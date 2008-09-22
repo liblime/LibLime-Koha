@@ -185,60 +185,44 @@ sub GetBranchName {
 
 $error = &ModBranch($newvalue);
 
-This function modify an existing branch
+This function creates a new or modifies an existing branch depending on the 
+existence of the hash key 'add' in the supplied parameter.
 
-C<$newvalue> is a ref to an array wich is containt all the column from branches table.
+C<$newvalue> is a ref to an hash containing  any columns from the branches table to be updated.
+FIXME: This code also allows passing category codes as hash keys.  There is a namespace collision
+problem here.  
 
 =cut
 
 sub ModBranch {
     my ($data) = @_;
+    my @columns = qw/branchname branchaddress1 branchaddress2 branchaddress3 branchphone branchfax
+                     branchemail branchip branchprinter itembarcodeprefix patronbarcodeprefix/;
     
     my $dbh    = C4::Context->dbh;
+    my (@qterms, @bind, $sth);
     if ($data->{add}) {
-        my $query  = "
-            INSERT INTO branches
-            (branchcode,branchname,branchaddress1,
-            branchaddress2,branchaddress3,branchzip,branchcity,
-            branchcountry,branchphone,branchfax,branchemail,
-            branchurl,branchip,branchprinter,branchnotes)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        ";
-        my $sth    = $dbh->prepare($query);
-        $sth->execute(
-            $data->{'branchcode'},       $data->{'branchname'},
-            $data->{'branchaddress1'},   $data->{'branchaddress2'},
-            $data->{'branchaddress3'},   $data->{'branchzip'},
-            $data->{'branchcity'},       $data->{'branchcountry'},
-            $data->{'branchphone'},      $data->{'branchfax'},
-            $data->{'branchemail'},      $data->{'branchurl'},
-            $data->{'branchip'},         $data->{'branchprinter'},
-            $data->{'branchnotes'},
-        );
-        return 1 if $dbh->err;
+        for my $col ( @columns ) {
+            if(exists($data->{$col})) {
+                push @qterms, $col;
+                push @bind, $data->{$col};
+            }
+        }
+        push @qterms, 'branchcode';
+        my $query  = " INSERT INTO branches (" . join(',',@qterms) .  ") VALUES (" . join(',', map { '?' } @qterms) . ")";
+        $sth    = $dbh->prepare($query);
+
     } else {
-        my $query  = "
-            UPDATE branches
-            SET branchname=?,branchaddress1=?,
-                branchaddress2=?,branchaddress3=?,branchzip=?,
-                branchcity=?,branchcountry=?,branchphone=?,
-                branchfax=?,branchemail=?,branchurl=?,branchip=?,
-                branchprinter=?,branchnotes=?
-            WHERE branchcode=?
-        ";
-        my $sth    = $dbh->prepare($query);
-        $sth->execute(
-            $data->{'branchname'},
-            $data->{'branchaddress1'},   $data->{'branchaddress2'},
-            $data->{'branchaddress3'},   $data->{'branchzip'},
-            $data->{'branchcity'},       $data->{'branchcountry'},
-            $data->{'branchphone'},      $data->{'branchfax'},
-            $data->{'branchemail'},      $data->{'branchurl'},
-            $data->{'branchip'},         $data->{'branchprinter'},
-            $data->{'branchnotes'},
-            $data->{'branchcode'},
-        );
+        for my $col ( @columns ) {
+            if(exists($data->{$col}) && ($col ne 'branchcode')) {
+                push @qterms, "$col=?";
+                push @bind, $data->{$col};
+            }
+        }
+        my $query  = " UPDATE branches SET " . join(',',@qterms) .  " WHERE branchcode=?";
+        $sth    = $dbh->prepare($query);
     }
+    $sth->execute(@bind, $data->{branchcode});
     # sort out the categories....
     my @checkedcats;
     my $cats = GetBranchCategory();
