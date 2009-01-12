@@ -93,6 +93,8 @@ $tabsysprefs{noItemTypeImages}      = "Admin";
 $tabsysprefs{OPACBaseURL}           = "Admin";
 $tabsysprefs{GranularPermissions}   = "Admin";
 $tabsysprefs{AllowOverrideLogin}    = "Admin";
+$tabsysprefs{itembarcodelength}     = "Admin";
+$tabsysprefs{patronbarcodelength}   = "Admin";
 
 # Authorities
 $tabsysprefs{authoritysep}          = "Authorities";

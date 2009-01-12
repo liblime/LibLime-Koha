@@ -3,32 +3,37 @@
 <!-- TMPL_INCLUDE NAME="doc-head-close-receipt.inc" -->
 </head>
 <body onload="window.print();">
-<div id="main">
+<div id="holdslip">
         <!-- TMPL_LOOP NAME="reservedata" -->
 <h5>Date: <!-- TMPL_VAR NAME="pulldate" --></h5>
-<h3> <!-- TMPL_IF NAME="transferrequired" -->Transfer to <!-- TMPL_VAR Name="branchname" --> <!-- TMPL_ELSE -->Hold in <!-- TMPL_VAR Name="branchname" --><!-- /TMPL_IF --></h3>
-
-<div id="reserve_display">
-
-<h3><!-- TMPL_VAR Name="surname" -->, <!-- TMPL_VAR Name="firstname" --></h3>
-
+<h3 class="transferdata"> <!-- TMPL_IF NAME="transferrequired" -->Transfer to <!-- TMPL_ELSE -->Hold in <!-- /TMPL_IF --> <!-- TMPL_VAR Name="pickup_library" --></h3>
+<div id="patrondata">
+<h3>For patron:</h3>
 <ul>
-	<li><!-- TMPL_VAR Name="cardnumber" --></li>
-    <li><!-- TMPL_VAR Name="phone" --></li>
-    <li><!-- TMPL_VAR Name="address" --><br />
-	  <!-- TMPL_IF Name="address2" --><!-- TMPL_VAR Name="address2" --><br /><!-- /TMPL_IF -->
-      <!-- TMPL_VAR Name="city" -->  <!-- TMPL_VAR NAME="zip" --></li>
-    <!-- TMPL_IF NAME="email" --><li><!-- TMPL_VAR NAME="email" --></li> <!-- /TMPL_IF -->
-</ul>
-<br />
-<h3>RESERVED ITEM</h3>
- <h4><!-- TMPL_VAR Name="title" escape="html" --></h4>
- <h5><!-- TMPL_VAR NAME="author" --> </h5>
- <p><!-- TMPL_VAR Name="barcode" --></p>
+    <li class="patrondetails name"><!-- TMPL_VAR Name="surname" -->, <!-- TMPL_VAR Name="firstname" --></li>
+    <li><!-- TMPL_VAR Name="cardnumber" --></li>
+    <!-- TMPL_IF NAME="phone" --><li class="patrondetails phone"><!-- TMPL_VAR Name="phone" --></li><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="address" --><li  class="patrondetails address"><!-- TMPL_VAR Name="address" --><br />
+        <!-- TMPL_IF Name="address2" --><!-- TMPL_VAR Name="address2" --><br /><!-- /TMPL_IF -->
+        <!-- TMPL_VAR Name="city" -->  <!-- TMPL_VAR NAME="zip" --></li><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="email" --><li class="patrondetails email"><!-- TMPL_VAR NAME="email" --></li> <!-- /TMPL_IF -->
+ </ul>
+</div>
+<div id="itemdata">
+<h3>Held Item:</h3>
+ <h4 class="title"><!-- TMPL_VAR Name="title" escape="html" --></h4>
+ <h5 class="author"><!-- TMPL_VAR NAME="author" --> </h5>
+ <!-- TMPL_IF NAME="barcode-img" -->
+    <div id="barcode_img" class="itemdetails">
+        <img id="barcode_img" src="/cgi-bin/koha/circ/barcode-img.pl?barcode=<!-- TMPL_VAR NAME="barcode" -->" />
+    </div>
+ <!-- TMPL_ELSE -->
+    <p class="barcode"><!-- TMPL_VAR Name="barcode" --></p>
+<!-- /TMPL_IF -->
  <!-- TMPL_IF NAME="reservenotes" --><p>Notes: <!-- TMPL_VAR Name="reservenotes" --></p><!-- /TMPL_IF -->
-
-
-
-                <!-- /TMPL_LOOP -->
+<p class="home_library">Item owned by <!-- TMPL_VAR NAME="owning_library" --></p>
+</div>
+   <!-- /TMPL_LOOP -->
 </div>
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
+

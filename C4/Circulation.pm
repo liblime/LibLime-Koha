@@ -123,14 +123,20 @@ Also deals with stocktaking.
 =over 4
 
 =item Generic filter function for barcode string.
-Called on every circ if the System Pref itemBarcodeInputFilter is set.
+Called on every circ if either System Pref B<itemBarcodeInputFilter> or B<itembarcodelength> is set,
+applying one or both modifications as appropriate.
+
 Will do some manipulation of the barcode for systems that deliver a barcode
 to circulation.pl that differs from the barcode stored for the item.
 For proper functioning of this filter, calling the function on the 
 correct barcode string (items.barcode) should return an unaltered barcode.
 
-The optional $filter argument is to allow for testing or explicit 
-behavior that ignores the System Pref.  Valid values are the same as the 
+Per branch barcode prefixes are inserted AFTER the filter function is applied
+to fix the barcode at branches.itembarcodelength characters IFF
+C<C4::Context->preference('itembarcodelength')> exists and is longer than C<length($barcode)>.
+
+The optional $filter argument is to allow for testing or explicit
+behavior that ignores the System Pref.  Valid values are the same as the
 System Pref options.
 
 =back
@@ -143,25 +149,41 @@ System Pref options.
 sub barcodedecode {
     my ($barcode, $filter) = @_;
     $filter = C4::Context->preference('itemBarcodeInputFilter') unless $filter;
-    $filter or return $barcode;     # ensure filter is defined, else return untouched barcode
-	if ($filter eq 'whitespace') {
-		$barcode =~ s/\s//g;
-	} elsif ($filter eq 'cuecat') {
-		chomp($barcode);
-	    my @fields = split( /\./, $barcode );
-	    my @results = map( decode($_), @fields[ 1 .. $#fields ] );
-	    ($#results == 2) and return $results[2];
-	} elsif ($filter eq 'T-prefix') {
-		if ($barcode =~ /^[Tt](\d)/) {
-			(defined($1) and $1 eq '0') and return $barcode;
-            $barcode = substr($barcode, 2) + 0;     # FIXME: probably should be substr($barcode, 1)
-		}
-        return sprintf("T%07d", $barcode);
-        # FIXME: $barcode could be "T1", causing warning: substr outside of string
-        # Why drop the nonzero digit after the T?
-        # Why pass non-digits (or empty string) to "T%07d"?
-	}
-    return $barcode;    # return barcode, modified or not
+
+    my $filter_dispatch = {
+        'whitespace' => sub {
+		                    $barcode =~ s/\s//g;
+		                    return $barcode;
+                        },
+	    'T-prefix'  =>  sub {
+		                    if ($barcode =~ /^[Tt](\d)/) {
+			                    (defined($1) and $1 eq '0') and return $barcode;
+                                $barcode = substr($barcode, 2) + 0;     # FIXME: probably should be substr($barcode, 1)
+		                    }
+                            return sprintf("T%07d", $barcode);
+                            # FIXME: $barcode could be "T1", causing warning: substr outside of string
+                            # Why drop the nonzero digit after the T?
+                            # Why pass non-digits (or empty string) to "T%07d"?
+                         },
+	     'cuecat'   =>  sub {
+		                    chomp($barcode);
+	                        my @fields = split( /\./, $barcode );
+	                        my @results = map( decode($_), @fields[ 1 .. $#fields ] );
+	                        if ( $#results == 2 ) {
+	                            return $results[2];
+	                        } else {
+	                            return $barcode;
+	                        }
+                        },
+    };
+    my $filtered = ($filter && exists($filter_dispatch->{$filter})) ? $filter_dispatch->{$filter}() : $barcode;
+    if(C4::Context->preference('itembarcodelength') && (length($filtered) < C4::Context->preference('itembarcodelength'))) {
+        my $prefix = GetBranchDetail(C4::Context->userenv->{'branch'})->{'itembarcodeprefix'} ;
+        my $padding = C4::Context->preference('itembarcodelength') - length($prefix) - length($filtered) ;
+        # FIXME : error check?
+        $filtered = $prefix . '0' x $padding . $filtered if($padding >= 0) ;
+    }
+    return $filtered || $barcode ;
 }
 
 =head2 decode

@@ -403,8 +403,6 @@ if ($op eq "modify")  {
     $template->param( updtype => 'M',modify => 1 );
     $template->param( step_1=>1, step_2=>1, step_3=>1, step_4=>1, step_5 => 1, step_6 => 1) unless $step;
 }
-# my $cardnumber=$data{'cardnumber'};
-$data{'cardnumber'}=fixup_cardnumber($data{'cardnumber'}) if $op eq 'add';
 if(!defined($data{'sex'})){
     $template->param( none => 1);
 } elsif($data{'sex'} eq 'F'){
@@ -542,6 +540,12 @@ for my $branch (sort { $branches->{$a}->{branchname} cmp $branches->{$b}->{branc
     $select_branches{$branch} = $branches->{$branch}->{'branchname'};
     $default = C4::Context->userenv->{'branch'} if (C4::Context->userenv && C4::Context->userenv->{'branch'});
 }
+# my $cardnumber=$data{'cardnumber'};
+# FIXME : Is there really a need to deliver an auto-calculated cardnumber to the entry form ?
+# We should just calculate it on submission, as that would allow the user to change branches without having to
+# recalculate (if a branch prefix is used), and would eliminate the race condition weakness here.  The cardnumber
+# will be reported when the patron account is created.  (but leaving as is for now).
+$data{'cardnumber'}=fixup_cardnumber($data{'cardnumber'}, $branches->{C4::Context->userenv->{'branch'}}) if $op eq 'add';
 # --------------------------------------------------------------------------------------------------------
   #in modify mod :default value from $CGIbranch comes from borrowers table
   #in add mod: default value come from branches table (ip correspendence)

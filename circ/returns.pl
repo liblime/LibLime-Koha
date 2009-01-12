@@ -108,8 +108,8 @@ foreach ( $query->param ) {
     my $borrowernumber = $query->param("bn-$counter");
     $counter++;
 
-    # decode barcode    ## Didn't we already decode them before passing them back last time??
-    $barcode = barcodedecode($barcode) if(C4::Context->preference('itemBarcodeInputFilter'));
+    # decode barcode
+    $barcode = barcodedecode($barcode) if(C4::Context->preference('itemBarcodeInputFilter') || C4::Context->preference('itembarcodelength'));
 
     ######################
     #Are these lines still useful ?
@@ -189,7 +189,8 @@ if ($dotransfer){
 
 # actually return book and prepare item table.....
 if ($barcode) {
-    $barcode = barcodedecode($barcode) if C4::Context->preference('itemBarcodeInputFilter');
+
+    $barcode = barcodedecode($barcode)  if(C4::Context->preference('itemBarcodeInputFilter') || C4::Context->preference('itembarcodelength'));
     $itemnumber = GetItemnumberFromBarcode($barcode);
 
     if ( C4::Context->preference("InProcessingToShelvingCart") ) {

@@ -67,11 +67,27 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
         debug           => 1,
     }
 );
-$template->param(
-     script_name => $script_name,
-     action      => $script_name,
+if ($op) {
+    $template->param(
+        script_name => $script_name,
+        $op         => 1
+    );    # we show only the TMPL_VAR names $op
+}
+else {
+    $template->param(
+        script_name => $script_name,
+        else        => 1
+    );    # we show only the TMPL_VAR names $op
+}
+$template->param( action => $script_name );
+
+#FIXME : this script needs significant revision to remove presentation-layer logic, printers, etc.
+
+# template params to pass regardless of user action:
+
+$template->param(   itembarcodelength => C4::Context->preference('itembarcodelength'),
+                    patronbarcodelength => C4::Context->preference('patronbarcodelength'),
 );
-$template->param( ($op || 'else') => 1 );
 
 if ( $op eq 'add' ) {
 
@@ -223,6 +239,8 @@ sub editbranchform {
              branchurl      => $data->{'branchurl'},
              branchip       => $data->{'branchip'},
              branchnotes    => $data->{'branchnotes'}, 
+             itembarcodeprefix       => $data->{'itembarcodeprefix'},
+             patronbarcodeprefix       => $data->{'patronbarcodeprefix'},
         );
     }
 

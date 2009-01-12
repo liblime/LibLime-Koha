@@ -52,14 +52,18 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 my $reserveinfo = GetReserveInfo($borrowernumber,$biblionumber );
 my $pulldate = C4::Dates->new();
 $reserveinfo->{'pulldate'} = $pulldate->output();
-$reserveinfo->{'branchname'} = GetBranchName($reserveinfo->{'branchcode'});
+$reserveinfo->{'pickup_library'} = GetBranchName($reserveinfo->{'branchcode'});
+$reserveinfo->{'owning_library'} = GetBranchName($reserveinfo->{'homebranch'});
+$reserveinfo->{'current_library'} = GetBranchName($reserveinfo->{'holdingbranch'});
+
 $reserveinfo->{'transferrequired'} = $transfer;
 
-$template->param( reservedata => [ $reserveinfo ] ,
-				);
+# If we have an itembarcodeprefix and we're transferring the item, send
+# item barcode to template for potential barcode image generation.
+if($transfer && C4::Context->preference('itembarcodelength') ) {
+    $reserveinfo->{'barcode-img'} = 1;
+}
+$template->param( reservedata => [ $reserveinfo ] );
 
 output_html_with_http_headers $input, $cookie, $template->output;
-
-
-
 

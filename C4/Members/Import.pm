@@ -244,7 +244,7 @@ sub ImportFromFH {
             # FIXME: fixup_cardnumber says to lock table, but the web interface doesn't so this doesn't either.
             # At least this is closer to AddMember than in members/memberentry.pl
             if (!$borrower{'cardnumber'}) {
-                $borrower{'cardnumber'} = fixup_cardnumber(undef);
+                $borrower{'cardnumber'} = fixup_cardnumber(undef,$branches->{$borrower{'branchcode'}});
             }
             if ($borrowernumber = AddMember(%borrower)) {
                 if ($extended) {

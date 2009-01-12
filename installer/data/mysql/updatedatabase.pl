@@ -50,6 +50,12 @@ GetOptions(
 my $dbh = C4::Context->dbh;
 $|=1; # flushes output
 
+
+# seed LL version
+unless (C4::Context->preference('LibLimeVersion')) {
+    SetLibLimeVersion("3.00.00.000");
+}
+
 =item
 
     Deal with virtualshelves
@@ -2117,6 +2123,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do("INSERT INTO permissions (module_bit, code, description) VALUES ( 1, 'circulate_remaining_permissions', 'Remaining circulation permissions')");
     $dbh->do("INSERT INTO permissions (module_bit, code, description) VALUES ( 1, 'override_renewals', 'Override blocked renewals')");
     print "Upgrade to $DBversion done (added subpermissions for circulate permission)\n";
+    SetVersion ($DBversion);
 }
 
 $DBversion = '3.01.00.010';
@@ -2467,213 +2474,671 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done (added FilterBeforeOverdueReport syspref and new index on authorised_values)\n";
 }
 
-$DBversion = "3.01.00.038";
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    # update branches table
-    # 
-    $dbh->do("ALTER TABLE branches ADD `branchzip` varchar(25) default NULL AFTER `branchaddress3`");
-    $dbh->do("ALTER TABLE branches ADD `branchcity` mediumtext AFTER `branchzip`");
-    $dbh->do("ALTER TABLE branches ADD `branchcountry` text AFTER `branchcity`");
-    $dbh->do("ALTER TABLE branches ADD `branchurl` mediumtext AFTER `branchemail`");
-    $dbh->do("ALTER TABLE branches ADD `branchnotes` mediumtext AFTER `branchprinter`");
-    print "Upgrade to $DBversion done (add ZIP, city, country, URL, and notes column to branches)\n";
-    SetVersion ($DBversion);
+###
+### blocks below this line are not part of koha project yet. ###
+###
+
+$DBversion = '3.01.00.001';
+if ( C4::Context->preference('LibLimeVersion') < TransformToNum($DBversion) ) {
+
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `summaries` (
+`summary_id` INTEGER auto_increment ,
+`biblionumber` int(11) DEFAULT NULL,
+`homebranch` VARCHAR(10) default NULL,
+`holdingbranch` VARCHAR(10) default NULL,
+`callnumber` char (30) default '',
+`shelvinglocation` int (11) default NULL,
+`call_number_source` char (10) default '',
+`collection_code` int (11) default NULL,
+`URI` char (255) default '',
+`itemtype` varchar(10) default NULL,
+`copy_number` INTEGER default '0',
+`last_modified_by` INTEGER default '0',
+`last_modified_timestamp` TIMESTAMP NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+`created_by` INTEGER default '0',
+`created_timestamp` TIMESTAMP,
+PRIMARY KEY (`summary_id`),
+CONSTRAINT `summaries_ibfk_1` FOREIGN KEY (`biblionumber`)        REFERENCES `biblio`    (`biblionumber`)   ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summaries_ibfk_2` FOREIGN KEY (`homebranch`)          REFERENCES `branches`  (`branchcode`)     ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summaries_ibfk_3` FOREIGN KEY (`holdingbranch`)       REFERENCES `branches`  (`branchcode`)     ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summaries_ibfk_4` FOREIGN KEY (`shelvinglocation`)    REFERENCES `authorised_values` (`id`)     ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summaries_ibfk_5` FOREIGN KEY (`call_number_source`)  REFERENCES `class_sources` (`cn_source`)  ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summaries_ibfk_6` FOREIGN KEY (`collection_code`)     REFERENCES `authorised_values` (`id`)     ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summaries_ibfk_7` FOREIGN KEY (`itemtype`)            REFERENCES `itemtypes` (`itemtype`)       ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summaries_ibfk_8` FOREIGN KEY (`last_modified_by`)    REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summaries_ibfk_9` FOREIGN KEY (`created_by`)          REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `unstructured_summary_holdings_statements` (
+`unstructured_summary_holdings_statement_id` INTEGER auto_increment ,
+`summary_id` INTEGER default '0',
+`sequence_number` INTEGER NOT NULL default '0',
+`public_note` char (100) default '',
+`staff_note` char (100) default '',
+`statement` MEDIUMTEXT NOT NULL default '',
+PRIMARY KEY (`unstructured_summary_holdings_statement_id`),
+CONSTRAINT `unstructured_summary_holdings_statements_ibfk_1` FOREIGN KEY (`summary_id`) REFERENCES `summaries` (`summary_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `structured_summary_holdings_statements` (
+`structured_summary_holdings_statement_id` INTEGER auto_increment ,
+`summary_id` INTEGER default '0',
+`sequence_number` INTEGER NOT NULL default '0',
+`public_note` char (100) NOT NULL default '',
+`staff_note` char (100) NOT NULL default '',
+`display_template` MEDIUMTEXT NOT NULL default '',
+PRIMARY KEY (`structured_summary_holdings_statement_id`),
+CONSTRAINT `structured_summary_holdings_statements` FOREIGN KEY (`summary_id`) REFERENCES `summaries` (`summary_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `structured_summary_holdings_statement_levels` (
+`id` INTEGER NOT NULL auto_increment ,
+`structured_summary_holdings_statement_id` INTEGER default '0',
+`level` INTEGER NOT NULL default '0',
+`beginning_label` char (32) NOT NULL default '',
+`beginning_value` char (32) NOT NULL default '',
+`ending_label` char (32) NOT NULL default '',
+`ending_value` char (32) NOT NULL default '',
+PRIMARY KEY (`id`),
+CONSTRAINT `structured_summary_holdings_statement_levels_ibfk_1` FOREIGN KEY (`structured_summary_holdings_statement_id`) REFERENCES `structured_summary_holdings_statements` (`structured_summary_holdings_statement_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `summary_record_templates` (
+`id` INTEGER auto_increment ,
+`homebranch` varchar(10) NOT NULL default '',
+`holdingbranch` varchar(10) NOT NULL default '',
+`itemtype` varchar(10) NOT NULL default '',
+`shelvinglocation` char (80) NOT NULL default '',
+`call_number_source` char (10) NOT NULL default '',
+`collection_code` char (10) NOT NULL default '',
+`URI` char (255) NOT NULL default '',
+PRIMARY KEY (`id`),
+CONSTRAINT `summary_record_templates_ibfk_1` FOREIGN KEY (`homebranch`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summary_record_templates_ibfk_2` FOREIGN KEY (`holdingbranch`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT `summary_record_templates_ibfk_3` FOREIGN KEY (`itemtype`) REFERENCES `itemtypes` (`itemtype`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `import_summaries` (
+  `import_record_id` int(11) NOT NULL,
+  `control_number` varchar(25) default NULL,
+  `biblio_control_number` varchar(25) default NULL,
+  `original_source` varchar(25) default NULL,
+  KEY `import_record_ibfk_1` (`import_record_id`),
+  KEY `biblio_control_number` (`biblio_control_number`),
+  CONSTRAINT `import_summaries_ibfk_1` FOREIGN KEY (`import_record_id`) REFERENCES `import_records` (`import_record_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+END_SQL
+
+
+    $dbh->do(<<'END_SQL');
+alter table items
+  add column summary_id int
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+alter table items
+  add constraint `items_ibfk_4`
+  foreign key (`summary_id`)
+  references `summaries` (`summary_id`)
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+UPDATE marc_subfield_structure
+ SET kohafield = 'summaries.homebranch'
+ WHERE tagfield = '852'
+ AND tagsubfield = 'a'
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+UPDATE marc_subfield_structure
+ SET kohafield = 'summaries.shelvinglocation'
+ WHERE tagfield = '852'
+ AND tagsubfield = 'b'
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+UPDATE marc_subfield_structure
+ SET kohafield = 'summaries.callnumber'
+ WHERE tagfield = '852'
+ AND tagsubfield = 'h'
+END_SQL
+
+    $dbh->do(<<'END_SQL');
+ALTER TABLE import_batches
+  ADD COLUMN `num_summaries` int(11) NOT NULL default '0'
+END_SQL
+
+    print "Upgrade to $DBversion done (DDL for summary records)\n";
+    SetLibLimeVersion($DBversion);
 }
 
-$DBversion = '3.01.00.039';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO systempreferences (variable,value,options,explanation,type)VALUES('SpineLabelFormat', '<itemcallnumber><copynumber>', '30|10', 'This preference defines the format for the quick spine label printer. Just list the fields you would like to see in the order you would like to see them, surrounded by <>, for example <itemcallnumber>.', 'Textarea')");
-    $dbh->do("INSERT INTO systempreferences (variable,value,options,explanation,type)VALUES('SpineLabelAutoPrint', '0', '', 'If this setting is turned on, a print dialog will automatically pop up for the quick spine label printer.', 'YesNo')");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (added SpineLabelFormat and SpineLabelAutoPrint sysprefs)\n";
+$DBversion = '3.01.00.002';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+    $dbh->do("ALTER TABLE `issues` ADD proxy_borrowernumber INT(11) DEFAULT NULL");
+    $dbh->do("ALTER TABLE `issues` ADD KEY `proxy_borrowernumber` (`proxy_borrowernumber`)");
+    $dbh->do("ALTER TABLE `issues` ADD CONSTRAINT `issues_ibfk_3` FOREIGN KEY (`proxy_borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE SET NULL");
+
+    $dbh->do("ALTER TABLE `old_issues` ADD proxy_borrowernumber INT(11) DEFAULT NULL;");
+    $dbh->do("ALTER TABLE `old_issues` ADD KEY `proxy_borrowernumber` (`proxy_borrowernumber`)");
+    $dbh->do("ALTER TABLE `old_issues` ADD CONSTRAINT `old_issues_ibfk_3` FOREIGN KEY (`proxy_borrowernumber`) REFERENCES `borrowers` (`borrowernumber`)  ON DELETE SET NULL ON UPDATE SET NULL");
+
+    $dbh->do("
+    CREATE TABLE `proxy_relationships` (
+        `proxy_relationship_id` int(11) NOT NULL auto_increment,
+        `borrowernumber` INT(11) NOT NULL,
+        `proxy_borrowernumber` INT(11) NOT NULL,
+        `date_expires` date DEFAULT NULL,        `active` TINYINT(1) DEFAULT 0 NOT NULL,
+        `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+        PRIMARY KEY (`proxy_relationship_id`),
+        KEY `proxy_borrowernumber` (`proxy_borrowernumber`),
+        KEY `borrowernumber` (`borrowernumber`),
+        CONSTRAINT `proxy_relationship_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`)
+            ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `proxy_relationship_ibfk_2` FOREIGN KEY (`proxy_borrowernumber`) REFERENCES `borrowers` (`borrowernumber`)
+            ON DELETE CASCADE ON UPDATE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
+        );
+ 	$dbh->do("INSERT INTO permissions (module_bit, code, description) VALUES
+		(4, 'borrowers_remaining_permissions', 'Remaining Borrowers Permissions'),
+    	(4, 'create_proxy_relationships', 'Create Proxy Relationships'),
+    	(4, 'edit_proxy_relationships', 'Edit Proxy Relationships'),
+    	(4, 'delete_proxy_relationships', 'Delete Proxy Relationships'),
+    	(1, 'checkout_via_proxy', 'Checkout via Proxy')");
+
+    $dbh->do(q{
+        INSERT INTO `letter` (`module`, `code`, `name`, `title`, `content`) VALUES
+		    ('proxy_relationship','PROXYADDED','Proxy Added','Borrowing Relationship Added','The following patron can now borrow materials for you: \r\n----\r\n<<proxy_firstname>> <<proxy_surname>> Expires on: <<proxy_expires_on>> Active: <<proxy_active>> \r\n----\r\nThank you.');
+        });
+    $dbh->do(q{
+        INSERT INTO `letter` (`module`, `code`, `name`, `title`, `content`) VALUES
+            ('proxy_relationship','PROXYCHANGED','Proxy Changed','Borrowing Relationship Changed','The following change was made to your borrowing relationships: \r\n----\r\n<<proxy_firstname>> <<proxy_surname>> can borrow for you until: <<proxy_expires_on>> Active: <<proxy_active>> \r\n----\r\nThank you.');
+        });
+	$dbh->do(q{
+	 	INSERT INTO `letter` (`module`, `code`, `name`, `title`, `content`) VALUES
+            ('proxy_relationship','PROXYDELETED','Proxy Deleted','Borrowing Relationship Deleted','The following borrowing relationship was deleted: \r\n----\r\n<<proxy_firstname>> <<proxy_surname>> \r\n----\r\nThank you.');
+        });
+
+	$dbh->do(q{INSERT INTO message_attributes (message_attribute_id, message_name, takes_days) VALUES (7, 'Proxy Added', 0);});
+	$dbh->do(q{INSERT INTO message_attributes (message_attribute_id, message_name, takes_days) VALUES (8, 'Proxy Changed', 0);});
+	$dbh->do(q{INSERT INTO message_attributes (message_attribute_id, message_name, takes_days) VALUES (9, 'Proxy Deleted', 0);});
+
+	$dbh->do(q{INSERT INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES (7, 'email', 0, 'proxy_relationship', 'PROXYADDED');});
+    $dbh->do(q{INSERT INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES (7, 'sms',   0, 'proxy_relationship', 'PROXYADDED');});
+
+    $dbh->do(q{INSERT INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES (8, 'email', 0, 'proxy_relationship', 'PROXYCHANGED');});
+    $dbh->do(q{INSERT INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES (8, 'sms',   0, 'proxy_relationship', 'PROXYCHANGED');});
+
+    $dbh->do(q{INSERT INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES (9, 'email', 0, 'proxy_relationship', 'PROXYDELETED');});
+    $dbh->do(q{INSERT INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES (9, 'sms',   0, 'proxy_relationship', 'PROXYDELETED');});
+
+    print "Upgrade to $DBversion done (add database changes for patron proxies)\n";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.040';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('AllowHoldDateInFuture','0','If set a date field is displayed on the Hold screen of the Staff Interface, allowing the hold date to be set in the future.','','YesNo')");
-    $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('OPACAllowHoldDateInFuture','0','If set, along with the AllowHoldDateInFuture system preference, OPAC users can set the date of a hold to be in the future.','','YesNo')");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (AllowHoldDateInFuture and OPACAllowHoldDateInFuture sysprefs)\n";
+$DBversion = '3.01.00.003';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `fine_thresholds` (
+    `id` int(11) NOT NULL auto_increment,
+    `name` varchar(50) NOT NULL,
+    `branchcode` varchar(10) default NULL,
+    `itemtype` varchar(10) default NULL,
+    `patron_category` varchar(10) default NULL,
+    `accounttype` varchar(16) default NULL,
+    `amount` decimal(28,6) default '0.000000',
+    PRIMARY KEY  (`id`),
+    KEY `fine_thresholds_branchcode` (`branchcode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+END_SQL
+    $dbh->do(<<'END_SQL');
+INSERT INTO permissions (module_bit, code, description) VALUES 
+    (13, 'fine_threshold_forgive', 'Run fine threshold forgiveness rules');
+END_SQL
+    
+    print  STDERR "Upgrade to $DBversion done (Fine Threshold table added)\n";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.041';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('AWSPrivateKey','','See:  http://aws.amazon.com.  Note that this is required after 2009/08/15 in order to retrieve any enhanced content other than book covers from Amazon.','','free')");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (added AWSPrivateKey syspref - note that if you use enhanced content from Amazon, this should be set right away.)\n";
+$DBversion = '3.01.00.004';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `accounttypes` (
+  `id` int(11) NOT NULL auto_increment,
+  `accounttype` varchar(16) NOT NULL default '',
+  `description` mediumtext,
+  `class`  enum('fee', 'payment', 'transaction', 'allocation', 'status') NOT NULL default 'fee',
+  PRIMARY KEY (`id`),
+  KEY `accounttypes_acctype` (`accounttype`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+END_SQL
+    $dbh->do(<<"END_SQL");
+INSERT INTO `accounttypes` (`accounttype`, `description`, `class`)
+    VALUES
+    ('ACCTMANAGE','Account Management Fee','fee'),
+    ('FINE','Overdue Fine','fee'),
+    ('ACCRUINGFINE','Accruing Overdue Fine','fee'),
+    ('LOSTITEM','Lost Item','fee'),
+    ('SUNDRY','Sundry','fee'),
+    ('NEWCARD','New Card Issued','fee'),
+    ('RESERVE','Reserve Title','fee'),
+    ('PAYMENT','Payment Made','payment'),
+    ('CREDIT','Credit','payment'),
+    ('REFUND','Refund','payment'),
+    ('FORGIVE','Fine Forgiven','transaction'),
+    ('TFORGIVE','Threshold Fine Forgiven','transaction'),
+    ('WRITEOFF','Writeoff','transaction'),
+    ('DROPBOXADJ','Dropbox Adjustment','transaction'),
+    ('LOSTRETURNED','Lost, Returned', 'transaction'),
+    ('FINEACCRUAL','Accruing Overdue Fine','transaction'),
+    ('PAY','Partial fee payment','transaction'),
+    ('SYSTEM','System-mediated transaction','transaction'),
+    ('ALLOCATION','Payment','allocation')
+END_SQL
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `fees` (
+    id int(11) NOT NULL auto_increment,
+    borrowernumber int(11) NOT NULL,
+    itemnumber int(11) default NULL,
+    branchcode varchar(10) default NULL,
+    description mediumtext default NULL,
+    curr_totaldue decimal(28,6) default 0,
+    orig_totaldue decimal(28,6) default 0,
+    date date default NULL,
+    accounttype varchar(16) default NULL,
+    notify_id int(11) default NULL,
+    notify_level int(2) NOT NULL default 0,
+    dispute mediumtext default NULL,
+    last_updated timestamp NOT NULL default CURRENT_TIMESTAMP,
+    orig_timestamp timestamp NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT `fees_ibfk1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fees_ibfk2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT `fees_ibfk3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fees_ibfk4` FOREIGN KEY (`accounttype`) REFERENCES `accounttypes` (`accounttype`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+END_SQL
+    $dbh->do(<<'END_SQL');
+
+CREATE TABLE `payments` (
+    id int(11) NOT NULL auto_increment,
+    borrowernumber int(11) NOT NULL,
+    branchcode varchar(10) default NULL,
+    description mediumtext default NULL,
+    amount decimal(28,6) default 0,
+    accounttype varchar(16) default NULL,
+    date date default NULL,
+    unallocated decimal(28,6) default 0,
+    timestamp timestamp NOT NULL,
+    operator_id int(11) default NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT `payments_operator` FOREIGN KEY (`operator_id`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE SET NULL,
+    CONSTRAINT `payments_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT `payments_acct` FOREIGN KEY (`accounttype`) REFERENCES `accounttypes` (`accounttype`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+END_SQL
+    $dbh->do(<<'END_SQL');
+CREATE TABLE `fee_transactions` (
+    id int(11) NOT NULL auto_increment,
+    fee_id int(11) default NULL,
+    payment_id int(11) default NULL,
+    borrowernumber int(11) NOT NULL,
+    description mediumtext default NULL,
+    amount decimal(28,6) default 0,
+    accounttype varchar(16) default NULL,
+    operator_id int(11) default NULL,
+    branchcode varchar(10) default NULL,
+    date date default NULL,
+    timestamp timestamp NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT `fee_trans_ibfk1` FOREIGN KEY (`fee_id`) REFERENCES `fees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fee_trans_ibfk2` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fee_trans_operator` FOREIGN KEY (`operator_id`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT `fee_trans_borrower` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fee_trans_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT `fee_trans_acct` FOREIGN KEY (`accounttype`) REFERENCES `accounttypes` (`accounttype`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+END_SQL
+    print "Upgrade to $DBversion done (added new tables for fines refactoring)\n";
+    print "Upgrade to $DBversion NOT DONE !! ( You MUST now run the accounts_to_fees.pl script to translate accountlines into fees & payments.)\n";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.042';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('OPACFineNoRenewals','99999','Fine Limit above which user canmot renew books via OPAC','','Integer')");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (added OPACFineNoRenewals syspref)\n";
+$DBversion = '3.01.00.005';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+#-- 1: change items.itype to itemtype
+    $dbh->do("ALTER TABLE `items` CHANGE `itype` `itemtype` VARCHAR(10) DEFAULT NULL");
+    $dbh->do("ALTER TABLE `items` ADD KEY `itemtype` (`itemtype`) ");
+    $dbh->do("ALTER TABLE `items` ADD KEY `cn_sort` (`cn_sort`) ");
+    $dbh->do("UPDATE `items` SET itemtype=NULL WHERE itemtype='' ");
+    $dbh->do("ALTER TABLE `items` ADD CONSTRAINT `items_fk_4` FOREIGN KEY (itemtype) REFERENCES itemtypes (`itemtype`) ON DELETE SET NULL ON UPDATE CASCADE");
+    if($dbh->errstr()){
+        print STDERR "*** If you got an error, you'll have to manually fix itemtypes in your items table, then run this SQL query:\n
+        ALTER TABLE `items` ADD CONSTRAINT `itemtype` FOREIGN KEY (serialid) REFERENCES serial (serialid) ON DELETE CASCADE ON UPDATE CASCADE\n
+        and finally, run the maintenance/sync_items_in_marc.pl script to update MARC data.\n";
+    }
+#-- 2: copy bibliotems.itemtype if item-level_itypes is OFF.
+    unless(C4::Context->preference("item-level_itypes")){
+        print STDERR "Copying biblio-level itemtypes to items table...\n";
+        $dbh->do("UPDATE items i,biblioitems bi SET i.itemtype=bi.itemtype WHERE i.biblionumber=bi.biblionumber AND i.itemtype IS NULL ");
+        print STDERR "<em>!WARNING!</em>  You MUST now run the maintenance script sync_items_in_marc_bib.pl .\n
+            If you do NOT have itemtypes mapped to the item level in your frameworks, you must add a 'Koha Link' in your frameworks
+            to items.itemtype, and then run sync_items_in_marc_bib. Failure to do so may result in inability to modify itemtypes.
+            This update makes a significant change to Koha if you haven't been using item-level_itypes!!\n";
+    }
+#-- 3: fix frameworks for items.itemtype
+    $dbh->do("UPDATE `marc_subfield_structure` SET kohafield='items.itemtype' WHERE kohafield='items.itype' ");
+
+#-- 4: remove itype syspref.
+    $dbh->do("DELETE FROM systempreferences WHERE variable='item-level_itypes'");
+
+    print "Upgrade to $DBversion done ( Mandate item-level circulation.  See <a href=\"http://wiki.koha.org/doku.php?id=en:development:rfcs3.2:rfc32_item_level_itemtypes\">RFC</a> for details).\n";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.043';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do('ALTER TABLE items ADD COLUMN permanent_location VARCHAR(80) DEFAULT NULL AFTER location');
-    $dbh->do('UPDATE items SET permanent_location = location');
-    $dbh->do("INSERT INTO `systempreferences` ( `variable` , `value` , `options` , `explanation` , `type` ) VALUES ( 'NewItemsDefaultLocation', '', '', 'If set, all new items will have a location of the given Location Code ( Authorized Value type LOC )', '')");
-    $dbh->do("INSERT INTO `systempreferences` ( `variable` , `value` , `options` , `explanation` , `type` ) VALUES ( 'InProcessingToShelvingCart', '0', '', 'If set, when any item with a location code of PROC is ''checked in'', it''s location code will be changed to CART.', 'YesNo')");
-    $dbh->do("INSERT INTO `systempreferences` ( `variable` , `value` , `options` , `explanation` , `type` ) VALUES ( 'ReturnToShelvingCart', '0', '', 'If set, when any item is ''checked in'', it''s location code will be changed to CART.', 'YesNo')");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (amended Item added NewItemsDefaultLocation, InProcessingToShelvingCart, ReturnToShelvingCart sysprefs)\n";
+$DBversion = '3.01.00.006';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+
+    $dbh->do("
+    CREATE TABLE `circ_termsets` (
+        `id` INT NOT NULL AUTO_INCREMENT,
+        `description` VARCHAR(64) default NULL,
+        `branchcode` VARCHAR(10) default NULL,
+        PRIMARY KEY (`id`),
+        CONSTRAINT `circ_termsets_fk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    ");
+    $dbh->do("
+    CREATE TABLE `circ_term_dates` (
+        `id` INT NOT NULL AUTO_INCREMENT,
+        `circ_termsets_id` INT(11) NOT NULL,
+        `startdate` date default NULL,
+        `enddate` date default NULL,
+        `duedate` date NOT NULL,
+        PRIMARY KEY (`id`),
+        CONSTRAINT `circ_termset_dates_fk_1` FOREIGN KEY (`circ_termsets_id`) REFERENCES `circ_termsets` (`id`)
+          ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    ");
+
+    $dbh->do(" ALTER TABLE issuingrules ADD circ_termsets_id int DEFAULT NULL ");
+    $dbh->do("ALTER TABLE `issuingrules` ADD CONSTRAINT `issuingrules_fk_1` FOREIGN KEY (circ_termsets_id) REFERENCES circ_termsets (`id`) ON DELETE SET NULL ON UPDATE CASCADE");
+    print "Upgrade to $DBversion done ( Add tables for term loans ).\n";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.044';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES( 'DisplayClearScreenButton', '0', 'If set to yes, a clear screen button will appear on the circulation page.', 'If set to yes, a clear screen button will appear on the circulation page.', 'YesNo')");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (added DisplayClearScreenButton system preference)\n";
+$DBversion = '3.01.00.007';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+# WARNING:  REQUIRES circ_termsets and circ_term_dates tables !
+    $dbh->do("
+    CREATE TABLE `circ_policies` (
+        `id` int(11) NOT NULL auto_increment,
+        `description` VARCHAR(80) NOT NULL,
+        `branchcode` VARCHAR(10) default NULL,
+        `rentalcharge` decimal(28,6) default NULL,
+        `replacement_fee` decimal(28,6) default NULL,
+        `overdue_fine` decimal(28,6) default NULL,
+        `issue_length` int(11) NOT NULL,
+        `issue_length_unit` enum('days','hours','minutes') NOT NULL default 'days',
+        `grace_period` int(11) NOT NULL,
+        `grace_period_unit` enum('days','hours','minutes') NOT NULL default 'days',
+        `fine_period` int(11) NOT NULL,
+        `fine_period_unit` enum('days','hours','minutes') NOT NULL default 'days',
+        `loan_type` enum('daily','hourly') NOT NULL default 'daily',
+        `maxissueqty` int(11) default NULL,
+        `maxrenewals` int(11) default NULL,
+        `maxfine` decimal(28,6) default NULL,
+        `hourly_incr` int(11) default NULL,
+        `allow_overnight` TINYINT default NULL,
+        `allow_over_closed` TINYINT default NULL,
+        `overnight_due` INT(11) default NULL,
+        `overnight_window` INT(11) default NULL,
+        PRIMARY KEY (`id`),
+        CONSTRAINT `circ_policies_fk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
+          ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    ");
+    $dbh->do("
+    CREATE TABLE `circ_rules` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `categorycode` VARCHAR(10) default NULL,
+        `branchcode` VARCHAR(10) default NULL,
+        `itemtype` VARCHAR(10) default NULL,
+        `circ_policies_id` int(11) not NULL,
+        `circ_termsets_id` int(11) default NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `circ_rule` (`categorycode`,`branchcode`,`itemtype`),
+        CONSTRAINT `circ_rules_fk_1` FOREIGN KEY (`categorycode`) REFERENCES `categories` (`categorycode`)
+          ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `circ_rules_fk_2` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
+          ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `circ_rules_fk_3` FOREIGN KEY (`itemtype`) REFERENCES `itemtypes` (`itemtype`)
+          ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `circ_rules_fk_4` FOREIGN KEY (`circ_policies_id`) REFERENCES `circ_policies` (`id`)
+          ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `circ_rules_fk_5` FOREIGN KEY (`circ_termsets_id`) REFERENCES `circ_termsets` (`id`)
+          ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    ");
+    # translate issuingrules to circ_rules & circ_policies ...
+    my $sth = $dbh->prepare("SELECT * FROM issuingrules");
+    $sth->execute();
+    my $sth_r = $dbh->prepare("INSERT INTO circ_rules (branchcode,categorycode,itemtype,circ_policies_id) VALUES ( ?,?,?,? )");
+    my $sth_p = $dbh->prepare("INSERT INTO circ_policies (id,description,issue_length,overdue_fine,grace_period,fine_period,maxissueqty,maxrenewals,rentalcharge) VALUES ( ?,?,?,?,?,?,?,?,? )");
+    my $sth_itype = $dbh->prepare("SELECT renewalsallowed,rentalcharge FROM itemtypes where itemtype=?");
+
+    my %circ_policy;
+    my $policy_id=0;
+    while( my $row = $sth->fetchrow_hashref()){
+        $sth_itype->execute($row->{itemtype});
+        my ($renewals,$rentalcharge) = $sth_itype->fetchrow_array();
+        my $pkey = join("_", map { $_ || '' } ($row->{issuelength},$row->{chargeperiod},$row->{firstremind},$row->{fine},$row->{maxissueqty},$renewals,$rentalcharge));
+        my $desc = "$row->{'maxissueqty'} items, $row->{'issuelength'} days, " . sprintf("%.2f",$row->{'fine'}) . " fine.";
+        unless(exists($circ_policy{$pkey})){
+            $circ_policy{$pkey} = ++$policy_id;
+            $sth_p->execute($policy_id,$desc,$row->{issuelength},$row->{fine},$row->{firstremind},$row->{chargeperiod},$row->{maxissueqty},$renewals,$rentalcharge );
+        }
+        #warn join(" | ",($row->{branchcode},$row->{categorycode},$row->{itemtype}));
+        # translate '*' to null values for defaults.
+        my @bind =  map { ($_ eq '*') ? undef : $_ } ( $row->{branchcode},$row->{categorycode},$row->{itemtype}) ;
+        $sth_r->execute( @bind,$circ_policy{$pkey});
+    }
+    print STDERR "Created $policy_id circ policies from issuingrules table...\n";
+    #now update issues & old_issues tables.
+    $dbh->do(" ALTER TABLE `issues` DROP COLUMN `return` ");
+    $dbh->do(" ALTER TABLE `issues` DROP COLUMN `issuingbranch` ");
+    $dbh->do(" ALTER TABLE `issues` DROP COLUMN `returndate` ");
+    $dbh->do(" ALTER TABLE `issues` CHANGE lastreneweddate lastreneweddate datetime ");
+    $dbh->do(" ALTER TABLE `issues` CHANGE date_due duedate datetime NOT NULL ");
+    $dbh->do(" ALTER TABLE `issues` CHANGE issuedate issuedate datetime NOT NULL ");
+    $dbh->do(" ALTER TABLE `issues` add column id bigint default NULL FIRST  ");
+    $dbh->do(" ALTER TABLE `issues` add column loan_type enum('daily','hourly') NOT NULL default 'daily' ");
+    $dbh->do(" ALTER TABLE `issues` DROP INDEX `bordate` ");
+    $dbh->do(" ALTER TABLE `issues` ADD CONSTRAINT `issues_fk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
+
+    $dbh->do(" ALTER TABLE `old_issues` DROP COLUMN `return` ");
+    $dbh->do(" ALTER TABLE `old_issues` DROP COLUMN `issuingbranch` ");
+    $dbh->do(" ALTER TABLE `old_issues` CHANGE lastreneweddate lastreneweddate datetime ");
+    $dbh->do(" ALTER TABLE `old_issues` CHANGE `returndate` `returndate` datetime NOT NULL ");
+    $dbh->do(" ALTER TABLE `old_issues` CHANGE `date_due` `duedate` datetime NOT NULL ");
+    $dbh->do(" ALTER TABLE `old_issues` CHANGE `issuedate` `issuedate` datetime NOT NULL ");
+    $dbh->do(" ALTER TABLE `old_issues` add column `id` bigint default NULL FIRST   ");
+    $dbh->do(" ALTER TABLE `old_issues` add column `loan_type` enum('daily','hourly') NOT NULL default 'daily' ");
+    $dbh->do(" ALTER TABLE `old_issues` DROP INDEX `old_bordate` ");
+    $dbh->do(" ALTER TABLE `old_issues` ADD CONSTRAINT `old_issues_fk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
+
+    $dbh->{AutoCommit} = 0 ;
+    $dbh->do("LOCK TABLES issues WRITE, old_issues WRITE" );
+    # now populate unique keys in issues & old_issues.
+    my $sth_old_issues = $dbh->prepare("SELECT borrowernumber,itemnumber,issuedate,timestamp FROM old_issues");
+    my $sth_issues = $dbh->prepare("SELECT borrowernumber,itemnumber,issuedate,timestamp FROM issues");
+    my $sth_old_issues_update = $dbh->prepare("UPDATE `old_issues` SET id=? where borrowernumber=? AND itemnumber=? AND issuedate=? AND timestamp=?");
+    my $sth_issues_update = $dbh->prepare("UPDATE `issues` SET id=? where borrowernumber=? AND itemnumber=? AND issuedate=? AND timestamp=?");
+    my $id = 0;
+    $sth_old_issues->execute();
+    my ($bornum, $itemnum, $issuedate, $timestamp);
+    $sth_old_issues->bind_columns(\$bornum,\$itemnum,\$issuedate,\$timestamp);
+    while($sth_old_issues->fetchrow_arrayref){
+        $sth_old_issues_update->execute(++$id,$bornum, $itemnum, $issuedate, $timestamp);
+    }
+    $sth_old_issues->finish();
+    $sth_issues->execute();
+    $sth_issues->bind_columns(\$bornum,\$itemnum,\$issuedate,\$timestamp);
+    while($sth_issues->fetchrow_arrayref){
+        $sth_issues_update->execute(++$id,$bornum, $itemnum, $issuedate, $timestamp);
+    }
+    $sth_old_issues->finish();
+    $dbh->do("COMMIT ");
+    $dbh->do("UNLOCK TABLES");
+    # Now that we have unique keys, we can add the PK.
+    $dbh->do(" ALTER TABLE `issues` DROP COLUMN timestamp ");
+    $dbh->do(" ALTER TABLE `old_issues` DROP COLUMN timestamp ");
+    $dbh->do(" ALTER TABLE `issues` ADD PRIMARY KEY (`id`) ");
+    $dbh->do(" ALTER TABLE `issues` CHANGE `id` `id` int NOT NULL AUTO_INCREMENT");
+    $dbh->do(" ALTER TABLE `issues` AUTO_INCREMENT = $id");
+    $dbh->do(" ALTER TABLE `old_issues` ADD PRIMARY KEY (`id`) ");
+    $dbh->{AutoCommit} = 1 ;
+
+    print "Upgrade to $DBversion done (add new circ rules tables enabling hourly circulation)\n If any errors were encountered in this update, you will need to manually repair the affected 
+tables.\n";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.045';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO systempreferences (variable,value,options,explanation,type)VALUES('HidePatronName', '0', '', 'If this is switched on, patron''s cardnumber will be shown instead of their name on the holds and catalog screens', 'YesNo')");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (added a preference to hide the patrons name in the staff catalog)";
+$DBversion = '3.01.00.008';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+    $dbh->do("DROP TABLE IF EXISTS `library_hours`");
+    $dbh->do("
+    CREATE TABLE `library_hours` (
+      `id` int(11) NOT NULL auto_increment,
+      `branchcode` varchar(10) default NULL,
+      `date`     date default NULL,
+      `weekday` smallint(6) default NULL,
+      `open`  time default NULL,
+      `close` time default NULL,
+      PRIMARY KEY  (`id`),
+      UNIQUE KEY  (`branchcode`,`date`),
+      UNIQUE KEY  (`branchcode`,`weekday`),
+      CONSTRAINT `library_hours_fk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    ");
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = "3.01.00.046";
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    # update borrowers table
-    # 
-    $dbh->do("ALTER TABLE borrowers ADD `country` text AFTER zipcode");
-    $dbh->do("ALTER TABLE borrowers ADD `B_country` text AFTER B_zipcode");
-    $dbh->do("ALTER TABLE deletedborrowers ADD `country` text AFTER zipcode");
-    $dbh->do("ALTER TABLE deletedborrowers ADD `B_country` text AFTER B_zipcode");
-    print "Upgrade to $DBversion done (add country and B_country to borrowers)\n";
-    SetVersion ($DBversion);
+$DBversion = '3.01.00.009';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+        $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('TimeFormat','12hr','Format of time values when displayed.','12hr|24hr','Choice')");
+    print "Upgrade to $DBversion done ( add system preference for time formats )";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.047';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("ALTER TABLE items MODIFY itemcallnumber varchar(255);");
-    $dbh->do("ALTER TABLE deleteditems MODIFY itemcallnumber varchar(255);");
-    $dbh->do("ALTER TABLE tmp_holdsqueue MODIFY itemcallnumber varchar(255);");
-    SetVersion ($DBversion);
-    print " Upgrade to $DBversion done (bug 2761: change max length of itemcallnumber to 255 from 30)\n";
+$DBversion = '3.01.00.010';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+        $dbh->do("UPDATE accounttypes SET description='Payment' WHERE accounttype='PAY'");
+    print STDERR "Upgrade to $DBversion done ( LL-521: Pay in Full not working. )";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.048';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("UPDATE userflags SET flagdesc='View Catalog (Librarian Interface)' WHERE bit=2;");
-    $dbh->do("UPDATE userflags SET flagdesc='Edit Catalog (Modify bibliographic/holdings data)' WHERE bit=9;");
-    $dbh->do("UPDATE userflags SET flagdesc='Allow to edit authorities' WHERE bit=14;");
-    $dbh->do("UPDATE userflags SET flagdesc='Allow to access to the reports module' WHERE bit=16;");
-    $dbh->do("UPDATE userflags SET flagdesc='Allow to manage serials subscriptions' WHERE bit=15;");
-    SetVersion ($DBversion);
-    print " Upgrade to $DBversion done (bug 2611: fix spelling/capitalization in permission flag descriptions)\n";
+$DBversion = '3.01.00.011';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+    $dbh->do("
+      CREATE TABLE `callslips` (
+          `callslip_id` int(11) NOT NULL auto_increment,
+          `request_type` enum('callslip','doc_del') NOT NULL default 'callslip',
+          `borrowernumber` int(11) NOT NULL,
+          `pickup_branch` varchar(10) NOT NULL,
+          `request_status` enum('requested','not_filled','in_process','in_transit','on_hold','completed','cancelled','expired') NOT NULL default 'requested',
+          `request_time` timestamp NOT NULL default CURRENT_TIMESTAMP,
+          `not_needed_after` date default NULL,
+          `no_fill_reason` varchar(50) default NULL,
+          `biblionumber` int(11) NOT NULL default '0',
+          `requested_itemnumber` int(11) default NULL,
+          `filled_itemnumber` int(11) default NULL,
+          `opac_requested` tinyint(1) NOT NULL default '0',
+          `article_authors` varchar(255) default NULL,
+          `article_title` varchar(255) default NULL,
+          `issue_date` varchar(50) default NULL,
+          `article_pages` varchar(50) default NULL,
+          `chapter` varchar(50) default NULL,
+          `request_note` varchar(255) default NULL,
+          `reply_note` varchar(255) default NULL,
+          `requesting_staff_borrowernumber` int(11) default NULL,
+          `processing_staff_borrowernumber` int(11) default NULL,
+          `procesing_time` datetime default NULL,
+          `on_hold_staff_borrowernumber` int(11) default NULL,
+          `keep_on_hold_time` datetime default NULL,
+          `on_hold_expiration_time` datetime default NULL,
+          `request_expiration_time` datetime default NULL,
+          `cancellation_time` datetime default NULL,
+          `cancelled_via_opac` tinyint(1) NOT NULL default '0',
+          `completed_time` datetime default NULL,
+      PRIMARY KEY  (`callslip_id`),
+      KEY `callslips_ibfk_1` (`borrowernumber`),
+      KEY `slips_ibfk_2` (`biblionumber`),
+      KEY `callslips_ibfk_3` (`requested_itemnumber`),
+      KEY `callslips_ibfk_4` (`filled_itemnumber`),
+      KEY `callslips_lookup` (`request_status`,`requested_itemnumber`),
+      CONSTRAINT `callslips_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT `callslips_ibfk_3` FOREIGN KEY (`requested_itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE,
+      CONSTRAINT `callslips_ibfk_4` FOREIGN KEY (`filled_itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE,
+      CONSTRAINT `slips_ibfk_2` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ");
+    $dbh->do("INSERT INTO systempreferences (variable, value, explanation,type) VALUES 
+                    ( 'AllowCallslipRequests','0','Enable Call Slip requests.','YesNo'),
+                    ( 'OPACCallslipRequests','0','Enable patron-initiated Call Slip requests in OPAC.','YesNo'),
+                    ( 'AllowDocumentDeliveryRequests','0','Enable Document Delivery requests.','YesNo'),
+                    ( 'OPACDocumentDeliveryRequests','0','Enable patron Document Delivery requests in OPAC','YesNo')
+    ");
+    $dbh->do("alter table circ_policies add column `allow_callslip` tinyint default NULL");
+    $dbh->do("alter table circ_policies add column `allow_doc_del` tinyint default NULL");
+    $dbh->do("ALTER table default_circ_rules ADD COLUMN max_callslip int(4) DEFAULT NULL");
+    $dbh->do("ALTER table default_circ_rules ADD COLUMN max_doc_del int(4) DEFAULT NULL");
+    $dbh->do("ALTER table default_borrower_circ_rules ADD COLUMN max_callslip int(4) DEFAULT NULL");
+    $dbh->do("ALTER table default_borrower_circ_rules ADD COLUMN max_doc_del int(4) DEFAULT NULL");
+    $dbh->do("ALTER table branch_borrower_circ_rules ADD COLUMN max_callslip int(4) DEFAULT NULL");
+    $dbh->do("ALTER table branch_borrower_circ_rules ADD COLUMN max_doc_del int(4) DEFAULT NULL");
+    print STDERR "Upgrade to $DBversion done ( Add callslips table. )";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.049';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("UPDATE permissions SET description = 'Perform inventory (stocktaking) of your catalog' WHERE code = 'inventory';");
-     SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (bug 2611: changed catalogue to catalog per the standard)\n";
+$DBversion = '3.01.00.012';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+    $dbh->do("CREATE TABLE xtags (
+             id int(11) NOT NULL auto_increment,
+             name varchar(255) NOT NULL,
+             PRIMARY KEY (id))");
+    $dbh->do("CREATE TABLE xtags_and_saved_sql (
+             id int(11) NOT NULL auto_increment,
+             xtag_id int(11) NOT NULL,
+             saved_sql_id int(11) NOT NULL,
+             UNIQUE (xtag_id, saved_sql_id),
+             PRIMARY KEY (id))");
+    $dbh->do("ALTER TABLE saved_sql ADD COLUMN metadata text");
+    print STDERR "Upgrade to $DBversion done ( Add xtags and xtags_and_saved_sql tables. )";
+    SetLibLimeVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.050';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('OPACSearchForTitleIn','<li class=\"yuimenuitem\">\n<a target=\"_blank\" class=\"yuimenuitemlabel\" href=\"http://worldcat.org/search?q=TITLE\">Other Libraries (WorldCat)</a></li>\n<li class=\"yuimenuitem\">\n<a class=\"yuimenuitemlabel\" href=\"http://www.scholar.google.com/scholar?q=TITLE\" target=\"_blank\">Other Databases (Google Scholar)</a></li>\n<li class=\"yuimenuitem\">\n<a class=\"yuimenuitemlabel\" href=\"http://www.bookfinder.com/search/?author=AUTHOR&amp;title=TITLE&amp;st=xl&amp;ac=qr\" target=\"_blank\">Online Stores (Bookfinder.com)</a></li>','Enter the HTML that will appear in the ''Search for this title in'' box on the detail page in the OPAC.  Enter TITLE, AUTHOR, or ISBN in place of their respective variables in the URL.  Leave blank to disable ''More Searches'' menu.','70|10','Textarea');");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (bug 1934: Add OPACSearchForTitleIn syspref)\n";
+$DBversion = '3.01.00.013';
+if (C4::Context->preference("LibLimeVersion") < TransformToNum($DBversion)) {
+    $dbh->do('ALTER TABLE branches ADD COLUMN itembarcodeprefix varchar(10) DEFAULT NULL' );
+    $dbh->do('ALTER TABLE branches ADD COLUMN patronbarcodeprefix  varchar(10) DEFAULT NULL' );
+    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,type)
+                VALUES ('itembarcodelength','','Number of characters in system-wide barcode schema (item barcodes).','Integer')");
+    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,type)
+                VALUES ('patronbarcodelength','','Number of characters in system-wide barcode schema (patron cardnumbers).','Integer')");
+    print "Upgrade to $DBversion done (Add barcode schema information for autobarcode and barcode input filters.)\n";
+    SetLibLimeVersion($DBversion);
 }
 
-$DBversion = '3.01.00.051';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("UPDATE systempreferences SET explanation='Fine limit above which user cannot renew books via OPAC' WHERE variable='OPACFineNoRenewals';");
-    $dbh->do("UPDATE systempreferences SET explanation='If set to ON, a clear screen button will appear on the circulation page.' WHERE variable='DisplayClearScreenButton';");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (fixed typos in new sysprefs)\n";
-}
-
-$DBversion = '3.01.00.052';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do('ALTER TABLE deleteditems ADD COLUMN permanent_location VARCHAR(80) DEFAULT NULL AFTER location');
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (bug 3481: add permanent_location column to deleteditems)\n";
-}
-
-$DBversion = '3.01.00.053';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    my $upgrade_script = C4::Context->config("intranetdir") . "/installer/data/mysql/labels_upgrade.pl";
-    system("perl $upgrade_script");
-    print "Upgrade to $DBversion done (Migrated labels tables and data to new schema.) NOTE: All existing label batches have been assigned to the first branch in the list of branches. This is ONLY true of migrated label batches.\n";
-    SetVersion ($DBversion);
-}
-
-$DBversion = '3.01.00.054';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("ALTER TABLE borrowers ADD `B_address2` text AFTER B_address");
-    $dbh->do("ALTER TABLE borrowers ADD `altcontactcountry` text AFTER altcontactzipcode");
-    $dbh->do("ALTER TABLE deletedborrowers ADD `B_address2` text AFTER B_address");
-    $dbh->do("ALTER TABLE deletedborrowers ADD `altcontactcountry` text AFTER altcontactzipcode");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (bug 1600, bug 3454: add altcontactcountry and B_address2 to borrowers and deletedborrowers)\n";
-}
-
-$DBversion = '3.01.00.055';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do(qq|UPDATE systempreferences set explanation='Enter the HTML that will appear in the ''Search for this title in'' box on the detail page in the OPAC.  Enter {TITLE}, {AUTHOR}, or {ISBN} in place of their respective variables in the URL. Leave blank to disable ''More Searches'' menu.', value='<li><a  href="http://worldcat.org/search?q={TITLE}" target="_blank">Other Libraries (WorldCat)</a></li>\n<li><a href="http://www.scholar.google.com/scholar?q={TITLE}" target="_blank">Other Databases (Google Scholar)</a></li>\n<li><a href="http://www.bookfinder.com/search/?author={AUTHOR}&amp;title={TITLE}&amp;st=xl&amp;ac=qr" target="_blank">Online Stores (Bookfinder.com)</a></li>' WHERE variable='OPACSearchForTitleIn'|);
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (changed OPACSearchForTitleIn per requests in bug 1934)\n";
-}
-
-$DBversion = '3.01.00.056';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('OPACPatronDetails','1','If OFF the patron details tab in the OPAC is disabled.','','YesNo');");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (Bug 1172 : Add OPACPatronDetails syspref)\n";
-}
-
-$DBversion = '3.01.00.057';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('OPACFinesTab','1','If OFF the patron fines tab in the OPAC is disabled.','','YesNo');");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (Bug 2576 : Add OPACFinesTab syspref)\n";
-}
-
-$DBversion = '3.01.00.058';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("ALTER TABLE `language_subtag_registry` ADD `id` INT( 11 ) NOT NULL AUTO_INCREMENT PRIMARY KEY;");
-    $dbh->do("ALTER TABLE `language_rfc4646_to_iso639` ADD `id` INT( 11 ) NOT NULL AUTO_INCREMENT PRIMARY KEY;");
-    $dbh->do("ALTER TABLE `language_descriptions` ADD `id` INT( 11 ) NOT NULL AUTO_INCREMENT PRIMARY KEY;");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (Added primary keys to language tables)\n";
-}
-
-$DBversion = '3.01.00.059';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO systempreferences (variable,value,options,explanation,type)VALUES('DisplayOPACiconsXSLT', '1', '', 'If ON, displays the format, audience, type icons in XSLT MARC21 results and display pages.', 'YesNo')");
-    SetVersion ($DBversion);
-    print "Upgrade to $DBversion done (added DisplayOPACiconsXSLT sysprefs)\n";
-}
-
-$DBversion = '3.01.00.060';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES('AllowAllMessageDeletion','0','Allow any Library to delete any message','','YesNo');");
-    $dbh->do('DROP TABLE IF EXISTS messages');
-    $dbh->do("CREATE TABLE messages ( `message_id` int(11) NOT NULL auto_increment,
-        `borrowernumber` int(11) NOT NULL,
-        `branchcode` varchar(4) default NULL,
-        `message_type` varchar(1) NOT NULL,
-        `message` text NOT NULL,
-        `message_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`message_id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
-
-	print "Upgrade to $DBversion done ( Added AllowAllMessageDeletion syspref and messages table )\n";
-    SetVersion ($DBversion);
-}
-
-$DBversion = '3.01.00.061';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('ShowPatronImageInWebBasedSelfCheck', '0', 'If ON, displays patron image when a patron uses web-based self-checkout', '', 'YesNo')");
-	print "Upgrade to $DBversion done ( Added ShowPatronImageInWebBasedSelfCheck system preference )\n";
-    SetVersion ($DBversion);
-}
 
 =item DropAllForeignKeys($table)
 
@@ -2732,6 +3197,20 @@ sub SetVersion {
       my $finish=$dbh->prepare("INSERT into systempreferences (variable,value,explanation) values ('Version',?,'The Koha database version. WARNING: Do not change this value manually, it is maintained by the webinstaller')");
       $finish->execute($kohaversion);
     }
+    C4::Context->clear_syspref_cache();
 }
+
+sub SetLibLimeVersion {
+    my $kohaversion = TransformToNum(shift);
+    if (C4::Context->preference('LibLimeVersion')) {
+      my $finish=$dbh->prepare("UPDATE systempreferences SET value=? WHERE variable='LibLimeVersion'");
+      $finish->execute($kohaversion);
+    } else {
+      my $finish=$dbh->prepare("INSERT into systempreferences (variable,value,explanation) values ('LibLimeVersion',?,'The LibLime database version. WARNING: Do not change this value manually, it is maintained by the webinstaller')");
+      $finish->execute($kohaversion);
+    }
+    C4::Context->clear_syspref_cache();
+}
+
 exit;
 

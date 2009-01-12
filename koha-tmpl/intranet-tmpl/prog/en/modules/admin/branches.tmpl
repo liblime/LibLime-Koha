@@ -117,6 +117,8 @@
         <li><label for="branchemail">Email</label><input type="text" name="branchemail" id="branchemail" value="<!-- TMPL_VAR name="branchemail" escape="HTML" -->" /></li>
         <li><label for="branchurl">URL</label><input type="text" name="branchurl" id="branchurl" value="<!-- TMPL_VAR name="branchurl" escape="HTML" -->" /></li>
         <li><label for="branchip">IP</label><input type="text" name="branchip" id="branchip" value="<!-- TMPL_VAR name="branchip" escape="HTML" -->" /> <span class="hint">Can be entered as a single IP, or a subnet such as 192.168.1.*</span></li>
+        <!-- TMPL_IF NAME="itembarcodelength" --><li><label for="itembarcodeprefix">Item barcode prefix</label><input type="text" name="itembarcodeprefix" id="itembarcodeprefix" value="<!-- TMPL_VAR name="itembarcodeprefix" -->" /></li><!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="patronbarcodelength" --><li><label for="patronbarcodeprefix">Patron barcode prefix</label><input type="text" name="patronbarcodeprefix" id="patronbarcodeprefix" value="<!-- TMPL_VAR name="patronbarcodeprefix" -->" /></li><!-- /TMPL_IF -->
 		<!--
         <li><label for="branchprinter">Library Printer</label>
             <select id="branchprinter" name="branchprinter">

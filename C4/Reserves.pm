@@ -1421,7 +1421,7 @@ sub GetReserveInfo {
 				cardnumber, city, zipcode,
 				biblio.title, biblio.author,
 				items.holdingbranch, items.itemcallnumber, items.itemnumber, 
-				barcode, notes
+				homebranch, barcode, notes
 			FROM reserves left join items 
 				ON items.itemnumber=reserves.itemnumber , 
 				borrowers, biblio 

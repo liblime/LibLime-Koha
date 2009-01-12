@@ -40,6 +40,11 @@ use C4::Auth;
 use C4::Output;
 use C4::Context;
 use C4::Members::Import;
+use C4::Branch qw(GetBranchName GetBranches);
+use C4::Members;
+use C4::Members::Attributes qw(:all);
+use C4::Members::AttributeTypes;
+use C4::Members::Messaging;
 
 use Text::CSV;
 # Text::CSV::Unicode, even in binary mode, fails to parse lines with these diacriticals:
@@ -90,6 +95,9 @@ if ($matchpoint) {
 my $overwrite_cardnumber = $input->param('overwrite_cardnumber');
 $template->param( SCRIPT_NAME => $ENV{'SCRIPT_NAME'} );
 ($extended) and $template->param(ExtendedPatronAttributes => 1);
+
+# FIXME : this tool will currently allow patrons to be imported to any library, uncontrolled by Independent branches.
+my $branches=GetBranches();
 
 if ( $uploadborrowers && length($uploadborrowers) > 0 ) {
     my %retval = C4::Members::Import::ImportFromFH($input->upload('uploadborrowers'),

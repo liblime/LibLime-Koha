@@ -24,6 +24,7 @@ use C4::Dates qw(format_date_in_iso);
 use Digest::MD5 qw(md5_base64);
 use Date::Calc qw/Today Add_Delta_YM/;
 use C4::Log; # logaction
+use C4::Branch qw(GetBranchDetail);
 use C4::Overdues;
 use C4::Reserves;
 use C4::Accounts;
@@ -180,11 +181,12 @@ sub SearchMember {
     
     # this is used by circulation everytime a new borrowers cardnumber is scanned
     # so we can check an exact match first, if that works return, otherwise do the rest
+    my $cardnum = _prefix_cardnum($searchstring);
     $query = "SELECT * FROM borrowers
         LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
         ";
     my $sth = $dbh->prepare("$query WHERE cardnumber = ?");
-    $sth->execute($searchstring);
+    $sth->execute($cardnum);
     my $data = $sth->fetchall_arrayref({});
     if (@$data){
         return ( scalar(@$data), $data );
@@ -695,6 +697,12 @@ sub ModMember {
             $data{password} = md5_base64($data{password});
         }
     }
+    # modify cardnumber if necessary.
+    if(C4::Context->preference('patronbarcodelength') && exists($data{'cardnumber'})){
+        $data{'cardnumber'} = _prefix_cardnum($data{'cardnumber'}); 
+        # TODO : generate error if cardnumber does not match barcode schema, 
+        #        or length not sufficient to prefix without corrupting input string.
+    }
     my @badkeys;
     foreach (keys %data) {  
         next if ($_ eq 'borrowernumber' or $_ eq 'flags');
@@ -747,7 +755,8 @@ sub AddMember {
     my $dbh = C4::Context->dbh;
     $data{'userid'} = '' unless $data{'password'};
     $data{'password'} = md5_base64( $data{'password'} ) if $data{'password'};
-    
+    $data{'cardnumber'} = _prefix_cardnum($data{'cardnumber'}) if(C4::Context->preference('patronbarcodelength'));
+
     # WE SHOULD NEVER PASS THIS SUBROUTINE ANYTHING OTHER THAN ISO DATES
     # IF YOU UNCOMMENT THESE LINES YOU BETTER HAVE A DARN COMPELLING REASON
 #    $data{'dateofbirth'}  = format_date_in_iso( $data{'dateofbirth'} );
@@ -902,6 +911,7 @@ sub changepassword {
 
 =head2 fixup_cardnumber
 
+get next available cardnumber.
 Warning: The caller is responsible for locking the members table in write
 mode, to avoid database corruption.
 
@@ -910,22 +920,20 @@ mode, to avoid database corruption.
 use vars qw( @weightings );
 my @weightings = ( 8, 4, 6, 3, 5, 2, 1 );
 
-sub fixup_cardnumber ($) {
-    my ($cardnumber) = @_;
+sub fixup_cardnumber {
+    my ($cardnumber, $branch) = @_;
     my $autonumber_members = C4::Context->boolean_preference('autoMemberNum') || 0;
 
     # Find out whether member numbers should be generated
     # automatically. Should be either "1" or something else.
     # Defaults to "0", which is interpreted as "no".
 
-    #     if ($cardnumber !~ /\S/ && $autonumber_members) {
     ($autonumber_members) or return $cardnumber;
     my $checkdigit = C4::Context->preference('checkdigit');
     my $dbh = C4::Context->dbh;
     if ( $checkdigit and $checkdigit eq 'katipo' ) {
 
         # if checkdigit is selected, calculate katipo-style cardnumber.
-        # otherwise, just use the max()
         # purpose: generate checksum'd member numbers.
         # We'll assume we just got the max value of digits 2-8 of member #'s
         # from the database and our job is to increment that by one,
@@ -960,16 +968,44 @@ sub fixup_cardnumber ($) {
         return "V$cardnumber$rem";
      } else {
 
-     # MODIFIED BY JF: mysql4.1 allows casting as an integer, which is probably
-     # better. I'll leave the original in in case it needs to be changed for you
-     # my $sth=$dbh->prepare("select max(borrowers.cardnumber) from borrowers");
-        my $sth = $dbh->prepare(
-            "select max(cast(cardnumber as signed)) from borrowers"
-        );
-        $sth->execute;
-        my ($result) = $sth->fetchrow;
-        return $result + 1;
-    }
+     # increment operator without cast(int) should be safe, and should properly increment
+     # whether the string is numeric or not.
+     # FIXME : This needs to be pulled out into an ajax function, since the interface allows on-the-fly changing of patron home library.
+     #
+         my $query =  "select max(borrowers.cardnumber) from borrowers ";
+         my @bind;
+         my $cardlength = C4::Context->preference('patronbarcodelength');
+         my $firstnumber = 0;
+         if($branch->{'patronbarcodeprefix'} && $cardlength) {
+             my $minrange = 10**($cardlength-length($branch->{'patronbarcodeprefix'}) );
+             $query .= " WHERE cardnumber BETWEEN ? AND ?";
+             $query .= " AND length(cardnumber) = ?";
+             $firstnumber = $branch->{'patronbarcodeprefix'} .substr(sprintf("%s",$minrange), 1) ;
+             @bind = ($firstnumber , $branch->{'patronbarcodeprefix'} . sprintf( "%s",$minrange - 1),$cardlength ) ;
+         }
+         my $sth= $dbh->prepare($query);
+         $sth->execute(@bind);
+         my ($result) = $sth->fetchrow;
+         $sth->finish;
+         if($result) {
+             $result =~ s/^$branch->{'patronbarcodeprefix'}//;
+             my $cnt = 0;
+             while ( $result =~ /([a-zA-Z]*[0-9]*)\z/ ) {   # use perl's magical stringcrement behavior (++).
+                 my $incrementable = $1;
+                 $incrementable++;
+                 if ( length($incrementable) > length($1) ) { # carry a digit to next incrementable fragment
+                     $cardnumber = substr($incrementable,1) . $cardnumber;
+                     $result = $`;
+                 } else {
+                     $cardnumber = $branch->{'patronbarcodeprefix'} . $` . $incrementable . $cardnumber ;
+                     last;
+                 }
+                 last if(++$cnt>10);
+             }
+         } else {
+             $cardnumber =  ++$firstnumber ;
+         }
+     }
     return $cardnumber;     # just here as a fallback/reminder 
 }
 
@@ -2343,6 +2379,34 @@ sub DeleteMessage {
     my $sth = $dbh->prepare($query);
     $sth->execute( $message_id );
 
+=head2 _prefix_cardnum
+
+=over 4
+
+$cardnum = _prefix_cardnum($cardnum,$branchcode);
+
+If a system-wide barcode length is defined, and a prefix defined for the passed branch or the user's branch,
+modify the barcode by prefixing and padding.
+
+=back
+=cut
+
+sub _prefix_cardnum{
+    my ($cardnum,$branchcode) = @_;
+    
+    if(C4::Context->preference('patronbarcodelength') && (length($cardnum) < C4::Context->preference('patronbarcodelength'))) {
+        #if we have a system-wide cardnum length and a branch prefix, prepend the prefix.
+        if( ! $branchcode && defined(C4::Context->userenv) ) {
+            $branchcode = C4::Context->userenv->{'branch'};
+        }
+        return $cardnum unless $branchcode;
+        my $branch = GetBranchDetail( $branchcode );
+        return $cardnum unless( defined($branch) && defined($branch->{'patronbarcodeprefix'}) );
+        my $prefix = $branch->{'patronbarcodeprefix'} ;
+        my $padding = C4::Context->preference('patronbarcodelength') - length($prefix) - length($cardnum) ;
+        $cardnum = $prefix . '0' x $padding . $cardnum if($padding >= 0) ;
+   }
+    return $cardnum;
 }
 
 END { }    # module clean-up code here (global destructor)
