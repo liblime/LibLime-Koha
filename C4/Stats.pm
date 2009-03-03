@@ -118,6 +118,28 @@ sub TotalPaid {
     return @{$sth->fetchall_arrayref({})};
 }
 
+sub GetPreviousCardnumbers {
+  my ( $borrowernumber ) = @_;
+  my $dbh = C4::Context->dbh;
+  
+  my $member = C4::Members::GetMember( $borrowernumber );
+  my $cardnumber = $member->{'cardnumber'};
+  
+  my $query = "SELECT DISTINCT(other) AS previous_cardnumber FROM statistics WHERE borrowernumber = ? AND other != ? AND other !='' ";
+  my $sth = $dbh->prepare( $query );
+  $sth->execute( $borrowernumber, $cardnumber );
+
+  my @results;
+  while ( my $data = $sth->fetchrow_hashref ) {
+
+warn "Found Previous Number: " . $data->{'previous_cardnumber'};
+    push( @results, $data );
+  }
+  $sth->finish;
+
+  return @results;  
+}
+                          
 1;
 __END__
 

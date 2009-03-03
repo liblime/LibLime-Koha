@@ -573,6 +573,13 @@ true on success, or false on failure
 sub ModMember {
     my (%data) = @_;
     my $dbh = C4::Context->dbh;
+    
+    my $member = GetMemberDetails( $data{'borrowernumber'} );
+    
+    if ( $member->{'cardnumber'} ne  $data{'cardnumber'} ) {
+      C4::Stats::UpdateStats( C4::Context->userenv->{branch}, 'card_replaced', '', $member->{'cardnumber'}, '', '', $data{'borrowernumber'} );
+    }
+
     my $iso_re = C4::Dates->new()->regexp('iso');
     foreach (qw(dateofbirth dateexpiry dateenrolled)) {
         if (my $tempdate = $data{$_}) {                                 # assignment, not comparison

@@ -330,6 +330,27 @@ if (nodename =="barcodes[]"){
  </div>
     <div class="action"><a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=3">Edit</a></div>
  
+ <!-- TMPL_IF NAME="previousCardnumbersLoop" -->
+  <div id="previouscardnumbers" >
+      <h3>Previous Cardnumbers</h3>
+        <ul>
+		<form method="post" action="restore_cardnumber.pl">
+			<table border="0"><tr><td>
+			<select name="previous_cardnumber" id="previous_cardnumber" size="<!-- TMPL_VAR NAME="previousCardnumbersCount" -->">
+			        <!-- TMPL_LOOP NAME="previousCardnumbersLoop" -->
+			    	  <!--TMPL_IF NAME="previous_cardnumber" -->
+			            <option value="<!-- TMPL_VAR NAME="previous_cardnumber" -->"><!-- TMPL_VAR NAME="previous_cardnumber" --></option>
+			          <!-- /TMPL_IF -->
+			        <!-- /TMPL_LOOP -->
+			</select></td>
+			<input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
+			<td><input type="submit" value="Restore" /></td>
+			</table>
+		</form>
+      </ul>
+  </div>    
+<!-- /TMPL_IF -->
+
  <div id="patron-alternate-address" style="padding-top: 1em;">
     <h3>Alternate Address</h3>
     <!-- TMPL_UNLESS NAME="I"--><!-- TMPL_UNLESS NAME="C"-->
@@ -358,6 +379,7 @@ if (nodename =="barcodes[]"){
 </div>
 <div class="action"><a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=2">Edit</a></div>
 
+
 </div>
 </div>
 
@@ -376,6 +398,7 @@ if (nodename =="barcodes[]"){
         <p>No outstanding charges</p>
     <!-- /TMPL_IF -->
 </div>
+
 
 <div id="checkedout">
     <h2>Checked Out</h2>
