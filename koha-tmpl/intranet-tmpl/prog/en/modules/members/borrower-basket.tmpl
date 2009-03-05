@@ -1,0 +1,114 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Borrower Cart</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="shortcut icon" href="<!-- TMPL_VAR NAME="themelang" -->/includes/favicon.ico" type="image/x-icon" />
+<meta http-equiv="Content-Language" content="en-us" />
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.pack.js"></script>
+<script type="text/javascript">
+	//<![CDATA[
+	$(document).ready(function(){
+		$("#CheckAll").click(function(){
+		var checked = [];
+		$("#bookbag_form").checkCheckboxes("*", true).each(
+		    function() {
+				selRecord(this.value,true); 
+			}
+		); 
+	        return false;
+	    });
+	    $("#CheckNone").click(function(){
+	    var checked = [];
+		$("#bookbag_form").unCheckCheckboxes("*",true).each(
+		    function() {
+				selRecord(this.value,false);
+			}
+		);
+	        return false;
+	    });
+	});
+	//]]>
+</script>
+
+<script type="text/javascript" language="javascript">
+    var MSG_BASKET_EMPTY = _("Your cart is currently empty");
+    var MSG_RECORD_IN_BASKET = _("This item is already in your cart");
+    var MSG_RECORD_ADDED = _("This item has been added to your cart");
+    var MSG_NRECORDS_ADDED = _(" item(s) added to your cart");
+    var MSG_NRECORDS_IN_BASKET = _("already in your cart");
+    var MSG_NO_RECORD_SELECTED = _("No item was selected");   
+    var MSG_NO_RECORD_ADDED = _("No item was added to your cart");
+    var MSG_CONFIRM_DEL_BASKET = _("Are you sure you want to empty your cart?");
+    var MSG_CONFIRM_DEL_RECORDS = _("Are you sure you want to remove the selected items?");
+</script>
+
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/borrower-basket.js"></script>
+</head>
+
+<body id="basket">
+
+<div id="doc" class="yui-t7">
+  <div class="container">
+    <h1>Borrower Cart</h1>
+
+    <div id="toolbar">
+      <ul>
+	<li><a class="empty" href="borrower-basket.pl" onclick="delBasket(); return false;">Empty Borrower Cart</a></li>
+      </ul>
+    </div>
+
+    <form action="borrower-basket.pl" method="get" name="bookbag_form" id="bookbag_form">
+
+<div class="searchresults">
+
+<p style="padding: 7px 0; border-top : 1px solid #E8E8E8;">
+  <a id="CheckAll" href="#">Select All</a> 
+  <a id="CheckNone" href="#">Clear All</a> | <b>Selected items :</b>
+  <a href="#" onclick="delSelRecords(); return false;">Remove</a>
+</p>
+
+    <table style="width:100%">
+    <tr>
+	    <th>&nbsp;</th>
+	    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=cardnumber">Card</a></th>
+	    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=surname">Name</a></th>
+	    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=borrowers.categorycode">Cat</a></th>
+	    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=branchcode">Library</a></th>
+	    <th>Expires on</th>
+	    <th>Circ note</th>
+    </tr>
+
+    <!-- TMPL_LOOP NAME="borrowers_loop" -->
+	<tr>
+	    <td><input type="checkbox" id="bor<!-- TMPL_VAR NAME="borrowernumber" -->" name="borrower" value="<!-- TMPL_VAR NAME="borrowernumber" -->" title="Click to add to Borrower Cart" onclick="selRecord(value,checked);" /></td>
+	    <td><!-- TMPL_VAR NAME="cardnumber" --></td>
+	    <td style="white-space: nowrap;"><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR NAME="firstname" --></a> <br /> <!-- TMPL_VAR NAME="address" --><!-- TMPL_IF NAME="address2" --><br /><!-- TMPL_VAR NAME="address2" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="city" --><br /><!-- TMPL_VAR NAME=city --><!-- /TMPL_IF --><!-- TMPL_IF NAME="zipcode" -->  <!-- TMPL_VAR NAME="zipcode" --><!-- /TMPL_IF --></td>
+	    <td><!-- TMPL_VAR NAME="category_description" --> (<!-- TMPL_VAR name="category_type" -->)</td>
+	    <td><!-- TMPL_VAR NAME="branchcode" --></td>
+	    <td><!-- TMPL_VAR NAME="dateexpiry" --></td>
+	    <td><!-- TMPL_VAR NAME="borrowernotes" --></td>
+	</tr>
+      <!-- /TMPL_LOOP -->
+    </form>
+
+
+  </div>
+</div>
+
+<form name="myform" action="borrower-basket.pl" method="get">
+    <input type="hidden" name="records" id="records" />
+</form>
+
+<table>
+  <tr>
+    <td>
+      <input type=button value="Bulk Edit Borrowers" onClick="self.opener.location='bulkedit.pl';self.close()">
+    </td>
+    <td>
+      <input type=button value="Bulk Delete Borrowers" onClick="self.opener.location='bulkedit.pl?delete=1';self.close()">
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
