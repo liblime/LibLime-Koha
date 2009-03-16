@@ -509,6 +509,7 @@ sub UpdateFine {
 			$debug and print STDERR "UpdateFine query: $query\n" .
 				"w/ args: $amount, $out, $diff, $data->{'borrowernumber'}, $data->{'itemnumber'}, \"\%$due\%\"\n";
             $sth2->execute($amount, $out, $diff, $data->{'borrowernumber'}, $data->{'itemnumber'}, "%$due%");
+            UpdateStats( my $branch = '', my $type = "fine_update", $amount, my $other = '', $data->{'itemnumber'}, my $itemtype = '', $data->{'borrowernumber'}, my $proccode = '' );
         } else {
             #      print "no update needed $data->{'amount'}"
         }
