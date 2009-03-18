@@ -67,6 +67,8 @@ C4::ClubsAndServices - Functions for managing clubs and services
   GetEnrolledClubsAndServices
   GetPubliclyEnrollableClubsAndServices
   GetAllEnrollableClubsAndServices
+
+  ReserveForBestSellersClub
   
   getTodayMysqlDateFormat
 );
@@ -995,6 +997,102 @@ sub getTodayMysqlDateFormat {
   my ($day,$month,$year) = (localtime)[3,4,5];
   my $today = sprintf("%04d-%02d-%02d", $year + 1900, $month + 1, $day);
   return $today;
+}
+
+sub ReserveForBestSellersClub {
+  my ( $biblionumber ) = @_;
+
+  #warn "ReserveForBestSellersClub( $biblionumber )";
+
+  unless( $biblionumber ) { return; }
+  
+  my $dbh = C4::Context->dbh;
+  my $sth;
+
+  ## Grab the bib for this biblionumber, we will need the author and title to find the relevent clubs
+  my $biblio_data = C4::Biblio::GetBiblioData( $biblionumber );
+  my $author = $biblio_data->{'author'};
+  my $title = $biblio_data->{'title'};
+  
+  #warn "Author: $author";
+  #warn "Title: $title";
+
+  ## Find the casaId for the Bestsellers Club archetype
+  $sth = $dbh->prepare("SELECT * FROM clubsAndServicesArchetypes WHERE title LIKE 'Bestsellers Club' ");
+  $sth->execute();
+  my $casa = $sth->fetchrow_hashref();
+  my $casaId = $casa->{'casaId'};
+  $sth->finish();
+
+  unless( $casaId ) { return; }
+    
+  #warn "casaId: $casaId";
+  
+  ## Find all the relevent bestsellers clubs
+  ## casData1 is title, casData2 is author
+  $sth = $dbh->prepare("SELECT * FROM clubsAndServices WHERE casaId = ?");
+  $sth->execute( $casaId );
+  my @clubs;
+  while ( my $club = $sth->fetchrow_hashref() ) {
+    #warn "Author/casData2 : '$author'/ " . $club->{'casData2'} . "'";
+    #warn "Title/casData1 : '$title'/" . $club->{'casData1'} . "'";
+
+    ## If the author, title or both match, keep it.
+    if ( ($club->{'casData1'} eq $title) || ($club->{'casData2'} eq $author) ) {
+      push( @clubs, $club );
+      #warn "casId" . $club->{'casId'};
+    }
+  }
+  $sth->finish();
+  
+  unless( scalar( @clubs ) ) { return; }
+  
+  ## Get all the members of the relevant clubs, but only get each borrower once, even if they are in multiple relevant clubs
+  ## Randomize the order of the borrowers
+  my @casIds;
+  my $sql = "SELECT DISTINCT(borrowers.borrowernumber) FROM borrowers, clubsAndServicesEnrollments
+             WHERE clubsAndServicesEnrollments.borrowernumber = borrowers.borrowernumber
+             AND (";
+  my $clubsCount = scalar( @clubs );
+  foreach my $club ( @clubs ) {
+    $sql .= " casId = ?";
+    if ( --$clubsCount ) {
+      $sql .= " OR";
+    }
+    push( @casIds, $club->{'casId'} );
+    #warn "casId: " . $club->{'casId'};
+  }
+  $sql .= " ) ORDER BY RAND()";
+  
+  #warn "SQL: $sql";
+  
+  $sth = $dbh->prepare( $sql );
+  $sth->execute( @casIds );
+  my @borrowers;
+  while ( my $borrower = $sth->fetchrow_hashref() ) {
+    push( @borrowers, $borrower );
+    #warn "Borrowernumber " . $borrower->{'borrowernumber'};
+  }
+  
+  unless( scalar( @borrowers ) ) { return; }
+  
+  my $priority = 1;
+  foreach my $borrower ( @borrowers ) {
+    C4::Reserves::AddReserve(
+      my $branch = $borrower->{'branchcode'},
+      my $borrowernumber = $borrower->{'borrowernumber'},
+      $biblionumber,
+      my $constraint = 'a',
+      my $bibitems,
+      $priority,
+      my $notes = "Automatic Reserve for Bestsellers Club",
+      $title,
+      my $checkitem,
+      my $found,
+      my $expire_date
+    );
+    $priority++;
+  }
 }
 
 1;

@@ -2414,6 +2414,13 @@ CREATE TABLE `clubsAndServicesArchetypes` (
   PRIMARY KEY  (`casaId`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
+--
+-- Preset data for ClubsAndServicesArchetypes
+--
+
+INSERT INTO `clubsAndServicesArchetypes` ( `casaId` , `type` , `title` , `description` , `publicEnrollment` , `casData1Title` , `casData2Title` , `casData3Title` , `caseData1Title` , `caseData2Title` , `caseData3Title` , `casData1Desc` , `casData2Desc` , `casData3Desc` , `caseData1Desc` , `caseData2Desc` , `caseData3Desc` , `branchcode` , `last_updated` )
+VALUES ('2', 'club', 'Bestsellers Club', 'This club archetype gives the patrons the ability join a club for a given author and for staff to batch generate a holds list which shuffles the holds queue when specific titles or books by certain authors are received.', '0', 'Title', 'Author', '', '', '', '', 'If filled in, the the club will only apply to books where the title matches this field. Must be identical to the MARC field mapped to title.', 'If filled in, the the club will only apply to books where the author matches this field. Must be identical to the MARC field mapped to author.', '', '', '', '', 'NO_L', '2009-03-18 14:15:25');
+
 -- 
 -- Table structure for table `clubsAndServicesEnrollments`
 -- 
