@@ -203,6 +203,7 @@ sub writeoff {
       );
     $sth->execute( $accountnum, $borrowernumber );
     $sth->finish;
+    
     $sth = $dbh->prepare("select max(accountno) from accountlines");
     $sth->execute;
     my $account = $sth->fetchrow_hashref;
@@ -215,6 +216,5 @@ sub writeoff {
     $sth->execute( $borrowernumber, $account->{'max(accountno)'},
         $itemnum, $amount );
     $sth->finish;
-    UpdateStats( $branch, 'writeoff', $amount, '', '', '',
-        $borrowernumber );
+    UpdateStats( $branch, 'writeoff', $amount, '', $itemnum, '', $borrowernumber, $accountnum );
 }
