@@ -545,6 +545,8 @@ sub UpdateFine {
         $borrowernumber,
         "due=".$due."  amount=".$amount." itemnumber=".$itemnum
         ) if C4::Context->preference("FinesLog");
+    UpdateStats( my $branch = '', my $type = "fine_new", $amount, my $other = '', $itemnum, my $itemtype = '', $borrowernumber, my $proccode = '' );
+
 }
 
 =head2 BorType
