@@ -233,9 +233,10 @@
                 <!-- TMPL_ELSE -->
                     <label for="initials">
                 <!-- /TMPL_IF-->
+                <!-- TMPL_IF NAME="showinitials" -->
                 Initials: </label>
                 <input type="text" id="initials" name="initials" size="20"  value="<!-- TMPL_VAR NAME="initials" -->" />	
-                <!-- TMPL_IF NAME="mandatoryinitials" --><span class="required">Required</span><!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="mandatoryinitials" --><span class="required">Required</span><!-- /TMPL_IF --><!-- /TMPL_IF -->
             </li>
         <!-- /TMPL_UNLESS -->
 		<li>
@@ -244,9 +245,10 @@
 			<!-- TMPL_ELSE -->
 			<label for="othernames">
 			<!-- /TMPL_IF-->
+                        <!-- TMPL_IF NAME="showothernames" -->
 			Other name: </label>
 			<input type="text" id="othernames" name="othernames" size="20"  value="<!-- TMPL_VAR NAME="othernames" -->" />
-<!-- TMPL_IF NAME="mandatoryothernames" --><span class="required">Required</span><!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="mandatoryothernames" --><span class="required">Required</span><!-- /TMPL_IF --><!-- /TMPL_IF -->
 		<!-- TMPL_IF NAME="I" --><input type="hidden" name="sex" value="N" /><!-- /TMPL_IF -->
 		</li>
     <!--TMPL_UNLESS Name="I"-->
