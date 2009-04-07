@@ -148,21 +148,27 @@ if(C4::Context->preference('globalDueDate') && (C4::Context->preference('globalD
         $globalduedate = C4::Dates->new(C4::Context->preference('globalDueDate'));
 }
 my $duedatespec_allow = C4::Context->preference('SpecifyDueDate');
+my $testduedate_allow = C4::Context->preference('AllowDueDateInPast');
 if($duedatespec_allow){
     if ($duedatespec) {
-    	if ($duedatespec =~ C4::Dates->regexp('syspref')) {
-    		my $tempdate = C4::Dates->new($duedatespec);
-    		if ($tempdate and $tempdate->output('iso') gt C4::Dates->new()->output('iso')) {
-    			# i.e., it has to be later than today/now
-    			$datedue = $tempdate;
-    		} else {
-    			$invalidduedate = 1;
-    			$template->param(IMPOSSIBLE=>1, INVALID_DATE=>$duedatespec);
-    		}
-    	} else {
-    		$invalidduedate = 1;
-    		$template->param(IMPOSSIBLE=>1, INVALID_DATE=>$duedatespec);
-    	}
+        if ($duedatespec =~ C4::Dates->regexp('syspref')) {
+            my $tempdate = C4::Dates->new($duedatespec);
+            if ($tempdate and $tempdate->output('iso') gt C4::Dates->new()->output('iso')) {
+                # i.e., it has to be later than today/now
+                $datedue = $tempdate;
+            } else {
+                 if ($testduedate_allow) {
+                     $datedue = $tempdate;
+                 }
+                 else {
+                     $invalidduedate = 1;
+                     $template->param(IMPOSSIBLE=>1, INVALID_DATE=>$duedatespec);
+                 }
+            }
+        } else {
+            $invalidduedate = 1;
+            $template->param(IMPOSSIBLE=>1, INVALID_DATE=>$duedatespec);
+        }
     } else {
         # pass global due date to tmpl if specifyduedate is true 
         # and we have no barcode (loading circ page but not checking out)
@@ -738,5 +744,6 @@ $template->param(
 	AllowRenewalLimitOverride => C4::Context->preference("AllowRenewalLimitOverride"),
     dateformat                => C4::Context->preference("dateformat"),
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
+    AllowDueDateInPast        => C4::Context->preference('AllowDueDateInPast'),
 );
 output_html_with_http_headers $query, $cookie, $template->output;
