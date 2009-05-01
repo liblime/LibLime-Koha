@@ -1140,6 +1140,8 @@ CREATE TABLE `issuingrules` (
   `maxissueqty` int(4) default NULL,
   `issuelength` int(4) default NULL,
   `branchcode` varchar(10) NOT NULL default '',
+  `max_fine` decimal(28,6) default NULL,
+  `max_holds` int(4) default NULL,
   PRIMARY KEY  (`branchcode`,`categorycode`,`itemtype`),
   KEY `categorycode` (`categorycode`),
   KEY `itemtype` (`itemtype`)

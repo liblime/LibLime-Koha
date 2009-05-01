@@ -120,12 +120,24 @@ if ($cardnumber) {
 #   we check the reserves of the borrower, and if he can reserv a document
 # FIXME At this time we have a simple count of reservs, but, later, we could improve the infos "title" ...
 
-    my $number_reserves =
-      GetReserveCount( $borrowerinfo->{'borrowernumber'} );
+    my $number_reserves = GetReserveCount( $borrowerinfo->{'borrowernumber'} );
 
-    if ( $number_reserves > C4::Context->preference('maxreserves') ) {
-		$warnings = 1;
-        $maxreserves = 1;
+    if ( C4::Context->preference('UseGranularMaxHolds') ) {
+    	my $itemtype;
+    	$sth = $dbh->prepare("SELECT itemtype FROM biblioitems WHERE biblionumber = ?");
+	$sth->execute($biblionumber);
+	($itemtype) = $sth->fetchrow_array;
+                                                
+    	my $irule = GetIssuingRule($borrowerinfo->{'categorycode'}, $itemtype, C4::Context->userenv->{'branch'} );
+    	
+    	if ( $number_reserves >= $irule->{'max_holds'} ) {
+    	  $warnings = 1;
+    	  $maxreserves = 1;
+    	  $template->param( override_required => 1 );
+	}
+    } elsif ( $number_reserves > C4::Context->preference('maxreserves') ) {
+	$warnings = 1;
+	$maxreserves = 1;
     }
 
     # we check the date expiry of the borrower (only if there is an expiry date, otherwise, set to 1 (warn)

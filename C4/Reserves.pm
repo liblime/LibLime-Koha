@@ -324,6 +324,38 @@ sub GetReservesFromBorrowernumber {
     my $data = $sth->fetchall_arrayref({});
     return @$data;
 }
+
+=item GetReservesByBorrowernumberAndItemtype
+
+    $borrowerreserv = GetReservesByBorrowernumberAndItemtypeOf($borrowernumber, $biblionumber);
+    
+    TODO :: Descritpion
+    
+=cut
+
+sub GetReservesByBorrowernumberAndItemtypeOf {
+    my ( $borrowernumber, $biblionumber ) = @_;
+    my $dbh   = C4::Context->dbh;
+    my $sth;
+
+    $sth = $dbh->prepare("SELECT itemtype FROM biblioitems WHERE biblionumber = ?");
+    $sth->execute( $biblionumber );
+    my $res = $sth->fetchrow_hashref();
+    my $itemtype = $res->{'itemtype'};
+
+    $sth = $dbh->prepare("
+            SELECT *
+            FROM   reserves, biblioitems
+            WHERE  borrowernumber=?
+            AND reserves.biblionumber = biblioitems.biblionumber
+            AND biblioitems.itemtype = ?
+            ORDER BY reservedate
+    ");
+    $sth->execute($borrowernumber,$itemtype);
+    my $data = $sth->fetchall_arrayref({});
+    return @$data;
+}
+
 #-------------------------------------------------------------------------------------
 
 =item GetReserveCount

@@ -68,7 +68,14 @@ $(document).ready(function() {
                 <th>Fine Grace Period</th>
                 <th>Fine Charging Interval</th>
                 <th>Current Checkouts Allowed</th>
-                <th>Loan Period</th><th>&nbsp;</th>
+                <th>Loan Period</th>
+                <!-- TMPL_IF NAME="UseGranularMaxFines" -->
+		  <th>Max Accruable Fine Per Issue</th>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="UseGranularMaxHolds" -->
+		  <th>Max Number of Holds</th>
+                <!-- /TMPL_IF -->
+		<th>&nbsp;</th>
             </tr>
             <!-- TMPL_LOOP NAME="rules" -->
                 <!-- TMPL_UNLESS NAME="__odd__" -->
@@ -98,6 +105,13 @@ $(document).ready(function() {
                         <!-- /TMPL_IF -->
                     </td>
                     <td><!-- TMPL_IF NAME="issuelength" --><!-- TMPL_VAR NAME="issuelength" --> day(s)<!-- /TMPL_IF --></td>
+                    <!-- TMPL_IF NAME="UseGranularMaxFines" -->
+        		   <td><!-- TMPL_IF NAME="max_fine" -->$<!-- TMPL_VAR NAME="max_fine" --><!-- /TMPL_IF --></td>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="UseGranularMaxHolds" -->
+        		  <td><!-- TMPL_IF NAME="max_holds" --><!-- TMPL_VAR NAME="max_holds" --><!-- /TMPL_IF --></td>
+                    <!-- /TMPL_IF -->
+
                     <td>
                         <a class="button" href="/cgi-bin/koha/admin/smart-rules.pl?op=delete&amp;itemtype=<!-- TMPL_VAR NAME="itemtype" -->&amp;categorycode=<!-- TMPL_VAR NAME="categorycode" -->&amp;branch=<!-- TMPL_VAR NAME="branch" -->">Delete</a>
                     </td>
@@ -125,6 +139,13 @@ $(document).ready(function() {
                     <td><input name="chargeperiod" size="2" /> day(s)</td>
                     <td><input name="maxissueqty" size="3" /></td>
                     <td><input name="issuelength" size="3" /> day(s)</td>
+                    <!-- TMPL_IF NAME="UseGranularMaxFines" -->
+                      <td>$<input name="max_fine" size="4" /></td>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="UseGranularMaxHolds" -->
+                    <td><input name="max_holds" size="3" /></td>
+                    <!-- /TMPL_IF -->
+
                     <td><input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->"/><input type="submit" value="Add" class="submit" /></td>
                 </tr>
             </table>

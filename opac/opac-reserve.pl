@@ -253,7 +253,28 @@ if ( $borr->{debarred} && ($borr->{debarred} eq 1) ) {
 
 my @reserves = GetReservesFromBorrowernumber( $borrowernumber );
 $template->param( RESERVES => \@reserves );
-if ( scalar(@reserves) >= $MAXIMUM_NUMBER_OF_RESERVES ) {
+if ( C4::Context->preference('UseGranularMaxHolds') ) {
+      ## Since we can't limit by branchcode in the opac, we use the * rule for branch
+      ## Get the reserves for the borrower, limited by itemtype
+      ## If the borrower is over the limit for their borrower.categorycode and the given itemtype
+      ## Disable ability to make a reserve
+      my $itemtype;
+      my $dbh = C4::Context->dbh;
+      my $sth = $dbh->prepare("SELECT itemtype FROM biblioitems WHERE biblionumber = ?");
+      $sth->execute($biblionumber);
+      ($itemtype) = $sth->fetchrow_array;
+      
+      my @reservesByItemtype = C4::Reserves::GetReservesByBorrowernumberAndItemtypeOf($borrowernumber, $biblionumber);
+      my $res_count = scalar( @reservesByItemtype );
+
+      my $irule = GetIssuingRule($borr->{'categorycode'}, $itemtype );
+
+      if ( $res_count >= $irule->{'max_holds'} ) {
+        $template->param( message => 1, too_many_reserves => $res_count );
+        $noreserves = 1;
+        $template->param( too_many_reserves => scalar(@reserves));
+      }
+} elsif ( scalar(@reserves) >= $MAXIMUM_NUMBER_OF_RESERVES ) {
     $template->param( message => 1 );
     $noreserves = 1;
     $template->param( too_many_reserves => scalar(@reserves));
