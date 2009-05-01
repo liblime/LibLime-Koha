@@ -100,6 +100,9 @@ my $borrowernumber = $query->param('borrowernumber');
 $branch  = C4::Context->userenv->{'branch'};  
 $printer = C4::Context->userenv->{'branchprinter'};
 
+if (C4::Context->preference("DisableHoldsIssueOverrideUnlessAuthorised") ) {
+    $template->param( DisableHoldsIssueOverrideUnlessAuthorised => 1 );
+}
 
 # If AutoLocation is not activated, we show the Circulation Parameters to chage settings of librarian
 if (C4::Context->preference("AutoLocation") ne 1) { # FIXME: string comparison to number
@@ -129,6 +132,12 @@ if ( $barcode ) {
     }
 }
 
+if (C4::Context->preference("DisableHoldsIssueOverrideUnlessAuthorised") ) {
+  my $authcode = C4::Auth::checkpw( C4::Context->dbh, $query->param('auth_username'), $query->param('auth_password') );
+  if ( $authcode < 2 ) {
+    $issueconfirmed = 0;
+  }
+}
 #set up cookie.....
 # my $branchcookie;
 # my $printercookie;
