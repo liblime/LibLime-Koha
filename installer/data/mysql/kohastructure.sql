@@ -493,6 +493,7 @@ CREATE TABLE `borrowers` (
   `altcontactcountry` text default NULL,
   `altcontactphone` varchar(50) default NULL,
   `smsalertnumber` varchar(50) default NULL,
+  `disable_reading_history` tinyint(1) default NULL,
   UNIQUE KEY `cardnumber` (`cardnumber`),
   PRIMARY KEY `borrowernumber` (`borrowernumber`),
   KEY `categorycode` (`categorycode`),

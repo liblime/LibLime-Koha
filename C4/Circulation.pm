@@ -1576,7 +1576,13 @@ sub AddReturn {
         } else {
             $messages->{'NeedsTransfer'} = 1;   # TODO: instead of 1, specify branchcode that the transfer SHOULD go to, $item->{homebranch}
         }
+
+
     }
+        if ( $borrower->{'disable_reading_history'} ) {
+          my $rowsaffected = AnonymiseIssueHistory( 'CURDATE', $borrower->{'borrowernumber'} );
+          warn "Rows Affected: $rowsaffected"; 
+        }
     return ( $doreturn, $messages, $issue, $borrower );
 }
 

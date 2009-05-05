@@ -99,6 +99,8 @@ for ( my $i = 0 ; $i < $count ; $i++ ) {
     push( @loop_reading, \%line );
 }
 
+$template->param( AllowReadingHistoryAnonymizing => C4::Context->preference('AllowReadingHistoryAnonymizing') );
+
 if (C4::Context->preference('BakerTaylorEnabled')) {
 	$template->param(
 		JacketImages=>1,
