@@ -138,8 +138,19 @@ function refocus(calendar) {
 </script>
 
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
+
+<!-- TMPL_IF NAME="CheckoutTimeout" -->
+  <script type="text/javascript">
+    function displaymessage() {
+      if ( confirm('Would You Like To Search For A New Record?') ) { 
+        window.location = '/cgi-bin/koha/circ/circulation.pl';
+      }
+    }
+  </script>
+<!-- /TMPL_IF -->
+
 </head>
-<body>
+<body <!-- TMPL_IF NAME="CheckoutTimeout" -->onclick="setTimeout('displaymessage()', <!-- TMPL_VAR NAME="CheckoutTimeout" --> * 1000)" <!-- /TMPL_IF --> >
 
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="circ-search.inc" -->
