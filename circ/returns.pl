@@ -83,6 +83,15 @@ my $userenv_branch = C4::Context->userenv->{'branch'} || '';
 #
 # Some code to handle the error if there is no branch or printer setting.....
 #
+my $checkin_override_date;
+if (C4::Context->preference('AllowCheckInDateChange')) {
+    my $tempdate = $query->param('checkin_override_date');
+    if ($tempdate && $tempdate =~ C4::Dates->regexp('syspref')) {
+        $checkin_override_date = C4::Dates->new($tempdate);
+        $template->param( checkin_override_date => $tempdate);
+    }
+}
+
 
 # Set up the item stack ....
 my %returneditems;
@@ -199,9 +208,13 @@ if ($barcode) {
 #
 # save the return
 #
-    ( $returned, $messages, $issueinformation, $borrower ) =
-      AddReturn( $barcode, $userenv_branch, $exemptfine, $dropboxmode);     # do the return
-
+    if ($checkin_override_date ) {
+        ( $returned, $messages, $issueinformation, $borrower ) =
+        AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode, $checkin_override_date->output('iso'));
+    } else {
+        ( $returned, $messages, $issueinformation, $borrower ) =
+        AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode);
+    }
     # get biblio description
     my $biblio = GetBiblioFromItemNumber($itemnumber);
     # fix up item type for display
@@ -535,18 +548,20 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
 
 $template->param(
     riloop         => \@riloop,
-    genbrname      => $branches->{$userenv_branch}->{'branchname'},
-    genprname      => $printers->{$printer}->{'printername'},
-    branchname     => $branches->{$userenv_branch}->{'branchname'},
-    printer        => $printer,
-    errmsgloop     => \@errmsgloop,
-    exemptfine     => $exemptfine,
-    dropboxmode    => $dropboxmode,
-    dropboxdate	   => $dropboxdate->output(),
-    overduecharges => $overduecharges,
     HoldButtonConfirm => $HoldButtonConfirm,
     HoldButtonIgnore => $HoldButtonIgnore,
     HoldButtonPrintConfirm => $HoldButtonPrintConfirm,
+    genbrname               => $branches->{C4::Context->userenv->{'branch'}}->{'branchname'},
+    genprname               => $printers->{$printer}->{'printername'},
+    branchname              => $branches->{C4::Context->userenv->{'branch'}}->{'branchname'},
+    printer                 => $printer,
+    errmsgloop              => \@errmsgloop,
+    exemptfine              => $exemptfine,
+    dropboxmode             => $dropboxmode,
+    dropboxdate				=> $dropboxdate->output(),
+	overduecharges          => $overduecharges,
+    DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
+    AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange'),
 );
 
 # actually print the page!

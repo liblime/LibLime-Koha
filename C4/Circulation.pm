@@ -1328,7 +1328,7 @@ sub GetBranchItemRule {
 =head2 AddReturn
 
 ($doreturn, $messages, $iteminformation, $borrower) =
-    &AddReturn($barcode, $branch, $exemptfine, $dropbox);
+    &AddReturn($barcode, $branch, $exemptfine, $dropbox, [$returndate]);
 
 Returns a book.
 
@@ -1346,6 +1346,9 @@ yesterday, or the last non-holiday as defined in C4::Calendar .  If
 overdue charges are applied and C<$dropbox> is true, the last charge
 will be removed.  This assumes that the fines accrual script has run
 for _today_.
+                    :w
+=item C<$returndate> is only passed if the default return date (i.e. today)
+is to be overridden, the date is passed in ISO format
 
 =back
 
@@ -1400,7 +1403,7 @@ patron who last borrowed the book.
 =cut
 
 sub AddReturn {
-    my ( $barcode, $branch, $exemptfine, $dropbox ) = @_;
+    my ( $barcode, $branch, $exemptfine, $dropbox, $returndate ) = @_;
     if ($branch and not GetBranchDetail($branch)) {
         warn "AddReturn error: branch '$branch' not found.  Reverting to " . C4::Context->userenv->{'branch'};
         undef $branch;
@@ -1418,18 +1421,25 @@ sub AddReturn {
         return (0, { BadBarcode => $barcode }); # no barcode means no item or borrower.  bail out.
     }
     my $issue  = GetItemIssue($itemnumber);
-#   warn Dumper($iteminformation);
+#   warn Dumper($issue);
     if ($issue and $issue->{borrowernumber}) {
         $borrower = C4::Members::GetMemberDetails($issue->{borrowernumber})
             or die "Data inconsistency: barcode $barcode (itemnumber:$itemnumber) claims to be issued to non-existant borrowernumber '$issue->{borrowernumber}'\n"
                 . Dumper($issue) . "\n";
     } else {
-        $messages->{'NotIssued'} = $barcode;
-        # even though item is not on loan, it may still be transferred;  therefore, get current branch info
-        $doreturn = 0;
-        # No issue, no borrowernumber.  ONLY if $doreturn, *might* you have a $borrower later.
+        # find the borrower
+        if ( ( not $issue->{borrowernumber} ) && $doreturn ) {
+            $messages->{'NotIssued'} = $barcode;
+            # even though item is not on loan, it may still
+            # be transferred; therefore, get current branch information
+            my $curr_iteminfo = GetItem($issue->{'itemnumber'});
+            $issue->{'homebranch'} = $curr_iteminfo->{'homebranch'};
+            $issue->{'holdingbranch'} = $curr_iteminfo->{'holdingbranch'};
+            $issue->{'itemlost'} = $curr_iteminfo->{'itemlost'};
+            $doreturn = 0;
+        }
     }
-
+    
     my $item = GetItem($itemnumber) or die "GetItem($itemnumber) failed";
         # full item data, but no borrowernumber or checkout info (no issue)
         # we know GetItem should work because GetItemnumberFromBarcode worked
@@ -1477,7 +1487,18 @@ sub AddReturn {
         }
 
         if ($borrowernumber) {
-            MarkIssueReturned($borrowernumber, $item->{'itemnumber'}, $circControlBranch);
+            if ($returndate ) { # over ride in effect
+                MarkIssueReturned(
+                    $borrower->{'borrowernumber'},
+                    $issue->{'itemnumber'},
+                    $circControlBranch,
+                    $returndate);
+            } else {
+                MarkIssueReturned(
+                    $borrower->{'borrowernumber'},
+                    $issue->{'itemnumber'},
+                    $circControlBranch);
+            }
             $messages->{'WasReturned'} = 1;    # FIXME is the "= 1" right?  This could be the borrower hash.
         }
 

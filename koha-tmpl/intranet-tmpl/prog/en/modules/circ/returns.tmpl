@@ -43,6 +43,9 @@ function Dopop(link) {
 	 });
 //]]>
 </script>
+
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -354,6 +357,34 @@ function Dopop(link) {
                         <!-- /TMPL_IF -->
                         <label for="dropboxcheck">Dropbox mode</label>
                     </li>
+                    <!-- TMPL_IF NAME="AllowCheckInDateChange" -->
+                    <!-- TMPL_IF NAME="CAN_user_circulate_change_circ_date_and_time" -->
+                    <li>
+                    <!-- TMPL_IF NAME="checkin_override_date" -->
+                        <input type="text" size="10" id="checkin_override_date" name="checkin_override_date" value="<!-- TMPL_VAR NAME="checkin_override_date" -->" />
+                    <!-- TMPL_ELSE -->
+                        <input type="text" size="10" id="checkin_override_date" name="checkin_override_date" value="" />
+                    <!-- /TMPL_IF -->
+                    <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" border="0" id="CalendarCheckInDate" style="cursor: pointer;" />
+                    <script language="JavaScript" type="text/javascript">
+                    function refocus(calendar) {
+                        document.getElementById('barcode').focus();
+                        calendar.hide();
+                    };
+                    Calendar.setup(
+                        {
+                        inputField : "checkin_override_date",
+                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->,
+                        button : "CalendarCheckInDate",
+                        onClose : refocus
+                        }
+                    );
+                    </script>
+                        <label for="checkin_override_date">Override Check In Date</label>
+
+                    </li>
+                    <!-- /TMPL_IF -->
+                    <!-- /TMPL_IF -->
                 </ul>
             </fieldset>
         </div>
