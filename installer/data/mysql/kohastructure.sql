@@ -2366,6 +2366,74 @@ CREATE TABLE `item_circulation_alert_preferences` (
   KEY `branchcode` (`branchcode`,`categorycode`,`item_type`, `notification`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `clubsAndServices`
+-- 
+
+DROP TABLE IF EXISTS `clubsAndServices`;
+CREATE TABLE `clubsAndServices` (
+  `casId` int(11) NOT NULL auto_increment,
+  `casaId` int(11) NOT NULL default '0' COMMENT 'foreign key to clubsAndServicesArchetypes',
+  `title` text NOT NULL,
+  `description` text,
+  `casData1` text COMMENT 'Data described in casa.casData1Title',
+  `casData2` text COMMENT 'Data described in casa.casData2Title',
+  `casData3` text COMMENT 'Data described in casa.casData3Title',
+  `startDate` date NOT NULL default '0000-00-00',
+  `endDate` date default NULL,
+  `branchcode` varchar(4) NOT NULL COMMENT 'branch where club or service was created.',
+  `last_updated` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  PRIMARY KEY  (`casId`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+
+-- 
+-- Table structure for table `clubsAndServicesArchetypes`
+-- 
+
+DROP TABLE IF EXISTS `clubsAndServicesArchetypes`;
+CREATE TABLE `clubsAndServicesArchetypes` (
+  `casaId` int(11) NOT NULL auto_increment,
+  `type` enum('club','service') NOT NULL default 'club',
+  `title` text NOT NULL COMMENT 'title of this archetype',
+  `description` text NOT NULL COMMENT 'long description of this archetype',
+  `publicEnrollment` tinyint(1) NOT NULL default '0' COMMENT 'If 1, patron should be able to enroll in club or service from OPAC, if 0, only a librarian should be able to enroll a patron in the club or service.',
+  `casData1Title` text COMMENT 'Title of contents in cas.data1',
+  `casData2Title` text COMMENT 'Title of contents in cas.data2',
+  `casData3Title` text COMMENT 'Title of contents in cas.data3',
+  `caseData1Title` text COMMENT 'Name of what is stored in cAsE.data1',
+  `caseData2Title` text COMMENT 'Name of what is stored in cAsE.data2',
+  `caseData3Title` text COMMENT 'Name of what is stored in cAsE.data3',
+  `casData1Desc` text,
+  `casData2Desc` text,
+  `casData3Desc` text,
+  `caseData1Desc` text,
+  `caseData2Desc` text,
+  `caseData3Desc` text,
+  `branchcode` varchar(4) default NULL COMMENT 'branch where archetype was created.',
+  `last_updated` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  PRIMARY KEY  (`casaId`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+
+-- 
+-- Table structure for table `clubsAndServicesEnrollments`
+-- 
+
+DROP TABLE IF EXISTS `clubsAndServicesEnrollments`;
+CREATE TABLE `clubsAndServicesEnrollments` (
+  `caseId` int(11) NOT NULL auto_increment,
+  `casaId` int(11) NOT NULL default '0' COMMENT 'foreign key to clubsAndServicesArchtypes',
+  `casId` int(11) NOT NULL default '0' COMMENT 'foreign key to clubsAndServices',
+  `borrowernumber` int(11) NOT NULL default '0' COMMENT 'foreign key to borrowers',
+  `data1` text COMMENT 'data described in casa.data1description',
+  `data2` text,
+  `data3` text,
+  `dateEnrolled` date NOT NULL default '0000-00-00' COMMENT 'date borrowers service begins',
+  `dateCanceled` date default NULL COMMENT 'date borrower decided to end service',
+  `last_updated` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `branchcode` varchar(4) default NULL COMMENT 'foreign key to branches',
+  PRIMARY KEY  (`caseId`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+                  
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
