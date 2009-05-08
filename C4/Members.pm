@@ -245,6 +245,16 @@ AND attribute like ?
     $data = $sth->fetchall_arrayref({});
 
     $sth->finish;
+
+    $query = "SELECT borrowers.*, categories.* FROM borrowers 
+    LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
+    LEFT JOIN statistics ON borrowers.borrowernumber = statistics.borrowernumber
+    WHERE statistics.type = 'card_replaced' AND statistics.other = ? GROUP BY statistics.other";
+    $sth = $dbh->prepare( $query );
+    $sth->execute( $searchstring );
+    my $prevcards_data = $sth->fetchall_arrayref({});
+    my $data = [ @$prevcards_data, @$data ];
+
     return ( scalar(@$data), $data );
 }
 
