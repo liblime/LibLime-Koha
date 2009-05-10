@@ -43,6 +43,27 @@
 </script>
 
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/borrower-basket.js"></script>
+
+<script type="text/javascript" language="javascript">
+  function confirmEdit() {
+    if ( confirm( 'You are about to edit all borrowers in your Borrowers Cart. Do you wish to continue?' ) ) {
+      self.opener.location='bulkedit.pl';
+      self.close();
+    } else {
+      return false;
+    }
+  }
+
+  function confirmDelete() {
+    if ( confirm( 'You are about to *delete* all borrowers in your Borrowers Cart. Do you wish to continue?' ) ) {
+      self.opener.location='bulkedit.pl?delete=1';
+      self.close();
+    } else {
+      return false;
+    }
+  }
+</script>
+
 </head>
 
 <body id="basket">
@@ -102,10 +123,10 @@
 <table>
   <tr>
     <td>
-      <input type=button value="Bulk Edit Borrowers" onClick="self.opener.location='bulkedit.pl';self.close()">
+      <input type=button value="Bulk Edit Borrowers" onClick="return confirmEdit();">
     </td>
     <td>
-      <input type=button value="Bulk Delete Borrowers" onClick="self.opener.location='bulkedit.pl?delete=1';self.close()">
+      <input type=button value="Bulk Delete Borrowers" onClick="confirmDelete();">
     </td>
   </tr>
 </table>
