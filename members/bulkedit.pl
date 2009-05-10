@@ -121,7 +121,15 @@ if ( $input->param('update') ) { ## Update the borrowers
   foreach my $borrowernumber ( @borrowernumbers ) {
     my $member = GetMember( $borrowernumber, 'borrowernumber' );
 
-    DelMember( $borrowernumber ); ## Should use MoveMemberToDeleted() instead, but not working
+    my ($overdue_count, $issue_count, $total_fines) = GetMemberIssuesAndFines( $borrowernumber );
+    
+    if ( $issue_count == 0 ) {
+      MoveMemberToDeleted( $borrowernumber ); ## Inserts borrower into deletedborrowers table
+      DelMember( $borrowernumber ); ## Deletes borrower and cancels reserves
+    } else {
+      $member->{'DELETE_FAILED'} = 1;
+      $member->{'OPEN_ISSUES'} = 1;
+    }
 
     push( @modded_members, $member );
   }

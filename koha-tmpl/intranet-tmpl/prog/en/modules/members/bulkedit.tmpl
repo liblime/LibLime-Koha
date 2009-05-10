@@ -82,7 +82,14 @@
 <!-- TMPL_IF NAME="delete_complete" -->
   <!-- TMPL_LOOP NAME="membersloop" -->
     <p>
-      Successfully Deleted 
+      <!-- TMPL_IF NAME="DELETE_FAILED" -->
+	Delete Failed: 
+		<!-- TMPL_IF NAME="OPEN_ISSUES" -->
+			Borrower currently has item issued to his or her account.
+		<!-- /TMPL_IF -->
+      <!-- TMPL_ELSE -->
+        Successfully Deleted
+      <!-- /TMPL_IF --> 
     <!-- TMPL_VAR NAME="surname" -->, <!--TMPL_VAR NAME="firstname" --> ( <!-- TMPL_VAR NAME="cardnumber" --> )
     </p>
   <!-- /TMPL_LOOP -->
