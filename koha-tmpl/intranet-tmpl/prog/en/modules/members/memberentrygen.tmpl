@@ -224,9 +224,6 @@
             }
             );
         </script>
-        <!-- TMPL_IF NAME="mandatorydateofbirth" --><span class="required">Required</span><!-- /TMPL_IF -->
-        <!-- TMPL_IF NAME="ERROR_dateofbirth" --><span class="required">(Error)</span><!-- /TMPL_IF -->
-            </li>
             <li>
                 <!-- TMPL_IF NAME="mandatoryinitials" -->
                     <label for="initials" class="required">
@@ -234,9 +231,12 @@
                     <label for="initials">
                 <!-- /TMPL_IF-->
                 <!-- TMPL_IF NAME="showinitials" -->
-                Initials: </label>
+                Middle Initial(s): </label>
                 <input type="text" id="initials" name="initials" size="20"  value="<!-- TMPL_VAR NAME="initials" -->" />	
                 <!-- TMPL_IF NAME="mandatoryinitials" --><span class="required">Required</span><!-- /TMPL_IF --><!-- /TMPL_IF -->
+            </li>
+        <!-- TMPL_IF NAME="mandatorydateofbirth" --><span class="required">Required</span><!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="ERROR_dateofbirth" --><span class="required">(Error)</span><!-- /TMPL_IF -->
             </li>
         <!-- /TMPL_UNLESS -->
 		<li>
