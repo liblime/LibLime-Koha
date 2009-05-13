@@ -175,6 +175,11 @@ No results found
 <!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 
+<form action="/cgi-bin/koha/members/member.pl" method="post" name="borrower-sql-search">
+	<label for="sqlsearch">Search borrowers by SQL</label>
+	<textarea name="sqlsearch" rows='5' cols='100'></textarea>
+	<input name="sqlsearch" type="submit" value="Search" />
+</form>
 </div>
 </div>
 

@@ -80,7 +80,12 @@ $member =~ s/\*/%/g;
 
 my ($count,$results);
 
-if(length($member) == 1)
+if ( $input->param('sqlsearch') ) {
+  $resultsperpage = '1000';
+  $template->param( member => $input->param('sqlsearch' ) );
+  ($count, $results) = SearchMemberBySQL( $input->param('sqlsearch' ) );
+}
+elsif(length($member) == 1)
 {
     ($count,$results)=SearchMember($member,$orderby,"simple");
 }
@@ -150,5 +155,9 @@ $template->param(
         numresults      => $count,
         resultsloop     => \@resultsdata,
             );
+
+if ( $input->param('sqlsearch') ) {
+  $template->param( member => $input->param('sqlsearch') );
+}
 
 output_html_with_http_headers $input, $cookie, $template->output;

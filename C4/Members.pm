@@ -39,6 +39,7 @@ BEGIN {
 	#Get data
 	push @EXPORT, qw(
 		&SearchMember 
+		&SearchMemberBySQL
 		&GetMemberDetails
 		&GetMember
 
@@ -255,6 +256,17 @@ AND attribute like ?
 
     $sth->finish;
     return ( scalar(@$data), $data );
+}
+
+sub SearchMemberBySQL {
+  my ( $query ) = @_;
+warn "$query";
+  my $dbh = C4::Context->dbh;
+  my $sth = $dbh->prepare( $query );
+  $sth->execute();
+  my $data = $sth->fetchall_arrayref({});
+  $sth->finish;
+  return( scalar( @$data ), $data );
 }
 
 =head2 GetMemberDetails
