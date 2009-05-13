@@ -123,14 +123,17 @@ if ( $input->param('update') ) { ## Update the borrowers
 
     my ($overdue_count, $issue_count, $total_fines) = GetMemberIssuesAndFines( $borrowernumber );
     
-    if ( $issue_count == 0 ) {
+    if ( $issue_count > 0 ) {
+      $member->{'DELETE_FAILED'} = 1;
+      $member->{'OPEN_ISSUES'} = 1;   
+    } elsif ( $total_fines > 0 ) {
+      $member->{'DELETE_FAILED'} = 1;
+      $member->{'OPEN_FINES'} = 1;       
+    } else {
       MoveMemberToDeleted( $borrowernumber ); ## Inserts borrower into deletedborrowers table
       DelMember( $borrowernumber ); ## Deletes borrower and cancels reserves
-    } else {
-      $member->{'DELETE_FAILED'} = 1;
-      $member->{'OPEN_ISSUES'} = 1;
     }
-
+    
     push( @modded_members, $member );
   }
   $template->param( delete_complete => 1 );
