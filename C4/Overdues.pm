@@ -267,7 +267,7 @@ sub CalcFine {
     } else {
         # a zero (or null)  chargeperiod means no charge.
     }
-        $amount = $data->{'max_fine'} if ( C4::Context->preference('UseGranularMaxFines') && ( $amount > $data->{'max_fine'} );
+        $amount = $data->{'max_fine'} if ( C4::Context->preference('UseGranularMaxFines') && ( $amount > $data->{'max_fine'} ));
 	$amount = C4::Context->preference('maxFine') if(C4::Context->preference('maxFine') && ( $amount > C4::Context->preference('maxFine')));
 	$debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
     return ($amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
