@@ -774,9 +774,13 @@
 				<label for="opacnote" class="required">
 			<!--TMPL_ELSE-->
 				<label for="opacnote">
-			<!-- /TMPL_IF-->	
+			<!-- /TMPL_IF-->
 			OPAC note: </label>
-			<textarea id="opacnote" name="opacnote" cols="55" rows="5"><!-- TMPL_VAR NAME="opacnote" --></textarea>
+			<!-- IF_TMPL NAME="CAN_user_edit_borrower_opacnote" -->
+			<textarea id="opacnote" name="opacnote" cols="55" rows="5" ><!-- TMPL_VAR NAME="opacnote" --></textarea>
+			<!--TMPL_ELSE-->
+			<textarea id="opacnote" name="opacnote" cols="55" rows="5" readonly><!-- TMPL_VAR NAME="opacnote" --></textarea>
+			<!-- /TMPL_IF-->
 			<div class="hint">This message appears on this patron's user page in the OPAC</div>
 	  <!-- TMPL_IF NAME="mandatoryopacnote" --><span class="required">Required</span><!-- /TMPL_IF -->
 		</li>
@@ -787,7 +791,11 @@
 				<label for="borrowernotes">
 			<!-- /TMPL_IF-->
 			Circulation note: </label>
+			<!-- IF_TMPL NAME="CAN_user_edit_borrower_circnote" -->
 			<textarea id="borrowernotes" name="borrowernotes" cols="55" rows="5"><!-- TMPL_VAR NAME="borrowernotes" --></textarea>
+			<!--TMPL_ELSE-->
+			<textarea id="borrowernotes" name="borrowernotes" cols="55" rows="5" readonly><!-- TMPL_VAR NAME="borrowernotes" --></textarea>
+			<!-- /TMPL_IF-->
 			<div class="hint">This message displays when checking out to this patron</div>
 	  <!-- TMPL_IF NAME="mandatoryborrowernotes" --><span class="required">Required</span><!-- /TMPL_IF -->
 		</li>

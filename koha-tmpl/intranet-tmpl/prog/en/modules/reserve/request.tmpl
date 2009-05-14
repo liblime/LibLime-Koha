@@ -477,7 +477,7 @@ function checkMultiHold() {
     </form>
 	</fieldset>
 <!-- /TMPL_UNLESS -->
-
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_edit_holds" -->
 <!-- TMPL_UNLESS NAME="cardnumber" -->
 <!-- TMPL_IF name="reserveloop" -->
 <form name="T<!-- TMPL_VAR NAME="time" -->" action="modrequest.pl" method="post">
@@ -516,7 +516,9 @@ function checkMultiHold() {
 	<!-- TMPL_LOOP Name="optionloop" -->                 
 	<!-- TMPL_IF Name="selected" --><option value="<!-- TMPL_VAR NAME="num" -->" selected="selected"><!-- TMPL_VAR NAME="num" --></option><!-- TMPL_ELSE --><option value="<!-- TMPL_VAR NAME="num" -->"><!-- TMPL_VAR NAME="num" --></option><!-- /TMPL_IF --> 
 	<!-- /TMPL_LOOP -->  
+    <!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_holds" -->
             <option value="del">del</option>
+    <!-- /TMPL_IF -->
           </select>
         </td>
         <td>
@@ -596,6 +598,7 @@ function checkMultiHold() {
 </form>
 <!-- /TMPL_IF -->
 <!-- /TMPL_UNLESS -->
+<!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 </div>
 </div>

@@ -39,6 +39,7 @@
 	</script>
 	
   <div id="newmenuc">
+    <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
     <!-- TMPL_IF NAME="NOTMARC" -->
 		<a id="newrecord" href="/cgi-bin/koha/cataloging/addbiblio.pl">New Record</a>
 	<!-- TMPL_ELSE -->
@@ -54,6 +55,7 @@
 			</select>
 			<input type="submit" value="Add Record Without Search" />
 		</form>
+    <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->  
   </div>
 </div>

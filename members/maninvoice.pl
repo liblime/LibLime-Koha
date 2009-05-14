@@ -51,7 +51,7 @@ if ($add){
 					query => $input,
 					type => "intranet",
 					authnotrequired => 0,
-					flagsrequired => {borrowers => 1},
+					flagsrequired => {borrowers => '*'},
 					debug => 1,
 					});
 		if ($error =~ /FOREIGN KEY/ && $error =~ /itemnumber/){

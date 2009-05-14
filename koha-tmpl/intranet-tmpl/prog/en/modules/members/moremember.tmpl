@@ -485,6 +485,7 @@ if (nodename =="barcodes[]"){
 <div id="onhold">
 	<h2>Patron current holds</h2>
 <!-- TMPL_IF NAME="reservloop" -->
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_holds" -->
 <form action="/cgi-bin/koha/reserve/modrequest.pl" method="post">
 	<input type="hidden" name="from" value="borrower" />
 	<table id="holdst">
@@ -535,6 +536,50 @@ if (nodename =="barcodes[]"){
 	</table>
 			<fieldset class="action"><input type="submit" class="cancel" name="submit" value="Cancel Marked Requests" /></fieldset>
 	</form>
+	<!-- TMPL_ELSE -->  <!-- Show table read only -->
+	<table id="holdst">
+		<thead><tr>
+			<th>Hold date</th>
+			<th>Title</th>
+			<th>Item Type</th>
+			<th>Call Number</th>
+			<th>Barcode</th>
+			<th>Priority</th>
+		</tr></thead>
+		<tbody><!-- TMPL_LOOP NAME="reservloop" -->
+		<tr class="<!-- TMPL_VAR NAME="color" -->">
+					<td>
+						<!-- TMPL_VAR NAME="reservedate" -->
+					</td>
+					<td>
+						<a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF -->
+
+					</td>
+					<td><!-- TMPL_VAR NAME="itemtype" --></td>
+					<td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
+					<td><!-- TMPL_IF name="waiting" -->
+                        <em>Item is <strong>waiting</strong></em>
+                        <!-- /TMPL_IF -->
+                        <!-- TMPL_IF name="transfered" -->
+                        <em>Item <strong>in transit</strong> from
+                        <!-- TMPL_VAR NAME="frombranch" --> since <!-- TMPL_VAR NAME="datesent" --> </em>
+                        <!-- /TMPL_IF -->
+
+                        <!-- TMPL_IF name="nottransfered" -->
+                        <em>Item hasn't been transfered yet from <!-- TMPL_VAR NAME="nottransferedby" --></em>
+                        <!-- /TMPL_IF -->
+						<!-- TMPL_IF name="barcodereserv" -->
+						<a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
+						<!-- /TMPL_IF -->
+					</td>
+					<td><!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF -->
+        <input type="hidden" name="rank-request" value="n" />
+		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
+		<input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" /></td>
+			</tr>
+		<!-- /TMPL_LOOP --></tbody>
+	</table>
+	<!-- /TMPL_IF -->
 	<!-- TMPL_ELSE -->
 	<p>Patron has nothing on hold.</p>
 	<!-- /TMPL_IF -->

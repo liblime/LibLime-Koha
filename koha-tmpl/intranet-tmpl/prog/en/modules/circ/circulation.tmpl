@@ -108,12 +108,18 @@ $.tablesorter.addParser({
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="TOO_MANY" -->
+<!-- TMPL_IF NAME="CAN_user_circulate_override_checkout_max" -->
     <li>Too many checked out (already checked out / max : <!-- TMPL_VAR name="TOO_MANY" -->)</li>
+<!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="NOT_FOR_LOAN_FORCING" -->
     <li>Item is normally not for loan.  Check out anyway?</li>
 <!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="NO_MORE_RENEWALS_FORCING" -->
+     <li>No more renewals normally possible. Check out anyway?</li>
+<!-- /TMPL_IF -->
+
 </ul>
 
 <form method="post" action="/cgi-bin/koha/circ/circulation.pl">
@@ -202,6 +208,12 @@ $.tablesorter.addParser({
         <!-- TMPL_IF NAME="NOTSAMEBRANCH" -->
             <li>This item belongs to <!-- TMPL_VAR NAME="itemhomebranch" --> and cannot be issued from this location.</li>
         <!-- /TMPL_IF -->
+
+        <!-- TMPL_UNLESS NAME="CAN_user_circulate_override_checkout_max" -->
+        <!-- TMPL_IF NAME="TOO_MANY" -->
+            <li>Too many checked out (already checked out / max : <!-- TMPL_VAR name="TOO_MANY" -->)</li>
+        <!-- /TMPL_IF -->
+        <!-- /TMPL_UNLESS -->
         </ul>
 
     <!-- TMPL_IF NAME="memberofinstution" -->
@@ -258,7 +270,9 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 
 	<input type="text" name="barcode" id="barcode" class="barcode focus" size="14" /> <input type="submit" value="Check Out" />
 
-    <!-- TMPL_IF NAME="SpecifyDueDate" --><div class="date-select">
+    <!-- TMPL_IF NAME="SpecifyDueDate" -->
+    <!-- TMPL_IF NAME="CAN_user_circulate_change_due_date" -->
+        <div class="date-select">
         <div class="hint">Specify Due Date:</div>
 		<!-- TMPL_IF NAME="duedatespec" --><input type="text" size="10" id="duedatespec" name="duedatespec" value="<!-- TMPL_VAR NAME="duedatespec" -->" /><!-- TMPL_ELSE --><input type="text" size="10" id="duedatespec" name="duedatespec" value="" />
 <!-- /TMPL_IF -->
@@ -298,7 +312,9 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 <input type="checkbox" id="stickyduedate" onclick="this.form.barcode.focus();" name="stickyduedate" />
 <!-- /TMPL_IF -->
           <input type="button" class="action" id="cleardate" value="Clear" name="cleardate" onclick="this.checked = false; this.form.duedatespec.value = ''; this.form.stickyduedate.checked = false; this.form.barcode.focus(); return false;" />
-</div><!-- /TMPL_IF -->
+</div>
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
           <input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
           <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->" />
           <input type="hidden" name="printer" value="<!-- TMPL_VAR NAME="printer" -->" />
@@ -369,7 +385,9 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
                 <!-- TMPL_IF NAME="charges_is_blocker" -->
                     Checkouts are blocked because fine balance is over the limit.
                 <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
             Make <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Payment</a></li>
+			<!-- /TMPL_IF -->
 			<!-- /TMPL_IF -->
 
         	<!-- TMPL_IF NAME="credits" -->

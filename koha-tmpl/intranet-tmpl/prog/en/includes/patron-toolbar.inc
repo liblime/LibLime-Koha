@@ -47,6 +47,7 @@
 	//]]>
 	</script>
 	<ul class="toolbar">
+    <!-- IF_TMPL NAME="CAN_user_borrowes_add_borrowers" -->
 	<li id="newmenuc">
 		<form action="/cgi-bin/koha/members/memberentry.pl" method="get">
 			<input type="hidden" name="op" value="add" />
@@ -65,5 +66,6 @@
 			<input type="submit" class="submit" value="Go" />
 		</form>
 	</li>
+    <!-- /IF_TMPL -->
 </ul>
 </div>

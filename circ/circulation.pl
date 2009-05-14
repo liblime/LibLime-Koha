@@ -86,7 +86,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user (
         query           => $query,
         type            => "intranet",
         authnotrequired => 0,
-        flagsrequired   => { circulate => 'circulate_remaining_permissions' },
+        flagsrequired   => { circulate => '*' },
     }
 );
 
@@ -220,7 +220,7 @@ if ($findborrower) {
 
 # get the borrower information.....
 my $borrower;
-my @lines;
+#my @lines;
 if ($borrowernumber) {
     $borrower = GetMemberDetails( $borrowernumber, 0 );
     my ( $od, $issue, $fines ) = GetMemberIssuesAndFines( $borrowernumber );
@@ -232,9 +232,12 @@ if ($borrowernumber) {
     my ( $enrol_year, $enrol_month, $enrol_day ) = split /-/,
       $borrower->{'dateenrolled'};
     # Renew day is calculated by adding the enrolment period to today
-    my ( $renew_year, $renew_month, $renew_day ) =
-      Add_Delta_YM( $enrol_year, $enrol_month, $enrol_day,
-        0 , $borrower->{'enrolmentperiod'}) if ($enrol_year*$enrol_month*$enrol_day>0);
+    my ( $renew_year, $renew_month, $renew_day );
+    if ($enrol_year*$enrol_month*$enrol_day>0) {
+        ( $renew_year, $renew_month, $renew_day ) =
+        Add_Delta_YM( $enrol_year, $enrol_month, $enrol_day,
+            0 , $borrower->{'enrolmentperiod'});
+    }
     # if the expiry date is before today ie they have expired
     if ( $warning_year*$warning_month*$warning_day==0 
       || Date_to_Days( $today_year, $today_month, $today_day ) 
@@ -278,6 +281,8 @@ if ($barcode) {
   my $blocker = $invalidduedate ? 1 : 0;
 
   delete $question->{'DEBT'} if ($debt_confirmed);
+  granular_overrides($template, $error, $question);
+
   foreach my $impossible ( keys %$error ) {
             $template->param(
                 $impossible => $$error{$impossible},
@@ -542,9 +547,8 @@ if ($borrowerslist) {
 
 #title
 my $flags = $borrower->{'flags'};
-my $flag;
 
-foreach $flag ( sort keys %$flags ) {
+foreach my $flag ( sort keys %$flags ) {
     $template->param( flagged=> 1);
     $flags->{$flag}->{'message'} =~ s#\n#<br />#g;
     if ( $flags->{$flag}->{'noissues'} ) {
@@ -711,3 +715,31 @@ $template->param(
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
 );
 output_html_with_http_headers $query, $cookie, $template->output;
+
+
+sub granular_overrides {
+    my ($template, $error, $question) = @_;
+    if ($question->{TOO_MANY} ) {
+        my $check_granular = $template->param('CAN_user_circulate_override_checkout_max');
+        if (!$check_granular) {
+            $error->{TOO_MANY} = $question->{TOO_MANY};
+            delete $question->{TOO_MANY};
+        }
+    }
+    if ($question->{NOT_FOR_LOAN_FORCING} ) {
+        my $check_granular = $template->param('CAN_user_circulate_override_non_circ');
+        if (!$check_granular) {
+            $error->{NOT_FOR_LOAN} = $question->{NOT_FOR_LOAN_FORCING};
+            delete $question->{NOT_FOR_LOAN_FORCING};
+        }
+    }
+    if ($error->{NO_MORE_RENEWALS} ) {
+        my $check_granular = $template->param('CAN_user_circulate_override_max_renewals');
+        if ($check_granular) {
+            $question->{NO_MORE_RENEWALS_FORCING} = $error->{NO_MORE_RENEWALS};
+            delete $error->{NO_MORE_RENEWALS};
+        }
+    }
+
+    return;
+}
