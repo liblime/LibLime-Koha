@@ -153,6 +153,6 @@ $template->param(
         resultsloop     => \@resultsdata,
             );
 
-$template->param("showinitials" => C4::Context->preference('DisplayInitialsOthernames'));
+$template->param("showinitials" => C4::Context->preference('DisplayInitials'));
 
 output_html_with_http_headers $input, $cookie, $template->output;

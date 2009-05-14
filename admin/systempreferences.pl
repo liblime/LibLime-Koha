@@ -209,7 +209,8 @@ $tabsysprefs{AutoEmailPrimaryAddress}      = "Patrons";
 $tabsysprefs{EnhancedMessagingPreferences} = "Patrons";
 $tabsysprefs{'SMSSendDriver'}              = 'Patrons';
 $tabsysprefs{HidePatronName}               = "Patrons";
-$tabsysprefs{DisplayInitialsOthernames}    = "Patrons";
+$tabsysprefs{DisplayInitials}              = "Patrons";
+$tabsysprefs{DisplayOthernames}            = "Patrons";
 
 # I18N/L10N
 $tabsysprefs{dateformat}    = "I18N/L10N";
