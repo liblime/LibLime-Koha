@@ -1326,7 +1326,7 @@ sub GetBranchItemRule {
 =head2 AddReturn
 
 ($doreturn, $messages, $iteminformation, $borrower) =
-    &AddReturn($barcode, $branch, $exemptfine, $dropbox);
+    &AddReturn($barcode, $branch, $exemptfine, $dropbox, [$returndate]);
 
 Returns a book.
 
@@ -1344,6 +1344,9 @@ yesterday, or the last non-holiday as defined in C4::Calendar .  If
 overdue charges are applied and C<$dropbox> is true, the last charge
 will be removed.  This assumes that the fines accrual script has run
 for _today_.
+                    :w
+=item C<$returndate> is only passed if the default return date (i.e. today)
+is to be overridden, the date is passed in ISO format
 
 =back
 
@@ -1388,7 +1391,7 @@ patron who last borrowed the book.
 =cut
 
 sub AddReturn {
-    my ( $barcode, $branch, $exemptfine, $dropbox ) = @_;
+    my ( $barcode, $branch, $exemptfine, $dropbox, $returndate ) = @_;
     my $dbh      = C4::Context->dbh;
     my $messages;
     my $doreturn = 1;
@@ -1457,7 +1460,18 @@ sub AddReturn {
 					# FIXME - is this right ? are we sure that the holdingbranch is still the pickup branch?
 				}
 			}
-            MarkIssueReturned($borrower->{'borrowernumber'}, $iteminformation->{'itemnumber'},$circControlBranch);
+            if ($returndate ) { # over ride in effect
+                MarkIssueReturned(
+                    $borrower->{'borrowernumber'},
+                    $iteminformation->{'itemnumber'},
+                    $circControlBranch,
+                    $returndate);
+            } else {
+                MarkIssueReturned(
+                    $borrower->{'borrowernumber'},
+                    $iteminformation->{'itemnumber'},
+                    $circControlBranch);
+            }
             $messages->{'WasReturned'} = 1;    # FIXME is the "= 1" right?
 
     
