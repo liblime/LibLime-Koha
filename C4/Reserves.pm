@@ -101,7 +101,7 @@ BEGIN {
         &GetReservesToBranch
         &GetReserveCount
         &GetReserveFee
-		&GetReserveInfo
+        &GetReserveInfo
     
         &GetOtherReserves
         
@@ -114,6 +114,10 @@ BEGIN {
         
         &CheckReserves
         &CancelReserve
+
+        &SuspendReserve
+        &ResumeReserve
+        &GetSuspendedReservesFromBiblionumber
 
         &IsAvailableForItemLevelRequest
     );
@@ -208,7 +212,8 @@ sub GetReservesFromBiblionumber {
 
     # Find the desired items in the reserves
     my $query = "
-        SELECT  branchcode,
+        SELECT  reservenumber,
+                branchcode,
                 timestamp AS rtimestamp,
                 priority,
                 biblionumber,
@@ -226,7 +231,6 @@ sub GetReservesFromBiblionumber {
     my @results;
     my $i = 0;
     while ( my $data = $sth->fetchrow_hashref ) {
-
         # FIXME - What is this doing? How do constraints work?
         if ($data->{constrainttype} eq 'o') {
             $query = '
@@ -269,6 +273,27 @@ sub GetReservesFromBiblionumber {
     return ( $#results + 1, \@results );
 }
 
+sub GetSuspendedReservesFromBiblionumber {
+    my ( $biblionumber ) = @_;
+warn "GetSuspendedReservesFromBiblionumber";
+    my $dbh   = C4::Context->dbh;
+
+    # Find the desired items in the reserves
+    my $query = "SELECT *
+        FROM  reserves_suspended, borrowers
+        WHERE biblionumber = ?
+        AND borrowers.borrowernumber = reserves_suspended.borrowernumber
+        ORDER BY priority";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($biblionumber);
+    my @results;
+    while ( my $data = $sth->fetchrow_hashref ) {
+warn "Found res " . $data->{'reservenumber'};
+        push @results, $data;
+    }
+    return ( $#results + 1, \@results );
+}
+
 =item GetReservesFromItemnumber
 
  ( $reservedate, $borrowernumber, $branchcode ) = GetReservesFromItemnumber($itemnumber);
@@ -281,7 +306,7 @@ sub GetReservesFromItemnumber {
     my ( $itemnumber ) = @_;
     my $dbh   = C4::Context->dbh;
     my $query = "
-    SELECT reservedate,borrowernumber,branchcode
+    SELECT reservenumber,reservedate,borrowernumber,branchcode
     FROM   reserves
     WHERE  itemnumber=?
     ";
@@ -1434,6 +1459,58 @@ sub _koha_notify_reserve {
             }
         );
     }
+}
+
+sub SuspendReserve {
+    my ( $reservenumber ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $sth;
+    my $query;
+
+    $query = "SELECT * FROM reserves WHERE reservenumber = ?";
+    $sth = $dbh->prepare( $query );
+    my $data = $sth->execute( $reservenumber );
+    my $reserve = $sth->fetchrow_hashref();
+    $sth->finish();
+    
+    $query = "INSERT INTO reserves_suspended SELECT * FROM reserves WHERE reservenumber = ?";
+    $sth = $dbh->prepare( $query );
+    $sth->execute( $reservenumber );
+    $sth->finish();
+    
+    $query = "DELETE FROM reserves WHERE reservenumber = ?";
+    $sth = $dbh->prepare( $query );
+    $sth->execute( $reservenumber );
+    $sth->finish();
+    
+    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $reserve->{'priority'} );    
+}
+
+sub ResumeReserve {
+    my ( $reservenumber ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $sth;
+    my $query;
+    
+    $query = "INSERT INTO reserves SELECT * FROM reserves_suspended WHERE reservenumber = ?";
+    $sth = $dbh->prepare( $query );
+    $sth->execute( $reservenumber );
+    $sth->finish();
+    
+    $query = "DELETE FROM reserves_suspended WHERE reservenumber = ?";
+    $sth = $dbh->prepare( $query );
+    $sth->execute( $reservenumber );
+    $sth->finish();
+
+    $query = "SELECT * FROM reserves WHERE reservenumber = ?";
+    $sth = $dbh->prepare( $query );
+    my $data = $sth->execute( $reservenumber );
+    my $reserve = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $reserve->{'priority'} );    
 }
 
 =back

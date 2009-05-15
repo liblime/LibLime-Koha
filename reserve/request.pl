@@ -55,6 +55,13 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
+my $action = $input->param('action');
+if ( $action eq 'suspend' ) {
+  SuspendReserve( $input->param('reservenumber') );
+} elsif ( $action eq 'resume' ) {
+  ResumeReserve( $input->param('reservenumber') );
+}
+
 my $multihold = $input->param('multi_hold');
 $template->param(multi_hold => $multihold);
 
@@ -499,9 +506,13 @@ foreach my $biblionumber (@biblionumbers) {
         $reserve{'priority'}    = $res->{'priority'};
         $reserve{'branchloop'} = \@branchloop;
         $reserve{'optionloop'} = \@optionloop;
+        $reserve{'reservenumber'} = $res->{'reservenumber'};
         
         push( @reserveloop, \%reserve );
     }
+
+    my ( $suspended_count, $suspended_reserves ) = GetSuspendedReservesFromBiblionumber($biblionumber);
+    $template->param( suspended_reserves_loop => $suspended_reserves );
     
     # get the time for the form name...
     my $time = time();
