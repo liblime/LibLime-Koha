@@ -731,7 +731,7 @@ sub CanBookBeIssued {
         if ( $amount > $amountlimit && !$inprocess ) {
             $issuingimpossible{DEBT} = sprintf( "%.2f", $amount );
         }
-        elsif ( $amount > 0 && $amount <= $amountlimit && !$inprocess ) {
+        elsif ( $amount > 0 && $amount <= $amountlimit && !$inprocess && !C4::Context->preference('WarnOnlyOnMaxFine') ) {
             $needsconfirmation{DEBT} = sprintf( "%.2f", $amount );
         }
     }
