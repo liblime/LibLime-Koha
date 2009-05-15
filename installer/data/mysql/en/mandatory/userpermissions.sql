@@ -11,7 +11,7 @@ INSERT INTO permissions (module_bit, code, description) VALUES
    ( 1, 'change_due_date', 'User can specify a due date other than in the circulation rules'),
    ( 1, 'view_borrower_name_in_checkin', 'User can see the borrower name in Check In'),
    ( 1, 'view_checkout', 'view items checked out to a borrower in checkin/checkout'),
-   ( 1, 'change circ date and time', 'User can change circulation date and time'),
+   ( 1, 'change_circ_date_and_time', 'User can change circulation date and time'),
    ( 1, 'fast_add', 'User can use fast add functionality in checkout' ),
    ( 1, 'renew_expired', 'User can renew an expired borrower in checkout'),
    ( 4, 'add_borrowers', 'Add a borrower record'),
