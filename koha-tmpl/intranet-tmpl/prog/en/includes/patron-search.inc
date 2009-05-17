@@ -49,6 +49,13 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 	<p class="tip">Enter patron card number or partial name:</p>
 	<form action="/cgi-bin/koha/members/member.pl" method="post">
     <input id="searchmember" size="25" class="focus" name="member" type="text" />
+    search fields:
+    <select name="searchfield" id="searchfield">
+	<option value="">Standard</option>
+	<option value="email">E-Mail</option>
+	<option value="borrowernumber">Borrower Number</option>
+	<option value="phonenumber">Phone Number</option>
+    </select>
     order by:
     <select name="orderby" id="searchorderby">
     <option value="surname,firstname">Surname</option>

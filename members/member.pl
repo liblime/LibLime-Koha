@@ -72,8 +72,10 @@ if (C4::Context->preference("AddPatronLists")=~/code/){
 #                   die_on_bad_params => 0,
 #                   loop_context_vars => 1 );
 
-my $member=$input->param('member');
-my $orderby=$input->param('orderby');
+my $member = $input->param('member');
+my $orderby = $input->param('orderby');
+my $searchfield = $input->param('searchfield');
+
 $orderby = "surname,firstname" unless $orderby;
 $member =~ s/,//g;   #remove any commas from search string
 $member =~ s/\*/%/g;
@@ -84,6 +86,9 @@ if ( $input->param('sqlsearch') ) {
   $resultsperpage = '1000';
   $template->param( member => $input->param('sqlsearch' ) );
   ($count, $results) = SearchMemberBySQL( $input->param('sqlsearch' ) );
+}
+elsif( $searchfield ) {
+    ($count, $results)=SearchMemberField( $member, $orderby, $searchfield );
 }
 elsif(length($member) == 1)
 {

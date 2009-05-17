@@ -39,6 +39,7 @@ BEGIN {
 	#Get data
 	push @EXPORT, qw(
 		&SearchMember 
+		&SearchMemberField
 		&SearchMemberBySQL
 		&GetMemberDetails
 		&GetMember
@@ -246,6 +247,39 @@ AND attribute like ?
     $data = $sth->fetchall_arrayref({});
 
     $sth->finish;
+    return ( scalar(@$data), $data );
+}
+
+sub SearchMemberField {
+    my ($searchstring, $orderby, $field ) = @_;
+    my $dbh   = C4::Context->dbh;
+    my $query = "";
+    my $count;
+    my @data;
+    my @bind = ();
+    
+    my $where = "WHERE $field LIKE '$searchstring'";
+    
+    if ( $field eq 'email' ) {
+      $where = "WHERE (  email LIKE '$searchstring' OR emailpro LIKE '$searchstring' )";
+    }
+    elsif ( $field eq 'phonenumber' ) {
+      #$searchstring =~ s/-/%/; ## Replaces all instances of - with %
+      #$searchstring =~ s/(/%/; ## Replaces all instances of ( with %
+      #$searchstring =~ s/)/%/; ## Replaces all instances of ( with %
+      $where = "WHERE (  phone LIKE '$searchstring' OR phonepro LIKE '$searchstring' )";
+    }
+    
+    # this is used by circulation everytime a new borrowers cardnumber is scanned
+    # so we can check an exact match first, if that works return, otherwise do the rest
+    $query = "SELECT * FROM borrowers
+              LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
+              $where ORDER BY $orderby";
+warn "SQL: $query";
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    my $data = $sth->fetchall_arrayref({});
+
     return ( scalar(@$data), $data );
 }
 
