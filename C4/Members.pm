@@ -161,7 +161,6 @@ C<$count> is the number of elements in C<$borrowers>.
 #called by member.pl and circ/circulation.pl
 sub SearchMember {
     my ($searchstring, $orderby, $type,$category_type,$filter,$showallbranches ) = @_;
-warn "SearchMember($searchstring, $orderby, $type,$category_type,$filter,$showallbranches )";
     my $dbh   = C4::Context->dbh;
     my $query = "";
     my $count;
@@ -184,24 +183,18 @@ warn "SearchMember($searchstring, $orderby, $type,$category_type,$filter,$showal
     if ( $type eq "simple" )    # simple search for one letter only
     {
         $query .= ($category_type ? " AND category_type = ".$dbh->quote($category_type) : ""); 
-        $query .= " WHERE (surname LIKE ? OR cardnumber LIKE ? OR email LIKE ? OR emailpro LIKE ? OR phone LIKE ? OR phonepro LIKE ? OR borrowernumber LIKE ?) ";
+        $query .= " WHERE (surname LIKE ? OR cardnumber like ?) ";
         if (C4::Context->preference("IndependantBranches") && !$showallbranches){
           if (C4::Context->userenv && C4::Context->userenv->{flags} % 2 !=1 && C4::Context->userenv->{'branch'}){
             $query.=" AND borrowers.branchcode =".$dbh->quote(C4::Context->userenv->{'branch'}) unless (C4::Context->userenv->{'branch'} eq "insecure");
           }
         }
         $query.=" ORDER BY $orderby";
-        @bind = ("$searchstring%","$searchstring","$searchstring%","$searchstring%","%$searchstring%","%$searchstring%","$searchstring%");
+        @bind = ("$searchstring%","$searchstring");
     }
     else    # advanced search looking in surname, firstname and othernames
     {
-        $searchstring =~ s/\*/%/; ## * is now a patron search wildcard character ( replaced * with % )
-        @data  = split( / /, $searchstring );
-
-        foreach my $dat ( @data ) {
-          warn "Data: $dat";
-        }
-        
+        @data  = split( ' ', $searchstring );
         $count = @data;
         $query .= " WHERE ";
         if (C4::Context->preference("IndependantBranches") && !$showallbranches){
@@ -211,22 +204,20 @@ warn "SearchMember($searchstring, $orderby, $type,$category_type,$filter,$showal
         }     
         $query.="((surname LIKE ? OR surname LIKE ?
                 OR firstname  LIKE ? OR firstname LIKE ?
-                OR othernames LIKE ? OR othernames LIKE ?  OR email LIKE ? OR emailpro LIKE ? OR phone LIKE ? OR phonepro LIKE ? OR borrowernumber LIKE ?)
+                OR othernames LIKE ? OR othernames LIKE ?)
         " .
         ($category_type?" AND category_type = ".$dbh->quote($category_type):"");
         @bind = (
             "$data[0]%", "% $data[0]%", "$data[0]%", "% $data[0]%",
-            "$data[0]%", "% $data[0]%", "$data[0]%", "$data[0]%", "%$data[0]%","%$data[0]%", "$data[0]%"
+            "$data[0]%", "% $data[0]%"
         );
         for ( my $i = 1 ; $i < $count ; $i++ ) {
             $query = $query . " AND (" . " surname LIKE ? OR surname LIKE ?
                 OR firstname  LIKE ? OR firstname LIKE ?
-                OR othernames LIKE ? OR othernames LIKE ? OR email LIKE ? OR emailpro LIKE ? OR phone LIKE ? OR phonepro LIKE ? OR borrowernumber LIKE ?)";
+                OR othernames LIKE ? OR othernames LIKE ?)";
             push( @bind,
                 "$data[$i]%",   "% $data[$i]%", "$data[$i]%",
-                "% $data[$i]%", "$data[$i]%",   "% $data[$i]%",
-                "$data[$i]%", "$data[$i]%", "%$data[$i]%", "%$data[$i]%", "$data[$i]%",                
-                 );
+                "% $data[$i]%", "$data[$i]%",   "% $data[$i]%" );
 
             # FIXME - .= <<EOT;
         }
