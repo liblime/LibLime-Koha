@@ -1,0 +1,35 @@
+<html>
+  <head></head>
+  <body>
+    <table>
+      <h2>New Items @ Your Library!</h2>
+      <h3><!-- TMPL_VAR NAME="listTitle" --></h3>
+<!-- TMPL_LOOP NAME="newItemsLoop" -->
+
+<a href="<!-- TMPL_VAR NAME="opacUrl" -->/cgi-bin/koha/opac-detail.pl?bib=<!-- TMPL_VAR NAME="biblionumber" ESCAPE="URL" -->">
+<h2 style="color:#000000;font:bold 15px Verdana, Geneva, Arial, Helvetica, sans-serif;border-bottom:3px solid #ffcc33">
+  <!-- TMPL_VAR NAME="title" -->
+</h2>
+</a>
+<table border="0" cellpadding="2" cellspacing="0" width="92%" align="center">
+  <tr>
+    <td valign="top">
+      <a href="<!-- TMPL_VAR NAME="opacUrl" -->/cgi-bin/koha/opac-detail.pl?bib=<!-- TMPL_VAR NAME="biblionumber" ESCAPE="URL" -->"><img src="<!-- TMPL_IF NAME="isbn" -->http://images.amazon.com/images/P/<!-- TMPL_VAR name="isbn" -->.01.TZZZZZZZ.jpg<!-- TMPL_ELSE -->http://g-images.amazon.com/images/G/01/x-site/icons/no-img-sm.gif<!-- /TMPL_IF -->" alt="" class="thumbnail" /></a>
+    </td>
+    <td valign="top">
+      <p style="color:#000000">
+        <ul>
+          <li>Author: <!-- TMPL_VAR NAME="author" --></li>
+          <li>ISBN: <!-- TMPL_VAR NAME="isbn" --></li>
+          <li>Call Number: <!-- TMPL_VAR NAME="itemcallnumber" --></li>
+        </ul>
+        <br>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- /TMPL_LOOP -->
+
+
+  </body>
+</html>
