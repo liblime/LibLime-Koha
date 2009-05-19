@@ -22,6 +22,29 @@
 	<li><a href="/cgi-bin/koha/about.pl">About Koha</a></li></ul></div></div></li>
 </ul>
 </div>
+
+<div id="spnTip"
+ style="
+	position:absolute;
+
+	left:0;
+	top:0;
+
+	right:100;
+	bottom:100;
+
+	visibility:hidden;
+	background:lightyellow;
+	border:1px solid gray;
+	padding:2px;
+	font-size:8pt;
+	font-family:Verdana;"
+
+ onMouseOut="hideTip()">
+	This is my tooltip.
+</div>
+
+
 <div id="login">
   <!-- TMPL_IF NAME="AutoLocation" --><strong><!-- TMPL_VAR NAME="LoginBranchname" --></strong>
   <!-- TMPL_ELSE -->
