@@ -80,7 +80,9 @@ function update_child() {
 	    });
 
 	    <!-- TMPL_IF name="adultborrower" -->new YAHOO.widget.Button("addchild");<!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 	    new YAHOO.widget.Button("editpatron");
+        <!-- /TMPL_IF -->
 	    new YAHOO.widget.Button("addnote");
 	    new YAHOO.widget.Button("changepassword");
 	    new YAHOO.widget.Button("printslip");
@@ -88,7 +90,9 @@ function update_child() {
 		new YAHOO.widget.Button("renewpatron");
 		new YAHOO.widget.Button("patronflags");
 		new YAHOO.widget.Button("deletepatron");
+        <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 		new YAHOO.widget.Button("updatechild");
+        <!-- /TMPL_IF -->
 	}
 
 	//]]>
@@ -110,7 +114,7 @@ function update_child() {
             <!-- /TMPL_IF -->
         <!-- /TMPL_IF -->
         <!-- /TMPL_IF -->
-        <!-- TMP_IF NAME="CAN_user_borrowers_add_borrowers" -->
+        <!-- TMPL_IF NAME="CAN_user_borrowers_add_borrowers" -->
 	<!-- TMPL_IF name="adultborrower" --><li><a id="addchild" href="/cgi-bin/koha/members/memberentry.pl?op=add&amp;guarantorid=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;category_type=C">Add child</a></li><!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->

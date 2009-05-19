@@ -211,11 +211,13 @@ if (nodename =="barcodes[]"){
      <!-- /TMPL_IF  -->
 </ol>
 </div>
+          <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
           <div class="action">  <!-- TMPL_IF name="guarantorborrowernumber" -->
 			<a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=1&amp;guarantorid=<!-- TMPL_VAR NAME="guarantorborrowernumber" -->">Edit</a>
 			<!-- TMPL_ELSE -->
             <a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=1">Edit</a>
 			<!-- /TMPL_IF --></div>
+           <!-- /TMPL_IF -->
 
 
 </div>
@@ -276,7 +278,9 @@ if (nodename =="barcodes[]"){
     <!-- /TMPL_LOOP -->
 </table>
 </div>
+<!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 <div class="action"><a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=4">Edit</a></div>
+<!-- /TMPL_IF -->
 <!-- /TMPL_UNLESS -->
 <!-- /TMPL_IF -->
 </div>
@@ -313,7 +317,9 @@ if (nodename =="barcodes[]"){
 	</ol>
 	</div>
  </div>
+   <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
             <div class="action"><a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=3">Edit</a></div>
+   <!--/TMPL_IF --> 
  
  <div id="patron-alternate-address" style="padding-top: 1em;">
     <h3>Alternate Address</h3>
@@ -343,7 +349,9 @@ if (nodename =="barcodes[]"){
 	<li><span class="label">Zip/Postal Code: </span><!-- TMPL_VAR NAME="altcontactzipcode" --></li>
     <li><span class="label">Phone: </span><!-- TMPL_VAR NAME="altcontactphone" --></li></ol></div>
 </div>
+<!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 <div class="action"><a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=2">Edit</a></div>
+<!-- /TMPL_IF -->
 
 </div>
 </div>
