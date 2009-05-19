@@ -62,7 +62,9 @@
     <th>OD/Issues</th>
     <th>Fines</th>
     <th>Circ note</th>
+    <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 	<th>&nbsp;</th>
+    <!-- /TMPL_IF -->
     </tr>
     <!-- TMPL_LOOP NAME="resultsloop" -->
     <!-- TMPL_IF name="overdue" -->
@@ -82,6 +84,7 @@
     <td><!-- TMPL_IF "overdues" --><span class="overdue"><strong><!-- TMPL_VAR NAME="overdues" --></strong></span><!-- TMPL_ELSE --><!-- TMPL_VAR NAME="overdues" --><!-- /TMPL_IF -->/<!-- TMPL_VAR NAME="issues" --></td>
     <td><!-- TMPL_VAR NAME="fines" --></td>
     <td><!-- TMPL_VAR NAME="borrowernotes" --></td>
+    <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 	<td><!-- TMPL_IF NAME="category_type" -->
             <a href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;category_type=<!-- TMPL_VAR NAME="category_type"-->">Edit</a>
 <!-- TMPL_ELSE --> <!-- try with categorycode if no category_type -->
@@ -90,7 +93,8 @@
     <!-- TMPL_ELSE --> <!-- if no categorycode, set category_type to A by default -->
             <a href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;category_type=A">Edit</a>
     <!-- /TMPL_IF -->
-<!-- /TMPL_IF --></td>
+    <!-- /TMPL_IF --></td>
+    <!-- /TMPL_IF -->
     </tr>
     <!-- /TMPL_LOOP -->
     </table>
