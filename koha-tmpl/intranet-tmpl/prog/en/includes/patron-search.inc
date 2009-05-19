@@ -44,32 +44,13 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 });    
 //]]>
 </script><!-- /TMPL_IF --><!-- /TMPL_IF -->
-
-<script language="javascript">
-function showTip(oSel) {
-	var borsearchtips = new Array();
-	borsearchtips[0] = "Standard Search";
-	borsearchtips[1] = "Search by E-mail Address";
-	borsearchtips[2] = "Search by BorrowerNumber. This is the unique identifier that a given borrower always has.";
-	borsearchtips[3] = "Search by Phone Number.";
-
-	var theTip = document.getElementById("spnTip");
-	theTip.innerHTML = borsearchtips[oSel.selectedIndex] || "Hover Mouse Cursor Over Each Option For Tips";
-	theTip.style.visibility = "visible";
-	}
-
-function hideTip() {
-	document.getElementById("spnTip").style.visibility = "hidden";
-	}
-</script>
-
 <div id="header_search">
 	<div id="patron_search" class="residentsearch">
 	<p class="tip">Enter patron card number or partial name:</p>
 	<form action="/cgi-bin/koha/members/member.pl" method="post">
     <input id="searchmember" size="25" class="focus" name="member" type="text" />
     search fields:
-    <select name="searchfield" id="searchfield" onMouseOver="showTip(this)" onMouseOut="hideTip()">
+    <select name="searchfield" id="searchfield">
 	<option value="">Standard</option>
 	<option value="email">E-Mail</option>
 	<option value="borrowernumber">Borrower Number</option>
