@@ -58,7 +58,9 @@ function CheckCheckAll(fmobj) {
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="patron-search.inc" -->
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <!-- TMPL_IF NAME="searching" --><a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; Search Results<!-- TMPL_ELSE -->Patrons<!-- /TMPL_IF --></div>
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <!-- TMPL_IF NAME="searching" --><a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; Search Results<!-- TMPL_ELSE -->Patrons<!-- /TMPL_IF -->
+	&nbsp <strong>Enter first and/or last name or card number for standard search.  For email or phone, you may enter partial text with a * for truncation (e.g., myemail* or *111-2222).</strong>
+</div>
 
 <div id="doc" class="yui-t7">
    
@@ -175,9 +177,12 @@ No results found
 <!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 
+<br/>
+<h3>Search borrowers by SQL</h3>
 <form action="/cgi-bin/koha/members/member.pl" method="post" name="borrower-sql-search">
-	<label for="sqlsearch">Search borrowers by SQL</label>
-	<textarea name="sqlsearch" rows='5' cols='100'></textarea>
+	<label for="sqlsearch">Structure SQL query as follows:  Select * from borrowers where (followed by your search criteria)
+</label>
+	<textarea name="sqlsearch" rows='5' cols='100'>SELECT * FROM borrowers LEFT JOIN categories ON borrowers.categorycode = categories.categorycode WHERE</textarea>
 	<input name="sqlsearch" type="submit" value="Search" />
 </form>
 </div>
