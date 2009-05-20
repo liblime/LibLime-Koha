@@ -34,6 +34,7 @@
 <!--/TMPL_IF-->
 		] 
 	
+    <!-- TMPL_IF NAME="CAN_user_borrowers_add_borrowers" -->
 	    new YAHOO.widget.Button({
 	        type: "menu",
 	        label: _("New"),
@@ -41,6 +42,7 @@
 	        menu: newmenu,
 	        container: "newmenuc"
 	    });
+    <!-- /TMPL_IF -->
 	
 	}
 

@@ -63,7 +63,9 @@ function update_child() {
                     <!-- TMPL_UNLESS NAME="CAN_user_staffaccess" -->, disabled: true<!-- /TMPL_UNLESS-->
                     <!-- TMPL_ELSE --><!-- /TMPL_IF -->
                 <!-- TMPL_ELSE -->, disabled: true<!-- /TMPL_IF-->},
+            <!-- TMPL_IF NAME="CAN_user_borrowers_delete_borrowers" --> 
             { text: _("Delete"), <!-- TMPL_IF NAME="StaffMember" --><!-- TMPL_UNLESS NAME="CAN_user_staffaccess" -->disabled: true, <!-- /TMPL_UNLESS --><!-- /TMPL_IF --> onclick: { fn: confirm_deletion } },
+            <!-- /TMPL_IF -->
 			{ text: _("Update Child to Adult Patron") , onclick: { fn: update_child }<!-- TMPL_UNLESS NAME="is_child" -->, disabled: true<!-- /TMPL_UNLESS -->}
 		];
 
@@ -108,6 +110,7 @@ function update_child() {
 	</script>
 	<ul class="toolbar">
 	<!-- TMPL_IF NAME="CAN_user_borrowers" -->
+    <!-- TMPL_IF name="CAN_user_borrowers_edit_borrowers" -->
 	<!-- TMPL_IF NAME="category_type" -->
             <!--TMPL_IF NAME="guarantor"-->
                 <li><a id="editpatron" href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;guarantorid=<!-- TMPL_VAR NAME="guarantorborrowernumber" -->&amp;category_type=<!-- TMPL_VAR NAME="category_type"-->">
@@ -122,11 +125,14 @@ function update_child() {
             <!-- /TMPL_IF -->
         <!-- /TMPL_IF -->
 	<!-- /TMPL_IF -->
+	<!-- /TMPL_IF -->
 	<!-- TMPL_IF NAME="CAN_user_borrowers" -->
+    <!-- TMPL_IF name="CAN_user_borrowers_add_borrowers" -->
 	<!-- TMPL_IF name="adultborrower" --><li><a id="addchild" href="/cgi-bin/koha/members/memberentry.pl?op=add&amp;guarantorid=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;category_type=C">Add child</a></li><!-- /TMPL_IF -->
 <!--	<li><a id="addnote" href="/cgi-bin/koha/members/addnotes.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Add Note</a></li> -->
 <!-- TMPL_IF NAME="StaffMember" --><!-- TMPL_IF NAME="CAN_user_staffaccess" --> <li><a id="changepassword" href="/cgi-bin/koha/members/member-password.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Change Password</a></li><!-- /TMPL_IF-->
           <!-- TMPL_ELSE--> <li><a id="changepassword" href="/cgi-bin/koha/members/member-password.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Change Password</a></li><!-- /TMPL_IF -->	
+	  <!-- /TMPL_IF -->
 	  <!-- /TMPL_IF -->
 	<li id="printmenuc"><a id="printpage" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=page">Print Page</a></li>
 	<li><a id="printslip" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=slip">Print Slip</a></li>
@@ -140,7 +146,15 @@ function update_child() {
                 <li><a id="patronflags" href="/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Set Permissions</a></li>
         <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
-    <!-- TMPL_IF NAME="StaffMember" --><!-- TMPL_UNLESS NAME="CAN_user_staffaccess" --><li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li><!-- /TMPL_UNLESS -->
-    <!-- TMPL_ELSE --><li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="StaffMember" --><!-- TMPL_UNLESS NAME="CAN_user_staffaccess" -->
+    <!-- TMPL_IF name="CAN_user_borrowers_delete_borrowers" -->
+    <li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li>
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_UNLESS -->
+    <!-- TMPL_ELSE -->
+    <!-- TMPL_IF name="CAN_user_borrowers_delete_borrowers" -->
+    <li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li>
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
 
 </ul></div>
