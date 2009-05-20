@@ -319,6 +319,20 @@ if (nodename =="barcodes[]"){
  </div>
    <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
             <div class="action"><a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=3">Edit</a></div>
+    <!-- TMPL_ELSE -->
+    <!-- Cannot edit borrower but can edit notes -->
+    <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrower_circnote" -->
+    <div class="action">
+    <a href="/cgi-bin/koha/members/membernote.pl?type=circ&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;screen=open">Edit Circ Note</a>
+    </div>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrower_opacnote" -->
+    <div class="action">
+    <a href="/cgi-bin/koha/members/membernote.pl?type=opac&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;screen=open">Edit OPAC Note</a>
+    </div>
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
+    </td>
    <!--/TMPL_IF --> 
  
  <div id="patron-alternate-address" style="padding-top: 1em;">
