@@ -138,6 +138,10 @@ foreach my $issue ( @issue_list ) {
     $issue->{'too_many'} = 1 if $renewerror and $renewerror eq 'too_many';
     $issue->{'on_reserve'} = 1 if $renewerror and $renewerror eq 'on_reserve';
 
+    if ( $issue->{'renewsleft'} < 0 ) {
+      $issue->{'renewsleft'} = '0';
+    }
+
     if ( $issue->{'overdue'} ) {
         push @overdues, $issue;
         $overdues_count++;
