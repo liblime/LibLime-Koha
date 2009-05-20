@@ -959,6 +959,14 @@ sub GetBranchcodesWithOverdueRules {
     my $rqoverduebranches = $dbh->prepare("SELECT DISTINCT branchcode FROM overduerules WHERE delay1 IS NOT NULL AND branchcode <> ''");
     $rqoverduebranches->execute;
     my @branches = map { shift @$_ } @{ $rqoverduebranches->fetchall_arrayref };
+    $rqoverduebranches->finish;
+# Check for branches from overdueitemrules if no branches found in overduerules
+    if (scalar(@branches) == 0) {
+      $rqoverduebranches = $dbh->prepare("SELECT DISTINCT branchcode FROM overdueitemrules WHERE delay1 IS NOT NULL AND branchcode <> ''");
+      $rqoverduebranches->execute;
+      @branches = map { shift @$_ } @{ $rqoverduebranches->fetchall_arrayref };
+      $rqoverduebranches->finish;
+    }
     return @branches;
 }
 

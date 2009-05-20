@@ -501,6 +501,192 @@ END_SQL
         }
     }
 
+# Examine overdueitemrules table
+
+    $rqoverduerules = $dbh->prepare("SELECT * FROM overdueitemrules WHERE delay1 IS NOT NULL AND branchcode = ? ");
+    $rqoverduerules->execute($branchcode);
+    # my $outfile = 'overdues_' . ( $mybranch || $branchcode || 'default' );
+    while ( my $overdue_rules = $rqoverduerules->fetchrow_hashref ) {
+      PERIOD: foreach my $i ( 1 .. 3 ) {
+
+            $verbose and warn "branch '$branchcode', pass $i\n";
+            my $mindays = $overdue_rules->{"delay$i"};    # the notice will be sent after mindays days (grace period)
+            my $maxdays = (
+                  $overdue_rules->{ "delay" . ( $i + 1 ) }
+                ? $overdue_rules->{ "delay" . ( $i + 1 ) }
+                : ($MAX)
+            );                                            # issues being more than maxdays late are managed somewhere else. (borrower probably suspended)
+
+            if ( !$overdue_rules->{"letter$i"} ) {
+                $verbose and warn "No letter$i code for branch '$branchcode'";
+                next PERIOD;
+            }
+
+            # $letter->{'content'} is the text of the mail that is sent.
+            # this text contains fields that are replaced by their value. Those fields must be written between brackets
+            # The following fields are available :
+	    # itemcount is interpreted here as the number of items in the overdue range defined by the current notice or all overdues < max if(-list-all).
+            # <date> <itemcount> <firstname> <lastname> <address1> <address2> <address3> <city> <postcode>
+
+            my $itemtype_sql = <<'END_SQL';
+SELECT COUNT(*), issues.borrowernumber, firstname, surname, address, address2, city, zipcode, email, MIN(date_due) as longest_issue
+FROM   issues,borrowers,items,itemtypes
+WHERE  issues.borrowernumber=borrowers.borrowernumber
+AND    issues.itemnumber=items.itemnumber
+AND    items.itype=itemtypes.itemtype
+END_SQL
+            my @itemtype_parameters;
+            if ($branchcode) {
+                $itemtype_sql .= ' AND issues.branchcode=? ';
+                push @itemtype_parameters, $branchcode;
+            }
+            if ( $overdue_rules->{itemtype} ) {
+                $itemtype_sql .= ' AND items.itype=? ';
+                push @itemtype_parameters, $overdue_rules->{itemtype};
+            }
+            $itemtype_sql .= '  GROUP BY issues.borrowernumber ';
+            if($triggered) {
+                $itemtype_sql .= ' HAVING TO_DAYS(NOW())-TO_DAYS(longest_issue) = ?';
+                push @itemtype_parameters, $mindays;
+            } else {
+                $itemtype_sql .= ' HAVING TO_DAYS(NOW())-TO_DAYS(longest_issue) BETWEEN ? and ? ' ;
+                push @itemtype_parameters, $mindays, $maxdays;
+            }
+
+            # $sth gets borrower info if at least one overdue item has triggered the overdue action.
+	    my $sth = $dbh->prepare($itemtype_sql);
+            $sth->execute(@itemtype_parameters);
+            $verbose and warn $itemtype_sql . "\n $branchcode | " . $overdue_rules->{'categorycode'} . "\n ($mindays, $maxdays)\nreturns " . $sth->rows . " rows";
+
+            while( my ( $itemcount, $borrowernumber, $firstname, $lastname, $address1, $address2, $city, $postcode, $email ) = $sth->fetchrow ) {
+                $verbose and warn "borrower $firstname, $lastname ($borrowernumber) has $itemcount items triggering level $i.";
+    
+                my $letter = C4::Letters::getletter( 'circulation', $overdue_rules->{"letter$i"} );
+                unless ($letter) {
+                    $verbose and warn "Message '$overdue_rules->{letter$i}' content not found";
+    
+                    # might as well skip while PERIOD, no other borrowers are going to work.
+                    # FIXME : Does this mean a letter must be defined in order to trigger a debar ?
+                    next PERIOD;
+                }
+    
+                if ( $overdue_rules->{"debarred$i"} ) {
+    
+                    #action taken is debarring
+                    C4::Members::DebarMember($borrowernumber);
+                    $verbose and warn "debarring $borrowernumber $firstname $lastname\n";
+                }
+                $sth2->execute( ($listall) ? ( $borrowernumber , 1 , $MAX ) : ( $borrowernumber, $mindays, $maxdays ) );
+                my $itemcount = 0;
+                my $titles = "";
+                while ( my $item_info = $sth2->fetchrow_hashref() ) {
+                    my @item_info = map { $_ =~ /^date|date$/ ? format_date( $item_info->{$_} ) : $item_info->{$_} || '' } @item_content_fields;
+                    $titles .= join("\t", @item_info) . "\n";
+                    $itemcount++;
+                }
+                $sth2->finish;
+    
+                $letter = parse_letter(
+                    {   letter         => $letter,
+                        borrowernumber => $borrowernumber,
+                        branchcode     => $branchcode,
+                        substitute     => {
+                            bib             => $branch_details->{'branchname'},
+                            'items.content' => $titles
+                        }
+                    }
+                );
+    
+                my @misses = grep { /./ } map { /^([^>]*)[>]+/; ( $1 || '' ); } split /\</, $letter->{'content'};
+                if (@misses) {
+                    $verbose and warn "The following terms were not matched and replaced: \n\t" . join "\n\t", @misses;
+                }
+                $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # Now that we've warned about them, remove them.
+                $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # 2nd pass for the double nesting.
+    
+                if ($nomail) {
+    
+                    push @output_chunks,
+                      prepare_letter_for_printing(
+                        {   letter         => $letter,
+                            borrowernumber => $borrowernumber,
+                            firstname      => $firstname,
+                            lastname       => $lastname,
+                            address1       => $address1,
+                            address2       => $address2,
+                            city           => $city,
+                            postcode       => $postcode,
+                            email          => $email,
+                            itemcount      => $itemcount,
+                            titles         => $titles,
+                            outputformat   => defined $csvfilename ? 'csv' : '',
+                        }
+                      );
+                } else {
+                    if ($email) {
+                        C4::Letters::EnqueueLetter(
+                            {   letter                 => $letter,
+                                borrowernumber         => $borrowernumber,
+                                message_transport_type => 'email',
+                                from_address           => $admin_email_address,
+                            }
+                        );
+                    } else {
+    
+                        # If we don't have an email address for this patron, send it to the admin to deal with.
+                        push @output_chunks,
+                          prepare_letter_for_printing(
+                            {   letter         => $letter,
+                                borrowernumber => $borrowernumber,
+                                firstname      => $firstname,
+                                lastname       => $lastname,
+                                address1       => $address1,
+                                address2       => $address2,
+                                city           => $city,
+                                postcode       => $postcode,
+                                email          => $email,
+                                itemcount      => $itemcount,
+                                titles         => $titles,
+                                outputformat   => defined $csvfilename ? 'csv' : '',
+                            }
+                          );
+                    }
+                }
+            }
+            $sth->finish;
+        }
+    }
+
+    if (@output_chunks) {
+        if ($nomail) {
+            if ( defined $csvfilename ) {
+                print $csv_fh @output_chunks;
+            } else {
+                local $, = "\f";    # pagebreak
+                print @output_chunks;
+            }
+        } else {
+            my $attachment = {
+                filename => defined $csvfilename ? 'attachment.csv' : 'attachment.txt',
+                type => 'text/plain',
+                content => join( "\n", @output_chunks )
+            };
+
+            my $letter = {
+                title   => 'Overdue Notices',
+                content => 'These messages were not sent directly to the patrons.',
+            };
+            C4::Letters::EnqueueLetter(
+                {   letter                 => $letter,
+                    borrowernumber         => undef,
+                    message_transport_type => 'email',
+                    attachments            => [$attachment],
+                    to_address             => $admin_email_address,
+                }
+            );
+        }
+    }
+
 }
 if ($csvfilename) {
 
