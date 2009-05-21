@@ -788,7 +788,7 @@ sub CancelReserve {
         # now fix the priority on the others....
         _FixPriority( $priority, $biblio );
     }
-    
+
     UpdateStats(
       $branchcode,
       my $type = 'reserve_canceled',
@@ -870,6 +870,17 @@ sub ModReserve {
         $sth = $dbh->prepare($query);
         $sth->execute( $biblio, $borrower );
         
+        UpdateStats(
+          my $branchcode = $branch,
+          my $type = 'reserve_canceled',
+          my $amount,
+          my $other = $biblio,
+          my $itemnum = $itemnumber,
+          my $itemtype,
+          my $borrowernumber = $borrower,
+          my $accountno
+        );
+
     }
     elsif ($rank =~ /^\d+/ and $rank > 0) {
         my $query = qq/
@@ -881,6 +892,8 @@ sub ModReserve {
         $sth->execute( $rank, $branch,$itemnumber, $biblio, $borrower);
         $sth->finish;
         _FixPriority( $biblio, $borrower, $rank);
+        
+
     }
 }
 

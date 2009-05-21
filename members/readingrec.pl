@@ -51,8 +51,7 @@ else {
 }
 my ($count,$issues)=GetAllIssues($borrowernumber,$order2,$limit);
 
-my ($template, $loggedinuser, $cookie)
-= get_template_and_user({template_name => "members/readingrec.tmpl",
+my ($template, $loggedinuser, $cookie) = get_template_and_user({template_name => "members/readingrec.tmpl",
 				query => $input,
 				type => "intranet",
 				authnotrequired => 0,
@@ -119,6 +118,20 @@ $template->param(
 			   			branchname => GetBranchName($data->{'branchcode'}),
 						showfulllink => ($count > 50),					
 						loop_reading => \@loop_reading);
+
+## Get reserves placed and canceled.
+my $dbh = C4::Context->dbh;
+my $query = "SELECT * , DATE_FORMAT(statistics.datetime, '%m/%d/%Y') AS date_formatted
+	     FROM statistics LEFT JOIN biblio on statistics.other = biblio.biblionumber 
+	     WHERE ( statistics.type = 'reserve' OR statistics.type = 'reserve_canceled' )
+	     AND borrowernumber = ?
+	     ORDER BY datetime DESC
+	     ";
+my $sth = $dbh->prepare( $query );
+$sth->execute( $borrowernumber );
+my $reserve_stats = $sth->fetchall_arrayref({});
+$template->param( reserves_stats_loop => $reserve_stats );
+
 output_html_with_http_headers $input, $cookie, $template->output;
 
 
