@@ -139,7 +139,9 @@ function confirm_deletion() {
 	<li id="addtoshelfc"><a id="addtoshelf" href="/cgi-bin/koha/virtualshelves/addbybiblionumber.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Add to shelf</a></li>
 	<li id="printbiblioc"><a id="printbiblio" href="/cgi-bin/koha/catalogue/detailprint.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Print</a></li>
 	<!-- TMPL_IF NAME="CAN_user_reserveforothers" -->
+	<!-- TMPL_IF NAME="CAN_user_reserveforothers_add_holds" -->
         <!-- TMPL_UNLESS name="bi_notforloan" -->
 	<!-- TMPL_UNLESS NAME="norequests" --><li><a id="placehold" href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Place Hold</a></li><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
+	<!-- /TMPL_IF -->
 	<!-- /TMPL_IF -->
 </ul></div>
