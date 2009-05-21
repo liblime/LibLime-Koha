@@ -186,8 +186,18 @@ function set_to_today(id, force) {
             </tr>
                 <!-- TMPL_LOOP NAME="item_loop" -->
                 <tr id="row<!-- TMPL_VAR NAME="itemnumber" -->">
-                    <!-- TMPL_IF Name="nomod"--> <td colspan="2">&nbsp;</td><!--TMPL_ELSE--><td><a href="additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">Edit</a></td>
-                    <td><a class="delete" href="/cgi-bin/koha/cataloguing/additem.pl?op=delitem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->" onclick="confirm_deletion(<!-- TMPL_VAR NAME="biblionumber" -->,<!-- TMPL_VAR NAME="itemnumber" -->); return false;">Delete</a></td><!--/TMPL_IF-->
+                    <!-- TMPL_IF Name="nomod"--> <td colspan="2">&nbsp;</td><!--TMPL_ELSE-->
+                    <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
+                    <td><a href="additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">Edit</a></td>
+                <!-- TMPL_ELSE -->
+                   <td>&nbsp;</td>
+                <!--/TMPL_IF-->
+                    <!-- TMPL_IF NAME="CAN_user_editcatalogue_delete_items" -->
+                    <td><a class="delete" href="/cgi-bin/koha/cataloguing/additem.pl?op=delitem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->" onclick="confirm_deletion(<!-- TMPL_VAR NAME="biblionumber" -->,<!-- TMPL_VAR NAME="itemnumber" -->); return false;">Delete</a></td>
+                <!-- TMPL_ELSE -->
+                   <td>&nbsp;</td>
+                <!--/TMPL_IF-->
+                <!--/TMPL_IF-->
                 <!-- TMPL_LOOP NAME="item_value" -->
                     <td><!-- TMPL_VAR ESCAPE=HTML NAME="field" --></td>
                 <!-- /TMPL_LOOP -->
