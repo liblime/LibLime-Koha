@@ -71,6 +71,7 @@
 <!-- /TMPL_LOOP -->
 </table>
 
+<h2>Reserves History</h2>
 <!-- TMPL_IF NAME="reserves_stats_loop" -->
 	<table>
 		<thead>
@@ -94,6 +95,28 @@
 		</tbody>
 	</table>
 <!-- /TMPL_IF -->
+
+<h2>Sent Notices History</h2>
+<!-- TMPL_IF NAME="notices_sent_stats_loop" -->
+	<table>
+		<thead>
+		<tr>
+			<th>Notices</th>
+			<th>Date</th>
+		</tr>
+		</thead>
+
+		<tbody>
+		<!-- TMPL_LOOP NAME="notices_sent_stats_loop" -->
+			<tr>
+				<td><!-- TMPL_VAR NAME="title" --></td>
+				<td><!-- TMPL_VAR NAME="date_formatted" --></td>
+			</tr>
+		<!-- /TMPL_LOOP -->
+		</tbody>
+	</table>
+<!-- /TMPL_IF -->
+
 </div>
 </div>
 

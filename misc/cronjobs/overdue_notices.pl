@@ -32,6 +32,7 @@ use C4::Context;
 use C4::Dates qw/format_date/;
 use C4::Debug;
 use C4::Letters;
+use C4::Stats;
 
 use Getopt::Long;
 use Pod::Usage;
@@ -415,6 +416,18 @@ END_SQL
                 $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # Now that we've warned about them, remove them.
                 $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # 2nd pass for the double nesting.
     
+                UpdateStats(
+                  $branchcode,
+                  my $type = 'notice_sent',
+                  my $amount,
+                  my $other = $overdue_rules->{"letter$i"},  
+                  my $itemnum,
+                  my $itemtype,
+                  $borrowernumber,
+                  my $accountno
+                );
+                                                        
+
                 if ($nomail) {
     
                     push @output_chunks,

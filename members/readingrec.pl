@@ -132,6 +132,18 @@ $sth->execute( $borrowernumber );
 my $reserve_stats = $sth->fetchall_arrayref({});
 $template->param( reserves_stats_loop => $reserve_stats );
 
+## Get notices sent
+$query = "SELECT * , DATE_FORMAT(statistics.datetime, '%m/%d/%Y') AS date_formatted
+	     FROM statistics LEFT JOIN letter on statistics.other = letter.code	     
+	     WHERE statistics.type = 'notice_sent'
+	     AND borrowernumber = ?
+	     ORDER BY datetime DESC
+	     ";
+$sth = $dbh->prepare( $query );
+$sth->execute( $borrowernumber );
+my $notices_sent_stats = $sth->fetchall_arrayref({});
+$template->param( notices_sent_stats_loop => $notices_sent_stats );
+
 output_html_with_http_headers $input, $cookie, $template->output;
 
 
