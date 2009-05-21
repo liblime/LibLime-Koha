@@ -437,6 +437,7 @@ if ($borrower) {
 # get each issue of the borrower & separate them in todayissues & previous issues
     my ($issueslist) = GetPendingIssues($borrower->{'borrowernumber'});
 
+    my $ren_override_limit = $template->param('CAN_user_circulate_override_max_renewals');
     # split in 2 arrays for today & previous
     foreach my $it ( @$issueslist ) {
         # set itemtype per item-level_itype syspref - FIXME this is an ugly hack
@@ -447,7 +448,7 @@ if ($borrower) {
         );
         $it->{'charge'} = sprintf("%.2f", $it->{'charge'});
         my ($can_renew, $can_renew_error) = CanBookBeRenewed( 
-            $borrower->{'borrowernumber'},$it->{'itemnumber'}
+            $borrower->{'borrowernumber'},$it->{'itemnumber'},$ren_override_limit
         );
         $it->{"renew_error_${can_renew_error}"} = 1 if defined $can_renew_error;
         my ( $restype, $reserves ) = CheckReserves( $it->{'itemnumber'} );
@@ -726,11 +727,11 @@ sub granular_overrides {
             delete $question->{TOO_MANY};
         }
     }
-    if ($question->{NOT_FOR_LOAN_FORCING} ) {
+    if ($error->{NOT_FOR_LOAN}) {
         my $check_granular = $template->param('CAN_user_circulate_override_non_circ');
-        if (!$check_granular) {
-            $error->{NOT_FOR_LOAN} = $question->{NOT_FOR_LOAN_FORCING};
-            delete $question->{NOT_FOR_LOAN_FORCING};
+        if ($check_granular) {
+            $question->{NOT_FOR_LOAN_FORCING} = $error->{NOT_FOR_LOAN};
+            delete $error->{NOT_FOR_LOAN};
         }
     }
     if ($error->{NO_MORE_RENEWALS} ) {
