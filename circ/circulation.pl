@@ -726,11 +726,11 @@ sub granular_overrides {
             delete $question->{TOO_MANY};
         }
     }
-    if ($question->{NOT_FOR_LOAN_FORCING} ) {
+    if ($error->{NOT_FOR_LOAN}) {
         my $check_granular = $template->param('CAN_user_circulate_override_non_circ');
-        if (!$check_granular) {
-            $error->{NOT_FOR_LOAN} = $question->{NOT_FOR_LOAN_FORCING};
-            delete $question->{NOT_FOR_LOAN_FORCING};
+        if ($check_granular) {
+            $question->{NOT_FOR_LOAN_FORCING} = $error->{NOT_FOR_LOAN};
+            delete $error->{NOT_FOR_LOAN};
         }
     }
     if ($error->{NO_MORE_RENEWALS} ) {
