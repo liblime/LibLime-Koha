@@ -544,13 +544,60 @@ if (nodename =="barcodes[]"){
             </td>
         </tr>
 		<!-- /TMPL_LOOP --></tbody>
-    </table>
-        <fieldset class="action"><input type="submit" class="cancel" name="submit" value="Cancel Marked Requests" /></fieldset>
-    </form>
-    <!-- TMPL_ELSE -->
-    <p>Patron has nothing on hold.</p>
-    <!-- /TMPL_IF -->
-    </div>
+	</table>
+			<fieldset class="action"><input type="submit" class="cancel" name="submit" value="Cancel Marked Requests" /></fieldset>
+	</form>
+	<!-- TMPL_ELSE -->
+	<p>Patron has nothing on hold.</p>
+	<!-- /TMPL_IF -->
+
+
+<!-- TMPL_IF NAME="suspended_reserves_loop" -->
+<h2>Patron suspended holds</h2>
+	<table id="holdst">
+		<thead><tr>
+			<th>Hold date</th>
+			<th>Title</th>
+			<th>Item Type</th>
+			<th>Call Number</th>
+			<th>Barcode</th>
+			<th>Priority</th>
+			<th>Resume?</th>
+		</tr></thead>
+		<tbody><!-- TMPL_LOOP NAME="suspended_reserves_loop" -->
+		<tr class="<!-- TMPL_VAR NAME="color" -->">
+					<td>
+						<!-- TMPL_VAR NAME="reservedate" -->
+					</td>
+					<td>
+						<a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF -->
+                        
+					</td>
+					<td><!-- TMPL_VAR NAME="itemtype" --></td>
+					<td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
+					<td><!-- TMPL_IF name="waiting" -->
+                        <em>Item is <strong>waiting</strong></em>
+                        <!-- /TMPL_IF -->
+                        <!-- TMPL_IF name="transfered" -->
+                        <em>Item <strong>in transit</strong> from
+                        <!-- TMPL_VAR NAME="frombranch" --> since <!-- TMPL_VAR NAME="datesent" --> </em>
+                        <!-- /TMPL_IF -->
+
+                        <!-- TMPL_IF name="nottransfered" -->
+                        <em>Item hasn't been transfered yet from <!-- TMPL_VAR NAME="nottransferedby" --></em>
+                        <!-- /TMPL_IF -->
+						<!-- TMPL_IF name="barcodereserv" -->
+						<a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
+						<!-- /TMPL_IF -->
+					</td>
+					<td><!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
+					<td><a href="/cgi-bin/koha/reserve/request.pl?action=resume&reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Resume</td>
+			</tr>
+		<!-- /TMPL_LOOP --></tbody>
+	</table>
+	</form>
+	<!-- /TMPL_IF -->
+	</div>
 </div>
 <!-- /TMPL_IF --> <!-- unknowuser -->
 

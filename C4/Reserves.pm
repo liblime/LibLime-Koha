@@ -118,6 +118,7 @@ BEGIN {
         &SuspendReserve
         &ResumeReserve
         &GetSuspendedReservesFromBiblionumber
+        &GetSuspendedReservesFromBorrowernumber
 
         &IsAvailableForItemLevelRequest
     );
@@ -350,6 +351,27 @@ sub GetReservesFromBorrowernumber {
     return @$data;
 }
 #-------------------------------------------------------------------------------------
+
+=item GetReservesFromBorrowernumber
+
+    $suspended_reserves = GetSuspendedReservesFromBorrowernumber($borrowernumber);
+    
+=cut
+
+sub GetSuspendedReservesFromBorrowernumber {
+    my ( $borrowernumber ) = @_;
+    my $dbh   = C4::Context->dbh;
+    my $sth;
+    $sth = $dbh->prepare("
+        SELECT *
+        FROM   reserves_suspended
+        WHERE  borrowernumber=?
+        ORDER BY reservedate
+    ");
+    $sth->execute($borrowernumber);
+    my $data = $sth->fetchall_arrayref({});
+    return @$data;
+}
 
 =item GetReserveCount
 
