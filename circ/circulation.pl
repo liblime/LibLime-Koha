@@ -437,6 +437,7 @@ if ($borrower) {
 # get each issue of the borrower & separate them in todayissues & previous issues
     my ($issueslist) = GetPendingIssues($borrower->{'borrowernumber'});
 
+    my $ren_override_limit = $template->param('CAN_user_circulate_override_max_renewals');
     # split in 2 arrays for today & previous
     foreach my $it ( @$issueslist ) {
         # set itemtype per item-level_itype syspref - FIXME this is an ugly hack
@@ -447,7 +448,7 @@ if ($borrower) {
         );
         $it->{'charge'} = sprintf("%.2f", $it->{'charge'});
         my ($can_renew, $can_renew_error) = CanBookBeRenewed( 
-            $borrower->{'borrowernumber'},$it->{'itemnumber'}
+            $borrower->{'borrowernumber'},$it->{'itemnumber'},$ren_override_limit
         );
         $it->{"renew_error_${can_renew_error}"} = 1 if defined $can_renew_error;
         my ( $restype, $reserves ) = CheckReserves( $it->{'itemnumber'} );
