@@ -512,7 +512,9 @@ foreach my $biblionumber (@biblionumbers) {
     }
 
     my ( $suspended_count, $suspended_reserves ) = GetSuspendedReservesFromBiblionumber($biblionumber);
-    $template->param( suspended_reserves_loop => $suspended_reserves );
+    if ( $suspended_count ) {
+      $template->param( suspended_reserves_loop => $suspended_reserves );
+    }
     
     # get the time for the form name...
     my $time = time();

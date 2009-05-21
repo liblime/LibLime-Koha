@@ -1,4 +1,4 @@
-<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<k!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <!-- TMPL_UNLESS NAME="multi_hold" -->
     <title>Koha &rsaquo; Circulation &rsaquo; Holds &rsaquo; Place a hold on <!-- TMPL_VAR NAME="title" escape="html" --></title>
 <!-- TMPL_ELSE -->
@@ -601,6 +601,7 @@ function checkMultiHold() {
 <!-- /TMPL_UNLESS -->
 <!-- /TMPL_IF -->
 
+<!-- TMPL_IF Name="suspended_reserves_loop" -->
 <fieldset class="rows left">
 	<legend>Suspended Holds</legend>
 	<table>
@@ -625,7 +626,7 @@ function checkMultiHold() {
 		<!-- /TMPL_LOOP -->
 	</table>
 </fieldset>
-
+<!-- /TMPL_IF -->
 
 </div>
 </div>
