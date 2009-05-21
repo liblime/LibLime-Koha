@@ -203,7 +203,6 @@ my $CGIbranch = CGI::scrolling_list(-id    => 'branchcode',
             -size   => 1,
             -override => 1,  
             -multiple =>0,
-            -default => $default,
             );
 
 
