@@ -424,11 +424,11 @@ foreach my $biblioNum (@biblionumbers) {
         # If there is no loan, return and transfer, we show a checkbox.
         $itemLoopIter->{notforloan} = $itemLoopIter->{notforloan} || 0;
 
-        my $branchitemrule = GetBranchItemRule( $borr->{'branchcode'}, $itemInfo->{'itype'} );
+        my $issuingrule = GetIssuingRule( $borr->{'categorycode'}, $itemInfo->{'itype'}, $borr->{'branchcode'} );
         my $policy_holdallowed = 1;
 
-        if ( $branchitemrule->{'holdallowed'} == 0 ||
-                ( $branchitemrule->{'holdallowed'} == 1 && $borr->{'branchcode'} ne $itemInfo->{'homebranch'} ) ) {
+        if ( $issuingrule->{'holdallowed'} == 0 ||
+                ( $issuingrule->{'holdallowed'} == 1 && $borr->{'branchcode'} ne $itemInfo->{'homebranch'} ) ) {
             $policy_holdallowed = 0;
         }
 

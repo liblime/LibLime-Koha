@@ -390,13 +390,13 @@ foreach my $biblionumber (@biblionumbers) {
                 }
             }
             
-            my $branchitemrule = GetBranchItemRule( $item->{'homebranch'}, $item->{'itype'} );
+			my $issuingrule = GetIssuingRule( $borrowerinfo->{'categorycode'}, $item->{'itype'}, $borrowerinfo->{'branchcode'} );
             my $policy_holdallowed = 1;
             
-            $item->{'holdallowed'} = $branchitemrule->{'holdallowed'};
+            $item->{'holdallowed'} = $issuingrule->{'holdallowed'};
             
-            if ( $branchitemrule->{'holdallowed'} == 0 ||
-                 ( $branchitemrule->{'holdallowed'} == 1 && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) ) {
+            if ( $issuingrule->{'holdallowed'} == 0 ||
+                 ( $issuingrule->{'holdallowed'} == 1 && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) ) {
                 $policy_holdallowed = 0;
             }
             

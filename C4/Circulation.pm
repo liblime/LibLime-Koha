@@ -1269,6 +1269,8 @@ my $branch_item_rule = GetBranchItemRule($branchcode, $itemtype);
 
 =back
 
+**DEPRECATED**: Hold policies are now stored in issuingrules.
+
 Retrieves circulation rule attributes that apply to the given
 branch and item type, regardless of patron category.
 
