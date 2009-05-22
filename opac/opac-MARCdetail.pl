@@ -58,6 +58,13 @@ my $itemtype     = &GetFrameworkCode($biblionumber);
 my $tagslib      = &GetMarcStructure( 0, $itemtype );
 my $biblio = GetBiblioData($biblionumber);
 my $record = GetMarcBiblio($biblionumber);
+my @items = C4::Items::GetItemsInfo($biblionumber, 'opac');
+my @suppresseditems;
+foreach my $itm (@items) {
+  if ($itm->{'suppress'}) {
+    push @suppresseditems, $itm->{'barcode'};
+  }
+}
 
 # open template
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
@@ -266,12 +273,18 @@ my @item_value_loop;
 my @header_value_loop;
 for ( my $i = 0 ; $i <= $#big_array ; $i++ ) {
     my $items_data;
+    my $suppress = 0;
     foreach my $subfield_code ( keys(%witness) ) {
         $items_data .= "<td>" . $big_array[$i]{$subfield_code} . "</td>";
+        if ($subfield_code eq 'p') {
+          foreach my $bcode (@suppresseditems) {
+            $suppress = 1 if ($bcode eq $big_array[$i]{$subfield_code});
+          }
+        }
     }
     my %row_data;
     $row_data{item_value} = $items_data;
-    push( @item_value_loop, \%row_data );
+    push( @item_value_loop, \%row_data ) if (!$suppress);
 }
 
 foreach my $subfield_code ( keys(%witness) ) {

@@ -1638,7 +1638,7 @@ ul#i18nMenu li.more ul li a {
 	font-weight : normal;
 	margin : 0 .5em 0 0;
 }
-.lost,.dmg,.wdn {
+.lost,.dmg,.wdn,.suppress {
 	display : block;
 	color : #990000;
 }

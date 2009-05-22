@@ -432,6 +432,7 @@ my %default_values_for_mod_from_marc = (
     replacementpricedate => undef, 
     restricted           => undef, 
     stack                => undef, 
+    suppress             => 0,
     uri                  => undef, 
     wthdrawn             => 0,
 );
@@ -1749,9 +1750,9 @@ _do_column_fixes_for_mod($item);
 Given an item hashref containing one or more
 columns to modify, fix up certain values.
 Specifically, set to 0 any passed value
-of C<notforloan>, C<damaged>, C<itemlost>, or
-C<wthdrawn> that is either undefined or
-contains the empty string.
+of C<notforloan>, C<damaged>, C<itemlost>,
+C<wthdrawn>, or C<suppress> that is either
+undefined or contains the empty string.
 
 =cut
 
@@ -1776,6 +1777,10 @@ sub _do_column_fixes_for_mod {
     }
     if (exists $item->{'location'} && !exists $item->{'permanent_location'}) {
         $item->{'permanent_location'} = $item->{'location'};
+    }
+    if (exists $item->{'suppress'} and
+        (not defined $item->{'suppress'} or $item->{'suppress'} eq '')) {
+        $item->{'suppress'} = 0;
     }
 }
 
@@ -1857,6 +1862,10 @@ C<items.itemlost>
 
 C<items.wthdrawn>
 
+=item *
+
+C<items.suppress>
+
 =back
 
 =cut
@@ -1864,7 +1873,7 @@ C<items.wthdrawn>
 sub _set_defaults_for_add {
     my $item = shift;
     $item->{dateaccessioned} ||= C4::Dates->new->output('iso');
-    $item->{$_} ||= 0 for (qw( notforloan damaged itemlost wthdrawn));
+    $item->{$_} ||= 0 for (qw( notforloan damaged itemlost wthdrawn suppress));
 }
 
 =head2 _koha_new_item
@@ -1901,6 +1910,7 @@ sub _koha_new_item {
             damaged             = ?,
             itemlost            = ?,
             wthdrawn            = ?,
+            suppress            = ?,
             itemcallnumber      = ?,
             restricted          = ?,
             itemnotes           = ?,
@@ -1937,6 +1947,7 @@ sub _koha_new_item {
             $item->{'damaged'},
             $item->{'itemlost'},
             $item->{'wthdrawn'},
+            $item->{'suppress'},
             $item->{'itemcallnumber'},
             $item->{'restricted'},
             $item->{'itemnotes'},

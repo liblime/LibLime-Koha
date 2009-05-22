@@ -376,6 +376,9 @@ if (C4::Context->preference('hidelostitems') == 1) {
     $query ="($query) and ( (lost,st-numeric <= 0) or ( allrecords,AlwaysMatches='' not lost,AlwaysMatches='') )";
 }
 
+# add item-level OPAC suppression
+$query ="($query) and ( (suppress,st-numeric=0) or ( allrecords,AlwaysMatches='' not suppress,AlwaysMatches='') )";
+
 # add OPAC suppression - requires at least one item indexed with Suppress
 if (C4::Context->preference('OpacSuppression')) {
     $query = "($query) not Suppress=1";
@@ -457,7 +460,7 @@ for (my $i=0;$i<=@servers;$i++) {
 		}
       
 	if ($results_hashref->{$server}->{"hits"}){
-	    $total = $total + $results_hashref->{$server}->{"hits"};
+            $total = $total + $results_hashref->{$server}->{"hits"};
 	}
         ## If there's just one result, redirect to the detail page
         if ($total == 1) {         

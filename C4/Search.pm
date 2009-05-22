@@ -1264,6 +1264,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
         my $other_count           = 0;
         my $wthdrawn_count        = 0;
         my $itemlost_count        = 0;
+        my $itemsuppress_count    = 0;
         my $itembinding_count     = 0;
         my $itemdamaged_count     = 0;
         my $item_in_transit_count = 0;
@@ -1315,7 +1316,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                 }
             }
 
-         # items not on loan, but still unavailable ( lost, withdrawn, damaged )
+         # items not on loan, but still unavailable ( lost, withdrawn, damaged, suppressed )
             else {
 
                 # item is on order
@@ -1330,6 +1331,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                 unless ($item->{wthdrawn}
                         || $item->{itemlost}
                         || $item->{damaged}
+                        || $item->{suppress}
                         || $item->{notforloan}
                         || $items_count > 20) {
 
@@ -1355,6 +1357,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                 if (   $item->{wthdrawn}
                     || $item->{itemlost}
                     || $item->{damaged}
+                    || $item->{suppress}
                     || $item->{notforloan} 
                     || ($transfertwhen ne '')
                     || ($restype{$item->{itemnumber}} eq "Attached")
@@ -1367,12 +1370,13 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     if (($restype{$item->{itemnumber}} eq "Attached") || ($restype{$item->{itemnumber}} eq "Reserved")) {
                       $can_place_holds = 1;
                     }
+                    $itemsuppress_count++    if $item->{suppress};
                     $item_in_transit_count++ if $transfertwhen ne '';
-                    $item->{status} = $item->{wthdrawn} . "-" . $item->{itemlost} . "-" . $item->{damaged} . "-" . $item->{notforloan};
+                    $item->{status} = $item->{wthdrawn} . "-" . $item->{itemlost} . "-" . $item->{damaged} . "-" . $item->{suppress} . "-" . $item->{notforloan};
                     $other_count++;
 
 					my $key = $prefix . $item->{status};
-					foreach (qw(wthdrawn itemlost damaged branchname itemcallnumber)) {
+					foreach (qw(wthdrawn itemlost damaged suppress branchname itemcallnumber)) {
                     	$other_items->{$key}->{$_} = $item->{$_};
 					}
                     $other_items->{$key}->{intransit} = ($transfertwhen ne '') ? 1 : 0;

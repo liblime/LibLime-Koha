@@ -1183,6 +1183,7 @@ CREATE TABLE `items` (
   `itemlost` tinyint(1) NOT NULL default 0,
   `wthdrawn` tinyint(1) NOT NULL default 0,
   `itemcallnumber` varchar(255) default NULL,
+  `suppress` tinyint(1) NOT NULL default 0,
   `issues` smallint(6) default NULL,
   `renewals` smallint(6) default NULL,
   `reserves` smallint(6) default NULL,

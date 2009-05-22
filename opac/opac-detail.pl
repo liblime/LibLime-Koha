@@ -75,12 +75,16 @@ if (C4::Context->preference("XSLTDetailsDisplay") ) {
 $template->param('OPACShowCheckoutName' => C4::Context->preference("OPACShowCheckoutName") ); 
 # change back when ive fixed request.pl
 my @all_items = &GetItemsInfo( $biblionumber, 'opac' );
+my @opac_items;
+for my $itm (@all_items) {
+  push @opac_items, $itm if (! $itm->{suppress});
+}
 my @items;
-@items = @all_items unless C4::Context->preference('hidelostitems');
+@items = @opac_items unless C4::Context->preference('hidelostitems');
 
 if (C4::Context->preference('hidelostitems')) {
     # Hide host items
-    for my $itm (@all_items) {
+    for my $itm (@opac_items) {
         push @items, $itm unless $itm->{itemlost};
     }
 }
