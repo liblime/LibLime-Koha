@@ -39,6 +39,7 @@ BEGIN {
         &CalcFine
         &Getoverdues
         &checkoverdues
+		&GetFinesSummary
         &CheckAccountLineLevelInfo
         &CheckAccountLineItemInfo
         &CheckExistantNotifyid
@@ -175,6 +176,38 @@ sub checkoverdues {
     $sth->execute($borrowernumber);
     my $results = $sth->fetchall_arrayref({});
     return ( scalar(@$results), $results);  # returning the count and the results is silly
+}
+
+=head2 GetOverdueSummary
+
+=over 4
+
+my $fines_by_type = GetFinesSummary( $borrowernumber );
+
+=back
+
+Given a borrowernumber, this will return a hashref with the keys being the types
+of fines and the values being the totals for each kind of fine.
+
+=cut
+
+sub GetFinesSummary {
+    my ( $borrowernumber ) = @_;
+
+    my $dbh = C4::Context->dbh;
+
+    my $sth = $dbh->prepare( "
+        SELECT
+          accounttype, SUM(amountoutstanding) AS total
+          FROM accountlines
+          WHERE borrowernumber = ?
+          GROUP BY accounttype
+          HAVING total > 0
+    " );
+
+    $sth->execute( $borrowernumber );
+
+    return { map { $_->{'accounttype'} => $_->{'total'} } @{ $sth->fetchall_arrayref( {} ) } }
 }
 
 =head2 CalcFine

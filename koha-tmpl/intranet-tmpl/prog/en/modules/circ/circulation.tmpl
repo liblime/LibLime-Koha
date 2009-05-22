@@ -506,12 +506,22 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
                 <!-- TMPL_ELSE -->
 			        <li>
                 <!-- /TMPL_IF -->
-            <span class="circ-hlt">Fines:</span> Patron has  <a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Outstanding fines<!-- TMPL_IF NAME="chargesamount" --> of <!-- TMPL_VAR NAME="chargesamount" --><!-- /TMPL_IF --></a>.
+                    <p>
+                        <span class="circ-hlt">Fines:</span> Patron has  <a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Outstanding fines<!-- TMPL_IF NAME="chargesamount" --> of $<!-- TMPL_VAR NAME="chargesamount" --><!-- /TMPL_IF --></a>:
+                    </p>
+                    <ul>
+                        <!-- TMPL_IF NAME="lost_fines_total" --><li><span class="circ-hlt">Replacement fees:</span> $<!-- TMPL_VAR NAME="lost_fees_total" --></li><!-- /TMPL_IF -->
+                        <!-- TMPL_IF NAME="overdue_fines_total" --><li><span class="circ-hlt">Overdue fines:</span> $<!-- TMPL_VAR NAME="overdue_fines_total" --></li><!-- /TMPL_IF -->
+                        <!-- TMPL_IF NAME="reserve_fees_total" --><li><span class="circ-hlt">Hold fees:</span> $<!-- TMPL_VAR NAME="reserve_fees_total" --></li><!-- /TMPL_IF -->
+                        <!-- TMPL_IF NAME="other_fees_total" --><li><span class="circ-hlt">Other fees:</span> $<!-- TMPL_VAR NAME="other_fees_total" --></li><!-- /TMPL_IF -->
+                    </ul>
+                    <p>
                 <!-- TMPL_IF NAME="charges_is_blocker" -->
-                    Checkouts are blocked because fine balance is over the limit.
+                        Checkouts are blocked because fine balance is over the limit.
                 <!-- /TMPL_IF -->
-            Make <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Payment</a></li>
-			<!-- /TMPL_IF -->
+                        Make <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Payment</a></li>
+                    </p>
+            <!-- /TMPL_IF -->
 
         	<!-- TMPL_IF NAME="credits" -->
 			<li><span class="circ-hlt">Credits:</span> Patron has a credit</li>
