@@ -36,6 +36,7 @@ my $total_bibs            = 0;
 my $total_requests        = 0;
 my $total_available_items = 0;
 my $num_items_mapped      = 0;
+our %issuingrules;
 
 my @branches_to_use = _get_branches_to_pull_from();
 
@@ -124,7 +125,8 @@ sub GetPendingHoldRequestsForBib {
     my $dbh = C4::Context->dbh;
 
     my $request_query = "SELECT biblionumber, borrowernumber, itemnumber, priority, reserves.branchcode, 
-                                reservedate, reservenotes, borrowers.branchcode AS borrowerbranch
+                                reservedate, reservenotes, borrowers.branchcode AS borrowerbranch,
+                                borrowers.categorycode AS borrowercategory
                          FROM reserves
                          JOIN borrowers USING (borrowernumber)
                          WHERE biblionumber = ?
@@ -199,8 +201,7 @@ sub GetItemsAvailableToFillHoldRequestsForBib {
 
     my $items = $sth->fetchall_arrayref({});
     $items = [ grep { my @transfers = GetTransfers($_->{itemnumber}); $#transfers == -1; } @$items ]; 
-    map { my $rule = GetBranchItemRule($_->{homebranch}, $_->{itype}); $_->{holdallowed} = $rule->{holdallowed}; $rule->{holdallowed} != 0 } @$items;
-    return [ grep { $_->{holdallowed} != 0 } @$items ];
+    return $items;
 }
 
 =head2 MapItemsToHoldRequests
@@ -277,10 +278,13 @@ sub MapItemsToHoldRequests {
         next if defined($request->{itemnumber}); # already handled these
 
         # look for local match first
+
         my $pickup_branch = $request->{branchcode};
-        if (exists $items_by_branch{$pickup_branch} and 
-            not ($items_by_branch{$pickup_branch}->[0]->{holdallowed} == 1 and 
-                 $request->{borrowerbranch} ne $items_by_branch{$pickup_branch}->[0]->{homebranch}) 
+        my $local_holdallowed = exists $items_by_branch{$pickup_branch} ? _get_issuing_rule( $request, $items_by_branch{$pickup_branch}->[0] )->{holdallowed} : 0;
+
+        if ($local_holdallowed and
+            not (($local_holdallowed == 1 and
+                 $request->{borrowerbranch} ne $items_by_branch{$pickup_branch}->[0]->{homebranch}))
            ) {
             my $item = pop @{ $items_by_branch{$pickup_branch} };
             delete $items_by_branch{$pickup_branch} if scalar(@{ $items_by_branch{$pickup_branch} }) == 0;
@@ -302,9 +306,10 @@ sub MapItemsToHoldRequests {
                 @pull_branches = sort keys %items_by_branch;
             }
             foreach my $branch (@pull_branches) {
-                next unless exists $items_by_branch{$branch} and
-                            not ($items_by_branch{$branch}->[0]->{holdallowed} == 1 and 
-                                $request->{borrowerbranch} ne $items_by_branch{$branch}->[0]->{homebranch});
+                $local_holdallowed = exists $items_by_branch{$branch} ? _get_issuing_rule( $request, $items_by_branch{$branch}->[0] )->{holdallowed} : 0;
+                next unless $local_holdallowed and
+                            not (($local_holdallowed == 1 and
+                                 $request->{borrowerbranch} ne $items_by_branch{$branch}->[0]->{homebranch}));
                 my $item = pop @{ $items_by_branch{$branch} };
                 delete $items_by_branch{$branch} if scalar(@{ $items_by_branch{$branch} }) == 0;
                 $item_map{$item->{itemnumber}} = { 
@@ -409,4 +414,20 @@ sub _get_branches_to_pull_from {
     @branches_to_use = shuffle(@branches_to_use) if  C4::Context->preference("RandomizeHoldsQueueWeight");
 
     return @branches_to_use;
+}
+
+=head2 _get_issuing_rule
+
+Looks up the issuing rule (for holdallowed) for a given request and item.
+
+=cut
+
+sub _get_issuing_rule {
+    my ($request, $item) = @_;
+
+    my ($branch, $categorycode, $itemtype) = ($request->{'borrowerbranch'}, $request->{'borrowercategory'}, $item->{'itype'});
+
+    $issuingrules{$branch}{$categorycode}{$itemtype} ||= GetIssuingRule( $categorycode, $itemtype, $branch );
+
+    return $issuingrules{$branch}{$categorycode}{$itemtype};
 }
