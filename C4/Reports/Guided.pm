@@ -143,7 +143,7 @@ sub get_report_areas {
     my $dbh = C4::Context->dbh();
 
     # FIXME these should be in the database
-    my @reports = ( 'Circulation', 'Catalog', 'Patrons', 'Acquisitions', 'Accounts');
+    my @reports = ( 'Circulation (checkouts and reserves)', 'Catalog (records and items)', 'Patrons', 'Acquisitions', 'Accounts (fines)');
     my @reports2;
     for ( my $i = 0 ; $i < 5 ; $i++ ) {
         my %hashrep;
