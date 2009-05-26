@@ -72,7 +72,7 @@
                     backgroundJobProgressTimer = setInterval("updateJobProgress()", 500);
                 },
                 error: function(xml, textStatus) {
-                    alert('Failed to submit form: ' + testStatus);
+                    alert('Failed to submit form: ' + textStatus);
                 }
 
             });
