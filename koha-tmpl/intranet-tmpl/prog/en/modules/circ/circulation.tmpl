@@ -294,7 +294,17 @@ function refocus(calendar) {
         <!-- /TMPL_IF -->
 
         <!-- TMPL_IF NAME="UNKNOWN_BARCODE" -->
-            <li>The barcode was not found</li>
+            <li>The barcode was not found
+             <!-- TMPL_IF NAME="CAN_user_circulate_fast_add" -->
+                <form method="post" class="confirm">
+                <!--TMPL_IF NAME="duedatespec" -->
+                <a href="/cgi-bin/koha/circ/fastcat.pl?barcode=<!-- TMPL_VAR NAME="barcode" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;duedatespec=<!-- TMPL_VAR NAME="duedatespec" -->&amp;branch=<!-- TMPL_VAR NAME="branch" -->&amp;stickyduedate=<!-- TMPL_VAR NAME="stickyduedate" -->"<input type="button" name="fastadd1" value="Fast Bib Add"></a>
+                <!-- TMPL_ELSE -->
+                <a href="/cgi-bin/koha/circ/fastcat.pl?barcode=<!-- TMPL_VAR NAME="barcode" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;branch=<!-- TMPL_VAR NAME="branch" -->"<input type="button" name="fastadd1" value="Fast Bib Add"></a>
+                <!-- /TMPL_IF -->
+                </form>
+                <!-- /TMPL_IF -->
+            </li>
         <!-- /TMPL_IF -->
 
         <!-- TMPL_IF NAME="NOT_FOR_LOAN" -->
