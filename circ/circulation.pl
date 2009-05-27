@@ -133,7 +133,7 @@ if ( $barcode ) {
 }
 
 if (C4::Context->preference("DisableHoldsIssueOverrideUnlessAuthorised") ) {
-  my $authcode = C4::Auth::checkpw( C4::Context->dbh, $query->param('auth_username'), $query->param('auth_password') );
+  my $authcode = C4::Auth::checkpw( C4::Context->dbh, $query->param('auth_username'), $query->param('auth_password'), my $bypass_userenv = 1 );
   my $permissions = C4::Auth::haspermission( $query->param('auth_username'), { 'superlibrarian' => 1 } );
   unless ( $authcode && $permissions ) {
     $issueconfirmed = 0;
