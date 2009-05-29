@@ -346,6 +346,7 @@ foreach my $biblioNum (@biblionumbers) {
 
     $biblioLoopIter{itemLoop} = [];
     my $numCopiesAvailable = 0;
+    my $numPolicyBlocked = 0;
     foreach my $itemInfo (@{$biblioData->{itemInfos}}) {
         my $itemNum = $itemInfo->{itemnumber};
         my $itemLoopIter = {};
@@ -432,9 +433,13 @@ foreach my $biblioNum (@biblionumbers) {
             $policy_holdallowed = 0;
         }
 
-        if (IsAvailableForItemLevelRequest($itemNum) and $policy_holdallowed) {
-            $itemLoopIter->{available} = 1;
-            $numCopiesAvailable++;
+        if (IsAvailableForItemLevelRequest($itemNum)) {
+            if ($policy_holdallowed) {
+                $itemLoopIter->{available} = 1;
+                $numCopiesAvailable++;
+            } else {
+                $numPolicyBlocked++;
+            }
         }
 
 	# FIXME: move this to a pm
@@ -468,7 +473,7 @@ foreach my $biblioNum (@biblionumbers) {
 }
 
 if ( $numBibsAvailable == 0 ) {
-    $template->param( none_available => 1, message => 1 );
+    $template->param( none_available => 1, num_policy_blocked => $numPolicyBlocked, message => 1 );
 }
 
 my $itemTableColspan = 5;

@@ -212,7 +212,9 @@
               <div class="dialog alert">ERROR: Internal error: incomplete hold request.</div>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="none_available" -->
-              <div class="dialog alert"><strong>Sorry</strong>, none of these items can be placed on hold.
+              <div class="dialog alert">
+                <strong>Sorry</strong>, none of these items can be placed on hold.
+                <!-- TMPL_IF NAME="num_policy_blocked" -->Some of them can't be placed on hold because your library's rules prevent it.<!-- /TMPL_IF -->
               </div>
             <!-- /TMPL_IF -->
           <!-- /TMPL_IF --><!-- NAME="message" -->
