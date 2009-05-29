@@ -253,7 +253,7 @@ my $updated_report = join( "\n", @updated );
 print "updated: $updated_report\n" if ( $verbose && $updated_report );
 push @attachments, { filename => 'update.txt', type => 'text/plain', content => "# Koha updated patrons for $today\n$updated_report" } if ( $updated_report );
 
-exit unless ( 0 && $confirm );
+exit unless ( $confirm );
 
 my $letter = {
     code => 'DEBT_COLLECT',

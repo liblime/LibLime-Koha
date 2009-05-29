@@ -30,8 +30,6 @@ use C4::Debug;
 use C4::Biblio;
 use Text::CSV_XS;
 use Data::Dumper;
-use Unicode::Normalize;
-use utf8;
 
 BEGIN {
 	$VERSION = 0.03;
@@ -1043,7 +1041,7 @@ sub DrawSpineText {
         # Or if there is a csv list of fields to display, display them.
         if ( ($$conf_data->{'formatstring'}) || ( $$conf_data->{$field->{code}} && $$item->{$field->{code}} ) ) {
             # get the string
-            my $str = NFC( $field->{data} );
+            my $str = $field->{data} ;
             # strip out naughty existing nl/cr's
             $str =~ s/\n//g;
             $str =~ s/\r//g;
