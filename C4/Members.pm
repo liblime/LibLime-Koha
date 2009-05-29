@@ -47,6 +47,7 @@ BEGIN {
 		&GetMemberIssuesAndFines
 		&GetPendingIssues
 		&GetAllIssues
+        &GetEarliestDueDate
 
 		&get_institutions 
 		&getzipnamecity 
@@ -65,6 +66,7 @@ BEGIN {
 
 		&GetMemberAccountRecords
 		&GetBorNotifyAcctRecord
+        &GetNotifiedMembers
 
 		&GetborCatFromCatType 
 		&GetBorrowercategory
@@ -81,6 +83,7 @@ BEGIN {
 	push @EXPORT, qw(
 		&ModMember
 		&changepassword
+        &MarkMemberReported
 	);
 
 	#Delete data
@@ -1089,6 +1092,19 @@ sub GetAllIssues {
     return ( $i, \@result );
 }
 
+sub GetEarliestDueDate {
+    my ( $borrowernumber ) = @_;
+    my $dbh = C4::Context->dbh;
+
+    return $dbh->selectrow_array( "
+        SELECT
+          date_due
+          FROM issues
+          WHERE borrowernumber = ?
+          ORDER BY date_due ASC
+          LIMIT 1
+    ", {}, $borrowernumber );
+}
 
 =head2 GetMemberAccountRecords
 
@@ -1177,6 +1193,54 @@ sub GetBorNotifyAcctRecord {
     $total /= 100;
     $sth->finish;
     return ( $total, \@acctlines, $numlines );
+}
+
+sub GetNotifiedMembers {
+    my ( $letter_code, $wait, $branchcode, @ignored_categories ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $query = "
+        SELECT
+          borrowers.borrowernumber, cardnumber,
+          surname, firstname, address, address2, city, zipcode, dateofbirth,
+          phone, phonepro, contactfirstname, contactname, categorycode,
+          last_reported_date, last_reported_amount
+          FROM message_queue, (
+            SELECT borrowernumber, MAX(time_queued) as time_queued
+              FROM message_queue
+              WHERE letter_code = ?
+              GROUP BY borrowernumber
+            ) AS mq_max
+            LEFT JOIN borrowers USING (borrowernumber)
+          WHERE
+            message_queue.time_queued = mq_max.time_queued
+            AND letter_code = ?
+            AND DATE_ADD(DATE(message_queue.time_queued), INTERVAL ? DAY) <= CURRENT_DATE
+            AND status = 'sent'
+          GROUP BY borrowernumber
+    ";
+
+    $query .= " AND categorycode NOT IN (" . join( ", ", map( { "?" } @ignored_categories ) ) . ")" if ( @ignored_categories );
+
+    if ( $branchcode ) {
+        $query .= " AND borrowers.branchcode = ?";
+        push @ignored_categories, $branchcode; # Just to get it in the right place
+    }
+
+    return $dbh->selectall_arrayref( $query, { Slice => {} }, $letter_code, $letter_code, $wait, @ignored_categories );
+}
+
+sub MarkMemberReported {
+    my ( $borrowernumber, $amount ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare( "
+        UPDATE borrowers
+          SET last_reported_date = CURRENT_DATE,
+            last_reported_amount = ?
+          WHERE borrowernumber = ?
+    " );
+    $sth->execute( $amount, $borrowernumber );
 }
 
 =head2 checkuniquemember (OUEST-PROVENCE)
