@@ -19,6 +19,7 @@
 <style type="text/css">
 	#sql { width: 90%; height: 9em; border: 1px solid #EEE; }
 </style>
+<script src="<!-- TMPL_VAR NAME="themelang" -->/js/jquery.multi-input.js" type="text/javascript"></script>
 <script type="text/javascript">
 //<![CDATA[
 $(document).ready(function(){
@@ -247,11 +248,17 @@ align          : "Tl"
 </script>          
 </td></tr>
 <!-- TMPL_ELSE -->
-<td><select name="<!-- TMPL_VAR NAME="name" -->_value">
+<td><select name="<!-- TMPL_VAR NAME="name" -->_value" id="<!-- TMPL_VAR NAME="name" -->_value">
 <!-- TMPL_LOOP NAME="values" -->
 <option value="<!-- TMPL_VAR NAME="availablevalues"-->"><!-- TMPL_VAR NAME="availablevalues" --></option>
 <!-- /TMPL_LOOP -->
 </select>
+<script type="text/javascript">
+$( 'select[id="<!-- TMPL_VAR NAME="name" -->_value"]' ).multi_input( {
+    add: 'OR...',
+    separator: ' OR '
+} );
+</script>
 </td></tr>
 <!-- /TMPL_IF -->
 <!-- /TMPL_LOOP -->
