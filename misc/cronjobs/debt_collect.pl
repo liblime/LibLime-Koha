@@ -180,7 +180,7 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
             next;
         }
 
-        if ( $borrower->{'last_reported_amount'} == $amount ) {
+        if ( $borrower->{'last_reported_amount'} == $total ) {
             print "skipping, no difference\n" if ( $verbose );
             next;
         }
@@ -242,11 +242,11 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
 
 my @attachments;
 
-my $submit_report = join( "\n", @submitted );
+my $submitted_report = join( "\n", @submitted );
 
-print "submitted: $submit_report\n" if ( $verbose && $submit_report );
+print "submitted: $submitted_report\n" if ( $verbose && $submitted_report );
 
-push @attachments, { filename => 'submit.txt', type => 'text/plain', content => "# Koha submitted patrons for $today\n$submitted_report" } if ( $submit_report );
+push @attachments, { filename => 'submit.txt', type => 'text/plain', content => "# Koha submitted patrons for $today\n$submitted_report" } if ( $submitted_report );
 
 my $updated_report = join( "\n", @updated );
 

@@ -70,7 +70,6 @@ sub AddBorrowerUpdate {
     return join( "\n",
         "========   " . $data->{'borrowernumber'},
         "name=" . ( $data->{'surname'} || '' ) . ', ' . ( $data->{'firstname'} || '' ),
-=
         "acct=" . ( $data->{'borrowernumber'} ),
         "totamt=" . sprintf( '%0.2f', $data->{'total'} ),
         "addamt=" . sprintf( '%0.2f', $data->{'additional'} ),
