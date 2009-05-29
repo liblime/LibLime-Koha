@@ -294,6 +294,7 @@ my $notforloan_label_of = get_notforloan_label_of();
 my $biblioLoop = [];
 my $numBibsAvailable = 0;
 my $itemdata_enumchron = 0;
+my $numPolicyBlocked = 0;
 my $itemLevelTypes = C4::Context->preference('item-level_itypes');
 $template->param('item-level_itypes' => $itemLevelTypes);
 
@@ -346,7 +347,6 @@ foreach my $biblioNum (@biblionumbers) {
 
     $biblioLoopIter{itemLoop} = [];
     my $numCopiesAvailable = 0;
-    my $numPolicyBlocked = 0;
     foreach my $itemInfo (@{$biblioData->{itemInfos}}) {
         my $itemNum = $itemInfo->{itemnumber};
         my $itemLoopIter = {};
