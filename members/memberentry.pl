@@ -60,9 +60,14 @@ my ($template, $loggedinuser, $cookie)
            flagsrequired => {borrowers => 1},
            debug => ($debug) ? 1 : 0,
        });
-my $disable_reading_history = $input->param('disable_reading_history');
 my $guarantorid    = $input->param('guarantorid');
 my $borrowernumber = $input->param('borrowernumber');
+
+my $disable_reading_history = $input->param('disable_reading_history');
+if ( $disable_reading_history ) {
+  C4::Circulation::AnonymiseIssueHistory( '', $borrowernumber );
+}
+
 my $actionType     = $input->param('actionType') || '';
 my $modify         = $input->param('modify');
 my $delete         = $input->param('delete');

@@ -46,4 +46,8 @@ my $sth = $dbh->prepare( $sql );
 $sth->execute( $disable_reading_history, $borrowernumber );
 $sth->finish();
 
+if ( $disable_reading_history ) {
+  C4::Circulation::AnonymiseIssueHistory( '', $borrowernumber );
+}
+
 print $query->redirect("/cgi-bin/koha/opac-readingrecord.pl");
