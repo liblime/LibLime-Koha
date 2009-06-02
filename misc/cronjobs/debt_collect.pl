@@ -124,8 +124,9 @@ use C4::Letters;
 use Getopt::Long;
 use Pod::Usage;
 
-my ( $help, $usage, $branch, $verbose, $confirm, @to, @ignored, $subject );
+my ( $help, $usage, $branch, $verbose, $confirm, @to, @ignored );
 
+my $subject = 'Debt Collect';
 my $billing_notice = 'BILLING';
 my $wait = 21;
 my $send_fine = 10;
@@ -138,7 +139,7 @@ GetOptions(
     'confirm' => \$confirm,
     'v|verbose' => \$verbose,
     'f|fine=f' => \$send_fine,
-    'to' => \@to,
+    'to=s' => \@to,
     'letter' => \$billing_notice,
     'w|wait=i' => \$wait,
     'ignore' => \@ignored,
@@ -148,14 +149,19 @@ GetOptions(
 pod2usage( 1 ) if ( $usage );
 pod2usage( -verbose => 2 ) if ( $help );
 
-unless ( $confirm ) {
-    $verbose = 1;     # If you're not running it for real, then the whole point is the print output.
-    print "### TEST MODE -- NO ACTIONS TAKEN ###\n";
-}
-
 if ( $branch && !GetBranchName( $branch ) ) {
     print "Invalid branch $branch, cannot continue\n";
     exit 1;
+}
+
+unless ( @to ) {
+    print "Must specify email addresses with --to";
+    exit 1;
+}
+
+unless ( $confirm ) {
+    $verbose = 1;     # If you're not running it for real, then the whole point is the print output.
+    print "### TEST MODE -- NO ACTIONS TAKEN ###\n";
 }
 
 my $today = C4::Dates->new()->output( 'iso' );
@@ -253,7 +259,7 @@ my $updated_report = join( "\n", @updated );
 print "updated: $updated_report\n" if ( $verbose && $updated_report );
 push @attachments, { filename => 'update.txt', type => 'text/plain', content => "# Koha updated patrons for $today\n$updated_report" } if ( $updated_report );
 
-exit unless ( $confirm );
+exit unless ( $confirm && @attachments );
 
 my $letter = {
     code => 'DEBT_COLLECT',
@@ -269,6 +275,6 @@ foreach my $email ( @to ) {
         to_address => $email,
         letter => $letter,
         message_transport_type => 'email',
-        attachments => @attachments ? \@attachments : ''
+        attachments => \@attachments
     } );
 }
