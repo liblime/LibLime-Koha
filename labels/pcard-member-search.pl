@@ -47,7 +47,7 @@ if($quicksearch){
                  query => $input,
                  type => "intranet",
                  authnotrequired => 0,
-                 flagsrequired => {borrowers => 1},
+                 flagsrequired => {borrowers => '*'},
                  debug => 1,
                  });
 } else {
@@ -56,7 +56,7 @@ if($quicksearch){
                  query => $input,
                  type => "intranet",
                  authnotrequired => 0,
-                 flagsrequired => {borrowers => 1},
+                 flagsrequired => {borrowers => '*'},
                  debug => 1,
                  });
 }
