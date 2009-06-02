@@ -197,7 +197,7 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
         my ( $additional, $waived, $paid, $returned );
 
         foreach my $acctline ( @$acctlines ) {
-            next if ( $acctline->{'date'} < $borrower->{'last_reported_date'} );
+            next if ( $acctline->{'date'} lt $borrower->{'last_reported_date'} );
             next if ( $acctline->{'amount'} == 0 );
 
             # The amounts, waived, paid, etc. are required to be negative
