@@ -15,6 +15,7 @@
 
 	function yuiToolbar() {   
 	
+    <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->   
     <!-- TMPL_IF NAME="NOTMARC" -->
 	    new YAHOO.widget.Button("newrecord");
 	<!-- TMPL_ELSE -->
@@ -34,7 +35,8 @@
 	    });  
 	}
 
-			<!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
 	//]]>
 	</script>
 	
