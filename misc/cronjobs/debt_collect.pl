@@ -194,23 +194,23 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
         print "updating\n" if ( $verbose );
 
         my $diff = $total - $borrower->{'last_reported_amount'}; # Amount we have to reconcile
-        my ( $additional, $waived, $paid, $returned );
+        my ( $additional, $waived, $paid, $returned ) = ( 0, 0, 0, 0 );
 
         foreach my $acctline ( @$acctlines ) {
             next if ( $acctline->{'date'} lt $borrower->{'last_reported_date'} );
-            next if ( $acctline->{'amount'} == 0 );
+            next unless ( $acctline->{'amount'} );
 
             # The amounts, waived, paid, etc. are required to be negative
 
             if ( $acctline->{'amount'} < 0 ) {
                 $diff -= $acctline->{'amount'};
-                if ( $acctline->{'type'} eq 'W' ) {
+                if ( $acctline->{'type'} && $acctline->{'type'} eq 'W' ) {
                     $waived += $acctline->{'amount'};
                 } else {
                     # No reliable way to detect returned items at this time
                     $paid += $acctline->{'amount'};
                 }
-            } else {
+            } elsif ( $acctline->{'amountoutstanding'} ) {
                 $diff -= $acctline->{'amountoutstanding'};
                 $additional += $acctline->{'amountoutstanding'};
             }
