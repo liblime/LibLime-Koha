@@ -233,14 +233,17 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
     } else {
         next if ( $total < $minimum );
 
+        if ( $confirm ) {
+            manualinvoice( $borrower->{borrowernumber}, '', 'Sent to collections agency - ', 'A', $send_fine, '' );
+            $total += $send_fine;
+        }
+
         print "submitting\n" if ( $verbose );
         push @submitted, AddBorrowerSubmit( {
             %$borrower,
             total => $total,
             earliest_due => GetEarliestDueDate( $borrower->{'borrowernumber'} )
-        } );
-            
-        manualinvoice( $borrower->{borrowernumber}, '', 'Sent to collections agency - ', 'A', $send_fine, '' ) if ( $confirm );
+        } );   
     }
 
     MarkMemberReported( $borrower->{'borrowernumber'}, $total ) if ( $confirm );
