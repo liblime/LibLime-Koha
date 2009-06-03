@@ -88,7 +88,7 @@ if ( $op eq "do_search" ) {
             query           => $query,
             type            => "intranet",
             authnotrequired => 0,
-            flagsrequired   => { borrowers => 1 },
+            flagsrequired   => { borrowers => '*' },
             flagsrequired   => { catalogue => 1 },
             debug           => 1,
         }

@@ -433,11 +433,13 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 <div class="yui-g"><div id="patronlists" class="toptabs">
 
 <ul>
+<!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
 <li>    <!--TMPL_IF NAME="issuecount"-->
             <a href="/cgi-bin/koha/circ/circulation.pl#checkouts"><!-- TMPL_VAR NAME="issuecount"--> Checkout(s)</a>
     <!-- TMPL_ELSE -->
             <a href="/cgi-bin/koha/circ/circulation.pl#checkouts">0 Checkouts</a>
     <!-- /TMPL_IF --></li>
+<!-- /TMPL_IF -->
 <li><!-- TMPL_IF NAME="countreserv"-->
             <a href="/cgi-bin/koha/circ/circulation.pl#reserves"><!--TMPL_VAR NAME="countreserv"--> Holds(s)</a>
     <!-- TMPL_ELSE -->
@@ -589,7 +591,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
     </table>
     <!--TMPL_IF NAME="issuecount"-->
     <fieldset class="action">
-    <!-- TMPL_IF NAME="CAN_user_circulate_override_renewals" -->
+    <!-- TMPL_IF NAME="CAN_user_circulate_override_max_renewals" -->
         <!-- TMPL_IF NAME="AllowRenewalLimitOverride" -->
         <label for="override_limit">Override Renewal Limit:</label>
         <input type="checkbox" name="override_limit" id="override_limit" value="1" />
