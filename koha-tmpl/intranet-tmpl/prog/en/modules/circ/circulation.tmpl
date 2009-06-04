@@ -593,7 +593,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
     </table>
     <!--TMPL_IF NAME="issuecount"-->
     <fieldset class="action">
-    <!-- TMPL_IF NAME="CAN_user_circulate_override_max_renewals" -->
+    <!-- TMPL_IF NAME="CAN_user_circulate_override_renewals" -->
         <!-- TMPL_IF NAME="AllowRenewalLimitOverride" -->
         <label for="override_limit">Override Renewal Limit:</label>
         <input type="checkbox" name="override_limit" id="override_limit" value="1" />
