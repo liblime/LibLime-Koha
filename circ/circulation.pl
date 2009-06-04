@@ -437,7 +437,7 @@ if ($borrower) {
 # get each issue of the borrower & separate them in todayissues & previous issues
     my ($issueslist) = GetPendingIssues($borrower->{'borrowernumber'});
 
-    my $ren_override_limit = $template->param('CAN_user_circulate_override_max_renewals');
+    my $ren_override_limit = $template->param('CAN_user_circulate_override_renewals');
     # split in 2 arrays for today & previous
     foreach my $it ( @$issueslist ) {
         # set itemtype per item-level_itype syspref - FIXME this is an ugly hack
@@ -735,7 +735,7 @@ sub granular_overrides {
         }
     }
     if ($error->{NO_MORE_RENEWALS} ) {
-        my $check_granular = $template->param('CAN_user_circulate_override_max_renewals');
+        my $check_granular = $template->param('CAN_user_circulate_override_renewals');
         if ($check_granular) {
             $question->{NO_MORE_RENEWALS_FORCING} = $error->{NO_MORE_RENEWALS};
             delete $error->{NO_MORE_RENEWALS};

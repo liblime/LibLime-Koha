@@ -5,7 +5,6 @@ INSERT INTO permissions (module_bit, code, description) VALUES
    ( 1, 'bookdrop', 'User can activate bookdrop mode in Check In'),
    ( 1, 'override_checkout_max', 'User can override the checkout maximum'),
    ( 1, 'override_non_circ', 'User can override the not for loan check'),
-   ( 1, 'override_max_renewals', 'User can override the maximum renewals check'),
    ( 1, 'override_max_fines', 'User can override block for patron over max fine limit'),
    ( 1, 'change_lost_status', 'User can set the item lost status'),
    ( 1, 'change_due_date', 'User can specify a due date other than in the circulation rules'),
