@@ -374,7 +374,9 @@ if (nodename =="barcodes[]"){
 	<ul>
 		<li><a href="#checkedout">Checked Out</a></li>
 		<li><a href="#finesandcharges">Fines &amp; Charges</a></li>
+<!-- TMPL_IF NAME="CAN_user_reserverforotthers_view_holds" -->
 		<li><a href="#onhold">On Hold</a></li>
+<!-- /TMPL_IF -->
 	</ul>
 	
 <div id="finesandcharges">
@@ -509,6 +511,7 @@ if (nodename =="barcodes[]"){
     </form><!-- TMPL_ELSE --><p>Patron has nothing checked out.</p><!-- /TMPL_IF -->
 	</div>
 	
+<!-- TMPL_IF NAME="CAN_user_reserverforotthers_view_holds" -->
 <div id="onhold">
 	<h2>Patron current holds</h2>
 <!-- TMPL_IF NAME="reservloop" -->
@@ -610,7 +613,8 @@ if (nodename =="barcodes[]"){
 	<!-- TMPL_ELSE -->
 	<p>Patron has nothing on hold.</p>
 	<!-- /TMPL_IF -->
-	</div>
+</div>
+<!-- /TMPL_IF -->
 </div>
 <!-- /TMPL_IF --> <!-- unknowuser -->
 
