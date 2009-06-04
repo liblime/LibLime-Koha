@@ -57,7 +57,9 @@ function update_child() {
 	    ];
 	
 		var moremenu = [
+            <!-- TMPL_IF NAME="CAN_user_circulate_renew_expired" -->
 			{ text: _("Renew Patron"),  onclick: { fn: confirm_reregistration } },
+            <!-- /TMPL_IF -->
             { text: _("Set Permissions"), url: "/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->"
                 <!-- TMPL_IF NAME="CAN_user_permissions" --><!-- TMPL_IF NAME="StaffMember" -->
                     <!-- TMPL_UNLESS NAME="CAN_user_staffaccess" -->, disabled: true<!-- /TMPL_UNLESS-->
