@@ -440,11 +440,13 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
             <a href="/cgi-bin/koha/circ/circulation.pl#checkouts">0 Checkouts</a>
     <!-- /TMPL_IF --></li>
 <!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 <li><!-- TMPL_IF NAME="countreserv"-->
             <a href="/cgi-bin/koha/circ/circulation.pl#reserves"><!--TMPL_VAR NAME="countreserv"--> Holds(s)</a>
     <!-- TMPL_ELSE -->
             <a href="/cgi-bin/koha/circ/circulation.pl#reserves">0 Holds</a>
     <!-- /TMPL_IF --></li>
+<!-- /TMPL_IF -->
 
 </ul>
 
@@ -608,6 +610,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 </div>
 <!-- /TMPL_IF -->
 
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 <div id="reserves">
 <!-- TMPL_IF NAME="reservloop" -->
     <table id="holdst">
@@ -646,6 +649,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 	<p>Patron has no pending holds.</p>
 <!-- /TMPL_IF -->
 </div> <!-- reservesloop -->
+<!-- /TMPL_IF -->
 
 <!-- /TMPL_IF --> <!-- borrowernumber -->
 </div></div>
