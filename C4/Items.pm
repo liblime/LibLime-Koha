@@ -1277,6 +1277,7 @@ sub GetItemsInfo {
 	while ( my $data = $sth->fetchrow_hashref ) {
         my $datedue = '';
         my $count_reserves;
+        my ($restype,$reserves,$reserve_count);
         $isth->execute( $data->{'itemnumber'} );
         if ( my $idata = $isth->fetchrow_hashref ) {
             $data->{borrowernumber} = $idata->{borrowernumber};
@@ -1284,21 +1285,21 @@ sub GetItemsInfo {
             $data->{surname}     = $idata->{surname};
             $data->{firstname}     = $idata->{firstname};
             $datedue                = $idata->{'date_due'};
-        if (C4::Context->preference("IndependantBranches")){
-        my $userenv = C4::Context->userenv;
-        if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) { 
-            $data->{'NOTSAMEBRANCH'} = 1 if ($idata->{'bcode'} ne $userenv->{branch});
+          if (C4::Context->preference("IndependantBranches")){
+            my $userenv = C4::Context->userenv;
+            if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) {
+              $data->{'NOTSAMEBRANCH'} = 1 if ($idata->{'bcode'} ne $userenv->{branch});
+            }
+          }
         }
+        if ( $data->{'serial'}) {
+          $ssth->execute($data->{'itemnumber'}) ;
+          ($data->{'serialseq'} , $data->{'publisheddate'}) = $ssth->fetchrow_array();
+          $serial = 1;
         }
-        }
-		if ( $data->{'serial'}) {	
-			$ssth->execute($data->{'itemnumber'}) ;
-			($data->{'serialseq'} , $data->{'publisheddate'}) = $ssth->fetchrow_array();
-			$serial = 1;
-        }
-		if ( $datedue eq '' ) {
-            my ( $restype, $reserves ) =
-              C4::Reserves::CheckReserves( $data->{'itemnumber'} );
+        if ( $datedue eq '' ) {
+          ( $restype, $reserves, $reserve_count ) =
+            C4::Reserves::CheckReserves( $data->{'itemnumber'} );
 # Previous conditional check with if ($restype) is not needed because a true
 # result for one item will result in subsequent items defaulting to this true
 # value.
@@ -1317,6 +1318,7 @@ sub GetItemsInfo {
         }
         $data->{'datedue'}        = $datedue;
         $data->{'count_reserves'} = $count_reserves;
+        $data->{'reserve_count'}  = $reserve_count;
 
         # get notforloan complete status if applicable
         my $sthnflstatus = $dbh->prepare(

@@ -130,7 +130,9 @@ my $biblio_authorised_value_images = C4::Items::get_authorised_value_images( C4:
 my $norequests = 1;
 my $branches = GetBranches();
 my %itemfields;
+my $item_count = 0;
 for my $itm (@items) {
+    $item_count++;
     $norequests = 0
        if ( (not $itm->{'wthdrawn'} )
          && (not $itm->{'itemlost'} )
@@ -171,8 +173,13 @@ for my $itm (@items) {
      }
 
      if( $itm->{'count_reserves'}){
-          if( $itm->{'count_reserves'} eq "Waiting"){ $itm->{'waiting'} = 1; }
-          if( $itm->{'count_reserves'} eq "Reserved"){ $itm->{'onhold'} = 1; }
+        $itm->{'count_reserves'} = 0 if ($item_count > $itm->{'reserve_count'});
+        if ($itm->{'itemlost'}) {
+          $itm->{'count_reserves'} = 0;
+          $item_count--;
+        };
+        if( $itm->{'count_reserves'} eq "Waiting"){ $itm->{'waiting'} = 1; }
+        if( $itm->{'count_reserves'} eq "Reserved"){ $itm->{'onhold'} = 1; }
      }
     
      my ( $transfertwhen, $transfertfrom, $transfertto ) = GetTransfers($itm->{itemnumber});
