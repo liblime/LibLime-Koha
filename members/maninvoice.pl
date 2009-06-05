@@ -22,6 +22,7 @@
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+#use warnings;
 use C4::Auth;
 use C4::Output;
 use CGI;
@@ -40,7 +41,10 @@ my $add=$input->param('add');
 if ($add){
 #  print $input->header;
     my $barcode=$input->param('barcode');
-	my $itemnum = GetItemnumberFromBarcode($barcode) if $barcode;
+	my $itemnum;
+    if ($barcode) {
+        $itemnum = GetItemnumberFromBarcode($barcode);
+    }
     my $desc=$input->param('desc');
     my $amount=$input->param('amount');
     my $type=$input->param('type');
@@ -77,7 +81,7 @@ if ($add){
 					
     if ( $data->{'category_type'} eq 'C') {
         my  ( $catcodes, $labels ) =  GetborCatFromCatType( 'A', 'WHERE category_type = ?' );
-        my $cnt = scalar(@$catcodes);
+        my $cnt = scalar @{$catcodes};
         $template->param( 'CATCODE_MULTI' => 1) if $cnt > 1;
         $template->param( 'catcode' =>    $catcodes->[0])  if $cnt == 1;
     }

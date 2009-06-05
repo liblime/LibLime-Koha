@@ -32,6 +32,7 @@
 =cut
 
 use strict;
+#use warnings;
 use CGI;
 use C4::Context;
 use C4::Auth;
@@ -60,7 +61,9 @@ BEGIN {
 my $dbh = C4::Context->dbh;
 
 my $input = new CGI;
-$debug or $debug = $input->param('debug') || 0;
+if (!$debug) {
+    $debug = $input->param('debug') || 0;
+}
 my $print = $input->param('print');
 my $override_limit = $input->param("override_limit") || 0;
 my @failedrenews = $input->param('failedrenew');
@@ -71,11 +74,15 @@ for my $renew (@failedrenews) { $renew_failed{$renew} = 1; }
 my %return_failed;
 for my $failedret (@failedreturns) { $return_failed{$failedret} = 1; }
 
-my $template_name;
+my $template_name = 'members/moremember.tmpl';
 
-if    ($print eq "page") { $template_name = "members/moremember-print.tmpl";   }
-elsif ($print eq "slip") { $template_name = "members/moremember-receipt.tmpl"; }
-else {                     $template_name = "members/moremember.tmpl";         }
+if ($print) {
+    if    ($print eq 'page') {
+        $template_name = 'members/moremember-print.tmpl';
+    } elsif ($print eq 'slip') {
+        $template_name = 'members/moremember-receipt.tmpl';
+    }
+}
 
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
@@ -100,7 +107,7 @@ if ( not defined $data ) {
 }
 
 # re-reregistration function to automatic calcul of date expiry
-if ( $reregistration eq 'y' ) {
+if ( $reregistration && $reregistration eq 'y' ) {
 	$data->{'dateexpiry'} = ExtendMemberSubscriptionTo( $borrowernumber );
 }
 
@@ -132,7 +139,6 @@ for (qw(debarred gonenoaddress lost borrowernotes)) {
 $data->{'ethnicity'} = fixEthnicity( $data->{'ethnicity'} );
 $data->{ "sex_".$data->{'sex'}."_p" } = 1;
 
-my $catcode;
 if ( $category_type eq 'C') {
 	if ($data->{'guarantorid'} ne '0' ) {
     	my $data2 = GetMember( $data->{'guarantorid'} ,'borrowernumber');
@@ -229,7 +235,9 @@ for ( my $i = 0 ; $i < $count ; $i++ ) {
     $issue->[$i]{'date_due'} = C4::Dates->new($issue->[$i]{'date_due'},'iso')->output('syspref');
     $issue->[$i]{'issuedate'} = C4::Dates->new($issue->[$i]{'issuedate'},'iso')->output('syspref');
     my %row = %{ $issue->[$i] };
-    $totalprice += $issue->[$i]{'replacementprice'};
+    if ($issue->[$i]{replacementprice} ) {
+        $totalprice += $issue->[$i]{'replacementprice'};
+    }
     $row{'replacementprice'} = $issue->[$i]{'replacementprice'};
     if ( $datedue lt $today ) {
         $overdues_exist = 1;
@@ -283,7 +291,7 @@ if ($borrowernumber) {
         $getreserv{itemtype}  = $itemtypeinfo->{'description'};
 
         # 		check if we have a waitin status for reservations
-        if ( $num_res->{'found'} eq 'W' ) {
+        if ( $num_res->{found} and $num_res->{'found'} eq 'W' ) {
             $getreserv{color}   = 'reserved';
             $getreserv{waiting} = 1;
         }
@@ -304,7 +312,7 @@ if ($borrowernumber) {
                 GetBranchName( $getiteminfo->{'holdingbranch'} );
         }
 
-# 		if we don't have a reserv on item, we put the biblio infos and the waiting position
+# if we don't have a reserv on item, we put the biblio infos and the waiting position
         if ( $getiteminfo->{'title'} eq '' ) {
             my $getbibinfo = GetBiblioData( $num_res->{'biblionumber'} );
             my $getbibtype = getitemtypeinfo( $getbibinfo->{'itemtype'} );
