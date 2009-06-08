@@ -162,6 +162,7 @@ function checkMultiHold() {
 		</div>
   <!-- /TMPL_IF -->
     
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_add_holds" -->
   <!-- TMPL_UNLESS NAME="multi_hold" -->
     <h1>Place a hold on <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a></h1>
   <!-- TMPL_ELSE -->
@@ -229,10 +230,10 @@ function checkMultiHold() {
 
 </ul></div>
 <!-- /TMPL_IF -->
-
   <!-- TMPL_IF NAME="messageborrower" -->
    <div class="dialog alert"><h3>Patron not found:</h3> <p>Name or barcode not found. Please try an other </p></div>
   <!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
   
   <fieldset class="rows left">
     <legend>Hold details</legend>
