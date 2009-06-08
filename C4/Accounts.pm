@@ -313,6 +313,7 @@ sub chargelostitem{
             "Lost Item $issues->{'title'} $issues->{'barcode'}",
             $issues->{'replacementprice'},$itemnumber);
             $sth2->finish;
+            UpdateStats( C4::Context->userenv->{'branch'} || $issues->{'holdingbranch'}, 'itemlost', $issues->{'replacementprice'}, $issues->{'itemlost'}, $issues->{'itemnumber'}, $issues->{'itype'}, $issues->{'borrowernumber'}, $accountno );
         # FIXME: Log this ?
         }
         #FIXME : Should probably have a way to distinguish this from an item that really was returned.
