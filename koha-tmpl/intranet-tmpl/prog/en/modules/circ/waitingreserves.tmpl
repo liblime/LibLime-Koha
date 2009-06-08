@@ -65,7 +65,9 @@ $.tablesorter.addParser({
                         <th>Title</th>
                         <th>Patron</th>
                         <th>Location</th>
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_waiting_holds" -->
                         <th>Action</th>
+<!-- /TMPL_IF -->
                 </tr></thead>
                         <tbody><!-- TMPL_LOOP NAME="reserveloop" -->
                         <!-- TMPL_IF NAME="messcompa" --><tr class="problem"><!-- TMPL_ELSE --><tr><!-- /TMPL_IF -->
@@ -87,6 +89,7 @@ $.tablesorter.addParser({
                 <!-- TMPL_VAR NAME="borrowermail" --></a><!--/TMPL_IF-->
                                         </td>
                                         <td><!-- TMPL_VAR NAME="homebranch" --> <!-- TMPL_VAR NAME="itemcallnumber" --></td>
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_waiting_holds" -->
                                         <td>
                                                 <form name="cancelReserve" action="waitingreserves.pl" method="post">
                                                         <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernum" -->" />
@@ -100,6 +103,7 @@ $.tablesorter.addParser({
                                                 <!-- /TMPL_IF -->
                                                 </form>
                                         </td>
+<!-- /TMPL_IF -->
                                 </tr>
                         <!-- /TMPL_LOOP --></tbody>
                 </table>

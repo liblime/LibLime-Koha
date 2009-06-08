@@ -25,6 +25,7 @@ INSERT INTO permissions (module_bit, code, description) VALUES
    ( 6, 'add_holds', 'User may place a hold for a borrower'),
    ( 6, 'reorder_holds', 'User can reorder hold requests'),
    ( 6, 'delete_pending_holds', 'User can delete holds from the pending list'),
+   ( 6, 'delete_waiting_holds', 'User can delete holds from the waiting for pickup list'),
    ( 9, 'view', 'User may view bibliographic and item information'),
    ( 9, 'add_bibliographic', 'Create a bibliographic record'),
    ( 9, 'edit_bibliographic', 'Edit a bibliographic record'),
