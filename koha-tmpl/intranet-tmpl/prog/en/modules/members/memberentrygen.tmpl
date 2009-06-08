@@ -776,7 +776,7 @@
 				<label for="opacnote">
 			<!-- /TMPL_IF-->
 			OPAC note: </label>
-			<!-- IF_TMPL NAME="CAN_user_edit_borrower_opacnote" -->
+			<!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrower_opacnote" -->
 			<textarea id="opacnote" name="opacnote" cols="55" rows="5" ><!-- TMPL_VAR NAME="opacnote" --></textarea>
 			<!--TMPL_ELSE-->
 			<textarea id="opacnote" name="opacnote" cols="55" rows="5" readonly><!-- TMPL_VAR NAME="opacnote" --></textarea>
@@ -791,7 +791,7 @@
 				<label for="borrowernotes">
 			<!-- /TMPL_IF-->
 			Circulation note: </label>
-			<!-- IF_TMPL NAME="CAN_user_edit_borrower_circnote" -->
+			<!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrower_circnote" -->
 			<textarea id="borrowernotes" name="borrowernotes" cols="55" rows="5"><!-- TMPL_VAR NAME="borrowernotes" --></textarea>
 			<!--TMPL_ELSE-->
 			<textarea id="borrowernotes" name="borrowernotes" cols="55" rows="5" readonly><!-- TMPL_VAR NAME="borrowernotes" --></textarea>
