@@ -23,6 +23,7 @@ use warnings;
 require Exporter;
 use C4::Context;
 use C4::Debug;
+use C4::Koha qw( GetAuthValCode );
 use vars qw($VERSION @ISA @EXPORT);
 
 our $debug;
@@ -34,6 +35,7 @@ BEGIN {
 	@EXPORT = qw(
 		&UpdateStats
 		&TotalPaid
+		&GetLostStats
 	);
 }
 
@@ -116,6 +118,25 @@ sub TotalPaid {
     my $sth = $dbh->prepare($query);
     $sth->execute();
     return @{$sth->fetchall_arrayref({})};
+}
+
+sub GetLostStats {
+    my ( $borrowernumber ) = @_;
+    my $dbh = C4::Context->dbh;
+    my $category = GetAuthValCode( 'items.itemlost', '' );
+
+    return $dbh->selectall_arrayref( "
+        SELECT
+          authorised_values.lib as description, stats_summary.*
+          FROM (
+            SELECT
+              other as itemlost, count(*) as count, cast(sum(value) as decimal(16, 2)) as total_amount
+              FROM statistics
+              WHERE statistics.type = 'itemlost' AND statistics.borrowernumber = ?
+              GROUP BY statistics.other
+          ) AS stats_summary LEFT JOIN authorised_values ON (authorised_values.authorised_value = stats_summary.itemlost AND authorised_values.category = ?)
+          ORDER BY authorised_values.lib
+    ", { Slice => {} }, $borrowernumber, $category );
 }
 
 1;
