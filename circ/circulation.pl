@@ -98,8 +98,10 @@ my @renew_failed;
 for (@failedrenews) { $renew_failed[$_] = 1; } 
 
 my $findborrower = $query->param('findborrower');
-$findborrower =~ s|,| |g;
+if ($findborrower) {
+    $findborrower =~ s|,| |g;
 #$findborrower =~ s|'| |g;
+}
 my $borrowernumber = $query->param('borrowernumber');
 
 $branch  = C4::Context->userenv->{'branch'};  
@@ -107,7 +109,7 @@ $printer = C4::Context->userenv->{'branchprinter'};
 
 
 # If Autolocated is not activated, we show the Circulation Parameters to chage settings of librarian
-if (C4::Context->preference("AutoLocation") ne 1) { # FIXME: string comparison to number
+if (C4::Context->preference("AutoLocation") != 1) {
     $template->param(ManualLocation => 1);
 }
 
@@ -122,6 +124,7 @@ my $organisation   = $query->param('organisations');
 my $print          = $query->param('print');
 my $newexpiry      = $query->param('dateexpiry');
 my $debt_confirmed = $query->param('debt_confirmed') || 0; # Don't show the debt error dialog twice
+my $finemax_override = $query->param('finemax_override') || 0;
 
 #set up cookie.....
 # my $branchcookie;
@@ -168,19 +171,26 @@ if($duedatespec_allow){
 my $todaysdate = C4::Dates->new->output('iso');
 
 # check and see if we should print
-if ( $barcode eq '' && $print eq 'maybe' ) {
-    $print = 'yes';
+my $inprocess;
+
+if ( $barcode eq q{} ) {
+    if ( $print && $print eq 'maybe' ) {
+        $print = 'yes';
+    }
+    $inprocess = q{};
+
+    my $charges = $query->param('charges');
+    if (  $charges && $charges eq 'yes' ) {
+        $template->param(
+            PAYCHARGES     => 'yes',
+            borrowernumber => $borrowernumber
+        );
+    }
+} else {
+    $inprocess = $query->param('inprocess');
 }
 
-my $inprocess = ($barcode eq '') ? '' : $query->param('inprocess');
-if ( $barcode eq '' && $query->param('charges') eq 'yes' ) {
-    $template->param(
-        PAYCHARGES     => 'yes',
-        borrowernumber => $borrowernumber
-    );
-}
-
-if ( $print eq 'yes' && $borrowernumber ne '' ) {
+if ( $print && $print eq 'yes' && $borrowernumber ne '' ) {
     printslip( $borrowernumber );
     $query->param( 'borrowernumber', '' );
     $borrowernumber = '';
@@ -330,8 +340,6 @@ if ($borrowernumber) {
 ##################################################################################
 # BUILD HTML
 # show all reserves of this borrower, and the position of the reservation ....
-my $borrowercategory;
-my $category_type;
 if ($borrowernumber) {
 
     # new op dev
@@ -404,7 +412,7 @@ if ($borrowernumber) {
         push( @reservloop, \%getreserv );
 
 #         if we have a reserve waiting, initiate waitingreserveloop
-        if ($getreserv{waiting} eq 1) {
+        if ($getreserv{waiting} == 1) {
         push (@WaitingReserveLoop, \%getWaitingReserveInfo)
         }
       
@@ -424,13 +432,9 @@ my $todaysissues = '';
 my $previssues   = '';
 my @todaysissues;
 my @previousissues;
-my $allowborrow;
 ## ADDED BY JF: new itemtype issuingrules counter stuff
 my $issued_itemtypes_loop;
 my $issued_itemtypes_count;
-my $issued_itemtypes_allowed_count;    # hashref with total allowed by itemtype
-my $issued_itemtypes_remaining;        # hashref with remaining
-my $issued_itemtypes_flags;            #hashref that stores flags
 my @issued_itemtypes_count_loop;
 
 if ($borrower) {
@@ -489,12 +493,12 @@ if ($borrower) {
 my $dbh = C4::Context->dbh;
 
 # how many of each is allowed?
-my $issueqty_sth = $dbh->prepare( "
+my $issueqty_sth = $dbh->prepare( '
 SELECT itemtypes.description AS description,issuingrules.itemtype,maxissueqty
 FROM issuingrules
   LEFT JOIN itemtypes ON (itemtypes.itemtype=issuingrules.itemtype)
   WHERE categorycode=?
-" );
+' );
 #my @issued_itemtypes_count;  # huh?
 $issueqty_sth->execute("*");	# This is a literal asterisk, not a wildcard.
 
@@ -549,10 +553,36 @@ if ($borrowerslist) {
 #title
 my $flags = $borrower->{'flags'};
 
-foreach my $flag ( sort keys %$flags ) {
+foreach my $flag ( sort keys %{$flags} ) {
     $template->param( flagged=> 1);
     $flags->{$flag}->{'message'} =~ s#\n#<br />#g;
     if ( $flags->{$flag}->{'noissues'} ) {
+        # Special handling of charges for granular override permission - kludgy
+        if ( $flag eq 'CHARGES' ) {
+            my $gp = $template->param('CAN_user_circulate_override_max_fines');
+            if ($gp) {
+                if (!$finemax_override) {
+                    $template->param(
+                        FINESMAX => 1,
+                        NEEDSCONFIRMATION  => 1,
+                        IMPOSSIBLE => 1,
+                    );
+                }
+                $template->param(
+                    charges    => 'true',
+                    chargesmsg => $flags->{'CHARGES'}->{'message'},
+                    chargesamount => $flags->{'CHARGES'}->{'amount'},
+                );
+                next; # Don't flag as noissues
+            } else {
+                $template->param(
+                    charges    => 'true',
+                    chargesmsg => $flags->{'CHARGES'}->{'message'},
+                    chargesamount => $flags->{'CHARGES'}->{'amount'},
+                    charges_is_blocker => 1
+                );
+            }
+        }
         $template->param(
             flagged  => 1,
             noissues => 'true',
@@ -565,14 +595,6 @@ foreach my $flag ( sort keys %$flags ) {
         }
         if ( $flag eq 'DBARRED' ) {
             $template->param( dbarred => 'true' );
-        }
-        if ( $flag eq 'CHARGES' ) {
-            $template->param(
-                charges    => 'true',
-                chargesmsg => $flags->{'CHARGES'}->{'message'},
-                chargesamount => $flags->{'CHARGES'}->{'amount'},
-                charges_is_blocker => 1
-            );
         }
         if ( $flag eq 'CREDITS' ) {
             $template->param(
@@ -699,20 +721,18 @@ $template->param(
 );
 
 
-#if ($branchcookie) {
-#$cookie=[$cookie, $branchcookie, $printercookie];
-#}
 
 my ($picture, $dberror) = GetPatronImage($borrower->{'cardnumber'});
 $template->param( picture => 1 ) if $picture;
 
 
 $template->param(
+    finemax_override          => $finemax_override,
     debt_confirmed            => $debt_confirmed,
     SpecifyDueDate            => $duedatespec_allow,
-    CircAutocompl             => C4::Context->preference("CircAutocompl"),
-	AllowRenewalLimitOverride => C4::Context->preference("AllowRenewalLimitOverride"),
-    dateformat                => C4::Context->preference("dateformat"),
+    CircAutocompl             => C4::Context->preference('CircAutocompl'),
+    AllowRenewalLimitOverride => C4::Context->preference('AllowRenewalLimitOverride'),
+    dateformat                => C4::Context->preference('dateformat'),
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
 );
 output_html_with_http_headers $query, $cookie, $template->output;
