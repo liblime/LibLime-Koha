@@ -478,7 +478,7 @@ function checkMultiHold() {
     </form>
 	</fieldset>
 <!-- /TMPL_UNLESS -->
-<!-- TMPL_IF NAME="CAN_user_reserveforothers_edit_holds" -->
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 <!-- TMPL_UNLESS NAME="cardnumber" -->
 <!-- TMPL_IF name="reserveloop" -->
 <form name="T<!-- TMPL_VAR NAME="time" -->" action="modrequest.pl" method="post">
@@ -510,6 +510,7 @@ function checkMultiHold() {
         <td>
           <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
           <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
+    <!-- TMPL_IF NAME="CAN_user_reserveforothers_edit_holds" -->
           <select name="rank-request">
     <!-- TMPL_IF Name="wait" -->
             <option value="W" selected="selected">Waiting</option>
@@ -521,6 +522,13 @@ function checkMultiHold() {
             <option value="del">del</option>
     <!-- /TMPL_IF -->
           </select>
+    <!-- TMPL_ELSE -->
+	<!-- TMPL_LOOP Name="optionloop" -->                 
+	<!-- TMPL_IF Name="selected" -->
+       <!-- TMPL_VAR NAME="num" -->
+    <!-- /TMPL_IF -->
+	<!-- /TMPL_LOOP -->  
+    <!-- /TMPL_IF -->
         </td>
         <td>
           <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" ><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a>
@@ -539,6 +547,7 @@ function checkMultiHold() {
             Item being transfered to <b> <!-- TMPL_VAR NAME="wbrname" --></b> <input type="hidden" name="pickup" value="<!-- TMPL_VAR NAME="wbrcode" -->" />
          <!-- /TMPL_IF -->
     <!-- TMPL_ELSE -->
+        <!-- TMPL_IF NAME="CAN_user_reserveforothers_edit_holds" -->
           <select name="pickup">
       <!-- TMPL_LOOP Name="branchloop" -->
         <!-- TMPL_IF Name="selected" -->
@@ -550,6 +559,13 @@ function checkMultiHold() {
             </option>
       <!-- /TMPL_LOOP -->
           </select>
+        <!-- TMPL_ELSE -->
+          <!-- TMPL_LOOP Name="branchloop" -->
+            <!-- TMPL_IF Name="selected" -->
+                <!-- TMPL_VAR NAME="branchname" -->
+            <!-- /TMPL_IF -->
+          <!-- /TMPL_LOOP -->
+        <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
         </td>
         <td>
@@ -592,9 +608,11 @@ function checkMultiHold() {
   <!-- /TMPL_IF --><!-- /reserveloop -->
 <!-- /TMPL_LOOP --><!-- /biblioloop -->
 
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_edit_holds" -->
 <fieldset class="action">
   <input type="submit" name="submit" value="Update hold(s)" />
 </fieldset>
+<!-- /TMPL_IF -->
 </fieldset>
 </form>
 <!-- /TMPL_IF -->

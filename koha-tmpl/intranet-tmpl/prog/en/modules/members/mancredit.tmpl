@@ -25,7 +25,9 @@
     <!-- TMPL_IF NAME="CAN_user_updatecharges_add_charges" -->
 	<li><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Invoice</a></li>
     <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
 	<li class="ui-tabs-selected"><a href="/cgi-bin/koha/members/mancredit.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Credit</a></li>
+    <!-- /TMPL_IF -->
 </ul>
 <div class="tabs-container">
 
