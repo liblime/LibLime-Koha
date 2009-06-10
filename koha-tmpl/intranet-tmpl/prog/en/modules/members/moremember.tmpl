@@ -372,7 +372,9 @@ if (nodename =="barcodes[]"){
 
 <div id="finesholdsissues" class="toptabs">
 	<ul>
+<!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
 		<li><a href="#checkedout">Checked Out</a></li>
+<!-- /TMPL_IF -->
 		<li><a href="#finesandcharges">Fines &amp; Charges</a></li>
 <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 		<li><a href="#onhold">On Hold</a></li>
@@ -388,6 +390,7 @@ if (nodename =="barcodes[]"){
     <!-- /TMPL_IF -->
 </div>
 
+<!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
 <div id="checkedout">
     <h2>Checked Out</h2>
     <!-- TMPL_IF NAME="issueloop" --><form action="/cgi-bin/koha/reserve/renewscript.pl" method="post" class="checkboxed">
@@ -509,8 +512,9 @@ if (nodename =="barcodes[]"){
         <input type="submit" id="return_all" name="return_all" value="Return all" />
         </fieldset>
     </form><!-- TMPL_ELSE --><p>Patron has nothing checked out.</p><!-- /TMPL_IF -->
-	</div>
-	
+</div>
+<!-- /TMPL_IF -->
+
 <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 <div id="onhold">
 	<h2>Patron current holds</h2>
