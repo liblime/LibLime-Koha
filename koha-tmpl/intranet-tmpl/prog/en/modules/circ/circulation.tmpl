@@ -153,7 +153,7 @@ function refocus(calendar) {
 <!-- /TMPL_IF -->
 
 </head>
-<body <!-- TMPL_IF NAME="CheckoutTimeout" -->onclick="mesg_timeout = setTimeout('displaymessage()', <!-- TMPL_VAR NAME="CheckoutTimeout" --> * 1000)" <!-- /TMPL_IF --> >
+<body <!-- TMPL_IF NAME="CheckoutTimeout" -->onload="mesg_timeout = setTimeout('displaymessage()', <!-- TMPL_VAR NAME="CheckoutTimeout" --> * 1000)" <!-- /TMPL_IF --> >
 
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="circ-search.inc" -->
