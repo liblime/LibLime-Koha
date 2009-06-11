@@ -39,7 +39,7 @@ BEGIN {
 	$VERSION = 3.01;
 	@ISA = qw(Exporter);
 	@EXPORT = qw(
-	&GetLetters &getletter &addalert &getalert &delalert &findrelatedto &SendAlerts
+	&GetLetters &getletter &addalert &getalert &delalert &findrelatedto &SendAlerts GetPrintMessages
 	);
 }
 
@@ -692,6 +692,26 @@ sub GetRSSMessages {
     
     return _get_unsent_messages( { message_transport_type => 'rss',
                                    limit                  => $params->{'limit'},
+                                   borrowernumber         => $params->{'borrowernumber'}, } );
+}
+
+=head2 GetPrintMessages
+
+=over 4
+
+my $message_list = GetPrintMessages( { borrowernumber => $borrowernumber } )
+
+Returns a arrayref of all queued print messages (optionally, for a particular
+person).
+
+=back
+
+=cut
+
+sub GetPrintMessages {
+    my $params = shift || {};
+    
+    return _get_unsent_messages( { message_transport_type => 'print',
                                    borrowernumber         => $params->{'borrowernumber'}, } );
 }
 
