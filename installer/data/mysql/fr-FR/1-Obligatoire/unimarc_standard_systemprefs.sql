@@ -247,3 +247,5 @@ INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('v
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('viewLabeledMARC','0','Autoriser l''affichage MARC labellis des notices bibliographiques','','YesNo');
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('viewMARC','1','Autoriser l''affichage de la vue MARC des notices bibliographiques','','YesNo');
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('FilterBeforeOverdueReport','0','Ne pas lancer le rapport sur les retards tant qu''il n''y a pas de filtre','','YesNo');
+INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES('EnableOwedNotification',0,'If ON, allows a notification to be sent on total amount owed.  OwedNotificationValue syspref will need to be set to the desired amount.',NULL,'YesNo');
+INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES('OwedNotificationValue',25.00,'Amount owed to receive a notification.  To work, EnableOwedNotification syspref will need to be turn ON.',NULL,'free');
