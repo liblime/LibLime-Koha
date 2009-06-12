@@ -1129,7 +1129,7 @@ sub GetMemberAccountRecords {
 	        $data->{title} = $biblio->{title};
         $acctlines[$numlines] = $data;
         $numlines++;
-        if (defined($data->{'amountoutstanding'}) {
+        if (defined($data->{'amountoutstanding'})) {
           $total += int(100 * $data->{'amountoutstanding'}); # convert float to integer to avoid round-off errors
         }
     }
