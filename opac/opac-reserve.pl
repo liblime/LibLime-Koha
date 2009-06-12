@@ -254,6 +254,7 @@ if ( $borr->{debarred} && ($borr->{debarred} eq 1) ) {
 my @reserves = GetReservesFromBorrowernumber( $borrowernumber );
 $template->param( RESERVES => \@reserves );
 if ( C4::Context->preference('UseGranularMaxHolds') ) {
+  foreach my $biblionumber (@biblionumbers) {
       ## Since we can't limit by branchcode in the opac, we use the * rule for branch
       ## Get the reserves for the borrower, limited by itemtype
       ## If the borrower is over the limit for their borrower.categorycode and the given itemtype
@@ -274,6 +275,7 @@ if ( C4::Context->preference('UseGranularMaxHolds') ) {
         $noreserves = 1;
         $template->param( too_many_reserves => scalar(@reserves));
       }
+  }
 } elsif ( scalar(@reserves) >= $MAXIMUM_NUMBER_OF_RESERVES ) {
     $template->param( message => 1 );
     $noreserves = 1;
