@@ -31,4 +31,6 @@
 		<li><a href="/cgi-bin/koha/reports/itemslost.pl">Lost Items</a></li>
 		<li><a href="/cgi-bin/koha/reports/manager.pl?report_name=itemtypes">Catalog by Item Type</a></li>
 		<li><a href="/cgi-bin/koha/reports/issues_avg_stats.pl">Average loan time</a></li>
+		<li><a href="/cgi-bin/koha/reports/expiredholds.pl">Expired Holds</a></li>
+		<li><a href="/cgi-bin/koha/reports/cancelledholds.pl">Cancelled Holds</a></li>
 	</ul>
