@@ -24,6 +24,7 @@ require Exporter;
 use C4::Context;
 use C4::Debug;
 use C4::Koha qw( GetAuthValCode );
+use C4::Items qw( GetItem );
 use vars qw($VERSION @ISA @EXPORT);
 
 our $debug;
@@ -124,19 +125,36 @@ sub GetLostStats {
     my ( $borrowernumber ) = @_;
     my $dbh = C4::Context->dbh;
     my $category = GetAuthValCode( 'items.itemlost', '' );
+    my %summary;
 
-    return $dbh->selectall_arrayref( "
+    my $lost_items = $dbh->selectall_arrayref( "
         SELECT
-          authorised_values.lib as description, stats_summary.*
-          FROM (
-            SELECT
-              other as itemlost, count(*) as count, cast(sum(value) as decimal(16, 2)) as total_amount
-              FROM statistics
-              WHERE statistics.type = 'itemlost' AND statistics.borrowernumber = ?
-              GROUP BY statistics.other
-          ) AS stats_summary LEFT JOIN authorised_values ON (authorised_values.authorised_value = stats_summary.itemlost AND authorised_values.category = ?)
+          authorised_values.lib as description, other as itemlost, value, itemnumber
+          FROM statistics LEFT JOIN authorised_values ON (authorised_value = other AND authorised_values.category = ?)
+          WHERE statistics.type = 'itemlost' AND statistics.borrowernumber = ?
+          GROUP BY statistics.itemnumber
           ORDER BY authorised_values.lib
-    ", { Slice => {} }, $borrowernumber, $category );
+    ", { Slice => {} }, $category, $borrowernumber );
+
+    foreach my $item ( @$lost_items ) {
+        my $type_summary = ( $summary{$item->{'itemlost'}} ||= {
+           description => $item->{'description'},
+           items => [],
+           total_amount => 0,
+        } );
+
+        my $iteminfo = GetItem( $item->{'itemnumber'} );
+
+        push @{ $type_summary->{'items'} }, {
+            biblionumber => $iteminfo->{'biblionumber'},
+            itemnumber => $iteminfo->{'itemnumber'},
+            barcode => $iteminfo->{'barcode'},
+        };
+
+        $type_summary->{'total_amount'} += $item->{'value'};
+    }
+
+    return [ map { $_->{'total_amount'} = sprintf( '%0.2f', $_->{'total_amount'} ); $_ } values %summary ];
 }
 
 1;
