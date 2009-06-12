@@ -375,12 +375,15 @@ if (nodename =="barcodes[]"){
 <!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
 		<li><a href="#checkedout">Checked Out</a></li>
 <!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="CAN_user_updatecharges_view_charges" -->
 		<li><a href="#finesandcharges">Fines &amp; Charges</a></li>
+<!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 		<li><a href="#onhold">On Hold</a></li>
 <!-- /TMPL_IF -->
 	</ul>
 	
+<!-- TMPL_IF NAME="CAN_user_updatecharges_view_charges" -->
 <div id="finesandcharges">
     <h2>Fines and Charges</h2>
     <!-- TMPL_IF EXPR="totaldue ne '0.00'" -->
@@ -389,6 +392,7 @@ if (nodename =="barcodes[]"){
         <p>No outstanding charges</p>
     <!-- /TMPL_IF -->
 </div>
+<!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
 <div id="checkedout">
