@@ -89,6 +89,7 @@ if ( $input->param('sqlsearch') ) {
 }
 elsif( $searchfield ) {
     ($count, $results)=SearchMemberField( $member, $orderby, $searchfield );
+    $template->param( searchfield => $searchfield );
 }
 elsif(length($member) == 1)
 {
@@ -140,6 +141,7 @@ my $base_url =
         { term => 'orderby', val => $orderby },
         { term => 'resultsperpage', val => $resultsperpage },
         { term => 'type',           val => 'intranet' },
+        { term => 'searchfield', val => $searchfield },
     )
   );
 
