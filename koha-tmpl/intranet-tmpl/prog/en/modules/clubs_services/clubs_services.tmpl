@@ -18,7 +18,7 @@
 
           <table>
             <tr>
-		<th colspan="5">Clubs</th>
+		<th colspan="6">Clubs</th>
 	   </tr>
 
             <tr>
@@ -26,7 +26,8 @@
               <th>Description</th>
               <th>Start Date</th>
               <th>End Date</th>
-              <th></th>
+              <th>&nbsp;</th>
+	      <th>&nbsp;</th>
             </tr>
 
         <!-- TMPL_IF NAME="clubsLoop" -->
@@ -37,16 +38,17 @@
                 <td><!-- TMPL_VAR NAME="startDate" --></td>
                 <td><!-- TMPL_VAR NAME="endDate" --></td>
                 <td><a href="enroll_clubs_services.pl?casId=<!-- TMPL_VAR NAME="casId" -->">Enroll</a></td>
+                <td><a href="clubs_services_enrollments.pl?casId=<!-- TMPL_VAR NAME="casId" -->">Details</a></td>
               </tr>
             <!-- /TMPL_LOOP -->
         <!-- TMPL_ELSE -->
           <tr><td colspan="5">There are no Clubs currently defined.</td></tr>
         <!-- /TMPL_IF -->
 
-            <tr><td colspan="5">&nbsp;</td></tr>
+            <tr><td colspan="6">&nbsp;</td></tr>
 
             <tr> 
-                <th colspan="5">Services</th>
+                <th colspan="6">Services</th>
             </tr>
 
             <tr>
@@ -54,7 +56,8 @@
               <th>Description</th>
               <th>Start Date</th>
               <th>End Date</th>
-              <th></th>
+              <th>&nbsp;</th>
+	      <th>&nbsp;</th>
             </tr>
         <!-- TMPL_IF NAME="servicesLoop" -->
             <!-- TMPL_LOOP NAME="servicesLoop" -->
@@ -64,10 +67,11 @@
                 <td><!-- TMPL_VAR NAME="startDate" --></td>
                 <td><!-- TMPL_VAR NAME="endDate" --></td>
                 <td><a href="enroll_clubs_services.pl?casId=<!-- TMPL_VAR NAME="casId" -->">Enroll</a></td>
+                <td><a href="clubs_services_enrollments.pl?casId=<!-- TMPL_VAR NAME="casId" -->">Details</a></td>
               </tr>
             <!-- /TMPL_LOOP -->
         <!-- TMPL_ELSE -->
-          <tr><td colspan="5">There are no Services currently defined.</td></tr>
+          <tr><td colspan="6">There are no Services currently defined.</td></tr>
         <!-- /TMPL_IF -->
         </table>
 </div>

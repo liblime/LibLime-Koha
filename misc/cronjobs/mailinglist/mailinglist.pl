@@ -42,7 +42,7 @@ my $opacUrl = 'http://catalog.library.org';
 use strict;
 
 use C4::Context;
-use C4::Date;
+use C4::Dates;
 
 use Mail::Sendmail;
 use Getopt::Long;

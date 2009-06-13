@@ -67,6 +67,7 @@ C4::ClubsAndServices - Functions for managing clubs and services
   GetEnrolledClubsAndServices
   GetPubliclyEnrollableClubsAndServices
   GetAllEnrollableClubsAndServices
+  GetCasEnrollments
 
   ReserveForBestSellersClub
   
@@ -556,6 +557,32 @@ sub GetEnrollments {
   return \@results;
 }
 
+## function GetCasEnrollments
+## Returns information about the clubs and services borrowers that are enrolled
+## Input:
+##   $casId: The id of the club or service to look up enrollments for
+## Output:
+##   $results: Reference to an array of associated arrays
+sub GetCasEnrollments {
+  my ( $casId ) = @_;
+
+  my $dbh = C4::Context->dbh;
+  
+  my $sth = $dbh->prepare("SELECT * FROM clubsAndServicesEnrollments, borrowers
+                           WHERE clubsAndServicesEnrollments.borrowernumber = borrowers.borrowernumber
+                           AND clubsAndServicesEnrollments.casId = ? ORDER BY surname, firstname");
+  $sth->execute( $casId ) or return 0;
+  
+  my @results;
+  while ( my $row = $sth->fetchrow_hashref ) {
+    push( @results , $row );
+  }
+  
+  $sth->finish;
+  
+  return \@results;
+}
+
 ## function GetClubsAndServices
 ## Returns information about clubs and services
 ## Input:
@@ -566,7 +593,7 @@ sub GetEnrollments {
 ##     Reference to an array of associated arrays
 sub GetClubsAndServices {
   my ( $type, $branchcode ) = @_;
-
+warn "C4::ClubsAndServices::GetClubsAndServices( $type, $branchcode )";
   my $dbh = C4::Context->dbh;
 
   my ( $sth, @results );
@@ -634,6 +661,7 @@ sub GetClubsAndServices {
   }
 
   while ( my $row = $sth->fetchrow_hashref ) {
+warn "Found result: " . $row->{'title'};
     push( @results , $row );
   }
 
