@@ -1515,7 +1515,20 @@ sub ResumeReserve {
     my $dbh = C4::Context->dbh;
     my $sth;
     my $query;
-    
+
+    $query = "SELECT * FROM reserves_suspended WHERE reservenumber = ?";
+    $sth = $dbh->prepare( $query );
+    my $data = $sth->execute( $reservenumber );
+    my $suspended_reserve = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    $query = "SELECT priority FROM reserves WHERE reservedate > ? AND biblionumber = ? ORDER BY reservedate ASC";
+    $sth = $dbh->prepare( $query );
+    $data = $sth->execute( $suspended_reserve->{'reservedate'}, $suspended_reserve->{'biblionumber'} );
+    my $next_reserve = $sth->fetchrow_hashref();
+    $sth->finish();
+    my $new_priority = $next_reserve->{'priority'};
+
     $query = "INSERT INTO reserves SELECT * FROM reserves_suspended WHERE reservenumber = ?";
     $sth = $dbh->prepare( $query );
     $sth->execute( $reservenumber );
@@ -1528,11 +1541,11 @@ sub ResumeReserve {
 
     $query = "SELECT * FROM reserves WHERE reservenumber = ?";
     $sth = $dbh->prepare( $query );
-    my $data = $sth->execute( $reservenumber );
+    $data = $sth->execute( $reservenumber );
     my $reserve = $sth->fetchrow_hashref();
     $sth->finish();
 
-    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $reserve->{'priority'} );    
+    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $new_priority );    
 }
 
 =back
