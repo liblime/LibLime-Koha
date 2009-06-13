@@ -40,7 +40,15 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 );
 
 my $biblionumber = $query->param('biblionumber');
-if ($biblionumber and $borrowernumber) {
+my $suspend = $query->param('suspend');
+my $resume = $query->param('resume');
+my $reservenumber = $query->param('reservenumber');
+
+if ( $resume && $reservenumber && $borrowernumber) {
+	ResumeReserve( $reservenumber );
+} elsif ( $suspend && $reservenumber && $borrowernumber) {
+	SuspendReserve( $reservenumber );
+} elsif ($biblionumber and $borrowernumber) {
 	CancelReserve($biblionumber, '', $borrowernumber);
 }
 print $query->redirect("/cgi-bin/koha/opac-user.pl#opac-user-holds");
