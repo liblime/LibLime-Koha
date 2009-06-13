@@ -245,3 +245,4 @@ INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('v
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('viewLabeledMARC','0','Allow display of labeled MARC view of bibiographic records','','YesNo');
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('viewMARC','1','Allow display of MARC view of bibiographic records','','YesNo');
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('FilterBeforeOverdueReport','0','Do not run overdue report until filter selected','','YesNo');
+INSERT INTO `systempreferences` ( `variable` , `value` , `options` , `explanation` , `type` ) VALUES ( 'BatchMemberDeleteFineThreshhold', '0.0', '', 'Any borrower with an amount of fines greater than this value cannot be deleting via batch borrower deleting.', 'Float' ); 

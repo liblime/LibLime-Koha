@@ -131,8 +131,15 @@ if ( $input->param('update') ) { ## Update the borrowers
       $member->{'DELETE_FAILED'} = 1;
       $member->{'OPEN_ISSUES'} = 1;   
     } elsif ( $total_fines > 0 ) {
-      $member->{'DELETE_FAILED'} = 1;
-      $member->{'OPEN_FINES'} = 1;       
+      if ( C4::Context->preference('BatchMemberDeleteFineThreshhold') ) {
+        if ( $total_fines > C4::Context->preference('BatchMemberDeleteFineThreshhold') ) {
+        $member->{'DELETE_FAILED'} = 1;
+        $member->{'OPEN_FINES'} = 1;               
+        }
+      } else {
+        $member->{'DELETE_FAILED'} = 1;
+        $member->{'OPEN_FINES'} = 1;       
+      }
     } else {
       MoveMemberToDeleted( $borrowernumber ); ## Inserts borrower into deletedborrowers table
       DelMember( $borrowernumber ); ## Deletes borrower and cancels reserves
