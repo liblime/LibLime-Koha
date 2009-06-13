@@ -2,6 +2,16 @@
 <title>Koha &rsaquo; Patrons &rsaquo; Batch Edit</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR NAME='themelang' -->/js/members.js"></script>
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/borrower-basket.js"></script>
+
+<script type="text/javascript">
+	function confirmDeleteBasket() {
+		if ( confirm( 'Do you wish to clear the Borrowers Basket at this time?' ) ) {
+			delCookie('borrower_list');
+		}
+	}
+</script>
+
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
 <script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
@@ -53,7 +63,7 @@
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/borrower-basket.js"></script>
 
 </head>
-<body <!-- TMPL_IF NAME="delete_complete" -->onLoad="delCookie('borrower_list');"<!-- /TMPL_IF --> >
+<body <!-- TMPL_IF NAME="finished" -->onLoad="confirmDeleteBasket();"<!-- /TMPL_IF --> >
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="patron-search.inc" -->
 

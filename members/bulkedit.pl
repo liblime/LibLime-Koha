@@ -116,6 +116,7 @@ if ( $input->param('update') ) { ## Update the borrowers
     
     push( @modded_members, $member );
   }
+  $template->param( finished => 1 );
   $template->param( edit_complete => 1 );
   $template->param( membersloop => \@modded_members );
 
@@ -139,6 +140,7 @@ if ( $input->param('update') ) { ## Update the borrowers
     
     push( @modded_members, $member );
   }
+  $template->param( finished => 1 );
   $template->param( delete_complete => 1 );
   $template->param( membersloop => \@modded_members );
 
