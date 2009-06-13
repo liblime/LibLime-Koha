@@ -516,6 +516,9 @@
 			OPAC note: </label>
 			<textarea id="opacnote" name="opacnote" cols="55" rows="5"></textarea>
 			<div class="hint">This message appears on this patron's user page in the OPAC</div>
+			<label for="opacnotes_empty">Empty OPAC Notes?</label>
+			<input type="checkbox" name="opacnotes_empty" value="1" />
+			<div class="hint">Checking this box will clear the OPAC notes field for all borrowers being edited.</div>
 	  
 		</li>
 
@@ -526,6 +529,9 @@
 			Circulation note: </label>
 			<textarea id="borrowernotes" name="borrowernotes" cols="55" rows="5"></textarea>
 			<div class="hint">This message displays when checking out to this patron</div>
+			<label for="borrowernotes_empty">Empty Circulation Notes?</label>
+			<input type="checkbox" name="borrowernotes_empty" value="1" />
+			<div class="hint">Checking this box will clear the Circulation notes field for all borrowers being edited.</div>
 	  
 		</li>
 		</ol>

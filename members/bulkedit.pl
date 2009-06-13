@@ -79,6 +79,9 @@ if ( $input->param('update') ) { ## Update the borrowers
     if ( $input->param( "$field" ) ) { $data{ "$field" }  = $input->param( "$field" ); }
   }
 
+  ## Checkboxes
+  if ( $input->param( 'opacnotes_empty' ) ) { $data{'opacnote'} = ''; }
+  if ( $input->param( 'borrowernotes_empty' ) ) { $data{'borrowernotes'} = ''; }
   
   ## Radio buttons
   if ( $input->param( 'gonenoaddress' ) >= 0 ) {
