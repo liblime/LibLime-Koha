@@ -339,7 +339,7 @@ if (nodename =="barcodes[]"){
 			<select name="previous_cardnumber" id="previous_cardnumber" size="<!-- TMPL_VAR NAME="previousCardnumbersCount" -->">
 			        <!-- TMPL_LOOP NAME="previousCardnumbersLoop" -->
 			    	  <!--TMPL_IF NAME="previous_cardnumber" -->
-			            <option value="<!-- TMPL_VAR NAME="previous_cardnumber" -->"><!-- TMPL_VAR NAME="previous_cardnumber" --></option>
+			            <option value="<!-- TMPL_VAR NAME="previous_cardnumber" -->"><!-- TMPL_VAR NAME="previous_cardnumber" --> : <!-- TMPL_VAR NAME="previous_cardnumber_date" --></option>
 			          <!-- /TMPL_IF -->
 			        <!-- /TMPL_LOOP -->
 			</select></td>
