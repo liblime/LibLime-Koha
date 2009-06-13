@@ -119,7 +119,8 @@ BEGIN {
         &ResumeReserve
         &GetSuspendedReservesFromBiblionumber
         &GetSuspendedReservesFromBorrowernumber
-
+        &ResumeSuspendedReservesWithResumeDate
+        
         &IsAvailableForItemLevelRequest
     );
 }    
@@ -1484,7 +1485,7 @@ sub _koha_notify_reserve {
 }
 
 sub SuspendReserve {
-    my ( $reservenumber ) = @_;
+    my ( $reservenumber, $resumedate ) = @_;
 
     my $dbh = C4::Context->dbh;
     my $sth;
@@ -1504,6 +1505,12 @@ sub SuspendReserve {
     $query = "DELETE FROM reserves WHERE reservenumber = ?";
     $sth = $dbh->prepare( $query );
     $sth->execute( $reservenumber );
+    $sth->finish();
+
+    ## Reuse waitingdate form resumedate, suspended reserves cannot be waiting.
+    $query = "UPDATE reserves_suspended SET waitingdate = ? WHERE reservenumber = ?";
+    $sth = $dbh->prepare( $query );
+    $sth->execute( $resumedate, $reservenumber );
     $sth->finish();
     
     _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $reserve->{'priority'} );    
@@ -1539,6 +1546,11 @@ sub ResumeReserve {
     $sth->execute( $reservenumber );
     $sth->finish();
 
+    $query = "UPDATE reserves SET waitingdate = NULL WHERE reservenumber = ?";
+    $sth = $dbh->prepare( $query );
+    $data = $sth->execute( $reservenumber );
+    $sth->finish();
+
     $query = "SELECT * FROM reserves WHERE reservenumber = ?";
     $sth = $dbh->prepare( $query );
     $data = $sth->execute( $reservenumber );
@@ -1546,6 +1558,22 @@ sub ResumeReserve {
     $sth->finish();
 
     _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $new_priority );    
+}
+
+sub ResumeSuspendedReservesWithResumeDate {
+    my $dbh = C4::Context->dbh;
+    my $sth;
+    my $query;
+
+    $query = "SELECT reservenumber FROM reserves_suspended WHERE DATE(waitingdate) < DATE( NOW() )";
+    $sth = $dbh->prepare( $query );
+    my $data = $sth->execute();
+    my $res = $sth->fetchall_arrayref();
+    $sth->finish();
+
+    foreach my $r ( @{$res} ) {
+      ResumeReserve( @$r );
+    }
 }
 
 =back

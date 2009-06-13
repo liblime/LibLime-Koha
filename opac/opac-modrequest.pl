@@ -43,11 +43,16 @@ my $biblionumber = $query->param('biblionumber');
 my $suspend = $query->param('suspend');
 my $resume = $query->param('resume');
 my $reservenumber = $query->param('reservenumber');
+my $resumedate = $query->param('resumedate');
+warn "Incoming ResumeDate: $resumedate";
 
 if ( $resume && $reservenumber && $borrowernumber) {
 	ResumeReserve( $reservenumber );
 } elsif ( $suspend && $reservenumber && $borrowernumber) {
-	SuspendReserve( $reservenumber );
+	my @parts = split(/-/, $resumedate );
+	my $resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1]; 
+	warn "ResumeDate: $resumedate";
+	SuspendReserve( $reservenumber, $resumedate );
 } elsif ($biblionumber and $borrowernumber) {
 	CancelReserve($biblionumber, '', $borrowernumber);
 }

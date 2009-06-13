@@ -312,7 +312,8 @@ $.tablesorter.addParser({
 				<th>Priority</th>
 				<!-- /TMPL_IF -->
                 <th>Status</th>
-		<th>Modify</th>
+		<th>Cancel</th>
+		<th>Suspend</th>
             </tr></thead>
 			<tbody>
             <!-- TMPL_LOOP NAME="RESERVES" -->
@@ -363,10 +364,17 @@ $.tablesorter.addParser({
 			<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
 			<input type="submit" name="submit" class="icon delete cancel" value="Cancel" onclick="return confirmDelete('Are you sure you want to cancel this hold?');" />
 		</form>
+		</td>
+		<td>
 		<form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
 			<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
 			<input type="hidden" name="suspend" value="1" />
-			<input type="submit" name="submit" class="icon delete cancel" value="Suspend" /></form>
+			<input type="submit" name="submit" class="icon delete cancel" value="Suspend" />
+			<br/>
+			<label>Resume on:</label>
+			<input type="text" size="10" maxlength="10" id="resumedate" name="resumedate" />
+			<label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
+		</form>
 		</td>
 
             </tr>
@@ -386,7 +394,7 @@ $.tablesorter.addParser({
 				<th>Priority</th>
 				<!-- /TMPL_IF -->
                 <th>Status</th>
-		<th>Modify</th>
+		<th>Resume</th>
             </tr></thead>
 			<tbody>
             <!-- TMPL_LOOP NAME="SUSPENDED_RESERVES" -->
