@@ -570,7 +570,8 @@ sub GetCasEnrollments {
   
   my $sth = $dbh->prepare("SELECT * FROM clubsAndServicesEnrollments, borrowers
                            WHERE clubsAndServicesEnrollments.borrowernumber = borrowers.borrowernumber
-                           AND clubsAndServicesEnrollments.casId = ? ORDER BY surname, firstname");
+                           AND clubsAndServicesEnrollments.casId = ? AND dateCanceled IS NULL
+                           ORDER BY surname, firstname");
   $sth->execute( $casId ) or return 0;
   
   my @results;
