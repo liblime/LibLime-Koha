@@ -120,6 +120,7 @@ if ( $op eq 'add_form' ) {
         summary         => $data->{summary},
         imagesets       => $imagesets,
         remote_image    => $remote_image,
+        reservefee      => sprintf( "%.2f", $data->{'reservefee'} )
     );
 
     # END $OP eq ADD_FORM
@@ -143,6 +144,7 @@ elsif ( $op eq 'add_validate' ) {
                  , notforloan = ?
                  , imageurl = ?
                  , summary = ?
+                 , reservefee = ?
             WHERE itemtype = ?
         ';
         $sth = $dbh->prepare($query2);
@@ -159,15 +161,16 @@ elsif ( $op eq 'add_validate' ) {
                 )
             ),
             $input->param('summary'),
+            $input->param('reservefee'),
             $input->param('itemtype')
         );
     }
     else {    # add a new itemtype & not modif an old
         my $query = "
             INSERT INTO itemtypes
-                (itemtype,description,renewalsallowed,rentalcharge, notforloan, imageurl,summary)
+                (itemtype,description,renewalsallowed,rentalcharge, notforloan, imageurl,summary,reservefee)
             VALUES
-                (?,?,?,?,?,?,?);
+                (?,?,?,?,?,?,?,?);
             ";
         my $sth = $dbh->prepare($query);
 		my $image = $input->param('image');
@@ -181,6 +184,7 @@ elsif ( $op eq 'add_validate' ) {
             $image eq 'remoteImage' ? $input->param('remoteImage') :
             $image,
             $input->param('summary'),
+            $input->param('reservefee')
         );
     }
 
@@ -204,7 +208,7 @@ elsif ( $op eq 'delete_confirm' ) {
 
     my $sth =
       $dbh->prepare(
-"select itemtype,description,renewalsallowed,rentalcharge from itemtypes where itemtype=?"
+"select itemtype,description,renewalsallowed,rentalcharge,reservefee from itemtypes where itemtype=?"
       );
     $sth->execute($itemtype);
     my $data = $sth->fetchrow_hashref;
@@ -214,7 +218,8 @@ elsif ( $op eq 'delete_confirm' ) {
         renewalsallowed => $data->{renewalsallowed},
         rentalcharge    => sprintf( "%.2f", $data->{rentalcharge} ),
         imageurl        => $data->{imageurl},
-        total           => $total
+        total           => $total,
+        reservefee      => sprintf( "%.2f", $data->{reservefee} )
     );
 
     # END $OP eq DELETE_CONFIRM
@@ -244,6 +249,7 @@ else {    # DEFAULT
     foreach my $itemtype ( @{$results}[ $first .. $last ] ) {
         $itemtype->{imageurl} = getitemtypeimagelocation( 'intranet', $itemtype->{imageurl} );
         $itemtype->{rentalcharge} = sprintf( '%.2f', $itemtype->{rentalcharge} );
+        $itemtype->{reservefee} = sprintf( '%.2f', $itemtype->{reservefee} );
         push( @loop, $itemtype );
     }
 

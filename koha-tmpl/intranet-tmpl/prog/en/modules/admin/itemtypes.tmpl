@@ -233,6 +233,10 @@ Item Types Administration
 		  <input type="text" id="rentalcharge" name="rentalcharge" size="10" value="<!-- TMPL_VAR name="rentalcharge" -->" />
          </li>
       <li>
+          <label for="reservefee">Hold fee: </label>
+		  <input type="text" id="reservefee" name="reservefee" size="10" value="<!-- TMPL_VAR name="reservefee" -->" />
+         </li>
+      <li>
           <label for="summary">Summary: </label>
          <textarea id="summary" name="summary" cols="55" rows="5"><!-- TMPL_VAR NAME="summary" --></textarea>
           <p>Enter a summary that will overwrite the default one in search results lists. Example, for a website itemtype : </p>
@@ -265,6 +269,7 @@ Item Types Administration
 	<tr><th scope="row">Loan length</th><td><!-- TMPL_VAR name="loanlength" --></td></tr>
 	<tr><th scope="row">Renewals</th><td><!-- TMPL_IF name="renewalsallowed" -->Allowed<!-- TMPL_ELSE -->Not allowed<!-- /TMPL_IF --></td></tr>
 <tr><th scope="row">Rental charge</th><td><!-- TMPL_VAR name="rentalcharge" --></td></tr></table>
+<tr><th scope="row">Hold fee</th><td><!-- TMPL_VAR name="reservefee" --></td></tr></table>
 		<form action="<!-- TMPL_VAR name="script_name" -->" method="post">
 		<input type="hidden" name="op" value="delete_confirmed" /><input type="hidden" name="itemtype" value="<!-- TMPL_VAR name="itemtype" -->" /><!-- TMPL_IF name="total" -->
 		</form>
@@ -287,6 +292,7 @@ Item Types Administration
     <th>Not for loan</th>
     <th>Renewable</th>
     <th>Charge</th>
+    <th>Hold fee</th>
     <th>Actions</th>
   </tr>
   <!-- TMPL_LOOP name="loop" -->
@@ -313,6 +319,11 @@ Item Types Administration
     <td>
     <!-- TMPL_UNLESS name="notforloan" -->
       <!-- TMPL_VAR NAME="rentalcharge" -->
+    <!-- /TMPL_UNLESS -->
+    </td>
+    <td>
+    <!-- TMPL_UNLESS name="notforloan" -->
+      <!-- TMPL_VAR NAME="reservefee" -->
     <!-- /TMPL_UNLESS -->
     </td>
     <td>

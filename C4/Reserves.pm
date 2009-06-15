@@ -131,9 +131,6 @@ sub AddReserve {
         $constraint, $bibitems,  $priority, $resdate,  $notes,
         $title,      $checkitem, $found
     ) = @_;
-    my $fee =
-          GetReserveFee($borrowernumber, $biblionumber, $constraint,
-            $bibitems );
     my $dbh     = C4::Context->dbh;
     my $const   = lc substr( $constraint, 0, 1 );
     $resdate = format_date_in_iso( $resdate ) if ( $resdate );
@@ -149,22 +146,7 @@ sub AddReserve {
         $waitingdate = $resdate;
     }
 
-    #eval {
     # updates take place here
-    if ( $fee > 0 ) {
-        my $nextacctno = &getnextacctno( $borrowernumber );
-        my $query      = qq/
-        INSERT INTO accountlines
-            (borrowernumber,accountno,date,amount,description,accounttype,amountoutstanding)
-        VALUES
-            (?,?,now(),?,?,'Res',?)
-    /;
-        my $usth = $dbh->prepare($query);
-        $usth->execute( $borrowernumber, $nextacctno, $fee,
-            "Reserve Charge - $title", $fee );
-    }
-
-    #if ($const eq 'a'){
     my $query = qq/
         INSERT INTO reserves
             (borrowernumber,biblionumber,reservedate,branchcode,constrainttype,
@@ -180,7 +162,23 @@ sub AddReserve {
         $found,          $waitingdate
     );
 
-    #}
+    # Assign holds fee if applicable
+    my $fee =
+      GetReserveFee( $borrowernumber, $biblionumber, $constraint, $bibitems );
+    if ( $fee > 0 ) {
+        my $nextacctno = &getnextacctno( $borrowernumber );
+        my $query      = qq/
+        INSERT INTO accountlines
+            (borrowernumber,accountno,date,amount,description,accounttype,amountoutstanding)
+        VALUES
+            (?,?,now(),?,?,'Res',?)
+    /;
+        my $usth = $dbh->prepare($query);
+        $usth->execute( $borrowernumber, $nextacctno, $fee,
+            "Reserve Charge - $title", $fee );
+
+    }
+
     ($const eq "o" || $const eq "e") or return;   # FIXME: why not have a useful return value?
     $query = qq/
         INSERT INTO reserveconstraints
@@ -431,6 +429,16 @@ sub GetReserveFee {
     my $data = $sth->fetchrow_hashref;
     $sth->finish();
     my $fee      = $data->{'reservefee'};
+    my $query = qq/
+      SELECT * FROM items
+    LEFT JOIN itemtypes ON items.itype = itemtypes.itemtype
+    WHERE biblionumber = ?
+    /;
+    my $isth = $dbh->prepare($query);
+    $isth->execute($biblionumber);
+    my $idata = $isth->fetchrow_hashref;
+    $fee += $idata->{'reservefee'};
+
     my $cntitems = @- > $bibitems;
 
     if ( $fee > 0 ) {
