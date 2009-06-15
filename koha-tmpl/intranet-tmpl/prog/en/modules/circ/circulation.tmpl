@@ -7,7 +7,11 @@
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.min.js"></script>
-<script type="text/javascript">
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.dimensions.pack.js"></script>
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tools.min.js"></script>
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/auth.js"></script>
+<link rel="stylesheet" type="text/css" href="<!-- TMPL_VAR NAME="themelang" -->/css/login.css" />
+<script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
 $.tablesorter.addParser({
     id: 'articles',
@@ -41,6 +45,27 @@ $.tablesorter.addParser({
             }
         } ).attr( 'checked', false );
         <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="show_override" -->
+        var submit_form = $( '#confirm, #charges_override' ).get( 0 );
+        auth.bind_get_override( '#override_login', function ( data ) {
+            if ( submit_form ) {
+                $( submit_form ).find( 'input[name=override_user]' ).val( data.override_user ).end() 
+                    .find( 'input[name=override_pass]' ).val( data.override_pass ).end()
+                    .submit();
+            } else {
+                document.location.search = 'borrowernumber=' + <!-- TMPL_VAR NAME="borrowernumber" --> + '&override_user=' + data.override_user + '&override_pass=' + data.override_pass.replace( '+', '%2B' );
+            }
+        } );
+        <!-- /TMPL_IF -->
+		$("td").click(function(e){
+			if(e.target.tagName.toLowerCase() == 'td'){
+            $(this).find("input:checkbox").each( function() {
+                $(this).attr('checked', !$(this).attr('checked'));
+            });
+			}
+		});
+	 });
+ });
 
 var allcheckboxes = $(".checkboxed");
 	$("#renew_all").click(function(){
@@ -136,7 +161,19 @@ function refocus(calendar) {
 };
 //]]>
 </script>
-
+<style type="text/css">
+    <!--
+    #login-overlay {
+        background-image: url(/intranet-tmpl/prog/img/overlay_white.png);
+        display: none;
+        width: 656px;
+        height: 526px;
+    }
+    #login-area {
+        position: relative;
+    }
+    -->
+</style>
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
 </head>
 <body>
@@ -244,7 +281,7 @@ function refocus(calendar) {
 <!-- /TMPL_IF -->
 </ul>
 
-<form method="post" action="/cgi-bin/koha/circ/circulation.pl">
+<form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="confirm">
 
 <!-- TMPL_IF NAME="RESERVED" -->
     <p>
@@ -264,17 +301,23 @@ function refocus(calendar) {
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
     <input type="hidden" name="issueconfirmed" value="1" />
     <!-- TMPL_IF NAME="DEBT" --><input type="hidden" name="debt_confirmed" value="1" /><!-- /TMPL_IF -->
+    <input type="hidden" name="charges_overridden" value="<!-- TMPL_VAR NAME="charges_overridden" -->" />
+    <input type="hidden" name="override_user" value="<!-- TMPL_VAR NAME="override_user" -->" />
+    <input type="hidden" name="override_pass" value="<!-- TMPL_VAR NAME="override_pass" -->" />
     <input type="hidden" name="duedatespec" value="<!-- TMPL_VAR NAME="duedatespec" -->" />
     <input type="hidden" name="stickyduedate" value="<!-- TMPL_VAR NAME="stickyduedate" -->" />
     <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->" />
     <input type="submit" class="approve" value="Yes, Check Out (Y)" accesskey="y" />
 </form>
 
-<form method="get" action="/cgi-bin/koha/circ/circulation.pl">
+<form method="POST" action="/cgi-bin/koha/circ/circulation.pl" id="dont_confirm">
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
     <input type="hidden" name="duedatespec" value="<!-- TMPL_VAR NAME="duedatespec" -->" />
     <input type="hidden" name="stickyduedate" value="<!-- TMPL_VAR NAME="stickyduedate" -->" />
     <input type="submit" class="deny" value="No, Don't Check Out (N)" accesskey="n" />
+    <input type="hidden" name="charges_overridden" value="<!-- TMPL_VAR NAME="charges_overridden" -->" />
+    <input type="hidden" name="override_user" value="<!-- TMPL_VAR NAME="override_user" -->" />
+    <input type="hidden" name="override_pass" value="<!-- TMPL_VAR NAME="override_pass" -->" />
 </form>
 
 </div></div>
@@ -383,12 +426,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 <!-- TMPL_IF NAME="flagged" -->
 <div class="yui-u first">
 <!-- TMPL_ELSE -->
-<div>
-
-<!-- /TMPL_IF -->
-
-
-<form method="post" action="/cgi-bin/koha/circ/circulation.pl" name="mainform">
+<div><!-- /TMPL_IF --><form method="post" action="/cgi-bin/koha/circ/circulation.pl" name="mainform" id="mainform">
 <fieldset id="circ_circulation_issue">
     <!-- TMPL_IF NAME="DisplayClearScreenButton" -->
 	    <input type=button value="Clear Screen" onClick="window.location = '/cgi-bin/koha/circ/circulation.pl'">
@@ -445,6 +483,9 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
           <input type="hidden" name="printer" value="<!-- TMPL_VAR NAME="printer" -->" />
           <input type="hidden" name="print" value="maybe" />
           <input type="hidden" name="debt_confirmed" value="<!-- TMPL_VAR NAME="debt_confirmed" -->" />
+          <input type="hidden" name="charges_overridden" value="<!-- TMPL_VAR NAME="charges_overridden" -->" />
+          <input type="hidden" name="override_user" value="<!-- TMPL_VAR NAME="override_user" -->" />
+          <input type="hidden" name="override_pass" value="<!-- TMPL_VAR NAME="override_pass" -->" />
                 <!-- TMPL_IF NAME="CHARGES" -->
                         <input type="hidden" name="charges" value="yes" />
                         <input type="hidden" name="oldamount" value="<!-- TMPL_VAR NAME="amountold" -->" />
@@ -503,6 +544,11 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
         	<!-- TMPL_IF NAME="charges" -->
                 <!-- TMPL_IF NAME="charges_is_blocker" -->
 			        <li class="blocker">
+                    <form id="charges_override" method="POST" action="/cgi-bin/koha/circ/circulation.pl">
+                        <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
+                        <input type="hidden" name="charges_overridden" value="1" />
+                        <input type="hidden" name="override_user" value="<!-- TMPL_VAR NAME="override_user" -->" />
+                        <input type="hidden" name="override_pass" value="<!-- TMPL_VAR NAME="override_pass" -->" />
                 <!-- TMPL_ELSE -->
 			        <li>
                 <!-- /TMPL_IF -->
@@ -510,11 +556,22 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
                 <!-- TMPL_IF NAME="charges_is_blocker" -->
                     Checkouts are blocked because fine balance is over the limit.
                 <!-- /TMPL_IF -->
-            Make <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Payment</a></li>
+                <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
+                    Make <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Payment</a>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="charges_override" -->
+                    <input type="submit" class="submit" value="Override" />
+                <!-- /TMPL_IF -->
+                </form>
+                </li>
 			<!-- /TMPL_IF -->
 
         	<!-- TMPL_IF NAME="credits" -->
 			<li><span class="circ-hlt">Credits:</span> Patron has a credit</li>
+			<!-- /TMPL_IF -->
+
+        	<!-- TMPL_IF NAME="override_user" -->
+            <li><span class="circ-hlt">Using override:</span> from <!-- TMPL_VAR NAME="override_user" --></li>
 			<!-- /TMPL_IF -->
 
 
@@ -597,11 +654,14 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 <!-- SUMMARY : TODAY & PREVIOUS ISSUES -->
 <div id="checkouts">
 <!--TMPL_IF NAME="issuecount"-->
-    <form action="/cgi-bin/koha/reserve/renewscript.pl" method="post" class="checkboxed">
+    <form action="/cgi-bin/koha/reserve/renewscript.pl" method="post" id="renew_form">
     <input type="hidden" value="circ" name="destination" />
     <input type="hidden" name="cardnumber" value="<!-- TMPL_VAR NAME="cardnumber" -->" />
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
     <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->" />
+    <input type="hidden" name="charges_overridden" value="<!-- TMPL_VAR NAME="charges_overridden" -->" />
+    <input type="hidden" name="override_user" value="<!-- TMPL_VAR NAME="override_user" -->" />
+    <input type="hidden" name="override_pass" value="<!-- TMPL_VAR NAME="override_pass" -->" />
         <table id="issuest">
     <thead><tr>
         <th scope="col">Due date</th>
@@ -865,4 +925,25 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 <!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
 </div><!-- /TMPL_IF --><!-- /TMPL_UNLESS -->
 </div>
+<!-- TMPL_IF "show_override" -->
+<div id="login-overlay">
+<div id="login-area">
+
+<div id="login_error">Please log in as a user that has the necessary rights.</div>
+<!-- login prompt time-->
+<form action="" method="post" name="loginform" id="loginform" autocomplete="off">
+    <input type="hidden" name="koha_login_context" value="intranet" />
+<p><label for="userid">Username:</label>
+<input type="text" name="userid" id="userid" class="input focus" value="<!-- TMPL_VAR NAME="userid" -->" size="20" tabindex="1" />
+</p>
+<p><label for="password">Password:</label>
+<input type="password" name="password" id="password" class="input" value="" size="20" tabindex="2" />
+</p>
+
+<p class="submit"><input type="button" name="cancel-override" id="cancel-override" class="submit" value="Cancel" /><input class="submit" id="login-submit" type="submit" value="Login &raquo;" tabindex="4" /></p>
+</form>
+
+</div>
+</div>
+<!-- /TMPL_IF -->
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

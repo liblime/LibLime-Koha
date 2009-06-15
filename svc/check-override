@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+# Copyright 2009 Jesse Weaver
+#
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+#
+# Koha is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
+# Suite 330, Boston, MA  02111-1307 USA
+#
+
+use strict;
+use warnings;
+
+use CGI;
+use C4::Auth qw/check_api_auth checkpw/;
+use C4::Context;
+use XML::Simple;
+
+my $query = new CGI;
+
+my ($status, undef, undef) = check_api_auth($query, {});
+
+print $query->header(-type => 'text/xml');
+
+if ( $status eq 'ok' ) {
+    my $override_user = $query->param("override_user") || '';
+    my $override_pass = $query->param("override_pass") || '';
+
+    $status = 'failed' if( !checkpw( C4::Context->dbh, $override_user, $override_pass, 1 ) );
+}
+
+print XMLout({ status => $status }, NoAttr => 1, RootName => 'response', XMLDecl => 1);

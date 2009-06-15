@@ -103,6 +103,7 @@ function update_child() {
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="StaffMember" --><!-- TMPL_UNLESS NAME="CAN_user_staffaccess" -->new YAHOO.widget.Button("deletepatron");<!-- /TMPL_UNLESS -->
             <!-- TMPL_ELSE -->new YAHOO.widget.Button("deletepatron");<!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="show_override" -->new YAHOO.widget.Button("override_login");<!-- /TMPL_IF -->
 	}
 
 	//]]>
@@ -141,7 +142,15 @@ function update_child() {
                 <li><a id="patronflags" href="/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Set Permissions</a></li>
         <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
-    <!-- TMPL_IF NAME="StaffMember" --><!-- TMPL_UNLESS NAME="CAN_user_staffaccess" --><li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li><!-- /TMPL_UNLESS -->
-    <!-- TMPL_ELSE --><li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li><!-- /TMPL_IF -->
-
+    <!-- TMPL_IF NAME="StaffMember" --><!-- TMPL_UNLESS NAME="CAN_user_staffaccess" -->
+    <!-- TMPL_IF name="CAN_user_borrowers_delete_borrowers" -->
+    <li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li>
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_UNLESS -->
+    <!-- TMPL_ELSE -->
+    <!-- TMPL_IF name="CAN_user_borrowers_delete_borrowers" -->
+    <li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li>
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="show_override" --><li><a id="override_login" href="#">Override Login</a></li><!-- /TMPL_IF -->
 </ul></div>
