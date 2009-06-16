@@ -681,7 +681,12 @@ sub CanBookBeIssued {
         # Offline circ calls AddIssue directly, doesn't run through here
         #  So issuingimpossible should be ok.
     }
-    $issuingimpossible{INVALID_DATE} = $duedate->output('syspref') unless ( $duedate && $duedate->output('iso') ge C4::Dates->today('iso') );
+    my $skip_duedate_check = C4::Context->preference('AllowDueDateInPast');
+    if (!$skip_duedate_check) {
+        unless ( $duedate && $duedate->output('iso') ge C4::Dates->today('iso') ) {
+            $issuingimpossible{INVALID_DATE} = $duedate->output('syspref');
+        }
+    }
 
     #
     # BORROWER STATUS
