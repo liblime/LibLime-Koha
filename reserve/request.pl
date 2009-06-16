@@ -57,7 +57,16 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 
 my $action = $input->param('action');
 if ( $action eq 'suspend' ) {
-  SuspendReserve( $input->param('reservenumber') );
+  my $resumedate = $input->param('resumedate');
+  
+  if ( $resumedate =~ m/(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])-(\d{4})/ ) {
+    my @parts = split(/-/, $resumedate );
+    $resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1];
+  } else {
+    $resumedate = '';
+  }
+  
+  SuspendReserve( $input->param('reservenumber'), $resumedate );
 } elsif ( $action eq 'resume' ) {
   ResumeReserve( $input->param('reservenumber') );
 }
@@ -513,6 +522,9 @@ foreach my $biblionumber (@biblionumbers) {
 
     my ( $suspended_count, $suspended_reserves ) = GetSuspendedReservesFromBiblionumber($biblionumber);
     if ( $suspended_count ) {
+      foreach my $res ( @$suspended_reserves ) {
+        $res->{'waitingdate'} = format_date( $res->{'waitingdate'} );
+      }
       $template->param( suspended_reserves_loop => $suspended_reserves );
     }
     

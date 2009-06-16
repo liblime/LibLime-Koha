@@ -49,9 +49,11 @@ warn "Incoming ResumeDate: $resumedate";
 if ( $resume && $reservenumber && $borrowernumber) {
 	ResumeReserve( $reservenumber );
 } elsif ( $suspend && $reservenumber && $borrowernumber) {
-	my @parts = split(/-/, $resumedate );
-	my $resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1]; 
-	warn "ResumeDate: $resumedate";
+	if ( $resumedate ) {
+		my @parts = split(/-/, $resumedate );
+		$resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1]; 
+		warn "ResumeDate: $resumedate";
+	}
 	SuspendReserve( $reservenumber, $resumedate );
 } elsif ($biblionumber and $borrowernumber) {
 	CancelReserve($biblionumber, '', $borrowernumber);

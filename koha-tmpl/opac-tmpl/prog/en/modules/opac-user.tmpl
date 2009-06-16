@@ -393,8 +393,8 @@ $.tablesorter.addParser({
 				<!-- TMPL_IF NAME="showpriority" -->
 				<th>Priority</th>
 				<!-- /TMPL_IF -->
-                <th>Status</th>
-		<th>Resume</th>
+                <th>Resume On</th>
+		<th>Resume Now</th>
             </tr></thead>
 			<tbody>
             <!-- TMPL_LOOP NAME="SUSPENDED_RESERVES" -->
@@ -420,25 +420,7 @@ $.tablesorter.addParser({
 				<td><!-- TMPL_VAR NAME="priority" --> </td>
 				<!-- /TMPL_IF -->
                 <td>
-                    <!-- TMPL_IF NAME="wait" -->
-                        <!-- TMPL_IF NAME="atdestination" -->
-                            <!-- TMPL_IF NAME="found" -->
-                            Item waiting at <b> <!-- TMPL_VAR NAME="wbrname" --></b>
-                            <input type="hidden" name="pickup" value="<!-- TMPL_VAR NAME="wbrcd" -->" />
-                            <!-- TMPL_ELSE -->
-                            Item waiting to be pulled from <b> <!-- TMPL_VAR NAME="wbrname" --></b>
-                        <!-- /TMPL_IF -->
-                        <!-- TMPL_ELSE -->
-                            Item in transit to <b> <!-- TMPL_VAR NAME="wbrname" --></b> <input type="hidden" name="pickup" value="<!-- TMPL_VAR NAME="wbrcd" -->" />
-                        <!-- /TMPL_IF -->
-                    <!-- TMPL_ELSE -->
-                            <!-- TMPL_IF NAME="intransit" -->
-                                Item in transit from <b> <!-- TMPL_VAR NAME="frombranch" --></b> since 
-                                <!-- TMPL_VAR NAME="datesent" -->
-                            <!-- TMPL_ELSE -->
-                                Pending
-                            <!-- /TMPL_IF -->
-                    <!-- /TMPL_IF -->
+			<!-- TMPL_VAR NAME="waitingdate" -->
                 </td>
 		<td>
 		<form action="/cgi-bin/koha/opac-modrequest.pl" method="post">

@@ -194,6 +194,7 @@ $template->param( showpriority=>1 ) if $OPACDisplayRequestPriority;
 my @suspended_reserves  = GetSuspendedReservesFromBorrowernumber( $borrowernumber );
 foreach my $res (@suspended_reserves) {
     $res->{'reservedate'} = format_date( $res->{'reservedate'} );
+    $res->{'waitingdate'} = format_date( $res->{'waitingdate'} );
     my $publictype = $res->{'publictype'};
     $res->{$publictype} = 1;
     $res->{'waiting'} = 1 if $res->{'found'} eq 'W';

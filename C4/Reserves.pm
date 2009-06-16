@@ -1508,10 +1508,12 @@ sub SuspendReserve {
     $sth->finish();
 
     ## Reuse waitingdate form resumedate, suspended reserves cannot be waiting.
-    $query = "UPDATE reserves_suspended SET waitingdate = ? WHERE reservenumber = ?";
-    $sth = $dbh->prepare( $query );
-    $sth->execute( $resumedate, $reservenumber );
-    $sth->finish();
+    if ( $resumedate ) {
+      $query = "UPDATE reserves_suspended SET waitingdate = ? WHERE reservenumber = ?";
+      $sth = $dbh->prepare( $query );
+      $sth->execute( $resumedate, $reservenumber );
+      $sth->finish();
+    }
     
     _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $reserve->{'priority'} );    
 }
