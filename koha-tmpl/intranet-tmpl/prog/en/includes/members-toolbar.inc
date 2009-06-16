@@ -59,6 +59,7 @@ function update_child() {
 			{ text: _("Renew Patron"),  onclick: { fn: confirm_reregistration } },
 			{ text: _("Set Permissions"), url: "/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->"<!-- TMPL_UNLESS NAME="CAN_user_permissions" -->, disabled: true<!-- /TMPL_UNLESS -->},
 			{ text: _("Delete"), onclick: { fn: confirm_deletion}<!-- TMPL_UNLESS NAME="CANDELETEUSER" -->, disabled: true<!-- /TMPL_UNLESS --> },
+			{ text: _("Copy Patron"), url: "/cgi-bin/koha/members/memberentry.pl?op=add&borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&category_type=<!-- TMPL_VAR NAME="category_type" -->&categorycode=<!-- TMPL_VAR NAME="categorycode" -->&copy=1"},
 			{ text: _("Update Child to Adult Patron") , onclick: { fn: update_child }<!-- TMPL_UNLESS NAME="is_child" -->, disabled: true<!-- /TMPL_UNLESS -->}
 		];
 

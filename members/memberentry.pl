@@ -66,6 +66,7 @@ my $actionType     = $input->param('actionType') || '';
 my $modify         = $input->param('modify');
 my $delete         = $input->param('delete');
 my $op             = $input->param('op');
+my $copy           = $input->param('copy');
 my $destination    = $input->param('destination');
 my $cardnumber     = $input->param('cardnumber');
 my $check_member   = $input->param('check_member');
@@ -195,6 +196,15 @@ if (($op eq 'insert') and !$nodouble){
       my $tmpborrowercategory=GetBorrowercategory($check_category);
       $check_categorytype=$tmpborrowercategory->{'category_type'};
     }   
+}
+
+# Copy the patron record
+if ($copy) {
+  my $borrowerdata=GetMember($borrowernumber);
+  foreach (qw(surname title streetnumber address streettype address2 zipcode city phone phonepro mobile fax email emailpro branchcode)) {
+    $newdata{$_} = $borrowerdata->{$_};
+  }
+  $template->param("copy"=>1);
 }
 
   #recover all data from guarantor address phone ,fax... 
