@@ -55,7 +55,9 @@ function update_child() {
 	    ];
 	
 		var moremenu = [
+            <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 			{ text: _("Renew Patron"),  onclick: { fn: confirm_reregistration } },
+            <!-- /TMPL_IF -->
 			{ text: _("Set Permissions"), url: "/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->"<!-- TMPL_UNLESS NAME="CAN_user_permissions" -->, disabled: true<!-- /TMPL_UNLESS -->},
             <!-- TMPL_IF NAME="CAN_user_borrowers_delete_borrowers" -->
 			{ text: _("Delete"), onclick: { fn: confirm_deletion } },
