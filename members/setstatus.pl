@@ -33,7 +33,7 @@ use C4::Auth;
 my $input = new CGI;
 
 my $flagsrequired;
-$flagsrequired->{borrowers}=1;
+$flagsrequired->{borrowers}=q|*|;
 my ($loggedinuser, $cookie, $sessionID) = checkauth($input, 0, $flagsrequired);
 
 my $destination = $input->param("destination");
