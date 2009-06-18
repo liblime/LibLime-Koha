@@ -53,15 +53,16 @@ for ($damaged,$itemlost,$wthdrawn) {
         $_ = 0;
     }
 }
-
+if ( $itemlost ne $item_data_hashref->{'itemlost'} ) {
+    ModItemLost( $biblionumber, $itemnumber, $itemlost );
+    C4::Accounts::chargelostitem( $itemnumber ) if ( $itemlost == 1 );
+}
 # modify MARC item if input differs from items table.
 my $item_changes = {};
 if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
     if ((not defined  $item_data_hashref->{'itemnotes'}) or $itemnotes ne $item_data_hashref->{'itemnotes'}) {
         $item_changes->{'itemnotes'} = $itemnotes;
     }
-} elsif ($itemlost ne $item_data_hashref->{'itemlost'}) {
-    $item_changes->{'itemlost'} = $itemlost;
 } elsif ($wthdrawn ne $item_data_hashref->{'wthdrawn'}) {
     $item_changes->{'wthdrawn'} = $wthdrawn;
 } elsif ($damaged ne $item_data_hashref->{'damaged'}) {
@@ -73,7 +74,5 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
 }
 
 ModItem($item_changes, $biblionumber, $itemnumber);
-
-C4::Accounts::chargelostitem($itemnumber) if ($itemlost==1) ;
 
 print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber#item$itemnumber");

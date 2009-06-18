@@ -30,6 +30,7 @@ use C4::Log;
 use C4::Branch;
 require C4::Reserves;
 use C4::Charset;
+use C4::Stats;
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -48,6 +49,7 @@ BEGIN {
         ModItemFromMarc
         ModItem
         ModDateLastSeen
+        ModItemLost
         ModItemTransfer
         DelItem
     
@@ -574,6 +576,33 @@ sub ModDateLastSeen {
     
     my $today = C4::Dates->new();    
     ModItem({ itemlost => 0, datelastseen => $today->output("iso") }, undef, $itemnumber);
+}
+
+=head2 ModItemLost
+
+=over 4
+
+ModItemLost( $biblionumber, $itemnumber, $lostvalue );
+
+=back
+
+Changes itemlost for a given item. If $lostvalue > 0, then a log entry is made
+for that item.
+
+=cut
+
+sub ModItemLost {
+    my ( $biblionumber, $itemnumber, $lostvalue ) = @_;
+    my $dbh = C4::Context->dbh;
+    my $data = $dbh->selectrow_hashref( "
+        SELECT
+          items.replacementprice, issues.borrowernumber, items.itype
+          FROM items LEFT JOIN issues USING (itemnumber)
+          WHERE items.itemnumber = ?
+    ", {}, $itemnumber );
+    return unless ( $data->{'borrowernumber'} );
+    C4::Stats::UpdateStats( C4::Context->userenv->{'branch'}, 'itemlost', $data->{'replacementprice'} || 0, $lostvalue, $itemnumber, $data->{'itype'}, $data->{'borrowernumber'}, 0 ) if ( $lostvalue > 0 );
+    ModItem( { itemlost => $lostvalue }, $biblionumber, $itemnumber );
 }
 
 =head2 DelItem
