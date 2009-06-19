@@ -94,7 +94,9 @@ function update_child() {
             <!-- TMPL_ELSE--> new YAHOO.widget.Button("changepassword"); <!-- /TMPL_IF -->
 	    new YAHOO.widget.Button("printslip");
 		new YAHOO.widget.Button("printpage");
+<!-- TMPL_IF NAME="CAN_user_circulate_renew_expired" -->
 	    new YAHOO.widget.Button("renewpatron");		 
+<!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="CAN_user_permissions" -->
           <!-- TMPL_IF NAME="StaffMember" -->
             <!-- TMPL_IF NAME="CAN_user_staffaccess" -->
