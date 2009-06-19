@@ -143,7 +143,7 @@ function refocus(calendar) {
   <script type="text/javascript">
     function displaymessage() {
       clearTimeout( mesg_timeout );
-      if ( confirm('Circ Timeout - Is this still the same patron?') ) { 
+      if ( confirm('Circ Timeout -- Are you finished with this patron?') ) { 
         window.location = '/cgi-bin/koha/circ/circulation.pl';
       } else {
         mesg_timeout = setTimeout('displaymessage()', <!-- TMPL_VAR NAME="CheckoutTimeout" --> * 1000);
