@@ -182,7 +182,7 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
         }
 
         if ( $borrower->{'last_reported_amount'} < $minimum ) {
-            MarkBorrowerReported( $borrower->{'borrowernumber'}, 0 ) if ( $confirm );
+            MarkMemberReported( $borrower->{'borrowernumber'}, 0 ) if ( $confirm );
             next;
         }
 
