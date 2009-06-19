@@ -1510,6 +1510,7 @@ ModReserveAffect, _not_ ModReserveFill)
 
 sub _koha_notify_reserve {
     my ($itemnumber, $borrowernumber, $biblionumber) = @_;
+    warn "_koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber ) {"; ##DBG
 
     my $dbh = C4::Context->dbh;
     my $borrower = C4::Members::GetMember( $borrowernumber );
@@ -1526,6 +1527,8 @@ sub _koha_notify_reserve {
         $print_mode = 1;
     }
 
+    warn "  \$print_mode = $print_mode; $letter_code = '$letter_code'"; ##DBG
+
     my $sth = $dbh->prepare("
         SELECT *
         FROM   reserves
@@ -1537,8 +1540,11 @@ sub _koha_notify_reserve {
     my $branch_details = GetBranchDetail( $reserve->{'branchcode'} );
 
     my $admin_email_address = $branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');
+    warn "  \$admin_email_address = $admin_email_address"; ##DBG
 
     my $letter = getletter( 'reserves', $letter_code );
+    use Data::Dumper; ##DBG
+    warn "  \$letter = " . Data::Dumper->new( $letter )->Indent(0)->Dump; ##DBG
 
     C4::Letters::parseletter( $letter, 'branches', $reserve->{'branchcode'} );
     C4::Letters::parseletter( $letter, 'borrowers', $borrowernumber );
@@ -1548,12 +1554,15 @@ sub _koha_notify_reserve {
     if ( $reserve->{'itemnumber'} ) {
         C4::Letters::parseletter( $letter, 'items', $reserve->{'itemnumber'} );
     }
+    warn "  \$letter = " . Data::Dumper->new( $letter )->Indent(0)->Dump; ##DBG
     my $today = C4::Dates->new()->output();
     $letter->{'title'} =~ s/<<today>>/$today/g;
     $letter->{'content'} =~ s/<<today>>/$today/g;
     $letter->{'content'} =~ s/<<[a-z0-9_]+\.[a-z0-9]+>>//g; #remove any stragglers
+    warn "  \$letter = " . Data::Dumper->new( $letter )->Indent(0)->Dump; ##DBG
 
     if ( $print_mode ) {
+        warn "  C4::Letters::EnqueueLetter( { letter => $letter, borrowernumber => $borrowernumber, message_transport_type => 'print' } );"; ##DBG
         C4::Letters::EnqueueLetter( {
             letter => $letter,
             borrowernumber => $borrowernumber,
@@ -1565,6 +1574,7 @@ sub _koha_notify_reserve {
 
     if ( grep { $_ eq 'email' } @{$messagingprefs->{transports}} ) {
         # aka, 'email' in ->{'transports'}
+        warn "  C4::Letters::EnqueueLetter( { letter => $letter, borrowernumber => $borrowernumber, message_transport_type => 'email' } );"; ##DBG
         C4::Letters::EnqueueLetter(
             {   letter                 => $letter,
                 borrowernumber         => $borrowernumber,
@@ -1575,6 +1585,7 @@ sub _koha_notify_reserve {
     }
 
     if ( grep { $_ eq 'sms' } @{$messagingprefs->{transports}} ) {
+        warn "  C4::Letters::EnqueueLetter( { letter => $letter, borrowernumber => $borrowernumber, message_transport_type => 'sms' } );"; ##DBG
         C4::Letters::EnqueueLetter(
             {   letter                 => $letter,
                 borrowernumber         => $borrowernumber,
@@ -1582,6 +1593,8 @@ sub _koha_notify_reserve {
             }
         );
     }
+
+    warn "}"; ##DBG
 }
 
 =item _ShiftPriorityByDateAndPriority
