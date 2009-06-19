@@ -366,15 +366,19 @@ $.tablesorter.addParser({
 		</form>
 		</td>
 		<td>
-		<form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
-			<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
-			<input type="hidden" name="suspend" value="1" />
-			<input type="submit" name="submit" class="icon delete cancel" value="Suspend" />
-			<br/>
-			<label>Resume on:</label>
-			<input type="text" size="10" maxlength="10" id="resumedate" name="resumedate" />
-			<label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
-		</form>
+		<!-- TMPL_IF NAME="found" -->
+			Items waiting cannot be suspended.
+		<!-- TMPL_ELSE -->
+			<form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
+				<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
+				<input type="hidden" name="suspend" value="1" />
+				<input type="submit" name="submit" class="icon delete cancel" value="Suspend" />
+				<br/>
+				<label>Resume on:</label>
+				<input type="text" size="10" maxlength="10" id="resumedate" name="resumedate" />
+				<label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
+			</form>
+		<!-- /TMPL_IF -->
 		</td>
 
             </tr>
