@@ -1262,6 +1262,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
           ( C4::Context->preference('maxItemsinSearchResults') )
           ? C4::Context->preference('maxItemsinSearchResults') - 1
           : 1;
+        my $other_otherstatus = '';
 
         # loop through every item
         foreach my $field (@fields) {
@@ -1279,6 +1280,25 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
             }
             elsif ($item->{$otherbranch}) {	# Last resort
                 $item->{'branchname'} = $branches{$item->{$otherbranch}}; 
+            }
+
+            my $sth = $dbh->prepare(
+            "SELECT description,holdsallowed
+               FROM itemstatus
+                 LEFT JOIN items ON itemstatus.statuscode=items.otherstatus
+               WHERE itemnumber = ?"
+            );
+            $sth->execute($oldbiblio->{itemnumber});
+            my @statusvalue = $sth->fetchrow;
+            my ($otherstatus,$holdsallowed,$OPACstatusdisplay);
+            if (@statusvalue) {
+              ($otherstatus,$holdsallowed) = @statusvalue;
+              $OPACstatusdisplay = 1;
+            }
+            else {
+              $otherstatus = '';
+              $holdsallowed = 1;
+              $OPACstatusdisplay = 0;
             }
 
 			my $prefix = $item->{$hbranch} . '--' . $item->{location} . $item->{itype} . $item->{itemcallnumber};
@@ -1317,6 +1337,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                         || $item->{itemlost}
                         || $item->{damaged}
                         || $item->{notforloan}
+                        || ($holdsallowed == 0)
                         || $items_count > 20) {
 
                     # A couple heuristics to limit how many times
@@ -1339,6 +1360,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     || $item->{itemlost}
                     || $item->{damaged}
                     || $item->{notforloan} 
+                    || ($holdsallowed == 0)
                     || ($transfertwhen ne ''))
                 {
                     $wthdrawn_count++        if $item->{wthdrawn};
@@ -1347,6 +1369,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     $item_in_transit_count++ if $transfertwhen ne '';
                     $item->{status} = $item->{wthdrawn} . "-" . $item->{itemlost} . "-" . $item->{damaged} . "-" . $item->{notforloan};
                     $other_count++;
+                    $other_otherstatus = $otherstatus if ($holdsallowed == 0);
 
 					my $key = $prefix . $item->{status};
 					foreach (qw(wthdrawn itemlost damaged branchname itemcallnumber)) {
@@ -1357,6 +1380,8 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 					$other_items->{$key}->{count}++ if $item->{$hbranch};
 					$other_items->{$key}->{location} = $shelflocations->{ $item->{location} };
 					$other_items->{$key}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
+                                        $other_items->{$prefix}->{OPACstatusdisplay} = $OPACstatusdisplay;
+                                        $other_items->{$prefix}->{otherstatus} = $otherstatus;
                 }
                 # item is available
                 else {
@@ -1368,6 +1393,8 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 					}
 					$available_items->{$prefix}->{location} = $shelflocations->{ $item->{location} };
 					$available_items->{$prefix}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
+                                        $available_items->{$prefix}->{OPACstatusdisplay} = $OPACstatusdisplay;
+                                        $available_items->{$prefix}->{otherstatus} = $otherstatus;
                 }
             }
         }    # notforloan, item level and biblioitem level
@@ -1415,6 +1442,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
         $oldbiblio->{damagedcount}         = $itemdamaged_count;
         $oldbiblio->{intransitcount}       = $item_in_transit_count;
         $oldbiblio->{orderedcount}         = $ordered_count;
+        $oldbiblio->{other_otherstatus}    = $other_otherstatus;
         push( @newresults, $oldbiblio );
     }
     return @newresults;

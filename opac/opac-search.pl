@@ -465,6 +465,8 @@ for (my $i=0;$i<=@servers;$i++) {
             $template->param(results_per_page =>  $results_per_page);
             $template->param(SEARCH_RESULTS => \@newresults,
                                 OPACItemsResultsDisplay => (C4::Context->preference("OPACItemsResultsDisplay") eq "itemdetails"?1:0),
+#           my $OPACstatusdisplay = ($newresults->{otherstatus} ne '') ? 1 : 0;
+#           $template->param(OPACstatusdisplay => $OPACstatusdisplay);
                             );
             ## Build the page numbers on the bottom of the page
             my @page_numbers;

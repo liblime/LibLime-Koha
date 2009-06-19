@@ -40,6 +40,7 @@ my $itemlost=$cgi->param('itemlost');
 my $itemnotes=$cgi->param('itemnotes');
 my $wthdrawn=$cgi->param('wthdrawn');
 my $damaged=$cgi->param('damaged');
+my $otherstatus=$cgi->param('otherstatus');
 
 my $confirm=$cgi->param('confirm');
 my $dbh = C4::Context->dbh;
@@ -66,6 +67,8 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
     $item_changes->{'wthdrawn'} = $wthdrawn;
 } elsif ($damaged ne $item_data_hashref->{'damaged'}) {
     $item_changes->{'damaged'} = $damaged;
+} elsif ($otherstatus ne $item_data_hashref->{'otherstatus'}) {
+    $item_changes->{'otherstatus'} = $otherstatus;
 } else {
     #nothings changed, so do nothing.
     print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber#item$itemnumber");

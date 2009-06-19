@@ -57,6 +57,7 @@ BEGIN {
 		&GetNormalizedISBN
 		&GetNormalizedEAN
 		&GetNormalizedOCLCNumber
+                &GetOtherItemStatus
 
 		$DEBUG
 	);
@@ -1197,6 +1198,32 @@ sub GetNormalizedOCLCNumber {
     }
     else { # TODO: add UNIMARC fields
     }
+}
+
+=head2 GetOtherItemStatus
+
+$statusvalues = GetAuthorisedValues($selected);
+
+This function returns all of the item status values from the'itemstatus' table
+in a reference to array of hashrefs.
+
+=cut
+
+sub GetOtherItemStatus {
+  my ($selected) = @_;
+  my @results;
+  my $dbh      = C4::Context->dbh;
+  my $query    = "SELECT * FROM itemstatus";
+
+  my $sth = $dbh->prepare($query);
+  $sth->execute;
+  while (my $data=$sth->fetchrow_hashref) {
+    if ($selected eq $data->{'statuscode'} ) {
+      $data->{'selected'} = 1;
+    }
+    push @results, $data;
+  }
+  return \@results; #$data;
 }
 
 sub _normalize_match_point {
