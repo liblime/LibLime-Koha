@@ -586,7 +586,7 @@ function checkMultiHold() {
     <!-- /TMPL_IF -->
         </td>
 	<td>
-		<input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" value="1" />
+		<input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" <!-- TMPL_IF NAME="wbrname" -->disabled<!-- /TMPL_IF --> value="1" />
 		<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
 		<label>Resume on:</label>
 		<input type="text" size="10" maxlength="10" id="resumedate" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
