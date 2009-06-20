@@ -411,7 +411,7 @@ sub manualinvoice {
             $amountleft, $notifyid );
     }
 
-    UpdateStats( my $branch = '', my $type = 'maninvoice', $amount, my $other = $type, $itemnum, my $itemtype, $borrowernumber, $accountno);
+    UpdateStats( my $branch = '', my $stattype = 'maninvoice', $amount, my $other = $type, $itemnum, my $itemtype, $borrowernumber, $accountno);
     return 0;
 }
 
