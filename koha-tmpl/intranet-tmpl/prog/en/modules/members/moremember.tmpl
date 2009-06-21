@@ -510,6 +510,7 @@ if (nodename =="barcodes[]"){
 			<th>Barcode</th>
 			<th>Priority</th>
 			<th>Delete?</th>
+			<th>Suspend?</th>
 		</tr></thead>
 		<tbody><!-- TMPL_LOOP NAME="reservloop" -->
 		<tr class="<!-- TMPL_VAR NAME="color" -->">
@@ -527,25 +528,35 @@ if (nodename =="barcodes[]"){
                 <!-- TMPL_VAR NAME="frombranch" --> since <!-- TMPL_VAR NAME="datesent" --> </em>
                 <!-- /TMPL_IF -->
 
-                <!-- TMPL_IF name="nottransfered" -->
-                <em>Item hasn't been transfered yet from <!-- TMPL_VAR NAME="nottransferedby" --></em>
-                <!-- /TMPL_IF -->
-                <!-- TMPL_IF name="barcodereserv" -->
-                <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
-                <!-- /TMPL_IF -->
-            </td>
-            <td><!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
-            <td><select name="rank-request">
-                    <option value="n">No</option>
-                    <option value="del">Yes</option>
-                </select>
-                <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
-                <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" />
-            </td>
-        </tr>
+                        <!-- TMPL_IF name="nottransfered" -->
+                        <em>Item hasn't been transfered yet from <!-- TMPL_VAR NAME="nottransferedby" --></em>
+                        <!-- /TMPL_IF -->
+						<!-- TMPL_IF name="barcodereserv" -->
+						<a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
+						<!-- /TMPL_IF -->
+					</td>
+					<td><!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
+					<td><select name="rank-request">
+			<option value="n">No</option>
+			<option value="del">Yes</option>
+			</select>
+			<td>
+				<!-- TMPL_IF NAME="waiting" -->
+					Cannot Suspend Waiting Items
+				<!-- TMPL_ELSE -->
+			                <input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" value="1" />
+			                <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />                                                 
+			                <label>Resume on:</label>                                                                  
+			                <input type="text" size="10" maxlength="10" id="resumedate" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
+			                <label for="resumedate">( Optional, use format MM-DD-YYYY )</label>                                                    
+				<!-- /TMPL_IF -->
+			</td>
+		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
+		<input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" /></td>
+			</tr>
 		<!-- /TMPL_LOOP --></tbody>
 	</table>
-			<fieldset class="action"><input type="submit" class="cancel" name="submit" value="Cancel Marked Requests" /></fieldset>
+			<fieldset class="action"><input type="submit" class="cancel" name="submit" value="Update Holds" /></fieldset>
 	</form>
 	<!-- TMPL_ELSE -->
 	<p>Patron has nothing on hold.</p>
