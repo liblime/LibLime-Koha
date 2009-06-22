@@ -74,7 +74,11 @@
     <tr>
       <td><!-- TMPL_VAR NAME="message_name" --></td>
       <!-- TMPL_IF NAME="takes_days" -->
+      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
       <td><select name="<!-- TMPL_VAR NAME="message_attribute_id" -->-DAYS">
+      <!-- TMPL_ELSE -->
+      <td><select disabled="1" name="<!-- TMPL_VAR NAME="message_attribute_id" -->-DAYS">
+      <!-- /TMPL_IF -->
           <!-- TMPL_LOOP name="select_days" -->
           <!-- TMPL_IF NAME="selected" --><option value="<!-- TMPL_VAR NAME="day" -->" selected="selected"><!-- TMPL_VAR NAME="day" --></option><!-- TMPL_ELSE -->
           <option value="<!-- TMPL_VAR NAME="day" -->"><!-- TMPL_VAR NAME="day" --></option>
@@ -86,31 +90,50 @@
       <td>-</td>
       <!-- /TMPL_IF -->
       <!-- TMPL_IF NAME="transport-sms" -->
-      <!-- TMPL_IF NAME="SMSSendDriver" --><td><input type="checkbox"
-                 id="sms<!-- TMPL_VAR NAME="message_attribute_id" -->"
+      <!-- TMPL_IF NAME="SMSSendDriver" -->
+      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
+                 <td><input type="checkbox" id="sms<!-- TMPL_VAR NAME="message_attribute_id" -->"
                  name="<!-- TMPL_VAR NAME="message_attribute_id" -->"
                  value="sms" <!-- TMPL_VAR NAME="transport-sms"   --> onclick = "document.messaging.none<!-- TMPL_VAR NAME="message_attribute_id" -->.checked=false;" />
-      </td><!-- /TMPL_IF -->
+      </td>
+      <!-- TMPL_ELSE -->
+         <td>
+          <input type="checkbox" readonly="true" value="sms" <!-- TMPL_VAR NAME="transport-sms" --> />
+         </td>
+      <!-- /TMPL_IF -->
+      <!-- /TMPL_IF -->
       <!-- TMPL_ELSE -->
       <td>-</td>
       <!-- /TMPL_IF -->
 
       <!-- TMPL_IF NAME="transport-email" -->
+      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
       <td><input type="checkbox"
                  id="email<!-- TMPL_VAR NAME="message_attribute_id" -->"
                  name="<!-- TMPL_VAR NAME="message_attribute_id" -->"
                  value="email"   <!-- TMPL_VAR NAME="transport-email"   --> onclick = "document.messaging.none<!-- TMPL_VAR NAME="message_attribute_id" -->.checked=false;" />
       </td>
       <!-- TMPL_ELSE -->
+         <td>
+          <input type="checkbox" readonly="true" value="email" <!-- TMPL_VAR NAME="transport-email" --> />
+         </td>
+      <!-- /TMPL_IF -->
+      <!-- TMPL_ELSE -->
       <td>-</td>
       <!-- /TMPL_IF -->
 
       <!-- TMPL_IF NAME="has_digest" -->
+      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
       <td><input type="checkbox"
                  id="digest<!-- TMPL_VAR NAME="message_attribute_id" -->"
                  value="<!-- TMPL_VAR NAME="message_attribute_id" -->"
                  name="digest"   <!-- TMPL_VAR NAME="digest" --> onclick = "document.messaging.none<!-- TMPL_VAR NAME="message_attribute_id" -->.checked=false;" />
       </td>
+      <!-- TMPL_ELSE -->
+         <td>
+          <input type="checkbox" readonly="true" value="digest" <!-- TMPL_VAR NAME="digest" --> />
+         </td>
+      <!-- /TMPL_IF -->
       <!-- TMPL_ELSE -->
       <td>-</td>
       <!-- /TMPL_IF -->
@@ -125,15 +148,26 @@
       <td>-</td>
       <!-- /TMPL_IF --> -->
 
+      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
       <td><input type="checkbox" class="none" id="none<!-- TMPL_VAR NAME="message_attribute_id" -->" /></td>
+      <!-- TMPL_ELSE -->
+      <td><input type="checkbox" readonly="true" class="none" id="none<!-- TMPL_VAR NAME="message_attribute_id" -->" /></td>
+      <!-- /TMPL_IF -->
     </tr>
     <!-- /TMPL_LOOP -->
   </table>
-<!-- TMPL_IF NAME="transport-sms" --><p><label for="SMSnumber">SMS number:</label> <input type="text" id="SMSnumber" name="SMSnumber" value="<!-- TMPL_VAR NAME="SMSnumber"  -->" /></p><!-- /TMPL_IF -->
-
+<!-- TMPL_IF NAME="transport-sms" -->
+<!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
+<p><label for="SMSnumber">SMS number:</label> <input type="text" id="SMSnumber" name="SMSnumber" value="<!-- TMPL_VAR NAME="SMSnumber"  -->" /></p>
+<!-- TMPL_ELSE -->
+<p><label for="SMSnumber">SMS number:</label> <input type="text" readonly="true" id="SMSnumber" name="SMSnumber" value="<!-- TMPL_VAR NAME="SMSnumber"  -->" /></p>
+<!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 <fieldset class="action">
   <input type="submit" value="Submit Changes" /> <a class="cancel" href="/cgi-bin/koha/opac-user.pl">Cancel</a>
 </fieldset>
+<!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="message_queue" -->
 <table>
