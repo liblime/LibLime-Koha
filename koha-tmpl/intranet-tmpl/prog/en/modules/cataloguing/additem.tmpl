@@ -68,12 +68,12 @@ function CloneSubfield(index){
     var old_id =  original.getAttribute('id');
     old_id=old_id.substr(12);
     var new_id  = old_id+new_key;
-    
+
     // set the attribute for the new 'div' subfields
     var inputs     = clone.getElementsByTagName('input');
     var selects    = clone.getElementsByTagName('select');
     var textareas  = clone.getElementsByTagName('textarea');
-        
+
     // input
     var id_input = "";
     for(var i=0,len=inputs.length; i<len ; i++ ){
@@ -81,30 +81,30 @@ function CloneSubfield(index){
         inputs[i].setAttribute('id',id_input);
         inputs[i].setAttribute('name',inputs[i].getAttribute('name'));
     }
-    
+
     // select 
     for(var i=0,len=selects.length; i<len ; i++ ){
         id_input = selects[i].getAttribute('id')+new_key;
         selects[i].setAttribute('id',selects[i].getAttribute('id')+new_key);
         selects[i].setAttribute('name',selects[i].getAttribute('name'));
     }
-    
+
     // textarea
     for(var i=0,len=textareas.length; i<len ; i++ ){
         id_input = textareas[i].getAttribute('id')+new_key;
         textareas[i].setAttribute('id',textareas[i].getAttribute('id')+new_key);
         textareas[i].setAttribute('name',textareas[i].getAttribute('name'));
     }
-    
+
     <!-- TMPL_UNLESS NAME='advancedMARCEditor' -->
     // when cloning a subfield, reset its label too.
     var label = clone.getElementsByTagName('label')[0];
     label.setAttribute('for',id_input);
     <!-- /TMPL_UNLESS -->
-    
+
     // setting a new if for the parent div
     clone.setAttribute('id',new_id);
-    
+
     var CloneButtonPlus;
     try {
       var spans = clone.getElementsByTagName('span');
@@ -160,10 +160,10 @@ function set_to_today(id, force) {
 </div>
 
 <div id="doc3" class="yui-t2">
-   
+
    <div id="bd">
-	<div id="yui-main">
-	<div class="yui-b">
+   <div id="yui-main">
+   <div class="yui-b">
 
 
 <h1>Items for <!-- TMPL_VAR name="title" escape="html" --> <!-- TMPL_IF NAME="author" --> by <!-- TMPL_VAR name="author" --><!-- /TMPL_IF --> (Record #<!-- TMPL_VAR NAME="biblionumber" -->)</h1>
@@ -213,15 +213,22 @@ function set_to_today(id, force) {
     <input type="hidden" name="op" value="<!-- TMPL_VAR NAME="op" -->" />
     <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
     <!-- TMPL_IF name="opisadd" -->
+    <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
         <h2 id="additema">Add Item</h2>
     <!-- TMPL_ELSE -->
+        <h2 id="additema">&nbsp; </h2>
+    <!-- /TMPL_IF -->
+
+    <!-- TMPL_ELSE -->
         <h2>Edit Item #<!-- TMPL_VAR NAME="itemnumber" --></h2>
-    <!-- /TMPL_IF -->	
+    <!-- /TMPL_IF -->
 	<fieldset class="rows">
 	<ol>
+    <!-- TMPL_IF name="opisadd" -->
+    <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
         <!-- TMPL_LOOP NAME="item" -->
                <li><div class="subfield_line" style="<!-- TMPL_VAR NAME='visibility' -->" id="subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->">
-   
+
                <label><!-- TMPL_VAR NAME="subfield" --> - <!-- TMPL_IF name="mandatory" --><b><!-- /TMPL_IF --><!-- TMPL_VAR NAME="marc_lib" --><!-- TMPL_IF name="mandatory" --> *</b><!-- /TMPL_IF --></label>
                 <!-- TMPL_VAR NAME="marc_value" -->
                 <input type="hidden" name="tag"       value="<!-- TMPL_VAR NAME="tag" -->" />
@@ -230,9 +237,28 @@ function set_to_today(id, force) {
                 <!-- TMPL_IF NAME="repeatable" -->
                     <span class="buttonPlus" onclick="CloneSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->')">+</span>
                 <!-- /TMPL_IF -->
-   
+
             </div></li>
         <!-- /tmpl_loop -->
+    <!-- TMPL_ELSE -->
+         <li>&nbsp;</li>
+    <!-- /TMPL_IF  -->
+    <!-- TMPL_ELSE -->
+        <!-- TMPL_LOOP NAME="item" -->
+               <li><div class="subfield_line" style="<!-- TMPL_VAR NAME='visibility' -->" id="subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->">
+
+               <label><!-- TMPL_VAR NAME="subfield" --> - <!-- TMPL_IF name="mandatory" --><b><!-- /TMPL_IF --><!-- TMPL_VAR NAME="marc_lib" --><!-- TMPL_IF name="mandatory" --> *</b><!-- /TMPL_IF --></label>
+                <!-- TMPL_VAR NAME="marc_value" -->
+                <input type="hidden" name="tag"       value="<!-- TMPL_VAR NAME="tag" -->" />
+                <input type="hidden" name="subfield"  value="<!-- TMPL_VAR NAME="subfield" -->" />
+                <input type="hidden" name="mandatory" value="<!-- TMPL_VAR NAME="mandatory" -->" />
+                <!-- TMPL_IF NAME="repeatable" -->
+                    <span class="buttonPlus" onclick="CloneSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->')">+</span>
+                <!-- /TMPL_IF -->
+
+            </div></li>
+        <!-- /tmpl_loop -->
+    <!-- /TMPL_IF  -->
     </ol>
     </fieldset>
     <input type="hidden" name="indicator" value=" " />
@@ -240,12 +266,14 @@ function set_to_today(id, force) {
     <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
 
 <fieldset class="action">    <!-- TMPL_IF name="opisadd" -->
+    <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
     <input type="submit" value="Add item" onclick="return Check(this.form)" />
+    <!-- /TMPL_IF -->
     <!-- TMPL_ELSE -->
     <input type="hidden" name="tag" value="<!-- TMPL_VAR NAME="itemtagfield" -->" />
     <input type="hidden" name="subfield" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
     <input type="hidden" name="field_value" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
-    <input type="submit" value="Save Changes" onclick="return Check(this.form)" /> 
+    <input type="submit" value="Save Changes" onclick="return Check(this.form)" />
     <!-- /TMPL_IF --></fieldset>
 
     </form>
