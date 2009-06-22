@@ -52,9 +52,13 @@ if ( $resume && $reservenumber && $borrowernumber) {
 	if ( $resumedate ) {
 		my @parts = split(/-/, $resumedate );
 		$resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1]; 
-		warn "ResumeDate: $resumedate";
 	}
-	SuspendReserve( $reservenumber, $resumedate );
+
+	if ( $resumedate =~ m/(\d{4})-(0[13578]|1[02])-(0[1-9]|[12]\d|3[01])|(\d{4})-(0[469]|11])-(0[1-9]|[12]\d|30)|(\d{4})-(02)-(0[1-9]|1\d|2[0-9])/ ) {
+            	SuspendReserve( $reservenumber, $resumedate );
+        } else {              
+        	SuspendReserve( $reservenumber );
+        } 
 } elsif ($biblionumber and $borrowernumber) {
 	CancelReserve($biblionumber, '', $borrowernumber);
 }
