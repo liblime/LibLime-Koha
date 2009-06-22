@@ -65,6 +65,32 @@ $.tablesorter.addParser({
 <!-- TMPL_IF NAME="GoogleJackets" -->KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF -->
             });
 //]]>
+
+
+function isValidDate(theField){
+  if ( theField.value.length < 1 ) {
+	return true;
+  }
+
+  dPart = theField.value.split("-");
+  if(dPart.length < 1) { return true; }
+  if(dPart.length!=3){
+    alert("Enter Date in this format: MM-DD-YYYY");
+    theField.focus();
+    return false;
+  }
+  dPart[0]--;
+  nDate = new Date(dPart[2], dPart[0], dPart[1]);
+  if(isNaN(nDate) || dPart[2]!=nDate.getFullYear() ||
+      dPart[0]!=nDate.getMonth() || dPart[1]!=nDate.getDate()){
+    alert("Enter Date in this format: MM-DD-YYYY");
+    theField.select();
+    theField.focus();
+    return false;
+  } else {
+    return true;
+  }
+}
 </script>
 </head>
 <body id="opac-user">
@@ -375,7 +401,7 @@ $.tablesorter.addParser({
 				<input type="submit" name="submit" class="icon delete cancel" value="Suspend" />
 				<br/>
 				<label>Resume on:</label>
-				<input type="text" size="10" maxlength="10" id="resumedate" name="resumedate" />
+				<input type="text" onblur="isValidDate(this)" size="10" maxlength="10" id="resumedate" name="resumedate" />
 				<label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
 			</form>
 		<!-- /TMPL_IF -->

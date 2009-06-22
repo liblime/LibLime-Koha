@@ -17,6 +17,31 @@ var override_items = {<!-- TMPL_LOOP NAME="bibitemloop" --><!-- TMPL_LOOP NAME="
 };
 var MSG_NO_ITEMS_AVAILABLE = _("A hold cannot be requested on any of these items.");
 
+
+function isValidDate(theField){
+  if ( theField.value.length < 1 ) {
+	return true;
+  }
+
+  dPart = theField.value.split("-");
+  if(dPart.length!=3){
+    alert("Enter Date in this format: MM-DD-YYYY");
+    theField.focus();
+    return false;
+  }
+  dPart[0]--;
+  nDate = new Date(dPart[2], dPart[0], dPart[1]);
+  if(isNaN(nDate) || dPart[2]!=nDate.getFullYear() ||
+      dPart[0]!=nDate.getMonth() || dPart[1]!=nDate.getDate()){
+    alert("Enter Date in this format: MM-DD-YYYY");
+    theField.select();
+    theField.focus();
+    return false;
+  } else {
+    return true;
+  }
+}
+
 function check() {
 	var msg = "";
 	var count_reserv = 0;
@@ -589,7 +614,7 @@ function checkMultiHold() {
 		<input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" <!-- TMPL_IF NAME="wbrname" -->disabled<!-- /TMPL_IF --> value="1" />
 		<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
 		<label>Resume on:</label>
-		<input type="text" size="10" maxlength="10" id="resumedate" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
+		<input type="text" onblur="isValidDate(this)" size="10" maxlength="10" id="resumedate" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
 		<label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
 	</td>
       </tr>
