@@ -563,10 +563,22 @@ if (nodename =="barcodes[]"){
 						<!-- /TMPL_IF -->
 					</td>
 					<td><!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
+                    <!-- TMPL_IF NAME="waiting" -->
+                            <!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_waiting_holds" -->
+                        <td><select name="rank-request">
+                            <option value="n">No</option>
+                            <option value="del">Yes</option>
+                        </select>
+                        <!-- TMPL_ELSE -->
+                        <td>No
+                        <input type="hidden" name="rank-request" value="n" />
+                        <!-- /TMPL_IF -->
+                    <!-- TMPL_ELSE -->
 					<td><select name="rank-request">
-			<option value="n">No</option>
-			<option value="del">Yes</option>
-			</select>
+			            <option value="n">No</option>
+			            <option value="del">Yes</option>
+			        </select>
+                    <!-- /TMPL_IF -->
 		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
 		<input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" /></td>
 			</tr>
