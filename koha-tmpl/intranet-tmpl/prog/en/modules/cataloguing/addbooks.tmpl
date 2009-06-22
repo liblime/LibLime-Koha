@@ -102,7 +102,11 @@
                     
                 </td>
                 <td>
+                <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
                     <a href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Add holdings</a>
+                <!-- TMPL_ELSE -->
+                    &nbsp;
+                <!-- /TMPL_IF -->
                 </td>
             </tr>
     <!-- /TMPL_LOOP -->
