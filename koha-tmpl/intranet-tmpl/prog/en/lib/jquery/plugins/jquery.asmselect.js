@@ -22,6 +22,8 @@
 			addItemTarget: 'bottom',				// Where to place new selected items in list: top or bottom
 			hideWhenAdded: false,					// Hide the option when added to the list? works only in FF
 			debugMode: false,					// Debug mode keeps original select visible 
+            useInput: false,
+            ignoreEmpty: true,
 
 			removeLabel: 'remove',					// Text used in the "remove" link
 			highlightAddedLabel: 'Added: ',				// Text that precedes highlight of added item
@@ -50,6 +52,7 @@
 			var buildingSelect = false; 				// is the new select being constructed right now?
 			var ieClick = false;					// in IE, has a click event occurred? ignore if not
 			var ignoreOriginalChangeEvent = false;			// originalChangeEvent bypassed when this is true
+            var $input;
 
 			function init() {
 
@@ -73,6 +76,16 @@
 					.addClass(options.containerClass) 
 					.attr('id', options.containerClass + index); 
 
+                if (!$original.attr('multiple')) {
+                    $original.attr('multiple', 'multiple').val([]);
+                }
+
+                if (options.useInput) {
+                    var input = $('<input type="hidden" name="' + $original.attr('name') + '" value=""/>');
+                    $original.attr('name', Math.floor(Math.random() * 1000000));
+                    $input = input.get(0);
+                }
+
 				buildSelect();
 
 				$select.change(selectChangeEvent)
@@ -80,10 +93,11 @@
 
 				$original.change(originalChangeEvent)
 					.wrap($container).before($select).before($ol);
+                if (options.useInput) $original.before(input);
 
 				if(options.sortable) makeSortable();
 
-				if($.browser.msie) $ol.css('display', 'inline-block'); 
+				if($.browser.msie) $ol.css('display', 'inline-block');
 			}
 
 			function makeSortable() {
@@ -174,6 +188,7 @@
 
 					if(!$t.attr('id')) $t.attr('id', 'asm' + index + 'option' + n); 
 					id = $t.attr('id'); 
+                    if(!this.value && options.ignoreEmpty) return;
 
 					if($t.is(":selected")) {
 						addListItem(id); 
@@ -270,6 +285,8 @@
 					$O.attr('selected', true); 
 				}
 
+                if ( options.useInput ) $input.value = ( $original.val() || [] ).join(',');
+
 				if(options.addItemTarget == 'top' && !buildingSelect) {
 					$ol.prepend($item); 
 					if(options.sortable) $original.prepend($O); 
@@ -329,6 +346,7 @@
 				if(highlightItem) setHighlight($item, options.highlightRemovedLabel); 
 
 				triggerOriginalChange(optionId, 'drop'); 
+                if ( options.useInput ) $input.value = ( $original.val() || [] ).join(',');
 				
 			}
 

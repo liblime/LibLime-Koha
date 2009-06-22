@@ -272,6 +272,7 @@ sub calculate {
 			" borrowers WHERE (statistics.borrowernumber=borrowers.borrowernumber) ";
 	$strsth .= " AND $line is not null ";
 
+	my @linevalues = @linefilter;
 	if ($line =~ /datetime/) {
 		if ($linefilter[1] and ($linefilter[0])) {
 			$strsth .= " AND $line between ? AND ? ";
@@ -284,20 +285,20 @@ sub calculate {
 		$strsth .= " AND   dayname(datetime) ='".   $daysel ."' " if $daysel;
 		$strsth .= " AND monthname(datetime) ='". $monthsel ."' " if $monthsel;
 	} elsif ($linefilter[0]) {
-		$linefilter[0] =~ s/\*/%/g;
-		$strsth .= " AND $line LIKE ? ";
+		@linevalues = split /,/, $linefilter[0];
+
+        if (scalar(@linevalues) > 1) {
+            $strsth .= " AND $line IN (" . join( ',', ('?') x scalar(@linevalues) ) . ")";
+        } else {
+            $linevalues[0] =~ s/\*/%/g;
+            $strsth .= " AND $line LIKE ? ";
+        }
 	}
 	$strsth .=" group by $linefield order by $lineorder ";
 	$debug and warn $strsth;
 	push @loopfilter, {crit=>'SQL =', sql=>1, filter=>$strsth};
 	my $sth = $dbh->prepare( $strsth );
-	if ((@linefilter) and ($linefilter[1])){
-		$sth->execute($linefilter[0],$linefilter[1]);
-	} elsif ($linefilter[0]) {
-		$sth->execute($linefilter[0]);
-	} else {
-		$sth->execute;
-	}
+    $sth->execute(@linevalues);
 
 	while (my ($celvalue) = $sth->fetchrow) {
 		my %cell = (rowtitle => $celvalue, totalrow => 0); # we leave 'rowtitle' as hash key (used when filling the table), and add coltitle_display

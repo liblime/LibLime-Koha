@@ -80,6 +80,7 @@ sub set_parameters {
 				-values   => \@select_branch,
 				-labels   => \%select_branches,
 				-size     => 1,
+				-title    => 'Select a branch',
 				-multiple => 0 );
 	$template->param(CGIbranch => $CGIbranch);
   
@@ -98,7 +99,7 @@ sub calculate {
 	my @results =();
 # extract parameters
 	my $borrower_category = @$parameters[0];
-	my $branch = @$parameters[1];
+	my @branch = split /,/, @$parameters[1];
 	my $dbh = C4::Context->dbh;
 # build the SQL query & execute it
 
@@ -117,7 +118,7 @@ sub calculate {
 					AND items.itemnumber = issues.itemnumber 
 					AND biblioitems.biblionumber = items.biblionumber 
 					AND borrowers.categorycode = ?";
-	$strsth.= " AND borrowers.branchcode = ".$dbh->quote($branch) if ($branch);
+	$strsth.= " AND borrowers.branchcode IN (" . join( ',', ('?') x scalar(@branch) ) . ")";
 	$strsth .= " GROUP BY biblioitems.itemtype";
 	my $sth = $dbh->prepare($strsth);
 	my $sthcategories = $dbh->prepare("select categorycode,description from categories");

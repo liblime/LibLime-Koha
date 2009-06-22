@@ -42,8 +42,8 @@ plugin that shows a stats on serials
 my $input      = new CGI;
 my $templatename   = "reports/serials_stats.tmpl";
 my $do_it      = $input->param("do_it");
-my $bookseller = $input->param("bookseller");
-my $branchcode = $input->param("branchcode");
+my @booksellers= split(/,/, $input->param("bookseller"));
+my @branches   = split(/,/, $input->param("branchcode"));
 my $expired    = $input->param("expired");
 my $order      = $input->param("order");
 my $output     = $input->param("output");
@@ -69,15 +69,15 @@ if($do_it){
     my $where = "WHERE 1 ";
     my @args;
     # if a specific branchcode was selected
-    if( $branchcode ne '' ){
-        $where .= "AND branchcode = ? ";
-        push @args,$branchcode;
+    if( @branches ){
+        $where .= "AND branchcode IN (" . join( ',', ('?') x scalar(@branches) ) . ")";
+        push @args,@branches;
     }
     
     # if a specific bookseller was selected
-    if($bookseller ne ''){
-        $where .= "AND aqbooksellerid = ? ";
-        push @args,$bookseller;
+    if(@booksellers){
+        $where .= "AND aqbooksellerid IN (" . join( ',', ('?') x scalar(@booksellers) ) . ")";
+        push @args,@booksellers;
     }
 
     my $sth = $dbh->prepare("SELECT * 
@@ -130,7 +130,7 @@ if($do_it){
     }
 }else{
     ## We generate booksellers list
-    my @booksellers;
+    my @bookseller_choices;
     
     my $sth = $dbh->prepare("SELECT aqbooksellerid, aqbooksellers.name 
                                 FROM subscription 
@@ -139,17 +139,17 @@ if($do_it){
     $sth->execute();
     
     while(my $row = $sth->fetchrow_hashref){
-        push(@booksellers,$row)
+        push(@bookseller_choices,$row)
     }
    
     ## We generate branchlist
-    my $branches=GetBranches();
+    my $branch_choices=GetBranches();
 	my @branchloop;
 	foreach (sort {$branches->{$a}->{'branchname'} cmp $branches->{$b}->{'branchname'}} keys %$branches) {
 		my $thisbranch = ''; # FIXME: populate $thisbranch to preselect one
 		my %row = (branchcode => $_,
 			selected => ($thisbranch eq $_ ? 1 : 0),
-			branchname => $branches->{$_}->{'branchname'},
+			branchname => $branch_choices->{$_}->{'branchname'},
 		);
 		push @branchloop, \%row;
 	} 
@@ -166,7 +166,7 @@ if($do_it){
 	$template->param(
 		CGIextChoice => $CGIextChoice,
 		CGIsepChoice => $CGIsepChoice,
-        booksellers  => \@booksellers,
+        booksellers  => \@bookseller_choices,
         branches     => \@branchloop);
 }
 
