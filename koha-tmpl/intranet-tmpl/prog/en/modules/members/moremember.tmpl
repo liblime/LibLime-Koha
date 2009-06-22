@@ -573,6 +573,7 @@ if (nodename =="barcodes[]"){
 			<th>Call Number</th>
 			<th>Barcode</th>
 			<th>Priority</th>
+			<th>Resume Date</th>
 			<th>Resume?</th>
 		</tr></thead>
 		<tbody><!-- TMPL_LOOP NAME="suspended_reserves_loop" -->
@@ -602,6 +603,7 @@ if (nodename =="barcodes[]"){
 						<!-- /TMPL_IF -->
 					</td>
 					<td><!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
+					<td><!-- TMPL_VAR NAME="waitingdate" --></td>
 					<td><a href="/cgi-bin/koha/reserve/request.pl?action=resume&reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Resume</td>
 			</tr>
 		<!-- /TMPL_LOOP --></tbody>
