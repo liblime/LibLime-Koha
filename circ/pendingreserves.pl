@@ -31,6 +31,7 @@ use C4::Auth;
 use C4::Dates qw/format_date format_date_in_iso/;
 use C4::Debug;
 use Date::Calc qw/Today Add_Delta_YMD/;
+use C4::Reserves;
 
 my $input = new CGI;
 my $order = $input->param('order');
@@ -130,6 +131,8 @@ my $strsth =
         GROUP_CONCAT(DISTINCT items.itemcallnumber 
         		ORDER BY items.itemnumber SEPARATOR '<br/>') l_itemcallnumber,
         items.itemnumber,
+        authorised_values.lib,
+        items.barcode,
         notes,
         notificationdate,
         reminderdate,
@@ -143,11 +146,13 @@ my $strsth =
 	LEFT JOIN items ON items.biblionumber=reserves.biblionumber 
 	LEFT JOIN biblio ON reserves.biblionumber=biblio.biblionumber
 	LEFT JOIN branchtransfers ON items.itemnumber=branchtransfers.itemnumber
+	LEFT JOIN authorised_values ON items.ccode=authorised_values.authorised_value
  WHERE
 reserves.found IS NULL
+AND reserves.itemnumber IS NULL
  $sqldatewhere
 AND items.itemnumber NOT IN (SELECT itemnumber FROM branchtransfers where datearrived IS NULL)
-AND items.itemnumber NOT IN (SELECT itemnumber FROM issues)
+AND items.itemnumber NOT IN (SELECT itemnumber FROM issues WHERE itemnumber IS NOT NULL)
 AND reserves.priority <> 0 
 AND notforloan = 0 AND damaged = 0 AND itemlost = 0 AND wthdrawn = 0
 ";
@@ -167,6 +172,52 @@ $sth->execute(@query_params);
 my @reservedata;
 my $previous;
 my $this;
+while ( my $data = $sth->fetchrow_hashref ) {
+    my ($count,$reserves) = GetReservesFromBiblionumber($data->{biblionumber});
+    foreach my $reserve (@$reserves) {
+      undef $data->{barcode} if (!defined($reserve->{itemnumber}));
+    }
+    $this=$data->{biblionumber}.":".$data->{borrowernumber};
+    my @itemlist;
+    push(
+        @reservedata,
+        {
+            reservedate      => format_date( $data->{l_reservedate} ),
+            priority         => $data->{priority},
+            name             => $data->{l_patron},
+            title            => $data->{title},
+            author           => $data->{author},
+            borrowernumber   => $data->{borrowernumber},
+            itemnum          => $data->{itemnumber},
+            phone            => $data->{phone},
+            email            => $data->{email},
+            biblionumber     => $data->{biblionumber},
+            statusw          => ( $data->{found} eq "W" ),
+            statusf          => ( $data->{found} eq "F" ),
+            holdingbranch    => $data->{l_holdingbranch},
+            branch           => $data->{l_branch},
+            itemcallnumber   => $data->{l_itemcallnumber},
+            notes            => $data->{notes},
+            notificationdate => $data->{notificationdate},
+            reminderdate     => $data->{reminderdate},
+            count            => $data->{icount},
+            rcount           => $data->{rcount},
+            pullcount        => $data->{icount} <= $data->{rcount} ? $data->{icount} : $data->{rcount},
+            itype            => $data->{l_itype},
+            location         => $data->{l_location},
+            ccode            => $data->{lib},
+            barcode          => $data->{barcode}
+        }
+    );
+    $previous=$this;
+}
+
+$sth->finish;
+
+$strsth=~ s/AND reserves.itemnumber IS NULL/AND reserves.itemnumber IS NOT NULL/;
+$strsth=~ s/LEFT JOIN items ON items.biblionumber=reserves.biblionumber/LEFT JOIN items ON items.itemnumber=reserves.itemnumber/;
+$sth = $dbh->prepare($strsth);
+$sth->execute(@query_params);
 while ( my $data = $sth->fetchrow_hashref ) {
     $this=$data->{biblionumber}.":".$data->{borrowernumber};
     my @itemlist;
@@ -191,65 +242,18 @@ while ( my $data = $sth->fetchrow_hashref ) {
             notes            => $data->{notes},
             notificationdate => $data->{notificationdate},
             reminderdate     => $data->{reminderdate},
-            count				  => $data->{icount},
-            rcount			  => $data->{rcount},
-            pullcount		  => $data->{icount} <= $data->{rcount} ? $data->{icount} : $data->{rcount},
-            itype				  => $data->{l_itype},
-            location			  => $data->{l_location}
+            count            => $data->{icount},
+            rcount           => $data->{rcount},
+            pullcount        => $data->{icount} <= $data->{rcount} ? $data->{icount} : $data->{rcount},
+            itype            => $data->{l_itype},
+            location         => $data->{l_location},
+            ccode            => $data->{lib},
+            barcode          => $data->{barcode}
         }
     );
     $previous=$this;
 }
-
 $sth->finish;
-
-# *** I doubt any of this is needed now with the above fixes *** -d.u.
-
-#$strsth=~ s/AND reserves.itemnumber is NULL/AND reserves.itemnumber is NOT NULL/;
-#$strsth=~ s/LEFT JOIN items ON items.biblionumber=reserves.biblionumber/LEFT JOIN items ON items.biblionumber=reserves.itemnumber/;
-#$sth = $dbh->prepare($strsth);
-#if (C4::Context->preference('IndependantBranches')){
-#       $sth->execute(C4::Context->userenv->{'branch'});
-#}
-#else {
-#       $sth->execute();
-#}
-#while ( my $data = $sth->fetchrow_hashref ) {
-#    $this=$data->{biblionumber}.":".$data->{borrowernumber};
-#    my @itemlist;
-#    push(
-#        @reservedata,
-#        {
-#            reservedate      => format_date( $data->{l_reservedate} ),
-#            priority         => $data->{priority},
-#            name             => $data->{l_patron},
-#            title            => $data->{title},
-#            author           => $data->{author},
-#            borrowernumber   => $data->{borrowernumber},
-#            itemnum          => $data->{itemnumber},
-#            phone            => $data->{phone},
-#            email            => $data->{email},
-#            biblionumber     => $data->{biblionumber},
-#            statusw          => ( $data->{found} eq "W" ),
-#            statusf          => ( $data->{found} eq "F" ),
-#            holdingbranch    => $data->{l_holdingbranch},
-#            branch           => $data->{l_branch},
-#            itemcallnumber   => $data->{l_itemcallnumber},
-#            notes            => $data->{notes},
-#            notificationdate => $data->{notificationdate},
-#            reminderdate     => $data->{reminderdate},
-#            count				  => $data->{icount},
-#            rcount			  => $data->{rcount},
-#            pullcount		  => $data->{icount} <= $data->{rcount} ? $data->{icount} : $data->{rcount},
-#            itype				  => $data->{l_itype},
-#            location			  => $data->{l_location},
-#            thisitemonly     => 1,
-# 
-#        }
-#    );
-#    $previous=$this;
-#}
-#$sth->finish;
 
 $template->param(
     todaysdate      	=> format_date($todaysdate),
