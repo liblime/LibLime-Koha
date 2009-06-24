@@ -146,8 +146,8 @@ $category_type is used to get a specified type of user.
 (mainly adults when creating a child.)
 
 C<$searchstring> is a space-separated list of search terms. Each term
-must match the beginning a borrower's surname, first name, or other
-name.
+must match the beginning a borrower's surname, first name, other
+name, or initials.
 
 C<$filter> is assumed to be a list of elements to filter results on
 
@@ -196,7 +196,7 @@ sub SearchMember {
         $query.=" ORDER BY $orderby";
         @bind = ("$searchstring%","$searchstring");
     }
-    else    # advanced search looking in surname, firstname and othernames
+    else    # advanced search looking in surname, firstname, othernames, and initials
     {
         @data  = split( ' ', $searchstring );
         $count = @data;
@@ -208,20 +208,23 @@ sub SearchMember {
         }     
         $query.="((surname LIKE ? OR surname LIKE ?
                 OR firstname  LIKE ? OR firstname LIKE ?
-                OR othernames LIKE ? OR othernames LIKE ?)
+                OR othernames LIKE ? OR othernames LIKE ?
+                OR initials LIKE ? OR initials LIKE ?)
         " .
         ($category_type?" AND category_type = ".$dbh->quote($category_type):"");
         @bind = (
             "$data[0]%", "% $data[0]%", "$data[0]%", "% $data[0]%",
-            "$data[0]%", "% $data[0]%"
+            "$data[0]%", "% $data[0]%", "$data[0]%", "% $data[0]%"
         );
         for ( my $i = 1 ; $i < $count ; $i++ ) {
             $query = $query . " AND (" . " surname LIKE ? OR surname LIKE ?
                 OR firstname  LIKE ? OR firstname LIKE ?
-                OR othernames LIKE ? OR othernames LIKE ?)";
+                OR othernames LIKE ? OR othernames LIKE ?
+                OR initials LIKE ? OR initials LIKE ?)";
             push( @bind,
                 "$data[$i]%",   "% $data[$i]%", "$data[$i]%",
-                "% $data[$i]%", "$data[$i]%",   "% $data[$i]%" );
+                "% $data[$i]%", "$data[$i]%",   "% $data[$i]%",
+                "$data[$i]%",   "% $data[$i]%" );
 
             # FIXME - .= <<EOT;
         }

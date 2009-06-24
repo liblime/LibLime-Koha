@@ -674,6 +674,7 @@ $template->param(
     printername                 => $printer,
     firstname                   => $borrower->{'firstname'},
     surname                     => $borrower->{'surname'},
+    initials                    => $borrower->{'initials'},
     dateexpiry        => format_date($newexpiry),
     expiry            => format_date($borrower->{'dateexpiry'}),
     categorycode      => $borrower->{'categorycode'},
@@ -737,4 +738,8 @@ $template->param(
     dateformat                => C4::Context->preference("dateformat"),
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
 );
+
+# Pass off whether to display initials or not
+$template->param( showinitials => C4::Context->preference('DisplayInitials') );
+
 output_html_with_http_headers $query, $cookie, $template->output;
