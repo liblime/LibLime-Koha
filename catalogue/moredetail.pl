@@ -85,7 +85,11 @@ my $itemtypes = GetItemTypes;
 $data->{'itemtypename'} = $itemtypes->{$data->{'itemtype'}}->{'description'};
 $results[0]=$data;
 ($itemnumber) and @items = (grep {$_->{'itemnumber'} == $itemnumber} @items);
+my $itemcount=0;
+my $additemnumber;
 foreach my $item (@items){
+    $additemnumber = $item->{'itemnumber'} if (!$itemcount);
+    $itemcount++;
     $item->{itemlostloop}= GetAuthorisedValues(GetAuthValCode('items.itemlost',$fw),$item->{itemlost}) if GetAuthValCode('items.itemlost',$fw);
     $item->{itemdamagedloop}= GetAuthorisedValues(GetAuthValCode('items.damaged',$fw),$item->{damaged}) if GetAuthValCode('items.damaged',$fw);
     $item->{'collection'} = $ccodes->{$item->{ccode}};
@@ -129,6 +133,7 @@ $template->param(loggedinuser => $loggedinuser);
 $template->param(biblionumber => $biblionumber);
 $template->param(biblioitemnumber => $bi);
 $template->param(itemnumber => $itemnumber);
+$template->param(additemnumber => $additemnumber);
 $template->param(ONLY_ONE => 1) if ( $itemnumber && $count != @items );
 $template->param(z3950_search_params => C4::Search::z3950_search_args(GetBiblioData($biblionumber)));
 
