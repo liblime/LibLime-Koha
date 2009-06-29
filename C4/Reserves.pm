@@ -1544,7 +1544,7 @@ sub _koha_notify_reserve {
 
     my $letter = getletter( 'reserves', $letter_code );
     use Data::Dumper; ##DBG
-    warn "  \$letter = " . Data::Dumper->new( $letter )->Indent(0)->Dump; ##DBG
+    warn "  \$letter = " . Data::Dumper->new( [ $letter ] )->Indent(0)->Dump; ##DBG
 
     C4::Letters::parseletter( $letter, 'branches', $reserve->{'branchcode'} );
     C4::Letters::parseletter( $letter, 'borrowers', $borrowernumber );
@@ -1554,12 +1554,12 @@ sub _koha_notify_reserve {
     if ( $reserve->{'itemnumber'} ) {
         C4::Letters::parseletter( $letter, 'items', $reserve->{'itemnumber'} );
     }
-    warn "  \$letter = " . Data::Dumper->new( $letter )->Indent(0)->Dump; ##DBG
+    warn "  \$letter = " . Data::Dumper->new( [ $letter ] )->Indent(0)->Dump; ##DBG
     my $today = C4::Dates->new()->output();
     $letter->{'title'} =~ s/<<today>>/$today/g;
     $letter->{'content'} =~ s/<<today>>/$today/g;
     $letter->{'content'} =~ s/<<[a-z0-9_]+\.[a-z0-9]+>>//g; #remove any stragglers
-    warn "  \$letter = " . Data::Dumper->new( $letter )->Indent(0)->Dump; ##DBG
+    warn "  \$letter = " . Data::Dumper->new( [ $letter ] )->Indent(0)->Dump; ##DBG
 
     if ( $print_mode ) {
         warn "  C4::Letters::EnqueueLetter( { letter => $letter, borrowernumber => $borrowernumber, message_transport_type => 'print' } );"; ##DBG
