@@ -125,7 +125,7 @@ sub GetPreviousCardnumbers {
   my $member = C4::Members::GetMember( $borrowernumber );
   my $cardnumber = $member->{'cardnumber'};
   
-  my $query = "SELECT DISTINCT(other) AS previous_cardnumber, DATE_FORMAT( datetime, '%m/%e/%Y') as previous_cardnumber_date FROM statistics WHERE borrowernumber = ? AND other != ? AND other !='' ";
+  my $query = "SELECT DISTINCT(other) AS previous_cardnumber, DATE_FORMAT( datetime, '%m/%e/%Y') as previous_cardnumber_date FROM statistics WHERE type = 'card_replaced' AND borrowernumber = ? AND other != ? AND other !='' ";
   my $sth = $dbh->prepare( $query );
   $sth->execute( $borrowernumber, $cardnumber );
 
