@@ -1539,6 +1539,7 @@ sub _koha_notify_reserve {
     my $admin_email_address = $branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');
 
     my $letter = getletter( 'reserves', $letter_code );
+    die "Could not find a letter called '$letter_code' in the 'reserves' module" unless( $letter );
 
     C4::Letters::parseletter( $letter, 'branches', $reserve->{'branchcode'} );
     C4::Letters::parseletter( $letter, 'borrowers', $borrowernumber );
