@@ -234,7 +234,7 @@ my $csvfilename;
 my $htmlfilename;
 my $triggered = 0;
 my $listall = 0;
-my $itemscontent = join( ',', qw( issuedate title barcode author ) );
+my $itemscontent = join( ',', qw( issuedate date_due title barcode author ) );
 
 GetOptions(
     'help|?'         => \$help,
@@ -413,6 +413,8 @@ END_SQL
                 $sth2->execute( ($listall) ? ( $borrowernumber , 1 , $MAX ) : ( $borrowernumber, $mindays, $maxdays ) );
                 my $itemcount = 0;
                 my $titles = "";
+                $titles .= join("\t", @item_content_fields) . "\n";
+                $itemcount++;
                 while ( my $item_info = $sth2->fetchrow_hashref() ) {
                     my @item_info = map { $_ =~ /^date|date$/ ? format_date( $item_info->{$_} ) : $item_info->{$_} || '' } @item_content_fields;
                     $titles .= join("\t", @item_info) . "\n";
@@ -603,6 +605,8 @@ END_SQL
                 $sth2->execute( ($listall) ? ( $borrowernumber , 1 , $MAX ) : ( $borrowernumber, $mindays, $maxdays ) );
                 my $itemcount = 0;
                 my $titles = "";
+                $titles .= join("\t", @item_content_fields) . "\n";
+                $itemcount++;
                 while ( my $item_info = $sth2->fetchrow_hashref() ) {
                     my @item_info = map { $_ =~ /^date|date$/ ? format_date( $item_info->{$_} ) : $item_info->{$_} || '' } @item_content_fields;
                     $titles .= join("\t", @item_info) . "\n";
