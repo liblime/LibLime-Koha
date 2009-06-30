@@ -23,6 +23,12 @@ function isValidDate(theField){
 	return true;
   }
 
+  if ( theField.value.length > 10 || theField.value.length < 10 ) {
+	alert("Enter Date in this format: MM-DD-YYYY");
+    	theField.focus();
+	return false;
+  }
+
   dPart = theField.value.split("-");
   if(dPart.length!=3){
     alert("Enter Date in this format: MM-DD-YYYY");
