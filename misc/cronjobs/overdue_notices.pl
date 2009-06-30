@@ -531,7 +531,7 @@ END_SQL
     $rqoverduerules->execute($branchcode);
     # my $outfile = 'overdues_' . ( $mybranch || $branchcode || 'default' );
     while ( my $overdue_rules = $rqoverduerules->fetchrow_hashref ) {
-      PERIOD: foreach my $i ( 1 .. 3 ) {
+      ITEMPERIOD: foreach my $i ( 1 .. 3 ) {
 
             $verbose and warn "branch '$branchcode', pass $i\n";
             my $mindays = $overdue_rules->{"delay$i"};    # the notice will be sent after mindays days (grace period)
@@ -543,7 +543,7 @@ END_SQL
 
             if ( !$overdue_rules->{"letter$i"} ) {
                 $verbose and warn "No letter$i code for branch '$branchcode'";
-                next PERIOD;
+                next ITEMPERIOD;
             }
 
             # $letter->{'content'} is the text of the mail that is sent.
@@ -589,9 +589,9 @@ END_SQL
                 unless ($letter) {
                     $verbose and warn "Message '$overdue_rules->{letter$i}' content not found";
 
-                    # might as well skip while PERIOD, no other borrowers are going to work.
+                    # might as well skip while ITEMPERIOD, no other borrowers are going to work.
                     # FIXME : Does this mean a letter must be defined in order to trigger a debar ?
-                    next PERIOD;
+                    next ITEMPERIOD;
                 }
 
                 if ( $overdue_rules->{"debarred$i"} ) {
