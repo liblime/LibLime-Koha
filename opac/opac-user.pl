@@ -184,6 +184,12 @@ $template->param( branchloop => \@branch_loop );
 my @reserves  = GetReservesFromBorrowernumber( $borrowernumber );
 foreach my $res (@reserves) {
     $res->{'reservedate'} = format_date( $res->{'reservedate'} );
+    if ($res->{'found'} eq 'W') {
+      $res->{'holdexpdate'} = format_date( $res->{'expirationdate'} );
+    }
+    else {
+      $res->{'holdexpdate'} = '';
+    }
     my $publictype = $res->{'publictype'};
     $res->{$publictype} = 1;
     $res->{'waiting'} = 1 if $res->{'found'} eq 'W';

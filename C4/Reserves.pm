@@ -28,6 +28,8 @@ use C4::Items;
 use C4::Search;
 use C4::Circulation;
 use C4::Accounts;
+use C4::Dates;
+use C4::Calendar;
 
 # for _koha_notify_reserve
 use C4::Members::Messaging;
@@ -36,6 +38,7 @@ use C4::Letters;
 use C4::Branch qw( GetBranchDetail );
 use C4::Dates qw( format_date_in_iso );
 use List::MoreUtils qw( firstidx );
+use Date::Calc qw(Today Add_Delta_Days);
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -985,15 +988,44 @@ sub ModReserveAffect {
     }
     else {
     # affect the reserve to Waiting as well.
-    $query = "
-        UPDATE reserves
-        SET     priority = 0,
-                found = 'W',
-                waitingdate=now(),
-                itemnumber = ?
-        WHERE borrowernumber = ?
-          AND biblionumber = ?
-    ";
+      my $holdperiod = C4::Context->preference('ReservesMaxPickUpDelay');
+      if ((!defined($holdperiod)) || ($holdperiod eq '') || ($holdperiod == 0)) {
+        $query = "
+            UPDATE reserves
+            SET     priority = 0,
+                    found = 'W',
+                    waitingdate=now(),
+                    itemnumber = ?
+            WHERE borrowernumber = ?
+              AND biblionumber = ?
+        ";
+      }
+      else {
+        my ($holdexpyear,$holdexpmonth,$holdexpday) = Today();
+        my $holdstartdate = C4::Dates->new(sprintf "%02d/%02d/%04d",$holdexpmonth,$holdexpday,$holdexpyear, 'us');
+
+        # Grab branch for calendar purposes
+        $sth = $dbh->prepare("SELECT branchcode FROM reserves WHERE borrowernumber=? AND biblionumber=?");
+        $sth->execute($borrowernumber,$biblionumber);
+        my ($branch) = $sth->fetchrow;
+
+        # Check to see if hold expiration date falls on a closed library day.
+        # Note the useDaysMode syspref will need to be set to Calendar for
+        # the code to advance to the next non-closed day.
+        my $calendar = C4::Calendar->new( branchcode => $branch);
+        my $holdexpdate  = $calendar->addDate($holdstartdate, $holdperiod);
+        my $sqlexpdate = $holdexpdate->output('iso');
+        $query = "
+            UPDATE reserves
+            SET     priority = 0,
+                    found = 'W',
+                    waitingdate=now(),
+                    itemnumber = ?,
+                    expirationdate='$sqlexpdate'
+            WHERE borrowernumber = ?
+              AND biblionumber = ?
+        ";
+      }
     }
     $sth = $dbh->prepare($query);
     $sth->execute( $itemnumber, $borrowernumber,$biblionumber);

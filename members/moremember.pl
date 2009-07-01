@@ -39,7 +39,7 @@ use C4::Output;
 use C4::Members;
 use C4::Members::Attributes;
 use C4::Members::AttributeTypes;
-use C4::Dates;
+use C4::Dates qw/format_date/;
 use C4::Reserves;
 use C4::Circulation;
 use C4::Koha;
@@ -302,9 +302,15 @@ if ($borrowernumber) {
             $getreserv{$_} = 0;
         }
         $getreserv{reservedate}  = C4::Dates->new($num_res->{'reservedate'},'iso')->output('syspref');
-        foreach (qw(biblionumber title author itemcallnumber )) {
-            $getreserv{$_} = $getiteminfo->{$_};
+        if ($num_res->{'found'} eq 'W') {
+          $getreserv{holdexpdate} = format_date($num_res->{'expirationdate'});
         }
+        else {
+          $getreserv{holdexpdate} = '';
+        }
+	foreach (qw(biblionumber title author itemcallnumber )) {
+		$getreserv{$_} = $getiteminfo->{$_};
+	}
         $getreserv{barcodereserv}  = $getiteminfo->{'barcode'};
         $getreserv{itemtype}  = $itemtypeinfo->{'description'};
 

@@ -322,6 +322,7 @@ $.tablesorter.addParser({
             <thead><tr>
                 <th>Title</th>
                 <th>Placed On</th>
+                <th>Expires On</th>
                 <th>Pick Up Location</th>
 				<!-- TMPL_IF NAME="showpriority" -->
 				<th>Priority</th>
@@ -347,7 +348,8 @@ $.tablesorter.addParser({
                 <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
                     <!-- TMPL_VAR NAME="author" -->
                 </td>
-                <td><!-- TMPL_VAR NAME="reservedate" --></td>
+                <td align=center><!-- TMPL_VAR NAME="reservedate" --></td>
+                <td align=center><!-- TMPL_VAR NAME="holdexpdate" --></td>
                 <td><!-- TMPL_VAR NAME="branch" --></td>
 				<!-- TMPL_IF NAME="showpriority" -->
 				<td><!-- TMPL_VAR NAME="priority" --> </td>
