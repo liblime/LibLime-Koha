@@ -389,7 +389,12 @@ function checkMultiHold() {
             <td>
             <!-- TMPL_VAR NAME="itemcallnumber" -->
             </td>
-            <td><!-- TMPL_IF NAME="copynumber" --><!-- TMPL_VAR NAME="copynumber" --><!-- TMPL_ELSE -->&nbsp;<!-- /TMPL_IF --></td>
+            <td>
+            <!-- TMPL_IF NAME="enumchron" -->
+            <!-- TMPL_VAR NAME="enumchron" --><!-- TMPL_IF NAME="serialseq" --> -- <!-- /TMPL_IF -->
+            <!-- /TMPL_IF -->
+            <!-- TMPL_VAR NAME="serialseq" --><!-- TMPL_IF NAME="publisheddate" --> (<!-- TMPL_VAR NAME="publisheddate" -->)<!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="copynumber" --><br /><!-- TMPL_VAR NAME="copynumber" --><!-- TMPL_ELSE -->&nbsp;<!-- /TMPL_IF --></td>
             <td>
         	<!-- TMPL_IF Name="onloan" -->
             <span class="checkedout">Due <!-- TMPL_VAR NAME="date_due" --></span>
