@@ -175,6 +175,7 @@ $tabsysprefs{AllowAllMessageDeletion}        = "Circulation";
 $tabsysprefs{HoldButtonConfirm}              = "Circulation";
 $tabsysprefs{HoldButtonPrintConfirm}         = "Circulation";
 $tabsysprefs{HoldButtonIgnore}               = "Circulation";
+$tabsysprefs{MarkLostItemsReturned}          = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}        = "StaffClient";
