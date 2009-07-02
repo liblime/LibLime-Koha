@@ -172,6 +172,10 @@ my @updated;
 # If $branch is not set, it is the same as not passing it
 foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @ignored ) } ) {
     print "$borrower->{firstname} $borrower->{surname} ($borrower->{cardnumber}): " if ( $verbose );
+    if ( $borrower->{exclude_from_collection} ) {
+        print "manually skipped\n" if ( $verbose );
+        next;
+    }
     my $sent_fine = GetFineByDescription( $borrower->{'borrowernumber'}, 'A', "Sent to collections agency" );
     my ( $total, $acctlines, $numlines ) = GetMemberAccountRecords( $borrower->{'borrowernumber'} );
 

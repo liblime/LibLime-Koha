@@ -480,16 +480,11 @@ while (@relationships) {
   push(@relshipdata, \%row);
 }
 
-my %flags = ( 'gonenoaddress' => ['gonenoaddress' ],
-        'lost'          => ['lost'],
-        'debarred'      => ['debarred']);
+my @flags = ( 'gonenoaddress', 'lost', 'debarred', 'exclude_from_collection' );
 
- 
 my @flagdata;
-foreach (keys(%flags)) {
-	my $key = $_;
-	my %row =  ('key'   => $key,
-		    'name'  => $flags{$key}[0]);
+foreach my $key (@flags) {
+	my %row = ('key' => $key);
 	if ($data{$key}) {
 		$row{'yes'}=' checked';
 		$row{'no'}='';

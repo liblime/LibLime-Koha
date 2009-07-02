@@ -126,7 +126,7 @@ foreach (qw(dateenrolled dateexpiry dateofbirth)) {
 }
 $data->{'IS_ADULT'} = ( $data->{'categorycode'} ne 'I' );
 
-for (qw(debarred gonenoaddress lost borrowernotes)) {
+for (qw(debarred gonenoaddress lost borrowernotes exclude_from_collection)) {
 	 $data->{$_} and $template->param(flagged => 1) and last;
 }
 

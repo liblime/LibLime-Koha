@@ -139,6 +139,9 @@ if (nodename =="barcodes[]"){
 <!-- TMPL_ELSE -->
     <!-- TMPL_IF NAME="reregistration" --><div class="dialog message">Patron's account has been renewed until <!-- TMPL_VAR NAME="dateexpiry" --></div><!-- /TMPL_IF -->
 
+<h3><!-- TMPL_UNLESS NAME="I" -->
+   <!-- TMPL_VAR NAME="title" --> <!-- TMPL_VAR NAME="firstname" --> <!-- /TMPL_UNLESS --> <!-- TMPL_VAR NAME="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)</h3>
+
     <!-- TMPL_IF NAME="flagged" -->
     <ul>
         <!-- TMPL_IF NAME="debarred" -->
@@ -152,11 +155,9 @@ if (nodename =="barcodes[]"){
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="gonenoaddress" --><li>Patron's address is in doubt.</li><!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="lost" --><li>Patron's card has been reported lost.</li><!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="exclude_from_collection" --><li>Patron has been manually excluded from debt collection.</li><!-- /TMPL_IF -->
     </ul>
     <!-- /TMPL_IF -->
-
-<h3><!-- TMPL_UNLESS NAME="I" -->
-   <!-- TMPL_VAR NAME="title" --> <!-- TMPL_VAR NAME="firstname" --> <!-- /TMPL_UNLESS --> <!-- TMPL_VAR NAME="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)</h3>
  <div class="yui-u first">
 <div id="patron-information" style="padding : .5em;">
 

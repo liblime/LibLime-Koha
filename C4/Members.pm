@@ -713,6 +713,7 @@ sub AddMember {
       . ",B_streetnumber=" . $dbh->quote( $data{'B_streetnumber'} )
       . ",B_streettype=" . $dbh->quote( $data{'B_streettype'} )
       . ",gonenoaddress=" . $dbh->quote( $data{'gonenoaddress'} )
+      . ",exclude_from_collection=" . $dbh->quote( $data{'exclude_from_collection'} )
       . ",lost="        . $dbh->quote( $data{'lost'} )
       . ",debarred="    . $dbh->quote( $data{'debarred'} )
       . ",ethnicity="   . $dbh->quote( $data{'ethnicity'} )
@@ -1204,7 +1205,7 @@ sub GetNotifiedMembers {
           borrowers.borrowernumber, cardnumber,
           surname, firstname, address, address2, city, zipcode, dateofbirth,
           phone, phonepro, contactfirstname, contactname, categorycode,
-          last_reported_date, last_reported_amount
+          last_reported_date, last_reported_amount, exclude_from_collection
           FROM message_queue, (
             SELECT borrowernumber, MAX(time_queued) as time_queued
               FROM message_queue

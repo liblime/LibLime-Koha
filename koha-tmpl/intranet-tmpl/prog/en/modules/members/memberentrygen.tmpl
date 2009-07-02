@@ -849,24 +849,25 @@
 			<legend>Patron Account Flags</legend>
 			<ol class="radio">
 			<!-- TMPL_LOOP NAME="flagloop" -->
-				<li><label class="radio" for="yes<!-- TMPL_VAR name="name" -->">
+				<li><label class="radio" for="yes<!-- TMPL_VAR name="key" -->">
 				<!-- TMPL_IF EXPR="key eq 'gonenoaddress'" -->Gone no Address:<!-- /TMPL_IF -->
 				<!-- TMPL_IF EXPR="key eq 'debarred'" -->Debarred:<!-- /TMPL_IF -->
 				<!-- TMPL_IF EXPR="key eq 'lost'" -->Lost Card:<!-- /TMPL_IF -->
+				<!-- TMPL_IF EXPR="key eq 'exclude_from_collection'" -->Exclude from Collection:<!-- /TMPL_IF -->
                 </label>
 				
-				<label for="yes<!-- TMPL_VAR NAME="name" -->">Yes </label>
+				<label for="yes<!-- TMPL_VAR NAME="key" -->">Yes </label>
 				<!-- TMPL_IF NAME="yes" -->
-				<input type="radio" id="yes<!-- TMPL_VAR NAME="name" -->" name="<!-- TMPL_VAR NAME="name" -->" value="1" checked="checked" />
+				<input type="radio" id="yes<!-- TMPL_VAR NAME="key" -->" name="<!-- TMPL_VAR NAME="key" -->" value="1" checked="checked" />
 				<!-- TMPL_ELSE -->
-				<input type="radio" id="yes<!-- TMPL_VAR NAME="name" -->" name="<!-- TMPL_VAR NAME="name" -->" value="1" />
+				<input type="radio" id="yes<!-- TMPL_VAR NAME="key" -->" name="<!-- TMPL_VAR NAME="key" -->" value="1" />
 				<!-- /TMPL_IF -->
 				
-				<label for="no<!-- TMPL_VAR NAME="name" -->">No </label>
+				<label for="no<!-- TMPL_VAR NAME="key" -->">No </label>
 				<!-- TMPL_IF NAME="no" -->
-				<input type="radio" id="no<!-- TMPL_VAR NAME="name" -->" name="<!-- TMPL_VAR NAME="name" -->" value="0" checked="checked"/>
+				<input type="radio" id="no<!-- TMPL_VAR NAME="key" -->" name="<!-- TMPL_VAR NAME="key" -->" value="0" checked="checked"/>
 				<!-- TMPL_ELSE -->
-				<input type="radio" id="no<!-- TMPL_VAR NAME="name" -->" name="<!-- TMPL_VAR NAME="name" -->" value="0" />
+				<input type="radio" id="no<!-- TMPL_VAR NAME="key" -->" name="<!-- TMPL_VAR NAME="key" -->" value="0" />
 				<!-- /TMPL_IF -->
 
 </li>
