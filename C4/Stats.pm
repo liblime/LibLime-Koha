@@ -122,21 +122,25 @@ sub TotalPaid {
 }
 
 sub GetLostStats {
-    my ( $borrowernumber ) = @_;
+    my ( $borrowernumber, $hide_old ) = @_;
     my $dbh = C4::Context->dbh;
     my $category = GetAuthValCode( 'items.itemlost', '' );
     my %summary;
 
     my $lost_items = $dbh->selectall_arrayref( "
         SELECT
-          authorised_values.lib as description, other as itemlost, value, itemnumber
-          FROM statistics LEFT JOIN authorised_values ON (authorised_value = other AND authorised_values.category = ?)
+          authorised_values.lib as description, other as itemlost, value, itemnumber,
+          items.itemnumber as item_exists, items.itemlost as still_lost, items.paidfor
+          FROM statistics
+            LEFT JOIN authorised_values ON (authorised_value = other AND authorised_values.category = ?)
+            LEFT JOIN items ON (statistics.itemnumber = items.itemnumber)
           WHERE statistics.type = 'itemlost' AND statistics.borrowernumber = ?
           GROUP BY statistics.itemnumber
           ORDER BY authorised_values.lib
     ", { Slice => {} }, $category, $borrowernumber );
 
     foreach my $item ( @$lost_items ) {
+        next if ( $hide_old && ( !$item->{'item_exists'} || !$item->{'itemlost'} || $item->{'paidfor'} ) );
         my $type_summary = ( $summary{$item->{'itemlost'}} ||= {
            description => $item->{'description'},
            items => [],
