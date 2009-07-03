@@ -229,19 +229,16 @@ sub calculate {
 
 	my $strsth = "SELECT distinctrow $linefield FROM borrowers WHERE $line IS NOT NULL ";
 	$linefilter =~ s/\*/%/g;
+    my @params;
 	if ( $linefilter ) {
-		$strsth .= " AND $linefield LIKE ? " ;
+        ( $strsth, @params ) = AddCondition( $strsth, $linefield, $linefilter );
 	}
 	$strsth .= " AND $status='1' " if ($status);
 	$strsth .=" order by $linefield";
 	
 	push @loopfilter, {sql=>1, crit=>"Query", filter=>$strsth};
 	my $sth = $dbh->prepare($strsth);
-	if ( $linefilter ) {
-		$sth->execute($linefilter);
-	} else {
-		$sth->execute;
-	}
+    @params ? $sth->execute( @params ) : $sth->execute;
  	while (my ($celvalue) = $sth->fetchrow) {
  		my %cell;
 		if ($celvalue) {
@@ -261,16 +258,16 @@ sub calculate {
 		$colfield = $column;
 	}
 	my $strsth2 = "select distinctrow $colfield from borrowers where $column is not null";
+    my @colvalues;
 	if ($colfilter) {
-		$colfilter =~ s/\*/%/g;
-		$strsth2 .= " AND $colfield LIKE ? ";
+        ( $strsth2, @colvalues ) = AddCondition( $strsth2, $colfield, $colfilter );
 	}
 	$strsth2 .= " AND $status='1' " if ($status);
 	$strsth2 .= " order by $colfield";
 	push @loopfilter, {sql=>1, crit=>"Query", filter=>$strsth2};
 	my $sth2 = $dbh->prepare($strsth2);
-	if ($colfilter) {
-		$sth2->execute($colfilter);
+	if (@colvalues) {
+		$sth2->execute(@colvalues);
 	} else {
 		$sth2->execute;
 	}
@@ -299,12 +296,10 @@ sub calculate {
 
 # preparing calculation
 	my $strcalc .= "SELECT $linefield, $colfield, count( * ) FROM borrowers WHERE 1 ";
-	@$filters[0]=~ s/\*/%/g if (@$filters[0]);
-	$strcalc .= " AND categorycode like '" . @$filters[0] ."'" if ( @$filters[0] );
+	$strcalc = AddCondition( $strcalc, 'categorycode', @$filters[0], 0 ) if ( @$filters[0] );
 	@$filters[1]=~ s/\*/%/g if (@$filters[1]);
 	$strcalc .= " AND zipcode like '" . @$filters[1] ."'" if ( @$filters[1] );
-	@$filters[2]=~ s/\*/%/g if (@$filters[2]);
-	$strcalc .= " AND branchcode like '" . @$filters[2] ."'" if ( @$filters[2] );
+	$strcalc = AddCondition( $strcalc, 'branchcode', @$filters[2], 0 ) if ( @$filters[2] );
 	@$filters[3]=~ s/\*/%/g if (@$filters[3]);
 	$strcalc .= " AND dateofbirth > '" . @$filters[3] ."'" if ( @$filters[3] );
 	@$filters[4]=~ s/\*/%/g if (@$filters[4]);

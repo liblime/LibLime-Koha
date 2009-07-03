@@ -185,8 +185,7 @@ sub calculate {
         my $strsth2;
         $strsth2 .= "select distinctrow $colfield FROM borrowers LEFT JOIN `old_issues` ON old_issues.borrowernumber=borrowers.borrowernumber";
         if ($colfilter[0]) {
-            $colfilter[0] =~ s/\*/%/g;
-            $strsth2 .= " and $column LIKE '$colfilter[0]' " ;
+            $strsth2 = AddCondition( $strsth2, $column, $colfilter[0], 0 );
         }
         $strsth2 .=" group by $colfield";
         $strsth2 .=" order by $colorder";
@@ -225,12 +224,12 @@ sub calculate {
     my $strcalc ;
     
 # Processing calculation
-    $strcalc .= "SELECT CONCAT( borrowers.surname , \"\\t\",borrowers.firstname, \"\\t\", borrowers.cardnumber)";
+    $strcalc .= 'SELECT CONCAT( borrowers.surname , "\t",borrowers.firstname, "\t", borrowers.cardnumber)';
     $strcalc .= " , $colfield " if ($colfield);
     $strcalc .= " FROM borrowers ";
     $strcalc .= "WHERE 1 ";
     @$filters[0]=~ s/\*/%/g if (@$filters[0]);
-    $strcalc .= " AND borrowers.categorycode like '" . @$filters[0] ."'" if ( @$filters[0] );
+    $strcalc = AddCondition( $strcalc, "borrowers.categorycode", @$filters[0], 0 ) if ( @$filters[0] );
     if (@$filters[1]){
         my $strqueryfilter="SELECT DISTINCT borrowernumber FROM old_issues where old_issues.timestamp> @$filters[1] ";
 #        my $queryfilter = $dbh->prepare("SELECT DISTINCT borrowernumber FROM old_issues where old_issues.timestamp> ".format_date_in_iso(@$filters[1]));

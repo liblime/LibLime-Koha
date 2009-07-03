@@ -2,11 +2,21 @@
 <title>Koha &rsaquo; Reports &rsaquo; Most-Circulated Items<!-- TMPL_IF NAME="do_it" --> &rsaquo; Results<!-- /TMPL_IF --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
+<script src="<!-- TMPL_VAR NAME="themelang"-->/lib/jquery/plugins/jquery.asmselect.js" type="text/javascript"></script>
+<script type="text/javascript">
+    <!--
+    $( document ).ready( function () {
+        $( '#branch, #documenttype, #patroncategory' ).asmSelect({useInput: true});
+    } );
+    // -->
+</script>
 <!-- TMPL_IF NAME="do_it" -->
 <script language="JavaScript" type="text/javascript">
-function Dopop(link) {
-	newin=window.open(link,'width=500,height=400,toolbar=false,scrollbars=yes');
-}
+    <!--
+    function Dopop(link) {
+        newin=window.open(link,'width=500,height=400,toolbar=false,scrollbars=yes');
+    }
+    // -->
 </script>
 <!-- /TMPL_IF-->
 </head>
@@ -193,20 +203,20 @@ function Dopop(link) {
 								);
 							</script></li>
 				<li><label for="branch">Library: </label>
-<select name="Filter" id="branch"><option value="" > Any Library</option>
+<select name="Filter" id="branch" title="Select a Library">
     <!--TMPL_LOOP Name="branchloop"-->
         <option value="<!--TMPL_VAR Name="value"-->" ><!--TMPL_VAR Name="branchname"--> </option>  
      <!--/TMPL_LOOP --> 
     </select>     </li>
       <li> 
-        <label for="documenttype">Item Type: </label><select name="Filter" id="documenttype"><option value="" > Any item type</option>
+        <label for="documenttype">Item Type: </label><select name="Filter" id="documenttype" title="Select an Item Type">
     <!--TMPL_LOOP Name="itemtypeloop"-->
         <option value="<!--TMPL_VAR Name="value"-->" ><!--TMPL_VAR Name="description"--> </option>  
      <!--/TMPL_LOOP --> 
     </select>
       </li>
       <li> 
-        <label for="patroncategory">Patron Category: </label><select name="Filter" id="patroncategory"><option value="" > Any Category code</option>
+        <label for="patroncategory">Patron Category: </label><select name="Filter" id="patroncategory" title="Select a Category">
     <!--TMPL_LOOP Name="borcatloop"-->
         <option value="<!--TMPL_VAR Name="value"-->" ><!--TMPL_VAR Name="description"--> </option>  
      <!--/TMPL_LOOP --> 

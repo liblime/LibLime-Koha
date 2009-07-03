@@ -262,8 +262,7 @@ sub calculate {
                 $strsth2 .= " and $column > '$colfilter[0]' " ;
             }
         } elsif ($colfilter[0]) {
-            $colfilter[0] =~ s/\*/%/g;
-            $strsth2 .= " and $column LIKE '$colfilter[0]' " ;
+            $strsth2 = AddCondition( $strsth2, $column, $colfilter[0], 0 );
         }
         $strsth2 .=" group by $colfield";
         $strsth2 .=" order by $colorder";
@@ -325,12 +324,9 @@ sub calculate {
     $strcalc .= " AND old_issues.returndate > '" . @$filters[2] ."'" if ( @$filters[2] );
     @$filters[3]=~ s/\*/%/g if (@$filters[3]);
     $strcalc .= " AND old_issues.returndate < '" . @$filters[3] ."'" if ( @$filters[3] );
-    @$filters[4]=~ s/\*/%/g if (@$filters[4]);
-    $strcalc .= " AND old_issues.branchcode like '" . @$filters[4] ."'" if ( @$filters[4] );
-    @$filters[5]=~ s/\*/%/g if (@$filters[5]);
-    $strcalc .= " AND biblioitems.itemtype like '" . @$filters[5] ."'" if ( @$filters[5] );
-    @$filters[6]=~ s/\*/%/g if (@$filters[6]);
-    $strcalc .= " AND borrowers.categorycode like '" . @$filters[6] ."'" if ( @$filters[6] );
+    $strcalc = AddCondition( $strcalc, "old_issues.branchcode", @$filters[4], 0 ) if ( @$filters[4] );
+    $strcalc = AddCondition( $strcalc, "biblioitems.itemtype", @$filters[5], 0 ) if ( @$filters[5] );
+    $strcalc = AddCondition( $strcalc, "borrowers.categorycode", @$filters[6], 0 ) if ( @$filters[6] );
     @$filters[7]=~ s/\*/%/g if (@$filters[7]);
     $strcalc .= " AND dayname(old_issues.timestamp) like '" . @$filters[7]."'" if (@$filters[7]);
     @$filters[8]=~ s/\*/%/g if (@$filters[8]);

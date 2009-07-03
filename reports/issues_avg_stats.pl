@@ -123,13 +123,13 @@ if ($do_it) {
     $req->execute;
     my @select;
     push @select,"";
-    $select{""}="";
     while (my ($value, $desc) =$req->fetchrow) {
         push @select, $value;
         $select{$value}=$desc;
     }
     my $CGIBorCat=CGI::scrolling_list( -name     => 'Filter',
                 -id => 'borcat',
+                -title => 'Select a Category',
                 -values   => \@select,
                 -labels   => \%select,
                 -size     => 1,
@@ -140,13 +140,13 @@ if ($do_it) {
     undef @select;
     undef %select;
     push @select,"";
-    $select{""}="";
     while (my ($value,$desc) =$req->fetchrow) {
         push @select, $value;
         $select{$value}=$desc;
     }
     my $CGIItemTypes=CGI::scrolling_list( -name     => 'Filter',
                 -id => 'itemtypes',
+                -title => 'Select an Item Type',
                 -values   => \@select,
                 -labels    => \%select,
                 -size     => 1,
@@ -165,13 +165,13 @@ if ($do_it) {
     my @select_branch;
     my %select_branches;
     push @select_branch,"";
-    $select_branches{""} = "";
     foreach my $branch (keys %$branches) {
         push @select_branch, $branch;
         $select_branches{$branch} = $branches->{$branch}->{'branchname'};
     }
     my $CGIBranch=CGI::scrolling_list( -name     => 'Filter',
                 -id => 'branch',
+                -title => 'Select a Library',
                 -values   => \@select_branch,
                 -labels   => \%select_branches,
                 -size     => 1,
@@ -374,12 +374,11 @@ sub calculate {
             $strsth .= " AND monthname($line) = '$linefilter[3]' " ;
         }
     } elsif ($linefilter[0]) {
-        $linefilter[0] =~ s/\*/%/g;
-        $strsth .= " AND $line LIKE '$linefilter[0]' " ;
+        $strsth = AddCondition( $strsth, $line, $linefilter[0], 0 );
     }
     $strsth .=" GROUP BY $linefield";
     $strsth .=" ORDER BY $lineorder";
-   
+
     my $sth = $dbh->prepare( $strsth );
     $sth->execute;
 
@@ -444,23 +443,16 @@ sub calculate {
         if ($colfilter[3]){
             $strsth2 .= " AND monthname($column) = '$colfilter[3]' " ;
         }
+        @colfilter = ();
     } elsif ($colfilter[0]) {
-        $colfilter[0] =~ s/\*/%/g;
-        $strsth2 .= " AND $column LIKE '$colfilter[0]' " ;
+        ( $strsth2, @colfilter ) = AddCondition( $strsth2, $column, $colfilter[0], 0 );
     }
     $strsth2 .=" GROUP BY $colfield";
     $strsth2 .=" ORDER BY $colorder";
     warn "". $strsth2;
     
     my $sth2 = $dbh->prepare( $strsth2 );
-    if (( @colfilter ) and ($colfilter[1])){
-        $sth2->execute("'".$colfilter[0]."'","'".$colfilter[1]."'");
-    } elsif ($colfilter[0]) {
-        $sth2->execute($colfilter[0]);
-    } else {
-        $sth2->execute;
-    }
-    
+    @colfilter ? $sth2->execute(@colfilter) : $sth->execute;
 
     while (my ($celvalue) = $sth2->fetchrow) {
         my %cell;
@@ -505,12 +497,9 @@ sub calculate {
     $strcalc .= " AND old_issues.returndate > '" . @$filters[4] ."'" if ( @$filters[4] );
     @$filters[5]=~ s/\*/%/g if (@$filters[5]);
     $strcalc .= " AND old_issues.returndate < '" . @$filters[5] ."'" if ( @$filters[5] );
-    @$filters[8]=~ s/\*/%/g if (@$filters[8]);
-    $strcalc .= " AND borrowers.categorycode like '" . @$filters[8] ."'" if ( @$filters[8] );
-    @$filters[9]=~ s/\*/%/g if (@$filters[9]);
-    $strcalc .= " AND biblioitems.itemtype like '" . @$filters[9] ."'" if ( @$filters[9] );
-    @$filters[10]=~ s/\*/%/g if (@$filters[10]);
-    $strcalc .= " AND old_issues.branchcode like '" . @$filters[10] ."'" if ( @$filters[10] );
+    $strcalc = AddCondition( $strcalc, 'borrowers.categorycode', @$filters[8], 0 ) if ( @$filters[8] );
+    $strcalc = AddCondition( $strcalc, 'biblioitems.itemtype', @$filters[9], 0 ) if ( @$filters[9] );
+    $strcalc = AddCondition( $strcalc, 'old_issues.branchcode', @$filters[10], 0 ) if ( @$filters[10] );
     @$filters[11]=~ s/\*/%/g if (@$filters[11]);
     $strcalc .= " AND borrowers.sort1 like '" . @$filters[11] ."'" if ( @$filters[11] );
     @$filters[12]=~ s/\*/%/g if (@$filters[12]);
