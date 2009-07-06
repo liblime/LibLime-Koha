@@ -33,6 +33,7 @@ use C4::Accounts;
 use C4::ItemCirculationAlertPreference;
 use C4::Message;
 use C4::Debug;
+use C4::Overdues;
 use Date::Calc qw(
   Today
   Today_and_Now
@@ -1517,11 +1518,16 @@ sub AddReturn {
         $messages->{'WasLost'} = 1;
     }
 
-    # fix up the overdues in accounts...
-    if ($borrowernumber) {
-        my $fix = _FixOverduesOnReturn($borrowernumber, $item->{itemnumber}, $exemptfine, $dropbox);
-        defined($fix) or warn "_FixOverduesOnReturn($borrowernumber, $item->{itemnumber}...) failed!";  # zero is OK, check defined
-    }
+        # For claims-returned items, update the fine to be as-if they returned it for normal overdue
+        if ($iteminformation->{'date_due'} && $iteminformation->{'itemlost'} && $iteminformation->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){
+          my $datedue = C4::Dates->new($iteminformation->{'date_due'},'iso'); 
+          my $due_str = $datedue->output();
+          my $today = C4::Dates->new();
+          my ($amt, $type, $daycounttotal, $daycount) =
+              C4::Overdues::CalcFine($iteminformation, $borrower->{'categorycode'},$branch, undef, undef,$datedue, $today);
+              (defined $type) or $type= '';
+              C4::Overdues::UpdateFine($iteminformation->{'itemnumber'},$iteminformation->{'borrowernumber'},$amt, $type, $due_str) if ($amt > 0); 
+        }
 
     # find reserves.....
     # if we don't have a reserve with the status W, we launch the Checkreserves routine
@@ -1559,6 +1565,19 @@ sub AddReturn {
     
     logaction("CIRCULATION", "RETURN", $borrowernumber, $item->{'biblionumber'})
         if C4::Context->preference("ReturnLog");
+
+        # fix up the overdues in accounts...
+        FixOverduesOnReturn( $borrower->{'borrowernumber'},
+            $iteminformation->{'itemnumber'}, $exemptfine, $dropbox );
+
+        # find reserves.....
+        # if we don't have a reserve with the status W, we launch the Checkreserves routine
+        my ( $resfound, $resrec ) = C4::Reserves::CheckReserves( $iteminformation->{'itemnumber'} );
+        if ($resfound) {
+              $resrec->{'ResFound'} = $resfound;
+            $messages->{'ResFound'} = $resrec;
+            $reserveDone = 1;
+        }
     
     # FIXME: make this comment intelligible.
     #adding message if holdingbranch is non equal a userenv branch to return the document to homebranch
