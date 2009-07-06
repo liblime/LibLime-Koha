@@ -254,6 +254,7 @@ $template->param( inputloop => \@inputloop );
 my $found    = 0;
 my $waiting  = 0;
 my $reserved = 0;
+my $damaged  = 0;
 
 # new op dev : we check if the document must be returned to his homebranch directly,
 #  if the document is transfered, we have warning message .
@@ -309,6 +310,25 @@ if ( $messages->{'WrongTransfer'} and not $messages->{'WasTransfered'}) {
     );
 }
 
+# Check to see if the item status has been changed to damaged.  If so, also
+# check to see if other items are available for this bib record.
+
+my $item = GetItem($itemnumber);
+if ($item->{damaged}) {
+  $damaged = 1;
+  my $biblio = GetBiblioFromItemNumber($itemnumber);
+  my @itemsinfo = GetItemsInfo($biblio->{'biblionumber'});
+  foreach my $iteminfo (@itemsinfo) {
+    next if ($item->{itemnumber} eq $iteminfo->{itemnumber});
+    if ((!defined($iteminfo->{onloan})) &&
+        (!$iteminfo->{wthdrawn}) &&
+        (!$iteminfo->{itemlost})) {
+      $damaged = 0;
+      last;
+    }
+  }
+}
+
 #
 # reserve found and item arrived at the expected branch
 #
@@ -318,7 +338,11 @@ if ( $messages->{'ResFound'}) {
     my ($borr) = GetMemberDetails( $reserve->{'borrowernumber'}, 0 );
 
     if ( $reserve->{'ResFound'} eq "Waiting" or $reserve->{'ResFound'} eq "Reserved" ) {
-        if ( $reserve->{'ResFound'} eq "Waiting" ) {
+        if ($damaged) {
+          $template->param(
+                damaged      => 1
+          );
+        } elsif ( $reserve->{'ResFound'} eq "Waiting" ) {
             $template->param(
                 waiting      => ($userenv_branch eq $reserve->{'branchcode'} ? 1 : 0 ),
             );

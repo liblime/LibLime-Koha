@@ -1413,7 +1413,10 @@ sub AddReturn {
     my $validTransfert = 0;
     
     # get information on item
-    my $itemnumber = GetItemnumberFromBarcode( $barcode );
+    my $itemnumber      = GetItemnumberFromBarcode( $barcode );
+    my $iteminformation = GetItemIssue($itemnumber);
+    my $biblio          = GetBiblioItemData($iteminformation->{'biblioitemnumber'});
+#    use Data::Dumper;warn Data::Dumper::Dumper($iteminformation);
     unless ($itemnumber) {
         return (0, { BadBarcode => $barcode }); # no barcode means no item or borrower.  bail out.
     }
@@ -1424,11 +1427,17 @@ sub AddReturn {
             or die "Data inconsistency: barcode $barcode (itemnumber:$itemnumber) claims to be issued to non-existant borrowernumber '$issue->{borrowernumber}'\n"
                 . Dumper($issue) . "\n";
     } else {
-        $messages->{'NotIssued'} = $barcode;
-        # even though item is not on loan, it may still be transferred;  therefore, get current branch info
-        $doreturn = 0;
-        # No issue, no borrowernumber.  ONLY if $doreturn, *might* you have a $borrower later.
-    }
+        if (! defined($iteminformation->{'barcode'})) {
+            $messages->{'NotIssued'} = $barcode;
+            # even though item is not on loan, it may still
+            # be transferred; therefore, get current branch information
+            my $curr_iteminfo = GetItem($iteminformation->{'itemnumber'});
+            $iteminformation->{'homebranch'}    = $curr_iteminfo->{'homebranch'};
+            $iteminformation->{'holdingbranch'} = $curr_iteminfo->{'holdingbranch'};
+            $iteminformation->{'itemlost'}      = $curr_iteminfo->{'itemlost'};
+            # These lines patch up $iteminformation enough so it can be used below for other messages
+            $doreturn = 0;
+        }
 
     my $item = GetItem($itemnumber) or die "GetItem($itemnumber) failed";
         # full item data, but no borrowernumber or checkout info (no issue)
