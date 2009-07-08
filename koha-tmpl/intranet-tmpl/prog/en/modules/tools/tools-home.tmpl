@@ -67,7 +67,12 @@
     <dt><a href="/cgi-bin/koha/tools/inventory.pl">Inventory/stocktaking</a></dt>
     <dd>Perform inventory (stocktaking) of your catalog</dd>
     <!-- /TMPL_IF -->
-	
+
+    <!-- TMPL_IF NAME="CAN_user_tools_batch_edit_items" -->
+    <dt><a href="/cgi-bin/koha/tools/batchitemedit.pl">Batch Edit Items</a></dt>
+    <dd>Batch edit item records</dd>
+    <!-- /TMPL_IF -->
+
 	</dl>
 </div>
 <div class="yui-u">
