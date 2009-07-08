@@ -67,9 +67,9 @@ BEGIN {
 		&GetSortDetails
 		&GetTitles
 
-    &GetPatronImage
-    &PutPatronImage
-    &RmPatronImage
+		&GetPatronImage
+		&PutPatronImage
+		&RmPatronImage
 
 		&GetMemberAccountRecords
 		&GetBorNotifyAcctRecord
@@ -78,7 +78,7 @@ BEGIN {
 
 		&GetborCatFromCatType 
 		&GetBorrowercategory
-    &GetBorrowercategoryList
+		&GetBorrowercategoryList
 
 		&GetBorrowersWhoHaveNotBorrowedSince
 		&GetBorrowersWhoHaveNeverBorrowed
@@ -90,6 +90,7 @@ BEGIN {
 		&DeleteMessage
 		&GetMessages
 		&GetMessagesCount
+                &GetMemberRevisions
 	);
 
 	#Modify data
@@ -1561,6 +1562,41 @@ sub GetExpiryDate {
     # die "GetExpiryDate: for enrollmentperiod $enrolmentperiod (category '$categorycode') starting $dateenrolled.\n";
     my @date = split /-/,$dateenrolled;
     return sprintf("%04d-%02d-%02d", Add_Delta_YM(@date,0,$enrolmentperiod));
+}
+
+=head2 GetMemberRevisions
+
+=over 4
+
+$revisions = &GetMemberRevisions($borrowernumber);
+
+Looks up addition/modification occurences of a patron's
+account by library staff via the action_logs table.
+Uses patron's borrowernumber for database selection.
+
+&GetMemberRevisions returns a reference-to array where each element
+is a reference-to-hash whose keys are the fields of the action_logs
+table.
+
+=cut
+
+#'
+sub GetMemberRevisions {
+
+    my ($borrowernumber) = @_;
+    my $dbh = C4::Context->dbh;
+    my $sth;
+    my $select = "
+    SELECT *
+      FROM action_logs
+      WHERE object=?
+    ";
+    $sth = $dbh->prepare($select);
+    $sth->execute($borrowernumber);
+    my $data = $sth->fetchall_arrayref({});
+    ($data) and return ($data);
+
+    return undef;
 }
 
 =head2 checkuserpassword (OUEST-PROVENCE)
