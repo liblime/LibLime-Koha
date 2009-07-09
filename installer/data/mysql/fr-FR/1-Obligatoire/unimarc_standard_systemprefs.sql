@@ -247,3 +247,4 @@ INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('v
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('viewLabeledMARC','0','Autoriser l''affichage MARC labellis des notices bibliographiques','','YesNo');
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('viewMARC','1','Autoriser l''affichage de la vue MARC des notices bibliographiques','','YesNo');
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('FilterBeforeOverdueReport','0','Ne pas lancer le rapport sur les retards tant qu''il n''y a pas de filtre','','YesNo');
+INSERT INTO `koha`.`systempreferences` ( `variable` , `value` , `options` , `explanation` , `type` ) VALUES ( 'BatchMemberDeletePaidDebtCollections', '0', '', 'If on, the batch delete will refuse to delete members with unpaid fines before being put in debt collections.', 'YesNo' );

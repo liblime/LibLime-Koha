@@ -127,23 +127,37 @@ if ( $input->param('update') ) { ## Update the borrowers
 
     my ($overdue_count, $issue_count, $total_fines) = GetMemberIssuesAndFines( $borrowernumber );
     
+    my $delete_member = 1;
+    
     if ( $issue_count > 0 ) {
+      $delete_member = 0;
       $member->{'DELETE_FAILED'} = 1;
       $member->{'OPEN_ISSUES'} = 1;   
-    } elsif ( $total_fines > 0 ) {
+    } 
+    
+    if ( $total_fines > 0 ) {
       if ( C4::Context->preference('BatchMemberDeleteFineThreshhold') ) {
         if ( $total_fines > C4::Context->preference('BatchMemberDeleteFineThreshhold') ) {
-        $member->{'DELETE_FAILED'} = 1;
-        $member->{'OPEN_FINES'} = 1;               
-        } else {
-          MoveMemberToDeleted( $borrowernumber ); ## Inserts borrower into deletedborrowers table
-          DelMember( $borrowernumber ); ## Deletes borrower and cancels reserves        
-        }
+          $delete_member = 0;
+          $member->{'DELETE_FAILED'} = 1;
+          $member->{'OPEN_FINES'} = 1;               
+        } 
       } else {
+        $delete_member = 0;
         $member->{'DELETE_FAILED'} = 1;
         $member->{'OPEN_FINES'} = 1;       
       }
-    } else {
+    }
+    
+    if ( C4::Context->preference('BatchMemberDeletePaidDebtCollections') ) {
+      if ( MemberOwesOnDebtCollection( $borrowernumber ) ) {
+        $delete_member = 0;
+        $member->{'DELETE_FAILED'} = 1;
+        $member->{'DEBT_COLLECTIONS'} = 1;       
+      }    
+    }
+    
+    if ( $delete_member ) {
       MoveMemberToDeleted( $borrowernumber ); ## Inserts borrower into deletedborrowers table
       DelMember( $borrowernumber ); ## Deletes borrower and cancels reserves
     }
