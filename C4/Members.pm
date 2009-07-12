@@ -1218,7 +1218,7 @@ sub GetNotifiedMembers {
             AND letter_code = ?
             AND DATE_ADD(DATE(message_queue.time_queued), INTERVAL ? DAY) <= CURRENT_DATE
             AND status = 'sent'
-          GROUP BY borrowernumber
+          GROUP BY borrowers.borrowernumber
     ";
 
     $query .= " AND categorycode NOT IN (" . join( ", ", map( { "?" } @ignored_categories ) ) . ")" if ( @ignored_categories );
