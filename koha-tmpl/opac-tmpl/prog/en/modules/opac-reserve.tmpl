@@ -161,6 +161,7 @@
         <div id="holds" class="container">
       
           <!-- TMPL_IF NAME="message" -->
+
             <!-- TMPL_IF NAME="GNA" -->
               <div class="dialog alert">
                 <strong>Sorry</strong>, you cannot place holds because the library doesn't have up-to-date <a href="/cgi-bin/koha/opac-userdetails.pl">contact information</a> on file.
@@ -191,7 +192,11 @@
               <div class="dialog alert">Sorry, you cannot place more than <!-- TMPL_VAR NAME="too_many_reserves" --> holds.
               </div>
             <!-- /TMPL_IF -->
-            <!-- TMPL_IF NAME="bad_biblionumber" -->
+	    <!-- TMPL_IF NAME="too_many_shelf_holds_per_day" -->
+        	<div class="dialog alert">Sorry, you cannot place more than <!-- TMPL_VAR NAME="too_many_shelf_holds_per_day" --> holds on available items in a single day.
+	        </div>
+	    <!-- /TMPL_IF -->            
+	    <!-- TMPL_IF NAME="bad_biblionumber" -->
               <div class="dialog alert">ERROR: No biblio record found for biblionumber <!-- TMPL_VAR NAME="bad_biblionumber" -->.</div>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="no_items_selected" -->

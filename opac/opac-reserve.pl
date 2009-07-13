@@ -281,6 +281,20 @@ if ( C4::Context->preference('UseGranularMaxHolds') ) {
     $noreserves = 1;
     $template->param( too_many_reserves => scalar(@reserves));
 }
+
+if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
+  foreach my $biblionumber (@biblionumbers) {
+    if ( GetAvailableItemsCount( $biblionumber ) ) {
+      my $reserves_today = GetReserveCount( $borrowernumber, my $today = 1, my $shelf_holds_only = 1 );
+      if ( $reserves_today >= C4::Context->preference('MaxShelfHoldsPerDay') ) {
+        $noreserves = 1;
+        $template->param( message => 1 );
+        $template->param( too_many_shelf_holds_per_day =>  C4::Context->preference('MaxShelfHoldsPerDay') );
+      }
+    }
+  }                                                                                              
+} 
+
 foreach my $res (@reserves) {
     foreach my $biblionumber (@biblionumbers) {
         if ( $res->{'biblionumber'} == $biblionumber && $res->{'borrowernumber'} == $borrowernumber) {

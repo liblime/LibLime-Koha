@@ -360,26 +360,48 @@ sub GetReservesByBorrowernumberAndItemtypeOf {
 
 =item GetReserveCount
 
-$number = &GetReserveCount($borrowernumber);
+$number = &GetReserveCount($borrowernumber [, $today [, $shelf_holds_only]  ]);
 
 this function returns the number of reservation for a borrower given on input arg.
 
+If optional $today is true, will return only holds placed today.
+
+If option $shelf_holds_only is true, will only return the count of holds placed on items not checked out.
 =cut
 
 sub GetReserveCount {
-    my ($borrowernumber) = @_;
+    my ($borrowernumber, $today, $shelf_holds_only ) = @_;
 
     my $dbh = C4::Context->dbh;
 
-    my $query = '
-        SELECT COUNT(*) AS counter
-        FROM reserves
-          WHERE borrowernumber = ?
-    ';
+    my $query = "SELECT COUNT(*) AS counter FROM reserves WHERE borrowernumber = ?";
+    
+    if ( $today ) {
+      $query .= ' AND DATE( reserves.timestamp ) = DATE( NOW() )';
+    }
+
+    if ( $shelf_holds_only ) {
+    warn "GetReservesCount: Shelf Holds Only";
+      $query = "
+        SELECT COUNT(*) as counter FROM items
+        LEFT JOIN issues ON issues.itemnumber = items.itemnumber
+        LEFT JOIN reserves ON reserves.biblionumber = items.biblionumber
+        WHERE issues.timestamp IS NULL
+        AND reserves.biblionumber IS NOT NULL
+        AND reserves.borrowernumber = ? 
+        AND DATE( reserves.timestamp ) = DATE( NOW() )
+        GROUP BY items.biblionumber
+      ";
+      
+    }
+
     my $sth = $dbh->prepare($query);
     $sth->execute($borrowernumber);
     my $row = $sth->fetchrow_hashref;
-    return $row->{counter};
+
+    my $res_count = $row->{counter};
+    warn "GetReservesCount: Found $res_count holds, shelf: $shelf_holds_only";
+    return $res_count;
 }
 
 =item GetOtherReserves
