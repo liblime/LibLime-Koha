@@ -156,8 +156,9 @@ function confirm_deletion() {
 
 <ul class="toolbar">
 	<!-- TMPL_IF NAME="CAN_user_editcatalogue" -->
+	<li id="newmenuc"></li>
 	<!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
-	<li id="newmenuc"><a id="newbiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl">New Record</a></li>
+	<li><a id="newbiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl">New Record</a></li>
 	<!-- /TMPL_IF -->
 	<!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
 	<li><a id="newitem" href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">New Item</a></li>
