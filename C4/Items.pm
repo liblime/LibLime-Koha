@@ -594,6 +594,7 @@ for that item.
 sub ModItemLost {
     my ( $biblionumber, $itemnumber, $lostvalue ) = @_;
     my $dbh = C4::Context->dbh;
+    ModItem( { itemlost => $lostvalue }, $biblionumber, $itemnumber );
     my $data = $dbh->selectrow_hashref( "
         SELECT
           items.replacementprice, issues.borrowernumber, items.itype
@@ -602,7 +603,6 @@ sub ModItemLost {
     ", {}, $itemnumber );
     return unless ( $data->{'borrowernumber'} );
     C4::Stats::UpdateStats( C4::Context->userenv->{'branch'}, 'itemlost', $data->{'replacementprice'} || 0, $lostvalue, $itemnumber, $data->{'itype'}, $data->{'borrowernumber'}, 0 ) if ( $lostvalue > 0 );
-    ModItem( { itemlost => $lostvalue }, $biblionumber, $itemnumber );
 }
 
 =head2 DelItem

@@ -129,7 +129,7 @@ sub GetLostStats {
 
     my $lost_items = $dbh->selectall_arrayref( "
         SELECT
-          authorised_values.lib as description, other as itemlost, value, itemnumber,
+          authorised_values.lib as description, other as itemlost, value, statistics.itemnumber,
           items.itemnumber as item_exists, items.itemlost as still_lost, items.paidfor
           FROM statistics
             LEFT JOIN authorised_values ON (authorised_value = other AND authorised_values.category = ?)
