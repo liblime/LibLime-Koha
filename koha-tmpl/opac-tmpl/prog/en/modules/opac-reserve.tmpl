@@ -433,8 +433,14 @@
                                          value="<!-- TMPL_VAR NAME="itemnumber" -->" />
                                 <!-- TMPL_ELSE -->
                                   <input disabled="disabled" type="radio" class="checkitem" name="checkitem" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
-                                  <img src="/opac-tmpl/<!-- TMPL_VAR NAME="theme" -->/famfamfam/silk/cross.png" alt="Cannot be put on hold" title="Cannot be put on hold" />
-                                <!-- /TMPL_IF --> <!-- TMPL_IF NAME="copynumber" --><!-- TMPL_VAR NAME="copynumber" --><!-- /TMPL_IF -->
+                                  <img src="/intranet-tmpl/<!-- TMPL_VAR NAME="theme" -->/img/famfamfam/silk/cross.png" alt="Cannot be put on hold" title="Cannot be put on hold" />
+                                <!-- /TMPL_IF -->
+                                <!-- TMPL_IF NAME="serialinfo" --><br /><!-- /TMPL_IF -->
+                                <!-- TMPL_IF NAME="enumchron" -->
+                                <!-- TMPL_VAR NAME="enumchron" --><!-- TMPL_IF NAME="serialseq" --> -- <!-- /TMPL_IF -->
+                                <!-- /TMPL_IF -->
+                                <!-- TMPL_VAR NAME="serialseq" --><!-- TMPL_IF NAME="publisheddate" --> (<!-- TMPL_VAR NAME="publisheddate" -->)<!-- /TMPL_IF -->
+                                <!-- TMPL_IF NAME="copynumber" --><br /><!-- TMPL_VAR NAME="copynumber" --><!-- /TMPL_IF -->
                               </td>
                               <!-- TMPL_IF NAME="item-level_itypes" -->
                                 <td>

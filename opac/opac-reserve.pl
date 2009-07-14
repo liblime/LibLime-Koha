@@ -356,6 +356,10 @@ foreach my $biblioNum (@biblionumbers) {
         $itemLoopIter->{callNumber} = $itemInfo->{itemcallnumber};
         $itemLoopIter->{enumchron} = $itemInfo->{enumchron};
         $itemLoopIter->{copynumber} = $itemInfo->{copynumber};
+        $itemLoopIter->{enumchron} = $itemInfo->{enumchron};
+        $itemLoopIter->{serialseq} = $itemInfo->{serialseq};
+        $itemLoopIter->{publisheddate} = $itemInfo->{publisheddate};
+        $itemLoopIter->{serialinfo} = $itemInfo->{enumchron} || $itemInfo->{serialseq} || $itemInfo->{publisheddate};
         if ($itemLevelTypes) {
             $itemLoopIter->{description} = $itemInfo->{description};
             $itemLoopIter->{imageurl} = $itemInfo->{imageurl};
