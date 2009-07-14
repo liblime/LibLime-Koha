@@ -264,25 +264,36 @@ SELECT borrowernumber, SUM(amountoutstanding) AS amountdue
   HAVING SUM(amountoutstanding) >= ?
 END_SQL
 
-    my $letter = C4::Letters::getletter( 'circulation', $letter_code );
-    unless ($letter) {
-      $verbose and warn "Message '$letter_code' content not found";
-      last;
-    }
-
     $sth->execute( $notify_value );
     while ( my $patron_hits = $sth->fetchrow_hashref() ) {
       my $patron = GetMemberDetails($patron_hits->{borrowernumber});
     
+      my $letter = C4::Letters::getletter( 'circulation', $letter_code );
+      unless ($letter) {
+        $verbose and warn "Message '$letter_code' content not found";
+        last;
+      }
+
       my $amount_due = sprintf "%.2f",$patron_hits->{amountdue};
       $verbose and warn "Patron: $patron->{borrowernumber} Amount: $amount_due\n";
+
+      my $sth2 = $dbh->prepare("SELECT date,description,amountoutstanding
+                                FROM accountlines
+                                WHERE borrowernumber = ?
+                                  AND amountoutstanding > 0.0");
+      $sth2->execute($patron->{borrowernumber});
+      my $outstanding_items = "";
+      while (my @rows = $sth2->fetchrow_array()) {
+        $outstanding_items .= join("\t",@rows) . "\n";
+      }
       $letter = parse_letter(
          {   letter         => $letter,
              borrowernumber => $patron->{borrowernumber},
              branchcode     => $branchcode,
              substitute     => {
-               bib            => $branch_details->{'branchname'},
-               totalamountdue => $amount_due
+               bib             => $branch_details->{'branchname'},
+               totalamountdue  => $amount_due,
+               'items.content' => $outstanding_items
              }
          }
       );
@@ -300,7 +311,7 @@ END_SQL
 # after the initial notification.  Other code will set the amount_notify_date
 # field back to NULL when the account drops below OwedNotificationValue.
 
-      my $sth2 = $dbh->prepare( <<'END_SQL' );
+      $sth2 = $dbh->prepare( <<'END_SQL' );
 SELECT *
   FROM borrowers
  WHERE borrowernumber = ?
