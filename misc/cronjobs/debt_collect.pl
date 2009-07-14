@@ -235,7 +235,10 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
             paid => $paid,
         } );
     } else {
-        next if ( $total < $minimum );
+        if ( $total < $minimum ) {
+            print "skipping, has only $total in fines\n" if ( $verbose );
+            next;
+        }
 
         if ( $confirm ) {
             manualinvoice( $borrower->{borrowernumber}, '', 'Sent to collections agency - ', 'A', $send_fine, '' );
@@ -246,7 +249,7 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
         push @submitted, AddBorrowerSubmit( {
             %$borrower,
             total => $total,
-            earliest_due => GetEarliestDueDate( $borrower->{'borrowernumber'} )
+            earliest_due => GetEarliestDueDate( $borrower->{'borrowernumber'} ) || '',
         } );   
     }
 
