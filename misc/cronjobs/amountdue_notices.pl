@@ -284,6 +284,7 @@ END_SQL
       $sth2->execute($patron->{borrowernumber});
       my $outstanding_items = "";
       while (my @rows = $sth2->fetchrow_array()) {
+        $rows[2] = sprintf "%.2f",$rows[2];
         $outstanding_items .= join("\t",@rows) . "\n";
       }
       $letter = parse_letter(
