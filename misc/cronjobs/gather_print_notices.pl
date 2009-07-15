@@ -92,7 +92,7 @@ print OUTPUT "</head><body>\n";
 
 foreach my $message ( @messages ) {
     print OUTPUT "<div class=\"message\">\n", $message->{'content'}, "</div>\n";
-    C4::Letters::_set_message_status( { message_id => $message, status => 'sent' } );
+    C4::Letters::_set_message_status( { message_id => $message->{'message_id'}, status => 'sent' } );
 }
 
 print OUTPUT "</body></html>\n";
