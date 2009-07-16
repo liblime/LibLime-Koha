@@ -85,7 +85,9 @@ function confirm_deletion() {
         <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
 	        { text: _("Edit as New (Duplicate)"), url: "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=&amp;op=duplicate" },
         <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="CAN_user_editcatalogue_delete_bibliographic" -->
 			{ text: _("Delete Record"), onclick: {fn: confirm_deletion }<!-- TMPL_IF NAME="count" -->,id:'disabled'<!-- /TMPL_IF --> }
+        <!-- /TMPL_IF -->
 	    ];
 		
 		var savemenu = [
