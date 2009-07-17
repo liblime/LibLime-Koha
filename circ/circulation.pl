@@ -124,7 +124,6 @@ my $organisation   = $query->param('organisations');
 my $print          = $query->param('print');
 my $newexpiry      = $query->param('dateexpiry');
 my $debt_confirmed = $query->param('debt_confirmed') || 0; # Don't show the debt error dialog twice
-my $finemax_override = $query->param('finemax_override') || 0;
 
 # Check if stickyduedate is turned off
 if ( $barcode ) {
@@ -566,32 +565,6 @@ foreach my $flag ( sort keys %{$flags} ) {
     $template->param( flagged=> 1);
     $flags->{$flag}->{'message'} =~ s#\n#<br />#g;
     if ( $flags->{$flag}->{'noissues'} ) {
-        # Special handling of charges for granular override permission - kludgy
-        if ( $flag eq 'CHARGES' ) {
-            my $gp = $template->param('CAN_user_circulate_override_max_fines');
-            if ($gp) {
-                if (!$finemax_override) {
-                    $template->param(
-                        FINESMAX => 1,
-                        NEEDSCONFIRMATION  => 1,
-                        IMPOSSIBLE => 1,
-                    );
-                }
-                $template->param(
-                    charges    => 'true',
-                    chargesmsg => $flags->{'CHARGES'}->{'message'},
-                    chargesamount => $flags->{'CHARGES'}->{'amount'},
-                );
-                next; # Don't flag as noissues
-            } else {
-                $template->param(
-                    charges    => 'true',
-                    chargesmsg => $flags->{'CHARGES'}->{'message'},
-                    chargesamount => $flags->{'CHARGES'}->{'amount'},
-                    charges_is_blocker => 1
-                );
-            }
-        }
         $template->param(
             flagged  => 1,
             noissues => 'true',
@@ -772,7 +745,6 @@ if ( scalar( @canned_notes ) ) {
 }
 
 $template->param(
-    finemax_override          => $finemax_override,
     debt_confirmed            => $debt_confirmed,
     SpecifyDueDate            => $duedatespec_allow,
     CircAutocompl             => C4::Context->preference('CircAutocompl'),
