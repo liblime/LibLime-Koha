@@ -270,6 +270,11 @@ if ( C4::Context->preference('UseGranularMaxHolds') ) {
 
       my $irule = GetIssuingRule($borr->{'categorycode'}, $itemtype, $borr->{'branchcode'} );
       
+      if ( !$irule->{'max_holds'} ) {
+        $template->param( message => 1, none_available => 1 );
+        $noreserves = 1;
+      }
+      
       if ( $res_count >= $irule->{'max_holds'} ) {
         $template->param( message => 1, too_many_reserves => $res_count );
         $noreserves = 1;
