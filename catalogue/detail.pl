@@ -86,6 +86,7 @@ my $subtitle         = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 's
 # Get Branches, Itemtypes and Locations
 my $branches = GetBranches();
 my $itemtypes = GetItemTypes();
+my $itemstatuses = GetOtherItemStatus();
 my $dbh = C4::Context->dbh;
 
 # change back when ive fixed request.pl
@@ -179,6 +180,16 @@ foreach my $item (@items) {
     $sth2->execute($item->{ReservedForBorrowernumber},$item->{itemnumber});
     while (my $wait_hashref = $sth2->fetchrow_hashref) {
         $item->{waitingdate} = format_date($wait_hashref->{waitingdate});
+    }
+
+    if ($item->{otherstatus}) {
+      foreach my $istatus (@$itemstatuses) {
+        if ($istatus->{statuscode} eq $item->{otherstatus}) {
+          $item->{otherstatus_description} = $istatus->{description};
+          $norequests = 1 if (!$istatus->{holdsallowed});
+          last;
+        }
+      }
     }
 
     push @itemloop, $item;

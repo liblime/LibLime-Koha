@@ -69,6 +69,7 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
     $item_changes->{'damaged'} = $damaged;
 } elsif ($otherstatus ne $item_data_hashref->{'otherstatus'}) {
     $item_changes->{'otherstatus'} = $otherstatus;
+    $item_changes->{'otherstatus'} = "NULL" if ($otherstatus eq '');
 } else {
     #nothings changed, so do nothing.
     print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber#item$itemnumber");

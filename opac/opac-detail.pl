@@ -90,6 +90,7 @@ if (!$dat) {
     exit;
 }
 my $itemtypes = GetItemTypes();
+my $itemstatuses = GetOtherItemStatus();
 # imageurl:
 my $itemtype = $dat->{'itemtype'};
 if ( $itemtype ) {
@@ -179,6 +180,16 @@ for my $itm (@items) {
         $itm->{transfertwhen} = format_date($transfertwhen);
         $itm->{transfertfrom} = $branches->{$transfertfrom}{branchname};
         $itm->{transfertto}   = $branches->{$transfertto}{branchname};
+     }
+
+     if ($itm->{'otherstatus'}) {
+       foreach my $istatus (@$itemstatuses) {
+         if ($istatus->{'statuscode'} eq $itm->{'otherstatus'}) {
+           $itm->{'otherstatus_description'} = $istatus->{'description'};
+           $norequests = 1 if (!$istatus->{'holdsallowed'});
+           last;
+         }
+       }
      }
 }
 

@@ -1202,7 +1202,7 @@ sub GetNormalizedOCLCNumber {
 
 =head2 GetOtherItemStatus
 
-$statusvalues = GetAuthorisedValues($selected);
+$statusvalues = GetOtherItemStatus($selected);
 
 This function returns all of the item status values from the'itemstatus' table
 in a reference to array of hashrefs.
