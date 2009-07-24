@@ -50,6 +50,7 @@ amountdue_notices.pl [ -n ] [ -library <branchcode> ] [ -csv [ <filename> ] ]
    -n                             No email will be sent
    -library      <branchname>     only deal with excessive amountdues from this library
    -csv          <filename>       populate CSV file
+   -html         <filename>       Output html to file
 
 =head1 OPTIONS
 
@@ -181,6 +182,7 @@ my $verbose = 0;
 my $nomail  = 0;
 my $mybranch;
 my $csvfilename;
+my $htmlfilename;
 
 GetOptions(
     'help|?'         => \$help,
@@ -189,6 +191,7 @@ GetOptions(
     'n'              => \$nomail,
     'library=s'      => \$mybranch,
     'csv:s'          => \$csvfilename,    # this optional argument gets '' if not supplied.
+    'html:s'          => \$htmlfilename,    # this optional argument gets '' if not supplied.
 ) or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage( -verbose => 2 ) if $man;
@@ -246,6 +249,28 @@ if ( defined $csvfilename ) {
     } else {
         $verbose and warn 'combine failed on argument: ' . $csv->error_input;
     }
+}
+
+our $html_fh;
+if ( defined $htmlfilename ) {
+  if ( $htmlfilename eq '' ) {
+    $html_fh = *STDOUT;
+  } else {
+    my $today = C4::Dates->new();
+    open $html_fh, ">",File::Spec->catdir ($htmlfilename,"amtduenotices-".$today->output('iso').".html");
+  }
+
+  print $html_fh "<html>\n";
+  print $html_fh "<head>\n";
+  print $html_fh "<style type='text/css'>\n";
+  print $html_fh "pre {page-break-after: always}\n";
+  print $html_fh "pre {white-space: pre-wrap;}\n";
+  print $html_fh "pre {white-space: -moz-pre-wrap;}\n";
+  print $html_fh "pre {white-space: -o-pre-wrap;}\n";
+  print $html_fh "pre {word-wrap: break-work;}\n";
+  print $html_fh "</style>\n";
+  print $html_fh "</head>\n";
+  print $html_fh "<body>\n";
 }
 
 foreach my $branchcode (@branches) {
@@ -341,7 +366,7 @@ END_SQL
                     city           => $patron->{city},
                     postcode       => $patron->{zipcode},
                     email          => $patron->{email},
-                    outputformat   => defined $csvfilename ? 'csv' : '',
+                    outputformat   => defined $csvfilename ? 'csv' : defined $htmlfilename ? 'html' : '',
                 }
               );
           } else {
@@ -367,7 +392,7 @@ END_SQL
                       city           => $patron->{city},
                       postcode       => $patron->{zipcode},
                       email          => $patron->{email},
-                      outputformat   => defined $csvfilename ? 'csv' : '',
+                      outputformat   => defined $csvfilename ? 'csv' : defined $htmlfilename ? 'html' : '',
                   }
                 );
             }
@@ -382,10 +407,14 @@ END_SQL
         if ($nomail) {
             if ( defined $csvfilename ) {
                 print $csv_fh @output_chunks;
+            } elsif ( defined $htmlfilename ) {
+                print $html_fh @output_chunks;
             } else {
                 local $, = "\f";    # pagebreak
                 print @output_chunks;
             }
+        } elsif ( defined $htmlfilename ) {
+            printf $html_fh @output_chunks;
         } else {
             my $attachment = {
                 filename => defined $csvfilename ? 'attachment.csv' : 'attachment.txt',
@@ -414,6 +443,12 @@ if ($csvfilename) {
     # note that we're not testing on $csv_fh to prevent closing
     # STDOUT.
     close $csv_fh;
+}
+
+if ( defined $htmlfilename ) {
+  print $html_fh "</body>\n";
+  print $html_fh "</html>\n";
+  close $html_fh;
 }
 
 =head1 INTERNAL METHODS
