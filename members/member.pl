@@ -73,6 +73,7 @@ if (C4::Context->preference("AddPatronLists")=~/code/){
 #                   loop_context_vars => 1 );
 
 my $member = $input->param('member');
+my $member_orig = $member;
 my $orderby = $input->param('orderby');
 my $searchfield = $input->param('searchfield');
 
@@ -137,7 +138,7 @@ my $base_url =
   . join(
     '&amp;',
     map { $_->{term} . '=' . $_->{val} } (
-        { term => 'member', val => $member},
+        { term => 'member', val => $member_orig},
         { term => 'orderby', val => $orderby },
         { term => 'resultsperpage', val => $resultsperpage },
         { term => 'type',           val => 'intranet' },
@@ -158,7 +159,7 @@ $template->param(
 
 $template->param( 
         searching       => "1",
-        member          => $member,
+        member          => $member_orig,
         numresults      => $count,
         resultsloop     => \@resultsdata,
             );
