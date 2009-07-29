@@ -285,6 +285,9 @@ foreach my $branchcode (@branches) {
     my $sth = $dbh->prepare( <<'END_SQL' );
 SELECT borrowernumber, SUM(amountoutstanding) AS amountdue
   FROM accountlines
+  WHERE accounttype <> 'FU'
+    AND (description NOT LIKE '%Debt Collect%')
+    AND (description NOT LIKE '%collections agency%')
   GROUP BY borrowernumber
   HAVING SUM(amountoutstanding) >= ?
 END_SQL
