@@ -31,7 +31,7 @@ prepared detailing what fines have been paid or added.
 
 =head1 SYNOPSIS
 
-holds/daily_fee.pl [ --confirm ] [ -v | --verbose ] ...
+debt_collect.pl [ --confirm ] [ -v | --verbose ] ...
 
  Options:
    -h | --help                 Print out help text
@@ -40,6 +40,7 @@ holds/daily_fee.pl [ --confirm ] [ -v | --verbose ] ...
    -v | --verbose              Show the reports that would be sent
    -l | --library LIBRARY_CODE Only report patrons from this library
    -f | --fine COLLECTION_FINE Charge this much to patrons that are reported
+   -o | --once [DESCRIPTION]   Don't charge sent to collection fee twice
    --letter LETTER_CODE        Letter code of the billing notice
    -w | --wait DAYS            How many days to wait to report patron
    --to EMAIL                  Send the reports to this email address
@@ -78,6 +79,12 @@ rather than those from all libraries. Should specify a library code.
 
 Charge this amount to patrons that are sent to the debt collections agency. If
 this is not specified, no fine will be charged. Should specify an amount.
+
+=item B<-o|--once>
+
+If this option is passed, only charge the debt collection fee once. If this
+option has an argument, it should be a description of the fine to ignore (in
+addition to the default).
 
 =item B<--to>
 
@@ -124,7 +131,7 @@ use C4::Letters;
 use Getopt::Long;
 use Pod::Usage;
 
-my ( $help, $usage, $branch, $verbose, $confirm, @to, @ignored );
+my ( $help, $usage, $branch, $verbose, $confirm, @to, @ignored, $once );
 
 my $subject = 'Debt Collect';
 my $billing_notice = 'BILLING';
@@ -145,6 +152,7 @@ GetOptions(
     'ignore' => \@ignored,
     'min' => \$minimum,
     'subject' => \$subject,
+    'o|once' => \$once,
 ) or pod2usage( 2 );
 pod2usage( 1 ) if ( $usage );
 pod2usage( -verbose => 2 ) if ( $help );
@@ -177,6 +185,7 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
         next;
     }
     my $sent_fine = GetFineByDescription( $borrower->{'borrowernumber'}, 'A', "Sent to collections agency" );
+    $sent_fine = GetFineByDescription( $borrower->{'borrowernumber'}, 'A', $once ) if ( !($sent_fine || $sent_fine->{'amountoutstanding'}) && $once && $once ne '1' ); # Since $once might be a string
     my ( $total, $acctlines, $numlines ) = GetMemberAccountRecords( $borrower->{'borrowernumber'} );
 
     if ( $borrower->{'last_reported_date'} && $borrower->{'last_reported_amount'} > 0 ) {
@@ -240,7 +249,7 @@ foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @
             next;
         }
 
-        if ( $confirm ) {
+        if ( $confirm && !( $once && $sent_fine && $sent_fine->{'amountoutstanding'} ) ) {
             manualinvoice( $borrower->{borrowernumber}, '', 'Sent to collections agency - ', 'A', $send_fine, '' );
             $total += $send_fine;
         }
