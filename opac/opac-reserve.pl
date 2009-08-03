@@ -54,6 +54,10 @@ sub get_out ($$$) {
 # get borrower information ....
 my ( $borr ) = GetMemberDetails( $borrowernumber );
 
+if ( C4::Context->preference('singleBranchMode') ) {
+  $template->param( branch => $borr->{'branchcode'} );
+}
+
 # get branches and itemtypes
 my $branches = GetBranches();
 my $itemTypes = GetItemTypes();

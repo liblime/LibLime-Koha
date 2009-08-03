@@ -231,6 +231,7 @@
             <form action="/cgi-bin/koha/opac-reserve.pl" method="post">
             <input type="hidden" name="place_reserve" value="1"/>
 
+
             <!-- These values are set dynamically by js -->
             <input type="hidden" name="biblionumbers" id="biblionumbers"/>
             <input type="hidden" name="selecteditems" id="selections"/>
@@ -360,6 +361,11 @@
                         </select>
                       </td>
                     <!-- /TMPL_UNLESS -->
+
+		    <!-- TMPL_IF NAME="singleBranchMode" -->
+			<input type="hidden" name="branch" id="branch_<!-- TMPL_VAR NAME="biblionumber" -->" value="<!-- TMPL_VAR NAME="branch" -->" />
+		    <!-- /TMPL_IF -->
+
                   </tr>
 
                   <!-- TMPL_IF NAME="OPACItemHolds" -->
