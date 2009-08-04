@@ -55,4 +55,6 @@ if (C4::Context->preference("AddPatronLists")=~/code/){
     $template->param(categories=>$categories);  
 }  
 
+$template->param( ShowPatronSearchBySQL => C4::Context->preference('ShowPatronSearchBySQL') );
+
 output_html_with_http_headers $query, $cookie, $template->output;

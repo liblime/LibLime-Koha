@@ -168,6 +168,8 @@ $template->param(
         resultsloop     => \@resultsdata,
             );
 
+$template->param( ShowPatronSearchBySQL => C4::Context->preference('ShowPatronSearchBySQL') );
+
 if ( $input->param('sqlsearch') ) {
   $template->param( member => $search_sql );
 }
