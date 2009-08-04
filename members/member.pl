@@ -83,10 +83,14 @@ $member =~ s/\*/%/g;
 
 my ($count,$results);
 
+my $search_sql;
 if ( $input->param('sqlsearch') ) {
   $resultsperpage = '1000';
-  $template->param( member => $input->param('sqlsearch' ) );
-  ($count, $results) = SearchMemberBySQL( $input->param('sqlsearch' ) );
+  $search_sql = 'SELECT * FROM borrowers LEFT JOIN categories ON borrowers.categorycode = categories.categorycode WHERE ';
+  my @parts = split( /;/, $input->param('sqlsearch') );
+  $search_sql .= $parts[0];
+  $template->param( member => $search_sql );
+  ($count, $results) = SearchMemberBySQL( $search_sql );
 }
 elsif( $searchfield ) {
     ($count, $results)=SearchMemberField( $member, $orderby, $searchfield );
@@ -165,7 +169,7 @@ $template->param(
             );
 
 if ( $input->param('sqlsearch') ) {
-  $template->param( member => $input->param('sqlsearch') );
+  $template->param( member => $search_sql );
 }
 
 output_html_with_http_headers $input, $cookie, $template->output;

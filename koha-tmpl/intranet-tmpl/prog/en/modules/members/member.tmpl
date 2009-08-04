@@ -180,9 +180,8 @@ No results found
 <br/>
 <h3>Search borrowers by SQL</h3>
 <form action="/cgi-bin/koha/members/member.pl" method="post" name="borrower-sql-search">
-	<label for="sqlsearch">Structure SQL query as follows:  Select * from borrowers where (followed by your search criteria)
-</label>
-	<textarea name="sqlsearch" rows='5' cols='100'>SELECT * FROM borrowers LEFT JOIN categories ON borrowers.categorycode = categories.categorycode WHERE</textarea>
+	<label for="sqlsearch">SELECT * FROM borrowers LEFT JOIN categories ON borrowers.categorycode = categories.categorycode WHERE</label>
+	<textarea name="sqlsearch" rows='5' cols='100'></textarea>
 	<input name="sqlsearch" type="submit" value="Search" />
 </form>
 </div>
