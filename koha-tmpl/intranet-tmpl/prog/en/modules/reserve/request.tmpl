@@ -104,7 +104,7 @@ function checkMultiHold() {
         return confirm(msg);
     });
     $("input.warning").click(function() {
-        return confirm( _( 'None of these items can normally be put on hold for this patron.' ) + "\n\n" + _( 'Place hold?' ) );
+        return confirm( _( 'Patron has exceeded hold limits.' ) + "\n\n" + _( 'Place hold?' ) );
     });
  	$("#requestany").click(function() {
 		if(this.checked){
