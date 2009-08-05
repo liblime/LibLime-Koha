@@ -381,18 +381,17 @@ sub GetReserveCount {
     }
 
     if ( $shelf_holds_only ) {
-    warn "GetReservesCount: Shelf Holds Only";
+    warn "GetReserveCount: Shelf Holds Only";
       $query = "
-        SELECT COUNT(*) as counter FROM items
+        SELECT COUNT( DISTINCT ( items.biblionumber ) ) AS counter
+        FROM items
         LEFT JOIN issues ON issues.itemnumber = items.itemnumber
         LEFT JOIN reserves ON reserves.biblionumber = items.biblionumber
         WHERE issues.timestamp IS NULL
         AND reserves.biblionumber IS NOT NULL
-        AND reserves.borrowernumber = ? 
-        AND DATE( reserves.timestamp ) = DATE( NOW() )
-        GROUP BY items.biblionumber
+        AND reserves.borrowernumber = ?
+        AND DATE( reserves.timestamp ) = DATE( NOW( ) )
       ";
-      
     }
 
     my $sth = $dbh->prepare($query);
