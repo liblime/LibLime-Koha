@@ -361,6 +361,7 @@ function checkMultiHold() {
     <!-- TMPL_LOOP Name="itemloop" -->
         <tr class="<!-- TMPL_VAR NAME="backgroundcolor" -->">
             <td>
+		
             <!-- TMPL_IF NAME="available" -->
                 <input type="radio" name="checkitem" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
             <!-- TMPL_ELSIF NAME="override" -->
@@ -539,6 +540,7 @@ function checkMultiHold() {
   <!-- TMPL_LOOP Name="reserveloop" -->
   <!-- TMPL_UNLESS Name="__odd__" --><tr class="highlight"><!-- TMPL_ELSE --><tr><!-- /TMPL_UNLESS -->
         <td>
+          <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
           <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
           <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
           <select name="rank-request">

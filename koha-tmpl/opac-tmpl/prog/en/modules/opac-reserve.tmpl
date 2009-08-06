@@ -429,8 +429,10 @@
                             <tr class="<!-- TMPL_VAR NAME="backgroundcolor" -->">
                               <td>
                                 <!-- TMPL_IF NAME="available" -->
-                                  <input type="radio" class="checkitem checkitem_<!-- TMPL_VAR NAME="biblionumber" -->" name="checkitem_<!-- TMPL_VAR NAME="biblionumber" -->"
-                                         value="<!-- TMPL_VAR NAME="itemnumber" -->" />
+				  <!-- TMPL_UNLESS NAME="ReservedForThisBorrower" -->
+	                                  <input type="radio" class="checkitem checkitem_<!-- TMPL_VAR NAME="biblionumber" -->" name="checkitem_<!-- TMPL_VAR NAME="biblionumber" -->"
+        	                                 value="<!-- TMPL_VAR NAME="itemnumber" -->" />
+				  <!-- /TMPL_UNLESS -->
                                 <!-- TMPL_ELSE -->
                                   <input disabled="disabled" type="radio" class="checkitem" name="checkitem" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
                                   <img src="/opac-tmpl/<!-- TMPL_VAR NAME="theme" -->/famfamfam/silk/cross.png" alt="Cannot be put on hold" title="Cannot be put on hold" />

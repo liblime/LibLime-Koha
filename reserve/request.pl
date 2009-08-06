@@ -126,7 +126,7 @@ if ($cardnumber) {
 
     if ( $number_reserves > C4::Context->preference('maxreserves') ) {
 		$warnings = 1;
-        $maxreserves = 1;
+		$maxreserves = 1;
     }
 
     # we check the date expiry of the borrower (only if there is an expiry date, otherwise, set to 1 (warn)
@@ -161,8 +161,8 @@ if ($cardnumber) {
                 maxreserves       => $maxreserves,
                 expiry            => $expiry,
                 diffbranch        => $diffbranch,
-				messages => $messages,
-				warnings => $warnings
+                messages => $messages,
+		warnings => $warnings
     );
 }
 
@@ -228,7 +228,8 @@ foreach my $biblionumber (@biblionumbers) {
             $count--;
         }
 
-        if ( defined $borrowerinfo && ($borrowerinfo->{borrowernumber} eq $res->{borrowernumber}) ) {
+        if ( defined $borrowerinfo && ($borrowerinfo->{borrowernumber} eq $res->{borrowernumber}) && !CanHoldMultipleItems($res->{itemtype}) ) {
+        if ( $borrowerinfo->{borrowernumber} eq $res->{borrowernumber} && !CanHoldMultipleItems($res->{itemtype}) ) {
             $warnings = 1;
             $alreadyreserved = 1;
             $biblioloopiter{warn} = 1;
@@ -417,6 +418,12 @@ foreach my $biblionumber (@biblionumbers) {
             while (my $wait_hashref = $sth2->fetchrow_hashref) {
                 $item->{waitingdate} = format_date($wait_hashref->{waitingdate});
             }
+            
+            if ( BorrowerHasReserve( $borrowerinfo->{'borrowernumber'}, '', $itemnumber ) ) {
+              $item->{available} = 0;
+              $item->{override} = 0;
+            }
+            
             push @{ $biblioitem->{itemloop} }, $item;
         }
         
@@ -441,6 +448,9 @@ foreach my $biblionumber (@biblionumbers) {
             $a_found cmp $b_found; 
         } @$reserves ) {
         my %reserve;
+
+        $reserve{'reservenumber'}   = $res->{'reservenumber'};
+
         my @optionloop;
         for ( my $i = 1 ; $i <= $totalcount ; $i++ ) {
             push(
