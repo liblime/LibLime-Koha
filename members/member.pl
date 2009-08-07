@@ -100,6 +100,7 @@ for (my $i=($startfrom-1)*$resultsperpage; $i < $to; $i++){
     count => $i+1,
     borrowernumber => $results->[$i]{'borrowernumber'},
     cardnumber => $results->[$i]{'cardnumber'},
+    PreviousCardnumber => $results->[$i]{'PreviousCardnumber'},
     surname => $results->[$i]{'surname'},
     firstname => $results->[$i]{'firstname'},
     categorycode => $results->[$i]{'categorycode'},
