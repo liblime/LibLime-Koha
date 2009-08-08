@@ -4,6 +4,7 @@
 <!-- TMPL_ELSE -->
     <title>Koha &rsaquo; Circulation &rsaquo; Holds &rsaquo; Confirm Holds</title>
 <!-- /TMPL_UNLESS -->
+<script type="text/javascript" src="/intranet-tmpl/prog/en/js/dates.js"></script>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript">
     // <![CDATA[
@@ -17,35 +18,27 @@ var override_items = {<!-- TMPL_LOOP NAME="bibitemloop" --><!-- TMPL_LOOP NAME="
 };
 var MSG_NO_ITEMS_AVAILABLE = _("A hold cannot be requested on any of these items.");
 
+function checkDates(){
+  var AllDatesValid = true;
+  <!-- TMPL_LOOP NAME="biblioloop" -->
+    <!-- TMPL_LOOP NAME="reserveloop" -->
+      reserve_date = modifyReservesForm.elements["resumedate_<!-- TMPL_VAR NAME="reservenumber" -->"];
+      reserve_date.style.backgroundColor = 'white';
+      if ( reserve_date.value.length > 0 ) {
+        if (isDate(reserve_date.value)==false){
+	  reserve_date.style.backgroundColor = 'red';
+          AllDatesValid = false;
+        }
+      }
+    <!-- /TMPL_LOOP -->
+  <!-- /TMPL_LOOP -->
+  return AllDatesValid;
+}
 
 function isValidDate(theField){
-  if ( theField.value.length < 1 ) {
-	return true;
-  }
-
-  if ( theField.value.length > 10 || theField.value.length < 10 ) {
-	alert("Enter Date in this format: MM-DD-YYYY");
-    	theField.focus();
-	return false;
-  }
-
-  dPart = theField.value.split("-");
-  if(dPart.length!=3){
-    alert("Enter Date in this format: MM-DD-YYYY");
-    theField.focus();
-    return false;
-  }
-  dPart[0]--;
-  nDate = new Date(dPart[2], dPart[0], dPart[1]);
-  if(isNaN(nDate) || dPart[2]!=nDate.getFullYear() ||
-      dPart[0]!=nDate.getMonth() || dPart[1]!=nDate.getDate()){
-    alert("Enter Date in this format: MM-DD-YYYY");
-    theField.select();
-    theField.focus();
-    return false;
-  } else {
-    return true;
-  }
+      if ( theField.value.length > 0 ) {
+        return isDate(theField.value);
+      }
 }
 
 function check() {
@@ -511,7 +504,7 @@ function checkMultiHold() {
 
 <!-- TMPL_UNLESS NAME="cardnumber" -->
 <!-- TMPL_IF name="reserveloop" -->
-<form name="T<!-- TMPL_VAR NAME="time" -->" action="modrequest.pl" method="post">
+<form name="modifyReservesForm" action="modrequest.pl" method="post" onSubmit="return checkDates()">
   <!-- TMPL_IF NAME="multi_hold" -->
     <input type = "hidden" name="multi_hold" value="1"/>
     <input type = "hidden" name="biblionumbers" value="<!-- TMPL_VAR NAME="biblionumbers" -->"/>

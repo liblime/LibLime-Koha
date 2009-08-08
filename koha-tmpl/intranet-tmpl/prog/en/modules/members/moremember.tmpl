@@ -4,6 +4,7 @@
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.pack.js"></script>
+<script type="text/javascript" src="/intranet-tmpl/prog/en/js/dates.js"></script>
 <script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
 $.tablesorter.addParser({
@@ -93,31 +94,27 @@ if (nodename =="barcodes[]"){
 
 //]]>
 
+function checkDates(){
+  var AllDatesValid = true;
+  <!-- TMPL_LOOP NAME="reservloop" -->
+      reserve_date = document.getElementById('resumedate_<!-- TMPL_VAR NAME="reservenumber" -->');
+      reserve_date.style.backgroundColor = 'white';
+      if ( reserve_date.value.length > 0 ) {
+        if (isDate(reserve_date.value)==false){
+	  reserve_date.style.backgroundColor = 'red';
+          AllDatesValid = false;
+        }
+      }
+  <!-- /TMPL_LOOP -->
+  return AllDatesValid;
+}
 
 function isValidDate(theField){
-  if ( theField.value.length < 1 ) {
-	return true;
-  }
-
-  dPart = theField.value.split("-");
-  if(dPart.length < 1) { return true; }
-  if(dPart.length!=3){
-    alert("Enter Date in this format: MM-DD-YYYY");
-    theField.focus();
-    return false;
-  }
-  dPart[0]--;
-  nDate = new Date(dPart[2], dPart[0], dPart[1]);
-  if(isNaN(nDate) || dPart[2]!=nDate.getFullYear() ||
-      dPart[0]!=nDate.getMonth() || dPart[1]!=nDate.getDate()){
-    alert("Enter Date in this format: MM-DD-YYYY");
-    theField.select();
-    theField.focus();
-    return false;
-  } else {
-    return true;
-  }
+      if ( theField.value.length > 0 ) {
+        return isDate(theField.value);
+      }
 }
+
 </script>
 
 </head>
@@ -525,7 +522,7 @@ function isValidDate(theField){
 <div id="onhold">
 	<h2>Patron current holds</h2>
 <!-- TMPL_IF NAME="reservloop" -->
-<form action="/cgi-bin/koha/reserve/modrequest.pl" method="post">
+<form name="modifyReservesForm" action="/cgi-bin/koha/reserve/modrequest.pl" method="post" onSubmit="return checkDates()">
 	<input type="hidden" name="from" value="borrower" />
 	<table id="holdst">
 		<thead><tr>
@@ -573,7 +570,7 @@ function isValidDate(theField){
 			                <input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" value="1" />
 			                <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />                                                 
 			                <label>Resume on:</label>                                                                  
-			                <input type="text" onblur="isValidDate(this)" size="10" maxlength="10" id="resumedate" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
+			                <input type="text" onblur="isValidDate(this)" size="10" maxlength="10" id="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
 			                <label for="resumedate" >( Optional, use format MM-DD-YYYY )</label>                                                    
 				<!-- /TMPL_IF -->
 			</td>
