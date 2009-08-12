@@ -92,8 +92,8 @@ if ( $op eq 'Proceed' ) {
             my $rep = { barcode => $barcode, };
             my $item = GetItem( q{}, $barcode );
             if ($item) {
-                ModItem( $columns_to_edit, $item->{itemnumber},
-                    $item->{biblionumber} );
+                ModItem( $columns_to_edit, $item->{biblionumber},
+                    $item->{itemnumber} );
                 ++$updated;
                 $rep->{updated} = 1;
             } else {
