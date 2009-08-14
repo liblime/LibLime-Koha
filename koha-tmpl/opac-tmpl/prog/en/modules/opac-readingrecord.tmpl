@@ -3,7 +3,7 @@
 <script type="text/javascript">
 function show_confirm() {
   if ( document.historyform.disable_reading_history[1].checked ) {  
-    var r = confirm("Are you sure you want to turn off your checkout history? All titles not currently checked out out will be deleted from your history.");
+    var r = confirm("Are you sure you want to clear your checkout history? All titles not currently checked out out will be permanently deleted from your history.");
     if ( r == true ) {
       var cardnumber = prompt("To confirm, please enter your library card number");
       if ( cardnumber == <!-- TMPL_VAR NAME="cardnumber" --> ) {
@@ -92,6 +92,9 @@ TMPL_ELSE -->Title<!-- /TMPL_UNLESS --></th>
                         <input type="radio" name="disable_reading_history" value="0" <!--TMPL_IF NAME="disable_reading_history"-->checked<!-- /TMPL_IF-->>Yes
                         <input type="radio" name="disable_reading_history" value="1" <!--TMPL_IF NAME="disable_reading_history"--><!-- TMPL_ELSE -->checked<!-- /TMPL_IF-->> No
                         <input type="submit" value="Save" />
+                        <p><i>
+                         By subscribing to My Reading History (choice Yes above), I acknowledge that the library's online catalog will retain for my personal use a list of all materials that I borrow. I may unsubscribe from this service at any time (choice No above), which will permanently delete anything not currently checked out from my reading history. Library staff will not access or release my reading history unless required by law to do so. I understand that anyone with access to my library card number and PIN can check my reading history or any other information attached to my account.
+			</i>
                 </form>
         </p>
 <!-- /TMPL_IF -->
