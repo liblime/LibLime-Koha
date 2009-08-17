@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+# Copyright 2009 PTFS Inc.
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the
@@ -23,6 +24,7 @@ use C4::Auth;
 use C4::Context;
 use C4::Items;
 use C4::Output;
+use C4::ItemDeleteList;
 
 my $query = new CGI;
 
@@ -38,7 +40,7 @@ my %ifields_map = (
     permanent_location => 'items.permanent_location',
     itype              => 'items.itype',
     restricted         => 'items.restricted',
-    ccode              => 'items.ccodes',
+    ccode              => 'items.ccode',
 );
 my @ifields = keys %ifields_map;
 
@@ -64,11 +66,10 @@ my $dbh = C4::Context->dbh;
 
 if ( $op eq 'Proceed' ) {
     my $reading_from_file = 0;
-    my $uploadbarcodes = $query->param('uploadbarcodes');
-    if ($uploadbarcodes && length $uploadbarcodes > 0) {
+    my $uploadbarcodes    = $query->param('uploadbarcodes');
+    if ( $uploadbarcodes && length $uploadbarcodes > 0 ) {
         $reading_from_file = 1;
     }
-
 
     # perform updates on item list
     my $processed_items   = [];
@@ -104,14 +105,50 @@ if ( $op eq 'Proceed' ) {
     }
 
     $template->param(
+        completed     => 1,
         edit_complete => 1,
         items_updated => $updated,
         itemsloop     => $processed_items,
     );
-} elsif ( $op eq 'delete' ) {
+} elsif ( $op eq 'Delete' ) {
 
     # delete the items in the list
-    # NOT CURRENTLY IMPLEMENTED`
+    my $reading_from_file = 0;
+    my $uploadbarcodes    = $query->param('uploadbarcodes');
+    if ( $uploadbarcodes && length $uploadbarcodes > 0 ) {
+        $reading_from_file = 1;
+    }
+    my $columns_to_select = get_columns_to_select($reading_from_file);
+    my $idl               = C4::ItemDeleteList->new();
+    if ($reading_from_file) {
+        while ( my $barcode = <$uploadbarcodes> ) {
+            chomp $barcode;
+            my $rep = { barcode => $barcode, };
+            my $item = GetItem( q{}, $barcode );
+            $idl->append(
+                {   itemnumber   => $item->{itemnumber},
+                    biblionumber => $item->{biblionumber},
+                }
+            );
+        }
+    } elsif ($columns_to_select) {
+        my $items = get_itemnumbers($columns_to_select);
+        foreach my $item ( @{$items} ) {
+            $idl->append(
+                {   itemnumber   => $item->{inum},
+                    biblionumber => $item->{bnum},
+                }
+            );
+        }
+    }
+    $template->param(
+        completed       => 1,
+        delete_complete => 1,
+        items_updated   => $idl->rowcount(),
+        itemsloop       => $idl->item_barcodes(),
+        delete_list_id  => $idl->list_id(),
+    );
+
 } else {    # Generate the edit form
     my $branchloop           = get_branches();
     my $withdrawnloop        = get_withdrawn();

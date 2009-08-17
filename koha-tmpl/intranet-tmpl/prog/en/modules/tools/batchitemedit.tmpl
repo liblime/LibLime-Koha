@@ -22,7 +22,7 @@
 
 
 
-
+<!-- TMPL_IF NAME="completed" -->
 <!-- TMPL_IF NAME="edit_complete" -->
 <!-- TODO make this more like the inventory results screen -->
     <p>
@@ -52,6 +52,30 @@
 <a class="refresh" href="/cgi-bin/koha/tools/batchitemedit.pl"> Enter New Selection</a>
 <a class="cancel" href="/cgi-bin/koha/tools/tools-home.pl">Leave</a>
 </fieldset>
+<!-- /TMPL_IF --> <!-- edit completed -->
+<!-- TMPL_IF NAME="delete_complete" -->
+<p>
+    <!-- TMPL_IF NAME="items_updated" -->
+        <!-- TMPL_VAR NAME="items_updated" --> Items flagged for deletion
+    <!-- TMPL_ELSE -->
+        No items selected for deletion
+    <!-- /TMPL_IF -->
+</p>
+
+<!-- TMPL_IF NAME="items_updated" -->
+<p>The list of selected items is delete list <!-- TMPL_VAR NAME="delete_list_id" --></p>
+<!-- /TMPL_IF -->
+  <!-- TMPL_LOOP NAME="itemsloop" -->
+    <p>
+    Barcode:<!-- TMPL_VAR NAME="barcode" -->&nbsp;
+    </p>
+  <!-- /TMPL_LOOP -->
+<fieldset class="action">
+<a class="refresh" href="/cgi-bin/koha/tools/batchitemedit.pl"> Enter New Selection</a>
+<a class="refresh" href="/cgi-bin/koha/tools/viewitemdeletelist.pl?list_id=<!-- TMPL_VAR NAME="delete_list_id" -->"> View Delete List</a>
+<a class="cancel" href="/cgi-bin/koha/tools/tools-home.pl">Leave</a>
+</fieldset>
+<!-- /TMPL_IF --> <!-- delete completed -->
 <!-- TMPL_ELSE -->
 <!-- itemnumber biblionumber biblioitemnumber barcode dateaccessioned booksellerid homebranch price replacementprice
 replacementpricedate datelastborrowed datelastseen stack notforloan damaged itemlost wthdrawn itemcallnumber
@@ -129,6 +153,7 @@ onloan cn_source cn_sort ccode materials uri itype more_subfields_xml enumchron 
             </select>
         </td>
         </tr>
+        <tr>
       <!-- location -->
         <td align="right">Location:</td>
         <td align="left">
@@ -358,7 +383,6 @@ onloan cn_source cn_sort ccode materials uri itype more_subfields_xml enumchron 
         </td>
         </tr>
         <tr valign="top">
-        <tr valign="top">
       <!-- ccode -->
         <td align="right">Collection Code:</td>
         <td align="left">
@@ -391,10 +415,11 @@ onloan cn_source cn_sort ccode materials uri itype more_subfields_xml enumchron 
         <tr><td>&nbsp;</td>
             <td><label for="uploadbarcodes">Barcode file:</label></td>
             <td><input type="file" id="uploadbarcodes" name="uploadbarcodes" /></td>
-        <tr>
+        </tr>
 </table>
 <fieldset class="action">
 <input type="submit" name="confirm"  value="Proceed" />
+<input type="submit" name="confirm"  value="Delete" />
 <a class="refresh" href="/cgi-bin/koha/tools/batchitemedit.pl"> Refresh Selection</a>
 <a class="cancel" href="/cgi-bin/koha/tools/tools-home.pl">Cancel</a>
 </fieldset>

@@ -2382,6 +2382,13 @@ CREATE TABLE `messages` (
   `message_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`message_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+DROP TABLE IF EXISTS itemdeletelist;
+CREATE TABLE itemdeletelist (
+    list_id      int(11) NOT NULL,
+    itemnumber   int(11) NOT NULL,
+    biblionumber int(11) NOT NULL,
+    PRIMARY KEY  (list_id, itemnumber)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

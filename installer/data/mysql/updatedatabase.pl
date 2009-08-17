@@ -2675,13 +2675,6 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
-$DBversion = '3.01.00.062';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('opacbookbagName', 'Cart', 'Allows libraries to define a different name for the OPAC Cart feature, such as Bookbag or Personal Shelf. If no name is defined, it will default to Cart.', '70|10', 'Textarea')");
-	print "Upgrade to $DBversion done ( Added system preference to rename OPAC cart feature)\n";
-    SetVersion ($DBversion);
-}
-
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table
