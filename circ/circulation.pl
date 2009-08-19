@@ -233,6 +233,14 @@ if ($findborrower) {
 my $borrower;
 if ($borrowernumber) {
     $borrower = GetMemberDetails( $borrowernumber, 0 );
+    
+    ## Store data for last scanned borrower in cookies for future use.
+    my $lbb = $query->cookie(-name=>'last_borrower_borrowernumber', -value=>"$borrowernumber", -expires=>'+1y');
+    my $lbc = $query->cookie(-name=>'last_borrower_cardnumber', -value=>"$borrower->{'cardnumber'}", -expires=>'+1y');
+    my $lbf = $query->cookie(-name=>'last_borrower_firstname', -value=>"$borrower->{'firstname'}", -expires=>'+1y');
+    my $lbs = $query->cookie(-name=>'last_borrower_surname', -value=>"$borrower->{'surname'}", -expires=>'+1y');
+    $cookie = [$cookie, $lbb, $lbc, $lbf, $lbs];        
+    
     my ( $od, $issue, $fines ) = GetMemberIssuesAndFines( $borrowernumber );
 
     # Warningdate is the date that the warning starts appearing

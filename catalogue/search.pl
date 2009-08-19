@@ -631,5 +631,12 @@ if ($query_desc || $limit_desc) {
     $template->param(searchdesc => 1);
 }
 
+$template->param(
+  last_borrower_borrowernumber => $cgi->cookie('last_borrower_borrowernumber'),
+  last_borrower_cardnumber => $cgi->cookie('last_borrower_cardnumber'),
+  last_borrower_firstname => $cgi->cookie('last_borrower_firstname'),
+  last_borrower_surname => $cgi->cookie('last_borrower_surname'),
+);
+
 # VI. BUILD THE TEMPLATE
 output_html_with_http_headers $cgi, $cookie, $template->output;
