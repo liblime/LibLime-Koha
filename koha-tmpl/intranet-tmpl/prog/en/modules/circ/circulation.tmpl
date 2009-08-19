@@ -4,6 +4,7 @@
 &rsaquo; Checking out to <!-- TMPL_VAR name="surname" -->, <!-- TMPL_VAR name="firstname" -->
 (<!-- TMPL_VAR NAME="cardnumber" -->)
 <!-- /TMPL_IF --></title>
+<!-- TMPL_INCLUDE NAME="greybox.inc" -->
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.min.js"></script>
@@ -462,6 +463,8 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
         <div id="circmessages" class="circmessage attention">
 		<!-- /TMPL_IF -->
 
+		<h3>Search To Hold</h3>
+		<ul><li><a href="/cgi-bin/koha/catalogue/search.pl" onclick="return GB_showFullScreen('Search To Hold', this.href)">Search</a></li></ul>
 		<h3><!-- TMPL_IF NAME="noissues" -->Cannot Check Out!<!-- TMPL_ELSE -->Attention:<!-- /TMPL_IF --></h3>
 		<ul>
 
