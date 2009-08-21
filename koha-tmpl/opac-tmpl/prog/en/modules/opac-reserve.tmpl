@@ -419,9 +419,7 @@
                               <th>Last Location</th>
                             <!-- /TMPL_UNLESS -->
                             <th>Call Number</th>
-                            <!-- TMPL_IF NAME="itemdata_enumchron" -->
-                              <th>Vol Info</th>
-                            <!-- /TMPL_IF -->
+                            <th>Volume</th>
                             <th>Information</th>
                           </tr>
 
@@ -435,12 +433,6 @@
                                   <input disabled="disabled" type="radio" class="checkitem" name="checkitem" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
                                   <img src="/intranet-tmpl/<!-- TMPL_VAR NAME="theme" -->/img/famfamfam/silk/cross.png" alt="Cannot be put on hold" title="Cannot be put on hold" />
                                 <!-- /TMPL_IF -->
-                                <!-- TMPL_IF NAME="serialinfo" --><br /><!-- /TMPL_IF -->
-                                <!-- TMPL_IF NAME="enumchron" -->
-                                <!-- TMPL_VAR NAME="enumchron" --><!-- TMPL_IF NAME="serialseq" --> -- <!-- /TMPL_IF -->
-                                <!-- /TMPL_IF -->
-                                <!-- TMPL_VAR NAME="serialseq" --><!-- TMPL_IF NAME="publisheddate" --> (<!-- TMPL_VAR NAME="publisheddate" -->)<!-- /TMPL_IF -->
-                                <!-- TMPL_IF NAME="copynumber" --><br /><!-- TMPL_VAR NAME="copynumber" --><!-- /TMPL_IF -->
                               </td>
                               <!-- TMPL_IF NAME="item-level_itypes" -->
                                 <td>
@@ -457,6 +449,12 @@
                               <!-- TMPL_IF NAME="itemdata_enumchron" --><!-- test -->
                                 <td><!-- TMPL_VAR NAME="enumchron" --></td>
                               <!-- /TMPL_IF -->
+                              <td>
+                              <!-- TMPL_IF NAME="enumchron" -->
+                              <!-- TMPL_VAR NAME="enumchron" --><!-- TMPL_IF NAME="serialseq" --> -- <!-- /TMPL_IF -->
+                              <!-- /TMPL_IF -->
+                              <!-- TMPL_VAR NAME="serialseq" --><!-- TMPL_IF NAME="publisheddate" --> (<!-- TMPL_VAR NAME="publisheddate" -->)<!-- /TMPL_IF -->
+                              <!-- TMPL_IF NAME="copynumber" --><br /><!-- TMPL_VAR NAME="copynumber" --><!-- TMPL_ELSE -->&nbsp;<!-- /TMPL_IF --></td>
                               <td>
                                 <!-- TMPL_IF NAME="date_due" -->
                                   <span class="checkedout">Due <!-- TMPL_VAR NAME="date_due" --></span>
