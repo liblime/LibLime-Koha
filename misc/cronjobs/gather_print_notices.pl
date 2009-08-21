@@ -28,10 +28,12 @@ BEGIN {
     eval { require "$FindBin::Bin/../kohalib.pl" };
 }
 
+use CGI; # NOT a CGI script, this is just to keep C4::Output::gettemplate happy
 use C4::Context;
 use C4::Dates;
 use C4::Debug;
 use C4::Letters;
+use C4::Output;
 use File::Spec;
 use Getopt::Long;
 
@@ -68,31 +70,21 @@ exit unless( @messages );
 
 open OUTPUT, '>', File::Spec->catdir( $output_directory, "notices-" . $today->output( 'iso' ) . ".html" );
 
-$today = $today->output();
+my $template = C4::Output::gettemplate( 'batch/print-notices.tmpl', 'intranet', new CGI );
+my $stylesheet_contents = '';
 
-print OUTPUT <<HEADER;
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-<title>Print Notices for $today</title>
-<style type="text/css">
-<!-- .message { page-break-after: always } -->
-</style>
-HEADER
+open STYLESHEET, '<', $stylesheet;
+while ( <STYLESHEET> ) { $stylesheet_contents .= $_ }
+close STYLESHEET;
 
-if ( $stylesheet ) {
-    print OUTPUT "<style type=\"text/css\"><!--\n";
-    open STYLESHEET, '<', $stylesheet;
-    while ( <STYLESHEET> ) { print OUTPUT $_ }
-    close STYLESHEET;
-    print OUTPUT "--></style>\n";
-}
+$template->param(
+    stylesheet => $stylesheet_contents,
+    today => $today->output(),
+    messages => \@messages,
+);
 
-print OUTPUT "</head><body>\n";
+print OUTPUT $template->output;
 
 foreach my $message ( @messages ) {
-    print OUTPUT "<div class=\"message\">\n", $message->{'content'}, "</div>\n";
     C4::Letters::_set_message_status( { message_id => $message->{'message_id'}, status => 'sent' } );
 }
-
-print OUTPUT "</body></html>\n";
