@@ -1,7 +1,10 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
     <title>Print Notices for <!-- TMPL_VAR NAME="today" --></title>
     <style type="text/css">
-    <!-- .message { page-break-after: always } -->
+        <!-- 
+        .message { page-break-after: always }
+        pre { font-family: monospace }
+        -->
     </style>
     <!-- TMPL_IF NAME="stylesheet" -->
     <style type="text/css">
@@ -14,7 +17,7 @@
 <body>
     <!-- TMPL_LOOP NAME="messages" -->
     <div class="message">
-        <!-- TMPL_VAR NAME="content" -->
+        <pre><!-- TMPL_VAR NAME="content" --></pre>
     </div>
     <!--/TMPL_LOOP -->
 </body>
