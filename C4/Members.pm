@@ -1197,7 +1197,7 @@ sub GetBorNotifyAcctRecord {
 }
 
 sub GetNotifiedMembers {
-    my ( $letter_code, $wait, $branchcode, @ignored_categories ) = @_;
+    my ( $wait, $branchcode, @ignored_categories ) = @_;
 
     my $dbh = C4::Context->dbh;
     my $query = "
@@ -1206,18 +1206,10 @@ sub GetNotifiedMembers {
           surname, firstname, address, address2, city, zipcode, dateofbirth,
           phone, phonepro, contactfirstname, contactname, categorycode,
           last_reported_date, last_reported_amount, exclude_from_collection
-          FROM message_queue, (
-            SELECT borrowernumber, MAX(time_queued) as time_queued
-              FROM message_queue
-              WHERE letter_code = ?
-              GROUP BY borrowernumber
-            ) AS mq_max
-            LEFT JOIN borrowers USING (borrowernumber)
+          FROM borrowers
           WHERE
-            message_queue.time_queued = mq_max.time_queued
-            AND letter_code = ?
-            AND DATE_ADD(DATE(message_queue.time_queued), INTERVAL ? DAY) <= CURRENT_DATE
-            AND status = 'sent'
+            amount_notify_date IS NOT NULL
+            AND DATE_ADD(amount_notify_date, INTERVAL ? DAY) <= CURRENT_DATE
           GROUP BY borrowers.borrowernumber
     ";
 
@@ -1228,7 +1220,7 @@ sub GetNotifiedMembers {
         push @ignored_categories, $branchcode; # Just to get it in the right place
     }
 
-    return $dbh->selectall_arrayref( $query, { Slice => {} }, $letter_code, $letter_code, $wait, @ignored_categories );
+    return $dbh->selectall_arrayref( $query, { Slice => {} }, $wait, @ignored_categories );
 }
 
 sub MarkMemberReported {

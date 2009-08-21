@@ -41,7 +41,6 @@ debt_collect.pl [ --confirm ] [ -v | --verbose ] ...
    -l | --library LIBRARY_CODE Only report patrons from this library
    -f | --fine COLLECTION_FINE Charge this much to patrons that are reported
    -o | --once [DESCRIPTION]   Don't charge sent to collection fee twice
-   --letter LETTER_CODE        Letter code of the billing notice
    -w | --wait DAYS            How many days to wait to report patron
    --to EMAIL                  Send the reports to this email address
    --subject SUBJECT           Subject of the sent email
@@ -91,10 +90,6 @@ addition to the default).
 Send the reports to this address. Can be specified multiple times, with an email
 address each time.
 
-=item B<-l|--letter>
-
-The letter code of the billing notice (defaults to BILLING).
-
 =item B<-w|--wait>
 
 How many days to wait, including holidays and weekends, after the last billing
@@ -134,7 +129,6 @@ use Pod::Usage;
 my ( $help, $usage, $branch, $verbose, $confirm, @to, @ignored, $once );
 
 my $subject = 'Debt Collect';
-my $billing_notice = 'BILLING';
 my $wait = 21;
 my $send_fine = 10;
 my $minimum = 25;
@@ -147,7 +141,6 @@ GetOptions(
     'v|verbose' => \$verbose,
     'f|fine=f' => \$send_fine,
     'to=s' => \@to,
-    'letter' => \$billing_notice,
     'w|wait=i' => \$wait,
     'ignore' => \@ignored,
     'min' => \$minimum,
@@ -163,7 +156,7 @@ if ( $branch && !GetBranchName( $branch ) ) {
 }
 
 unless ( @to ) {
-    print "Must specify email addresses with --to";
+    print "Must specify email addresses with --to\n";
     exit 1;
 }
 
@@ -178,7 +171,7 @@ my @submitted;
 my @updated;
 
 # If $branch is not set, it is the same as not passing it
-foreach my $borrower ( @{ GetNotifiedMembers( $billing_notice, $wait, $branch, @ignored ) } ) {
+foreach my $borrower ( @{ GetNotifiedMembers( $wait, $branch, @ignored ) } ) {
     print "$borrower->{firstname} $borrower->{surname} ($borrower->{cardnumber}): " if ( $verbose );
     if ( $borrower->{exclude_from_collection} ) {
         print "manually skipped\n" if ( $verbose );
@@ -287,7 +280,7 @@ my $letter = {
 };
 
 foreach my $email ( @to ) {
-    print "sending reports to $email";
+    print "sending reports to $email\n";
 
     C4::Letters::EnqueueLetter( {
         borrowernumber => 1,
