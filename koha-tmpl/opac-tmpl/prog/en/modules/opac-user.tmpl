@@ -5,6 +5,7 @@
 <!-- /TMPL_LOOP -->
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script type="text/javascript" src="/intranet-tmpl/prog/en/js/dates.js"></script>
 <script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
 $.tablesorter.addParser({
@@ -66,31 +67,28 @@ $.tablesorter.addParser({
             });
 //]]>
 
-
-function isValidDate(theField){
-  if ( theField.value.length < 1 ) {
-	return true;
-  }
-
-  dPart = theField.value.split("-");
-  if(dPart.length < 1) { return true; }
-  if(dPart.length!=3){
-    alert("Enter Date in this format: MM-DD-YYYY");
-    theField.focus();
-    return false;
-  }
-  dPart[0]--;
-  nDate = new Date(dPart[2], dPart[0], dPart[1]);
-  if(isNaN(nDate) || dPart[2]!=nDate.getFullYear() ||
-      dPart[0]!=nDate.getMonth() || dPart[1]!=nDate.getDate()){
-    alert("Enter Date in this format: MM-DD-YYYY");
-    theField.select();
-    theField.focus();
-    return false;
-  } else {
-    return true;
-  }
+function checkDates(){
+  var AllDatesValid = true;
+  <!-- TMPL_LOOP NAME="RESERVES" -->
+      reserve_date = document.getElementById('resumedate_<!-- TMPL_VAR NAME="reservenumber" -->');
+      reserve_date.style.backgroundColor = 'white';
+      if ( reserve_date.value.length > 0 ) {
+        if (isDate(reserve_date.value)==false){
+          reserve_date.style.backgroundColor = 'red';
+          AllDatesValid = false;
+        }
+      }  
+  <!-- /TMPL_LOOP -->
+  return AllDatesValid;
 }
+ 
+function isValidDate(theFieldName){
+      reserve_date = document.getElementById( theFieldName );
+      if ( reserve_date.value.length > 0 ) {
+        return isDate(reserve_date.value);  
+      }
+}
+
 </script>
 </head>
 <body id="opac-user">
@@ -395,13 +393,13 @@ function isValidDate(theField){
 		<!-- TMPL_IF NAME="found" -->
 			Items waiting cannot be suspended.
 		<!-- TMPL_ELSE -->
-			<form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
+			<form action="/cgi-bin/koha/opac-modrequest.pl" method="post" onsubmit="return isValidDate('resumedate_<!-- TMPL_VAR NAME="reservenumber" -->')">
 				<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
 				<input type="hidden" name="suspend" value="1" />
 				<input type="submit" name="submit" class="icon delete cancel" value="Suspend" />
 				<br/>
 				<label>Resume on:</label>
-				<input type="text" onblur="isValidDate(this)" size="10" maxlength="10" id="resumedate" name="resumedate" />
+				<input type="text" size="10" maxlength="10" id="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
 				<label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
 			</form>
 		<!-- /TMPL_IF -->
