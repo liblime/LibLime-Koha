@@ -92,7 +92,7 @@ window.onload=function (){
 	var ss = new ScreenSaver( <!-- TMPL_VAR NAME="ResetOpacInactivityTimeout" --> * 1000);
 
 	ss.onstart = function () {
-		document.location = '/';
+		document.location = '/cgi-bin/koha/opac-main.pl?logout.x=1';
 	};
 }
 </script>
