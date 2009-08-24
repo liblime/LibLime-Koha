@@ -43,7 +43,7 @@ my $biblionumber = $query->param('biblionumber');
 my $suspend = $query->param('suspend');
 my $resume = $query->param('resume');
 my $reservenumber = $query->param('reservenumber');
-my $resumedate = $query->param('resumedate');
+my $resumedate = $query->param("resumedate_$reservenumber");
 warn "Incoming ResumeDate: $resumedate";
 
 if ( $resume && $reservenumber && $borrowernumber) {
