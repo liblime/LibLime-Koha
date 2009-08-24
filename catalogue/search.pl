@@ -631,7 +631,12 @@ if ($query_desc || $limit_desc) {
     $template->param(searchdesc => 1);
 }
 
+my $last_borrower_cookie = 0;
+if ( $cgi->cookie('last_borrower_borrowernumber') ) {
+  $last_borrower_cookie = 1;
+}
 $template->param(
+  last_borrower_cookie => $last_borrower_cookie,
   last_borrower_borrowernumber => $cgi->cookie('last_borrower_borrowernumber'),
   last_borrower_cardnumber => $cgi->cookie('last_borrower_cardnumber'),
   last_borrower_firstname => $cgi->cookie('last_borrower_firstname'),
