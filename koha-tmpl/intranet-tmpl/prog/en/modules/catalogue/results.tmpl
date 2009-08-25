@@ -409,7 +409,7 @@ function GetZ3950Terms(){
                                     <!-- TMPL_ELSE -->
                                         <a class="reserve" id="reserve_<!-- TMPL_VAR NAME="biblionumber" -->" href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Holds</a>
                                         <!-- <a class="reserve" id="reserve_<!-- TMPL_VAR NAME="biblionumber" -->" href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&cardnumber=<!-- TMPL_VAR NAME="last_borrower_cardnumber" -->">Hold for <!-- TMPL_VAR NAME="last_borrower_firstname" --> <!-- TMPL_VAR NAME="last_borrower_surname" --></a> -->
-					<!-- TMPL_IF NAME="last_borrower_cookie" -->
+					<!-- TMPL_IF NAME="last_borrower_show_button" -->
 	                                        <input type="button" onClick = "window.location = '/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&cardnumber=<!-- TMPL_VAR NAME="last_borrower_cardnumber" -->'" value="Hold for <!-- TMPL_VAR NAME="last_borrower_firstname" --> <!-- TMPL_VAR NAME="last_borrower_surname" -->" />
 					<!-- /TMPL_IF -->
                                     <!-- /TMPL_IF -->

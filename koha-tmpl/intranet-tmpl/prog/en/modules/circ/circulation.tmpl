@@ -464,7 +464,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 		<!-- /TMPL_IF -->
 
 		<h3>Search To Hold</h3>
-		<ul><li><a href="/cgi-bin/koha/catalogue/search.pl" onclick="return GB_showFullScreen('Search To Hold', this.href)">Search</a></li></ul>
+		<ul><li><a href="/cgi-bin/koha/catalogue/search.pl?last_borrower_show_button=1" onclick="return GB_showFullScreen('Search To Hold', this.href)">Search</a></li></ul>
 		<h3><!-- TMPL_IF NAME="noissues" -->Cannot Check Out!<!-- TMPL_ELSE -->Attention:<!-- /TMPL_IF --></h3>
 		<ul>
 

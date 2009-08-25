@@ -179,6 +179,23 @@ if (C4::Context->preference("marcflavour") eq "UNIMARC" ) {
     $template->param('UNIMARC' => 1);
 }
 
+warn "Cookie: " . $cgi->cookie('last_borrower_borrowernumber');
+warn "Show Button: " . $cgi->param('last_borrower_show_button');
+
+my $last_borrower_show_button = 0;
+if ( $cgi->cookie('last_borrower_borrowernumber') && $cgi->param('last_borrower_show_button') ) {
+  $last_borrower_show_button = 1;
+}
+
+warn "last_borrower_show_button: $last_borrower_show_button";
+$template->param(
+  last_borrower_show_button => $last_borrower_show_button,
+  last_borrower_borrowernumber => $cgi->cookie('last_borrower_borrowernumber'),
+  last_borrower_cardnumber => $cgi->cookie('last_borrower_cardnumber'),
+  last_borrower_firstname => $cgi->cookie('last_borrower_firstname'),
+  last_borrower_surname => $cgi->cookie('last_borrower_surname'),
+);
+
 ## URI Re-Writing
 # Deprecated, but preserved because it's interesting :-)
 # The same thing can be accomplished with mod_rewrite in
@@ -631,17 +648,6 @@ if ($query_desc || $limit_desc) {
     $template->param(searchdesc => 1);
 }
 
-my $last_borrower_cookie = 0;
-if ( $cgi->cookie('last_borrower_borrowernumber') ) {
-  $last_borrower_cookie = 1;
-}
-$template->param(
-  last_borrower_cookie => $last_borrower_cookie,
-  last_borrower_borrowernumber => $cgi->cookie('last_borrower_borrowernumber'),
-  last_borrower_cardnumber => $cgi->cookie('last_borrower_cardnumber'),
-  last_borrower_firstname => $cgi->cookie('last_borrower_firstname'),
-  last_borrower_surname => $cgi->cookie('last_borrower_surname'),
-);
 
 # VI. BUILD THE TEMPLATE
 output_html_with_http_headers $cgi, $cookie, $template->output;
