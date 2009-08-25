@@ -452,17 +452,16 @@ function GetZ3950Terms(){
                                         <!-- TMPL_IF name="imageurl" -->
                                         <li style="list-style: none; list-style-type: none;"><img src="<!-- TMPL_VAR name="imageurl" -->" title="<!-- TMPL_VAR name="description" -->" />
                                         <!-- TMPL_ELSE --><li><!-- /TMPL_IF -->
-                                        <!-- TMPL_ELSE --><li><!-- /TMPL_IF --><!-- /TMPL_IF -->
-
+                                        <!-- TMPL_ELSE --><li><!-- /TMPL_IF --><!-- /TMPL_IF --> 
                                         <!-- TMPL_IF NAME="branchname" --><!-- TMPL_VAR NAME="branchname" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="location" --><!-- TMPL_VAR NAME="location" --><!-- /TMPL_IF -->
-                                        <!-- TMPL_IF NAME="otherstatus" --> w/ <!-- TMPL_VAR NAME="otherstatus" --> status <!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnum:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="wthdrawn" -->(Withdrawn)<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="itemlost" -->(Lost)<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="damaged" -->(Damaged)<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="intransit" -->(In transit)<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="notforloan" --><!-- TMPL_VAR name="notforloan" --><!-- /TMPL_IF -->
+                                        <!-- TMPL_IF NAME="otherstatus" --> (<!-- TMPL_VAR NAME="otherstatus" -->)<!-- /TMPL_IF -->
                                         (<!-- TMPL_VAR NAME="count" -->)</li>
                                     <!-- /TMPL_LOOP --></ul>
                                     <!-- /TMPL_IF -->

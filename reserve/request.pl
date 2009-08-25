@@ -58,9 +58,10 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 my $multihold = $input->param('multi_hold');
 $template->param(multi_hold => $multihold);
 
-# get Branches and Itemtypes
+# get Branches and Itemtypes and OtherItemStatus
 my $branches = GetBranches();
 my $itemtypes = GetItemTypes();
+my $itemstatuses = GetOtherItemStatus();
     
 my $default = C4::Context->userenv->{branch};
 my @values;
@@ -362,7 +363,24 @@ foreach my $biblionumber (@biblionumbers) {
                       : "";
                 $item->{backgroundcolor} = 'other';
             }
-            
+
+            # Examine item.otherstatus and determine if it can be held
+            if ( $item->{otherstatus}) {
+              foreach my $istatus (@$itemstatuses) {
+                if ($istatus->{statuscode} eq $item->{otherstatus}) {
+                  $item->{otherstatus_description} = $istatus->{description};
+                  $template->param( otherstatus_description => $item->{otherstatus_description} );
+                  if (!$istatus->{holdsallowed}) {
+                    $biblioloopiter{warn} = 1;
+                    $biblioloopiter{noresstatus} = 1;
+                    $item->{noresstatus} = 1;
+                    $item->{backgroundcolor} = 'other';
+                  }
+                  last;
+                }
+              }
+            }
+
             # Check the transit status
             my ( $transfertwhen, $transfertfrom, $transfertto ) =
               GetTransfers($itemnumber);
@@ -404,7 +422,7 @@ foreach my $biblionumber (@biblionumbers) {
                 if ( not $policy_holdallowed and C4::Context->preference( 'AllowHoldPolicyOverride' ) ) {
                     $item->{override} = 1;
                     $num_override++;
-                } elsif ( $policy_holdallowed ) {
+                } elsif (( $policy_holdallowed ) && (!$item->{noresstatus} )) {
                     $item->{available} = 1;
                     $num_available++;
                 }

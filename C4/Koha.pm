@@ -1213,7 +1213,7 @@ sub GetOtherItemStatus {
   my ($selected) = @_;
   my @results;
   my $dbh      = C4::Context->dbh;
-  my $query    = "SELECT * FROM itemstatus";
+  my $query    = "SELECT * FROM itemstatus ORDER BY description";
 
   my $sth = $dbh->prepare($query);
   $sth->execute;

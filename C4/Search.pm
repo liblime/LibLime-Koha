@@ -1263,6 +1263,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
           ? C4::Context->preference('maxItemsinSearchResults') - 1
           : 1;
         my $other_otherstatus = '';
+        my $other_otherstatus_count = 0;
 
         # loop through every item
         foreach my $field (@fields) {
@@ -1288,7 +1289,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                  LEFT JOIN items ON itemstatus.statuscode=items.otherstatus
                WHERE itemnumber = ?"
             );
-            $sth->execute($oldbiblio->{itemnumber});
+            $sth->execute($item->{itemnumber});
             my @statusvalue = $sth->fetchrow;
             my ($otherstatus,$holdsallowed,$OPACstatusdisplay);
             if (@statusvalue) {
@@ -1369,7 +1370,15 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     $item_in_transit_count++ if $transfertwhen ne '';
                     $item->{status} = $item->{wthdrawn} . "-" . $item->{itemlost} . "-" . $item->{damaged} . "-" . $item->{notforloan};
                     $other_count++;
-                    $other_otherstatus = $otherstatus if ($holdsallowed == 0);
+                    if ($holdsallowed == 0) {
+                      $other_otherstatus_count++;
+                      if ($other_otherstatus eq '') {
+                        $other_otherstatus = $otherstatus;
+                      }
+                      else {
+                        $other_otherstatus .= ', ' . $otherstatus;
+                      }
+                    }
 
 					my $key = $prefix . $item->{status};
 					foreach (qw(wthdrawn itemlost damaged branchname itemcallnumber)) {
@@ -1380,8 +1389,13 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 					$other_items->{$key}->{count}++ if $item->{$hbranch};
 					$other_items->{$key}->{location} = $shelflocations->{ $item->{location} };
 					$other_items->{$key}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
-                                        $other_items->{$prefix}->{OPACstatusdisplay} = $OPACstatusdisplay;
-                                        $other_items->{$prefix}->{otherstatus} = $otherstatus;
+                                        $other_items->{$key}->{OPACstatusdisplay} = $OPACstatusdisplay;
+                                        if (!defined($other_items->{$key}->{otherstatus})) {
+                                          $other_items->{$key}->{otherstatus} = $otherstatus;
+                                        }
+                                        else {
+                                          $other_items->{$key}->{otherstatus} .=', ' . $otherstatus;
+                                        }
                 }
                 # item is available
                 else {
@@ -1443,6 +1457,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
         $oldbiblio->{intransitcount}       = $item_in_transit_count;
         $oldbiblio->{orderedcount}         = $ordered_count;
         $oldbiblio->{other_otherstatus}    = $other_otherstatus;
+        $oldbiblio->{other_otherstatuscount} = $other_otherstatus_count;
         push( @newresults, $oldbiblio );
     }
     return @newresults;

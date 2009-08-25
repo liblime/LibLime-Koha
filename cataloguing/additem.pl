@@ -440,7 +440,7 @@ foreach my $tag (sort keys %{$tagslib}) {
       }
       elsif ( $tagslib->{$tag}->{$subfield}->{authorised_value} eq "otherstatus" ) {
         push @authorised_values, "" unless ( $tagslib->{$tag}->{$subfield}->{mandatory} );
-        my $sth = $dbh->prepare("select statuscode,description from itemstatus order by description");
+        my $sth = $dbh->prepare("SELECT statuscode,description FROM itemstatus ORDER BY description");
         $sth->execute;
         while ( my ( $statuscode, $description ) = $sth->fetchrow_array ) {
           push @authorised_values, $statuscode;

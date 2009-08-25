@@ -395,6 +395,7 @@ my %default_values_for_mod_from_marc = (
     location             => undef, 
     materials            => undef, 
     notforloan           => 0,
+    otherstatus          => undef,
     paidfor              => undef, 
     price                => undef, 
     replacementprice     => undef, 
