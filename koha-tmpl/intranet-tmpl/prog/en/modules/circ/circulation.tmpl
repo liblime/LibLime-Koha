@@ -450,7 +450,12 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
                         <input type="hidden" name="charges" value="yes" />
                         <input type="hidden" name="oldamount" value="<!-- TMPL_VAR NAME="amountold" -->" />
                 <!-- /TMPL_IF -->
+<fieldset style="width: 10px;">
+<input type="button" value="Search To Hold" id="searchtohold" name="searchtohold" onclick="return GB_showFullScreen('Search To Hold', '/cgi-bin/koha/catalogue/search.pl?last_borrower_show_button=1')" />
 </fieldset>
+
+</fieldset>
+
 </form></div><!-- /TMPL_UNLESS --><!-- /unless noissues -->
 
 <!-- TMPL_IF NAME="noissues" --><div><!-- TMPL_ELSE --><div class="yui-u"><!-- /TMPL_IF -->
@@ -462,9 +467,8 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 		<!-- TMPL_ELSE -->
         <div id="circmessages" class="circmessage attention">
 		<!-- /TMPL_IF -->
+<h3><input type="button" value="Search To Hold" id="searchtohold" onclick="return GB_showFullScreen('Search To Hold', '/cgi-bin/koha/catalogue/search.pl?last_borrower_show_button=1')" /></h3>
 
-		<h3>Search To Hold</h3>
-		<ul><li><a href="/cgi-bin/koha/catalogue/search.pl?last_borrower_show_button=1" onclick="return GB_showFullScreen('Search To Hold', this.href)">Search</a></li></ul>
 		<h3><!-- TMPL_IF NAME="noissues" -->Cannot Check Out!<!-- TMPL_ELSE -->Attention:<!-- /TMPL_IF --></h3>
 		<ul>
 
