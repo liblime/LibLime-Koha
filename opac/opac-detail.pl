@@ -186,7 +186,7 @@ for my $itm (@items) {
        foreach my $istatus (@$itemstatuses) {
          if ($istatus->{'statuscode'} eq $itm->{'otherstatus'}) {
            $itm->{'otherstatus_description'} = $istatus->{'description'};
-           $norequests = 1 if (!$istatus->{'holdsallowed'});
+           $norequests = 1 if ((!$istatus->{'holdsallowed'}) || (!$istatus->{'holdsfilled'}));
            last;
          }
        }

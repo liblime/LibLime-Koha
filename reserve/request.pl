@@ -364,13 +364,14 @@ foreach my $biblionumber (@biblionumbers) {
                 $item->{backgroundcolor} = 'other';
             }
 
-            # Examine item.otherstatus and determine if it can be held
+            # Examine items.otherstatus and determine if it can be held
             if ( $item->{otherstatus}) {
               foreach my $istatus (@$itemstatuses) {
                 if ($istatus->{statuscode} eq $item->{otherstatus}) {
                   $item->{otherstatus_description} = $istatus->{description};
                   $template->param( otherstatus_description => $item->{otherstatus_description} );
-                  if (!$istatus->{holdsallowed}) {
+                  if ((!$istatus->{holdsallowed}) ||
+                      (!$istatus->{holdsfilled})) {
                     $biblioloopiter{warn} = 1;
                     $biblioloopiter{noresstatus} = 1;
                     $item->{noresstatus} = 1;
