@@ -133,6 +133,8 @@
             var branchSel = $("#branch_" + biblioNum);
             if (branchSel.size() > 0) {
                 selections += $(branchSel).val();
+            } else {
+                selections += ' '; // Dummy value, to make split() work correctly
             }
             selections += "/";
             return true;
