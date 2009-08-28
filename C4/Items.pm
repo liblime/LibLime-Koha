@@ -48,6 +48,7 @@ BEGIN {
         AddItem
         AddItemBatchFromMarc
         ModItemFromMarc
+		Item2Marc
         ModItem
         MoveItemToAnotherBiblio
         ModDateLastSeen
@@ -1644,22 +1645,29 @@ sub GetMarcItem {
 
     # Tack on 'items.' prefix to column names so that TransformKohaToMarc will work.
     # Also, don't emit a subfield if the underlying field is blank.
+
+    
+    return Item2Marc($itemrecord,$biblionumber);
+
+}
+
+sub Item2Marc {
+    my ($itemrecord,$biblionumber)=@_;
     my $mungeditem = { 
         map {  
             defined($itemrecord->{$_}) && $itemrecord->{$_} ne '' ? ("items.$_" => $itemrecord->{$_}) : ()  
         } keys %{ $itemrecord } 
     };
     my $itemmarc = TransformKohaToMarc($mungeditem);
+    my ( $itemtag, $itemsubfield ) = GetMarcFromKohaField("items.itemnumber",GetFrameworkCode($biblionumber)||'');
 
     my $unlinked_item_subfields = _parse_unlinked_item_subfields_from_xml($mungeditem->{'items.more_subfields_xml'});
     if (defined $unlinked_item_subfields and $#$unlinked_item_subfields > -1) {
-        my @fields = $itemmarc->fields();
-        if ($#fields > -1) {
-            $fields[0]->add_subfields(@$unlinked_item_subfields);
+        foreach my $field ($itemmarc->field($itemtag)){
+            $field->add_subfields(@$unlinked_item_subfields);
         }
     }
     return $itemmarc;
-
 }
 
 =head2 GetMarcWithItems
