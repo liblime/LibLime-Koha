@@ -297,11 +297,11 @@ foreach my $biblionumber (@biblionumbers) {
         my $num_override  = 0;
         
         $biblioitem->{description} =
-          $itemtypes->{ $biblioitem->{itemtype} }{description};
+          $itemtypes->{ $biblioitem->{itemtype} }{description} if (defined($biblioitem->{itemtype}));
         $biblioloopiter{description} = $biblioitem->{description};
         $biblioloopiter{itypename} = $biblioitem->{description};
         $biblioloopiter{imageurl} =
-          getitemtypeimagelocation('intranet', $itemtypes->{$biblioitem->{itemtype}}{imageurl});
+          getitemtypeimagelocation('intranet', $itemtypes->{$biblioitem->{itemtype}}{imageurl}) if (defined($biblioitem->{itemtype}));
         
         foreach my $itemnumber ( @{ $itemnumbers_of_biblioitem{$biblioitemnumber} } )    {
             my $item = $iteminfos_of->{$itemnumber};
@@ -415,7 +415,7 @@ foreach my $biblionumber (@biblionumbers) {
             $item->{'holdallowed'} = $branchitemrule->{'holdallowed'};
             
             if ( $branchitemrule->{'holdallowed'} == 0 ||
-                 ( $branchitemrule->{'holdallowed'} == 1 && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) ) {
+                 ( $branchitemrule->{'holdallowed'} == 1 && defined($borrowerinfo) && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) ) {
                 $policy_holdallowed = 0;
             }
             
