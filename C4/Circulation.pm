@@ -156,14 +156,11 @@ sub barcodedecode {
 		                    return $barcode;
                         },
 	    'T-prefix'  =>  sub {
-		                    if ($barcode =~ /^[Tt](\d)/) {
-			                    (defined($1) and $1 eq '0') and return $barcode;
-                                $barcode = substr($barcode, 2) + 0;     # FIXME: probably should be substr($barcode, 1)
-		                    }
-                            return sprintf("T%07d", $barcode);
-                            # FIXME: $barcode could be "T1", causing warning: substr outside of string
-                            # Why drop the nonzero digit after the T?
-                            # Why pass non-digits (or empty string) to "T%07d"?
+                            if ($barcode =~ /^[Tt]\s*(\d+)/) {
+                                return sprintf("T%07d", $1 );
+                            } else {
+                                return $barcode;
+                            }
                          },
 	     'cuecat'   =>  sub {
 		                    chomp($barcode);
