@@ -47,7 +47,7 @@ use C4::Dates;
 use Mail::Sendmail;
 use Getopt::Long;
 use Date::Calc qw(Add_Delta_Days);
-use HTML::Template;
+use HTML::Template::Pro;
 use Data::Dumper;
 
 
