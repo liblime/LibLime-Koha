@@ -1070,6 +1070,24 @@ sub ReserveForBestSellersClub {
     if ( ($club->{'casData1'} eq $title) || ($club->{'casData2'} eq $author) ) {
       push( @clubs, $club );
       #warn "casId" . $club->{'casId'};
+    } elsif ( $club->{'casData1'} =~ m/%/ ) { # Title is using % as a wildcard
+      my @substrings = split(/%/, $club->{'casData1'} );
+      my $all_match = 1;
+      foreach my $sub ( @substrings ) {
+        unless( $title =~ m/\Q$sub/) {
+          $all_match = 0;
+        }
+      }
+      if ( $all_match ) { push( @clubs, $club ); }
+    } elsif ( $club->{'casData2'} =~ m/%/ ) { # Author is using % as a wildcard
+      my @substrings = split(/%/, $club->{'casData2'} );
+      my $all_match = 1;
+      foreach my $sub ( @substrings ) {
+        unless( $author =~ m/\Q$sub/) {
+          $all_match = 0;
+        }
+      }
+      if ( $all_match ) { push( @clubs, $club ); }
     }
   }
   $sth->finish();
