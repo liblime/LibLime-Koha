@@ -124,9 +124,7 @@ my (@itemloop, %itemfields);
 my $norequests = 1;
 my $authvalcode_items_itemlost = GetAuthValCode('items.itemlost',$fw);
 my $authvalcode_items_damaged  = GetAuthValCode('items.damaged', $fw);
-my $item_count = 0;
 foreach my $item (@items) {
-    $item_count++;
     # can place holds defaults to yes
     $norequests = 0 unless ( ( $item->{'notforloan'} > 0 ) || ( $item->{'itemnotforloan'} > 0 ) );
 
@@ -157,17 +155,15 @@ foreach my $item (@items) {
     # checking for holds
     my ($reservedate,$reservedfor,$expectedAt);
     my $ItemBorrowerReserveInfo;
+    my ($rescount,$res) = GetReservesFromBiblionumber($biblionumber);
     my ($restype,$reserves,$reserve_count) = CheckReserves($item->{itemnumber});
     if ($reserves != 0) {
       $reservedate = $reserves->{reservedate};
       $reservedfor = $reserves->{borrowernumber};
       $expectedAt  = $reserves->{branchcode};
       $ItemBorrowerReserveInfo = GetMemberDetails( $reservedfor, 0);
-      undef $reservedate if ($item_count > $reserve_count);
-      if ($item->{itemlost}) {
-        undef $reservedate;
-        $item_count--;
-      }
+      undef $reservedate if ($reserves->{nullitem});
+      $template->param( totalreserves => $rescount );
     }
     if (C4::Context->preference('HidePatronName')){
 	$item->{'hidepatronname'} = 1;

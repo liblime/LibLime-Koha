@@ -378,7 +378,7 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
                                     In transit from <!-- TMPL_VAR NAME="transfertfrom" -->
                                     to <!-- TMPL_VAR NAME="transfertto" --> since <!-- TMPL_VAR NAME="transfertwhen" -->
                                 <!-- TMPL_ELSE -->
-                                    <!-- TMPL_IF NAME="waiting" -->On hold<!-- TMPL_ELSE --><!-- TMPL_IF NAME="onhold" -->On hold<!-- TMPL_ELSE -->Available<!-- /TMPL_IF --><!-- /TMPL_IF -->
+                                    <!-- TMPL_IF NAME="attached" -->On hold<!-- TMPL_ELSE -->Available<!-- /TMPL_IF -->
                                 <!-- /TMPL_IF -->
                             <!-- /TMPL_IF -->
                         <!-- /TMPL_IF -->
@@ -392,6 +392,12 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
         </tr>
         <!-- /TMPL_LOOP --></tbody>
     </table>
+    <!-- TMPL_IF NAME="totalreserves" -->
+      <div class="dialogue alert">
+         <b> Total holds: <!-- TMPL_VAR NAME="totalreserves" --> <p> Items with "On hold" status are item specific holds. </b>
+      </div>
+    <!-- /TMPL_IF -->
+
 <!-- TMPL_ELSE -->
 <p>No physical items for this record</p>
 <!-- /TMPL_IF -->

@@ -313,6 +313,11 @@ function verify_images() {
                 </tr>
             <!-- /TMPL_LOOP -->
         </table>
+        <!-- TMPL_IF NAME="totalreserves" -->
+        <div class="dialogue alert">
+        <b> There are a total of <!-- TMPL_VAR NAME="totalreserves" --> holds.  Items with "On hold" status are item specific holds. </b>
+        </div>
+        <!-- /TMPL_IF -->
 		<!-- TMPL_IF NAME="debug_display" -->
 		<br /><br />
 		<table>

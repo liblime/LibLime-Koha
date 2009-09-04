@@ -366,7 +366,7 @@ sub GetOtherReserves {
     my ($itemnumber) = @_;
     my $messages;
     my $nextreservinfo;
-    my ( $restype, $checkreserves ) = CheckReserves($itemnumber);
+    my ( $restype, $checkreserves, $count ) = CheckReserves($itemnumber);
     if ($checkreserves) {
         my $iteminfo = GetItem($itemnumber);
         if ( $iteminfo->{'holdingbranch'} ne $checkreserves->{'branchcode'} ) {
@@ -583,7 +583,7 @@ Otherwise, it finds the most important item in the reserves with the
 same biblio number as this book (I'm not clear on this) and returns it
 with C<$status> set to C<Reserved>.
 
-C<&CheckReserves> returns a two-element list:
+C<&CheckReserves> returns a three-element list:
 
 C<$status> is either C<Waiting>, C<Reserved> (see above), or 0.
 
@@ -648,6 +648,7 @@ sub CheckReserves {
             else {
                 # See if this item is more important than what we've got
                 # so far.
+                $res->{'nullitem'} = 1 if (!defined($res->{'itemnumber'}));
                 if ( $res->{'priority'} != 0 && $res->{'priority'} < $priority )
                 {
                     $priority = $res->{'priority'};

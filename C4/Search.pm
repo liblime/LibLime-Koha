@@ -1234,6 +1234,17 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
             $oldbiblio->{summary} = $summary;
         }
 
+        my %restype;
+        my ($rescount,$reserves) = C4::Reserves::GetReservesFromBiblionumber($oldbiblio->{biblionumber});
+        foreach my $res (@$reserves) {
+          if ($res->{itemnumber}) {
+            $restype{$res->{itemnumber}} = "Attached";
+            $rescount--;
+          }
+        }
+
+        ($i % 2) and $oldbiblio->{'toggle'} = 1;
+
         # Pull out the items fields
         my @fields = $marcrecord->field($itemtag);
 
@@ -1265,7 +1276,9 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
           : 1;
 
         # loop through every item
+        my $itemcount = 0;
         foreach my $field (@fields) {
+            $itemcount++;
             my $item;
 
             # populate the items hash
@@ -1335,22 +1348,23 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     ($transfertwhen, $transfertfrom, $transfertto) = C4::Circulation::GetTransfers($item->{itemnumber});
                 }
 
-                my ($restype,$reserves,$count) = C4::Reserves::CheckReserves($item->{itemnumber});
-                $restype = 0 if (($restype eq "Reserved") && ($item_reserve_count == $count));
+                if ($restype{$item->{itemnumber}} ne "Attached") {
+                  $restype{$item->{itemnumber}} = ($itemcount <= $rescount) ? "Reserved" : '';
+                }
                 # item is withdrawn, lost or damaged
                 if (   $item->{wthdrawn}
                     || $item->{itemlost}
                     || $item->{damaged}
                     || $item->{notforloan} 
                     || ($transfertwhen ne '')
-                    || ($restype eq "Waiting")
-                    || ($restype eq "Reserved") )
+                    || ($restype{$item->{itemnumber}} eq "Attached")
+                    || ($restype{$item->{itemnumber}} eq "Reserved") )
                 {
                     $wthdrawn_count++        if $item->{wthdrawn};
                     $itemlost_count++        if $item->{itemlost};
                     $itemdamaged_count++     if $item->{damaged};
-                    $item_reserve_count++    if (($restype eq "Waiting") || ($restype eq "Reserved"));
-                    if (($restype eq "Waiting") || ($restype eq "Reserved")) {
+                    $item_reserve_count++    if (($restype{$item->{itemnumber}} eq "Attached") || ($restype{$item->{itemnumber}} eq "Reserved"));
+                    if (($restype{$item->{itemnumber}} eq "Attached") || ($restype{$item->{itemnumber}} eq "Reserved")) {
                       $can_place_holds = 1;
                     }
                     $item_in_transit_count++ if $transfertwhen ne '';
@@ -1362,7 +1376,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     	$other_items->{$key}->{$_} = $item->{$_};
 					}
                     $other_items->{$key}->{intransit} = ($transfertwhen ne '') ? 1 : 0;
-                    $other_items->{$key}->{reserved} = (($restype eq "Waiting") || ($restype eq "Reserved")) ? 1 : 0;
+                    $other_items->{$key}->{reserved} = (($restype{$item->{itemnumber}} eq "Attached") || ($restype{$item->{itemnumber}} eq "Reserved")) ? 1 : 0;
 					$other_items->{$key}->{notforloan} = GetAuthorisedValueDesc('','',$item->{notforloan},'','',$notforloan_authorised_value) if $notforloan_authorised_value;
 					$other_items->{$key}->{count}++ if $item->{$hbranch};
 					$other_items->{$key}->{location} = $shelflocations->{ $item->{location} };

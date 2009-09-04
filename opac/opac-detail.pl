@@ -172,14 +172,10 @@ for my $itm (@items) {
          $itm->{'lostimagelabel'} = $lostimageinfo->{ 'label' };
      }
 
-     if( $itm->{'count_reserves'}){
-        $itm->{'count_reserves'} = 0 if ($item_count > $itm->{'reserve_count'});
-        if ($itm->{'itemlost'}) {
-          $itm->{'count_reserves'} = 0;
-          $item_count--;
-        };
-        if( $itm->{'count_reserves'} eq "Waiting"){ $itm->{'waiting'} = 1; }
-        if( $itm->{'count_reserves'} eq "Reserved"){ $itm->{'onhold'} = 1; }
+     if ($itm->{'reserve_status'}){
+       if( $itm->{'reserve_status'} eq "Attached"){ $itm->{'attached'} = 1; }
+       if( $itm->{'reserve_status'} eq "Reserved"){ $itm->{'onhold'} = 1; }
+       $template->param( totalreserves => $itm->{'reserve_count'});
      }
     
      my ( $transfertwhen, $transfertfrom, $transfertto ) = GetTransfers($itm->{itemnumber});
