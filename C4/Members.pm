@@ -1197,7 +1197,7 @@ sub GetBorNotifyAcctRecord {
 }
 
 sub GetNotifiedMembers {
-    my ( $wait, $branchcode, @ignored_categories ) = @_;
+    my ( $wait, $max_wait, $branchcode, @ignored_categories ) = @_;
 
     my $dbh = C4::Context->dbh;
     my $query = "
@@ -1209,7 +1209,7 @@ sub GetNotifiedMembers {
           FROM borrowers
           WHERE
             amount_notify_date IS NOT NULL
-            AND DATE_ADD(amount_notify_date, INTERVAL ? DAY) <= CURRENT_DATE
+            AND CURRENT_DATE BETWEEN DATE_ADD(amount_notify_date, INTERVAL ? DAY) AND DATE_ADD(amount_notify_date, INTERVAL ? DAY)
           GROUP BY borrowers.borrowernumber
     ";
 
@@ -1220,7 +1220,7 @@ sub GetNotifiedMembers {
         push @ignored_categories, $branchcode; # Just to get it in the right place
     }
 
-    return $dbh->selectall_arrayref( $query, { Slice => {} }, $wait, @ignored_categories );
+    return $dbh->selectall_arrayref( $query, { Slice => {} }, $wait, $max_wait, @ignored_categories );
 }
 
 sub MarkMemberReported {

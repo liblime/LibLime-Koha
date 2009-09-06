@@ -42,6 +42,7 @@ debt_collect.pl [ --confirm ] [ -v | --verbose ] ...
    -f | --fine COLLECTION_FINE Charge this much to patrons that are reported
    -o | --once [DESCRIPTION]   Don't charge sent to collection fee twice
    -w | --wait DAYS            How many days to wait to report patron
+   --max-wait DAYS             Ignore patrons after this many days old
    --to EMAIL                  Send the reports to this email address
    --subject SUBJECT           Subject of the sent email
    --ignore PATRON_TYPE        Ignore borrowers of this type
@@ -130,6 +131,7 @@ my ( $help, $usage, $branch, $verbose, $confirm, @to, @ignored, $once );
 
 my $subject = 'Debt Collect';
 my $wait = 21;
+my $max_wait = 365;
 my $send_fine = 10;
 my $minimum = 25;
 
@@ -142,6 +144,7 @@ GetOptions(
     'f|fine=f' => \$send_fine,
     'to=s' => \@to,
     'w|wait=i' => \$wait,
+    'max-wait=i' => \$max_wait,
     'ignore' => \@ignored,
     'min' => \$minimum,
     'subject' => \$subject,
@@ -171,7 +174,7 @@ my @submitted;
 my @updated;
 
 # If $branch is not set, it is the same as not passing it
-foreach my $borrower ( @{ GetNotifiedMembers( $wait, $branch, @ignored ) } ) {
+foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignored ) } ) {
     print "$borrower->{firstname} $borrower->{surname} ($borrower->{cardnumber}): " if ( $verbose );
     if ( $borrower->{exclude_from_collection} ) {
         print "manually skipped\n" if ( $verbose );
