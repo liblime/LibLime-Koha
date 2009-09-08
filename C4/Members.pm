@@ -972,16 +972,21 @@ sub fixup_cardnumber {
      # whether the string is numeric or not.
      # FIXME : This needs to be pulled out into an ajax function, since the interface allows on-the-fly changing of patron home library.
      #
-         my $query =  "select max(borrowers.cardnumber) from borrowers ";
+         my $query;
          my @bind;
          my $cardlength = C4::Context->preference('patronbarcodelength');
          my $firstnumber = 0;
          if($branch->{'patronbarcodeprefix'} && $cardlength) {
+            $query =  "select max(cardnumber) from borrowers ";
              my $minrange = 10**($cardlength-length($branch->{'patronbarcodeprefix'}) );
              $query .= " WHERE cardnumber BETWEEN ? AND ?";
              $query .= " AND length(cardnumber) = ?";
              $firstnumber = $branch->{'patronbarcodeprefix'} .substr(sprintf("%s",$minrange), 1) ;
              @bind = ($firstnumber , $branch->{'patronbarcodeprefix'} . sprintf( "%s",$minrange - 1),$cardlength ) ;
+         } else {
+            # not using prefix; assume we just want to increment the largest integer barcode.
+            # note mysql throws lots of warnings on this for alphanumeric cardnumbers.
+            $query =  "select max(cast(cardnumber as signed)) from borrowers ";
          }
          my $sth= $dbh->prepare($query);
          $sth->execute(@bind);
