@@ -603,7 +603,7 @@ foreach (qw(dateenrolled dateexpiry dateofbirth)) {
 
 if (C4::Context->preference('ExtendedPatronAttributes')) {
     $template->param(ExtendedPatronAttributes => 1);
-    patron_attributes_form($template, $borrowernumber);
+    patron_attributes_form($template, $borrowernumber, $copy);
 }
 
 if (C4::Context->preference('EnhancedMessagingPreferences')) {
@@ -686,6 +686,7 @@ sub  parse_extended_patron_attributes {
 sub patron_attributes_form {
     my $template = shift;
     my $borrowernumber = shift;
+    my $copy = shift;
 
     my @types = C4::Members::AttributeTypes::GetAttributeTypes();
     if (scalar(@types) == 0) {
@@ -715,7 +716,7 @@ sub patron_attributes_form {
         if (exists $attr_hash{$attr_type->code()}) {
             foreach my $attr (@{ $attr_hash{$attr_type->code()} }) {
                 my $newentry = { map { $_ => $entry->{$_} } %$entry };
-                $newentry->{value} = $attr->{value};
+                $newentry->{value} = ($copy) ? '' : $attr->{value};
                 $newentry->{password} = $attr->{password};
                 $newentry->{use_dropdown} = 0;
                 if ($attr_type->authorised_value_category()) {
