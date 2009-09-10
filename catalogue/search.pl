@@ -179,15 +179,10 @@ if (C4::Context->preference("marcflavour") eq "UNIMARC" ) {
     $template->param('UNIMARC' => 1);
 }
 
-warn "Cookie: " . $cgi->cookie('last_borrower_borrowernumber');
-warn "Show Button: " . $cgi->param('last_borrower_show_button');
-
 my $last_borrower_show_button = 0;
 if ( $cgi->cookie('last_borrower_borrowernumber') && $cgi->param('last_borrower_show_button') ) {
   $last_borrower_show_button = 1;
 }
-
-warn "last_borrower_show_button: $last_borrower_show_button";
 $template->param(
   last_borrower_show_button => $last_borrower_show_button,
   last_borrower_borrowernumber => $cgi->cookie('last_borrower_borrowernumber'),
@@ -534,7 +529,7 @@ for (my $i=0;$i<@servers;$i++) {
             } elsif  ($defaultview eq 'labeled_marc' && $views->{can_view_labeledMARC}) {
                 print $cgi->redirect("/cgi-bin/koha/catalogue/labeledMARCdetail.pl?biblionumber=$biblionumber");
             } else {
-                print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber");
+                print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber&last_borrower_show_button=$last_borrower_show_button");
             } 
             exit;
         }

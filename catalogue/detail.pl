@@ -294,4 +294,17 @@ if (C4::Context->preference('OPACBaseURL')){
      $template->param( OpacUrl => C4::Context->preference('OPACBaseURL') );
 }
 
+## Process 'Hold For' button data
+my $last_borrower_show_button = 0;
+if ( $query->cookie('last_borrower_borrowernumber') && $query->param('last_borrower_show_button') ) {
+  $last_borrower_show_button = 1;
+  $template->param(
+    last_borrower_show_button => $last_borrower_show_button,
+    last_borrower_borrowernumber => $query->cookie('last_borrower_borrowernumber'),
+    last_borrower_cardnumber => $query->cookie('last_borrower_cardnumber'),
+    last_borrower_firstname => $query->cookie('last_borrower_firstname'),  
+    last_borrower_surname => $query->cookie('last_borrower_surname'),
+  );
+} 
+             
 output_html_with_http_headers $query, $cookie, $template->output;

@@ -41,10 +41,13 @@ function verify_images() {
 
 <body>
 
-<!-- TMPL_INCLUDE NAME="header.inc" -->
-<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+<!-- TMPL_UNLESS NAME="last_borrower_show_button" -->
+	<!-- TMPL_INCLUDE NAME="header.inc" -->
+	<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/catalogue/search.pl">Catalog</a>  &rsaquo; Details for <i><!-- TMPL_VAR NAME="title" escape="html" --></i></div>
+	<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/catalogue/search.pl">Catalog</a>  &rsaquo; Details for <i><!-- TMPL_VAR NAME="title" escape="html" --></i></div>
+<!-- /TMPL_UNLESS -->
+
 
 <div id="doc3" class="yui-t2">
    
@@ -107,7 +110,14 @@ function verify_images() {
 		</li>
 	<!-- /TMPL_IF -->
         </ul>
+
+<!-- TMPL_IF NAME="last_borrower_show_button" -->
+	<p><input type="button" onClick = "window.location = '/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&cardnumber=<!-- TMPL_VAR NAME="last_borrower_cardnumber" -->'" value="Hold for <!-- TMPL_VAR NAME="last_borrower_firstname" --> <!-- TMPL_VAR NAME="last_borrower_surname" -->" /></p>
+<!-- /TMPL_IF -->
+
         </div>
+
+
        
 <!-- TMPL_IF NAME="AmazonEnabled" --><!-- TMPL_IF NAME="AmazonCoverImages" --><div class="yui-u" id="bookcoverimg">
 <a href="http://www.amazon<!-- TMPL_VAR NAME="AmazonTld" -->/gp/reader/<!-- TMPL_VAR NAME="normalized_isbn" -->/ref=sib_dp_pt/002-7879865-0184864#reader-link"><img border="0" src="http://images.amazon.com/images/P/<!-- TMPL_VAR NAME="normalized_isbn" -->.01.MZZZZZZZ.jpg" alt="" /></a></div><!-- /TMPL_IF --><!-- /TMPL_IF -->

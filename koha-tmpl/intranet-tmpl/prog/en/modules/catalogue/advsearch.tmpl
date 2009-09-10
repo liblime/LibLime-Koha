@@ -20,8 +20,10 @@
 </head>
 <body>
 
-<!-- TMPL_INCLUDE NAME="header.inc" -->
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; Advanced Search</div>
+<!-- TMPL_UNLESS NAME="last_borrower_show_button" -->
+	<!-- TMPL_INCLUDE NAME="header.inc" -->
+	<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; Advanced Search</div>
+<!-- /TMPL_UNLESS -->
 
 <div id="doc" class="yui-t7">
    <div id="bd">
