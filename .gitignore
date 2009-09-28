@@ -1,0 +1,14 @@
+cataloguing/biblios.pl
+koha-tmpl/intranet-tmpl/prog/en/lib/biblios/
+koha-tmpl/intranet-tmpl/prog/en/modules/cataloguing/biblios.tmpl
+acqui/getit.pl
+koha-tmpl/intranet-tmpl/prog/en/modules/acqui/getit.tmpl
+plugins/
+svc/proxy_auth_cookie
+svc/z3950
+svc/bibs
+svc/item_types
+svc/collections
+svc/organizations
+svc/collection_codes
+svc/shelving_locations

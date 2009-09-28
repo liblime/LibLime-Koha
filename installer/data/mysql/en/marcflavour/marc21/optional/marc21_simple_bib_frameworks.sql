@@ -141,6 +141,8 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'BKS', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'BKS', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'BKS', '', '', NULL),
+        ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'BKS', '', '', NULL),
+        ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'BKS', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'BKS', '', '', NULL);
 
 
@@ -181,6 +183,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'g', 'Cost, normal purchase price', 'Cost, normal purchase price', 0, 0, 'items.price', 10, '', '', '', 0, 0, 'BKS', '', '', NULL),
 		('952', 'h', 'Serial Enumeration / chronology','Serial Enumeration / chronology', 0, 0, 'items.enumchron', 10, '', '', '', 0, 0, 'BKS', '', '', NULL),
 		('952', 'j', 'Shelving control number', 'Shelving control number', 0, 0, 'items.stack', 10, 'STACK', '', '', NULL, -1, 'BKS', '', '', NULL),
+        ('952', 'k', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, 'BKS', '', '', NULL),
 		('952', 'l', 'Total Checkouts', 'Total Checkouts', 0, 0, 'items.issues', 10, '', '', '', NULL, -5, 'BKS', '', '', NULL),
 		('952', 'm', 'Total Renewals', 'Total Renewals', 0, 0, 'items.renewals', 10, '', '', '', NULL, -5, 'BKS', '', '', NULL),
 		('952', 'n', 'Total Holds', 'Total Holds', 0, 0, 'items.reserves', 10, '', '', '', NULL, -5, 'BKS', '', '', NULL),
@@ -4061,6 +4064,8 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'CF', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'CF', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'CF', '', '', NULL),
+        ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'CF', '', '', NULL),
+        ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'CF', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'CF', '', '', NULL);
 
 
@@ -4101,6 +4106,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'g', 'Cost, normal purchase price', 'Cost, normal purchase price', 0, 0, 'items.price', 10, '', '', '', 0, 0, 'CF', '', '', NULL),
 		('952', 'h', 'Serial Enumeration / chronology','Serial Enumeration / chronology', 0, 0, 'items.enumchron', 10, '', '', '', 0, 0, 'CF', '', '', NULL),
 		('952', 'j', 'Shelving control number', 'Shelving control number', 0, 0, 'items.stack', 10, 'STACK', '', '', NULL, -1, 'CF', '', '', NULL),
+        ('952', 'k', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, 'CF', '', '', NULL),
 		('952', 'l', 'Total Checkouts', 'Total Checkouts', 0, 0, 'items.issues', 10, '', '', '', NULL, -5, 'CF', '', '', NULL),
 		('952', 'm', 'Total Renewals', 'Total Renewals', 0, 0, 'items.renewals', 10, '', '', '', NULL, -5, 'CF', '', '', NULL),
 		('952', 'n', 'Total Holds', 'Total Holds', 0, 0, 'items.reserves', 10, '', '', '', NULL, -5, 'CF', '', '', NULL),
@@ -7982,6 +7988,8 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'SR', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'SR', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'SR', '', '', NULL),
+        ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'SR', '', '', NULL),
+        ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'SR', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'SR', '', '', NULL);
 
 
@@ -8022,6 +8030,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'g', 'Cost, normal purchase price', 'Cost, normal purchase price', 0, 0, 'items.price', 10, '', '', '', 0, 0, 'SR', '', '', NULL),
 		('952', 'h', 'Serial Enumeration / chronology','Serial Enumeration / chronology', 0, 0, 'items.enumchron', 10, '', '', '', 0, 0, 'SR', '', '', NULL),
 		('952', 'j', 'Shelving control number', 'Shelving control number', 0, 0, 'items.stack', 10, 'STACK', '', '', NULL, -1, 'SR', '', '', NULL),
+        ('952', 'k', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, 'SR', '', '', NULL),
 		('952', 'l', 'Total Checkouts', 'Total Checkouts', 0, 0, 'items.issues', 10, '', '', '', NULL, -5, 'SR', '', '', NULL),
 		('952', 'm', 'Total Renewals', 'Total Renewals', 0, 0, 'items.renewals', 10, '', '', '', NULL, -5, 'SR', '', '', NULL),
 		('952', 'n', 'Total Holds', 'Total Holds', 0, 0, 'items.reserves', 10, '', '', '', NULL, -5, 'SR', '', '', NULL),
@@ -11902,6 +11911,8 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'VR', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'VR', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'VR', '', '', NULL),
+        ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'VR', '', '', NULL),
+        ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'VR', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'VR', '', '', NULL);
 
 
@@ -11942,6 +11953,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'g', 'Cost, normal purchase price', 'Cost, normal purchase price', 0, 0, 'items.price', 10, '', '', '', 0, 0, 'VR', '', '', NULL),
 		('952', 'h', 'Serial Enumeration / chronology','Serial Enumeration / chronology', 0, 0, 'items.enumchron', 10, '', '', '', 0, 0, 'VR', '', '', NULL),
 		('952', 'j', 'Shelving control number', 'Shelving control number', 0, 0, 'items.stack', 10, 'STACK', '', '', NULL, -1, 'VR', '', '', NULL),
+        ('952', 'k', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, 'VR', '', '', NULL),
 		('952', 'l', 'Total Checkouts', 'Total Checkouts', 0, 0, 'items.issues', 10, '', '', '', NULL, -5, 'VR', '', '', NULL),
 		('952', 'm', 'Total Renewals', 'Total Renewals', 0, 0, 'items.renewals', 10, '', '', '', NULL, -5, 'VR', '', '', NULL),
 		('952', 'n', 'Total Holds', 'Total Holds', 0, 0, 'items.reserves', 10, '', '', '', NULL, -5, 'VR', '', '', NULL),
@@ -15821,6 +15833,8 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'AR', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'AR', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'AR', '', '', NULL),
+        ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'AR', '', '', NULL),
+        ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'AR', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'AR', '', '', NULL);
 
 
@@ -15861,6 +15875,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'g', 'Cost, normal purchase price', 'Cost, normal purchase price', 0, 0, 'items.price', 10, '', '', '', 0, 0, 'AR', '', '', NULL),
 		('952', 'h', 'Serial Enumeration / chronology','Serial Enumeration / chronology', 0, 0, 'items.enumchron', 10, '', '', '', 0, 0, 'AR', '', '', NULL),
 		('952', 'j', 'Shelving control number', 'Shelving control number', 0, 0, 'items.stack', 10, 'STACK', '', '', NULL, -1, 'AR', '', '', NULL),
+        ('952', 'k', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, 'AR', '', '', NULL),
 		('952', 'l', 'Total Checkouts', 'Total Checkouts', 0, 0, 'items.issues', 10, '', '', '', NULL, -5, 'AR', '', '', NULL),
 		('952', 'm', 'Total Renewals', 'Total Renewals', 0, 0, 'items.renewals', 10, '', '', '', NULL, -5, 'AR', '', '', NULL),
 		('952', 'n', 'Total Holds', 'Total Holds', 0, 0, 'items.reserves', 10, '', '', '', NULL, -5, 'AR', '', '', NULL),
@@ -19739,6 +19754,8 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'KT', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'KT', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'KT', '', '', NULL),
+        ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'KT', '', '', NULL),
+        ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'KT', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'KT', '', '', NULL);
 
 
@@ -19779,6 +19796,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'g', 'Cost, normal purchase price', 'Cost, normal purchase price', 0, 0, 'items.price', 10, '', '', '', 0, 0, 'KT', '', '', NULL),
 		('952', 'h', 'Serial Enumeration / chronology','Serial Enumeration / chronology', 0, 0, 'items.enumchron', 10, '', '', '', 0, 0, 'KT', '', '', NULL),
 		('952', 'j', 'Shelving control number', 'Shelving control number', 0, 0, 'items.stack', 10, 'STACK', '', '', NULL, -1, 'KT', '', '', NULL),
+        ('952', 'k', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, 'KT', '', '', NULL),
 		('952', 'l', 'Total Checkouts', 'Total Checkouts', 0, 0, 'items.issues', 10, '', '', '', NULL, -5, 'KT', '', '', NULL),
 		('952', 'm', 'Total Renewals', 'Total Renewals', 0, 0, 'items.renewals', 10, '', '', '', NULL, -5, 'KT', '', '', NULL),
 		('952', 'n', 'Total Holds', 'Total Holds', 0, 0, 'items.reserves', 10, '', '', '', NULL, -5, 'KT', '', '', NULL),
@@ -23658,6 +23676,8 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'IR', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'IR', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'IR', '', '', NULL),
+        ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'IR', '', '', NULL),
+        ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'IR', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'IR', '', '', NULL);
 
 
@@ -23698,6 +23718,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'g', 'Cost, normal purchase price', 'Cost, normal purchase price', 0, 0, 'items.price', 10, '', '', '', 0, 0, 'IR', '', '', NULL),
 		('952', 'h', 'Serial Enumeration / chronology','Serial Enumeration / chronology', 0, 0, 'items.enumchron', 10, '', '', '', 0, 0, 'IR', '', '', NULL),
 		('952', 'j', 'Shelving control number', 'Shelving control number', 0, 0, 'items.stack', 10, 'STACK', '', '', NULL, -1, 'IR', '', '', NULL),
+        ('952', 'k', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, 'IR', '', '', NULL),
 		('952', 'l', 'Total Checkouts', 'Total Checkouts', 0, 0, 'items.issues', 10, '', '', '', NULL, -5, 'IR', '', '', NULL),
 		('952', 'm', 'Total Renewals', 'Total Renewals', 0, 0, 'items.renewals', 10, '', '', '', NULL, -5, 'IR', '', '', NULL),
 		('952', 'n', 'Total Holds', 'Total Holds', 0, 0, 'items.reserves', 10, '', '', '', NULL, -5, 'IR', '', '', NULL),
@@ -27575,6 +27596,8 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'SER', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'SER', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'SER', '', '', NULL),
+        ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'SER', '', '', NULL),
+        ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'SER', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'SER', '', '', NULL);
 
 
@@ -27615,6 +27638,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'g', 'Cost, normal purchase price', 'Cost, normal purchase price', 0, 0, 'items.price', 10, '', '', '', 0, 0, 'SER', '', '', NULL),
 		('952', 'h', 'Serial Enumeration / chronology','Serial Enumeration / chronology', 0, 0, 'items.enumchron', 10, '', '', '', 0, 0, 'SER', '', '', NULL),
 		('952', 'j', 'Shelving control number', 'Shelving control number', 0, 0, 'items.stack', 10, 'STACK', '', '', NULL, -1, 'SER', '', '', NULL),
+        ('952', 'k', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, 'SER', '', '', NULL),
 		('952', 'l', 'Total Checkouts', 'Total Checkouts', 0, 0, 'items.issues', 10, '', '', '', NULL, -5, 'SER', '', '', NULL),
 		('952', 'm', 'Total Renewals', 'Total Renewals', 0, 0, 'items.renewals', 10, '', '', '', NULL, -5, 'SER', '', '', NULL),
 		('952', 'n', 'Total Holds', 'Total Holds', 0, 0, 'items.reserves', 10, '', '', '', NULL, -5, 'SER', '', '', NULL),

@@ -70,6 +70,7 @@ my %tabsysprefs;
 $tabsysprefs{acquisitions}              = "Acquisitions";
 $tabsysprefs{gist}                      = "Acquisitions";
 $tabsysprefs{emailPurchaseSuggestions}  = "Acquisitions";
+$tabsysprefs{GetItAcquisitions}         = "Acquisitions";
 
 # Admin
 $tabsysprefs{singleBranchMode}      = "Admin";
@@ -103,6 +104,7 @@ $tabsysprefs{dontmerge}             = "Authorities";
 $tabsysprefs{BiblioAddsAuthorities} = "Authorities";
 
 # Cataloguing
+$tabsysprefs{BibliosCataloging}          = "Cataloging";
 $tabsysprefs{advancedMARCeditor}          = "Cataloging";
 $tabsysprefs{autoBarcode}                 = "Cataloging";
 $tabsysprefs{hide_marc}                   = "Cataloging";

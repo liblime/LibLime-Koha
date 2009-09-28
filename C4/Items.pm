@@ -437,6 +437,7 @@ my %default_values_for_mod_from_marc = (
     suppress             => 0,
     uri                  => undef, 
     wthdrawn             => 0,
+    catstat              => undef,
 );
 
 sub ModItemFromMarc {
@@ -1996,7 +1997,8 @@ sub _koha_new_item {
             enumchron           = ?,
             more_subfields_xml  = ?,
             copynumber          = ?,
-            otherstatus         = ?
+            otherstatus         = ?,
+            catstat             = ?
           ";
     my $sth = $dbh->prepare($query);
    $sth->execute(
@@ -2034,7 +2036,8 @@ sub _koha_new_item {
             $item->{'enumchron'},
             $item->{'more_subfields_xml'},
             $item->{'copynumber'},
-            $item->{'otherstatus'}
+            $item->{'otherstatus'},
+            $item->{'catstat'},
     );
     my $itemnumber = $dbh->{'mysql_insertid'};
     if ( defined $sth->errstr ) {

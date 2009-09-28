@@ -43,3 +43,8 @@ INSERT INTO `authorised_values` (category, authorised_value, lib) VALUES ('NOT_L
 -- restricted status of an item, linked to items.restricted
 INSERT INTO `authorised_values` (category, authorised_value, lib) VALUES ('RESTRICTED','0','');
 INSERT INTO `authorised_values` (category, authorised_value, lib) VALUES ('RESTRICTED','1','Restricted Access');
+
+INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','READY','Ready to be Cataloged');
+INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','BINDERY','Sent to Bindery');
+INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','CATALOGED','Cataloged');
+

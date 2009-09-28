@@ -406,6 +406,9 @@ function barcodeMatch(barcode,itemnumber) {
 		<!-- /TMPL_IF -->
 <!-- TMPL_ELSE -->
     <p>No physical items for this record</p>
+<!-- This puts in the On Order and In Process Count that are published to records via GetIt -->
+<!-- TMPL_IF NAME="GetItAcquisitions" -->
+<!-- TMPL_IF "on_order_count" --><!-- TMPL_VAR NAME="on_order_count" --> item(s) currently on order<!-- /TMPL_IF --><!-- TMPL_IF "in_process_count" --><!-- TMPL_VAR NAME="in_process_count" --> item(s) in processing<!-- /TMPL_IF --><!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
     </div>
     

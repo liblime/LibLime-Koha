@@ -4050,6 +4050,41 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( CSV Export profiles )\n";
 }
 
+$DBversion = '4.03.08.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do("ALTER TABLE items ADD catstat varchar(80) default NULL");
+    $dbh->do("ALTER TABLE biblioitems ADD on_order_count varchar(80) default NULL");
+    $dbh->do("ALTER TABLE biblioitems ADD in_process_count varchar(80) default NULL");
+    $dbh->do("DELETE FROM authorised_values WHERE category='CATSTAT'");
+    $dbh->do("INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','READY','Ready to be Cataloged')");
+    $dbh->do("INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','BINDERY','Sent to Bindery')");
+    $dbh->do("INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','CATALOGED','Cataloged')");
+    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('GetItAcquisitions','0','If set, a link to GetIt Acquisitions will appear in the Koha menu and GetIt Acquisitions-specific functionality will appear elsewhere. Please refer to the documentation for details.','','YesNo')");
+    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('BibliosCataloging','0','If set, a link to Biblios Cataloging will appear in the Koha menu and Biblios Cataloging-specific functionality will appear elsewhere. Please refer to the documentation for details.','','YesNo')");
+
+    # Update Frameworks
+    my $sth=$dbh->prepare("SELECT DISTINCT(frameworkcode) FROM marc_subfield_structure");
+    $sth->execute;
+    while (my $row=$sth->fetchrow_hashref) {
+        my $frameworkcode = $row->{'frameworkcode'} || '';
+        print "Adding CATSTAT to framework:$frameworkcode\n";
+        $dbh->do("INSERT INTO `marc_subfield_structure`
+                    (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`)
+            VALUES  ('952', 'k', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, '$frameworkcode', '', '', NULL)");
+
+        $dbh->do("INSERT INTO `marc_subfield_structure`
+                    (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`)
+            VALUES  ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, '$frameworkcode', '', '', NULL)");
+
+        $dbh->do("INSERT INTO `marc_subfield_structure`
+                    (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`)
+            VALUES  ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, '$frameworkcode', '', '', NULL)");
+
+    }
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done (Adds new item field 'CATSTAT' for maintaining cataloging status, adds on_order_count and in_process_count for GetIt integration, adds new system preferences for GetIt and Biblios menu display).\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

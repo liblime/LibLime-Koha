@@ -13,8 +13,15 @@
                             <li><a href="/cgi-bin/koha/virtualshelves/shelves.pl">Lists</a></li>
                             <!-- TMPL_IF NAME="CAN_user_editcatalogue" -->
                             <li><a href="/cgi-bin/koha/cataloguing/addbooks.pl">Cataloging</a></li>
+                            <!-- TMPL_IF NAME="BibliosCataloging" -->
+                            <li><a href="/cgi-bin/koha/cataloguing/biblios.pl">‡biblios Cataloging</a></li>
+                            <!-- /TMPL_IF -->
                             <!-- TMPL_IF NAME="CAN_user_acquisition" -->
+                            <!-- TMPL_IF NAME="GetItAcquisitions" -->
+                            <li><a href="/cgi-bin/koha/acqui/getit.pl">GetIt Acquisitions</a></li>
+                            <!-- TMPL_ELSE -->
                             <li><a href="/cgi-bin/koha/acqui/acqui-home.pl">Acquisitions</a></li>
+                            <!-- /TMPL_IF -->
                             <!-- /TMPL_IF -->
                             <li><a href="/cgi-bin/koha/authorities/authorities-home.pl">Authorities</a></li>
                             <!-- TMPL_IF EXPR="CAN_user_serials && !UsePeriodicals" -->

@@ -292,6 +292,8 @@ sub get_template_and_user {
             ClubsAndServices             => C4::Context->preference("EnableClubsAndServices"),
             UsePeriodicals               => C4::Context->preference('UsePeriodicals'),
             HideItypeInOPAC              => C4::Context->boolean_preference('HideItypeInOPAC'),
+            GetItAcquisitions            => C4::Context->preference("GetItAcquisitions"),
+            BibliosCataloging            => C4::Context->preference("BibliosCataloging"),
     );
 
     if ( $in->{'type'} eq "intranet" ) {
@@ -323,6 +325,8 @@ sub get_template_and_user {
             NoZebra                     => C4::Context->preference('NoZebra'),
             LinkLostItemsToPatron       => C4::Context->preference('LinkLostItemsToPatron'),
             RefundReturnedLostItem      => C4::Context->preference('RefundReturnedLostItem'),
+            GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),
+            BibliosCataloging => C4::Context->preference("BibliosCataloging"),
         );
     }
     else {
@@ -410,6 +414,8 @@ sub get_template_and_user {
             virtualshelves            => "" . C4::Context->preference("virtualshelves"),
             OPACSerialIssueDisplayCount => C4::Context->preference("OPACSerialIssueDisplayCount"),
             ResetOpacInactivityTimeout => C4::Context->preference("ResetOpacInactivityTimeout"),
+            GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),
+            BibliosCataloging => C4::Context->preference("BibliosCataloging"),
         );
     }
     return ( $template, $borrowernumber, $cookie, $flags);

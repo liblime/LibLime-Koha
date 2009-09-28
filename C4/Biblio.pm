@@ -3112,7 +3112,9 @@ sub _koha_modify_biblioitem_nonmarc {
         cn_item         = ?,
         cn_suffix       = ?,
         cn_sort         = ?,
-        totalissues     = ?
+        totalissues     = ?,
+        on_order_count  = ?,
+        in_process_count = ?,
         where biblioitemnumber = ?
         ";
     my $sth = $dbh->prepare($query);
@@ -3145,6 +3147,8 @@ sub _koha_modify_biblioitem_nonmarc {
         $biblioitem->{'cn_suffix'},
         $cn_sort,
         $biblioitem->{'totalissues'},
+        $biblioitem->{'on_order_count'},
+        $biblioitem->{'in_process_count'},
         $biblioitem->{'biblioitemnumber'}
     );
     if ( $dbh->errstr ) {
@@ -3201,7 +3205,9 @@ sub _koha_add_biblioitem {
         cn_item         = ?,
         cn_suffix       = ?,
         cn_sort         = ?,
-        totalissues     = ?
+        totalissues     = ?,
+        on_order_count  = ?,
+        in_process_count = ?
         ";
     my $sth = $dbh->prepare($query);
     $sth->execute(
@@ -3233,7 +3239,9 @@ sub _koha_add_biblioitem {
         $biblioitem->{'cn_item'},
         $biblioitem->{'cn_suffix'},
         $cn_sort,
-        $biblioitem->{'totalissues'}
+        $biblioitem->{'totalissues'},
+        $biblioitem->{'on_order_count'},
+        $biblioitem->{'in_process_count'}
     );
     my $bibitemnum = $dbh->{'mysql_insertid'};
     if ( $dbh->errstr ) {
