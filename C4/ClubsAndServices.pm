@@ -1031,8 +1031,6 @@ sub getTodayMysqlDateFormat {
 sub ReserveForBestSellersClub {
   my ( $biblionumber ) = @_;
 
-  #warn "ReserveForBestSellersClub( $biblionumber )";
-
   unless( $biblionumber ) { return; }
   
   my $dbh = C4::Context->dbh;
@@ -1042,10 +1040,8 @@ sub ReserveForBestSellersClub {
   my $biblio_data = C4::Biblio::GetBiblioData( $biblionumber );
   my $author = $biblio_data->{'author'};
   my $title = $biblio_data->{'title'};
+  my $itemtype = $biblio_data->{'itemtype'};
   
-  #warn "Author: $author";
-  #warn "Title: $title";
-
   ## Find the casaId for the Bestsellers Club archetype
   $sth = $dbh->prepare("SELECT * FROM clubsAndServicesArchetypes WHERE title LIKE 'Bestsellers Club' ");
   $sth->execute();
@@ -1055,8 +1051,6 @@ sub ReserveForBestSellersClub {
 
   unless( $casaId ) { return; }
     
-  #warn "casaId: $casaId";
-  
   ## Find all the relevent bestsellers clubs
   ## casData1 is title, casData2 is author
   $sth = $dbh->prepare("SELECT * FROM clubsAndServices WHERE casaId = ?");
@@ -1087,6 +1081,20 @@ sub ReserveForBestSellersClub {
           $all_match = 0;
         }
       }
+      
+      ## Make sure the bib is in the list of itemtypes to use
+      my @itemtypes = split( / /, $club->{'casData3'} );
+      my $found_itemtype_match = 0;
+      if ( @itemtypes ) { ## If no itemtypes are listed, all itemtypes are valid, skip test.
+        foreach my $it ( @itemtypes ) {
+          if ( $it eq $itemtype ) {
+            $found_itemtype_match = 1;
+            last; ## Short circuit for speed.
+          }
+        }
+        $all_match = 0 unless ( $found_itemtype_match ); 
+      }
+      
       if ( $all_match ) { push( @clubs, $club ); }
     }
   }
@@ -1107,18 +1115,15 @@ sub ReserveForBestSellersClub {
       $sql .= " OR";
     }
     push( @casIds, $club->{'casId'} );
-    #warn "casId: " . $club->{'casId'};
   }
   $sql .= " ) ORDER BY RAND()";
   
-  #warn "SQL: $sql";
   
   $sth = $dbh->prepare( $sql );
   $sth->execute( @casIds );
   my @borrowers;
   while ( my $borrower = $sth->fetchrow_hashref() ) {
     push( @borrowers, $borrower );
-    #warn "Borrowernumber " . $borrower->{'borrowernumber'};
   }
   
   unless( scalar( @borrowers ) ) { return; }
