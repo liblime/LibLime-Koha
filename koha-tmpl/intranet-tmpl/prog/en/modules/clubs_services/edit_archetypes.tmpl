@@ -47,12 +47,13 @@
 
       <!-- LIST ALL ARCHETYPES -->
           <table>
-            <tr><th colspan="12">Club Archetypes</th></tr>
+            <tr><th colspan="99">Club Archetypes</th></tr>
             <tr>
               <th>Owner</strong</td>
               <th>Title</th>
               <th>Description</th>
               <th>Public Enrollment</th>
+	      <th>Require Email</th>
 	      <th>Club Data 1 Title</th>
 	      <th>Club Data 2 Title</th>
               <th>Club Data 3 Title</th>
@@ -70,6 +71,7 @@
                 <td><!-- TMPL_VAR NAME="title" --></td>
                 <td><!-- TMPL_VAR NAME="description" --></td>
                 <td><!-- TMPL_VAR NAME="publicEnrollment" --></td>
+                <td><!-- TMPL_VAR NAME="caseRequireEmail" --></td>
                 <td><!-- TMPL_VAR NAME="casData1Title" --></td>
                 <td><!-- TMPL_VAR NAME="casData2Title" --></td>
                 <td><!-- TMPL_VAR NAME="casData3Title" --></td>
@@ -81,17 +83,18 @@
               </tr>
             <!-- /TMPL_LOOP -->
         <!-- TMPL_ELSE -->
-            <tr><td colspan="12">There are no Club Archetypes currently defined.</td></tr>
+            <tr><td colspan="99">There are no Club Archetypes currently defined.</td></tr>
         <!-- /TMPL_IF -->
 
-            <tr><td colspan="12">&nbsp;</td></tr>
+            <tr><td colspan="99">&nbsp;</td></tr>
 
-            <tr><th colspan="12">Service Archetypes</th></tr>
+            <tr><th colspan="99">Service Archetypes</th></tr>
             <tr>
               <th>Owner</strong</td>
               <th>Title</th>
               <th>Description</th>
               <th>Public Enrollment</th>
+	      <th>Require Email</th>
 	      <th>Service Data 1 Title</th>
 	      <th>Service Data 2 Title</th>
               <th>Service Data 3 Title</th>
@@ -109,6 +112,7 @@
                 <td><!-- TMPL_VAR NAME="title" --></td>
                 <td><!-- TMPL_VAR NAME="description" --></td>
                 <td><!-- TMPL_VAR NAME="publicEnrollment" --></td>
+                <td><!-- TMPL_VAR NAME="caseRequireEmail" --></td>
                 <td><!-- TMPL_VAR NAME="casData1Title" --></td>
                 <td><!-- TMPL_VAR NAME="casData2Title" --></td>
                 <td><!-- TMPL_VAR NAME="casData3Title" --></td>
@@ -227,6 +231,14 @@
               <td><input type="text" name="caseData3Desc" <!-- TMPL_IF NAME="editCaseData3Desc" --> value="<!-- TMPL_VAR NAME="editCaseData3Desc" -->" <!-- /TMPL_IF --> /></td>
             </tr>
           </table>
+
+	  <table>
+		<tr>
+			<td><input type="checkbox" name="caseRequireEmail" id="caseRequireEmail" value="1" <!-- TMPL_IF NAME="editCaseRequireEmail" -->checked="checked"<!-- /TMPL_IF --> /></td>
+			<td>Require E-mail</td>
+			<td><i>If checked, a borrower will not be able to enroll unless he or she has a valid e-mail address on record in the field specified in the System Preference 'AutoEmailPrimaryAddress'.</i></td>
+		</tr>
+	  </table>
 
           <br />
           <!-- TMPL_IF NAME="previousActionEdit" -->

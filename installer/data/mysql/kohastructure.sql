@@ -2409,6 +2409,7 @@ CREATE TABLE `clubsAndServicesArchetypes` (
   `caseData1Desc` text,
   `caseData2Desc` text,
   `caseData3Desc` text,
+  `caseRequireEmail` tinyint(1) NOT NULL default '0',
   `branchcode` varchar(4) default NULL COMMENT 'branch where archetype was created.',
   `last_updated` timestamp NOT NULL default CURRENT_TIMESTAMP,
   PRIMARY KEY  (`casaId`)

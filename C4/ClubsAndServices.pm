@@ -104,6 +104,8 @@ C4::ClubsAndServices - Functions for managing clubs and services
 ##     clubsAndServicesEnrollment.data1
 ##   $caseData2Desc: Same but for data2
 ##   $caseData3Desc: Same but for data3
+##   $caseRequireEmail: If 1, enrollment in clubs or services based on this archetype will require a valid e-mail address field in the borrower
+##	record as specified in the syspref AutoEmailPrimaryAddress
 ##   $branchcode: The branchcode for the branch where this Archetype was created
 ## Output:
 ##   $success: 1 if all database operations were successful, 0 otherwise
@@ -115,7 +117,7 @@ sub AddClubOrServiceArchetype {
        $caseData1Title, $caseData2Title, $caseData3Title, 
        $casData1Desc, $casData2Desc, $casData3Desc, 
        $caseData1Desc, $caseData2Desc, $caseData3Desc, 
-       $branchcode ) = @_;
+       $caseRequireEmail, $branchcode ) = @_;
 
   ## Check for all neccessary parameters
   if ( ! $type ) {
@@ -133,9 +135,9 @@ sub AddClubOrServiceArchetype {
   my $dbh = C4::Context->dbh;
 
   my $sth;
-  $sth = $dbh->prepare("INSERT INTO clubsAndServicesArchetypes ( casaId, type, title, description, publicEnrollment, branchcode, last_updated ) 
-                        VALUES ( NULL, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-  $sth->execute( $type, $title, $description, $publicEnrollment, $branchcode ) or $success = 0;
+  $sth = $dbh->prepare("INSERT INTO clubsAndServicesArchetypes ( casaId, type, title, description, publicEnrollment, caseRequireEmail, branchcode, last_updated ) 
+                        VALUES ( NULL, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+  $sth->execute( $type, $title, $description, $publicEnrollment, $caseRequireEmail, $branchcode ) or $success = 0;
   my $casaId = $dbh->{'mysql_insertid'};
   $sth->finish;
 
@@ -241,6 +243,8 @@ sub AddClubOrServiceArchetype {
 ##     clubsAndServicesEnrollment.data1
 ##   $caseData2Desc: Same but for data2
 ##   $caseData3Desc: Same but for data3
+##   $caseRequireEmail: If 1, enrollment in clubs or services based on this archetype will require a valid e-mail address field in the borrower
+##	record as specified in the syspref AutoEmailPrimaryAddress
 ## Output:
 ##   $success: 1 if all database operations were successful, 0 otherwise
 ##   $errorCode: Code for reason of failure, good for translating errors in templates
@@ -250,7 +254,8 @@ sub UpdateClubOrServiceArchetype {
        $casData1Title, $casData2Title, $casData3Title, 
        $caseData1Title, $caseData2Title, $caseData3Title,
        $casData1Desc, $casData2Desc, $casData3Desc, 
-       $caseData1Desc, $caseData2Desc, $caseData3Desc 
+       $caseData1Desc, $caseData2Desc, $caseData3Desc,
+       $caseRequireEmail,
      ) = @_;
 
   ## Check for all neccessary parameters
@@ -278,16 +283,15 @@ sub UpdateClubOrServiceArchetype {
                         casData1Title = ?, casData2Title = ?, casData3Title = ?,
                         caseData1Title = ?, caseData2Title = ?, caseData3Title = ?, 
                         casData1Desc = ?, casData2Desc = ?, casData3Desc = ?,
-                        caseData1Desc = ?, caseData2Desc = ?, caseData3Desc = ?, 
+                        caseData1Desc = ?, caseData2Desc = ?, caseData3Desc = ?, caseRequireEmail = ?,
                         last_updated = NOW() WHERE casaId = ?");
-#  $sth = $dbh->prepare("INSERT INTO clubsAndServicesArchetypes ( casaId, type, title, description, publicEnrollment, last_updated ) 
-#                        VALUES ( NULL, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+
   $sth->execute( $type, $title, $description, $publicEnrollment, 
                  $casData1Title, $casData2Title, $casData3Title, 
                  $caseData1Title, $caseData2Title, $caseData3Title, 
                  $casData1Desc, $casData2Desc, $casData3Desc, 
                  $caseData1Desc, $caseData2Desc, $caseData3Desc, 
-                 $casaId ) 
+                 $caseRequireEmail, $casaId ) 
       or return ( $success = 0, my $errorCode = 6, my $errorMessage = $sth->errstr() );
   $sth->finish;
   
@@ -511,9 +515,19 @@ sub EnrollInClubOrService {
     return ( 0, 3, "No Borrower Given" );
   } 
   
-  if ( ! $borrowernumber ) {
-    $borrowernumber = getBorrowernumberByCardnumber( $borrowerCardnumber );
+  my $AutoEmailPrimaryAddress = C4::Context->preference('AutoEmailPrimaryAddress');
+  
+  my $member = C4::Members::GetMember( $borrowerCardnumber, 'cardnumber' ) if ( $borrowerCardnumber );
+  my $member = C4::Members::GetMember( $borrowernumber, 'borrowernumber' ) if ( $borrowernumber );
+  
+  warn "AutoEmailPrimaryAddress: $AutoEmailPrimaryAddress";
+  warn "Email: " . $member->{ $AutoEmailPrimaryAddress };
+  
+  unless( $member->{ $AutoEmailPrimaryAddress } ) {
+    return( 0, 4, "Email Address Required: No Valid Email Address In Borrower Record" );
   }
+  
+  $borrowernumber = $member->{'borrowernumber'};
   
   if ( isEnrolled( $casId, $borrowernumber ) ) { return ( 0, 5, "Member is already enrolled!" ); }
 
@@ -758,7 +772,7 @@ sub GetClubsAndServicesArchetypes {
 ##     $caseData1Title, $caseData2Title, $caseData3Title, 
 ##     $casData1Desc, $casData2Desc, $casData3Desc,
 ##     $caseData1Desc, $caseData2Desc, $caseData3Desc, 
-##     $last_updated, $branchcode )
+##     $caseRequireEmail, $last_updated, $branchcode )
 ##     Except: 0 on failure
 sub GetClubOrServiceArchetype {
   my ( $casaId ) = @_;
@@ -791,6 +805,7 @@ sub GetClubOrServiceArchetype {
       $$row{'caseData1Desc'},
       $$row{'caseData2Desc'},
       $$row{'caseData3Desc'},
+      $$row{'caseRequireEmail'},
       $$row{'last_updated'},
       $$row{'branchcode'}
   );
@@ -1028,6 +1043,7 @@ sub getTodayMysqlDateFormat {
   return $today;
 }
 
+## This should really be moved to a new module, C4::ClubsAndServices::BestSellersClub
 sub ReserveForBestSellersClub {
   my ( $biblionumber ) = @_;
 

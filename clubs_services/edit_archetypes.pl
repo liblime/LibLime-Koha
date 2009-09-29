@@ -46,6 +46,7 @@ if ( $query->param('action') eq 'create' ) {
   my $caseData2Desc = $query->param('caseData2Desc');
   my $caseData3Desc = $query->param('caseData3Desc');
 
+  my $caseRequireEmail = $query->param('caseRequireEmail');
 
   my ( $createdSuccessfully, $errorCode, $errorMessage ) = AddClubOrServiceArchetype( 
                                                              $type, 
@@ -63,7 +64,8 @@ if ( $query->param('action') eq 'create' ) {
                                                              $casData3Desc, 
                                                              $caseData1Desc, 
                                                              $caseData2Desc, 
-                                                             $caseData3Desc, 
+                                                             $caseData3Desc,
+                                                             $caseRequireEmail,
                                                              $branchcode 
                                                            );
   
@@ -102,7 +104,7 @@ elsif ( $query->param('action') eq 'edit' ) {
        $caseData1Title, $caseData2Title, $caseData3Title, 
        $casData1Desc, $casData2Desc, $casData3Desc, 
        $caseData1Desc, $caseData2Desc, $caseData3Desc, 
-       $casaTimestamp, $casaBranchcode ) = GetClubOrServiceArchetype( $casaId );
+       $caseRequireEmail, $casaTimestamp, $casaBranchcode ) = GetClubOrServiceArchetype( $casaId );
 
   $template->param(
       previousActionEdit => 1,
@@ -122,6 +124,7 @@ elsif ( $query->param('action') eq 'edit' ) {
       editCaseData1Desc => $caseData1Desc,
       editCaseData2Desc => $caseData2Desc,
       editCaseData3Desc => $caseData3Desc,
+      editCaseRequireEmail => $caseRequireEmail,
       editCasaTimestamp => $casaTimestamp,
       editCasaBranchcode => $casaBranchcode
   );
@@ -160,6 +163,7 @@ elsif ( $query->param('action') eq 'update' ) {
   my $caseData2Desc = $query->param('caseData2Desc');
   my $caseData3Desc = $query->param('caseData3Desc');
 
+  my $caseRequireEmail = $query->param('caseRequireEmail');
 
   my ( $createdSuccessfully, $errorCode, $errorMessage ) = 
     UpdateClubOrServiceArchetype( 
@@ -167,7 +171,8 @@ elsif ( $query->param('action') eq 'update' ) {
       $casData1Title, $casData2Title, $casData3Title, 
       $caseData1Title, $caseData2Title, $caseData3Title, 
       $casData1Desc, $casData2Desc, $casData3Desc, 
-      $caseData1Desc, $caseData2Desc, $caseData3Desc 
+      $caseData1Desc, $caseData2Desc, $caseData3Desc,
+      $caseRequireEmail
     );
   
   $template->param(
