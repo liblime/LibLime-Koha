@@ -24,7 +24,7 @@
 # This script utilizes the 'New Items E-mail List' archetype
 # from the ClubsAndServices.pm module.
 # If you do not have this archtype, create an archetype of that name
-# with club/service data 1 as Itemtype, and clab/service data 2 as Callnumber.
+# with club/service data 1 as Itemtype, and club/service data 2 as Callnumber.
 # No other data is needed.
 
 # The script grabs all new items with the given itemtype and callnumber.
@@ -36,20 +36,20 @@
 # The e-mails are based on the included HTML::Template file mailinglist.tmpl
 # If you would like to modify the style of the e-mail, just alter that file.
 
-my $debug = 0;
-my $fromEmail = 'example@library.org';
-my $opacUrl = 'http://catalog.library.org';
+my $debug = 1;
+my $opacUrl = "http://" . C4::Context->preference('OPACBaseURL');
 use strict;
 
 use C4::Context;
 use C4::Dates;
+use C4::Message;
 
 use Mail::Sendmail;
 use Getopt::Long;
 use Date::Calc qw(Add_Delta_Days);
 use HTML::Template::Pro;
-use Data::Dumper;
 
+use Data::Dumper;
 
 my $dbh = C4::Context->dbh;
 
@@ -65,6 +65,7 @@ my $dbh = C4::Context->dbh;
   #Put in format of mysql date YYYY-MM-DD
   my $afterDate = $y2 . '-' . $m2 . '-' . $d2;
   if ( $debug ) { print "Date 7 Days Ago: $afterDate\n"; }
+
 ## Grab the "New Items E-mail List" Archetype
 my $sth = $dbh->prepare("SELECT * FROM clubsAndServicesArchetypes WHERE title = 'New Items E-mail List'");
 $sth->execute;
@@ -122,16 +123,13 @@ print Dumper ( @newItems );
                          clubsAndServicesEnrollments.casId = ?");
   $sth2->execute( $mailingList->{'casId'} );
   while ( my $borrower = $sth2->fetchrow_hashref() ) {
-    if ( $debug ) { print "Borrower Email: " . $borrower->{'emailaddress'} . "\n"; }
-    my %mail = (
-      from => $fromEmail,
-      to => $borrower->{'emailaddress'},
-      subject => 'New Items @ Your Library: ' . $mailingList->{'title'},
-      'content-type' => 'text/html; charset="iso-8859-1"',
-      body => $email
-    );
+    if ( $debug ) { print "Borrower Email: " . $borrower->{'email'} . "\n"; }
     
-    sendmail( %mail ) || print "Error: $Mail::Sendmail::error\n";
+    my $letter;
+    $letter->{'title'} = 'New Items @ Your Library: ' . $mailingList->{'title'};
+    $letter->{'content'} = $email;
+    $letter->{'code'} = 'MAILINGLIST';
+    C4::Message->enqueue($letter, $borrower, 'email');
   }
   
   
