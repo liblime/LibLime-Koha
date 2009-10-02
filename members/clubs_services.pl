@@ -29,7 +29,15 @@ $template->param(
   borrowernumber => $borrowernumber,
   surname => $borrowerData->{'surname'},
   firstname => $borrowerData->{'firstname'},
-  cardnumber => $borrowerData->{'cardnumber'}
+  cardnumber => $borrowerData->{'cardnumber'},
+  address => $borrowerData->{'address'},
+  city => $borrowerData->{'city'},
+  phone => $borrowerData->{'phone'},
+  email => $borrowerData->{'email'},
+  categorycode => $borrowerData->{'categorycode'},
+  categoryname => $borrowerData->{'description'},
+  branchcode => $borrowerData->{'branchcode'},
+  branchname => C4::Branch::GetBranchName($borrowerData->{'branchcode'}),
 );
                                                 
 
