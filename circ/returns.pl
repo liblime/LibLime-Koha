@@ -255,6 +255,7 @@ my $found    = 0;
 my $waiting  = 0;
 my $reserved = 0;
 my $damaged  = 0;
+my $damaged_othersavailable = 0;
 
 # new op dev : we check if the document must be returned to his homebranch directly,
 #  if the document is transfered, we have warning message .
@@ -314,17 +315,21 @@ if ( $messages->{'WrongTransfer'} and not $messages->{'WasTransfered'}) {
 # check to see if other items are available for this bib record.
 
 my $item = GetItem($itemnumber);
+my @reserveinfo = GetReservesFromItemnumber($itemnumber);
 if ($item->{damaged}) {
   $damaged = 1;
-  my $biblio = GetBiblioFromItemNumber($itemnumber);
-  my @itemsinfo = GetItemsInfo($biblio->{'biblionumber'});
-  foreach my $iteminfo (@itemsinfo) {
-    next if ($item->{itemnumber} eq $iteminfo->{itemnumber});
-    if ((!defined($iteminfo->{onloan})) &&
-        (!$iteminfo->{wthdrawn}) &&
-        (!$iteminfo->{itemlost})) {
-      $damaged = 0;
-      last;
+  if (!defined($reserveinfo[0])) { # Make sure there's no item specific hold
+    my $biblio = GetBiblioFromItemNumber($itemnumber);
+    my @itemsinfo = GetItemsInfo($biblio->{'biblionumber'});
+    foreach my $iteminfo (@itemsinfo) {
+      next if ($itemnumber eq $iteminfo->{itemnumber});
+      if ((!defined($iteminfo->{onloan})) &&
+          (!$iteminfo->{wthdrawn}) &&
+          (!$iteminfo->{itemlost})) {
+        $damaged = 0;
+        $damaged_othersavailable = 1;
+        last;
+      }
     }
   }
 }
@@ -341,6 +346,10 @@ if ( $messages->{'ResFound'}) {
         if ($damaged) {
           $template->param(
                 damaged      => 1
+          );
+        } elsif ($damaged_othersavailable) {
+          $template->param(
+                damaged_othersavailable => 1
           );
         } elsif ( $reserve->{'ResFound'} eq "Waiting" ) {
             $template->param(

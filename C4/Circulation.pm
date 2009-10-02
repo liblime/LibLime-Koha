@@ -1438,6 +1438,7 @@ sub AddReturn {
             # These lines patch up $iteminformation enough so it can be used below for other messages
             $doreturn = 0;
         }
+    }
 
     my $item = GetItem($itemnumber) or die "GetItem($itemnumber) failed";
         # full item data, but no borrowernumber or checkout info (no issue)
