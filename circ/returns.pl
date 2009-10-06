@@ -75,6 +75,9 @@ my $printers = GetPrinters();
 #my $branch  = C4::Context->userenv?C4::Context->userenv->{'branch'}:"";
 my $printer = C4::Context->userenv ? C4::Context->userenv->{'branchprinter'} : "";
 my $overduecharges = (C4::Context->preference('finesMode') && C4::Context->preference('finesMode') ne 'off');
+my $HoldButtonConfirm = (C4::Context->preference('HoldButtonConfirm'));
+my $HoldButtonIgnore = (C4::Context->preference('HoldButtonIgnore'));
+my $HoldButtonPrintConfirm = (C4::Context->preference('HoldButtonPrintConfirm'));
 
 my $userenv_branch = C4::Context->userenv->{'branch'} || '';
 #
@@ -541,6 +544,9 @@ $template->param(
     dropboxmode    => $dropboxmode,
     dropboxdate	   => $dropboxdate->output(),
     overduecharges => $overduecharges,
+    HoldButtonConfirm => $HoldButtonConfirm,
+    HoldButtonIgnore => $HoldButtonIgnore,
+    HoldButtonPrintConfirm => $HoldButtonPrintConfirm,
 );
 
 # actually print the page!
