@@ -46,46 +46,65 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 </script><!-- /TMPL_IF --><!-- /TMPL_IF -->
 <div id="header_search">
 	<div id="patron_search" class="residentsearch">
-	<p class="tip">Enter patron card number or partial name:</p>
-	<form action="/cgi-bin/koha/members/member.pl" method="post">
-    <input id="searchmember" size="25" class="focus" name="member" type="text" />
-    search fields:
-    <select name="searchfield" id="searchfield">
-	<option value="">Standard</option>
-	<option value="email">E-Mail</option>
-	<option value="borrowernumber">Borrower Number</option>
-	<option value="phonenumber">Phone Number</option>
-    </select>
-    order by:
-    <select name="orderby" id="searchorderby">
-    <option value="surname,firstname">Surname</option>
-    <option value="cardnumber">Cardnumber</option>
-    </select>
-    <input value="Search" class="submit" type="submit" />
-</form>
+		<p class="tip">Enter first and/or last name or card number for standard search. For email or phone, you may enter partial text with a * for truncation (e.g., myemail* or *111-2222).</p>
+		<form action="/cgi-bin/koha/members/member.pl" method="post">
+    			<input id="searchmember" class="focus" name="member" type="text" />
+			<label for="searchfield">Search Fields:</label>
+			<select name="searchfield" id="searchfield">
+				<option value="">Standard</option>
+				<option value="email">E-Mail</option>
+				<option value="borrowernumber">Borrower Number</option>
+				<option value="phonenumber">Phone Number</option>
+			</select>
+			<label for="orderby">Order By:</label>
+			<select name="orderby" id="searchorderby">
+				<option value="surname,firstname">Surname</option>
+				<option value="cardnumber">Cardnumber</option>
+			</select>
+			<input value="Search" class="submit" type="submit" />
+		</form>
 	</div>
+
 	<!-- TMPL_IF NAME="CAN_user_circulate" -->
-	<div id="circ_search" class="residentsearch" style="display:none;">
-	<p class="tip">Enter patron card number or partial name:</p>
-    <form action="/cgi-bin/koha/circ/circulation.pl" method="post">
-    <!-- TMPL_IF NAME="CircAutocompl" -->
-    <div class="autocomplete">
-            <div id="borrowerautocomplete" class="autocomplete">
-                <input autocomplete="off" id="findborrower" name="findborrower" type="text" />
-                <div id="yborrowercontainer"></div>
-                <input id="ysearchsubmit" type="submit" class="submit" value="Submit" />
-                <input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
-                <input name="printer" value="" type="hidden" />
-            </div>
-        </div>
-	<!-- TMPL_ELSE -->
-            <input id="findborrower" name="findborrower" size="40" type="text" />
-            <input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
-            <input name="printer" value="" type="hidden" />
-            <input value="Submit" class="submit" type="submit" />
+		<div id="circ_search" class="residentsearch" style="display:none;">
+			<p class="tip">Enter first and/or last name or card number for standard search. For email or phone, you may enter partial text with a * for truncation (e.g., myemail* or *111-2222).</p>
+			<form action="/cgi-bin/koha/circ/circulation.pl" method="post">
+				<!-- TMPL_IF NAME="CircAutocompl" -->
+					<nobr>
+						<div class="autocomplete">
+							<div id="borrowerautocomplete" class="autocomplete">
+								<input autocomplete="off" id="findborrower" name="findborrower" type="text" />
+								<div id="yborrowercontainer"></div>
+	
+								<label for="searchfield">Search Fields:</label>
+								<select name="searchfield" id="searchfield">
+									<option value="">Standard</option>
+									<option value="email">E-Mail</option>
+									<option value="borrowernumber">Borrower Number</option>
+									<option value="phonenumber">Phone Number</option>
+								</select>
+	
+								<label for="orderby">Order By:</label>
+								<select name="orderby" id="searchorderby">
+									<option value="surname,firstname">Surname</option>
+									<option value="cardnumber">Cardnumber</option>
+								</select>
+	
+								<input id="ysearchsubmit" type="submit" class="submit" value="Submit" />
+								<input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
+								<input name="printer" value="" type="hidden" />
+							</div>
+						</div>
+					</nobr>
+				<!-- TMPL_ELSE -->
+					<input id="findborrower" name="findborrower" size="40" type="text" />
+					<input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
+					<input name="printer" value="" type="hidden" />
+					<input value="Submit" class="submit" type="submit" />
+				<!-- /TMPL_IF -->
+			</form>
+		</div>
 	<!-- /TMPL_IF -->
-    </form>
-	</div><!-- /TMPL_IF -->
 	<!-- TMPL_IF NAME="CAN_user_catalogue" -->
 	<div id="catalog_search" class="residentsearch" style="display:none;">
 	<p class="tip">Enter search keywords:</p>

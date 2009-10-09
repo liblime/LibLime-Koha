@@ -258,6 +258,8 @@ sub SearchMemberField {
     my @data;
     my @bind = ();
     
+    return SearchMember( $searchstring, $orderby ) unless ( $field );
+    
     my $where = "WHERE $field LIKE '$searchstring'";
     
     if ( $field eq 'email' ) {
@@ -275,7 +277,6 @@ sub SearchMemberField {
     $query = "SELECT * FROM borrowers
               LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
               $where ORDER BY $orderby";
-warn "SQL: $query";
     my $sth = $dbh->prepare($query);
     $sth->execute();
     my $data = $sth->fetchall_arrayref({});
@@ -285,7 +286,6 @@ warn "SQL: $query";
 
 sub SearchMemberBySQL {
   my ( $query ) = @_;
-warn "$query";
   my $dbh = C4::Context->dbh;
   my $sth = $dbh->prepare( $query );
   $sth->execute();
