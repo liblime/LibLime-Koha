@@ -258,7 +258,7 @@ sub SearchMemberField {
     my @data;
     my @bind = ();
 
-    $searchstring =~ s/\*/%/;    
+    $searchstring =~ s/\*/%/g;
 
     return SearchMember( $searchstring, $orderby ) unless ( $field );
 
@@ -268,9 +268,10 @@ sub SearchMemberField {
       $where = "WHERE (  email LIKE '$searchstring' OR emailpro LIKE '$searchstring' )";
     }
     elsif ( $field eq 'phonenumber' ) {
-      #$searchstring =~ s/-/%/; ## Replaces all instances of - with %
-      #$searchstring =~ s/(/%/; ## Replaces all instances of ( with %
-      #$searchstring =~ s/)/%/; ## Replaces all instances of ( with %
+      $searchstring =~ s/ /%/g; ## Replaces all instances of a space with %
+      $searchstring =~ s/-/%/g; ## Replaces all instances of - with %
+      $searchstring =~ s/\(/%/g; ## Replaces all instances of ( with %
+      $searchstring =~ s/\)/%/g; ## Replaces all instances of ( with %
       $where = "WHERE (  phone LIKE '$searchstring' OR phonepro LIKE '$searchstring' )";
     }
     
