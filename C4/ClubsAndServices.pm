@@ -503,26 +503,32 @@ sub DeleteClubOrService {
 ##   $errorMessage: English description of error
 sub EnrollInClubOrService {
   my ( $casaId, $casId, $borrowerCardnumber, $dateEnrolled, $data1, $data2, $data3, $branchcode, $borrowernumber ) = @_;
-
+warn "EnrollInClubOrService( $casaId, $casId, $borrowerCardnumber, $dateEnrolled, $data1, $data2, $data3, $branchcode, $borrowernumber )";
   ## Check for all neccessary parameters
-  if ( ! $casaId ) {
+  unless ( $casaId ) {
     return ( 0, 1, "No casaId Given" );
   }
-  if ( ! $casId ) {
+  unless ( $casId ) {
     return ( 0, 2, "No casId Given" );
   } 
-  if ( ! ( $borrowerCardnumber || $borrowernumber ) ) {
+  unless ( ( $borrowerCardnumber || $borrowernumber ) ) {
     return ( 0, 3, "No Borrower Given" );
   } 
   
-  my $AutoEmailPrimaryAddress = C4::Context->preference('AutoEmailPrimaryAddress');
+  my $member;
+  if ( $borrowerCardnumber ) {
+    $member = C4::Members::GetMember( $borrowerCardnumber, 'cardnumber' );
+  } elsif ( $borrowernumber ) {
+    $member = C4::Members::GetMember( $borrowernumber, 'borrowernumber' );
+  } else {
+    return ( 0, 3, "No Borrower Given" );
+  }
   
-  my $member = C4::Members::GetMember( $borrowerCardnumber, 'cardnumber' ) if ( $borrowerCardnumber );
-  my $member = C4::Members::GetMember( $borrowernumber, 'borrowernumber' ) if ( $borrowernumber );
-  
-  warn "AutoEmailPrimaryAddress: $AutoEmailPrimaryAddress";
-  warn "Email: " . $member->{ $AutoEmailPrimaryAddress };
-  
+  unless ( $member ) {
+    return ( 0, 4, "No Matching Borrower Found" );
+  }
+
+  my $AutoEmailPrimaryAddress = C4::Context->preference('AutoEmailPrimaryAddress');    
   unless( $member->{ $AutoEmailPrimaryAddress } ) {
     return( 0, 4, "Email Address Required: No Valid Email Address In Borrower Record" );
   }
