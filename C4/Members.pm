@@ -257,9 +257,11 @@ sub SearchMemberField {
     my $count;
     my @data;
     my @bind = ();
-    
+
+    $searchstring =~ s/\*/%/;    
+
     return SearchMember( $searchstring, $orderby ) unless ( $field );
-    
+
     my $where = "WHERE $field LIKE '$searchstring'";
     
     if ( $field eq 'email' ) {
