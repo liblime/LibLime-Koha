@@ -52,9 +52,9 @@ my $get_items = $params->{'get_items'};
 if ( $get_items ) {
     my $orderbyfilter    = $params->{'orderbyfilter'}   || undef;
     my $barcodefilter    = $params->{'barcodefilter'}   || undef;
-    my @branchfilter     = $input->param('branchfilter');
-    my @itemtypesfilter  = $input->param('itemtypesfilter');
-    my @loststatusfilter = $input->param('loststatusfilter');
+    my @branchfilter     = $query->param('branchfilter');
+    my @itemtypesfilter  = $query->param('itemtypesfilter');
+    my @loststatusfilter = $query->param('loststatusfilter');
 
     my %where;
     $where{'barcode'}          = $barcodefilter   if defined $barcodefilter;
