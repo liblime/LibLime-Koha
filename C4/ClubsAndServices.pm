@@ -503,7 +503,7 @@ sub DeleteClubOrService {
 ##   $errorMessage: English description of error
 sub EnrollInClubOrService {
   my ( $casaId, $casId, $borrowerCardnumber, $dateEnrolled, $data1, $data2, $data3, $branchcode, $borrowernumber ) = @_;
-warn "EnrollInClubOrService( $casaId, $casId, $borrowerCardnumber, $dateEnrolled, $data1, $data2, $data3, $branchcode, $borrowernumber )";
+
   ## Check for all neccessary parameters
   unless ( $casaId ) {
     return ( 0, 1, "No casaId Given" );
@@ -528,9 +528,12 @@ warn "EnrollInClubOrService( $casaId, $casId, $borrowerCardnumber, $dateEnrolled
     return ( 0, 4, "No Matching Borrower Found" );
   }
 
-  my $AutoEmailPrimaryAddress = C4::Context->preference('AutoEmailPrimaryAddress');    
-  unless( $member->{ $AutoEmailPrimaryAddress } ) {
-    return( 0, 4, "Email Address Required: No Valid Email Address In Borrower Record" );
+  my $casa = GetClubOrServiceArchetype( $casaId, 1 );
+  if ( $casa->{'caseRequireEmail'} ) {
+    my $AutoEmailPrimaryAddress = C4::Context->preference('AutoEmailPrimaryAddress');    
+    unless( $member->{ $AutoEmailPrimaryAddress } ) {
+      return( 0, 4, "Email Address Required: No Valid Email Address In Borrower Record" );
+    }
   }
   
   $borrowernumber = $member->{'borrowernumber'};
@@ -771,6 +774,7 @@ sub GetClubsAndServicesArchetypes {
 ## Returns information about a club or services archetype
 ## Input:
 ##   $casaId: Id of Archetype to get
+##   $asHashref: Optional, if true, will return hashref instead of array
 ## Output:
 ##   $results: 
 ##     ( $casaId, $type, $title, $description, $publicEnrollment, 
@@ -781,7 +785,7 @@ sub GetClubsAndServicesArchetypes {
 ##     $caseRequireEmail, $last_updated, $branchcode )
 ##     Except: 0 on failure
 sub GetClubOrServiceArchetype {
-  my ( $casaId ) = @_;
+  my ( $casaId, $asHashref ) = @_;
   
   my $dbh = C4::Context->dbh;
   
@@ -792,6 +796,8 @@ sub GetClubOrServiceArchetype {
   my $row = $sth->fetchrow_hashref;
   
   $sth->finish;
+  
+  if ( $asHashref ) { return $row; }
 
   return (
       $$row{'casaId'},
