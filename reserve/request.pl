@@ -183,12 +183,22 @@ if ($borrowerslist) {
     {
         push @values, $borrower->{cardnumber};
 
-        $labels{ $borrower->{cardnumber} } = sprintf(
-            '%s, %s ... (%s - %s) ... %s',
-            $borrower->{surname},    $borrower->{firstname},
-            $borrower->{cardnumber}, $borrower->{categorycode},
-            $borrower->{address},
-        );
+        if (C4::Context->preference('DisplayInitials')) {
+          $labels{ $borrower->{cardnumber} } = sprintf(
+              '%s, %s %s ... (%s - %s) ... %s',
+              $borrower->{surname},  $borrower->{firstname},
+              $borrower->{initials}, $borrower->{cardnumber},
+              $borrower->{categorycode}, $borrower->{address},
+          );
+        }
+        else {
+          $labels{ $borrower->{cardnumber} } = sprintf(
+              '%s, %s ... (%s - %s) ... %s',
+              $borrower->{surname},    $borrower->{firstname},
+              $borrower->{cardnumber}, $borrower->{categorycode},
+              $borrower->{address},
+          );
+        }
     }
 
     $CGIselectborrower = CGI::scrolling_list(

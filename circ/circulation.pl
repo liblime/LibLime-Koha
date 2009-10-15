@@ -519,6 +519,7 @@ while ( my $data = $issueqty_sth->fetchrow_hashref() ) {
 my @values;
 my %labels;
 my $CGIselectborrower;
+$template->param( showinitials => C4::Context->preference('DisplayInitials') );
 if ($borrowerslist) {
     foreach (
         sort {(lc $a->{'surname'} cmp lc $b->{'surname'} || lc $a->{'firstname'} cmp lc $b->{'firstname'})
@@ -526,8 +527,14 @@ if ($borrowerslist) {
       )
     {
         push @values, $_->{'borrowernumber'};
-        $labels{ $_->{'borrowernumber'} } =
+        if (C4::Context->preference('DisplayInitials')) {
+          $labels{ $_->{'borrowernumber'} } =
+"$_->{'surname'}, $_->{'firstname'} $_->{'initials'} ... ($_->{'cardnumber'} - $_->{'categorycode'}) ...  $_->{'address'} ";
+        }
+        else {
+          $labels{ $_->{'borrowernumber'} } =
 "$_->{'surname'}, $_->{'firstname'} ... ($_->{'cardnumber'} - $_->{'categorycode'}) ...  $_->{'address'} ";
+        }
     }
     $CGIselectborrower = CGI::scrolling_list(
         -name     => 'borrowernumber',
