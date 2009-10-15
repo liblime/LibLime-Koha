@@ -945,7 +945,7 @@ sub GetLostItems {
     my @query_parameters;
     foreach my $key (keys %$where) {
         if ( ref($where->{$key}) eq 'ARRAY' ) {
-            $query .= " AND $key IN (" . join(',', ('?') x scalar(@{$where->{key}})) . ")";
+            $query .= " AND $key IN (" . join(',', ('?') x scalar(@{$where->{$key}})) . ")";
             push @query_parameters, @{$where->{$key}};
         } else {
             $query .= " AND $key LIKE ?";
