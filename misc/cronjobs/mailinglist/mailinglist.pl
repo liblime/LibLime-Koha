@@ -36,8 +36,6 @@
 # The e-mails are based on the included HTML::Template file mailinglist.tmpl
 # If you would like to modify the style of the e-mail, just alter that file.
 
-my $debug = 1;
-my $opacUrl = "http://" . C4::Context->preference('OPACBaseURL');
 use strict;
 
 use C4::Context;
@@ -51,34 +49,77 @@ use HTML::Template::Pro;
 
 use Data::Dumper;
 
+use Getopt::Long;
+my ( $name, $start, $end, $help );
+my $verbose = 0;
+GetOptions(
+  'name=s' => \$name,
+  'start=i' => \$start,
+  'end=i' => \$end,
+  'verbose' => \$verbose,
+  'help' => \$help,
+);
+
+if ( $help ) {
+  print "\nmailinglist.pl --name [Club Name] --start [Days Ago] --end [Days Ago]\n\n";
+  print "Example: 'mailinglist.pl --name MyClub --start 7 --end 0' will send\na list of items cataloged since last week to the members of the club\nnamed MyClub\n\n";
+  print "All arguments are optional. Defaults are to run for all clubs, with dates from 7 to 0 days ago.\n\n";
+  exit;
+}
+
+unless( C4::Context->preference('OPACBaseURL') ) { die("Koha System Preference 'OPACBaseURL' is not set!"); }
+my $opacUrl = 'http://' . C4::Context->preference('OPACBaseURL');
+        
 my $dbh = C4::Context->dbh;
+my $sth;
 
 ## Step 0: Get the date from last week
   #Gets localtime on the computer executed on.
   my ($d, $m, $y) = (localtime)[3,4,5];
+
+  ## 0.1 Get start date
   #Adjust the offset to either a neg or pos number of days.
   my $offset = -7;
+  if ( $start ) { $offset = $start * -1; }
   #Formats the date and sets the offset to subtract 60 days form the #current date. This works with the first line above.
   my ($y2, $m2, $d2) = Add_Delta_Days($y+1900, $m+1, $d, $offset);
   #Checks to see if the month is greater than 10.
   if ($m2<10) {$m2 = "0" . $m2;};
   #Put in format of mysql date YYYY-MM-DD
   my $afterDate = $y2 . '-' . $m2 . '-' . $d2;
-  if ( $debug ) { print "Date 7 Days Ago: $afterDate\n"; }
+  if ( $verbose ) { print "Date $offset Days Ago: $afterDate\n"; }
 
-## Grab the "New Items E-mail List" Archetype
-my $sth = $dbh->prepare("SELECT * FROM clubsAndServicesArchetypes WHERE title = 'New Items E-mail List'");
-$sth->execute;
-my $archetype = $sth->fetchrow_hashref();
+  ## 0.2 Get end date
+  #Adjust the offset to either a neg or pos number of days.
+  $offset = 0;
+  if ( $end ) { $offset = $end * -1; }
+  ($y2, $m2, $d2) = Add_Delta_Days($y+1900, $m+1, $d, $offset);
+  if ($m2<10) {$m2 = "0" . $m2;};
+  my $beforeDate = $y2 . '-' . $m2 . '-' . $d2;
+  if ( $verbose ) { print "Date $offset Days Ago: $beforeDate\n"; }
+die();
+if ( $name ) {
 
-## Grab all the mailing lists
-$sth = $dbh->prepare("SELECT * FROM clubsAndServices WHERE clubsAndServices.casaId = ?");
-$sth->execute( $archetype->{'casaId'} );
+  $sth = $dbh->prepare("SELECT * FROM clubsAndServices WHERE clubsAndServices.title = ?");
+  $sth->execute( $name );
+  
+} else { ## No name given, process all items
+
+  ## Grab the "New Items E-mail List" Archetype
+  $sth = $dbh->prepare("SELECT * FROM clubsAndServicesArchetypes WHERE title = 'New Items E-mail List'");
+  $sth->execute;
+  my $archetype = $sth->fetchrow_hashref();
+
+  ## Grab all the mailing lists
+  $sth = $dbh->prepare("SELECT * FROM clubsAndServices WHERE clubsAndServices.casaId = ?");
+  $sth->execute( $archetype->{'casaId'} );
+  
+}
 
 ## For each mailing list, generate the list of new items, then get the subscribers, then mail the list to the subscribers
 while( my $mailingList = $sth->fetchrow_hashref() ) {
   ## Get the new Items
-  if ( $debug ) { print "###\nWorking On Mailing List: " . $mailingList->{'title'} . "\n"; }
+  if ( $verbose ) { print "###\nWorking On Mailing List: " . $mailingList->{'title'} . "\n"; }
   my $itemtype = $mailingList->{'casData1'};
   my $callnumber = $mailingList->{'casData2'};
   ## If either are empty, ignore them with a wildcard
@@ -98,8 +139,9 @@ while( my $mailingList = $sth->fetchrow_hashref() ) {
                             biblio.biblionumber = items.biblionumber AND
                             biblioitems.itemtype LIKE ? AND
                             items.itemcallnumber LIKE ? AND
-                            dateaccessioned > ?");
-  $sth2->execute( $itemtype, $callnumber, $afterDate );
+                            dateaccessioned >= ? AND
+                            dateaccessioned <= ?");
+  $sth2->execute( $itemtype, $callnumber, $afterDate, $beforeDate );
   my @newItems;
   while ( my $row = $sth2->fetchrow_hashref ) {
     $row->{'opacUrl'} = $opacUrl;
@@ -123,7 +165,7 @@ print Dumper ( @newItems );
                          clubsAndServicesEnrollments.casId = ?");
   $sth2->execute( $mailingList->{'casId'} );
   while ( my $borrower = $sth2->fetchrow_hashref() ) {
-    if ( $debug ) { print "Borrower Email: " . $borrower->{'email'} . "\n"; }
+    if ( $verbose ) { print "Borrower Email: " . $borrower->{'email'} . "\n"; }
     
     my $letter;
     $letter->{'title'} = 'New Items @ Your Library: ' . $mailingList->{'title'};
