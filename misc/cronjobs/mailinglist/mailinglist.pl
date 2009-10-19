@@ -62,7 +62,7 @@ GetOptions(
 
 if ( $help ) {
   print "\nmailinglist.pl --name [Club Name] --start [Days Ago] --end [Days Ago]\n\n";
-  print "Example: 'mailinglist.pl --name MyClub --start 7 --end 0' will send\na list of items cataloged since last week to the members of the club\nnamed MyClub\n\n";
+  print "Example: 'mailinglist.pl --name \"My Club' --start 7 --end 0\" will send\na list of items cataloged since last week to the members of the club\nnamed MyClub\n\n";
   print "All arguments are optional. Defaults are to run for all clubs, with dates from 7 to 0 days ago.\n\n";
   exit;
 }
@@ -97,7 +97,7 @@ my $sth;
   if ($m2<10) {$m2 = "0" . $m2;};
   my $beforeDate = $y2 . '-' . $m2 . '-' . $d2;
   if ( $verbose ) { print "Date $offset Days Ago: $beforeDate\n"; }
-die();
+
 if ( $name ) {
 
   $sth = $dbh->prepare("SELECT * FROM clubsAndServices WHERE clubsAndServices.title = ?");
