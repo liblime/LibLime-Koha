@@ -33,6 +33,7 @@ use POSIX qw/strftime/;
 # use utf8;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $debug $ldap);
 
+my $opacbookbagName =  C4::Context->preference('opacbookbagName') || "Cart";
 BEGIN {
     $VERSION = 3.02;        # set version for version checking
     $debug = $ENV{DEBUG} || 0 ;
@@ -365,6 +366,7 @@ sub get_template_and_user {
             opaccolorstylesheet       => "" . C4::Context->preference("opaccolorstylesheet"),
             opacstylesheet            => "" . C4::Context->preference("opacstylesheet"),
             opacbookbag               => "" . C4::Context->preference("opacbookbag"),
+            opacbookbagName            =>  $opacbookbagName,
             opaccredits               => "" . C4::Context->preference("opaccredits"),
             opacheader                => "" . C4::Context->preference("opacheader"),
             opaclanguagesdisplay      => "" . C4::Context->preference("opaclanguagesdisplay"),
@@ -833,6 +835,7 @@ sub checkauth {
         opaclanguagesdisplay => C4::Context->preference("opaclanguagesdisplay"),
         opacuserjs           => C4::Context->preference("opacuserjs"),
         opacbookbag          => "" . C4::Context->preference("opacbookbag"),
+        opacbookbagName      => $opacbookbagName,
         OpacCloud            => C4::Context->preference("OpacCloud"),
         OpacTopissue         => C4::Context->preference("OpacTopissue"),
         OpacAuthorities      => C4::Context->preference("OpacAuthorities"),

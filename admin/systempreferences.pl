@@ -328,6 +328,7 @@ $tabsysprefs{DisplayOPACiconsXSLT}	 = "OPAC";
 $tabsysprefs{SearchMyLibraryFirst} = "OPAC";
 $tabsysprefs{hidelostitems}        = "OPAC";
 $tabsysprefs{opacbookbag}          = "OPAC";
+$tabsysprefs{opacbookbagName}          = "OPAC";
 $tabsysprefs{OpacPasswordChange}   = "OPAC";
 $tabsysprefs{opacreadinghistory}   = "OPAC";
 $tabsysprefs{virtualshelves}       = "OPAC";
