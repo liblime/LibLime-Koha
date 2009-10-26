@@ -179,9 +179,15 @@ sub add_form {
         }
     }
     else {
+        my @item_field_names = qw(barcode itemcallnumber date_due issuedate);
+
         push @{$field_selection}, add_fields('biblio','biblioitems'),
             {value => q{},             text => '---ITEMS---'  },
             {value => 'items.content', text => 'items.content'},
+            {value => 'items.barcode', text => 'items.barcode'},
+            {value => 'items.itemcallnumber', text => 'items.itemcallnumber'},
+            {value => 'items.date_due', text => 'items.date_due'},
+            {value => 'items.issuedate', text => 'items.issuedate'},
             add_fields('borrowers');
     }
 

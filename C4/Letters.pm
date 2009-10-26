@@ -477,12 +477,15 @@ sub parseletter_sth {
         carp "ERROR: parseletter_sth() called without argument (table)";
         return;
     }
-    # check cache first
+    my $itemselect =
+    'SELECT barcode, itemcallnumber, location, holdingbranch, date_due, issuedate from items left join issues on issues.itemnumber = items.itemnumber '
+    . 'WHERE items.itemnumber = ? ';
+# check cache first
     (defined $handles{$table}) and return $handles{$table};
     my $query = 
     ($table eq 'biblio'       ) ? "SELECT * FROM $table WHERE   biblionumber = ?"                      :
     ($table eq 'biblioitems'  ) ? "SELECT * FROM $table WHERE   biblionumber = ?"                      :
-    ($table eq 'items'        ) ? "SELECT * FROM $table WHERE     itemnumber = ?"                      :
+    ($table eq 'items'        ) ? $itemselect :
     ($table eq 'reserves'     ) ? "SELECT * FROM $table WHERE borrowernumber = ? and biblionumber = ?" :
     ($table eq 'borrowers'    ) ? "SELECT * FROM $table WHERE borrowernumber = ?"                      :
     ($table eq 'branches'     ) ? "SELECT * FROM $table WHERE     branchcode = ?"                      :
@@ -527,6 +530,15 @@ sub parseletter {
         ($letter->{title}  ) and $letter->{title}   =~ s/$replacefield/$replacedby/g;
         ($letter->{content}) and $letter->{content} =~ s/$replacefield/$replacedby/g;
     }
+    if ($table eq 'items') {
+        for my $field ( qw( issuedate date_due)) {
+            my $replacefield = "<<$table.$field>>";
+            my $replacedby   = $values->{$field} || '';
+            ($letter->{title}  ) and $letter->{title}   =~ s/$replacefield/$replacedby/g;
+            ($letter->{content}) and $letter->{content} =~ s/$replacefield/$replacedby/g;
+        }
+    }
+
 }
 
 =head2 EnqueueLetter
