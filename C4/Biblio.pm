@@ -1670,20 +1670,22 @@ sub TransformHtmlToXml {
 #         }
         if ( ( @$tags[$i] ne $prevtag ) ) {
             $j++ unless ( @$tags[$i] eq "" );
+			my $indicator1=eval{substr( @$indicator[$j], 0, 1 )};
+			my $indicator2=eval{substr( @$indicator[$j], 1, 1 )};
+            my $ind1 = _default_ind_to_space($indicator1);
+            my $ind2;
+            if ( @$indicator[$j] ) {
+               $ind2 = _default_ind_to_space($indicator2);
+            }
+            else {
+               warn "Indicator in @$tags[$i] is empty";
+               $ind2 = " ";
+            }
             if ( !$first ) {
                 $xml .= "</datafield>\n";
                 if (   ( @$tags[$i] && @$tags[$i] > 10 )
                     && ( @$values[$i] ne "" ) )
                 {
-                    my $ind1 = _default_ind_to_space(substr( @$indicator[$j], 0, 1 ));
-                    my $ind2;
-                    if ( @$indicator[$j] ) {
-                        $ind2 = _default_ind_to_space(substr( @$indicator[$j], 1, 1 ));
-                    }
-                    else {
-                        warn "Indicator in @$tags[$i] is empty";
-                        $ind2 = " ";
-                    }
                     $xml .= "<datafield tag=\"@$tags[$i]\" ind1=\"$ind1\" ind2=\"$ind2\">\n";
                     $xml .= "<subfield code=\"@$subfields[$i]\">@$values[$i]</subfield>\n";
                     $first = 0;
@@ -1707,8 +1709,6 @@ sub TransformHtmlToXml {
                         $first = 1;
                     }
                     else {
-                        my $ind1 = _default_ind_to_space( substr( @$indicator[$j], 0, 1 ) );
-                        my $ind2 = _default_ind_to_space( substr( @$indicator[$j], 1, 1 ) );
                         $xml .= "<datafield tag=\"@$tags[$i]\" ind1=\"$ind1\" ind2=\"$ind2\">\n";
                         $xml .= "<subfield code=\"@$subfields[$i]\">@$values[$i]</subfield>\n";
                         $first = 0;
@@ -1717,12 +1717,21 @@ sub TransformHtmlToXml {
             }
         }
         else {    # @$tags[$i] eq $prevtag
+   		    my $indicator1=eval{substr( @$indicator[$j], 0, 1 )};
+		    my $indicator2=eval{substr( @$indicator[$j], 1, 1 )};
+            my $ind1 = _default_ind_to_space($indicator1);
+            my $ind2;
+            if ( @$indicator[$j] ) {
+              $ind2 = _default_ind_to_space($indicator2);
+            }
+            else {
+              warn "Indicator in @$tags[$i] is empty";
+              $ind2 = " ";
+            }
             if ( @$values[$i] eq "" ) {
             }
             else {
                 if ($first) {
-                    my $ind1 = _default_ind_to_space( substr( @$indicator[$j], 0, 1 ) );
-                    my $ind2 = _default_ind_to_space( substr( @$indicator[$j], 1, 1 ) );
                     $xml .= "<datafield tag=\"@$tags[$i]\" ind1=\"$ind1\" ind2=\"$ind2\">\n";
                     $first = 0;
                 }
