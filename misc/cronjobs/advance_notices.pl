@@ -55,6 +55,7 @@ use C4::Members;
 use C4::Members::Messaging;
 use C4::Overdues;
 use C4::Dates qw/format_date/;
+use DBI;
 
 
 # These are defaults for command line options.
