@@ -1215,6 +1215,11 @@ sub GetOtherItemStatus {
   my $dbh      = C4::Context->dbh;
   my $query    = "SELECT * FROM itemstatus ORDER BY description";
 
+# Push an initial empty record
+  my %data;
+  $data{'statuscode'} = $data{'description'} = '';
+  push @results, \%data;
+
   my $sth = $dbh->prepare($query);
   $sth->execute;
   while (my $data=$sth->fetchrow_hashref) {
