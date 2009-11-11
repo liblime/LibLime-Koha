@@ -234,6 +234,7 @@ $tabsysprefs{sortbynonfiling}         = "Searching";
 $tabsysprefs{QueryAutoTruncate}       = "Searching";
 $tabsysprefs{QueryRemoveStopwords}    = "Searching";
 $tabsysprefs{AdvancedSearchTypes}     = "Searching";
+$tabsysprefs{DisplayMultiPlaceHold}   = "Searching";
 
 # EnhancedContent
 $tabsysprefs{AmazonEnabled}          = "EnhancedContent";
