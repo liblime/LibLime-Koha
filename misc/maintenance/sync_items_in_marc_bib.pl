@@ -17,14 +17,16 @@ $| = 1;
 
 # command-line parameters
 my $want_help = 0;
-my $do_update = 0;
+my $sync = 0;
+my $remove_items = 0;
 
 my $result = GetOptions(
-    'run-update'    => \$do_update,
-    'h|help'        => \$want_help,
+    'sync'      => \$sync,
+    'remove'    => \$remove_items,
+    'h|help'    => \$want_help,
 );
 
-if (not $result or $want_help or not $do_update) {
+if (not $result or $want_help or (not $sync and not $remove_items)) {
     print_usage();
     exit 0;
 }
@@ -94,18 +96,20 @@ sub process_bib {
         $bib_modified = 1;
     }
 
-    # add back items from items table
-    $item_sth->execute($biblionumber);
-    while (my $itemnumber = $item_sth->fetchrow_array) {
-        my $marc_item = C4::Items::GetMarcItem($biblionumber, $itemnumber);
-        unless ($marc_item) {
-            warn "FAILED C4::Items::GetMarcItem for biblionumber=$biblionumber, itemnumber=$itemnumber";
-            next;
-        }
-        foreach my $item_field ($marc_item->field($itemtag)) {
-            $bib->insert_fields_ordered($item_field);
-            $num_marc_items_added++;
-            $bib_modified = 1;
+    unless($remove_items){
+        # add back items from items table
+        $item_sth->execute($biblionumber);
+        while (my $itemnumber = $item_sth->fetchrow_array) {
+            my $marc_item = C4::Items::GetMarcItem($biblionumber, $itemnumber);
+            unless ($marc_item) {
+                warn "FAILED C4::Items::GetMarcItem for biblionumber=$biblionumber, itemnumber=$itemnumber";
+                next;
+            }
+            foreach my $item_field ($marc_item->field($itemtag)) {
+                $bib->insert_fields_ordered($item_field);
+                $num_marc_items_added++;
+                $bib_modified = 1;
+            }
         }
     }
 
@@ -126,19 +130,20 @@ sub print_usage {
     print <<_USAGE_;
 $0: synchronize item data embedded in MARC bibs
 
-Replaces the item data embedded in the MARC bib 
-records (for indexing) with the authoritative 
-item data as stored in the items table.
+This script removes the item data embedded in the MARC bib
+records (for indexing).  Optionally it will replace the embedded items
+with the authoritative item data as stored in the items table.
 
 If Zebra is used, run rebuild_zebra.pl -b -r after
 running this script.
 
-NOTE: this script should be run only if there is
-reason to suspect that the embedded item tags are
-not in sync with the items table.
+This script should be run when updating to LEK 4.000.010
+from any previous version. As of this version, item data is
+no longer stored in the MARC data, but only added dynamically when needed.
 
 Parameters:
-    --run-update            run the synchronization
+    --sync          synchronize embedded MARC data (deprecated use)
+    --remove        remove embedded MARC data
     --help or -h            show this message.
 _USAGE_
 }

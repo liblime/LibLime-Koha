@@ -1004,7 +1004,8 @@ my $record = GetMarcBiblio($biblionumber);
 
 Returns MARC::Record representing bib identified by
 C<$biblionumber>.  If no bib exists, returns undef.
-The MARC record contains both biblio & item data.
+The MARC record contains only biblio data.
+To get a MARC Record with embedded items data, call C4::Items::GetMarcWithItems.
 
 =cut
 

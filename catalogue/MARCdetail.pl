@@ -70,7 +70,7 @@ my $subscriptionid = $query->param('subscriptionid');
 
 my $tagslib = &GetMarcStructure(1,$frameworkcode);
 
-my $record = GetMarcBiblio($biblionumber);
+my $record = GetMarcWithItems($biblionumber);
 my $biblio = GetBiblioData($biblionumber);
 # open template
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(

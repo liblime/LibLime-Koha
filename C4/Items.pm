@@ -43,6 +43,7 @@ BEGIN {
     # function exports
     @EXPORT = qw(
         GetItem
+        GetMarcWithItems
         AddItemFromMarc
         AddItem
         AddItemBatchFromMarc
@@ -52,9 +53,8 @@ BEGIN {
         ModItemLost
         ModItemTransfer
         DelItem
-    
+
         CheckItemPreSave
-    
         GetItemStatus
         GetItemLocation
         GetLostItems
@@ -267,8 +267,8 @@ sub AddItem {
     $item->{'itemnumber'} = $itemnumber;
 
     # create MARC tag representing item and add to bib
-    my $new_item_marc = _marc_from_item_hash($item, $frameworkcode, $unlinked_item_subfields);
-    _add_item_field_to_biblio($new_item_marc, $item->{'biblionumber'}, $frameworkcode );
+#    my $new_item_marc = _marc_from_item_hash($item, $frameworkcode, $unlinked_item_subfields);
+#    _add_item_field_to_biblio($new_item_marc, $item->{'biblionumber'}, $frameworkcode );
    
     logaction("CATALOGUING", "ADD", $itemnumber, "item") if C4::Context->preference("CataloguingLog");
     
@@ -342,7 +342,7 @@ sub AddItemBatchFromMarc {
         # and there is no TransformMarcFieldToKoha
         my $temp_item_marc = MARC::Record->new();
         $temp_item_marc->append_fields($item_field);
-    
+
         # add biblionumber and biblioitemnumber
         my $item = TransformMarcToKoha( $dbh, $temp_item_marc, $frameworkcode, 'items' );
         my $unlinked_item_subfields = _get_unlinked_item_subfields($temp_item_marc, $frameworkcode);
@@ -377,7 +377,7 @@ sub AddItemBatchFromMarc {
     }
 
     # update the MARC biblio
-    $biblionumber = ModBiblioMarc( $record, $biblionumber, $frameworkcode );
+#    $biblionumber = ModBiblioMarc( $record, $biblionumber, $frameworkcode );
 
     return (\@itemnumbers, \@errors);
 }
@@ -518,17 +518,18 @@ sub ModItem {
     _koha_modify_item($item);
 
     # update biblio MARC XML
-    my $whole_item = GetItem($itemnumber) or die "FAILED GetItem($itemnumber)";
+#    my $whole_item = GetItem($itemnumber) or die "FAILED GetItem($itemnumber)";
 
-    unless (defined $unlinked_item_subfields) {
-        $unlinked_item_subfields = _parse_unlinked_item_subfields_from_xml($whole_item->{'more_subfields_xml'});
-    }
-    my $new_item_marc = _marc_from_item_hash($whole_item, $frameworkcode, $unlinked_item_subfields) 
-        or die "FAILED _marc_from_item_hash($whole_item, $frameworkcode)";
+#    unless (defined $unlinked_item_subfields) {
+#        $unlinked_item_subfields = _parse_unlinked_item_subfields_from_xml($whole_item->{'more_subfields_xml'});
+#    }
+#    my $new_item_marc = _marc_from_item_hash($whole_item, $frameworkcode, $unlinked_item_subfields)
+#        or die "FAILED _marc_from_item_hash($whole_item, $frameworkcode)";
     
-    _replace_item_field_in_biblio($new_item_marc, $biblionumber, $itemnumber, $frameworkcode);
-	($new_item_marc       eq '0') and die "$new_item_marc is '0', not hashref";  # logaction line would crash anyway
-    logaction("CATALOGUING", "MODIFY", $itemnumber, $new_item_marc->as_formatted) if C4::Context->preference("CataloguingLog");
+#    _replace_item_field_in_biblio($new_item_marc, $biblionumber, $itemnumber, $frameworkcode);
+#	($new_item_marc       eq '0') and die "$new_item_marc is '0', not hashref";  # logaction line would crash anyway
+# TODO: Separate Item data modification from Cataloguing Log.
+    logaction("CATALOGUING", "MODIFY", $itemnumber, Data::Dumper->Dump( [$item],['item'] )) if C4::Context->preference("CataloguingLog");
 }
 
 =head2 ModItemTransfer
@@ -636,15 +637,15 @@ sub DelItem {
 
     #search item field code
     my ( $itemtag, $itemsubfield ) = GetMarcFromKohaField("items.itemnumber",$frameworkcode);
-    my @fields = $record->field($itemtag);
+ #   my @fields = $record->field($itemtag);
 
     # delete the item specified
-    foreach my $field (@fields) {
-        if ( $field->subfield($itemsubfield) eq $itemnumber ) {
-            $record->delete_field($field);
-        }
-    }
-    &ModBiblioMarc( $record, $biblionumber, $frameworkcode );
+#    foreach my $field (@fields) {
+#        if ( $field->subfield($itemsubfield) eq $itemnumber ) {
+#            $record->delete_field($field);
+#        }
+#    }
+#    &ModBiblioMarc( $record, $biblionumber, $frameworkcode );
     logaction("CATALOGUING", "DELETE", $itemnumber, "item") if C4::Context->preference("CataloguingLog");
 }
 
@@ -1660,9 +1661,41 @@ sub GetMarcItem {
             $fields[0]->add_subfields(@$unlinked_item_subfields);
         }
     }
-    
+warn $itemmarc->as_formatted;
     return $itemmarc;
 
+}
+
+=head2 GetMarcWithItems
+
+=over 4
+
+my $record_with_embedded_items = GetMarcWithItems($biblionumber, $marc_biblio);
+
+=back
+
+Returns MARC::Record of the biblio passed in as parameter.
+The MARC::Record biblio may be passed as an optional second parameter.
+This function is meant for use in exporting records for indexing, or in MARC export.
+
+=cut
+
+sub GetMarcWithItems {
+    my $biblionumber = shift;
+    my $marc = shift;
+
+    my $biblio_marc = ($marc && ref($marc) eq 'MARC::Record') ? $marc : GetMarcBiblio($biblionumber);
+    my $frameworkcode = GetFrameworkCode( $biblionumber );
+    my $items = get_itemnumbers_of($biblionumber)->{$biblionumber};
+    my ($itemtag, $itemsubfield) = &GetMarcFromKohaField("items.itemnumber",'');
+
+    foreach my $itemnumber (@$items) {
+        my $whole_item = GetItem($itemnumber);
+        my $new_item_marc = _marc_from_item_hash($whole_item, $frameworkcode,$whole_item->{'more_subfields_xml'});
+        # FIXME: _marc_from_item_hash returns a MARC::Record object instead of the more sensible MARC::Field object.
+        $biblio_marc->append_fields($new_item_marc->field($itemtag));
+    }
+    return $biblio_marc;
 }
 
 =head1 PRIVATE FUNCTIONS AND VARIABLES
@@ -2142,34 +2175,10 @@ sub _marc_from_item_hash {
     return $item_marc;
 }
 
-=head2 _add_item_field_to_biblio
-
-=over 4
-
-_add_item_field_to_biblio($item_marc, $biblionumber, $frameworkcode);
-
-=back
-
-Adds the fields from a MARC record containing the
-representation of a Koha item record to the MARC
-biblio record.  The input C<$item_marc> record
-is expect to contain just one field, the embedded
-item information field.
-
-=cut
-
-sub _add_item_field_to_biblio {
-    my ($item_marc, $biblionumber, $frameworkcode) = @_;
-
-    my $biblio_marc = GetMarcBiblio($biblionumber);
-    foreach my $field ($item_marc->fields()) {
-        $biblio_marc->append_fields($field);
-    }
-
-    ModBiblioMarc($biblio_marc, $biblionumber, $frameworkcode);
-}
 
 =head2 _replace_item_field_in_biblio
+
+DEPRECATED ... By removing embedded items from stored MARC data, this is no longer useful.
 
 =over
 
@@ -2182,7 +2191,6 @@ representation of the item, examine the biblio MARC
 for the corresponding tag for that item and 
 replace it with the tag from C<$item_marc>.
 
-=cut
 
 sub _replace_item_field_in_biblio {
     my ($ItemRecord, $biblionumber, $itemnumber, $frameworkcode) = @_;
@@ -2211,6 +2219,8 @@ sub _replace_item_field_in_biblio {
     # save the record
     ModBiblioMarc($completeRecord, $biblionumber, $frameworkcode);
 }
+
+=cut
 
 =head2 _repack_item_errors
 

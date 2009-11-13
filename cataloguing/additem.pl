@@ -266,7 +266,7 @@ if ($op eq "additem") {
 #-------------------------------------------------------------------------------
 
 # now, build existiing item list
-my $temp = GetMarcBiblio( $biblionumber );
+my $temp = GetMarcWithItems( $biblionumber );
 my @fields = $temp->fields();
 #my @fields = $record->fields();
 my %witness; #---- stores the list of subfields used at least once, with the "meaning" of the code
@@ -305,7 +305,8 @@ foreach my $field (@fields) {
         push(@big_array, \%this_row);
     }
 }
-
+use Data::Dumper;
+warn Dumper \%witness;
 my ($holdingbrtagf,$holdingbrtagsubf) = &GetMarcFromKohaField("items.holdingbranch",$frameworkcode);
 @big_array = sort {$a->{$holdingbrtagsubf} cmp $b->{$holdingbrtagsubf}} @big_array;
 

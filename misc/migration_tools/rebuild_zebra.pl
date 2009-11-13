@@ -7,6 +7,7 @@ use Getopt::Long;
 use File::Temp qw/ tempdir /;
 use File::Path;
 use C4::Biblio;
+use C4::Items;
 use C4::AuthoritiesMarc;
 use Business::ISBN;
 
@@ -410,12 +411,12 @@ sub get_raw_marc_record {
                         # trying to process a record update
             }
         } else {
-            eval { $marc = GetMarcBiblio($record_number); };
+            eval { $marc = GetMarcWithItems($record_number); };
             if ($@) {
                 # here we do warn since catching an exception
                 # means that the bib was found but failed
                 # to be parsed
-                warn "error retrieving biblio $record_number";
+                warn "error retrieving biblio $record_number : $@";
                 return;
             }
         }
@@ -600,9 +601,9 @@ Parameters:
                             use this if you might have records > 99,999 chars,
 							
     -nosanitize             export biblio/authority records directly from DB marcxml
-                            field without sanitizing records. It speed up
+                            field without sanitizing records. It speeds up
                             dump process but could fail if DB contains badly
-                            encoded records. Works only with -x,
+                            encoded records. Works only with -x.  WARNING: Item data will not be indexed with this option.
 
     -w                      skip shadow indexing for this batch
 
