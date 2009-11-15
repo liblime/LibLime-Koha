@@ -510,11 +510,18 @@ sub parseletter {
         carp "ERROR: parseletter() 1st argument 'letter' empty";
         return;
     }
-    # 	warn "Parseletter : ($letter, $table, $pk ...)";
+    #	warn "Parseletter : ($letter, $table, $pk ...)";
     my $sth = parseletter_sth($table);
     unless ($sth) {
         warn "parseletter_sth('$table') failed to return a valid sth.  No substitution will be done for that table.";
         return;
+    }
+    my $check_in_notice;
+    if ($table eq 'items') {
+        if ($pk2 && $pk2 eq 'CHECKIN') {
+            $check_in_notice = 1;
+        }
+        $pk2 = undef;
     }
     if ( $pk2 ) {
         $sth->execute($pk, $pk2);
@@ -536,6 +543,14 @@ sub parseletter {
         }
     }
     if ($table eq 'items') {
+        if ($check_in_notice) {
+            # need to get dates from old_issues
+            my $dates = C4::Context->dbh->selectrow_arrayref(
+'SELECT issuedate, date_due FROM old_issues where itemnumber = ? AND DATE(timestamp) = CURDATE() ORDER BY timestamp DESC LIMIT 1',
+                {}, $pk);
+            $values->{issuedate} = ${ $dates}[0];
+            $values->{date_due}  = ${ $dates}[1];
+        }
         $values->{issuedate} = format_date($values->{issuedate});
         $values->{date_due}  = format_date($values->{date_due});
         $values->{content} = join "\t", $values->{issuedate}, $values->{title}, $values->{barcode}, $values->{author};

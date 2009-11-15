@@ -2447,7 +2447,7 @@ sub SendCirculationAlert {
     C4::Letters::parseletter($letter, 'biblioitems', $item->{biblionumber});
     C4::Letters::parseletter($letter, 'borrowers',   $borrower->{borrowernumber});
     C4::Letters::parseletter($letter, 'branches',    $branch);
-    C4::Letters::parseletter($letter, 'items', $item->{itemnumber});
+    C4::Letters::parseletter($letter, 'items', $item->{itemnumber}, $type);
     my @transports = @{ $borrower_preferences->{transports} };
     # warn "no transports" unless @transports;
     for (@transports) {
