@@ -1871,7 +1871,8 @@ sub _koha_new_item {
             uri = ?,
             enumchron           = ?,
             more_subfields_xml  = ?,
-            copynumber          = ?
+            copynumber          = ?,
+            otherstatus         = ?
           ";
     my $sth = $dbh->prepare($query);
    $sth->execute(
@@ -1908,6 +1909,7 @@ sub _koha_new_item {
             $item->{'enumchron'},
             $item->{'more_subfields_xml'},
             $item->{'copynumber'},
+            $item->{'otherstatus'}
     );
     my $itemnumber = $dbh->{'mysql_insertid'};
     if ( defined $sth->errstr ) {
