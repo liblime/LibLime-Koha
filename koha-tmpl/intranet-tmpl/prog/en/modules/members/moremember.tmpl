@@ -331,6 +331,7 @@ if (nodename =="barcodes[]"){
  </div>
     <div class="action"><a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=3">Edit</a></div>
  
+ <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
  <!-- TMPL_IF NAME="previousCardnumbersLoop" -->
   <div id="previouscardnumbers" >
       <h3>Previous Cardnumbers</h3>
@@ -350,7 +351,8 @@ if (nodename =="barcodes[]"){
 		</form>
       </ul>
   </div>    
-<!-- /TMPL_IF -->
+ <!-- /TMPL_IF -->
+ <!-- /TMPL_IF -->
 
  <div id="patron-alternate-address" style="padding-top: 1em;">
     <h3>Alternate Address</h3>
