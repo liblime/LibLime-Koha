@@ -95,7 +95,7 @@ if ($op eq "do_search" && $query) {
 
     for(my $i=0;$i<$total;$i++) {
         my %resultsloop;
-        my $marcrecord = MARC::File::USMARC::decode($marcrecords->[$i]);
+        my $marcrecord = MARC::File::XML::decode($marcrecords->[$i]);
         my $biblio = TransformMarcToKoha(C4::Context->dbh,$marcrecord,'');
 
         #build the hash for the template.

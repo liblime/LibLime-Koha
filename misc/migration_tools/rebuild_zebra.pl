@@ -274,7 +274,7 @@ sub select_all_authorities {
 }
 
 sub select_all_biblios {
-    my $sth = $dbh->prepare("SELECT biblionumber FROM biblioitems ORDER BY biblionumber");
+    my $sth = $dbh->prepare("SELECT biblionumber FROM biblioitems where biblionumber < 1000 ORDER BY biblionumber");
     $sth->execute();
     return $sth;
 }
@@ -285,9 +285,10 @@ sub export_marc_records_from_sth {
     my $num_exported = 0;
     open (OUT, ">:utf8 ", "$directory/exported_records") or die $!;
     my $i = 0;
+EXPORT_RECORD:
     while (my ($record_number) = $sth->fetchrow_array) {
         print "." if ( $verbose_logging );
-        print "\r$i" unless ($i++ %100 or !$verbose_logging);
+        print "$i\r" unless ($i++ %100 or !$verbose_logging);
         if ( $nosanitize ) {
             my $marcxml = $record_type eq 'biblio'
                           ? GetXmlBiblio( $record_number )
@@ -305,7 +306,19 @@ sub export_marc_records_from_sth {
             # strung together with no single root element.  zebraidx doesn't seem
             # to care, though, at least if you're using the GRS-1 filter.  It does
             # care if you're using the DOM filter, which requires valid XML file(s).
-            print OUT ($as_xml) ? $marc->as_xml_record() : $marc->as_usmarc();
+            # Also, encoding problems with the record can cause as_xml_record() to fail
+            # even if the MARC::Record object was successfully created, so we add an eval.
+            if($as_xml){
+                my $marcxml;
+                eval { $marcxml = $marc->as_xml_record(); };
+                if ($@) {
+                    warn "Failure in MARC::File::XML.  Skipping record";
+                    next EXPORT_RECORD;
+                }
+                print OUT NFC($marc->as_xml_record());
+            } else {
+                print OUT $marc->as_usmarc();
+            }
             $num_exported++;
         }
     }

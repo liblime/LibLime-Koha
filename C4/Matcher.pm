@@ -22,6 +22,7 @@ use warnings;
 
 use C4::Context;
 use MARC::Record;
+use MARC::File::XML;
 use C4::Search;
 use C4::Biblio;
 
@@ -680,7 +681,7 @@ sub get_matches {
 
     my @results = ();
     foreach my $marcblob (keys %matches) {
-        my $target_record = MARC::Record->new_from_usmarc($marcblob);
+        my $target_record = MARC::Record->new_from_xml($marcblob);
         my $result = TransformMarcToKoha(C4::Context->dbh, $target_record, '');
         # FIXME - again, bibliospecific
         # also, can search engine be induced to give just the number in the first place?
@@ -732,10 +733,8 @@ sub dump {
 
 sub _passes_required_checks {
     my ($source_record, $target_blob, $matchchecks) = @_;
-    my $target_record;
     # FIXME -- need to avoid parsing record twice
-    eval{ $target_record = MARC::Record->new_from_usmarc($target_blob); };
-    if($@){ warn $@; }
+    my $target_record = MARC::Record->new_from_xml($target_blob,'UTF-8');
 
     # no checks supplied == automatic pass
     return 1 if $#{ $matchchecks } == -1;

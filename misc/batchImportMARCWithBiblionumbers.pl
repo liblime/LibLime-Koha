@@ -90,7 +90,7 @@ sub search {
 	if ($nbresults eq "1" ){
 		my $rec=$oAResult->record(0);
 		my $marcdata=$rec->raw();
-		$authrecord = MARC::File::USMARC::decode($marcdata);
+		$authrecord = MARC::File::XML::decode($marcdata);
 	}
 	return ($authrecord,$nbresults);
 }

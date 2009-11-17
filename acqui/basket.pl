@@ -186,7 +186,7 @@ else {
         creationdate     => format_date( $basket->{creationdate} ),
         authorisedby     => $basket->{authorisedby},
         authorisedbyname => $basket->{authorisedbyname},
-        closedate        => format_date( $basket->{closedate} ),
+        closedate        => ($basket->{closedate}) ? format_date( $basket->{closedate} ) : '',
         active           => $bookseller->{'active'},
         booksellerid     => $bookseller->{'id'},
         name             => $bookseller->{'name'},

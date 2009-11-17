@@ -63,6 +63,8 @@ use C4::Biblio;
 use C4::Auth;
 use C4::Output;
 use C4::Koha;
+use C4::Charset;
+use MARC::File::XML;
 
 my $input = new CGI;
 
@@ -106,14 +108,13 @@ if (defined $error) {
 
 my @results;
 
-foreach my $i ( 0 .. scalar @$marcresults ) {
+for my $marcxml ( @$marcresults ) {
     my %resultsloop;
-    my $marcrecord = MARC::File::USMARC::decode($marcresults->[$i]);
+    my $marcrecord = MARC::File::XML::decode($marcxml);
     my $biblio = TransformMarcToKoha(C4::Context->dbh,$marcrecord,'');
 
     #build the hash for the template.
     %resultsloop=%$biblio;
-    $resultsloop{highlight}       = ($i % 2)?(1):(0);
     $resultsloop{booksellerid} = $booksellerid;
     push @results, \%resultsloop;
 }

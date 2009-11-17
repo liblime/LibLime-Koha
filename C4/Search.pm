@@ -119,7 +119,7 @@ sub FindDuplicate {
     my @results;
     foreach my $possible_duplicate_record (@$searchresults) {
         my $marcrecord =
-          MARC::Record->new_from_usmarc($possible_duplicate_record);
+          MARC::Record->new_from_xml($possible_duplicate_record);
         my $result = TransformMarcToKoha( $dbh, $marcrecord, '' );
 
         # FIXME :: why 2 $biblionumber ?
@@ -1191,9 +1191,8 @@ sub searchResults {
 	my $marcflavour = C4::Context->preference("marcflavour");
     # loop through all of the records we've retrieved
     for ( my $i = $offset ; $i <= $times - 1 ; $i++ ) {
-#        my $marcrecord;
-#        eval { $marcrecord = MARC::Record->new_from_xml( $marcresults[$i], 'UTF-8' )};
-        my $marcrecord = MARC::File::USMARC::decode( $marcresults[$i] );
+        my $marcrecord;
+        eval { $marcrecord = MARC::Record->new_from_xml( $marcresults[$i], 'UTF-8' )};
         if($@){
             warn "could not read marcxml. $@";
             next;

@@ -592,7 +592,9 @@ sub _new_Zconn {
     my $tried=0; # first attempt
     my $Zconn; # connection object
     $server = "biblioserver" unless $server;
-    $syntax = "usmarc" unless $syntax;
+    if(!$syntax){
+        $syntax = ($server eq 'biblioserver') ? 'xml' : 'usmarc';
+    }
 
     my $host = $context->{'listen'}->{$server}->{'content'};
     my $servername = $context->{"config"}->{$server};
