@@ -1661,7 +1661,6 @@ sub GetMarcItem {
             $fields[0]->add_subfields(@$unlinked_item_subfields);
         }
     }
-warn $itemmarc->as_formatted;
     return $itemmarc;
 
 }

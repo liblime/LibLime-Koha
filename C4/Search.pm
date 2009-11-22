@@ -171,7 +171,7 @@ my @results;
 
 for my $i (0..$hits) {
     my %resultsloop;
-    my $marcrecord = MARC::File::USMARC::decode($marcresults->[$i]);
+    my $marcrecord = MARC::File::XML::decode($marcresults->[$i], 'UTF-8');
     my $biblio = TransformMarcToKoha(C4::Context->dbh,$marcrecord,'');
 
     #build the hash for the template.
@@ -248,7 +248,6 @@ sub SimpleSearch {
                 if ( defined $max_results && $offset + $max_results < $hits ) {
                     $last_record  = $offset + $max_results;
                 }
-
                 for my $j ( $first_record..$last_record ) {
                     my $record = $tmpresults[ $i - 1 ]->record( $j-1 )->raw(); # 0 indexed
                     push @results, $record;
@@ -436,7 +435,7 @@ sub getRecords {
                             $tmprecord->append_fields($tmptitle);
                             $tmprecord->append_fields($tmpauthor);
                         }
-                        $results_hash->{'RECORDS'}[$j] = $tmprecord->as_usmarc();
+                        $results_hash->{'RECORDS'}[$j] = $tmprecord->as_xml();
                     }
 
                     # not an index scan
@@ -446,11 +445,16 @@ sub getRecords {
                         # warn "RECORD $j:".$record;
                         $results_hash->{'RECORDS'}[$j] = $record;
 
-            # Fill the facets while we're looping, but only for the biblioserver
-                        $facet_record = MARC::Record->new_from_usmarc($record)
-                          if $servers[ $i - 1 ] =~ /biblioserver/;
+                        # Fill the facets while we're looping, but only for the biblioserver
+                        if($servers[ $i - 1 ] =~ /biblioserver/){
+                            $facet_record = eval { MARC::Record->new_from_xml($record,'UTF-8') };
+                            if($@){
+                                warn "Bad record returned. $@";
+                                next;
+                            }
+                            #warn $servers[$i-1]."\n".$record; #.$facet_record->title();
+                        }
 
-                    #warn $servers[$i-1]."\n".$record; #.$facet_record->title();
                         if ($facet_record) {
                             for ( my $k = 0 ; $k <= @$facets ; $k++ ) {
                                 ($facets->[$k]) or next;
@@ -476,7 +480,6 @@ sub getRecords {
 
             # warn "connection ", $i-1, ": $size hits";
             # warn $results[$i-1]->record(0)->render() if $size > 0;
-
             # BUILD FACETS
             if ( $servers[ $i - 1 ] =~ /biblioserver/ ) {
                 for my $link_value (
@@ -1127,7 +1130,6 @@ sub searchResults {
     my ( $searchdesc, $hits, $results_per_page, $offset, $scan, $opac, @marcresults ) = @_;
     my $dbh = C4::Context->dbh;
     my @newresults;
-
     #Build branchnames hash
     #find branchname
     #get branch information.....
@@ -1189,7 +1191,12 @@ sub searchResults {
 	my $marcflavour = C4::Context->preference("marcflavour");
     # loop through all of the records we've retrieved
     for ( my $i = $offset ; $i <= $times - 1 ; $i++ ) {
-        my $marcrecord = MARC::File::USMARC::decode( $marcresults[$i] );
+        my $marcrecord;
+        eval { $marcrecord = MARC::Record->new_from_xml( $marcresults[$i], 'UTF-8' )};
+        if($@){
+            warn "could not read marcxml. $@";
+            next;
+        }
         my $oldbiblio = TransformMarcToKoha( $dbh, $marcrecord, '' );
         $oldbiblio->{subtitle} = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 'subtitle', $marcrecord, '');
         $oldbiblio->{result_number} = $i + 1;
