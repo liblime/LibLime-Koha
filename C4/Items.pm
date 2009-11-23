@@ -460,7 +460,7 @@ sub ModItemFromMarc {
 
 =over 4
 
-ModItem({ column => $newvalue }, $biblionumber, $itemnumber[, $original_item_marc]);
+ModItem({ column => $newvalue }, $biblionumber, $itemnumber [, $dbh, $frameworkcode, $unlinked_item_subfields ] );
 
 =back
 
@@ -505,6 +505,12 @@ sub ModItem {
     };
 
     $item->{'itemnumber'} = $itemnumber or return undef;
+    my $orig_item = GetItem($itemnumber);
+
+    # FIXME : ModItem is called on status mods, not just item edits.
+    # status mods should be separated into a different function, so we can safely call _check_itembarcode.
+    # _check_itembarcode($item) if(C4::Context->preference('itembarcodelength')) ;
+
     _set_derived_columns_for_mod($item);
     _do_column_fixes_for_mod($item);
     # FIXME add checks
@@ -517,18 +523,33 @@ sub ModItem {
     # update items table
     _koha_modify_item($item);
 
-    # update biblio MARC XML
-#    my $whole_item = GetItem($itemnumber) or die "FAILED GetItem($itemnumber)";
+    # Test for item changes that should trigger a reindex.
+    my $reindex = 0;
+    foreach (qw|barcode
+                dateaccessioned
+                homebranch
+                datelastborrowed
+                notforloan
+                damaged
+                itemlost
+                wthdrawn
+                itemcallnumber
+                itemnotes
+                holdingbranch
+                location
+                onloan
+                cn_sort
+                ccode
+                uri
+                itemtype
+                more_subfields_xml
+                enumchron
+                copynumber| ){
+        $reindex = 1 if($item->{$_} && $item->{$_} ne $orig_item->{$_});
+    }
+    ModZebra($biblionumber,"specialUpdate","biblioserver") if $reindex;
 
-#    unless (defined $unlinked_item_subfields) {
-#        $unlinked_item_subfields = _parse_unlinked_item_subfields_from_xml($whole_item->{'more_subfields_xml'});
-#    }
-#    my $new_item_marc = _marc_from_item_hash($whole_item, $frameworkcode, $unlinked_item_subfields)
-#        or die "FAILED _marc_from_item_hash($whole_item, $frameworkcode)";
-    
-#    _replace_item_field_in_biblio($new_item_marc, $biblionumber, $itemnumber, $frameworkcode);
-#	($new_item_marc       eq '0') and die "$new_item_marc is '0', not hashref";  # logaction line would crash anyway
-# TODO: Separate Item data modification from Cataloguing Log.
+    # TODO: Separate Item data modification from Cataloguing Log.
     logaction("CATALOGUING", "MODIFY", $itemnumber, Data::Dumper->Dump( [$item],['item'] )) if C4::Context->preference("CataloguingLog");
 }
 
@@ -2065,7 +2086,6 @@ sub _koha_modify_item {
     my ( $item ) = @_;
     my $dbh=C4::Context->dbh;  
     my $error;
-
     my $query = "UPDATE items SET ";
     my @bind;
     for my $key ( keys %$item ) {
