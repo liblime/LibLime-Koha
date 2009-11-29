@@ -1,10 +1,10 @@
 borrowers.borrowernumber	Koha Internal Borrower ID
 borrowers.cardnumber	Card Number (barcode)
 borrowers.surname	Surname
-borrowers.firstname	Firstname
+borrowers.firstname	First Name
 borrowers.title	Title
 borrowers.othernames	Other Names
-borrowers.initials	 Initials
+borrowers.initials	Initials
 borrowers.streetaddress	Street Address 
 borrowers.suburb	Suburb
 borrowers.city	City
@@ -39,23 +39,23 @@ borrowers.dateofbirth	Date of Birth
 borrowers.branchcode	Branch Code
 borrowers.categorycode	Patron Category
 borrowers.dateenrolled	Date Added
-borrowers.gonenoaddress	Address Missing
-borrowers.lost	Lost Card
+borrowers.gonenoaddress	Address is Missing
+borrowers.lost	Card is Lost
 borrowers.debarred	Debarred
 borrowers.contactname	Contact Name (deprecated)
 borrowers.borrowernotes	Notes for Staff
-borrowers.guarantorid	Koha Internal ID of Guarantor (parent)
-borrowers.contactfirstname	First Name of Guarantor
-borrowers.contactname	Surname of Guarantor
-borrowers.contacttitle	Title of Guarantor (Mr., Ms., etc.)
-borrowers.relationship	Relationship of Patron with Guarantor
+borrowers.guarantorid	Guarantor's (parent's) Koha Internal ID
+borrowers.contactfirstname	Guarantor's First Name
+borrowers.contactname	Guarantor's Surname
+borrowers.contacttitle	Guarantor's Title (Mr., Ms., etc.)
+borrowers.relationship	Guarantor's Relationship with Patron
 borrowers.ethnicity	Ethnicity
 borrowers.ethnotes	Ethnicity Notes
 borrowers.sex	Gender
 borrowers.dateexpiry	Expiration Date
 borrowers.phonepro	Work Phone
 borrowers.physstreet	Physical Street Address
-borrowers.password	 Password (encrypted)
+borrowers.password	Password (encrypted)
 borrowers.flags	Warnings
 borrowers.userid	Login ID
 borrowers.zipcode	Zip/Postal Code
@@ -77,8 +77,8 @@ items.homebranch	Permanent Branch Code
 items.price	Price
 items.replacementprice	Replacement Price
 items.replacementpricedate	Date Replacement Price was set
-items.datelastborrowed	Date Item last issued
-items.datelastseen	Date Item was last seen by Koha
+items.datelastborrowed	Date Item Last Issued
+items.datelastseen	Date Item Was Last Seen by Koha
 items.multivolume	Volume Number (if part of a multivolume work)
 items.stack	Is the item in the stack?
 items.notforloan	Item is Not for loan
@@ -92,7 +92,7 @@ items.restricted	Item is Restricted
 items.binding	Item Needs Binding
 items.itemnotes	Item Notes
 items.holdingbranch	Current Branch
-items.paidfor	Has Item been lost and then paid for
+items.paidfor	Item Has Been Lost and Then Paid For
 items.timestamp	Timestamp
 items.location	Location
 items.ccode	Collection Code
@@ -101,7 +101,7 @@ items.damaged	Item is Damaged
 items.onloan	Due Date of Item, If Checked Out
 items.cn_source	Classification Scheme
 items.cn_sort	Koha Internal Call Number
-items.materials	Materials specified
+items.materials	Materials Specified
 items.uri	URL
 items.more_subfields_xml	Item MARCXML Blob
 items.enumchron	Enumeration and Chronology Info

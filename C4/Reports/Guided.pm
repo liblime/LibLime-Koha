@@ -203,17 +203,16 @@ sub _get_columns {
     $sth->execute();
     my @columns;
 	my $column_defs = _get_column_defs($cgi);
-	my %tablehash;
-	$tablehash{'table'}=$tablename;
-    $tablehash{'__first__'} = $first;
-	push @columns, \%tablehash;
     while ( my $data = $sth->fetchrow_arrayref() ) {
         my %temphash;
         $temphash{'name'}        = "$tablename.$data->[0]";
-        $temphash{'description'} = $column_defs->{"$tablename.$data->[0]"};
+        $temphash{'description'} = $column_defs->{$temphash{'name'}} || $temphash{'name'};
         push @columns, \%temphash;
     }
-    $sth->finish();
+
+    @columns = sort { $a->{'description'} cmp $b->{'description'} } @columns;
+
+	unshift @columns, { table => $tablename, __first__ => $first };
     return (@columns);
 }
 
@@ -318,16 +317,11 @@ sub get_criteria {
               "SELECT distinct($column) as availablevalues FROM $table";
             my $sth = $dbh->prepare($query);
             $sth->execute();
-            my @values;
-            while ( my $row = $sth->fetchrow_hashref() ) {
-                push @values, $row;
-                ### $row;
-            }
-            $sth->finish();
+            my $values = $sth->fetchall_arrayref({});
             my %temp;
             $temp{'name'}   = $value;
 			$temp{'description'} = $column_defs->{$value};
-            $temp{'values'} = \@values;
+            $temp{'values'} = [ sort { $a->{'availablevalues'} cmp $b->{'availablevalues'} } @$values ];
             push @criteria_array, \%temp;
         }
     }
