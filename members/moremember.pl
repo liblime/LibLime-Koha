@@ -48,7 +48,6 @@ use C4::Biblio;
 use C4::Reserves;
 use C4::Branch; # GetBranchName
 use C4::Form::MessagingPreferences;
-use C4::Stats qw( GetLostStats );
 
 #use Smart::Comments;
 #use Data::Dumper;
@@ -390,7 +389,7 @@ my $branch=C4::Context->userenv->{'branch'};
 
 $template->param($data);
 
-$template->param( lost_summary => GetLostStats( $borrowernumber ) );
+$template->param( lost_summary => GetLostStats( $borrowernumber, 1 ) );
 
 if (C4::Context->preference('ExtendedPatronAttributes')) {
     $template->param(ExtendedPatronAttributes => 1);

@@ -28,6 +28,8 @@ use C4::Overdues;
 use C4::Reserves;
 use C4::Accounts;
 use C4::Biblio;
+use C4::Items;
+use C4::Koha qw( GetAuthValCode );
 
 our ($VERSION,@ISA,@EXPORT,@EXPORT_OK,$debug);
 
@@ -65,6 +67,7 @@ BEGIN {
 
 		&GetMemberAccountRecords
 		&GetBorNotifyAcctRecord
+        &GetLostStats
 
 		&GetborCatFromCatType 
 		&GetBorrowercategory
@@ -1192,6 +1195,46 @@ sub GetBorNotifyAcctRecord {
     $total /= 100;
     $sth->finish;
     return ( $total, \@acctlines, $numlines );
+}
+
+sub GetLostStats {
+    my ( $borrowernumber, $hide_old ) = @_;
+    my $dbh = C4::Context->dbh;
+    my $category = GetAuthValCode( 'items.itemlost', '' );
+    my %summary;
+
+    my $lost_items = $dbh->selectall_arrayref( "
+        SELECT
+          authorised_values.lib as description, value, statistics.itemnumber,
+          items.itemnumber as item_exists, items.itemlost, items.paidfor
+          FROM statistics
+            LEFT JOIN items ON (statistics.itemnumber = items.itemnumber)
+            LEFT JOIN authorised_values ON (authorised_value = itemlost AND authorised_values.category = ?)
+          WHERE statistics.type = 'itemlost' AND statistics.borrowernumber = ?
+          GROUP BY statistics.itemnumber
+          ORDER BY authorised_values.lib
+    ", { Slice => {} }, $category, $borrowernumber );
+
+    foreach my $item ( @$lost_items ) {
+        next if ( $hide_old && ( !$item->{'item_exists'} || !$item->{'itemlost'} || $item->{'paidfor'} ) );
+        my $type_summary = ( $summary{$item->{'itemlost'}} ||= {
+           description => $item->{'description'},
+           items => [],
+           total_amount => 0,
+        } );
+
+        my $iteminfo = GetItem( $item->{'itemnumber'} );
+
+        push @{ $type_summary->{'items'} }, {
+            biblionumber => $iteminfo->{'biblionumber'},
+            itemnumber => $iteminfo->{'itemnumber'},
+            barcode => $iteminfo->{'barcode'},
+        };
+
+        $type_summary->{'total_amount'} += $item->{'value'};
+    }
+
+    return [ map { $_->{'total_amount'} = sprintf( '%0.2f', $_->{'total_amount'} ); $_ } values %summary ];
 }
 
 =head2 checkuniquemember (OUEST-PROVENCE)
