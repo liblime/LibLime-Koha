@@ -150,6 +150,7 @@ sub get_form_values {
         biblio => MARC::Record->new(),
         frameworkcode => '',
         omit => [],
+        wipe => [],
         allow_repeatable => 1,
         %$options
     };
@@ -199,6 +200,13 @@ sub get_form_values {
                 $value =~ s/MM/$month/g;
                 $value =~ s/DD/$day/g;
             }
+            if ($subfieldlib->{'kohafield'} && $options->{'wipe'} && grep ( {$_ eq $subfieldlib->{'kohafield'} } @{ $options->{'wipe'} }) ) {
+                $value = "";
+            }
+
+
+
+
             $subfield_data{visibility} = "display:none;" if ( ($subfieldlib->{hidden} > 4 ) || ( $subfieldlib->{hidden} < -4 ));
             # testing branch value if IndependantBranches.
             my $pref_itemcallnumber = C4::Context->preference( 'itemcallnumber' );
