@@ -132,6 +132,7 @@ sub XSLTParse4Display {
     }
     $sysxml .= "</sysprefs>\n";
     $xmlrecord =~ s/\<\/record\>/$itemsxml$sysxml\<\/record\>/;
+    $xmlrecord =~ s/\& /\&amp\; /;
 
     my $parser = XML::LibXML->new();
     # don't die when you find &, >, etc
