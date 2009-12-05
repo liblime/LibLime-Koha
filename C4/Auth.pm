@@ -353,6 +353,7 @@ sub get_template_and_user {
             OPACAmazonEnabled         => C4::Context->preference("OPACAmazonEnabled"),
             OPACAmazonCoverImages     => C4::Context->preference("OPACAmazonCoverImages"),
             OPACAmazonSimilarItems    => "" . C4::Context->preference("OPACAmazonSimilarItems"),
+            OPACAmazonReviews         => C4::Context->preference("OPACAmazonReviews"),
             OPACFRBRizeEditions       => C4::Context->preference("OPACFRBRizeEditions"),
             OPACItemHolds             => C4::Context->preference("OPACItemHolds"),
             OPACShelfBrowser          => "". C4::Context->preference("OPACShelfBrowser"),
