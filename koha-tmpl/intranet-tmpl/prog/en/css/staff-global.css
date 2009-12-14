@@ -1860,4 +1860,42 @@ h1#xml a {
 	right: 0; 
 	top: 0;
 	padding: 5px; 
+
+#cartDetails {
+	background-color : #FFF;
+	border: 1px solid #739acf;
+	border-right-width : 2px;
+	border-bottom-width : 2px;
+	color : black;
+	display : none;
+	margin : 0;
+	padding : 10px;
+	text-align : center;
+	width : 180px;
+}
+#cartmenulink {
+        background: transparent url("../../img/cart-small.gif") 0 3px no-repeat;
+        padding-left : 15px;
+}
+#cartmenulink span#basketcount span {
+	display : inline;
+	font-size : 90%;
+	font-weight : normal;
+	padding : 0;
+}
+#moremenu {
+        display : none;
+}
+
+.results_summary {
+  display: block;
+  font-size : 85%; 
+  color: #707070;
+  padding : 0 0 .5em 0;
+}
+.results_summary .label {
+  color: #202020;
+}
+.results_summary a {
+  font-weight: normal;
 }
