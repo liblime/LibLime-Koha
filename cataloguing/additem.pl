@@ -413,14 +413,26 @@ foreach my $tag (sort keys %{$tagslib}) {
     }
 
 # Void out and/or reset some fields in the creation of a copy of a new item
+    my %iteminfo = ( "Withdrawn status"      => '',
+                     "Lost status"           => '',
+                     "Materials specified \(bound volume or other part\)" => '',
+                     "Damaged status"        => '',
+                     "Use restrictions"      => '',
+                     "Not for loan"          => '',
+                     "Date acquired"         => $today_iso,
+                     "Total Checkouts"       => 0,
+                     "Total Renewals"        => 0,
+                     "Total Holds"           => 0,
+                     "Barcode"               => '',
+                     "Checked out"           => '',
+                     "Date last seen"        => $today_iso,
+                     "Date last checked out" => '',
+                     "Copy number"           => ''
+                   );
     if ($op eq "addadditionalitem") {
-      if (($tagslib->{$tag}->{$subfield}->{lib} eq 'Withdrawn status') ||
-          ($tagslib->{$tag}->{$subfield}->{lib} eq 'Lost status') ||
-          ($tagslib->{$tag}->{$subfield}->{lib} eq 'Damaged status') ||
-          ($tagslib->{$tag}->{$subfield}->{lib} eq 'Barcode')) {
-            $value = '';
+      if (defined($iteminfo{$tagslib->{$tag}->{$subfield}->{lib}})) {
+        $value = $iteminfo{$tagslib->{$tag}->{$subfield}->{lib}};
       }
-      $value = $today_iso if ($tagslib->{$tag}->{$subfield}->{lib} eq 'Date acquired');
     }
     my $attributes_no_value = qq(tabindex="1" id="$subfield_data{id}" name="field_value" class="input_marceditor" size="67" maxlength="255" );
     my $attributes          = qq($attributes_no_value value="$value" );
