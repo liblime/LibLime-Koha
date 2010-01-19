@@ -266,10 +266,7 @@ sub AddItem {
 	my ( $itemnumber, $error ) = _koha_new_item( $item, $item->{barcode} );
     $item->{'itemnumber'} = $itemnumber;
 
-    # create MARC tag representing item and add to bib
-#    my $new_item_marc = _marc_from_item_hash($item, $frameworkcode, $unlinked_item_subfields);
-#    _add_item_field_to_biblio($new_item_marc, $item->{'biblionumber'}, $frameworkcode );
-   
+    ModZebra($biblionumber,"specialUpdate","biblioserver");
     logaction("CATALOGUING", "ADD", $itemnumber, "item") if C4::Context->preference("CataloguingLog");
     
     return ($item->{biblionumber}, $item->{biblioitemnumber}, $itemnumber);
