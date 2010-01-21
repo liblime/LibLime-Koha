@@ -2381,7 +2381,6 @@ CREATE TABLE `itemstatus` (
   `statuscode` varchar(10) NOT NULL default '',
   `description` varchar(25) default NULL,
   `holdsallowed` tinyint(1) NOT NULL default 0,
-  `holdsfilled` tinyint(1) NOT NULL default 0,
   PRIMARY KEY  (`statuscode_id`),
   UNIQUE KEY `statuscode` (`statuscode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

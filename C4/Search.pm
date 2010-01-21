@@ -1284,22 +1284,21 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
             }
 
             my $sth = $dbh->prepare(
-            "SELECT description,holdsallowed,holdsfilled
+            "SELECT description,holdsallowed
                FROM itemstatus
                  LEFT JOIN items ON itemstatus.statuscode=items.otherstatus
                WHERE itemnumber = ?"
             );
             $sth->execute($item->{itemnumber});
             my @statusvalue = $sth->fetchrow;
-            my ($otherstatus,$holdsallowed,$holdsfilled,$OPACstatusdisplay);
+            my ($otherstatus,$holdsallowed,$OPACstatusdisplay);
             if (@statusvalue) {
-              ($otherstatus,$holdsallowed,$holdsfilled) = @statusvalue;
+              ($otherstatus,$holdsallowed) = @statusvalue;
               $OPACstatusdisplay = 1;
             }
             else {
               $otherstatus = '';
               $holdsallowed = 1;
-              $holdsfilled  = 1;
               $OPACstatusdisplay = 0;
             }
 
@@ -1340,7 +1339,6 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                         || $item->{damaged}
                         || $item->{notforloan}
                         || ($holdsallowed == 0)
-                        || ($holdsfilled == 0)
                         || $items_count > 20) {
 
                     # A couple heuristics to limit how many times
@@ -1364,7 +1362,6 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     || $item->{damaged}
                     || $item->{notforloan} 
                     || ($holdsallowed == 0)
-                    || ($holdsfilled == 0)
                     || ($transfertwhen ne ''))
                 {
                     $wthdrawn_count++        if $item->{wthdrawn};
@@ -1373,7 +1370,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     $item_in_transit_count++ if $transfertwhen ne '';
                     $item->{status} = $item->{wthdrawn} . "-" . $item->{itemlost} . "-" . $item->{damaged} . "-" . $item->{notforloan};
                     $other_count++;
-                    if (($holdsallowed == 0) || ($holdsfilled == 0)) {
+                    if ($holdsallowed == 0) {
                       $other_otherstatus_count++;
                       if ($other_otherstatus eq '') {
                         $other_otherstatus = $otherstatus;

@@ -107,7 +107,6 @@ if ( $op eq 'add_form' ) {
         statuscode      => $statuscode,
         description     => $data->{'description'},
         holdsallowed    => $data->{'holdsallowed'},
-        holdsfilled     => $data->{'holdsfilled'},
         template        => C4::Context->preference('template'),
     );
 
@@ -128,21 +127,19 @@ elsif ( $op eq 'add_validate' ) {
             UPDATE itemstatus
             SET    description = ?
                  , holdsallowed = ?
-                 , holdsfilled = ?
             WHERE statuscode = ?
         ';
         $sth = $dbh->prepare($query2);
         $sth->execute(
             $input->param('description'),
             $input->param('holdsallowed') ? 1 : 0,
-            $input->param('holdsfilled') ? 1 : 0,
             $input->param('statuscode')
         );
     }
     else {    # add a new itemtype & not modif an old
         my $query = "
             INSERT INTO itemstatus
-                (statuscode,description,holdsallowed,holdsfilled)
+                (statuscode,description,holdsallowed)
             VALUES
                 (?,?,?,?);
             ";
@@ -151,7 +148,6 @@ elsif ( $op eq 'add_validate' ) {
             $input->param('statuscode'),
             $input->param('description'),
             $input->param('holdsallowed') ? 1 : 0,
-            $input->param('holdsfilled') ? 1 : 0,
         );
     }
 
@@ -166,15 +162,14 @@ elsif ( $op eq 'delete_confirm' ) {
 
     my $sth =
       $dbh->prepare(
-"select statuscode,description,holdsallowed,holdsfilled from itemstatus where statuscode =?"
+"select statuscode,description,holdsallowed from itemstatus where statuscode =?"
       );
     $sth->execute($statuscode);
     my $data = $sth->fetchrow_hashref;
     $template->param(
         statuscode      => $statuscode,
         description     => $data->{description},
-        holdsallowed    => $data->{holdsallowed},
-        holdsfilled     => $data->{holdsfilled}
+        holdsallowed    => $data->{holdsallowed}
     );
 
     # END $OP eq DELETE_CONFIRM

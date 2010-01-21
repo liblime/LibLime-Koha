@@ -370,8 +370,7 @@ foreach my $biblionumber (@biblionumbers) {
                 if ($istatus->{statuscode} eq $item->{otherstatus}) {
                   $item->{otherstatus_description} = $istatus->{description};
                   $template->param( otherstatus_description => $item->{otherstatus_description} );
-                  if ((!$istatus->{holdsallowed}) ||
-                      (!$istatus->{holdsfilled})) {
+                  if (!$istatus->{holdsallowed}) {
                     $biblioloopiter{warn} = 1;
                     $biblioloopiter{noresstatus} = 1;
                     $item->{noresstatus} = 1;

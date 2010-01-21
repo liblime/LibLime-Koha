@@ -160,15 +160,6 @@ Item Status Administration
             <!-- /TMPL_IF -->
           (if checked, item of this current status can have a hold placed on it)
       </li>
-      <li>
-          <label for="holdsfilled">Holds filled</label>
-            <!-- TMPL_IF name="holdsfilled" -->
-                <input type="checkbox" id="holdsfilled" name="holdsfilled" checked="checked" value="1" />
-            <!-- TMPL_ELSE -->
-                <input type="checkbox" id="holdsfilled" name="holdsfilled" value="1" />
-            <!-- /TMPL_IF -->
-          (if checked, item of this current status can fill a hold placed on it)
-      </li>
 	  </ol>
     </fieldset>
 
@@ -190,7 +181,6 @@ Item Status Administration
 
 	<tr><th scope="row">Description</th><td><!-- TMPL_VAR name="description" --></td></tr>
 	<tr><th scope="row">Holds allowed</th><td><!-- TMPL_IF NAME="holdsallowed" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td></tr>
-	<tr><th scope="row">Available for holds</th><td><!-- TMPL_IF name="holdsfilled" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td></tr>
 </table>
 		<form action="<!-- TMPL_VAR name="script_name" -->" method="post">
 		<input type="hidden" name="op" value="delete_confirmed" /><input type="hidden" name="statuscode" value="<!-- TMPL_VAR name="statuscode" -->" />
@@ -207,7 +197,6 @@ Item Status Administration
     <th>Code</th>
     <th>Description</th>
     <th>Holds allowed</th>
-    <th>Available for hold</th>
     <th>Action</th>
   </tr>
   <!-- TMPL_LOOP name="loop" -->
@@ -223,7 +212,6 @@ Item Status Administration
     </td>
     <td><!-- TMPL_VAR name="description" --></td>
     <td><!-- TMPL_IF NAME="holdsallowed" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
-    <td><!-- TMPL_IF NAME="holdsfilled" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
     <td>
       <a href="<!-- TMPL_VAR name="script_name" -->?op=add_form&amp;statuscode=<!-- TMPL_VAR name="statuscode" escape="HTML" -->">Edit</a>
       <a href="<!-- TMPL_VAR name="script_name" -->?op=delete_confirm&amp;statuscode=<!-- TMPL_VAR name="statuscode" escape="HTML" -->">Delete</a>
