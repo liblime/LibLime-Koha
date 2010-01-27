@@ -545,7 +545,7 @@ sub ModItem {
                 more_subfields_xml
                 enumchron
                 copynumber| ){
-        $reindex = 1 if($item->{$_} && $item->{$_} ne $orig_item->{$_});
+        $reindex = 1 if( exists($item->{$_}) && $item->{$_} ne $orig_item->{$_});
     }
     ModZebra($biblionumber,"specialUpdate","biblioserver") if $reindex;
 
