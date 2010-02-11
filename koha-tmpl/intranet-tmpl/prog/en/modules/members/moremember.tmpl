@@ -543,8 +543,7 @@ if (nodename =="barcodes[]"){
                        <!-- TMPL_IF name="barcodereserv" -->
                          <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
                        <!-- /TMPL_IF -->
-                  </td>
-            <td><!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
+            <!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
             <td><select name="rank-request">
                     <option value="n">No</option>
                     <option value="del">Yes</option>
