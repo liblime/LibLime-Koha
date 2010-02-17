@@ -436,7 +436,8 @@ sub ModStatus {
         libfirstname => $emailinfo->{libfirstname},
         byfirstname => $emailinfo->{byfirstname},
         bysurname => $emailinfo->{bysurname},
-        reason => $emailinfo->{reason}
+        reason => $emailinfo->{reason},
+	LibraryName => C4::Context->preference("LibraryName")
     );
     my %mail = (
         To => $emailinfo->{byemail},
