@@ -558,6 +558,8 @@ if (my $search_for_title = C4::Context->preference('OPACSearchForTitleIn')){
     $search_for_title =~ s/{AUTHOR}/$dat->{author}/g;
     $search_for_title =~ s/{TITLE}/$dat->{title}/g;
     $search_for_title =~ s/{ISBN}/$isbn/g;
+    $dat->{title} =~ s/\/+$//; # remove trailing slash
+    $dat->{title} =~ s/\s+$//; # remove trailing space
  $template->param('OPACSearchForTitleIn' => $search_for_title);
 }
 
