@@ -61,7 +61,7 @@ if ($branch){
     $session->param('branch', $branch);
     $session->param('branchname', GetBranchName($branch));
 }
-
+my $dispreturn = C4::Context->preference('PatronDisplayReturn');
 my $printer = $query->param('printer');
 if ($printer){
     # update our session so the userenv is updated
@@ -668,6 +668,7 @@ $template->param(
     findborrower                => $findborrower,
     borrower                    => $borrower,
     borrowernumber              => $borrowernumber,
+    dispreturn                  => $dispreturn,
     branch                      => $branch,
     branchname                  => GetBranchName($borrower->{'branchcode'}),
     printer                     => $printer,
