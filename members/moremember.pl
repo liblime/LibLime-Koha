@@ -407,6 +407,7 @@ $template->param(
     roaddetails     => $roaddetails,
     borrowernumber  => $borrowernumber,
     categoryname    => $data->{'description'},
+    dispreturn      => C4::Context->preference('PatronDisplayReturn'),
     reregistration  => $reregistration,
     branch          => $branch,
     totalprice      => sprintf("%.2f", $totalprice),
