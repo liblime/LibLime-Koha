@@ -52,6 +52,7 @@ overdue_notices.pl [ -n ] [ -library <branchcode> ] [ -max <number of days> ] [ 
    -max          <days>           maximum days overdue to deal with
    -library      <branchname>     only deal with overdues from this library
    -csv          <filename>       populate CSV file
+   -html         <filename>       Output html to file
    -itemscontent <list of fields> item information in templates
 
 =head1 OPTIONS
@@ -230,6 +231,7 @@ my $nomail  = 0;
 my $MAX     = 90;
 my $mybranch;
 my $csvfilename;
+my $htmlfilename;
 my $triggered = 0;
 my $listall = 0;
 my $itemscontent = join( ',', qw( issuedate title barcode author ) );
@@ -242,6 +244,7 @@ GetOptions(
     'max=s'          => \$MAX,
     'library=s'      => \$mybranch,
     'csv:s'          => \$csvfilename,    # this optional argument gets '' if not supplied.
+    'html:s'          => \$htmlfilename,    # this optional argument gets '' if not supplied.
     'itemscontent=s' => \$itemscontent,
     'list-all'      => \$listall,
     't|triggered'             => \$triggered,
@@ -255,6 +258,13 @@ if ( defined $csvfilename && $csvfilename =~ /^-/ ) {
 
 my @branches    = C4::Overdues::GetBranchcodesWithOverdueRules();
 my $branchcount = scalar(@branches);
+my @overduebranches    = C4::Overdues::GetBranchcodesWithOverdueRules();	# Branches with overdue rules
+
+my $overduebranch_word = scalar @overduebranches > 1 ? 'branches' : 'branch';
+my $branchcodes_word = scalar @branchcodes > 1 ? 'branches' : 'branch';
+
+my $PrintNoticesMaxLines = C4::Context->preference('PrintNoticesMaxLines');
+
 if ($branchcount) {
     my $branch_word = scalar @branches > 1 ? 'branches' : 'branch';
     $verbose and warn "Found $branchcount $branch_word with first message enabled: " . join( ', ', map { "'$_'" } @branches ), "\n";
@@ -283,6 +293,7 @@ my @item_content_fields = split( /\s*,\s*/, $itemscontent );
 my $dbh = C4::Context->dbh();
 binmode( STDOUT, ":utf8" );
 
+
 our $csv;       # the Text::CSV_XS object
 our $csv_fh;    # the filehandle to the CSV file.
 if ( defined $csvfilename ) {
@@ -297,6 +308,28 @@ if ( defined $csvfilename ) {
     } else {
         $verbose and warn 'combine failed on argument: ' . $csv->error_input;
     }
+}
+
+@branches = @overduebranches unless @branches;
+our $html_fh;
+if ( defined $htmlfilename ) {
+  if ( $htmlfilename eq '' ) {
+    $html_fh = *STDOUT;
+  } else {
+    open $html_fh, ">", $htmlfilename or die "unable to open $htmlfilename: $!";
+  }
+  
+  print $html_fh "<html>\n";
+  print $html_fh "<head>\n";
+  print $html_fh "<style type='text/css'>\n";
+  print $html_fh "pre {page-break-after: always;}\n";
+  print $html_fh "pre {white-space: pre-wrap;}\n";
+  print $html_fh "pre {white-space: -moz-pre-wrap;}\n";
+  print $html_fh "pre {white-space: -o-pre-wrap;}\n";
+  print $html_fh "pre {word-wrap: break-work;}\n";
+  print $html_fh "</style>\n";
+  print $html_fh "</head>\n";
+  print $html_fh "<body>\n";
 }
 
 foreach my $branchcode (@branches) {
@@ -378,6 +411,7 @@ END_SQL
                 $verbose and warn "borrower $firstname, $lastname ($borrowernumber) has $itemcount items triggering level $i.";
     
                 my $letter = C4::Letters::getletter( 'circulation', $overdue_rules->{"letter$i"} );
+
                 unless ($letter) {
                     $verbose and warn "Message '$overdue_rules->{letter$i}' content not found";
     
@@ -395,7 +429,16 @@ END_SQL
                 $sth2->execute( ($listall) ? ( $borrowernumber , 1 , $MAX ) : ( $borrowernumber, $mindays, $maxdays ) );
                 my $itemcount = 0;
                 my $titles = "";
+                my @items = ();
+                
+                my $i = 0;
+                my $exceededPrintNoticesMaxLines = 0;
                 while ( my $item_info = $sth2->fetchrow_hashref() ) {
+                    if ( ( !$email || $nomail ) && $PrintNoticesMaxLines && $i >= $PrintNoticesMaxLines ) {
+                      $exceededPrintNoticesMaxLines = 1;
+                      last;
+                    }
+                    $i++;
                     my @item_info = map { $_ =~ /^date|date$/ ? format_date( $item_info->{$_} ) : $item_info->{$_} || '' } @item_content_fields;
                     $titles .= join("\t", @item_info) . "\n";
                     $itemcount++;
@@ -412,7 +455,11 @@ END_SQL
                         }
                     }
                 );
-    
+                
+                if ( $exceededPrintNoticesMaxLines ) {
+                  $letter->{'content'} .= "List too long for form; please check your account online for a complete list of your overdue items.";
+                }
+
                 my @misses = grep { /./ } map { /^([^>]*)[>]+/; ( $1 || '' ); } split /\</, $letter->{'content'};
                 if (@misses) {
                     $verbose and warn "The following terms were not matched and replaced: \n\t" . join "\n\t", @misses;
@@ -435,7 +482,7 @@ END_SQL
                             email          => $email,
                             itemcount      => $itemcount,
                             titles         => $titles,
-                            outputformat   => defined $csvfilename ? 'csv' : '',
+                            outputformat   => defined $csvfilename ? 'csv' : defined $htmlfilename ? 'html' : '',
                         }
                       );
                 } else {
@@ -463,7 +510,7 @@ END_SQL
                                 email          => $email,
                                 itemcount      => $itemcount,
                                 titles         => $titles,
-                                outputformat   => defined $csvfilename ? 'csv' : '',
+                                outputformat   => defined $csvfilename ? 'csv' : defined $htmlfilename ? 'html' : '',
                             }
                           );
                     }
@@ -477,11 +524,17 @@ END_SQL
         if ($nomail) {
             if ( defined $csvfilename ) {
                 print $csv_fh @output_chunks;
+            } elsif ( defined $htmlfilename ) {
+                print $html_fh @output_chunks;
             } else {
                 local $, = "\f";    # pagebreak
                 print @output_chunks;
             }
-        } else {
+        } 
+        elsif ( defined $htmlfilename ) {
+            print $html_fh @output_chunks;        
+        }
+        else {
             my $attachment = {
                 filename => defined $csvfilename ? 'attachment.csv' : 'attachment.txt',
                 type => 'text/plain',
@@ -505,10 +558,15 @@ END_SQL
 
 }
 if ($csvfilename) {
-
     # note that we're not testing on $csv_fh to prevent closing
     # STDOUT.
     close $csv_fh;
+}
+
+if ( defined $htmlfilename ) {
+  print $html_fh "</body>\n";
+  print $html_fh "</html>\n";
+  close $html_fh;
 }
 
 =head1 INTERNAL METHODS
@@ -537,6 +595,7 @@ sub parse_letter {
     foreach my $required (qw( letter borrowernumber )) {
         return unless exists $params->{$required};
     }
+
 
     if ( $params->{'substitute'} ) {
         while ( my ( $key, $replacedby ) = each %{ $params->{'substitute'} } ) {
@@ -597,6 +656,10 @@ sub prepare_letter_for_printing {
         } else {
             $verbose and warn 'combine failed on argument: ' . $csv->error_input;
         }
+    } elsif ( exists $params->{'outputformat'} && $params->{'outputformat'} eq 'html' ) {
+      $return = "<pre>\n";
+      $return .= "$params->{'letter'}->{'content'}\n";
+      $return .= "\n</pre>\n";
     } else {
         $return .= "$params->{'letter'}->{'content'}\n";
 
