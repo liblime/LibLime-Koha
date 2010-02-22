@@ -60,7 +60,8 @@ C4::Reserves - Koha functions for dealing with reservation.
   - priority >0      : then the reserve is at 1st stage, and not yet affected to any item.
              =0      : then the reserve is being dealed
   - found : NULL       : means the patron requested the 1st available, and we haven't choosen the item
-            W(aiting)  : the reserve has an itemnumber affected, and is on the way
+            T(ransit)  : the reserve is linked to an item but is in transit to the pickup branch
+            W(aiting)  : the reserve is linked to an item, is at the pickup branch, and is waiting on the hold shelf
             F(inished) : the reserve has been completed, and is done
   - itemnumber : empty : the reserve is still unaffected to an item
                  filled: the reserve is attached to an item
@@ -70,15 +71,15 @@ C4::Reserves - Koha functions for dealing with reservation.
   a library having it run "transfertodo", and clic on the list    
          if there is no transfer to do, the reserve waiting
          patron can pick it up                                    P =0, F=W,    I=filled 
-         if there is a transfer to do, write in branchtransfer    P =0, F=NULL, I=filled
+         if there is a transfer to do, write in branchtransfer    P =0, F=T,    I=filled
            The pickup library recieve the book, it check in       P =0, F=W,    I=filled
   The patron borrow the book                                      P =0, F=F,    I=filled
   
   ==== 2nd use case ====
   patron requests a document, a given item,
     If pickup is holding branch                                   P =0, F=W,   I=filled
-    If transfer needed, write in branchtransfer                   P =0, F=NULL, I=filled
-        The pickup library recieve the book, it checks it in      P =0, F=W,    I=filled
+    If transfer needed, write in branchtransfer                   P =0, F=T,    I=filled
+        The pickup library receive the book, it checks it in      P =0, F=W,    I=filled
   The patron borrow the book                                      P =0, F=F,    I=filled
   
 =head1 FUNCTIONS
@@ -1259,7 +1260,8 @@ sub ModReserveAffect {
     $query = "
         UPDATE reserves
         SET    priority = 0,
-               itemnumber = ?
+               itemnumber = ?,
+               found = 'T'
         WHERE reservenumber = ?
     ";
     }
@@ -1506,12 +1508,15 @@ sub _FixPriority {
      }
     if ( $rank eq "W" || $rank eq "0" ) {
 
-        # make sure priority for waiting items is 0
+        # make sure priority for waiting or in-transit items is 0
         my $query = qq/
             UPDATE reserves
             SET    priority = 0
             WHERE reservenumber = ?
-              AND found ='W'
+              AND found IN ('W', 'T')
+            WHERE biblionumber = ?
+              AND borrowernumber = ?
+              AND found IN ('W', 'T')
         /;
         my $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
@@ -1528,7 +1533,7 @@ sub _FixPriority {
         SELECT borrowernumber, reservedate, constrainttype, reservenumber
         FROM   reserves
         WHERE  biblionumber   = ?
-          AND  ((found <> 'W') or found is NULL)
+          AND  ((found <> 'W' AND found <> 'T') or found is NULL)
         ORDER BY priority ASC
     /;
     my $sth = $dbh->prepare($query);
