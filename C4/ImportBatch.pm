@@ -220,16 +220,35 @@ sub AddBiblioToBatch {
         my @fields = $marc_record->field($action->{'tag'});
         if ( $action->{'action'} eq 'delete' ) {
             foreach my $field (@fields) {
+                $marc_record->delete_field($field);
+            }
+        } elsif ( $action->{'action'} eq 'delete_sub' ) {
+            foreach my $field (@fields) {
                 $field->delete_subfield(code => $action->{'subfield'});
             }
-        } elsif ( $action->{'action'} eq 'add_always' ) {
+        } elsif ( $action->{'action'} eq 'delete_match' ) {
             foreach my $field (@fields) {
-                $field->add_subfields($action->{'subfield'}, $action->{'contents'});
+               if ($field->subfield($action->{'subfield'})){
+                   my $cmp1 = _normalize_string($field->subfield($action->{'subfield'}));
+                   my $cmp2 = _normalize_string($action->{'contents'});
+                   if ($cmp1 eq $cmp2){
+                       $field->delete_subfield(code => $action->{'subfield'});
+                   }
+               }
             }
+        } elsif ( $action->{'action'} eq 'add_always' ) {
+            $marc_record->insert_grouped_field(MARC::Field->new($action->{'tag'},'','',$action->{'subfield'} => $action->{'contents'})); 
         } elsif ( $action->{'action'} eq 'add' ) {
+            my $found =0;
             foreach my $field (@fields) {
-                next if ($field->subfield($action->{'subfield'}));
-                $field->add_subfields($action->{'subfield'}, $action->{'contents'});
+                if ($field->subfield($action->{'subfield'})){
+                    my $cmp1 = _normalize_string($field->subfield($action->{'subfield'}));
+                    my $cmp2 = _normalize_string($action->{'contents'});
+                    $found = 1 if ($cmp1 eq $cmp2);
+                }
+            }
+            if (!$found){
+              $marc_record->insert_grouped_field(MARC::Field->new($action->{'tag'},'','',$action->{'subfield'} => $action->{'contents'}));
             }
         }
     }
@@ -295,7 +314,8 @@ sub  BatchStageMarcRecords {
     } 
     
     my $batch_id = AddImportBatch('create_new', 'staging', 'batch', $file_name, $comments);
-    if ($parse_items) {
+use Data::Dumper; warn Dumper(@$added_items);
+    if ($parse_items || @$added_items) {
         SetImportBatchItemAction($batch_id, 'always_add');
     } else {
         SetImportBatchItemAction($batch_id, 'ignore');
@@ -1417,6 +1437,17 @@ sub GetImportProfileSubfieldActions {
 }
 
 # internal functions
+sub _normalize_string {
+    my ($str) = @_;
+    $str = uc $str;
+    $str =~ s/^\s+//;
+    $str =~ s/\s+$//;
+    $str =~ s/\W+$//;
+    $str =~ s/\s+$//;
+    $str =~ s/\s+/_/g;
+    $str =~ s/__/_/g;
+    return $str;
+}
 
 sub _create_import_record {
     my ($batch_id, $record_sequence, $marc_record, $record_type, $encoding, $z3950random) = @_;

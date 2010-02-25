@@ -124,8 +124,10 @@ if ($completedJobID) {
     my @additional_items;
     my @subfield_actions;
 
+    my @added_items = C4::Form::AddItem::get_all_items($input, '');
+
     if ( $profile ) {
-        if ( $input->param( 'include_items_from_profile' ) ) {
+        if ( $input->param( 'include_items_from_profile' ) && !@added_items) {
             push @additional_items, GetImportProfileItems( $profile );
         }
         if ( $input->param( 'include_actions_from_profile' ) ) {
@@ -133,7 +135,8 @@ if ($completedJobID) {
         }
     }
 
-    push @additional_items, C4::Form::AddItem::get_all_items( $input, '' );
+     push @additional_items, @added_items;
+#    push @additional_items, C4::Form::AddItem::get_all_items( $input, '' );
     push @subfield_actions, get_subfield_actions( $input );
 
 	if ( $new_profile_name ) {
@@ -176,16 +179,16 @@ if ($completedJobID) {
 
         # if we get here, we're a child that has detached
         # itself from Apache
-        $staging_callback = staging_progress_callback($job, $dbh);
-        $matching_callback = matching_progress_callback($job, $dbh);
+       # $staging_callback = staging_progress_callback($job, $dbh);
+       # $matching_callback = matching_progress_callback($job, $dbh);
 
     }
 
     # FIXME branch code
     my ($batch_id, $num_valid, $num_items, @import_errors) = BatchStageMarcRecords($syntax, $marcrecord, $filename, 
                                                                                    $comments, '', $parse_items, 0,
-                                                                                   \@additional_items, \@subfield_actions,
-                                                                                   50, staging_progress_callback($job, $dbh));
+                                                                                   \@additional_items, \@subfield_actions);
+                                                                               #    50, staging_progress_callback($job, $dbh));
     $dbh->commit();
     my $num_with_matches = 0;
     my $checked_matches = 0;
@@ -196,12 +199,17 @@ if ($completedJobID) {
         if (defined $matcher) {
             $checked_matches = 1;
             $matcher_code = $matcher->code();
-            $num_with_matches = BatchFindBibDuplicates($batch_id, $matcher, 
-                                                       10, 50, matching_progress_callback($job, $dbh));
+            #$num_with_matches = BatchFindBibDuplicates($batch_id, $matcher, 
+            #                                           10, 50, matching_progress_callback($job, $dbh));
+            $num_with_matches = BatchFindBibDuplicates($batch_id, $matcher); 
             SetImportBatchMatcher($batch_id, $matcher_id);
             SetImportBatchOverlayAction($batch_id, $overlay_action);
             SetImportBatchNoMatchAction($batch_id, $nomatch_action);
-            SetImportBatchItemAction($batch_id, $item_action);
+            if ( @additional_items) {
+               SetImportBatchItemAction($batch_id, 'always_add');
+            } else {
+               SetImportBatchItemAction($batch_id, $item_action);
+            }
             $dbh->commit();
         } else {
             $matcher_failed = 1;
@@ -277,7 +285,7 @@ sub get_subfield_actions {
     my @results;
 
     foreach my $i ( 0..$#types ) {
-		next unless ( $tags[$i] && $subfields[$i] );
+		next unless ( $tags[$i] );
         push @results, {
             action => $types[$i],
             tag => $tags[$i],

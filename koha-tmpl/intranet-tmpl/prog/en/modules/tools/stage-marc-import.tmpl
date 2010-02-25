@@ -90,8 +90,13 @@ $( document ).ready( function( ){
 function change_type() {
   if ( this.value == 'delete' ) {
     $( this ).nextAll( '.action-contents-text' ).eq( 0 ).hide();
+    $( this ).nextAll( '.action-contents-subfield' ).eq( 0 ).hide();
+  } else if ( this.value == 'delete_sub' ){
+    $( this ).nextAll( '.action-contents-text' ).eq( 0 ).hide();
+    $( this ).nextAll( '.action-contents-subfield' ).eq( 0 ).show();
   } else {
     $( this ).nextAll( '.action-contents-text' ).eq( 0 ).show();
+    $( this ).nextAll( '.action-contents-subfield' ).eq( 0 ).show();
   }
 }
 
@@ -372,7 +377,9 @@ function set_to_today(id, force) {
   </fieldset>
   <fieldset class="rows" id="add-items">
     <legend>Add more items to each record?</legend>
+    <ol style>
     <input type="hidden" name="include_items_from_profile" value="1" />
+      <li><b>NOTE:  if you select to add new items here, any item records in the incoming bibliographic record will also be unavoidably added!<br/></b></li></ol>
     <ol style="display: none" id="profile-items-info">
       <li>Adding <span id="profile-items-num-added"></span> more item(s), from import profile. <a href="#" id="profile-items-modify">Modify</a></li>
     </ol>
@@ -382,6 +389,8 @@ function set_to_today(id, force) {
     </ol>
     <ol id="add-item-actions">
       <li><input type="button" id="new-item" value="New item" /></li>
+      <li><b>If you make changes to this form, and want to save them, be sure to save the profile!</b></li>
+
     </ol>
   </fieldset>
   <fieldset class="rows" id="modify-subfields">
