@@ -1,5 +1,5 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
-<!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog &rsaquo; Your Cart
+<!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog &rsaquo; Your <TMPL_VAR NAME="opacbookbagName">
     <!-- TMPL_IF NAME="print_basket" --></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="shortcut icon" href="<!-- TMPL_VAR NAME="themelang" -->/includes/favicon.ico" type="image/x-icon" />
@@ -112,7 +112,7 @@ function tagAdded() {
 <div id="doc" class="yui-t7">
 <div class="container">
 <!-- TMPL_UNLESS NAME="print_basket" -->
-<h1>Your Cart</h1>
+<h1>Your <TMPL_VAR NAME="opacbookbagName"></h1>
 
 <div id="toolbar">
 <ul>
@@ -356,7 +356,7 @@ function tagAdded() {
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="print_basket" -->
-<a href="#back" class="screen">&lt;&lt; Back to Cart</a>
+<a href="#back" class="screen">&lt;&lt; Back to <TMPL_VAR NAME="opacbookbagName"></a>
 <!-- TMPL_ELSE -->
 <form name="myform" action="opac-basket.pl" method="get">
     <input type="hidden" name="records" id="records" />

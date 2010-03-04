@@ -96,7 +96,7 @@ function highlightOn() {
 $(document).ready(function(){
 	$(".addtocart").show();
 	var param1 = "<label for=\"addto\">"+_("Add to: ")+"<\/label><select name=\"addto\" id=\"addto\"><option value=\"\"><\/option>";
-	<!-- TMPL_IF name="opacbookbag" -->	param1 += "<option value=\"addtocart\">"+_("Cart")+"<\/option>";
+	<!-- TMPL_IF name="opacbookbag" -->	param1 += "<option value=\"addtocart\">"+_("<TMPL_VAR NAME="opacbookbagName">")+"<\/option>";
 	<!-- /TMPL_IF --><!-- TMPL_IF NAME="virtualshelves" --><!-- TMPL_IF NAME="loggedinusername" --><!-- TMPL_IF NAME="addbarshelves" -->
 	param1 += "<optgroup label=\""+_("Your Lists:")+"\">";<!-- TMPL_LOOP NAME="addbarshelvesloop" -->
 	param1 += "<option id=\"s<!-- TMPL_VAR NAME="shelfnumber" -->\" value=\"addtolist\"><!-- TMPL_VAR NAME="shelfname" ESCAPE="html"--><\/option>";<!-- /TMPL_LOOP -->
@@ -338,7 +338,7 @@ $(document).ready(function(){
                 <tr>
             <!-- /TMPL_UNLESS -->
 
-                <td class="select selectcol"><!--TMPL_IF EXPR="opacbookbag || virtualshelves" --><input type="checkbox" id="bib<!-- TMPL_VAR NAME="biblionumber" -->" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" title="Click to add to cart" /> <label for="bib<!-- TMPL_VAR NAME="biblionumber" -->"></label><!-- /TMPL_IF --></td>
+                <td class="select selectcol"><!--TMPL_IF EXPR="opacbookbag || virtualshelves" --><input type="checkbox" id="bib<!-- TMPL_VAR NAME="biblionumber" -->" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" title="Click to add to <TMPL_VAR NAME="opacbookbagName">" /> <label for="bib<!-- TMPL_VAR NAME="biblionumber" -->"></label><!-- /TMPL_IF --></td>
                 <td class="select selectcol"><!-- TMPL_VAR NAME="result_number" -->.</td>
 
 				<!-- TMPL_UNLESS NAME="item-level_itypes" -->
@@ -469,7 +469,7 @@ $(document).ready(function(){
 
 				<!-- TMPL_IF NAME="opacuserlogin" --><!-- TMPL_IF NAME="loggedinusername" --><!-- TMPL_IF NAME="virtualshelves" --><a class="addtolist" href="/cgi-bin/koha/opac-addbybiblionumber.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" onclick="Dopop('opac-addbybiblionumber.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->'); return false;">Save to Lists</a>
     			<!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_IF -->
-        		<!-- TMPL_IF NAME="opacbookbag" --><a class="addtocart" href="#" onclick="addRecord('<!-- TMPL_VAR NAME="biblionumber" -->'); return false;">Add to Cart</a><!-- /TMPL_IF -->
+        		<!-- TMPL_IF NAME="opacbookbag" --><a class="addtocart" href="#" onclick="addRecord('<!-- TMPL_VAR NAME="biblionumber" -->'); return false;">Add to <TMPL_VAR NAME="opacbookbagName"></a><!-- /TMPL_IF -->
 				</span>
 				</td><td>
 					<a class="p1" href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">

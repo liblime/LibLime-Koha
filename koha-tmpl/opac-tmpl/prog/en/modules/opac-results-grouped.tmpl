@@ -21,7 +21,7 @@ $(document).ready(function(){
     });
 	$("span.clearall").html("<a id=\"CheckNone\" href=\"#\">Clear All</a>");
 	$("span.checkall").html("<a id=\"CheckAll\" href=\"#\">Select All</a>");
-	$("span.addto").html("<label for=\"addto\">Add to: </label><select name=\"addto\" id=\"addto\"><option value=\"\"></option><!-- TMPL_IF name="opacbookbag" --><option value=\"addtocart\">Cart</option><!-- /TMPL_IF --><!-- TMPL_IF NAME="virtualshelves" --><!-- TMPL_IF NAME="loggedinusername" --><optgroup label=\"Lists:\"><!-- TMPL_IF NAME="barshelves" --><!-- TMPL_LOOP NAME="barshelvesloop" --><!-- TMPL_IF EXPR="category == 1" --><option id=\"s<!-- TMPL_VAR NAME="shelfnumber" -->\" value=\"addtolist\"><!-- TMPL_VAR NAME="shelfname" --></option><!-- /TMPL_IF --><!-- /TMPL_LOOP --><!-- /TMPL_IF --><option value=\"newlist\">[ New List ]</option></optgroup><!-- TMPL_ELSE --><option value=\"newlist\">List</option><!-- /TMPL_IF --><!-- /TMPL_IF --></select> <input type=\"submit\" class=\"submit\" value=\"Save\" />");
+	$("span.addto").html("<label for=\"addto\">Add to: </label><select name=\"addto\" id=\"addto\"><option value=\"\"></option><!-- TMPL_IF name="opacbookbag" --><option value=\"addtocart\"><TMPL_VAR NAME="opacbookbagName"></option><!-- /TMPL_IF --><!-- TMPL_IF NAME="virtualshelves" --><!-- TMPL_IF NAME="loggedinusername" --><optgroup label=\"Lists:\"><!-- TMPL_IF NAME="barshelves" --><!-- TMPL_LOOP NAME="barshelvesloop" --><!-- TMPL_IF EXPR="category == 1" --><option id=\"s<!-- TMPL_VAR NAME="shelfnumber" -->\" value=\"addtolist\"><!-- TMPL_VAR NAME="shelfname" --></option><!-- /TMPL_IF --><!-- /TMPL_LOOP --><!-- /TMPL_IF --><option value=\"newlist\">[ New List ]</option></optgroup><!-- TMPL_ELSE --><option value=\"newlist\">List</option><!-- /TMPL_IF --><!-- /TMPL_IF --></select> <input type=\"submit\" class=\"submit\" value=\"Save\" />");
 	$("#addto").change(function(){
 		cartList();
 	});
@@ -263,7 +263,7 @@ function highlightOn() {
 					<!-- /TMPL_UNLESS -->
 				<!-- /TMPL_IF -->
 
-				<!--TMPL_IF EXPR="opacbookbag || virtualshelves" --><input type="checkbox" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" title="Click to add to cart" /> <label for="bib<!-- TMPL_VAR NAME="biblionumber" -->"><!-- /TMPL_IF --><img src="<!-- TMPL_VAR NAME="themelang" -->/images/<!-- TMPL_VAR NAME="itemtype" -->.gif" alt="<!-- TMPL_VAR NAME="ccode" -->" title="<!-- TMPL_VAR NAME="ccode" -->" /><!--TMPL_IF EXPR="opacbookbag || virtualshelves" --></label><!-- /TMPL_IF --> <!-- TMPL_IF name="classification" -->
+				<!--TMPL_IF EXPR="opacbookbag || virtualshelves" --><input type="checkbox" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" title="Click to add to <TMPL_VAR NAME="opacbookbagName">" /> <label for="bib<!-- TMPL_VAR NAME="biblionumber" -->"><!-- /TMPL_IF --><img src="<!-- TMPL_VAR NAME="themelang" -->/images/<!-- TMPL_VAR NAME="itemtype" -->.gif" alt="<!-- TMPL_VAR NAME="ccode" -->" title="<!-- TMPL_VAR NAME="ccode" -->" /><!--TMPL_IF EXPR="opacbookbag || virtualshelves" --></label><!-- /TMPL_IF --> <!-- TMPL_IF name="classification" -->
                                     <a href="/cgi-bin/koha/opac-search.pl?q=callnum:<!-- TMPL_VAR NAME="classification" ESCAPE="URL" -->">
                                         <!-- TMPL_VAR NAME="classification" -->
                                     </a>

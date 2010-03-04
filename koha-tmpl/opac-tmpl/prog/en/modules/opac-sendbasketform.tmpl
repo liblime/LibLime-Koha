@@ -1,4 +1,4 @@
-<!-- TMPL_INCLUDE NAME="doc-head-open.inc" --><!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog &rsaquo;  Sending Your Cart
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" --><!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog &rsaquo;  Sending Your <TMPL_VAR NAME="opacbookbagName">
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 </head>
 <body style="padding: 1em;" id="sendbasket">
@@ -6,11 +6,11 @@
 
 	<!-- TMPL_IF NAME="SENT" -->
 		<h3>Message Sent</h3>
-	    <p>The cart was sent to: <!-- TMPL_VAR NAME="email_add" --></p>
+	    <p>The <TMPL_VAR NAME="opacbookbagName"> was sent to: <!-- TMPL_VAR NAME="email_add" --></p>
 		<p><a class="focus close" href="#">Close window</a></p>
 	<!-- /TMPL_IF  -->
 	<!-- TMPL_IF NAME="error" -->
-	<p>Problem sending the cart...</p>
+	<p>Problem sending the <TMPL_VAR NAME="opacbookbagName">...</p>
 	<!-- /TMPL_IF -->
 	
 <!-- TMPL_ELSE -->
@@ -18,7 +18,7 @@
 <form action="<!-- TMPL_VAR NAME="url" -->" method="post">
 
 <fieldset class="rows"> 
-<legend>Sending your cart</legend>
+<legend>Sending your <TMPL_VAR NAME="opacbookbagName"></legend>
 <ol>   <li>
         <label for="email_add">Email Address:</label>
         <input type="text" id="email_add" name="email_add" size="43" class="focus" />

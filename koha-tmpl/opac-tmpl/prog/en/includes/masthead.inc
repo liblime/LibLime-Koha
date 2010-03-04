@@ -94,7 +94,7 @@
  </div>
 </div>
 
-<!-- TMPL_IF NAME="opacbookbag" --><div id="cartDetails">Your cart is empty.</div><!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="opacbookbag" --><div id="cartDetails">Your <TMPL_VAR NAME="opacbookbagName"> is empty.</div><!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="virtualshelves" -->
 <div id="listsmenu" class="yuimenu" style="display: none">

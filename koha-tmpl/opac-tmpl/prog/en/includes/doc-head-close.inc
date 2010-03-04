@@ -41,16 +41,17 @@
 <!-- TMPL_IF NAME="TagsEnabled" --><script type="text/javascript" language="javascript" src="<!-- TMPL_VAR NAME="themelang" -->/js/tags.js"></script><!-- /TMPL_IF -->
 <script type="text/javascript" language="javascript">
 	//<![CDATA[
-    <!-- TMPL_IF NAME="opacbookbag" -->var MSG_BASKET_EMPTY = _("Your cart is currently empty");
-    var MSG_RECORD_IN_BASKET = _("This item is already in your cart");
-    var MSG_RECORD_ADDED = _("This item has been added to your cart");
-    var MSG_NRECORDS_ADDED = _(" item(s) added to your cart");
-    var MSG_NRECORDS_IN_BASKET = _("already in your cart");
+    <!-- TMPL_IF NAME="opacbookbag" -->var MSG_BASKET_EMPTY = _("Your <TMPL_VAR NAME="opacbookbagName"> is currently empty");
+    var BASKET_NAME = "<!-- TMPL_VAR NAME="opacbookbagName" -->";
+    var MSG_RECORD_IN_BASKET = _("This item is already in your <TMPL_VAR NAME="opacbookbagName">");
+    var MSG_RECORD_ADDED = _("This item has been added to your <TMPL_VAR NAME="opacbookbagName">");
+    var MSG_NRECORDS_ADDED = _(" item(s) added to your <TMPL_VAR NAME="opacbookbagName">");
+    var MSG_NRECORDS_IN_BASKET = _("already in your <TMPL_VAR NAME="opacbookbagName">");
     var MSG_NO_RECORD_SELECTED = _("No item was selected");
-    var MSG_NO_RECORD_ADDED = _("No item was added to your cart");
-    var MSG_CONFIRM_DEL_BASKET = _("Are you sure you want to empty your cart?");
+    var MSG_NO_RECORD_ADDED = _("No item was added to your <TMPL_VAR NAME="opacbookbagName">");
+    var MSG_CONFIRM_DEL_BASKET = _("Are you sure you want to empty your <TMPL_VAR NAME="opacbookbagName">?");
     var MSG_CONFIRM_DEL_RECORDS = _("Are you sure you want to remove the selected items?");
-	$("#cartDetails").ready(function(){ $("#cmspan").html("<a href=\"#\" id=\"cartmenulink\" class=\"\"><i><\/i><span><i><\/i><span><\/span><img src=\"/opac-tmpl/prog/images/cart.gif\" width=\"14\" height=\"14\" alt=\"\" border=\"0\" /> "+_("Cart")+"<span id=\"basketcount\"><\/span><\/span><\/a>"); }); <!-- /TMPL_IF -->
+	$("#cartDetails").ready(function(){ $("#cmspan").html("<a href=\"#\" id=\"cartmenulink\" class=\"\"><i><\/i><span><i><\/i><span><\/span><img src=\"/opac-tmpl/prog/images/cart.gif\" width=\"14\" height=\"14\" alt=\"\" border=\"0\" /> "+_("<TMPL_VAR NAME="opacbookbagName">")+"<span id=\"basketcount\"><\/span><\/span><\/a>"); }); <!-- /TMPL_IF -->
 	<!-- TMPL_IF NAME="OPACAmazonCoverImages" -->$(window).load(function() {
 		 	verify_images();
 		 });<!-- /TMPL_IF -->
