@@ -93,6 +93,8 @@ window.onload=function (){
 
 	ss.onstart = function () {
 		document.location = '/cgi-bin/koha/opac-main.pl?logout.x=1';
+                updateBasket(0,null);
+                delCookie("bib_list");
 	};
 }
 </script>
