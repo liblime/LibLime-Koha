@@ -266,23 +266,23 @@ function verify_images() {
                 <!-- TMPL_IF NAME="reservedate"-->
                     <!-- TMPL_IF NAME="waitingdate" -->
                         Waiting
+                      <!-- TMPL_IF NAME="canreservefromotherbranches" -->for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="ReservedForBorrowernumber" -->">
+                        <!-- TMPL_IF NAME="hidepatronname" -->
+                          <!-- TMPL_VAR NAME="cardnumber" -->
+                        <!-- TMPL_ELSE -->
+                          <!-- TMPL_VAR NAME="ReservedForFirstname" --> <!-- TMPL_VAR NAME="ReservedForSurname" -->
+                        <!-- /TMPL_IF -->
+                      </a><!-- /TMPL_IF -->
+                      <!-- TMPL_IF NAME="waitingdate" -->
+                          at<!-- TMPL_ELSE -->expected at
+                      <!-- /TMPL_IF -->   <!-- TMPL_VAR NAME="ExpectedAtLibrary" -->
+                      since
+                      <!-- TMPL_IF NAME="waitingdate" --><!-- TMPL_VAR NAME="waitingdate" -->
+                      <!-- TMPL_ELSE -->
+                        <!-- TMPL_IF name="reservedate" --><!-- TMPL_VAR NAME="reservedate" --><!-- /TMPL_IF -->
+                      <!-- /TMPL_IF -->
                     <!-- TMPL_ELSE -->
                         On hold
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF NAME="canreservefromotherbranches" -->for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="ReservedForBorrowernumber" -->">
-		        <!-- TMPL_IF NAME="hidepatronname" -->
-		            <!-- TMPL_VAR NAME="cardnumber" -->
-		        <!-- TMPL_ELSE -->
-		            <!-- TMPL_VAR NAME="ReservedForFirstname" --> <!-- TMPL_VAR NAME="ReservedForSurname" -->
-			<!-- /TMPL_IF -->
-		    </a><!-- /TMPL_IF -->
-                    <!-- TMPL_IF NAME="waitingdate" -->
-                        at<!-- TMPL_ELSE -->expected at
-                    <!-- /TMPL_IF -->   <!-- TMPL_VAR NAME="ExpectedAtLibrary" -->
-                    since
-                    <!-- TMPL_IF NAME="waitingdate" --><!-- TMPL_VAR NAME="waitingdate" -->
-                    <!-- TMPL_ELSE -->
-                        <!-- TMPL_IF name="reservedate" --><!-- TMPL_VAR NAME="reservedate" --><!-- /TMPL_IF -->
                     <!-- /TMPL_IF -->
                 <!-- /TMPL_IF -->
                 <!-- TMPL_UNLESS name="itemnotforloan" --><!-- TMPL_UNLESS NAME="onloan" --><!-- TMPL_UNLESS NAME="itemlost" --><!-- TMPL_UNLESS NAME="wthdrawn" --><!-- TMPL_UNLESS NAME="damaged" --><!-- TMPL_UNLESS NAME="transfertwhen" --><!-- TMPL_UNLESS NAME="reservedate" -->
@@ -313,6 +313,11 @@ function verify_images() {
                 </tr>
             <!-- /TMPL_LOOP -->
         </table>
+        <!-- TMPL_IF NAME="totalreserves" -->
+        <div class="dialogue alert">
+        <b> There are a total of <!-- TMPL_VAR NAME="totalreserves" --> holds.  Items with "On hold" status are item specific holds. </b>
+        </div>
+        <!-- /TMPL_IF -->
 		<!-- TMPL_IF NAME="debug_display" -->
 		<br /><br />
 		<table>

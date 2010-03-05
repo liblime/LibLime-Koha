@@ -1238,7 +1238,20 @@ If this is set, it is set to C<One Order>.
 
 sub GetItemsInfo {
     my ( $biblionumber, $type ) = @_;
+
+    my %restype;
+    my $attached_count = 0;
+    my ($rescount,$reserves) = C4::Reserves::GetReservesFromBiblionumber($biblionumber);
+    foreach my $res (@$reserves) {
+      if ($res->{itemnumber}) {
+        $attached_count++;
+        $restype{$res->{itemnumber}} = "Attached";
+        $rescount--;
+      }
+    }
+
     my $dbh   = C4::Context->dbh;
+    my $itemcount;
     # note biblioitems.* must be avoided to prevent large marc and marcxml fields from killing performance.
     my $query = "
     SELECT items.*,
@@ -1275,8 +1288,10 @@ sub GetItemsInfo {
        );
 	my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=? "); 
 	while ( my $data = $sth->fetchrow_hashref ) {
+        $itemcount++;
         my $datedue = '';
-        my $count_reserves;
+        my ($restype,$reserves,$reserve_count);
+        my $reserve_status;
         $isth->execute( $data->{'itemnumber'} );
         if ( my $idata = $isth->fetchrow_hashref ) {
             $data->{borrowernumber} = $idata->{borrowernumber};
@@ -1284,25 +1299,23 @@ sub GetItemsInfo {
             $data->{surname}     = $idata->{surname};
             $data->{firstname}     = $idata->{firstname};
             $datedue                = $idata->{'date_due'};
-        if (C4::Context->preference("IndependantBranches")){
-        my $userenv = C4::Context->userenv;
-        if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) { 
-            $data->{'NOTSAMEBRANCH'} = 1 if ($idata->{'bcode'} ne $userenv->{branch});
+          if (C4::Context->preference("IndependantBranches")){
+            my $userenv = C4::Context->userenv;
+            if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) {
+              $data->{'NOTSAMEBRANCH'} = 1 if ($idata->{'bcode'} ne $userenv->{branch});
+            }
+          }
         }
+        if ( $data->{'serial'}) {
+          $ssth->execute($data->{'itemnumber'}) ;
+          ($data->{'serialseq'} , $data->{'publisheddate'}) = $ssth->fetchrow_array();
+          $serial = 1;
         }
-        }
-		if ( $data->{'serial'}) {	
-			$ssth->execute($data->{'itemnumber'}) ;
-			($data->{'serialseq'} , $data->{'publisheddate'}) = $ssth->fetchrow_array();
-			$serial = 1;
-        }
-		if ( $datedue eq '' ) {
-            my ( $restype, $reserves ) =
-              C4::Reserves::CheckReserves( $data->{'itemnumber'} );
-# Previous conditional check with if ($restype) is not needed because a true
-# result for one item will result in subsequent items defaulting to this true
-# value.
-            $count_reserves = $restype;
+        if ( $datedue eq '' ) {
+          if ($restype{$data->{'itemnumber'}} ne "Attached") {
+            $restype{$data->{'itemnumber'}} = ($itemcount <= $rescount) ? "Reserved" : '';
+          }
+          $reserve_status = $restype{$data->{'itemnumber'}};
         }
         $isth->finish;
         $ssth->finish;
@@ -1316,7 +1329,8 @@ sub GetItemsInfo {
             $data->{'branchname'} = $bdata->{'branchname'};
         }
         $data->{'datedue'}        = $datedue;
-        $data->{'count_reserves'} = $count_reserves;
+        $data->{'reserve_status'} = $reserve_status;
+        $data->{'reserve_count'}  = $rescount + $attached_count;
 
         # get notforloan complete status if applicable
         my $sthnflstatus = $dbh->prepare(

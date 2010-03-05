@@ -369,7 +369,7 @@ sub GetOtherReserves {
     my ($itemnumber) = @_;
     my $messages;
     my $nextreservinfo;
-    my ( $restype, $checkreserves ) = CheckReserves($itemnumber);
+    my ( $restype, $checkreserves, $count ) = CheckReserves($itemnumber);
     if ($checkreserves) {
         my $iteminfo = GetItem($itemnumber);
         if ( $iteminfo->{'holdingbranch'} ne $checkreserves->{'branchcode'} ) {
@@ -572,8 +572,7 @@ sub GetReservesForBranch {
 
 =item CheckReserves
 
-  ($status, $reserve) = &CheckReserves($itemnumber);
-  ($status, $reserve) = &CheckReserves(undef, $barcode);
+  ($status, $reserve, $count) = &CheckReserves($itemnumber);
 
 Find a book in the reserves.
 
@@ -587,13 +586,15 @@ Otherwise, it finds the most important item in the reserves with the
 same biblio number as this book (I'm not clear on this) and returns it
 with C<$status> set to C<Reserved>.
 
-C<&CheckReserves> returns a two-element list:
+C<&CheckReserves> returns a three-element list:
 
 C<$status> is either C<Waiting>, C<Reserved> (see above), or 0.
 
 C<$reserve> is the reserve item that matched. It is a
 reference-to-hash whose keys are mostly the fields of the reserves
 table in the Koha database.
+
+C<$count> is the number of reserves for this item.
 
 =cut
 
@@ -626,25 +627,33 @@ sub CheckReserves {
     return ( 0, 0 ) unless $itemnumber; # bail if we got nothing.
 
     # if item is not for loan it cannot be reserved either.....
-    #    execpt where items.notforloan < 0 :  This indicates the item is holdable. 
-    return ( 0, 0 ) if  ( $notforloan_per_item > 0 ) or $notforloan_per_itemtype;
+    #    execption to notforloan is where items.notforloan < 0 :  This indicates the item is holdable. 
+    return ( 0, 0, 0 ) if  ( $notforloan_per_item > 0 ) or $notforloan_per_itemtype;
 
     # Find this item in the reserves
     my @reserves = _Findgroupreserve( $bibitem, $biblio, $itemnumber );
+    my $count    = scalar @reserves;
 
     # $priority and $highest are used to find the most important item
     # in the list returned by &_Findgroupreserve. (The lower $priority,
     # the more important the item.)
     # $highest is the most important item we've seen so far.
     my $highest;
-    if (scalar @reserves) {
+    if ($count) {
         my $priority = 10000000;
         foreach my $res (@reserves) {
-            if ( $res->{'itemnumber'} == $itemnumber && $res->{'priority'} == 0) {
-                return ( "Waiting", $res ); # Found it
-            } else {
-                # See if this item is more important than what we've got so far
-                if ( $res->{'priority'} && $res->{'priority'} < $priority ) {
+            # FIXME - $item might be undefined or empty: the caller
+            # might be searching by barcode.
+            if ( $res->{'itemnumber'} == $item && $res->{'priority'} == 0) {
+                # Found it
+                return ( "Waiting", $res, $count );
+            }
+            else {
+                # See if this item is more important than what we've got
+                # so far.
+                $res->{'nullitem'} = 1 if (!defined($res->{'itemnumber'}));
+                if ( $res->{'priority'} != 0 && $res->{'priority'} < $priority )
+                {
                     $priority = $res->{'priority'};
                     $highest  = $res;
                 }
@@ -656,10 +665,10 @@ sub CheckReserves {
     # We return the most important (i.e. next) reservation.
     if ($highest) {
         $highest->{'itemnumber'} = $item;
-        return ( "Reserved", $highest );
+        return ( "Reserved", $highest, $count );
     }
     else {
-        return ( 0, 0 );
+        return ( 0, 0, 0 );
     }
 }
 
