@@ -263,3 +263,4 @@ INSERT INTO systempreferences (variable,value,options,explanation,type)VALUES('D
 INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES('AllowAllMessageDeletion','0','Allow any Library to delete any message','','YesNo');
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('ShowPatronImageInWebBasedSelfCheck', '0', 'If ON, displays patron image when a patron uses web-based self-checkout', '', 'YesNo');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('opacbookbagName','Cart','Allows libraries to define a different name for the OPAC Cart feature, such as Bookbag or Personal Shelf. If no name is defined, it will default to Cart.','70|10','Textarea');
+INSERT INTO systempreferences (variable,value,options,explanation,type)VALUES('PatronDisplayReturn', '1', '', 'If ON, allows items to be returned in the patron details display checkout list.', 'YesNo');
