@@ -280,6 +280,11 @@ sub get_template_and_user {
             SyndeticsSeries              => C4::Context->preference("SyndeticsSeries"),
 			SyndeticsCoverImageSize		 => C4::Context->preference("SyndeticsCoverImageSize"),
                  );
+            XSLTDetailsDisplay           => C4::Context->preference("XSLTDetailsDisplay"),
+            XSLTResultsDisplay           => C4::Context->preference("XSLTResultsDisplay"),
+            BranchesLoop                 => GetBranchesLoop(),
+            using_https                  => $in->{'query'}->https() ? 1 : 0,
+    );
 
     if ( $in->{'type'} eq "intranet" ) {
         $template->param(
