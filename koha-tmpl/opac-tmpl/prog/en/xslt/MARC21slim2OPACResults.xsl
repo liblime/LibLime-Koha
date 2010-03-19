@@ -459,7 +459,7 @@
             </xsl:choose>
             <xsl:choose>
             <xsl:when test="position()=last()">
-                <xsl:call-template name="nameABCDN"/>.
+                <xsl:call-template name="nameABCDN"/> 
             </xsl:when>
             <xsl:otherwise>
                 <xsl:call-template name="nameABCDN"/>;
@@ -471,6 +471,15 @@
             <xsl:choose>
             <xsl:when test="position()=1">
 		<xsl:text> -- </xsl:text>
+            </xsl:when>
+            </xsl:choose>
+            <xsl:choose>
+            <xsl:when test="marc:subfield[@code='n']">
+               <xsl:text> </xsl:text>
+               <xsl:call-template name="subfieldSelect">
+                  <xsl:with-param name="codes">n</xsl:with-param> 
+               </xsl:call-template>
+               <xsl:text> </xsl:text>
             </xsl:when>
             </xsl:choose>
             <xsl:choose>
