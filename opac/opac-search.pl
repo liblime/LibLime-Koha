@@ -130,7 +130,7 @@ my $itype_or_itemtype = (C4::Context->preference("item-level_itypes"))?'itype':'
 my @itemtypesloop;
 my $selected=1;
 my $cnt;
-my $advanced_search_types = C4::Context->preference("AdvancedSearchTypes");
+my $advanced_search_types = C4::Context->preference("OPACAdvancedSearchTypes");
 
 if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {
 	foreach my $thisitemtype ( sort {$itemtypes->{$a}->{'description'} cmp $itemtypes->{$b}->{'description'} } keys %$itemtypes ) {
