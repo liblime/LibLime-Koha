@@ -207,6 +207,7 @@ foreach my $res (@reserves) {
 $template->param( RESERVES       => \@reserves );
 $template->param( reserves_count => $#reserves+1 );
 $template->param( showpriority=>1 ) if $OPACDisplayRequestPriority;
+$template->param( opacmsgtab => C4::Context->preference('opacmsgtab') );
 
 my @waiting;
 my $wcount = 0;
