@@ -172,6 +172,9 @@ $tabsysprefs{NewItemsDefaultLocation}        = "Circulation";
 $tabsysprefs{ReturnToShelvingCart}           = "Circulation";
 $tabsysprefs{DisplayClearScreenButton}       = "Circulation";
 $tabsysprefs{AllowAllMessageDeletion}        = "Circulation";
+$tabsysprefs{HoldButtonConfirm}              = "Circulation";
+$tabsysprefs{HoldButtonPrintConfirm}         = "Circulation";
+$tabsysprefs{HoldButtonIgnore}               = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}        = "StaffClient";

@@ -76,8 +76,12 @@ function Dopop(link) {
             <input type="hidden" name="WT-itemNumber" value="<!-- TMPL_VAR Name="WrongTransferItem" -->" />
             <input type="hidden" name="WT-waitingAt" value="<!-- TMPL_VAR Name="TransferWaitingAt" -->" />
             <input type="hidden" name="WT-From" value="<!-- TMPL_VAR Name="wtransfertFrom" -->" />
+		<!-- TMPL_IF name="HoldButtonConfirm" -->
         <input type="submit" class="approve" value="Confirm" />
+        	<!-- /TMPL_IF -->
+		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
 			<input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
+        	<!-- /TMPL_IF -->
     </form>
     <!-- /TMPL_IF --></div>
 <!-- /TMPL_IF -->
@@ -106,8 +110,10 @@ function Dopop(link) {
 		<h4><strong>Hold at</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
         <!-- /TMPL_IF -->
         <form method="post" action="returns.pl" class="confirm">
+		<!-- TMPL_IF name="HoldButtonConfirm" -->
             <input type="submit" class="approve" value="Confirm" />
-
+        	<!-- /TMPL_IF -->
+		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
 			<input type="submit" value="Print and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
             <!-- TMPL_LOOP Name="inputloop" -->
                 <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
@@ -120,6 +126,7 @@ function Dopop(link) {
                 <input type="hidden" name="diffBranch" value="<!-- TMPL_VAR Name="destbranch" -->" />
                 <input type="hidden" name="exemptfine" value="<!-- TMPL_VAR Name="exemptfine" -->" />
                 <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
+        	<!-- /TMPL_IF -->
                 </form>
 	</div>
     <!-- /TMPL_IF -->
@@ -146,7 +153,10 @@ function Dopop(link) {
         <!-- /TMPL_IF -->
 
         <form method="post" action="returns.pl" class="confirm">
+		<!-- TMPL_IF name="HoldButtonConfirm" -->
             <input type="submit" class="approve" value="Confirm" />
+        	<!-- /TMPL_IF -->
+		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
 			<input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
             <!-- TMPL_LOOP Name="inputloop" -->
                 <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
@@ -157,6 +167,7 @@ function Dopop(link) {
             <input type="hidden" name="exemptfine" value="<!-- TMPL_VAR Name="exemptfine" -->" />
             <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
             <input type="hidden" name="barcode" value="0" />
+        	<!-- /TMPL_IF -->
         </form>
 		</div>
     <!-- /TMPL_IF -->
@@ -235,13 +246,23 @@ function Dopop(link) {
         <!-- /TMPL_IF -->
         <form method="post" action="returns.pl" class="confirm">
             <!-- TMPL_IF name="transfertodo" -->
+		<!-- TMPL_IF name="HoldButtonConfirm" -->
                 <input type="submit" class="approve" value="Confirm hold and Transfer" />
+        	<!-- /TMPL_IF -->
+		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
                 <input type="submit" value="Print slip, Transfer, and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
+        	<!-- /TMPL_IF -->
             <!-- TMPL_ELSE -->
+		<!-- TMPL_IF name="HoldButtonConfirm" -->
                 <input type="submit" class="approve" value="Confirm hold" />
+        	<!-- /TMPL_IF -->
+		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
                 <input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
+        	<!-- /TMPL_IF -->
             <!-- /TMPL_IF -->
+		<!-- TMPL_IF name="HoldButtonIgnore" -->
                 <input type="submit" class="deny" value="Ignore" onclick="$('.dialog:visible').hide('slow'); $('#barcode').focus(); return false;" />
+            	<!-- /TMPL_IF -->
             <!-- TMPL_LOOP Name="inputloop" -->
 	<input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
 	<input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
