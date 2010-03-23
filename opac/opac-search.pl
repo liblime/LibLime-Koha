@@ -123,6 +123,24 @@ $template->param(
     searchdomainloop => GetBranchCategories(undef,'searchdomain'),
 );
 
+# add support for searching by shelving location
+my @shelvinglocsloop;
+my $selected=1;
+my $cnt2;
+my $shelflocations =GetAuthorisedValues("LOC");
+for my $thisloc (sort {$a->{'lib'} cmp $b->{'lib'}} @$shelflocations) {
+    my %row =(
+                number => $cnt2++,
+                ccl => 'loc',
+                code => $thisloc->{authorised_value},
+                selected => $selected,
+                description => $thisloc->{'lib'},
+                count5 => $cnt2 % 4,
+              );
+    	$selected = 0; # set to zero after first pass through
+    push @shelvinglocsloop, \%row;
+}
+$template->param(shelvinglocsloop => \@shelvinglocsloop);
 # load the Type stuff
 my $itemtypes = GetItemTypes;
 # the index parameter is different for item-level itemtypes
