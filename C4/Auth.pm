@@ -279,7 +279,6 @@ sub get_template_and_user {
             SyndeticsAwards              => C4::Context->preference("SyndeticsAwards"),
             SyndeticsSeries              => C4::Context->preference("SyndeticsSeries"),
 			SyndeticsCoverImageSize		 => C4::Context->preference("SyndeticsCoverImageSize"),
-                 );
             XSLTDetailsDisplay           => C4::Context->preference("XSLTDetailsDisplay"),
             XSLTResultsDisplay           => C4::Context->preference("XSLTResultsDisplay"),
             BranchesLoop                 => GetBranchesLoop(),
