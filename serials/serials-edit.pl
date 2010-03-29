@@ -121,6 +121,7 @@ my ($template, $loggedinuser, $cookie)
 
 my @serialdatalist;
 my %processedserialid;
+my $today = C4::Dates->new();
 foreach my $tmpserialid (@serialids){
     #filtering serialid for duplication
     #NEW serial should appear only once and are created afterwards
@@ -128,6 +129,7 @@ foreach my $tmpserialid (@serialids){
     my $data=GetSerialInformation($tmpserialid);
     $data->{publisheddate}=format_date($data->{publisheddate});
     $data->{planneddate}=format_date($data->{planneddate});
+    $data->{arriveddate}=$today->output('us');
     $data->{'editdisable'}=((HasSubscriptionExpired($data->{subscriptionid})&& $data->{'status1'})||$data->{'cannotedit'});
     push @serialdatalist,$data;
     $processedserialid{$tmpserialid}=1;
