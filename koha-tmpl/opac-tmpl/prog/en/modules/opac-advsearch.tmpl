@@ -131,6 +131,20 @@
 	</fieldset>
     </div>
 <!-- TMPL_IF NAME="expanded_options" -->
+    <div id="advsearch-shelvingloc" class="container">
+	<fieldset>
+    <legend>Limit to any of the following shelving locations:</legend>
+    <table>
+        <tr>
+      <!--TMPL_LOOP Name="shelvinglocsloop"-->
+        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->" name="limit" value="mc-<!-- TMPL_VAR NAME="ccl" -->:<!--TMPL_VAR Name="code" -->"/><label for="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->">
+        <!--TMPL_VAR Name="description" --></label></td>
+        <!-- TMPL_UNLESS name="count5" --><!-- TMPL_UNLESS name="__last__" --></tr><tr><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
+      <!--/TMPL_LOOP-->
+		</tr>
+    </table>
+	</fieldset>
+    </div>
     <!--TMPL_IF Name="usmarc"-->
         <!-- SUBTYPE LIMITS -->
             <div id="subtypes" class="container"><fieldset>

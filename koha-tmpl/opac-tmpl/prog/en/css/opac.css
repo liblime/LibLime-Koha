@@ -539,6 +539,29 @@ a.hold,
 	background-color : #F8F8EB;
 }
 
+/* the shelving location list in advanced search */
+#advsearch-shelvingloc table {
+	border-collapse : separate;
+	border-spacing : 3px;
+	border : 0px;
+	margin : 0px;
+	background-color : white;
+	border : 0px solid #D8DEB8;
+}
+
+#advsearch-shelvingloc table tr td {
+	background-color : #F8F8EB;
+	border : 0px;
+	margin : 0px;
+	width : 700px;
+}
+
+#advsearch-shelvingloc td {
+	font-size : 0.8em;
+	background-color : #F8F8EB;
+}
+
+
 body#advsearch #breadcrumbs {
 	line-height : 1px;
 	height : 1px;
