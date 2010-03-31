@@ -276,7 +276,9 @@ if ($mybranch) {
 }
 
 # these are the fields that will be substituted into <<item.content>>
-my @item_content_fields = split( /,/, $itemscontent );
+$itemscontent=~s/^\s*//;
+$itemscontent=~s/\s*$//;
+my @item_content_fields = split( /\s*,\s*/, $itemscontent );
 
 my $dbh = C4::Context->dbh();
 binmode( STDOUT, ":utf8" );

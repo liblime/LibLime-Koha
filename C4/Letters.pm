@@ -26,6 +26,7 @@ use C4::Members;
 use C4::Log;
 use C4::SMS;
 use C4::Debug;
+use C4::Dates qw/format_date/;
 use Encode;
 use Carp;
 
@@ -477,12 +478,17 @@ sub parseletter_sth {
         carp "ERROR: parseletter_sth() called without argument (table)";
         return;
     }
-    # check cache first
+    my $itemselect =
+    'SELECT barcode, itemcallnumber, location, holdingbranch, date_due, issuedate, author, title from items '
+    . 'left join issues on issues.itemnumber = items.itemnumber '
+    . 'LEFT JOIN biblio on items.biblionumber = biblio.biblionumber '
+    . 'WHERE items.itemnumber = ? ';
+# check cache first
     (defined $handles{$table}) and return $handles{$table};
     my $query = 
     ($table eq 'biblio'       ) ? "SELECT * FROM $table WHERE   biblionumber = ?"                      :
     ($table eq 'biblioitems'  ) ? "SELECT * FROM $table WHERE   biblionumber = ?"                      :
-    ($table eq 'items'        ) ? "SELECT * FROM $table WHERE     itemnumber = ?"                      :
+    ($table eq 'items'        ) ? $itemselect :
     ($table eq 'reserves'     ) ? "SELECT * FROM $table WHERE borrowernumber = ? and biblionumber = ?" :
     ($table eq 'borrowers'    ) ? "SELECT * FROM $table WHERE borrowernumber = ?"                      :
     ($table eq 'branches'     ) ? "SELECT * FROM $table WHERE     branchcode = ?"                      :
@@ -504,11 +510,18 @@ sub parseletter {
         carp "ERROR: parseletter() 1st argument 'letter' empty";
         return;
     }
-    # 	warn "Parseletter : ($letter, $table, $pk ...)";
+    #	warn "Parseletter : ($letter, $table, $pk ...)";
     my $sth = parseletter_sth($table);
     unless ($sth) {
         warn "parseletter_sth('$table') failed to return a valid sth.  No substitution will be done for that table.";
         return;
+    }
+    my $check_in_notice;
+    if ($table eq 'items') {
+        if ($pk2 && $pk2 eq 'CHECKIN') {
+            $check_in_notice = 1;
+        }
+        $pk2 = undef;
     }
     if ( $pk2 ) {
         $sth->execute($pk, $pk2);
@@ -519,14 +532,36 @@ sub parseletter {
     my $values = $sth->fetchrow_hashref;
 
     # and get all fields from the table
-    my $columns = C4::Context->dbh->prepare("SHOW COLUMNS FROM $table");
-    $columns->execute;
-    while ( ( my $field ) = $columns->fetchrow_array ) {
-        my $replacefield = "<<$table.$field>>";
-        my $replacedby   = $values->{$field} || '';
-        ($letter->{title}  ) and $letter->{title}   =~ s/$replacefield/$replacedby/g;
-        ($letter->{content}) and $letter->{content} =~ s/$replacefield/$replacedby/g;
+    if ($table ne 'items' ) {
+        my $columns = C4::Context->dbh->prepare("SHOW COLUMNS FROM $table");
+        $columns->execute;
+        while ( ( my $field ) = $columns->fetchrow_array ) {
+            my $replacefield = "<<$table.$field>>";
+            my $replacedby   = $values->{$field} || '';
+            ($letter->{title}  ) and $letter->{title}   =~ s/$replacefield/$replacedby/g;
+            ($letter->{content}) and $letter->{content} =~ s/$replacefield/$replacedby/g;
+        }
     }
+    if ($table eq 'items') {
+        if ($check_in_notice) {
+            # need to get dates from old_issues
+            my $dates = C4::Context->dbh->selectrow_arrayref(
+'SELECT issuedate, date_due FROM old_issues where itemnumber = ? AND DATE(timestamp) = CURDATE() ORDER BY timestamp DESC LIMIT 1',
+                {}, $pk);
+            $values->{issuedate} = ${ $dates}[0];
+            $values->{date_due}  = ${ $dates}[1];
+        }
+        $values->{issuedate} = format_date($values->{issuedate});
+        $values->{date_due}  = format_date($values->{date_due});
+        $values->{content} = join "\t", $values->{issuedate}, $values->{title}, $values->{barcode}, $values->{author};
+        for my $field ( qw( issuedate date_due barcode holdingbranch location itemcallnumber content)) {
+            my $replacefield = "<<$table.$field>>";
+            my $replacedby   = $values->{$field} || '';
+            ($letter->{title}  ) and $letter->{title}   =~ s/$replacefield/$replacedby/g;
+            ($letter->{content}) and $letter->{content} =~ s/$replacefield/$replacedby/g;
+        }
+    }
+
 }
 
 =head2 EnqueueLetter

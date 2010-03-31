@@ -55,6 +55,7 @@ use C4::Members;
 use C4::Members::Messaging;
 use C4::Overdues;
 use C4::Dates qw/format_date/;
+use DBI;
 
 
 # These are defaults for command line options.
@@ -150,7 +151,7 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
         
         if ( $borrower_preferences->{'wants_digest'} ) {
             # cache this one to process after we've run through all of the items.
-            $due_digest->{$upcoming->{'borrowernumber'}}++;
+            push @{$due_digest->{$upcoming->{borrowernumber}}}, $upcoming->{itemnumber};
         } else {
             my $biblio = C4::Biblio::GetBiblioFromItemNumber( $upcoming->{'itemnumber'} );
             my $letter_type = 'DUE';
@@ -179,7 +180,7 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
 
         if ( $borrower_preferences->{'wants_digest'} ) {
             # cache this one to process after we've run through all of the items.
-            $upcoming_digest->{$upcoming->{'borrowernumber'}}++;
+            push @{$due_digest->{$upcoming->{borrowernumber}}}, $upcoming->{itemnumber};
         } else {
             my $biblio = C4::Biblio::GetBiblioFromItemNumber( $upcoming->{'itemnumber'} );
             my $letter_type = 'PREDUE';
@@ -231,7 +232,9 @@ SELECT biblio.*, items.*, issues.*
     AND (TO_DAYS(date_due)-TO_DAYS(NOW()) = ?)
 END_SQL
 
-PATRON: while ( my ( $borrowernumber, $count ) = each %$upcoming_digest ) {
+PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
+    my @items = @{$upcoming_digest->{$borrowernumber}};
+    my $count = scalar @items;
     my $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $borrowernumber,
                                                                                   message_name   => 'advance notice' } );
     # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
@@ -267,7 +270,9 @@ PATRON: while ( my ( $borrowernumber, $count ) = each %$upcoming_digest ) {
 }
 
 # Now, run through all the people that want digests and send them
-PATRON: while ( my ( $borrowernumber, $count ) = each %$due_digest ) {
+PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
+    my @items = @{$upcoming_digest->{$borrowernumber}};
+    my $count = scalar @items;
     my $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $borrowernumber,
                                                                                   message_name   => 'item due' } );
     # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
