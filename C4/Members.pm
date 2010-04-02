@@ -256,6 +256,20 @@ AND attribute like ?
     $data = $sth->fetchall_arrayref({});
 
     $sth->finish;
+
+    $query = "SELECT borrowers.*, categories.* FROM borrowers 
+    LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
+    LEFT JOIN statistics ON borrowers.borrowernumber = statistics.borrowernumber
+    WHERE statistics.type = 'card_replaced' AND statistics.other = ? GROUP BY statistics.other";
+    $sth = $dbh->prepare( $query );
+    $sth->execute( $searchstring );
+    my $prevcards_data = $sth->fetchall_arrayref({});
+    foreach my $row ( @$prevcards_data ) {
+      $row->{'PreviousCardnumber'} = 1;
+    }
+        
+    $data = [ @$prevcards_data, @$data ];
+
     return ( scalar(@$data), $data );
 }
 
@@ -584,6 +598,13 @@ true on success, or false on failure
 sub ModMember {
     my (%data) = @_;
     my $dbh = C4::Context->dbh;
+    
+    my $member = GetMemberDetails( $data{'borrowernumber'} );
+    
+    if ( $member->{'cardnumber'} ne  $data{'cardnumber'} ) {
+      C4::Stats::UpdateStats( C4::Context->userenv->{branch}, 'card_replaced', '', $member->{'cardnumber'}, '', '', $data{'borrowernumber'} );
+    }
+
     my $iso_re = C4::Dates->new()->regexp('iso');
     foreach (qw(dateofbirth dateexpiry dateenrolled)) {
         if (my $tempdate = $data{$_}) {                                 # assignment, not comparison

@@ -221,8 +221,9 @@ if ($findborrower) {
     }
     elsif ( $#borrowers == 0 ) {
         $query->param( 'borrowernumber', $borrowers[0]->{'borrowernumber'} );
-        $query->param( 'barcode',           '' );
+        $query->param( 'barcode', '' );
         $borrowernumber = $borrowers[0]->{'borrowernumber'};
+        $template->param( PreviousCardnumber => $borrowers[0]->{'PreviousCardnumber'} );
     }
     else {
         $borrowerslist = \@borrowers;

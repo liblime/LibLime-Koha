@@ -395,6 +395,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
     <!-- /TMPL_IF -->
 
     <label for="barcode">Checking out to <!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR name="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->) </label>
+    <!-- TMPL_IF NAME="PreviousCardnumber" --><div><span class="circ-hlt">Warning: Scanned Old Card</span></div><!-- /TMPL_IF -->
 	<div class="hint">Enter item barcode:</div>
 
 	<input type="text" name="barcode" id="barcode" class="barcode focus" size="14" /> <input type="submit" value="Check Out" />
