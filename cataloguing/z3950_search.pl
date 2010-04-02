@@ -73,7 +73,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user({
         query           => $input,
         type            => "intranet",
         authnotrequired => 1,
-        flagsrequired   => { catalogue => 1 },
+        flagsrequired   => { catalogue => '*' },
         debug           => 1,
 });
 

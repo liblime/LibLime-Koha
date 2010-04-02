@@ -51,7 +51,7 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
         query           => $input,
         type            => "intranet",
         authnotrequired => 0,
-        flagsrequired   => { reserveforothers => 1 },
+        flagsrequired   => { reserveforothers => '*' },
     }
 );
 
@@ -434,22 +434,23 @@ foreach my $biblionumber (@biblionumbers) {
 
     # existingreserves building
     my @reserveloop;
-    ( $count, $reserves ) = GetReservesFromBiblionumber($biblionumber,1);
-    foreach my $res ( sort { 
-            my $a_found = $a->{found} || '';
-            my $b_found = $a->{found} || '';
-            $a_found cmp $b_found; 
-        } @$reserves ) {
+    my $populate_option_loop = $template->param('CAN_user_reserveforothers_reorder_holds');
+    ( $count, $reserves ) = GetReservesFromBiblionumber($biblionumber);
+    foreach my $res ( sort { $a->{found} cmp $b->{found} } @$reserves ) {
         my %reserve;
         my @optionloop;
-        for ( my $i = 1 ; $i <= $totalcount ; $i++ ) {
-            push(
-                 @optionloop,
-                 {
-                  num      => $i,
-                  selected => ( $i == $res->{priority} ),
-                 }
+        if ($populate_option_loop ) {
+            for ( my $i = 1 ; $i <= $totalcount ; $i++ ) {
+                push(
+                    @optionloop,
+                    {
+                        num      => $i,
+                        selected => ( $i == $res->{priority} ),
+                    }
                 );
+            }
+        } else {
+            push @optionloop, { num => $res->{priority}, selected => 1, };
         }
         
         if ( defined $res->{'found'} && $res->{'found'} eq 'W' ) {

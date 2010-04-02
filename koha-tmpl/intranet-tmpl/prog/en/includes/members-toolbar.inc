@@ -56,9 +56,13 @@ function update_child() {
 	    ];
 	
 		var moremenu = [
+            <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 			{ text: _("Renew Patron"),  onclick: { fn: confirm_reregistration } },
+            <!-- /TMPL_IF -->
 			{ text: _("Set Permissions"), url: "/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->"<!-- TMPL_UNLESS NAME="CAN_user_permissions" -->, disabled: true<!-- /TMPL_UNLESS -->},
-			{ text: _("Delete"), onclick: { fn: confirm_deletion}<!-- TMPL_UNLESS NAME="CANDELETEUSER" -->, disabled: true<!-- /TMPL_UNLESS --> },
+            <!-- TMPL_IF NAME="CAN_user_borrowers_delete_borrowers" -->
+			{ text: _("Delete"), onclick: { fn: confirm_deletion }<!-- TMPL_UNLESS NAME="CANDELETEUSER" -->, disabled: true<!-- /TMPL_UNLESS --> },
+            <!-- /TMPL_IF -->
 			{ text: _("Update Child to Adult Patron") , onclick: { fn: update_child }<!-- TMPL_UNLESS NAME="is_child" -->, disabled: true<!-- /TMPL_UNLESS -->}
 		];
 
@@ -79,21 +83,26 @@ function update_child() {
 	    });
 
 	    <!-- TMPL_IF name="adultborrower" -->new YAHOO.widget.Button("addchild");<!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 	    new YAHOO.widget.Button("editpatron");
+        <!-- /TMPL_IF -->
 	    new YAHOO.widget.Button("addnote");
 	    new YAHOO.widget.Button("changepassword");
 	    new YAHOO.widget.Button("printslip");
 		new YAHOO.widget.Button("printpage");
-	    new YAHOO.widget.Button("renewpatron");		 
+		new YAHOO.widget.Button("renewpatron");
 		new YAHOO.widget.Button("patronflags");
 		new YAHOO.widget.Button("deletepatron");
+        <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 		new YAHOO.widget.Button("updatechild");
+        <!-- /TMPL_IF -->
 	}
 
 	//]]>
 
 	</script>
 	<ul class="toolbar">
+    <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 	<!-- TMPL_IF NAME="category_type" -->
             <!--TMPL_IF NAME="guarantor"-->
                 <li><a id="editpatron" href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;guarantorid=<!-- TMPL_VAR NAME="guarantorborrowernumber" -->&amp;category_type=<!-- TMPL_VAR NAME="category_type"-->">
@@ -107,10 +116,18 @@ function update_child() {
                 <li><a id="editpatron" href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;category_type=A">Edit</a></li>
             <!-- /TMPL_IF -->
         <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="CAN_user_borrowers_add_borrowers" -->
 	<!-- TMPL_IF name="adultborrower" --><li><a id="addchild" href="/cgi-bin/koha/members/memberentry.pl?op=add&amp;guarantorid=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;category_type=C">Add child</a></li><!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 <!--	<li><a id="addnote" href="/cgi-bin/koha/members/addnotes.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Add Note</a></li> -->
 	<li><a id="changepassword" href="/cgi-bin/koha/members/member-password.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Change Password</a></li>
+    <!-- /TMPL_IF -->
 	<li id="printmenuc"><a id="printpage" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=page">Print Page</a></li>
 	<li><a id="printslip" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=slip">Print Slip</a></li>
-	<li id="moremenuc"><a id="renewpatron" href="/cgi-bin/koha/members/moremember.pl?reregistration=y&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Renew Account</a></li><!-- TMPL_IF NAME="CAN_user_permissions" --><li><a id="patronflags" href="/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Set Permissions</a></li><!-- /TMPL_IF --><li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li>
+	<li id="moremenuc"><a id="renewpatron" href="/cgi-bin/koha/members/moremember.pl?reregistration=y&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Renew Account</a></li><!-- TMPL_IF NAME="CAN_user_permissions" --><li><a id="patronflags" href="/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Set Permissions</a></li><!-- /TMPL_IF -->
+    <!-- TMPL_IF name="CAN_user_borrowers_delete_borrowers" -->
+    <li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li>
+    <!-- /TMPL_IF -->
 </ul></div>

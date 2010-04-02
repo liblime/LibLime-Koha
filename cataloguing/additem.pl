@@ -80,7 +80,7 @@ my ($template, $loggedinuser, $cookie)
                  query => $input,
                  type => "intranet",
                  authnotrequired => 0,
-                 flagsrequired => {editcatalogue => 1},
+                 flagsrequired => {editcatalogue => '*'},
                  debug => 1,
                  });
 

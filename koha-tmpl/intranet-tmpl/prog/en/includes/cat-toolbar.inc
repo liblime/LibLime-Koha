@@ -66,15 +66,25 @@ function confirm_deletion() {
 
 	function yuiToolbar() {
 		var newmenu = [
+        <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
 			{text: _("New Record"), url: "/cgi-bin/koha/cataloguing/addbiblio.pl" },
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
 			{text: _("New Item"), url: "/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#additema" },
+        <!-- /TMPL_IF -->
 			{text: _("New Subscription"), url: "/cgi-bin/koha/serials/subscription-add.pl?biblionumber_for_new_subscription=<!-- TMPL_VAR NAME="biblionumber" -->"},
 		];
 	
 	    var editmenu = [
+        <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_bibliographic" -->
 	        { text: _("Edit Record"), url: "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=&amp;op=" },
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
 	        { text: _("Edit Items"), url: "/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" },
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
 	        { text: _("Edit as New (Duplicate)"), url: "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=&amp;op=duplicate" },
+        <!-- /TMPL_IF -->
 			{ text: _("Delete Record"), onclick: {fn: confirm_deletion }<!-- TMPL_IF NAME="count" -->,id:'disabled'<!-- /TMPL_IF --> }
 	    ];
 		
@@ -146,17 +156,28 @@ function confirm_deletion() {
 
 <ul class="toolbar">
 	<!-- TMPL_IF NAME="CAN_user_editcatalogue" -->
+	<!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
 	<li id="newmenuc"><a id="newbiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl">New Record</a></li>
+	<!-- /TMPL_IF -->
+	<!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
 	<li><a id="newitem" href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">New Item</a></li>
+	<!-- /TMPL_IF -->
 	<li><a id="newsub" href="/cgi-bin/koha/serials/subscription-add.pl?biblionumber_for_new_subscription=<!-- TMPL_VAR NAME="biblionumber" -->">New Subscription</a></li>
 	<li id="editmenuc"><a id="editbiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=<!--TMPL_VAR Name="current_framework" -->&amp;op=">Edit Record</a></li>
+	<!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
 	<li><a id="edititems" href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Edit Items</a></li>
+	<!-- /TMPL_IF -->
+	<!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
 	<li><a id="duplicatebiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=<!--TMPL_VAR Name="current_framework" -->&amp;op=duplicate">Duplicate Record</a></li>
+	<!-- /TMPL_IF -->
+	<!-- TMPL_IF NAME="CAN_user_editcatalogue_delete_bibliographic" -->
 	<li><a id="deletebiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl?op=delete&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Delete</a></li>
-	<!-- /TMPL_IF -->	
+	<!-- /TMPL_IF -->
+	<!-- /TMPL_IF -->
 	<li id="addtoshelfc"><a id="addtoshelf" href="/cgi-bin/koha/virtualshelves/addbybiblionumber.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Add to shelf</a></li>
 	<li id="printbiblioc"><a id="printbiblio" href="/cgi-bin/koha/catalogue/detailprint.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Print</a></li>
 	<!-- TMPL_IF NAME="CAN_user_reserveforothers" -->
+	<!-- TMPL_IF NAME="CAN_user_reserveforothers_add_holds" -->
         <!-- TMPL_UNLESS name="bi_notforloan" -->
 	<!-- TMPL_UNLESS NAME="norequests" --><li><a id="placehold" href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Place Hold</a></li><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
 	<!-- /TMPL_IF -->

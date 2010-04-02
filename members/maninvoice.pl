@@ -43,7 +43,10 @@ my $add=$input->param('add');
 if ($add){
 #  print $input->header;
     my $barcode=$input->param('barcode');
-    my $itemnum = GetItemnumberFromBarcode($barcode) if $barcode;
+	my $itemnum;
+    if ($barcode) {
+        $itemnum = GetItemnumberFromBarcode($barcode);
+    }
     my $desc=$input->param('desc');
     my $amount=$input->param('amount');
     my $type=$input->param('type');
@@ -54,7 +57,7 @@ if ($add){
 					query => $input,
 					type => "intranet",
 					authnotrequired => 0,
-					flagsrequired => {borrowers => 1},
+					flagsrequired => {borrowers => '*'},
 					debug => 1,
 					});
 		if ($error =~ /FOREIGN KEY/ && $error =~ /itemnumber/){
@@ -74,7 +77,7 @@ if ($add){
 					query => $input,
 					type => "intranet",
 					authnotrequired => 0,
-					flagsrequired => {borrowers => 1, updatecharges => 1},
+					flagsrequired => {borrowers => '*', updatecharges => '*'},
 					debug => 1,
 					});
 					
@@ -90,7 +93,7 @@ if ($add){
 
     if ( $data->{'category_type'} eq 'C') {
         my  ( $catcodes, $labels ) =  GetborCatFromCatType( 'A', 'WHERE category_type = ?' );
-        my $cnt = scalar(@$catcodes);
+        my $cnt = scalar @{$catcodes};
         $template->param( 'CATCODE_MULTI' => 1) if $cnt > 1;
         $template->param( 'catcode' =>    $catcodes->[0])  if $cnt == 1;
     }
