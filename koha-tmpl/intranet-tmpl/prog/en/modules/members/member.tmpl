@@ -1,12 +1,65 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Patrons <!-- TMPL_IF NAME="searching" -->&rsaquo; Search Results<!-- /TMPL_IF --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/borrower-basket.js"></script>
+
+<script type="text/javascript" language="javascript">
+    var MSG_BASKET_EMPTY = _("Your cart is currently empty");                                   
+    var MSG_RECORD_IN_BASKET = _("This item is already in your cart");
+    var MSG_RECORD_ADDED = _("This item has been added to your cart");
+    var MSG_NRECORDS_ADDED = _(" item(s) added to your cart");
+    var MSG_NRECORDS_IN_BASKET = _("already in your cart");   
+    var MSG_NO_RECORD_SELECTED = _("No item was selected");   
+    var MSG_NO_RECORD_ADDED = _("No item was added to your cart");
+    var MSG_CONFIRM_DEL_BASKET = _("Are you sure you want to empty your cart?");
+    var MSG_CONFIRM_DEL_RECORDS = _("Are you sure you want to remove the selected items?");                 
+</script>
+
+<script language="JavaScript" type="text/javascript">
+//==========================================
+// Check All boxes
+//==========================================
+function CheckAll(fmobj) {
+  for (var i=0;i<fmobj.elements.length;i++) {
+    var e = fmobj.elements[i];
+    if ( (e.name != 'allbox') && (e.type=='checkbox') && (!e.disabled) ) {
+      e.checked = fmobj.allbox.checked;
+    }
+  }
+}
+
+//==========================================
+// Check all or uncheck all?
+//==========================================
+function CheckCheckAll(fmobj) {
+  var TotalBoxes = 0;
+  var TotalOn = 0;
+  for (var i=0;i<fmobj.elements.length;i++) {
+    var e = fmobj.elements[i];
+    if ((e.name != 'allbox') && (e.type=='checkbox')) {
+      TotalBoxes++;
+      if (e.checked) {
+       TotalOn++;
+      }
+    }
+  }
+  if (TotalBoxes==TotalOn) {
+    fmobj.allbox.checked=true;
+  }
+  else {
+   fmobj.allbox.checked=false;
+  }
+}
+
+</script>
+
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="patron-search.inc" -->
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <!-- TMPL_IF NAME="searching" --><a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; Search Results<!-- TMPL_ELSE -->Patrons<!-- /TMPL_IF --></div>
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <!-- TMPL_IF NAME="searching" --><a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; Search Results<!-- TMPL_ELSE -->Patrons<!-- /TMPL_IF -->
+</div>
 
 <div id="doc" class="yui-t7">
    
@@ -14,6 +67,18 @@
 	<div id="yui-main">
 	<div class="yui-g">
 	
+<span id="cmspan">
+  <a href="#" id="cartmenulink" class="">
+    <i></i>
+    <span>
+      <i></i><span></span>
+      <img src="/opac-tmpl/prog/images/cart.gif" width="14" height="14" alt="" border="0" />
+      Borrower Cart
+    <span id="basketcount"></span>
+    </span>
+  </a>
+</span>
+
 <!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
 
 
@@ -50,10 +115,14 @@
 
 <!-- TMPL_IF NAME="resultsloop" -->
    <div id="searchheader"> <h3>Results <!-- TMPL_VAR Name ="from" --> to <!-- TMPL_VAR Name ="to" --> of <!-- TMPL_VAR Name ="numresults" --> found for '<span class="ex"><!-- TMPL_VAR NAME="member" --></span>'</h3></div>
-<div class="searchresults">
 
+   <p><button type="submit" class="submit" onClick="addMultiple();" >Add Selected Borrowers To Cart</button></p>
+
+<div class="searchresults">
+<form name="bookbag_form" id="bookbag_form" >
     <table style="width:100%">
     <tr>
+    <th><input style="border:inset 1px;" name="allbox" type="checkbox" value="Check All" onclick="CheckAll(document.bookbag_form);" /></th>
     <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=cardnumber">Card</a></th>
     <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=surname">Name</a></th>
     <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=borrowers.categorycode">Cat</a></th>
@@ -62,8 +131,10 @@
     <th>OD/Issues</th>
     <th>Fines</th>
     <th>Circ note</th>
-	<th>&nbsp;</th>
+    <th>&nbsp;</th>
+    <th>&nbsp;</th>
     </tr>
+
     <!-- TMPL_LOOP NAME="resultsloop" -->
     <!-- TMPL_IF name="overdue" -->
     <tr class="problem">
@@ -74,6 +145,7 @@
     <tr>
     <!-- /TMPL_UNLESS -->
     <!-- /TMPL_IF -->
+    <td><input type="checkbox" id="bor<!-- TMPL_VAR NAME="borrowernumber" -->" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" title="Click to add to Borrower Cart" /></td>
     <td><!-- TMPL_VAR NAME="cardnumber" --></td>
     <td style="white-space: nowrap;"><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR NAME="firstname" --></a> <br /> <!-- TMPL_VAR NAME="address" --><!-- TMPL_IF NAME="address2" --><br /><!-- TMPL_VAR NAME="address2" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="city" --><br /><!-- TMPL_VAR NAME=city --><!-- /TMPL_IF --><!-- TMPL_IF NAME="zipcode" -->  <!-- TMPL_VAR NAME="zipcode" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="country" -->, <!-- TMPL_VAR NAME="country" --><!-- /TMPL_IF --></td>
     <td><!-- TMPL_VAR NAME="category_description" --> (<!-- TMPL_VAR name="category_type" -->)</td>
@@ -82,6 +154,7 @@
     <td><!-- TMPL_IF "overdues" --><span class="overdue"><strong><!-- TMPL_VAR NAME="overdues" --></strong></span><!-- TMPL_ELSE --><!-- TMPL_VAR NAME="overdues" --><!-- /TMPL_IF -->/<!-- TMPL_VAR NAME="issues" --></td>
     <td><!-- TMPL_VAR NAME="fines" --></td>
     <td><!-- TMPL_VAR NAME="borrowernotes" --></td>
+    <td><a class="addtocart" href="#" onclick="addRecord('<!-- TMPL_VAR NAME="borrowernumber" -->'); return false;">Add&nbsp;to&nbsp;Cart</a></td>
 	<td><!-- TMPL_IF NAME="category_type" -->
             <a href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;category_type=<!-- TMPL_VAR NAME="category_type"-->">Edit</a>
 <!-- TMPL_ELSE --> <!-- try with categorycode if no category_type -->
@@ -93,6 +166,7 @@
 <!-- /TMPL_IF --></td>
     </tr>
     <!-- /TMPL_LOOP -->
+</form>
     </table>
 	<div class="pages"><!--TMPL_IF Name="multipage"--><!--TMPL_VAR Name="paginationbar" --><!--/TMPL_IF--></div>
 </div>
@@ -100,6 +174,16 @@
 <!-- TMPL_IF NAME="searching" -->
 No results found
 <!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
+
+<!-- TMPL_IF NAME="ShowPatronSearchBySQL" -->
+	<br/>
+	<h3>Search borrowers by SQL</h3>
+	<form action="/cgi-bin/koha/members/member.pl" method="post" name="borrower-sql-search">
+		<label for="sqlsearch">SELECT * FROM borrowers LEFT JOIN categories ON borrowers.categorycode = categories.categorycode WHERE</label>
+		<textarea name="sqlsearch" rows='5' cols='100'></textarea>
+		<input name="sqlsearch" type="submit" value="Search" />
+	</form>
 <!-- /TMPL_IF -->
 
 </div>
