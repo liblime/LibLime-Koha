@@ -1248,7 +1248,7 @@ sub get_session {
 
 sub checkpw {
 
-    my ( $dbh, $userid, $password ) = @_;
+    my ( $dbh, $userid, $password, $bypass_userenv ) = @_;
     if ($ldap) {
         $debug and print STDERR "## checkpw - checking LDAP\n";
         my ($retval,$retcard) = checkpw_ldap(@_);    # EXTERNAL AUTH
@@ -1268,7 +1268,7 @@ sub checkpw {
         if ( md5_base64($password) eq $md5password ) {
 
             C4::Context->set_userenv( "$borrowernumber", $userid, $cardnumber,
-                $firstname, $surname, $branchcode, $flags );
+                $firstname, $surname, $branchcode, $flags ) unless ( $bypass_userenv );
             return 1, $cardnumber;
         }
     }
@@ -1284,7 +1284,7 @@ sub checkpw {
         if ( md5_base64($password) eq $md5password ) {
 
             C4::Context->set_userenv( $borrowernumber, $userid, $cardnumber,
-                $firstname, $surname, $branchcode, $flags );
+                $firstname, $surname, $branchcode, $flags ) unless ( $bypass_userenv );
             return 1, $userid;
         }
     }
