@@ -111,6 +111,7 @@ BEGIN {
 		&TransformHtmlToXml
 		&PrepareItemrecordDisplay
 		&GetNoZebraIndexes
+		&GetAvailableItemsCount
 	);
 }
 
@@ -433,6 +434,25 @@ sub DelBiblio {
     logaction("CATALOGUING", "DELETE", $biblionumber, "") if C4::Context->preference("CataloguingLog");
 
     return;
+}
+
+sub GetAvailableItemsCount {
+  my ( $biblionumber ) = @_;
+  warn "GetAvailableItemsCount( $biblionumber )";
+  my $dbh = C4::Context->dbh;
+  
+  my $query = "SELECT COUNT( * ) AS ItemsAvailableCount
+              FROM items
+              LEFT JOIN issues ON issues.itemnumber = items.itemnumber
+              WHERE issues.timestamp IS NULL
+              AND items.biblionumber = ?";
+  my $sth = $dbh->prepare( $query );
+  $sth->execute( $biblionumber );
+  
+  my $row = $sth->fetchrow_hashref();
+  my $items_available_count = $row->{'ItemsAvailableCount'};
+  
+  return $items_available_count;
 }
 
 =head2 LinkBibHeadingsToAuthorities

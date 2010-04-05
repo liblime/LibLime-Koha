@@ -598,7 +598,8 @@ sub checkauth {
             $userid    = undef;
             $sessionID = undef;
         }
-        elsif ( $ip ne $ENV{'REMOTE_ADDR'} ) {
+        elsif ( 0 ) {
+#        elsif ( $ip ne $ENV{'REMOTE_ADDR'} ) {
             # Different ip than originally logged in from
             $info{'oldip'}        = $ip;
             $info{'newip'}        = $ENV{'REMOTE_ADDR'};

@@ -121,13 +121,15 @@ if ($cardnumber) {
 #   we check the reserves of the borrower, and if he can reserv a document
 # FIXME At this time we have a simple count of reservs, but, later, we could improve the infos "title" ...
 
-    my $number_reserves =
-      GetReserveCount( $borrowerinfo->{'borrowernumber'} );
-
+  my $number_reserves = GetReserveCount( $borrowerinfo->{'borrowernumber'} );    
+  if ( ! C4::Context->preference('UseGranularMaxHolds') ) {
     if ( $number_reserves > C4::Context->preference('maxreserves') ) {
-		$warnings = 1;
-        $maxreserves = 1;
+      $warnings = 1;
+      $maxreserves = 1;
     }
+  }
+
+    
 
     # we check the date expiry of the borrower (only if there is an expiry date, otherwise, set to 1 (warn)
     my $expiry_date = $borrowerinfo->{dateexpiry};
@@ -213,6 +215,37 @@ if ($multihold) {
 
 my @biblioloop = ();
 foreach my $biblionumber (@biblionumbers) {
+
+    my $number_reserves = GetReserveCount( $borrowerinfo->{'borrowernumber'} );    
+    if ( C4::Context->preference('UseGranularMaxHolds') ) {
+    	my $itemtype;
+    	$sth = $dbh->prepare("SELECT itemtype FROM biblioitems WHERE biblionumber = ?");
+	$sth->execute($biblionumber);
+	($itemtype) = $sth->fetchrow_array;
+                                                
+    	my $irule = GetIssuingRule($borrowerinfo->{'categorycode'}, $itemtype, C4::Context->userenv->{'branch'} );
+    	my $max_holds = $irule->{'max_holds'};    	
+    	if ( $max_holds && $number_reserves >= $max_holds ) {
+    	  $template->param( warnings => 1 );
+    	  $template->param( maxreserves => 1);
+    	  $template->param( override_required => 1 );
+	}
+    }
+
+  if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
+    if ( GetAvailableItemsCount( $biblionumber ) ) {
+      my $shelf_holds_today = GetReserveCount( $borrowerinfo->{'borrowernumber'}, my $today = 1, my $shelf_holds_only = 1 );
+      my $max_shelf_holds_per_day = C4::Context->preference('MaxShelfHoldsPerDay');
+
+      if ( $shelf_holds_today >= $max_shelf_holds_per_day ) {
+        $warnings = 1;
+        $template->param( 
+          override_required => 1,
+          max_shelf_holds_per_day => $max_shelf_holds_per_day
+        );
+      }
+    }	                    
+  }
 
     my %biblioloopiter = ();
 
