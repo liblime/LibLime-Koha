@@ -35,8 +35,8 @@ BEGIN {
 	@EXPORT = qw(
 		&recordpayment &makepayment &manualinvoice
 		&getnextacctno &reconcileaccount &getcharges &getcredits
-		&getrefunds &chargelostitem
 		&ReversePayment
+		&getrefunds &chargelostitem makepartialpayment
 	); # removed &fixaccounts
 }
 
@@ -205,6 +205,39 @@ sub makepayment {
     if ( $data->{'accounttype'} eq 'Rep' || $data->{'accounttype'} eq 'L' ) {
         returnlost( $borrowernumber, $data->{'itemnumber'} );
     }
+}
+
+# makepayment needs to be fixed to handle partials till then this separate subroutine
+# fills in
+sub makepartialpayment {
+    my ( $borrowernumber, $accountno, $amount, $user, $branch ) = @_;
+    if (!$amount || $amount < 0) {
+        return;
+    }
+    my $dbh = C4::Context->dbh;
+
+    my $nextaccntno = getnextacctno($borrowernumber);
+    my $newamtos    = 0;
+
+    my $data = $dbh->selectrow_hashref(
+        'SELECT * FROM accountlines WHERE  borrowernumber=? AND accountno=?',undef,$borrowernumber,$accountno);
+    my $new_outstanding = $data->{amountoutstanding} - $amount;
+
+    my $update = 'UPDATE  accountlines SET amountoutstanding = ?  WHERE   borrowernumber = ? '
+    . ' AND   accountno = ?';
+    $dbh->do( $update, undef, $new_outstanding, $borrowernumber, $accountno);
+
+    # create new line
+    my $insert = 'INSERT INTO accountlines (borrowernumber, accountno, date, amount, '
+    .  'description, accounttype, amountoutstanding) '
+    . ' VALUES (?, ?, now(), ?, ?, ?, 0)';
+
+    $dbh->do(  $insert, undef, $borrowernumber, $nextaccntno, $amount,
+        "Payment, thanks - $user", 'Pay');
+
+    UpdateStats( $user, 'payment', $amount, '', '', '', $borrowernumber, $accountno );
+
+    return;
 }
 
 =head2 getnextacctno

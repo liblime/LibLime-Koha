@@ -9,7 +9,7 @@
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; Pay Fines for <!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR name="surname" --></div>
 
 <div id="doc3" class="yui-t2">
-   
+
    <div id="bd">
 	<div id="yui-main">
 	<div class="yui-b">
@@ -44,13 +44,20 @@
 <tr>
 	<td>
 	<!-- TMPL_IF NAME="net_balance" -->
-	<select name="payfine<!-- TMPL_VAR name="i" -->">
+	<!--<select name="payfine<!-- TMPL_VAR name="i" -->">
 	<option value="no">Unpaid</option>
-	<option value="yes">Paid</option>
-	<option value="wo">Writeoff</option>
-	</select>
+	<option value="yes">Paid</option> -->
+    <input type="submit" name="pay_indiv<!-- TMPL_VAR name="i" -->"i value="Pay" />
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_writeoff_charges" -->
+    <input type="submit" name="wo_indiv<!-- TMPL_VAR name="i" -->"i value="Writeoff" />
+	<!--<option value="wo">Writeoff</option> -->
+    <!--  /TMPL_IF -->
+	<!--</select> -->
 	<!-- /TMPL_IF -->
+	<input type="hidden" name="line_id<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="i" -->" />
 	<input type="hidden" name="itemnumber<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="itemnumber" -->" />
+	<input type="hidden" name="description<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="description" -->" />
+	<input type="hidden" name="title<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="title" -->" />
 	<input type="hidden" name="accounttype<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="accounttype" -->" />
 	<input type="hidden" name="amount<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="amount" -->" />
 	<input type="hidden" name="out<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="amountoutstanding" -->" />
@@ -81,7 +88,16 @@
 	<td><!-- TMPL_VAR name="total" --></td>
 </tr>
 </table>
-<fieldset class="action"><input type="submit" name="submit"  value="Make Payment" class="submit" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset></form><!-- TMPL_ELSE --><p><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> has no outstanding fines.</p><!-- /TMPL_IF -->
+<!-- <p>On All Or Part Of The Total Sum Due:</p> -->
+<fieldset class="action">
+ <input type="submit" name="paycollect"  value="Pay Amount" class="submit" />
+<!-- TMPL_IF NAME="CAN_user_updatecharges_writeoff_charges" -->
+ <input type="submit" name="woall"  value="Writeoff All" class="submit" />
+<!-- /TMPL_IF -->
+ <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">
+  Cancel</a>
+</fieldset>
+</form><!-- TMPL_ELSE --><p><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> has no outstanding fines.</p><!-- /TMPL_IF -->
 </div></div>
 
 </div>
