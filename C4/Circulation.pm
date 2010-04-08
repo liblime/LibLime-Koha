@@ -1421,21 +1421,21 @@ sub AddReturn {
         return (0, { BadBarcode => $barcode }); # no barcode means no item or borrower.  bail out.
     }
     my $issue  = GetItemIssue($itemnumber);
-#   warn Dumper($iteminformation);
+#   warn Dumper($issue);
     if ($issue and $issue->{borrowernumber}) {
         $borrower = C4::Members::GetMemberDetails($issue->{borrowernumber})
             or die "Data inconsistency: barcode $barcode (itemnumber:$itemnumber) claims to be issued to non-existant borrowernumber '$issue->{borrowernumber}'\n"
                 . Dumper($issue) . "\n";
     } else {
         # find the borrower
-        if ( ( not $iteminformation->{borrowernumber} ) && $doreturn ) {
+        if ( ( not $issue->{borrowernumber} ) && $doreturn ) {
             $messages->{'NotIssued'} = $barcode;
             # even though item is not on loan, it may still
             # be transferred; therefore, get current branch information
-            my $curr_iteminfo = GetItem($iteminformation->{'itemnumber'});
-            $iteminformation->{'homebranch'} = $curr_iteminfo->{'homebranch'};
-            $iteminformation->{'holdingbranch'} = $curr_iteminfo->{'holdingbranch'};
-            $iteminformation->{'itemlost'} = $curr_iteminfo->{'itemlost'};
+            my $curr_iteminfo = GetItem($issue->{'itemnumber'});
+            $issue->{'homebranch'} = $curr_iteminfo->{'homebranch'};
+            $issue->{'holdingbranch'} = $curr_iteminfo->{'holdingbranch'};
+            $issue->{'itemlost'} = $curr_iteminfo->{'itemlost'};
             $doreturn = 0;
         }
     }
@@ -1494,13 +1494,13 @@ sub AddReturn {
             if ($returndate ) { # over ride in effect
                 MarkIssueReturned(
                     $borrower->{'borrowernumber'},
-                    $iteminformation->{'itemnumber'},
+                    $issue->{'itemnumber'},
                     $circControlBranch,
                     $returndate);
             } else {
                 MarkIssueReturned(
                     $borrower->{'borrowernumber'},
-                    $iteminformation->{'itemnumber'},
+                    $issue->{'itemnumber'},
                     $circControlBranch);
             }
             $messages->{'WasReturned'} = 1;    # FIXME is the "= 1" right?
