@@ -102,6 +102,7 @@ for (my $i=($startfrom-1)*$resultsperpage; $i < $to; $i++){
     cardnumber => $results->[$i]{'cardnumber'},
     surname => $results->[$i]{'surname'},
     firstname => $results->[$i]{'firstname'},
+    initials => $results->[$i]{'initials'},
     categorycode => $results->[$i]{'categorycode'},
     category_type => $results->[$i]{'category_type'},
     category_description => $results->[$i]{'description'},
@@ -151,5 +152,7 @@ $template->param(
         numresults      => $count,
         resultsloop     => \@resultsdata,
             );
+
+$template->param("showinitials" => C4::Context->preference('DisplayInitials'));
 
 output_html_with_http_headers $input, $cookie, $template->output;
