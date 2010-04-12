@@ -54,9 +54,10 @@ sub get_out ($$$) {
 # get borrower information ....
 my ( $borr ) = GetMemberDetails( $borrowernumber );
 
-# get branches and itemtypes
+# get branches and itemtypes and otheritemstatus
 my $branches = GetBranches();
 my $itemTypes = GetItemTypes();
+my $itemstatuses = GetOtherItemStatus();
 
 # There are two ways of calling this script, with a single biblio num
 # or multiple biblio nums.
@@ -410,6 +411,21 @@ foreach my $biblioNum (@biblionumbers) {
             $itemInfo->{backgroundcolor} = 'other';
         }
 
+        # Examine items.otherstatus and determine if it can be held
+        if ($itemInfo->{otherstatus}) {
+          foreach my $istatus (@$itemstatuses) {
+            if ($istatus->{statuscode} eq $itemInfo->{otherstatus}) {
+              $itemInfo->{otherstatus_description} = $istatus->{description};
+              $template->param(otherstatus_description => $itemInfo->{otherstatus_description});
+              if (!$istatus->{holdsallowed}) {
+                $itemInfo->{noresstatus} = 1;
+                $itemLoopIter->{noresstatus} = 1;
+              }
+              last;
+            }
+          }
+        }
+
         # Check of the transfered documents
         my ( $transfertwhen, $transfertfrom, $transfertto ) =
           GetTransfers($itemNum);
@@ -432,7 +448,7 @@ foreach my $biblioNum (@biblionumbers) {
             $policy_holdallowed = 0;
         }
 
-        if (IsAvailableForItemLevelRequest($itemNum) and $policy_holdallowed) {
+        if (IsAvailableForItemLevelRequest($itemNum) and $policy_holdallowed and not $itemInfo->{noresstatus}) {
             $itemLoopIter->{available} = 1;
             $numCopiesAvailable++;
         }

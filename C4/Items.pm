@@ -426,6 +426,7 @@ my %default_values_for_mod_from_marc = (
     location             => undef, 
     materials            => undef, 
     notforloan           => 0,
+    otherstatus          => undef,
     paidfor              => undef, 
     price                => undef, 
     replacementprice     => undef, 
@@ -1919,7 +1920,8 @@ sub _koha_new_item {
             uri = ?,
             enumchron           = ?,
             more_subfields_xml  = ?,
-            copynumber          = ?
+            copynumber          = ?,
+            otherstatus         = ?
           ";
     my $sth = $dbh->prepare($query);
    $sth->execute(
@@ -1956,6 +1958,7 @@ sub _koha_new_item {
             $item->{'enumchron'},
             $item->{'more_subfields_xml'},
             $item->{'copynumber'},
+            $item->{'otherstatus'}
     );
     my $itemnumber = $dbh->{'mysql_insertid'};
     if ( defined $sth->errstr ) {

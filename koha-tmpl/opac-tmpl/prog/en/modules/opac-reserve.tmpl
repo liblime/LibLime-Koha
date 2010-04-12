@@ -464,6 +464,9 @@
                                 <!-- TMPL_IF Name="notforloan" -->
                                   <span class="notforloan">Not for loan (<!-- TMPL_VAR NAME="notforloanvalue" -->)</span>
                                 <!-- /TMPL_IF -->
+                                <!-- TMPL_IF Name="noresstatus" -->
+                                  <span class="noresstatus">Current status can't be held.</span>
+                                <!-- /TMPL_IF -->
                                 <!-- TMPL_IF NAME="reservedate"-->
                                   <span class="waiting"><!-- TMPL_IF NAME="waitingdate" -->Waiting<!-- TMPL_ELSE -->On hold<!-- /TMPL_IF --> for patron 
                                     <!-- TMPL_IF NAME="waitingdate" -->at<!-- TMPL_ELSE -->expected at<!-- /TMPL_IF --> <!-- TMPL_VAR NAME="ExpectedAtLibrary" -->
