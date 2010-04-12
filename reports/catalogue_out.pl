@@ -155,9 +155,7 @@ sub calculate {
 		"SELECT $column as coltitle, count(items.itemnumber) AS coltitle_count FROM $tablename LEFT JOIN items ON items.homebranch=$column " :
 		"SELECT $column as coltitle, count(*)                AS coltitle_count FROM $tablename " ;
         if ($tablename eq 'branches') {
-			my $f = @$filters[0];
-            $f =~ s/\*/%/g;
-            $strsth2 .= " AND $column LIKE '$f' " ;
+            $strsth2 = AddCondition( $strsth2, $column, @$filters[0], 0 );
         }
         $strsth2 .=" GROUP BY $column ORDER BY $column ";	# needed for count
 		push @loopfilter, {crit=>'SQL', sql=>1, filter=>$strsth2};
@@ -191,16 +189,15 @@ sub calculate {
           WHERE       issues.itemnumber IS NULL
            AND    old_issues.itemnumber IS NULL
 	";
+    my @filter_params;
 	if ($filters->[0]) {
-    	$filters->[0]=~ s/\*/%/g;
-		push @exe_args, $filters->[0]; 
-    	$query .= " AND items.homebranch LIKE ?";
+        ( $query, @filter_params ) = AddCondition( $query, 'items.homebranch', $filters->[0] );
 	}
+    push @exe_args, @filter_params;
 	if ($filters->[1]) {
-    	$filters->[1]=~ s/\*/%/g;
-		push @exe_args, $filters->[1]; 
-    	$query .= " AND items.itype      LIKE ?";
+        ( $query, @filter_params ) = AddCondition( $query, 'items.itype', $filters->[1] );
 	}
+    push @exe_args, @filter_params;
 	if ($column) {
 		$query .= " AND $column = ? GROUP BY items.itemnumber, $column ";	# placeholder handled below
     } else {

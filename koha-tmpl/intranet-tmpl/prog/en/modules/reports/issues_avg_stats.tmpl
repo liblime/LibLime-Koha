@@ -3,6 +3,14 @@
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
 </head>
+<script src="<!-- TMPL_VAR NAME="themelang"-->/lib/jquery/plugins/jquery.asmselect.js" type="text/javascript"></script>
+<script type="text/javascript">
+    <!--
+    $( document ).ready( function () {
+        $( '#borcat, #itemtypes, #branch' ).asmSelect({useInput: true});
+    } );
+    // -->
+</script>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="cat-search.inc" -->

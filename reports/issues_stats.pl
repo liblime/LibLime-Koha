@@ -284,20 +284,13 @@ sub calculate {
 		$strsth .= " AND   dayname(datetime) ='".   $daysel ."' " if $daysel;
 		$strsth .= " AND monthname(datetime) ='". $monthsel ."' " if $monthsel;
 	} elsif ($linefilter[0]) {
-		$linefilter[0] =~ s/\*/%/g;
-		$strsth .= " AND $line LIKE ? ";
+        ( $strsth, @linefilter ) = AddCondition( $strsth, $line, $linefilter[0] );
 	}
 	$strsth .=" group by $linefield order by $lineorder ";
 	$debug and warn $strsth;
 	push @loopfilter, {crit=>'SQL =', sql=>1, filter=>$strsth};
 	my $sth = $dbh->prepare( $strsth );
-	if ((@linefilter) and ($linefilter[1])){
-		$sth->execute($linefilter[0],$linefilter[1]);
-	} elsif ($linefilter[0]) {
-		$sth->execute($linefilter[0]);
-	} else {
-		$sth->execute;
-	}
+    @linefilter ? $sth->execute(@linefilter) : $sth->execute;
 
 	while (my ($celvalue) = $sth->fetchrow) {
 		my %cell = (rowtitle => $celvalue, totalrow => 0); # we leave 'rowtitle' as hash key (used when filling the table), and add coltitle_display
@@ -358,20 +351,13 @@ sub calculate {
         $strsth2 .= " AND   dayname(datetime) ='". $daysel   ."' " if $daysel;
         $strsth2 .= " AND monthname(datetime) ='". $monthsel ."' " if $monthsel;
     } elsif ($colfilter[0]) {
-        $colfilter[0] =~ s/\*/%/g;
-        $strsth2 .= " AND $column LIKE ? " ;
+        ( $strsth2, @colfilter ) = AddCondition( $strsth2, $column, $colfilter[0] );
     }
 	$strsth2 .=" GROUP BY $colfield ORDER BY $colorder ";
 
 	my $sth2 = $dbh->prepare($strsth2);
 	push @loopfilter, {crit=>'SQL =', sql=>1, filter=>$strsth2};
-	if ((@colfilter) and ($colfilter[1])){
-		$sth2->execute($colfilter[0], $colfilter[1]);
-	} elsif ($colfilter[0]) {
-		$sth2->execute($colfilter[0]);
-	} else {
-		$sth2->execute;
-	}
+    @colfilter ? $sth2->execute( @colfilter ) : $sth2->execute;
 
 	while (my ($celvalue) = $sth2->fetchrow) {
 		my %cell = (coltitle => $celvalue); # we leave 'coltitle' as hash key (used when filling the table), and add coltitle_display
@@ -432,11 +418,11 @@ sub calculate {
 	@$filters = map {defined($_) and s/\*/%/g; $_} @$filters;
 	$strcalc .= " AND statistics.datetime > '"       . @$filters[0] ."'" if (@$filters[0] );
 	$strcalc .= " AND statistics.datetime < '"       . @$filters[1] ."'" if (@$filters[1] );
-	$strcalc .= " AND borrowers.categorycode LIKE '" . @$filters[2] ."'" if (@$filters[2] );
-	$strcalc .= " AND statistics.itemtype LIKE '"    . @$filters[3] ."'" if (@$filters[3] );
-	$strcalc .= " AND statistics.branch LIKE '"      . @$filters[4] ."'" if (@$filters[4] );
-	$strcalc .= " AND items.ccode LIKE '"            . @$filters[5] ."'" if (@$filters[5] );
-	$strcalc .= " AND items.location LIKE '"         . @$filters[6] ."'" if (@$filters[6] );
+	$strcalc = AddCondition( $strcalc, 'borrowers.categorycode', @$filters[2], 0 ) if (@$filters[2] );
+	$strcalc = AddCondition( $strcalc, 'statistics.itemtype', @$filters[3], 0 ) if (@$filters[3] );
+	$strcalc = AddCondition( $strcalc, 'statistics.branch', @$filters[4], 0 ) if (@$filters[4] );
+	$strcalc = AddCondition( $strcalc, 'items.ccode', @$filters[5], 0 ) if (@$filters[5] );
+	$strcalc = AddCondition( $strcalc, 'items.location', @$filters[6], 0 ) if (@$filters[6] );
 	$strcalc .= " AND items.itemcallnumber >='"      . @$filters[7] ."'" if (@$filters[7] );
 	$strcalc .= " AND items.itemcallnumber <'"       . @$filters[8] ."'" if (@$filters[8] );
 	$strcalc .= " AND borrowers.sort1 LIKE '"        . @$filters[9] ."'" if (@$filters[9] );

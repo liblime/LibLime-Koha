@@ -975,8 +975,13 @@ sub GetLostItems {
     ";
     my @query_parameters;
     foreach my $key (keys %$where) {
-        $query .= " AND $key LIKE ?";
-        push @query_parameters, "%$where->{$key}%";
+        if ( ref($where->{$key}) eq 'ARRAY' ) {
+            $query .= " AND $key IN (" . join(',', ('?') x scalar(@{$where->{$key}})) . ")";
+            push @query_parameters, @{$where->{$key}};
+        } else {
+            $query .= " AND $key LIKE ?";
+            push @query_parameters, "%$where->{$key}%";
+        }
     }
     my @ordervalues = qw/title author homebranch itype barcode price replacementprice lib datelastseen location/;
     

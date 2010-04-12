@@ -121,7 +121,6 @@ else {
     $req->execute;
     my @select;
     push @select, "";
-	$select{''} = "All Suppliers";
     while ( my ( $value, $desc ) = $req->fetchrow ) {
         push @select, $desc;
         $select{$value}=$desc;
@@ -129,6 +128,7 @@ else {
     my $CGIBookSellers = CGI::scrolling_list(
         -name   => 'Filter',
         -id     => 'supplier',
+        -title    => 'Select a Supplier',
         -values => \@select,
         -labels   => \%select,
         -size     => 1,
@@ -140,7 +140,6 @@ else {
     undef @select;
     undef %select;
     push @select, "";
-    $select{''} = "All Item Types";
     while ( my ( $value, $desc ) = $req->fetchrow ) {
         push @select, $value;
         $select{$value} = $desc;
@@ -148,6 +147,7 @@ else {
     my $CGIItemTypes = CGI::scrolling_list(
         -name     => 'Filter',
         -id       => 'itemtypes',
+        -title    => 'Select an Item Type',
         -values   => \@select,
         -labels   => \%select,
         -size     => 1,
@@ -159,7 +159,6 @@ else {
     undef @select;
     undef %select;
     push @select, "";
-    $select{''} = "All Funds";
 
     while ( my ( $value, $desc ) = $req->fetchrow ) {
         push @select, $value;
@@ -168,6 +167,7 @@ else {
     my $CGIBudget = CGI::scrolling_list(
         -name     => 'Filter',
         -id       => 'budget',
+        -title    => 'Select a Budget',
         -values   => \@select,
         -labels   => \%select,
         -size     => 1,
@@ -431,8 +431,7 @@ sub calculate {
             $strsth .= " AND $line >= ? ";
         }
         elsif ( $linefilter[0] ) {
-            $linefilter[0] =~ s/\*/%/g;
-            $strsth .= " AND $line LIKE ? ";
+            ( $strsth, @linefilter ) = AddCondition( $strsth, $line, $linefilter[0] );
         }
     }
     $strsth .= " GROUP BY $linefield";
@@ -441,15 +440,7 @@ sub calculate {
     #warn "377:strsth= $strsth";
 
     my $sth = $dbh->prepare($strsth);
-    if ( (@linefilter) and ( $linefilter[1] ) ) {
-        $sth->execute( $linefilter[0], $linefilter[1] );
-    }
-    elsif ( $linefilter[0] ) {
-        $sth->execute( $linefilter[0] );
-    }
-    else {
-        $sth->execute;
-    }
+    @linefilter ? $sth->execute(@linefilter) : $sth->execute;
 	while ( my ($celvalue) = $sth->fetchrow ) {
 		my %cell;
 		if ($celvalue) {
@@ -544,8 +535,7 @@ sub calculate {
             $strsth2 .= " AND $column >= ? ";
         }
         elsif ( $colfilter[0] ) {
-            $colfilter[0] =~ s/\*/%/g;
-            $strsth2 .= " AND $column LIKE ? ";
+            ( $strsth, @linefilter ) = AddCondition( $strsth, $column, $colfilter[0] );
         }
     }
     $strsth2 .= " GROUP BY $colfield";
@@ -554,15 +544,7 @@ sub calculate {
 #	warn "MASON:. $strsth2";
 
     my $sth2 = $dbh->prepare($strsth2);
-    if ( (@colfilter) and ($colfilter[1]) ) {
-        $sth2->execute( $colfilter[0], $colfilter[1] );
-    }
-    elsif ( $colfilter[0] ) {
-        $sth2->execute( $colfilter[0] );
-    }
-    else {
-        $sth2->execute;
-    }
+    @colfilter ? $sth2->execute(@colfilter) : $sth2->execute;
 	while ( my $celvalue = $sth2->fetchrow ) {
 		my %cell;
 		if ($celvalue) {
@@ -623,15 +605,9 @@ sub calculate {
 #    @$filters[5] =~ s/\*/%/g if ( @$filters[5] );
 #    $strcalc .= " AND aqbasket.closedate <= '" . @$filters[5] . "'"
 #      if ( @$filters[5] );
-    @$filters[4] =~ s/\*/%/g if ( @$filters[4] );
-    $strcalc .= " AND aqbooksellers.name LIKE '" . @$filters[4] . "'"
-      if ( @$filters[4] );
-    @$filters[5] =~ s/\*/%/g if ( @$filters[5] );
-    $strcalc .= " AND biblioitems.itemtype LIKE '" . @$filters[5] . "'"
-      if ( @$filters[5] );
-    @$filters[6] =~ s/\*/%/g if ( @$filters[6] );
-    $strcalc .= " AND aqorderbreakdown.bookfundid LIKE '" . @$filters[6] . "'"
-      if ( @$filters[6] );
+    $strcalc = AddCondition( $strcalc, 'aqbooksellers.name', @$filters[4], 0 ) if ( @$filters[4] );
+    $strcalc = AddCondition( $strcalc, 'biblioitems.itemtype', @$filters[5], 0 ) if ( @$filters[5] );
+    $strcalc = AddCondition( $strcalc, 'aqorderbreakdown.bookfundid', @$filters[6], 0 ) if ( @$filters[6] );
     @$filters[7] =~ s/\*/%/g if ( @$filters[7] );
     $strcalc .= " AND aqorders.sort1 LIKE '" . @$filters[7] . "'"
       if ( @$filters[7] );
