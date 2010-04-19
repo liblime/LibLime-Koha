@@ -52,7 +52,7 @@ sub prepare_for_output {
     my $dbh         = C4::Context->dbh();
     my $all_perms   = get_all_subpermissions();
     my $user_perms  = get_user_subpermissions( $bor->{userid} );
-    my $loop        = [];
+    my @loop;
 
     my $user_flags = $dbh->selectall_arrayref(
         'SELECT bit,flag,flagdesc FROM userflags ORDER BY bit',
@@ -74,7 +74,7 @@ sub prepare_for_output {
             add_subpermissions_to_row( $row, $uf->{flag}, $all_perms,
                 $user_perms );
         }
-        push @{$loop}, $row;
+        push @loop, $row;
     }
 
     if ( $bor->{'category_type'} eq 'C' ) {

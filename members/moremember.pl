@@ -76,6 +76,7 @@ my %return_failed;
 for my $failedret (@failedreturns) { $return_failed{$failedret} = 1; }
 
 my $quickslip = 0;
+my $template_name;
 
 if    ($print eq "page") { $template_name = "members/moremember-print.tmpl";   }
 elsif ($print eq "slip") { $template_name = "members/moremember-receipt.tmpl"; }
