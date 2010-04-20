@@ -28,6 +28,7 @@
   <!-- TMPL_IF NAME="virtualshelves" --> 
   <!-- TMPL_IF NAME="listsview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-shelves.pl?display=privateshelves">my lists</a></li>
   <!-- /TMPL_IF -->
+  <!-- TMPL_IF NAME="clubs_services" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-clubsAndServices.pl">my clubs &amp; services</a></li>
 
 </ul>
 </div>
