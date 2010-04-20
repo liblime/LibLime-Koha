@@ -41,7 +41,7 @@ sub usage {
     print STDERR <<USAGE;
 Usage: $0 [ -s STYLESHEET ] OUTPUT_DIRECTORY
   Will print all waiting print notices to
-  OUTPUT_DIRECTORY/notices-CURRENT_DATE.html .
+  OUTPUT_DIRECTORY/holdnotices-CURRENT_DATE.html .
   If the filename of a CSS stylesheet is specified with -s, the contents of that
   file will be included in the HTML.
 USAGE
@@ -68,7 +68,7 @@ my $today = C4::Dates->new();
 my @messages = @{ GetPrintMessages() };
 exit unless( @messages );
 
-open OUTPUT, '>', File::Spec->catdir( $output_directory, "notices-" . $today->output( 'iso' ) . ".html" );
+open OUTPUT, '>', File::Spec->catdir( $output_directory, "holdnotices-" . $today->output( 'iso' ) . ".html" );
 
 my $template = C4::Output::gettemplate( 'batch/print-notices.tmpl', 'intranet', new CGI );
 my $stylesheet_contents = '';
