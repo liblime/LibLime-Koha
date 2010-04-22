@@ -5,6 +5,7 @@
 <!-- /TMPL_LOOP -->
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script type="text/javascript" src="/intranet-tmpl/prog/en/js/dates.js"></script>
 <script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
 $.tablesorter.addParser({
@@ -65,6 +66,29 @@ $.tablesorter.addParser({
 <!-- TMPL_IF NAME="GoogleJackets" -->KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF -->
             });
 //]]>
+
+function checkDates(){
+  var AllDatesValid = true;
+  <!-- TMPL_LOOP NAME="RESERVES" -->
+      reserve_date = document.getElementById('resumedate_<!-- TMPL_VAR NAME="reservenumber" -->');
+      reserve_date.style.backgroundColor = 'white';
+      if ( reserve_date.value.length > 0 ) {
+        if (isDate(reserve_date.value)==false){
+          reserve_date.style.backgroundColor = 'red';
+          AllDatesValid = false;
+        }
+      }  
+  <!-- /TMPL_LOOP -->
+  return AllDatesValid;
+}
+ 
+function isValidDate(theFieldName){
+      reserve_date = document.getElementById( theFieldName );
+      if ( reserve_date.value.length > 0 ) {
+        return isDate(reserve_date.value);  
+      }
+}
+
 </script>
 </head>
 <body id="opac-user">
@@ -125,7 +149,7 @@ $.tablesorter.addParser({
             <!-- TMPL_IF NAME="amountlessthanzero" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-fines">Credits</a></li><!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="waiting_count" --><!-- TMPL_IF NAME="atdestination" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-waiting">Waiting</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
-            <!-- TMPL_IF NAME="reserves_count" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-holds">Holds</a></li><!-- /TMPL_IF -->
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-holds">Holds</a></li>
         </ul>
         
 <!-- TMPL_IF NAME="OPACFinesTab" -->
@@ -326,7 +350,6 @@ $.tablesorter.addParser({
 <!-- /TMPL_IF -->
     
 
-    <!-- TMPL_IF NAME="reserves_count" -->
         <div id="opac-user-holds">
         <table id="holdst">
         <caption>Holds <span class="count">(<!-- TMPL_VAR NAME="reserves_count" --> total)</span></caption>
@@ -340,7 +363,8 @@ $.tablesorter.addParser({
 				<th>Priority</th>
 				<!-- /TMPL_IF -->
                 <th>Status</th>
-		<th>Modify</th>
+		<th>Cancel</th>
+		<th>Suspend</th>
             </tr></thead>
 			<tbody>
             <!-- TMPL_LOOP NAME="RESERVES" -->
@@ -389,16 +413,84 @@ $.tablesorter.addParser({
                 </td>
 		<td>
 		<form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
-		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
-		<input type="submit" name="submit" class="icon delete cancel" value="Cancel" onclick="return confirmDelete('Are you sure you want to cancel this hold?');" /></form>
+			<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
+			<input type="submit" name="submit" class="icon delete cancel" value="Cancel" onclick="return confirmDelete('Are you sure you want to cancel this hold?');" />
+		</form>
+		</td>
+		<td>
+		<!-- TMPL_IF NAME="found" -->
+			Items waiting cannot be suspended.
+		<!-- TMPL_ELSE -->
+			<form action="/cgi-bin/koha/opac-modrequest.pl" method="post" onsubmit="return isValidDate('resumedate_<!-- TMPL_VAR NAME="reservenumber" -->')">
+				<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
+				<input type="hidden" name="suspend" value="1" />
+				<input type="submit" name="submit" class="icon delete cancel" value="Suspend" />
+				<br/>
+				<label>Resume on:</label>
+				<input type="text" size="10" maxlength="10" id="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
+				<label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
+			</form>
+		<!-- /TMPL_IF -->
 		</td>
 
             </tr>
             <!-- /TMPL_LOOP -->
 			</tbody>
         </table>
+
+	<!-- TMPL_IF NAME="suspended_reserves_count" -->
+       <table id="holdst"> 
+        <caption>Suspended Holds <span class="count">(<!-- TMPL_VAR NAME="suspended_reserves_count" --> total)</span></caption>
+            <!-- RESERVES TABLE ROWS -->
+            <thead><tr>
+                <th>Title</th>
+                <th>Placed On</th>
+                <th>Pick Up Location</th>
+				<!-- TMPL_IF NAME="showpriority" -->
+				<th>Priority</th>
+				<!-- /TMPL_IF -->
+                <th>Resume On</th>
+		<th>Resume Now</th>
+            </tr></thead>
+			<tbody>
+            <!-- TMPL_LOOP NAME="SUSPENDED_RESERVES" -->
+           <!-- TMPL_IF NAME="wait" -->
+                        <!-- TMPL_IF NAME="atdestination" -->
+                            <!-- TMPL_IF NAME="found" -->
+                            <tr class="reserved">
+                            <!-- TMPL_ELSE -->
+                            <tr>
+                        <!-- /TMPL_IF -->
+                        <!-- TMPL_ELSE -->
+                            <tr class="transfered">
+                        <!-- /TMPL_IF -->
+                    <!-- TMPL_ELSE -->
+                            <tr>
+                    <!-- /TMPL_IF -->
+                <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
+                    <!-- TMPL_VAR NAME="author" -->
+                </td>
+                <td><!-- TMPL_VAR NAME="reservedate" --></td>
+                <td><!-- TMPL_VAR NAME="branch" --></td>
+				<!-- TMPL_IF NAME="showpriority" -->
+				<td><!-- TMPL_VAR NAME="priority" --> </td>
+				<!-- /TMPL_IF -->
+                <td>
+			<!-- TMPL_VAR NAME="waitingdate" -->
+                </td>
+		<td>
+		<form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
+			<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
+			<input type="hidden" name="resume" value="1" />
+			<input type="submit" name="submit" class="icon delete cancel" value="Resume" /></form>
+		</td>
+
+            </tr>
+            <!-- /TMPL_LOOP -->
+			</tbody>
+        </table>
+	<!-- /TMPL_IF -->
     </div>
-    <!-- /TMPL_IF -->
     </div><!-- /opac-user views -->
     </div><!-- /userdetails -->
 </div>

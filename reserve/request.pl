@@ -55,6 +55,22 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
+my $action = $input->param('action');
+if ( $action eq 'suspend' ) {
+  my $resumedate = $input->param('resumedate');
+  
+  if ( $resumedate =~ m/(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])-(\d{4})/ ) {
+    my @parts = split(/-/, $resumedate );
+    $resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1];
+  } else {
+    $resumedate = '';
+  }
+  
+  SuspendReserve( $input->param('reservenumber'), $resumedate );
+} elsif ( $action eq 'resume' ) {
+  ResumeReserve( $input->param('reservenumber') );
+}
+
 my $multihold = $input->param('multi_hold');
 $template->param(multi_hold => $multihold);
 
@@ -499,8 +515,17 @@ foreach my $biblionumber (@biblionumbers) {
         $reserve{'priority'}    = $res->{'priority'};
         $reserve{'branchloop'} = GetBranchesLoop($res->{'branchcode'});
         $reserve{'optionloop'} = \@optionloop;
+        $reserve{'reservenumber'} = $res->{'reservenumber'};
         
         push( @reserveloop, \%reserve );
+    }
+
+    my ( $suspended_count, $suspended_reserves ) = GetSuspendedReservesFromBiblionumber($biblionumber);
+    if ( $suspended_count ) {
+      foreach my $res ( @$suspended_reserves ) {
+        $res->{'waitingdate'} = format_date( $res->{'waitingdate'} );
+      }
+      $template->param( suspended_reserves_loop => $suspended_reserves );
     }
     
     # get the time for the form name...

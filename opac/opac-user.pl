@@ -200,14 +200,30 @@ foreach my $res (@reserves) {
         $res->{'priority'} = '' if $res->{'priority'} eq '0';
     }
 }
-
-# use Data::Dumper;
-# warn Dumper(@reserves);
-
 $template->param( RESERVES       => \@reserves );
 $template->param( reserves_count => $#reserves+1 );
 $template->param( showpriority=>1 ) if $OPACDisplayRequestPriority;
 $template->param( opacmsgtab => C4::Context->preference('opacmsgtab') );
+
+my @suspended_reserves  = GetSuspendedReservesFromBorrowernumber( $borrowernumber );
+foreach my $res (@suspended_reserves) {
+    $res->{'reservedate'} = format_date( $res->{'reservedate'} );
+    $res->{'waitingdate'} = format_date( $res->{'waitingdate'} );
+    my $publictype = $res->{'publictype'};
+    $res->{$publictype} = 1;
+    $res->{'waiting'} = 1 if $res->{'found'} eq 'W';
+    $res->{'branch'} = $branches->{ $res->{'branchcode'} }->{'branchname'};
+    my $biblioData = GetBiblioData($res->{'biblionumber'});
+    $res->{'reserves_title'} = $biblioData->{'title'};
+    if ($OPACDisplayRequestPriority) {
+        $res->{'priority'} = '' if $res->{'priority'} eq '0';
+    }
+}
+$template->param( SUSPENDED_RESERVES => \@suspended_reserves );
+$template->param( suspended_reserves_count => $#suspended_reserves+1 );
+
+# use Data::Dumper;
+# warn Dumper(@reserves);
 
 my @waiting;
 my $wcount = 0;
