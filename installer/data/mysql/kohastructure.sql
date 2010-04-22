@@ -493,6 +493,7 @@ CREATE TABLE `borrowers` (
   `altcontactcountry` text default NULL,
   `altcontactphone` varchar(50) default NULL,
   `smsalertnumber` varchar(50) default NULL,
+  `amount_notify_date` date default NULL,
   UNIQUE KEY `cardnumber` (`cardnumber`),
   PRIMARY KEY `borrowernumber` (`borrowernumber`),
   KEY `categorycode` (`categorycode`),
