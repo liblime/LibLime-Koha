@@ -292,7 +292,8 @@ the value "1".
 =cut
 
 sub GetMemberDetails {
-    my ( $borrowernumber, $cardnumber ) = @_;
+    my ( $borrowernumber, $cardnumber, $circ_session ) = @_;
+    $circ_session ||= {};
     my $dbh = C4::Context->dbh;
     my $query;
     my $sth;
@@ -311,7 +312,7 @@ sub GetMemberDetails {
     my ($amount) = GetMemberAccountRecords( $borrowernumber);
     $borrower->{'amountoutstanding'} = $amount;
     # FIXME - patronflags calls GetMemberAccountRecords... just have patronflags return $amount
-    my $flags = patronflags( $borrower);
+    my $flags = patronflags( $borrower, $circ_session );
     my $accessflagshash;
 
     $sth = $dbh->prepare("select bit,flag from userflags");
@@ -400,15 +401,17 @@ The "message" field that comes from the DB is OK.
 # FIXME rename this function.
 sub patronflags {
     my %flags;
-    my ( $patroninformation) = @_;
+    my ( $patroninformation, $circ_session ) = @_;
+    $circ_session ||= {};
     my $dbh=C4::Context->dbh;
     my ($amount) = GetMemberAccountRecords( $patroninformation->{'borrowernumber'});
+
     if ( $amount > 0 ) {
         my %flaginfo;
         my $noissuescharge = C4::Context->preference("noissuescharge") || 5;
         $flaginfo{'message'} = sprintf "Patron owes \$%.02f", $amount;
-        $flaginfo{'amount'}  = sprintf "%.02f", $amount;
-        if ( $amount > $noissuescharge ) {
+        $flaginfo{'amount'} = sprintf "%.02f",$amount;
+        if ( $amount > $noissuescharge && !$circ_session->{'charges_overridden'} ) {
             $flaginfo{'noissues'} = 1;
         }
         $flags{'CHARGES'} = \%flaginfo;

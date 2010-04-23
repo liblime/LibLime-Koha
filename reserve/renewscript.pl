@@ -63,6 +63,9 @@ if ($input->param('return_all')) {
 }
 
 my $branch=$input->param('branch');
+my $charges_overridden=$input->param('charges_overridden');
+my $override_user=$input->param('override_user');
+my $override_pass=$input->param('override_pass');
 my $datedue;
 if ($input->param('newduedate')){
     $datedue=C4::Dates->new($input->param('newduedate'));
@@ -100,11 +103,11 @@ foreach my $barcode (@barcodes) {
 #
 if ($input->param('destination') eq "circ"){
     print $input->redirect(
-        '/cgi-bin/koha/circ/circulation.pl?findborrower='.$cardnumber.$failedrenews.$failedreturn
+        "/cgi-bin/koha/circ/circulation.pl?override_user=$override_user&override_pass=$override_pass&charges_overridden=$charges_overridden&findborrower=$cardnumber".$failedrenews.$failedreturn
     );
 }
 else {
     print $input->redirect(
-        '/cgi-bin/koha/members/moremember.pl?borrowernumber='.$borrowernumber.$failedrenews.$failedreturn
+        "/cgi-bin/koha/members/moremember.pl?borrowernumber='.$borrowernumber.$failedrenews.$failedreturn
     );
 }

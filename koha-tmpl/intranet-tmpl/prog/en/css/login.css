@@ -1,46 +1,46 @@
-a.edit, a.delete, a.edit:hover, a.delete:hover {
+#login-area a.edit, #login-area a.delete, #login-area a.edit:hover, #login-area a.delete:hover {
 	border-bottom: none;
 	display: block;
 	padding: 5px 0;
 	text-align: center;
 }
 
-a.edit:hover {
+#login-area a.edit:hover {
 	background: #ccc;
 	color: #036;
 }
 
-a:visited {
+#login-area a:visited {
 	color: #006;
 }
 
-a:hover {
+#login-area a:hover {
 /*	border-bottom: 1px solid #3a75ae;*/
 	color: #069;
 }
 
-body	{
+body.login-area {
 	background: #f9fcfe;
 }
 
-form, label input {
+#login-area form, label input {
 	margin: 0;
 	padding: 0;
 }
 
-input:focus, textarea:focus, label:focus {
+#login-area input:focus, textarea:focus, label:focus {
 	background: #fff;
 	border: 1px solid #686868;
 }
 
-label {
+#login-area label {
 	display : block;
 	margin : .2em 0;
 }
 
-#logo { margin-bottom: 2em; }
+#login-area #logo { margin-bottom: 2em; }
 
-#login {
+#login-area {
 	background: #fff;
 	border: 1px solid #a2a2a2;
 	margin: 4em auto;
@@ -51,7 +51,7 @@ label {
 	width: 25em;
 }
 
-#login #login_error {
+#login-area #login_error {
 	background: #c00;
 	border: 1px solid #a40000;
 	color: #fff;
@@ -61,45 +61,45 @@ label {
 	text-align: center;
 }
 
-#login h1 {
+#login-area h1 {
 	background: url(../../img/koha-logo.gif) no-repeat top center;
 	margin-top: 0;
 	margin-bottom : .5em;
 }
 
-#login h1 a {
+#login-area h1 a {
 	display: block;
 	text-indent: -1000px;
 	height: 74px;
 	border-bottom: none;
 }
 
-#login input {
+#login-area input {
 	padding: 3px;
 }
 
-#login ul {
+#login-area ul {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-#login ul li {
+#login-area ul li {
 	display: inline;
 	margin-left: 1.4em;
 	text-align: center;
 }
 
-#login #userid, #password {
+#login-area #userid, #password {
 	font-size: 1.7em;
 	width: 97%;
 }
 
-#login #branch {
+#login-area #branch {
 	width : 99%;
 }
 
-#login #submit {
+#login-area .submit {
 	font-size: 1.4em;
 	padding : .3em .6em;
 }
@@ -112,7 +112,7 @@ label {
         font-style: italic;
 }
 
-.submit input, .submit input:focus, .button {
+#login-area .submit input, #login-area .submit input:focus, #login-area .button {
 	background: url(../../img/button-bg.gif );
 	border: 1px solid #999;
 	border-left-color: #ccc;
@@ -121,18 +121,18 @@ label {
 	padding: 0.25em;
 }
 
-.submit input:active, .button:active {
+#login-area .submit input:active, #login-area .button:active {
 	background: #f4f4f4;
 	border: 1px solid #999;
 	border-left-color: #999;
 	border-top-color: #999;
 }
 
-.submit, .editform th, #postcustomsubmit {
+#login-area .submit, #login-area .editform th, #login-area #postcustomsubmit {
 	text-align: right;
 }
 
-textarea, input, select {
+#login-area textarea, input, select {
 	background: #f4f4f4;
 	border: 1px solid #b2b2b2;
 	color: #000;

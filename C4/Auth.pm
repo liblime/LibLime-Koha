@@ -39,7 +39,7 @@ BEGIN {
     $debug = $ENV{DEBUG} || 0 ;
     @ISA   = qw(Exporter);
     @EXPORT    = qw(&checkauth &get_template_and_user);
-    @EXPORT_OK = qw(&check_api_auth &get_session &check_cookie_auth &checkpw &get_all_subpermissions &get_user_subpermissions);
+    @EXPORT_OK = qw(&check_api_auth &get_session &check_cookie_auth &checkpw &check_override_perms &get_all_subpermissions &get_user_subpermissions);
     %EXPORT_TAGS = (EditPermissions => [qw(get_all_subpermissions get_user_subpermissions)]);
     $ldap = C4::Context->config('useldapserver') || 0;
     if ($ldap) {
@@ -1248,7 +1248,7 @@ sub get_session {
 
 sub checkpw {
 
-    my ( $dbh, $userid, $password ) = @_;
+    my ( $dbh, $userid, $password, $prehashed ) = @_;
     if ($ldap) {
         $debug and print STDERR "## checkpw - checking LDAP\n";
         my ($retval,$retcard) = checkpw_ldap(@_);    # EXTERNAL AUTH
@@ -1265,7 +1265,7 @@ sub checkpw {
         my ( $md5password, $cardnumber, $borrowernumber, $userid, $firstname,
             $surname, $branchcode, $flags )
           = $sth->fetchrow;
-        if ( md5_base64($password) eq $md5password ) {
+        if ( ( $prehashed ? $password : md5_base64($password) ) eq $md5password ) {
 
             C4::Context->set_userenv( "$borrowernumber", $userid, $cardnumber,
                 $firstname, $surname, $branchcode, $flags );
@@ -1281,7 +1281,7 @@ sub checkpw {
         my ( $md5password, $cardnumber, $borrowernumber, $userid, $firstname,
             $surname, $branchcode, $flags )
           = $sth->fetchrow;
-        if ( md5_base64($password) eq $md5password ) {
+        if ( ( $prehashed ? $password : md5_base64($password) ) eq $md5password ) {
 
             C4::Context->set_userenv( $borrowernumber, $userid, $cardnumber,
                 $firstname, $surname, $branchcode, $flags );
@@ -1289,7 +1289,7 @@ sub checkpw {
         }
     }
     if (   $userid && $userid eq C4::Context->config('user')
-        && "$password" eq C4::Context->config('pass') )
+        && "$password" eq ( $prehashed ? md5_base64( C4::Context->config('pass') ) : C4::Context->config('pass') ) )
     {
 
 # Koha superuser account
@@ -1297,7 +1297,7 @@ sub checkpw {
         return 2;
     }
     if (   $userid && $userid eq 'demo'
-        && "$password" eq 'demo'
+        && "$password" eq ( $prehashed ? md5_base64( 'demo' ) : $password )
         && C4::Context->config('demo') )
     {
 
@@ -1305,6 +1305,19 @@ sub checkpw {
 # some features won't be effective : modify systempref, modify MARC structure,
         return 2;
     }
+    return 0;
+}
+
+sub check_override_perms {
+    my ( $userid, $override_user, $override_pass, $flags ) = @_;
+    my $dbh = C4::Context->dbh;
+
+    warn "check_override_perms( $userid, $override_user, $override_pass, " . values( %$flags ) . " )\n";
+
+    return 1 if ( haspermission( $userid, $flags ) );
+
+    return 1 if ( $override_user && checkpw( $dbh, $override_user, $override_pass, 1 ) && haspermission( $override_user, $flags ) );
+
     return 0;
 }
 

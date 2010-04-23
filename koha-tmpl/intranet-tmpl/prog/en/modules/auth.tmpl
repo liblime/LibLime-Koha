@@ -8,12 +8,12 @@
 </title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 </head>
-<body>
+<body class="login">
 
 <div id="doc" class="yui-t7">
    <div id="bd">
 
-<div id="login">
+<div id="login-area">
 <h1><a href="http://koha.org">Koha</a></h1>
 <!-- TMPL_IF NAME="nopermission" -->
 <div id="login_error"><strong>Error: </strong>Unauthorized user<a href="/cgi-bin/koha/mainpage.pl?logout.x=1">click to log out</a></div>
@@ -62,7 +62,7 @@
 
 <!-- <p><label><input name="rememberme" type="checkbox" id="rememberme" value="forever" tabindex="3" />Remember me</label></p> -->
 
-<p class="submit"><input id="submit" type="submit" value="Login &raquo;" tabindex="4" /></p>
+<p class="submit"><input id="login-submit" class="submit" type="submit" value="Login &raquo;" tabindex="4" /></p>
 </form>
 <!--<ul> -->
 <!--	<li><a href="/cgi-bin/koha/lostpassword.pl" title="Password Lost and Found">Lost your password?</a></li> -->
