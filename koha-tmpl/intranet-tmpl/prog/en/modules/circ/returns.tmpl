@@ -43,6 +43,7 @@ function Dopop(link) {
 	 });
 //]]>
 </script>
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -337,6 +338,7 @@ function Dopop(link) {
 
                 <ul>
                     <!-- TMPL_IF NAME="overduecharges" -->
+                    <!-- TMPL_IF NAME="CAN_user_circulate_exempt_fines" -->
                     <li>
                         <!-- TMPL_IF NAME="exemptfine" -->
                         <input type="checkbox" id="exemptcheck" name="exemptfine" value="exemptfine" checked="checked" />
@@ -345,7 +347,9 @@ function Dopop(link) {
                         <!-- /TMPL_IF -->
                         <label for="exemptcheck">Forgive overdue charges</label>
                     </li>
+                    <!-- /TMPL_IF -->
                     <!-- /TMPL_IF --> <!-- overduecharges -->
+                    <!-- TMPL_IF NAME="CAN_user_circulate_bookdrop" -->
                     <li>
                         <!-- TMPL_IF NAME="dropboxmode" -->
                         <input type="checkbox" id="dropboxcheck" name="dropboxmode" value="dropboxmode" checked="checked" />
@@ -354,6 +358,28 @@ function Dopop(link) {
                         <!-- /TMPL_IF -->
                         <label for="dropboxcheck">Dropbox mode</label>
                     </li>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="AllowCheckInDateChange" -->
+                    <!-- TMPL_IF NAME="CAN_user_circulate_change_circ_date_and_time" -->
+                    <li>
+                    <!-- TMPL_IF NAME="checkin_override_date" -->
+                        <input type="text" size="10" id="f_checkin_override_date" name="checkin_override_date" value="<!-- TMPL_VAR NAME="checkin_override_date" -->" readonly="1" />
+                    <!-- TMPL_ELSE -->
+                        <input type="text" size="10" id="f_checkin_override_date" name="checkin_override_date" value="" readonly="1"/>
+                    <!-- /TMPL_IF -->
+                         <img src="<!-- TMPL_VAR NAME="themelang" -->/lib/calendar/cal.gif" id="f_trigger_c" style="cursor: pointer;"
+                         title="CheckIn Date selector" />
+                        <script type="text/javascript">
+                            Calendar.setup({
+                                inputField      :   "f_checkin_override_date",
+                                 ifFormat       : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                                 button         : "f_trigger_c",
+                                 singleClick    : true
+                             });
+                        </script>
+                        <label for="checkin_override_date">Override Check In Date</label>
+                    </li>
+                    <!-- /TMPL_IF -->
                 </ul>
             </fieldset>
         </div>
@@ -399,9 +425,13 @@ function Dopop(link) {
             <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR Name="barcode" --></a></td>
             <td><!-- TMPL_VAR Name="itemtype" --> <!-- TMPL_VAR Name="ccode" --></td>
 			<td><!-- TMPL_IF Name="duedate" -->
+            <!-- TMPL_IF NAME="CAN_user_circulate_view_borrower_name_in_checkin" -->
                 <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->">
                     <!-- TMPL_VAR Name="borsurname" -->, <!-- TMPL_VAR Name="borfirstname" --> (<!-- TMPL_VAR name="borcategorycode" -->)
                 </a>
+            <!-- TMPL_ELSE --> <!-- not allowed to see name so no link either -->
+            <!-- TMPL_VAR NAME="borcnum" -->
+            <!-- /TMPL_IF -->
             <!-- TMPL_ELSE -->Not checked out<!-- /TMPL_IF --></td>
             <td><!-- TMPL_IF name="bornote" --><span class="circ-hlt"><!-- TMPL_VAR name="bornote" --><br /></span><!-- /TMPL_IF -->
             <!-- TMPL_IF name="itemnote" --><span class="circ-hlt"><!-- TMPL_VAR name="itemnote" --></span><!-- /TMPL_IF -->

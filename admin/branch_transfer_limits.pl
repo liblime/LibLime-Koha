@@ -34,7 +34,7 @@ my ($template, $loggedinuser, $cookie)
     = get_template_and_user({template_name => "admin/branch_transfer_limits.tmpl",
 			     query => $input,
 			     type => "intranet",
-			     flagsrequired => {borrowers => 1},
+			     flagsrequired => {borrowers => '*'},
 			     debug => 1,
 			     });
 

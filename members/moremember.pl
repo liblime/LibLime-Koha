@@ -32,6 +32,7 @@
 =cut
 
 use strict;
+#use warnings;
 use CGI;
 use C4::Context;
 use C4::Auth;
@@ -61,7 +62,9 @@ BEGIN {
 my $dbh = C4::Context->dbh;
 
 my $input = new CGI;
-$debug or $debug = $input->param('debug') || 0;
+if (!$debug) {
+    $debug = $input->param('debug') || 0;
+}
 my $print = $input->param('print');
 my $override_limit = $input->param("override_limit") || 0;
 my @failedrenews = $input->param('failedrenew');
@@ -72,8 +75,8 @@ for my $renew (@failedrenews) { $renew_failed{$renew} = 1; }
 my %return_failed;
 for my $failedret (@failedreturns) { $return_failed{$failedret} = 1; }
 
-my $template_name;
 my $quickslip = 0;
+my $template_name;
 
 if    ($print eq "page") { $template_name = "members/moremember-print.tmpl";   }
 elsif ($print eq "slip") { $template_name = "members/moremember-receipt.tmpl"; }
@@ -86,7 +89,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         query           => $input,
         type            => "intranet",
         authnotrequired => 0,
-        flagsrequired   => { borrowers => 1 },
+        flagsrequired   => { borrowers => '*' },
         debug           => 1,
     }
 );
@@ -103,7 +106,7 @@ if ( not defined $data ) {
 }
 
 # re-reregistration function to automatic calcul of date expiry
-if ( $reregistration eq 'y' ) {
+if ( $reregistration && $reregistration eq 'y' ) {
 	$data->{'dateexpiry'} = ExtendMemberSubscriptionTo( $borrowernumber );
 }
 
@@ -135,7 +138,6 @@ for (qw(debarred gonenoaddress lost borrowernotes)) {
 $data->{'ethnicity'} = fixEthnicity( $data->{'ethnicity'} );
 $data->{ "sex_".$data->{'sex'}."_p" } = 1;
 
-my $catcode;
 if ( $category_type eq 'C') {
 	if ($data->{'guarantorid'} ne '0' ) {
     	my $data2 = GetMember( $data->{'guarantorid'} ,'borrowernumber');
@@ -229,7 +231,9 @@ for ( my $i = 0 ; $i < $issuecount ; $i++ ) {
     $issue->[$i]{'issuedate'} = C4::Dates->new($issue->[$i]{'issuedate'},'iso')->output('syspref');
     my $biblionumber = $issue->[$i]{'biblionumber'};
     my %row = %{ $issue->[$i] };
-    $totalprice += $issue->[$i]{'replacementprice'};
+    if ($issue->[$i]{replacementprice} ) {
+        $totalprice += $issue->[$i]{'replacementprice'};
+    }
     $row{'replacementprice'} = $issue->[$i]{'replacementprice'};
     # item lost, damaged loops
     if ($row{'itemlost'}) {
@@ -315,7 +319,7 @@ if ($borrowernumber) {
         $getreserv{itemtype}  = $itemtypeinfo->{'description'};
 
         # 		check if we have a waitin status for reservations
-        if ( $num_res->{'found'} eq 'W' ) {
+        if ( $num_res->{found} and $num_res->{'found'} eq 'W' ) {
             $getreserv{color}   = 'reserved';
             $getreserv{waiting} = 1;
         }
@@ -336,7 +340,7 @@ if ($borrowernumber) {
                 GetBranchName( $getiteminfo->{'holdingbranch'} );
         }
 
-# 		if we don't have a reserv on item, we put the biblio infos and the waiting position
+# if we don't have a reserv on item, we put the biblio infos and the waiting position
         if ( $getiteminfo->{'title'} eq '' ) {
             my $getbibinfo = GetBiblioData( $num_res->{'biblionumber'} );
             my $getbibtype = getitemtypeinfo( $getbibinfo->{'itemtype'} );

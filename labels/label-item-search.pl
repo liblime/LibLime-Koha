@@ -75,6 +75,18 @@ if ( $op eq "do_search" ) {
     $datefrom = $query->param('datefrom');
     $dateto   = $query->param('dateto');
 
+    ( $template, $loggedinuser, $cookie ) = get_template_and_user(
+        {
+            template_name   => "labels/result.tmpl",
+            query           => $query,
+            type            => "intranet",
+            authnotrequired => 0,
+            flagsrequired   => { borrowers => '*' },
+            flagsrequired   => { catalogue => 1 },
+            debug           => 1,
+        }
+    );
+
     if ($datefrom) {
         $datefrom = C4::Dates->new($datefrom);
         $ccl_query .= ' and ' if $ccl_textbox;

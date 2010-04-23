@@ -34,6 +34,7 @@
 <!--/TMPL_IF-->
 		] 
 	
+    <!-- TMPL_IF NAME="CAN_user_borrowers_add_borrowers" -->
 	    new YAHOO.widget.Button({
 	        type: "menu",
 	        label: _("New"),
@@ -41,12 +42,14 @@
 	        menu: newmenu,
 	        container: "newmenuc"
 	    });
+    <!-- /TMPL_IF -->
 	
 	}
 
 	//]]>
 	</script>
 	<ul class="toolbar">
+    <!-- TMPL_IF NAME="CAN_user_borrowers_add_borrowers" -->
 	<li id="newmenuc">
 		<form action="/cgi-bin/koha/members/memberentry.pl" method="get">
 			<input type="hidden" name="op" value="add" />
@@ -65,5 +68,6 @@
 			<input type="submit" class="submit" value="Go" />
 		</form>
 	</li>
+    <!-- /TMPL_IF -->
 </ul>
 </div>

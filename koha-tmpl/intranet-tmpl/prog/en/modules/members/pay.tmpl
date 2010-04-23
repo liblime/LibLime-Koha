@@ -20,8 +20,12 @@
 <ul class="ui-tabs-nav">
 	<li><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Account</a></li>
 	<li class="ui-tabs-selected"><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay fines</a></li>
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_add_charges" -->
 	<li><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Invoice</a></li>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
 	<li><a href="/cgi-bin/koha/members/mancredit.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Credit</a></li>
+    <!-- /TMPL_IF -->
 </ul>
 <div class="tabs-container">
 
@@ -47,7 +51,9 @@
 	<select name="payfine<!-- TMPL_VAR name="i" -->">
 	<option value="no">Unpaid</option>
 	<option value="yes">Paid</option>
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_writeoff_charges" -->
 	<option value="wo">Writeoff</option>
+    <!--  /TMPL_IF -->
 	</select>
 	<!-- /TMPL_IF -->
 	<input type="hidden" name="itemnumber<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="itemnumber" -->" />

@@ -20,9 +20,15 @@
 <div class="toptabs">
 <ul class="ui-tabs-nav">
 	<li class="ui-tabs-selected"><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Account</a></li>
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
 	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay fines</a></li>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_add_charges" -->
 	<li><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create manual invoice</a></li>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
 	<li><a href="/cgi-bin/koha/members/mancredit.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create manual credit</a></li>
+    <!-- /TMPL_IF -->
 </ul>
 <div class="tabs-container">
 <!-- The table with the account items -->
@@ -45,7 +51,9 @@
       <!-- TMPL_IF NAME="amountoutstandingcredit" --><td class="credit"><!-- TMPL_ELSE --><td class="debit"><!-- /TMPL_IF --><!-- TMPL_VAR NAME="amountoutstanding" --></td>
       <td>
 	<!-- TMPL_IF NAME="payment" -->
+            <!-- TMPL_IF NAME="CAN_user_updatecharges_edit_charges" -->
 		<a href="boraccount.pl?action=reverse&borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&accountno=<!-- TMPL_VAR NAME="accountno" -->">Reverse</a>
+            <!-- /TMPL_IF -->
 	<!-- TMPL_ELSE -->
 		&nbsp;
 	<!-- /TMPL_IF -->
@@ -53,12 +61,10 @@
     </tr>
 
   <!-- /TMPL_LOOP -->
-<tfoot>
   <tr>
     <td colspan="3">Total due</td>
     <!-- TMPL_IF NAME="totalcredit" --><td colspan="2" class="credit"><!-- TMPL_ELSE --><td colspan="2" class="debit"><!-- /TMPL_IF --><!-- TMPL_VAR NAME="total" --></td>
   </tr>
-  </tfoot>
 </table>
 </div></div>
 

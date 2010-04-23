@@ -232,7 +232,9 @@ function refocus(calendar) {
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="TOO_MANY" -->
+<!-- TMPL_IF NAME="CAN_user_circulate_override_checkout_max" -->
     <li>Too many checked out (already checked out / max : <!-- TMPL_VAR name="TOO_MANY" -->)</li>
+<!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="PATRON_CANT" -->
@@ -242,6 +244,10 @@ function refocus(calendar) {
 <!-- TMPL_IF NAME="NOT_FOR_LOAN_FORCING" -->
     <li>Item is normally not for loan.  Check out anyway?</li>
 <!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="NO_MORE_RENEWALS_FORCING" -->
+     <li>No more renewals normally possible. Check out anyway?</li>
+<!-- /TMPL_IF -->
+
 </ul>
 
 <form method="post" action="/cgi-bin/koha/circ/circulation.pl">
@@ -332,6 +338,12 @@ function refocus(calendar) {
         <!-- TMPL_IF NAME="NOTSAMEBRANCH" -->
             <li>This item belongs to <!-- TMPL_VAR NAME="itemhomebranch" --> and cannot be issued from this location.</li>
         <!-- /TMPL_IF -->
+
+        <!-- TMPL_UNLESS NAME="CAN_user_circulate_override_checkout_max" -->
+        <!-- TMPL_IF NAME="TOO_MANY" -->
+            <li>Too many checked out (already checked out / max : <!-- TMPL_VAR name="TOO_MANY" -->)</li>
+        <!-- /TMPL_IF -->
+        <!-- /TMPL_UNLESS -->
         </ul>
 
     <!-- TMPL_IF NAME="memberofinstution" -->
@@ -399,7 +411,9 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 
 	<input type="text" name="barcode" id="barcode" class="barcode focus" size="14" /> <input type="submit" value="Check Out" />
 
-    <!-- TMPL_IF NAME="SpecifyDueDate" --><div class="date-select">
+    <!-- TMPL_IF NAME="SpecifyDueDate" -->
+    <!-- TMPL_IF NAME="CAN_user_circulate_change_due_date" -->
+        <div class="date-select">
         <div class="hint">Specify Due Date:</div>
 		<!-- TMPL_IF NAME="duedatespec" --><input type="text" size="10" id="duedatespec" name="duedatespec" value="<!-- TMPL_VAR NAME="duedatespec" -->" /><!-- TMPL_ELSE --><input type="text" size="10" id="duedatespec" name="duedatespec" value="" />
 <!-- /TMPL_IF -->
@@ -439,7 +453,9 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 <input type="checkbox" id="stickyduedate" onclick="this.form.barcode.focus();" name="stickyduedate" />
 <!-- /TMPL_IF -->
           <input type="button" class="action" id="cleardate" value="Clear" name="cleardate" onclick="this.checked = false; this.form.duedatespec.value = ''; this.form.stickyduedate.checked = false; this.form.barcode.focus(); return false;" />
-</div><!-- /TMPL_IF -->
+</div>
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
           <input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
           <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->" />
           <input type="hidden" name="printer" value="<!-- TMPL_VAR NAME="printer" -->" />
@@ -467,7 +483,10 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 
 			<!-- TMPL_IF NAME = "warndeparture" -->
 			<li><span class="circ-hlt">Expiration:</span> Patron's card will expire soon.
-			Patron's card expires on <!-- TMPL_VAR NAME="expiry" --> <a href="/cgi-bin/koha/members/setstatus.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;cardnumber=<!-- TMPL_VAR NAME="cardnumber" -->&amp;destination=circ&amp;reregistration=y">Renew</a> or <a href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;categorycode=<!-- TMPL_VAR NAME="categorycode" -->">Edit Details</a>
+			Patron's card expires on <!-- TMPL_VAR NAME="expiry" -->
+<!-- TMPL_IF NAME="CAN_user_circulate_renew_expired" -->
+<a href="/cgi-bin/koha/members/setstatus.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;cardnumber=<!-- TMPL_VAR NAME="cardnumber" -->&amp;destination=circ&amp;reregistration=y">Renew</a> or <a href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;categorycode=<!-- TMPL_VAR NAME="categorycode" -->">Edit Details</a>
+<!-- /TMPL_IF -->
 
 			</li>
 			<!-- /TMPL_IF -->
@@ -480,8 +499,10 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 
 			<!-- TMPL_IF NAME = "expired" -->
 			<li><span class="circ-hlt">Expiration:</span> Patron's card has expired.
-			Patron's card expired on <!-- TMPL_VAR NAME="expiry" --> <a href="/cgi-bin/koha/members/setstatus.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;cardnumber=<!-- TMPL_VAR NAME="cardnumber" -->&amp;destination=circ&amp;reregistration=y">Renew</a> or <a href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;categorycode=<!-- TMPL_VAR NAME="categorycode" -->">Edit Details</a>
-
+			Patron's card expired on <!-- TMPL_VAR NAME="expiry" -->
+<!-- TMPL_IF NAME="CAN_user_circulate_renew_expired" -->
+<a href="/cgi-bin/koha/members/setstatus.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;cardnumber=<!-- TMPL_VAR NAME="cardnumber" -->&amp;destination=circ&amp;reregistration=y">Renew</a> or <a href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;categorycode=<!-- TMPL_VAR NAME="categorycode" -->">Edit Details</a>
+<!-- /TMPL_IF -->
 			</li>
 			<!-- /TMPL_IF -->
 
@@ -510,7 +531,9 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
                 <!-- TMPL_IF NAME="charges_is_blocker" -->
                     Checkouts are blocked because fine balance is over the limit.
                 <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
             Make <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Payment</a></li>
+			<!-- /TMPL_IF -->
 			<!-- /TMPL_IF -->
 
         	<!-- TMPL_IF NAME="credits" -->
@@ -581,19 +604,24 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 <div class="yui-g"><div id="patronlists" class="toptabs">
 
 <ul>
+<!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
 <li>    <!--TMPL_IF NAME="issuecount"-->
             <a href="/cgi-bin/koha/circ/circulation.pl#checkouts"><!-- TMPL_VAR NAME="issuecount"--> Checkout(s)</a>
     <!-- TMPL_ELSE -->
             <a href="/cgi-bin/koha/circ/circulation.pl#checkouts">0 Checkouts</a>
     <!-- /TMPL_IF --></li>
+<!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 <li><!-- TMPL_IF NAME="countreserv"-->
             <a href="/cgi-bin/koha/circ/circulation.pl#reserves"><!--TMPL_VAR NAME="countreserv"--> Hold(s)</a>
     <!-- TMPL_ELSE -->
             <a href="/cgi-bin/koha/circ/circulation.pl#reserves">0 Holds</a>
     <!-- /TMPL_IF --></li>
+<!-- /TMPL_IF -->
 
 </ul>
 
+<!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
 <!-- SUMMARY : TODAY & PREVIOUS ISSUES -->
 <div id="checkouts">
 <!--TMPL_IF NAME="issuecount"-->
@@ -801,8 +829,9 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 <p>Patron has nothing checked out.</p>
 <!-- /TMPL_IF -->
 </div>
+<!-- /TMPL_IF -->
 
-
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 <div id="reserves">
 <!-- TMPL_IF NAME="reservloop" -->
 <form action="/cgi-bin/koha/reserve/modrequest.pl" method="post">
@@ -852,6 +881,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 	<p>Patron has nothing on hold.</p>
 <!-- /TMPL_IF -->
 </div> <!-- reservesloop -->
+<!-- /TMPL_IF -->
 
 <!-- /TMPL_IF --> <!-- borrowernumber -->
 </div></div>

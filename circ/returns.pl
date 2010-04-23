@@ -63,7 +63,7 @@ my ( $template, $librarian, $cookie ) = get_template_and_user(
         query           => $query,
         type            => "intranet",
         authnotrequired => 0,
-        flagsrequired   => { circulate => "circulate_remaining_permissions" },
+        flagsrequired   => { circulate => '*' },
     }
 );
 
@@ -83,6 +83,15 @@ my $userenv_branch = C4::Context->userenv->{'branch'} || '';
 #
 # Some code to handle the error if there is no branch or printer setting.....
 #
+my $checkin_override_date;
+if (C4::Context->preference('AllowCheckInDateChange')) {
+    my $tempdate = $query->param('checkin_override_date');
+    if ($tempdate && $tempdate =~ C4::Dates->regexp('syspref')) {
+        $checkin_override_date = C4::Dates->new($tempdate);
+        $template->param( checkin_override_date => $tempdate);
+    }
+}
+
 
 # Set up the item stack ....
 my %returneditems;
@@ -199,9 +208,13 @@ if ($barcode) {
 #
 # save the return
 #
-    ( $returned, $messages, $issueinformation, $borrower ) =
-      AddReturn( $barcode, $userenv_branch, $exemptfine, $dropboxmode);     # do the return
-
+    if ($checkin_override_date ) {
+        ( $returned, $messages, $issueinformation, $borrower ) =
+        AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode, $checkin_override_date->output('iso'));
+    } else {
+        ( $returned, $messages, $issueinformation, $borrower ) =
+        AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode);
+    }
     # get biblio description
     my $biblio = GetBiblioFromItemNumber($itemnumber);
     # fix up item type for display
@@ -547,6 +560,8 @@ $template->param(
     HoldButtonConfirm => $HoldButtonConfirm,
     HoldButtonIgnore => $HoldButtonIgnore,
     HoldButtonPrintConfirm => $HoldButtonPrintConfirm,
+    DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
+    AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange')
 );
 
 # actually print the page!

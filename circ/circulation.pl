@@ -82,7 +82,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user (
         query           => $query,
         type            => "intranet",
         authnotrequired => 0,
-        flagsrequired   => { circulate => 'circulate_remaining_permissions' },
+        flagsrequired   => { circulate => '*' },
     }
 );
 
@@ -93,16 +93,18 @@ my %renew_failed;
 for (@failedrenews) { $renew_failed{$_} = 1; }
 
 my $findborrower = $query->param('findborrower');
-$findborrower =~ s|,| |g;
+if ($findborrower) {
+    $findborrower =~ s|,| |g;
 #$findborrower =~ s|'| |g;
+}
 my $borrowernumber = $query->param('borrowernumber');
 
 $branch  = C4::Context->userenv->{'branch'};  
 $printer = C4::Context->userenv->{'branchprinter'};
 
 
-# If AutoLocation is not activated, we show the Circulation Parameters to chage settings of librarian
-if (C4::Context->preference("AutoLocation") ne 1) { # FIXME: string comparison to number
+# If Autolocated is not activated, we show the Circulation Parameters to chage settings of librarian
+if (C4::Context->preference("AutoLocation") != 1) {
     $template->param(ManualLocation => 1);
 }
 
@@ -178,19 +180,26 @@ if($duedatespec_allow){
 my $todaysdate = C4::Dates->new->output('iso');
 
 # check and see if we should print
-if ( $barcode eq '' && $print eq 'maybe' ) {
-    $print = 'yes';
+my $inprocess;
+
+if ( $barcode eq q{} ) {
+    if ( $print && $print eq 'maybe' ) {
+        $print = 'yes';
+    }
+    $inprocess = q{};
+
+    my $charges = $query->param('charges');
+    if (  $charges && $charges eq 'yes' ) {
+        $template->param(
+            PAYCHARGES     => 'yes',
+            borrowernumber => $borrowernumber
+        );
+    }
+} else {
+    $inprocess = $query->param('inprocess');
 }
 
-my $inprocess = ($barcode eq '') ? '' : $query->param('inprocess');
-if ( $barcode eq '' && $query->param('charges') eq 'yes' ) {
-    $template->param(
-        PAYCHARGES     => 'yes',
-        borrowernumber => $borrowernumber
-    );
-}
-
-if ( $print eq 'yes' && $borrowernumber ne '' ) {
+if ( $print && $print eq 'yes' && $borrowernumber ne '' ) {
     printslip( $borrowernumber );
     $query->param( 'borrowernumber', '' );
     $borrowernumber = '';
@@ -240,9 +249,12 @@ if ($borrowernumber) {
     my ($warning_year, $warning_month, $warning_day) = split /-/, $borrower->{'dateexpiry'};
     my (  $enrol_year,   $enrol_month,   $enrol_day) = split /-/, $borrower->{'dateenrolled'};
     # Renew day is calculated by adding the enrolment period to today
-    my (  $renew_year,   $renew_month,   $renew_day) =
-      Add_Delta_YM( $enrol_year, $enrol_month, $enrol_day,
-        0 , $borrower->{'enrolmentperiod'}) if ($enrol_year*$enrol_month*$enrol_day>0);
+    my ( $renew_year, $renew_month, $renew_day );
+    if ($enrol_year*$enrol_month*$enrol_day>0) {
+        ( $renew_year, $renew_month, $renew_day ) =
+        Add_Delta_YM( $enrol_year, $enrol_month, $enrol_day,
+            0 , $borrower->{'enrolmentperiod'});
+    }
     # if the expiry date is before today ie they have expired
     if ( $warning_year*$warning_month*$warning_day==0 
         || Date_to_Days($today_year,     $today_month, $today_day  ) 
@@ -286,6 +298,8 @@ if ($barcode) {
   my $blocker = $invalidduedate ? 1 : 0;
 
   delete $question->{'DEBT'} if ($debt_confirmed);
+  granular_overrides($template, $error, $question);
+
   foreach my $impossible ( keys %$error ) {
             $template->param(
                 $impossible => $$error{$impossible},
@@ -333,8 +347,6 @@ if ($borrowernumber) {
 ##################################################################################
 # BUILD HTML
 # show all reserves of this borrower, and the position of the reservation ....
-my $borrowercategory;
-my $category_type;
 if ($borrowernumber) {
 
     # new op dev
@@ -403,7 +415,7 @@ if ($borrowernumber) {
         push( @reservloop, \%getreserv );
 
 #         if we have a reserve waiting, initiate waitingreserveloop
-        if ($getreserv{waiting} eq 1) {
+        if ($getreserv{waiting} == 1) {
         push (@WaitingReserveLoop, \%getWaitingReserveInfo)
         }
       
@@ -431,6 +443,8 @@ my $totalprice = 0;
 if ($borrower) {
 # get each issue of the borrower & separate them in todayissues & previous issues
     my ($issueslist) = GetPendingIssues($borrower->{'borrowernumber'});
+
+    my $ren_override_limit = $template->param('CAN_user_circulate_override_renewals');
     # split in 2 arrays for today & previous
     foreach my $it ( @$issueslist ) {
         my $itemtypeinfo = getitemtypeinfo( (C4::Context->preference('item-level_itypes')) ? $it->{'itype'} : $it->{'itemtype'} );
@@ -442,7 +456,7 @@ if ($borrower) {
         );
         $it->{'charge'} = sprintf("%.2f", $it->{'charge'});
         my ($can_renew, $can_renew_error) = CanBookBeRenewed( 
-            $borrower->{'borrowernumber'},$it->{'itemnumber'}
+            $borrower->{'borrowernumber'},$it->{'itemnumber'},$ren_override_limit
         );
         $it->{"renew_error_${can_renew_error}"} = 1 if defined $can_renew_error;
         my ( $restype, $reserves ) = CheckReserves( $it->{'itemnumber'} );
@@ -488,12 +502,13 @@ if ($borrower) {
 my $dbh = C4::Context->dbh;
 
 # how many of each is allowed?
-my $issueqty_sth = $dbh->prepare( "
+my $issueqty_sth = $dbh->prepare( '
 SELECT itemtypes.description AS description,issuingrules.itemtype,maxissueqty
 FROM issuingrules
   LEFT JOIN itemtypes ON (itemtypes.itemtype=issuingrules.itemtype)
   WHERE categorycode=?
-" );
+' );
+#my @issued_itemtypes_count;  # huh?
 $issueqty_sth->execute("*");	# This is a literal asterisk, not a wildcard.
 
 while ( my $data = $issueqty_sth->fetchrow_hashref() ) {
@@ -545,7 +560,8 @@ if ($borrowerslist) {
 
 #title
 my $flags = $borrower->{'flags'};
-foreach my $flag ( sort keys %$flags ) {
+
+foreach my $flag ( sort keys %{$flags} ) {
     $template->param( flagged=> 1);
     $flags->{$flag}->{'message'} =~ s#\n#<br />#g;
     if ( $flags->{$flag}->{'noissues'} ) {
@@ -570,7 +586,7 @@ foreach my $flag ( sort keys %$flags ) {
                 charges_is_blocker => 1
             );
         }
-        elsif ( $flag eq 'CREDITS' ) {
+        if ( $flag eq 'CREDITS' ) {
             $template->param(
                 credits    => 'true',
                 creditsmsg => $flags->{'CREDITS'}->{'message'}
@@ -712,9 +728,6 @@ if ($stickyduedate) {
     $session->param( 'stickyduedate', $duedatespec );
 }
 
-#if ($branchcookie) {
-#$cookie=[$cookie, $branchcookie, $printercookie];
-#}
 
 my ($picture, $dberror) = GetPatronImage($borrower->{'cardnumber'});
 $template->param( picture => 1 ) if $picture;
@@ -734,9 +747,37 @@ if ( scalar( @canned_notes ) ) {
 $template->param(
     debt_confirmed            => $debt_confirmed,
     SpecifyDueDate            => $duedatespec_allow,
-    CircAutocompl             => C4::Context->preference("CircAutocompl"),
-	AllowRenewalLimitOverride => C4::Context->preference("AllowRenewalLimitOverride"),
-    dateformat                => C4::Context->preference("dateformat"),
+    CircAutocompl             => C4::Context->preference('CircAutocompl'),
+    AllowRenewalLimitOverride => C4::Context->preference('AllowRenewalLimitOverride'),
+    dateformat                => C4::Context->preference('dateformat'),
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
 );
 output_html_with_http_headers $query, $cookie, $template->output;
+
+
+sub granular_overrides {
+    my ($template, $error, $question) = @_;
+    if ($question->{TOO_MANY} ) {
+        my $check_granular = $template->param('CAN_user_circulate_override_checkout_max');
+        if (!$check_granular) {
+            $error->{TOO_MANY} = $question->{TOO_MANY};
+            delete $question->{TOO_MANY};
+        }
+    }
+    if ($error->{NOT_FOR_LOAN}) {
+        my $check_granular = $template->param('CAN_user_circulate_override_non_circ');
+        if ($check_granular) {
+            $question->{NOT_FOR_LOAN_FORCING} = $error->{NOT_FOR_LOAN};
+            delete $error->{NOT_FOR_LOAN};
+        }
+    }
+    if ($error->{NO_MORE_RENEWALS} ) {
+        my $check_granular = $template->param('CAN_user_circulate_override_renewals');
+        if ($check_granular) {
+            $question->{NO_MORE_RENEWALS_FORCING} = $error->{NO_MORE_RENEWALS};
+            delete $error->{NO_MORE_RENEWALS};
+        }
+    }
+
+    return;
+}

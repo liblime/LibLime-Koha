@@ -16,6 +16,7 @@
 
 	function yuiToolbar() {
 	
+    <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->   
     <!-- TMPL_IF NAME="NOTMARC" -->
 	    new YAHOO.widget.Button("newrecord");
 	<!-- TMPL_ELSE -->
@@ -34,6 +35,8 @@
 	        container: "newmenuc"
 	    });  
 	}
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
 
     /* this function open a popup to search on z3950 server.  */
     function PopupZ3950() {
@@ -64,6 +67,7 @@
 	</script>
 	
   <div id="newmenuc">
+    <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
     <!-- TMPL_IF NAME="NOTMARC" -->
 		<a id="newrecord" href="/cgi-bin/koha/cataloging/addbiblio.pl">New Record</a>
 	<!-- TMPL_ELSE -->
@@ -80,6 +84,7 @@
 			<input type="submit" value="Add Record Without Search" />
 		</form>
         <a id="z3950search" onclick="PopupZ3950(); return false;">z39.50 Search</a>
+    <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->  
 
   </div>
