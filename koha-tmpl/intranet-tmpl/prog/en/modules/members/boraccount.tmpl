@@ -51,7 +51,9 @@
       <!-- TMPL_IF NAME="amountoutstandingcredit" --><td class="credit"><!-- TMPL_ELSE --><td class="debit"><!-- /TMPL_IF --><!-- TMPL_VAR NAME="amountoutstanding" --></td>
       <td>
 	<!-- TMPL_IF NAME="payment" -->
+            <!-- TMPL_IF NAME="CAN_user_updatecharges_edit_charges" -->
 		<a href="boraccount.pl?action=reverse&borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&accountno=<!-- TMPL_VAR NAME="accountno" -->">Reverse</a>
+            <!-- /TMPL_IF -->
 	<!-- TMPL_ELSE -->
 		&nbsp;
 	<!-- /TMPL_IF -->
