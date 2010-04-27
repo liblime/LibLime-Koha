@@ -28,7 +28,7 @@ body.login-area {
 	padding: 0;
 }
 
-#login-area input:focus, textarea:focus, label:focus {
+#login-area input:focus, #login-area textarea:focus, $login-area label:focus {
 	background: #fff;
 	border: 1px solid #686868;
 }
@@ -132,7 +132,7 @@ body.login-area {
 	text-align: right;
 }
 
-#login-area textarea, input, select {
+#login-area textarea, #login-area input, #login-area select {
 	background: #f4f4f4;
 	border: 1px solid #b2b2b2;
 	color: #000;
