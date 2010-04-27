@@ -458,27 +458,31 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 			 //<![CDATA[
                    function validate1(date) {
                          var today = new Date();
-                         if ( date < today ) {
-                             return true;
-                          } else {
-                             return false;
-                          }
-                     };
-                     function refocus(calendar) {
-                        $('#barcode').focus();
-                        calendar.hide();
-                     };
+                     if ( date < today ) {
+                         return true;
+                      } else {
+                         return false;
+                      }
+                 };
+                 function refocus(calendar) {
+                    document.getElementById('barcode').focus();
+                    calendar.hide();
+                 };
 				//#TODO - ADD syspref (AllowPostDatedCheckouts).
-                     Calendar.setup(
-                          {
-                             inputField : "duedatespec",
-                             ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-                             button : "CalendarDueDate",
-                             disableFunc : validate1,
-                             dateStatusFunc : validate1,
-                             onClose : refocus
-                           }
-                        );
+                 Calendar.setup(
+                      {
+                         inputField : "duedatespec",
+                         ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                         button : "CalendarDueDate",
+                        <!-- TMPL_IF NAME="AllowDueDateInPast" -->
+                         onClose : refocus
+                        <!-- TMPL_ELSE -->
+                         disableFunc : validate1,
+                         dateStatusFunc : validate1,
+                         onClose : refocus
+                        <!-- /TMPL_IF -->
+                       }
+                    );
 				//]]>
                  </script>
 
