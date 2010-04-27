@@ -310,8 +310,13 @@ if ($barcode) {
     CanBookBeIssued( $borrower, $barcode, $datedue , $inprocess );
   my $blocker = $invalidduedate ? 1 : 0;
 
-  delete $question->{'DEBT'} if ($circ_session->{'debt_confirmed'} || $circ_session->{'charges_overridden'});
-  granular_overrides($circ_session, $error, $question);
+  if ($circ_session->{'debt_confirmed'} || $circ_session->{'charges_overridden'}) {
+    delete $question->{'DEBT'};
+    delete $error->{'DEBT'};
+  }
+  if (C4::Context->preference('GranularPermissions')){
+     granular_overrides($template, $error, $question);
+  }
 
   foreach my $impossible ( keys %$error ) {
             $template->param(
