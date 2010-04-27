@@ -548,20 +548,20 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
 
 $template->param(
     riloop         => \@riloop,
-    genbrname      => $branches->{$userenv_branch}->{'branchname'},
-    genprname      => $printers->{$printer}->{'printername'},
-    branchname     => $branches->{$userenv_branch}->{'branchname'},
-    printer        => $printer,
-    errmsgloop     => \@errmsgloop,
-    exemptfine     => $exemptfine,
-    dropboxmode    => $dropboxmode,
-    dropboxdate	   => $dropboxdate->output(),
-    overduecharges => $overduecharges,
     HoldButtonConfirm => $HoldButtonConfirm,
     HoldButtonIgnore => $HoldButtonIgnore,
     HoldButtonPrintConfirm => $HoldButtonPrintConfirm,
+    genbrname               => $branches->{C4::Context->userenv->{'branch'}}->{'branchname'},
+    genprname               => $printers->{$printer}->{'printername'},
+    branchname              => $branches->{C4::Context->userenv->{'branch'}}->{'branchname'},
+    printer                 => $printer,
+    errmsgloop              => \@errmsgloop,
+    exemptfine              => $exemptfine,
+    dropboxmode             => $dropboxmode,
+    dropboxdate				=> $dropboxdate->output(),
+	overduecharges          => $overduecharges,
     DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
-    AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange')
+    AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange'),
 );
 
 # actually print the page!

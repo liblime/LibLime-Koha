@@ -1444,7 +1444,7 @@ sub AddReturn {
             $doreturn = 0;
         }
     }
-
+    
     my $item = GetItem($itemnumber) or die "GetItem($itemnumber) failed";
         # full item data, but no borrowernumber or checkout info (no issue)
         # we know GetItem should work because GetItemnumberFromBarcode worked
@@ -1492,7 +1492,18 @@ sub AddReturn {
         }
 
         if ($borrowernumber) {
-            MarkIssueReturned($borrowernumber, $item->{'itemnumber'}, $circControlBranch);
+            if ($returndate ) { # over ride in effect
+                MarkIssueReturned(
+                    $borrower->{'borrowernumber'},
+                    $issue->{'itemnumber'},
+                    $circControlBranch,
+                    $returndate);
+            } else {
+                MarkIssueReturned(
+                    $borrower->{'borrowernumber'},
+                    $issue->{'itemnumber'},
+                    $circControlBranch);
+            }
             $messages->{'WasReturned'} = 1;    # FIXME is the "= 1" right?  This could be the borrower hash.
         }
 
