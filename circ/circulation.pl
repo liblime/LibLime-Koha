@@ -573,6 +573,7 @@ while ( my $data = $issueqty_sth->fetchrow_hashref() ) {
 my @values;
 my %labels;
 my $CGIselectborrower;
+$template->param( showinitials => C4::Context->preference('DisplayInitials') );
 if ($borrowerslist) {
     foreach (
         sort {(lc $a->{'surname'} cmp lc $b->{'surname'} || lc $a->{'firstname'} cmp lc $b->{'firstname'})
@@ -580,8 +581,14 @@ if ($borrowerslist) {
       )
     {
         push @values, $_->{'borrowernumber'};
-        $labels{ $_->{'borrowernumber'} } =
+        if (C4::Context->preference('DisplayInitials')) {
+          $labels{ $_->{'borrowernumber'} } =
+"$_->{'surname'}, $_->{'firstname'} $_->{'initials'} ... ($_->{'cardnumber'} - $_->{'categorycode'}) ...  $_->{'address'} ";
+        }
+        else {
+          $labels{ $_->{'borrowernumber'} } =
 "$_->{'surname'}, $_->{'firstname'} ... ($_->{'cardnumber'} - $_->{'categorycode'}) ...  $_->{'address'} ";
+        }
     }
     $CGIselectborrower = CGI::scrolling_list(
         -name     => 'borrowernumber',
@@ -734,6 +741,7 @@ $template->param(
     printername                 => $printer,
     firstname                   => $borrower->{'firstname'},
     surname                     => $borrower->{'surname'},
+    initials                    => $borrower->{'initials'},
     dateexpiry        => format_date($newexpiry),
     expiry            => format_date($borrower->{'dateexpiry'}),
     categorycode      => $borrower->{'categorycode'},
@@ -799,6 +807,10 @@ $template->param(
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
     AllowDueDateInPast        => C4::Context->preference('AllowDueDateInPast'),
 );
+
+# Pass off whether to display initials or not
+$template->param( showinitials => C4::Context->preference('DisplayInitials') );
+
 output_html_with_http_headers $query, $cookie, $template->output;
 
 

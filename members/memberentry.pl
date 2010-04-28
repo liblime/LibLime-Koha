@@ -104,6 +104,8 @@ foreach (@field_check) {
 }
 $template->param("add"=>1) if ($op eq 'add');
 $template->param("checked" => 1) if (defined($nodouble) && $nodouble eq 1);
+$template->param("showinitials" => C4::Context->preference('DisplayInitials'));
+$template->param("showothernames" => C4::Context->preference('DisplayOthernames'));
 ($borrower_data = GetMember($borrowernumber,'borrowernumber')) if ($op eq 'modify' or $op eq 'save');
 my $categorycode  = $input->param('categorycode') || $borrower_data->{'categorycode'};
 my $category_type = $input->param('category_type');

@@ -1,7 +1,7 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Circulation
 <!-- TMPL_IF NAME="borrowernumber" -->
-&rsaquo; Checking out to <!-- TMPL_VAR name="surname" -->, <!-- TMPL_VAR name="firstname" -->
+&rsaquo; Checking out to <!-- TMPL_VAR name="surname" -->, <!-- TMPL_VAR name="firstname" --><!-- TMPL_IF NAME="showinitials" --> <!-- TMPL_VAR NAME="initials" --><!-- /TMPL_IF -->
 (<!-- TMPL_VAR NAME="cardnumber" -->)
 <!-- /TMPL_IF --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
@@ -179,7 +179,7 @@ function refocus(calendar) {
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="circ-search.inc" -->
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo;<!-- TMPL_IF NAME="borrowernumber" --> <a href="/cgi-bin/koha/circ/circulation.pl">Checkouts</a> &rsaquo; <!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR name="surname" --><!-- TMPL_ELSE --> <strong>Checkouts</strong><!-- /TMPL_IF --></div>
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo;<!-- TMPL_IF NAME="borrowernumber" --> <a href="/cgi-bin/koha/circ/circulation.pl">Checkouts</a> &rsaquo; <!-- TMPL_VAR name="firstname" --> <!-- TMPL_IF NAME="showinitials" --><!-- TMPL_VAR NAME="initials" --><!-- /TMPL_IF --> <!-- TMPL_VAR name="surname" --><!-- TMPL_ELSE --> <strong>Checkouts</strong><!-- /TMPL_IF --></div>
 
 
 <!-- TMPL_IF NAME="CGIselectborrower" -->
@@ -488,7 +488,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 	    <input type=button value="Clear Screen" onClick="window.location = '/cgi-bin/koha/circ/circulation.pl'">
     <!-- /TMPL_IF -->
 
-    <label for="barcode">Checking out to <!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR name="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->) </label>
+    <label for="barcode">Checking out to <!-- TMPL_VAR name="firstname" --> <!-- TMPL_IF NAME="showinitials" --><!-- TMPL_VAR NAME="initials" --><!-- /TMPL_IF --> <!-- TMPL_VAR name="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->) </label>
     <!-- TMPL_IF NAME="PreviousCardnumber" --><div><span class="circ-hlt">Warning: Scanned Old Card</span></div><!-- /TMPL_IF -->
 	<div class="hint">Enter item barcode:</div>
 

@@ -148,8 +148,8 @@ $category_type is used to get a specified type of user.
 (mainly adults when creating a child.)
 
 C<$searchstring> is a space-separated list of search terms. Each term
-must match the beginning a borrower's surname, first name, or other
-name.
+must match the beginning a borrower's surname, first name, other
+name, or initials.
 
 C<$filter> is assumed to be a list of elements to filter results on
 
@@ -198,7 +198,7 @@ sub SearchMember {
         $query.=" ORDER BY $orderby";
         @bind = ("$searchstring%","$searchstring");
     }
-    else    # advanced search looking in surname, firstname and othernames
+    else    # advanced search looking in surname, firstname, othernames, and initials
     {
         @data  = split( ' ', $searchstring );
         $count = @data;
@@ -210,11 +210,13 @@ sub SearchMember {
         }     
         $query.="((surname LIKE ? OR (surname LIKE ? AND surname REGEXP ?)
                 OR firstname  LIKE ? OR (firstname LIKE ? AND firstname REGEXP ?)
-                OR othernames LIKE ? OR (othernames LIKE ? AND othernames REGEXP ?))
+                OR othernames LIKE ? OR (othernames LIKE ? AND othernames REGEXP ?)
+                OR initials LIKE ? OR (initials LIKE ? AND initials REGEXP ?))
         " .
         ($category_type?" AND category_type = ".$dbh->quote($category_type):"");
         my $regex = '[[:punct:][:space:]]'.$data[0];
         @bind = (
+            "$data[0]%", "%$data[0]%", $regex, 
             "$data[0]%", "%$data[0]%", $regex, 
             "$data[0]%", "%$data[0]%", $regex, 
             "$data[0]%", "%$data[0]%", $regex 
@@ -222,14 +224,15 @@ sub SearchMember {
         for ( my $i = 1 ; $i < $count ; $i++ ) {
             $query = $query . " AND (" . " surname LIKE ? OR (surname LIKE ? AND surname REGEXP ?)
                 OR firstname  LIKE ? OR (firstname LIKE ? AND firstname REGEXP ?)
-                OR othernames LIKE ? OR (othernames LIKE ? AND othernames REGEXP ?))";
+                OR othernames LIKE ? OR (othernames LIKE ? AND othernames REGEXP ?)
+                OR initials LIKE ? OR (initials LIKE ? AND initials REGEXP ?))";
             $regex = '[[:punct:][:space:]]'.$data[$i];
             push( @bind,
               "$data[$i]%", "%$data[$i]%", $regex,
               "$data[$i]%", "%$data[$i]%", $regex,
+              "$data[$i]%", "%$data[$i]%", $regex,
               "$data[$i]%", "%$data[$i]%", $regex
             );
-
 
             # FIXME - .= <<EOT;
         }

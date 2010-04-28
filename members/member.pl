@@ -119,6 +119,7 @@ for (my $i=($startfrom-1)*$resultsperpage; $i < $to; $i++){
     PreviousCardnumber => $results->[$i]{'PreviousCardnumber'},
     surname => $results->[$i]{'surname'},
     firstname => $results->[$i]{'firstname'},
+    initials => $results->[$i]{'initials'},
     categorycode => $results->[$i]{'categorycode'},
     category_type => $results->[$i]{'category_type'},
     category_description => $results->[$i]{'description'},
@@ -175,5 +176,6 @@ $template->param( ShowPatronSearchBySQL => C4::Context->preference('ShowPatronSe
 if ( $input->param('sqlsearch') ) {
   $template->param( member => $search_sql );
 }
+$template->param("showinitials" => C4::Context->preference('DisplayInitials'));
 
 output_html_with_http_headers $input, $cookie, $template->output;
