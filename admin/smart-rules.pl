@@ -99,8 +99,8 @@ elsif ($op eq 'delete-branch-item') {
 # save the values entered
 elsif ($op eq 'add') {
     my $sth_search = $dbh->prepare("SELECT COUNT(*) AS total FROM issuingrules WHERE branchcode=? AND categorycode=? AND itemtype=?");
-    my $sth_insert = $dbh->prepare("INSERT INTO issuingrules (branchcode, categorycode, itemtype, maxissueqty, issuelength, fine, firstremind, chargeperiod) VALUES(?,?,?,?,?,?,?,?)");
-    my $sth_update=$dbh->prepare("UPDATE issuingrules SET fine=?, firstremind=?, chargeperiod=?, maxissueqty=?, issuelength=? WHERE branchcode=? AND categorycode=? AND itemtype=?");
+    my $sth_insert = $dbh->prepare("INSERT INTO issuingrules (branchcode, categorycode, itemtype, maxissueqty, issuelength, fine, firstremind, chargeperiod, max_fine, max_holds) VALUES(?,?,?,?,?,?,?,?,?,?)");
+    my $sth_update = $dbh->prepare("UPDATE issuingrules SET fine=?, firstremind=?, chargeperiod=?, maxissueqty=?, issuelength=?, max_fine = ?, max_holds = ? WHERE branchcode=? AND categorycode=? AND itemtype=?");
     
     my $br = $branch; # branch
     my $bor  = $input->param('categorycode'); # borrower category
@@ -109,6 +109,9 @@ elsif ($op eq 'add') {
     my $firstremind  = $input->param('firstremind');
     my $chargeperiod = $input->param('chargeperiod');
     my $maxissueqty  = $input->param('maxissueqty');
+    my $max_fine = $input->param('max_fine');
+    my $max_holds = $input->param('max_holds');
+    
     $maxissueqty =~ s/\s//g;
     $maxissueqty = undef if $maxissueqty !~ /^\d+/;
     my $issuelength  = $input->param('issuelength');
@@ -117,9 +120,9 @@ elsif ($op eq 'add') {
     $sth_search->execute($br,$bor,$cat);
     my $res = $sth_search->fetchrow_hashref();
     if ($res->{total}) {
-        $sth_update->execute($fine, $firstremind, $chargeperiod, $maxissueqty,$issuelength,$br,$bor,$cat);
+        $sth_update->execute($fine, $firstremind, $chargeperiod, $maxissueqty, $issuelength, $max_fine, $max_holds, $br, $bor, $cat );
     } else {
-        $sth_insert->execute($br,$bor,$cat,$maxissueqty,$issuelength,$fine,$firstremind,$chargeperiod);
+        $sth_insert->execute($br, $bor, $cat, $maxissueqty, $issuelength, $fine, $firstremind, $chargeperiod, $max_fine, $max_holds);
     }
 } 
 elsif ($op eq "set-branch-defaults") {
@@ -372,6 +375,7 @@ while (my $row = $sth2->fetchrow_hashref) {
     $row->{'humancategorycode'} ||= $row->{'categorycode'};
     $row->{'default_humancategorycode'} = 1 if $row->{'humancategorycode'} eq '*';
     $row->{'fine'} = sprintf('%.2f', $row->{'fine'});
+    $row->{'max_fine'} = sprintf('%.2f', $row->{'max_fine'});
     push @row_loop, $row;
 }
 $sth->finish;
@@ -470,6 +474,14 @@ if ($defaults) {
 }
 
 $template->param(default_rules => ($defaults ? 1 : 0));
+
+if ( C4::Context->preference('UseGranularMaxFines') ) {
+  $template->param( UseGranularMaxFines => 1 );
+}
+
+if ( C4::Context->preference('UseGranularMaxHolds') ) {
+  $template->param( UseGranularMaxHolds => 1 );
+}
 
 $template->param(categoryloop => \@category_loop,
                         itemtypeloop => \@itemtypes,

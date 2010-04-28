@@ -105,7 +105,7 @@ function checkMultiHold() {
         return confirm(msg);
     });
     $("input.warning").click(function() {
-        return confirm( _( 'None of these items can normally be put on hold for this patron.' ) + "\n\n" + _( 'Place hold?' ) );
+        return confirm( _( 'Patron has exceeded hold limits.' ) + "\n\n" + _( 'Place hold?' ) );
     });
  	$("#requestany").click(function() {
 		if(this.checked){
@@ -198,12 +198,14 @@ function checkMultiHold() {
 
 <!-- TMPL_IF NAME="warnings" -->
     <div class="dialog alert">
-
     <!-- TMPL_UNLESS NAME="multi_hold" -->
       <h3>Cannot Place Hold</h3>
   	  <ul>
         <!-- TMPL_IF NAME="maxreserves" -->
           <li><strong>Too Many Holds: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --> </a> has too many holds.</li>
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="max_shelf_holds_per_day" -->
+          <li><strong>Too Many Shelf Holds Today: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --> </a> has placed too many holds in one day for bibs with at least one available item.</li>
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="alreadyreserved" -->
           <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> <strong>already has a hold</strong> on this item </li>

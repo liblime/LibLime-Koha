@@ -54,6 +54,10 @@ sub get_out ($$$) {
 # get borrower information ....
 my ( $borr ) = GetMemberDetails( $borrowernumber );
 
+if ( C4::Context->preference('singleBranchMode') ) {
+  $template->param( branch => $borr->{'branchcode'} );
+}
+
 # get branches and itemtypes
 my $branches = GetBranches();
 my $itemTypes = GetItemTypes();
@@ -262,11 +266,51 @@ if ( $borr->{debarred} && ($borr->{debarred} eq 1) ) {
 
 my @reserves = GetReservesFromBorrowernumber( $borrowernumber );
 $template->param( RESERVES => \@reserves );
-if ( scalar(@reserves) >= $MAXIMUM_NUMBER_OF_RESERVES ) {
+if ( C4::Context->preference('UseGranularMaxHolds') ) {
+  foreach my $biblionumber (@biblionumbers) {
+      ## Since we can't limit by branchcode in the opac, we use the * rule for branch
+      ## Get the reserves for the borrower, limited by itemtype
+      ## If the borrower is over the limit for their borrower.categorycode and the given itemtype
+      ## Disable ability to make a reserve
+      my $itemtype;
+      my $dbh = C4::Context->dbh;
+      my $sth = $dbh->prepare("SELECT itemtype FROM biblioitems WHERE biblionumber = ?");
+      $sth->execute($biblionumber);
+      ($itemtype) = $sth->fetchrow_array;
+      
+      my @reservesByItemtype = C4::Reserves::GetReservesByBorrowernumberAndItemtypeOf($borrowernumber, $biblionumber);
+      my $res_count = scalar( @reservesByItemtype );
+
+      my $irule = GetIssuingRule($borr->{'categorycode'}, $itemtype, $borr->{'branchcode'} );
+      
+      if ( !$irule->{'max_holds'} ) {
+        $template->param( message => 1, none_available => 1 );
+        $noreserves = 1;
+      } elsif ( $res_count >= $irule->{'max_holds'} ) {
+        $template->param( message => 1, too_many_reserves => $res_count );
+        $noreserves = 1;
+        $template->param( too_many_reserves => scalar(@reserves));
+      }
+  }
+} elsif ( scalar(@reserves) >= $MAXIMUM_NUMBER_OF_RESERVES ) {
     $template->param( message => 1 );
     $noreserves = 1;
     $template->param( too_many_reserves => scalar(@reserves));
 }
+
+if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
+  foreach my $biblionumber (@biblionumbers) {
+    if ( GetAvailableItemsCount( $biblionumber ) ) {
+      my $reserves_today = GetReserveCount( $borrowernumber, my $today = 1, my $shelf_holds_only = 1 );
+      if ( $reserves_today >= C4::Context->preference('MaxShelfHoldsPerDay') ) {
+        $noreserves = 1;
+        $template->param( message => 1 );
+        $template->param( too_many_shelf_holds_per_day =>  C4::Context->preference('MaxShelfHoldsPerDay') );
+      }
+    }
+  }                                                                                              
+} 
+
 foreach my $res (@reserves) {
     foreach my $biblionumber (@biblionumbers) {
         if ( $res->{'biblionumber'} == $biblionumber && $res->{'borrowernumber'} == $borrowernumber) {

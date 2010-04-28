@@ -723,15 +723,21 @@ sub CanBookBeIssued {
       C4::Members::GetMemberAccountRecords( $borrower->{'borrowernumber'}, '' && $duedate->output('iso') );
     if ( C4::Context->preference("IssuingInProcess") ) {
         my $amountlimit = C4::Context->preference("noissuescharge");
+                
         if ( $amount > $amountlimit && !$inprocess ) {
             $issuingimpossible{DEBT} = sprintf( "%.2f", $amount );
         }
-        elsif ( $amount > 0 && $amount <= $amountlimit && !$inprocess ) {
+        elsif ( $amount > 0 && $amount <= $amountlimit && !$inprocess && !C4::Context->preference('WarnOnlyOnMaxFine') ) {
             $needsconfirmation{DEBT} = sprintf( "%.2f", $amount );
         }
     }
     else {
-        if ( $amount > 0 ) {
+        my $max_fine = 0;
+        if ( C4::Context->preference('WarnOnlyOnMaxFine') ) {
+          $max_fine = C4::Context->preference("noissuescharge");
+        }
+
+        if ( $amount > $max_fine ) {
             $needsconfirmation{DEBT} = sprintf( "%.2f", $amount );
         }
     }
