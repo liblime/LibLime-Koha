@@ -2,6 +2,14 @@
 <title>Koha &rsaquo; Reports &rsaquo; Checkouts by patron category</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
+<script src="<!-- TMPL_VAR NAME="themelang"-->/lib/jquery/plugins/jquery.asmselect.js" type="text/javascript"></script>
+<script type="text/javascript">
+    <!--
+    $( document ).ready( function () {
+        $( '#branch' ).asmSelect({useInput: true});
+    } );
+    // -->
+</script>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -55,7 +63,7 @@
 	<form method="post" action="/cgi-bin/koha/reports/manager.pl">
 		<fieldset class="rows">
 		<legend>Checkouts by patron category</legend>
-		<ol><li><label for="borrowercategory">Select a borrower category</label><select name="value" id="borrowercategory"><option value="" > Any Category code</option>
+		<ol><li><label for="borrowercategory">Select a borrower category</label><select name="value" id="borrowercategory" title="">
     <!--TMPL_LOOP Name="loopcategories"-->
         <option value="<!--TMPL_VAR Name="value"-->" ><!--TMPL_VAR Name="description"--> </option>  
      <!--/TMPL_LOOP --> 

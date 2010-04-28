@@ -192,12 +192,16 @@ elsif ( $phase eq 'Choose these criteria' ) {
     my @criteria = $input->param('criteria_column');
 	my $query_criteria;
     foreach my $crit (@criteria) {
-        my $value = $input->param( $crit . "_value" );
-        ($value) or next;
-        if ($value =~ C4::Dates->regexp('syspref')) { 
-            $value = C4::Dates->new($value)->output("iso");
-        }
-        $query_criteria .= " AND $crit='$value'";
+        my (@values) = $input->param( $crit . "_value" );
+        (@values) or next;
+
+		@values = map { ($_ =~ C4::Dates->regexp('syspref')) ? C4::Dates->new($_)->output("iso") : $_ } @values;
+
+		if (scalar(@values) > 1 ) {
+			$query_criteria .= " AND $crit IN (" . join(", ", map({ "'$_'" } @values)) . ")";
+		} else {
+			$query_criteria .= " AND $crit='$values[0]'";
+		}
     }
 
     $template->param(

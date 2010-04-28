@@ -7,8 +7,8 @@
 <!-- TMPL_ELSIF NAME="buildx"  -->&rsaquo; Build A Report, Step <!-- TMPL_VAR NAME="buildx" --> of 6:
   <!-- TMPL_IF    NAME="build1" -->Choose a Module
   <!-- TMPL_ELSIF NAME="build2" -->Pick a Report Type
-  <!-- TMPL_ELSIF NAME="build3" -->Select Columns for Display
-  <!-- TMPL_ELSIF NAME="build4" -->Select Criteria to Limit on
+  <!-- TMPL_ELSIF NAME="build3" -->Select Information to Display
+  <!-- TMPL_ELSIF NAME="build4" -->Select Limiting Criteria
   <!-- TMPL_ELSIF NAME="build5" -->Pick which columns to total
   <!-- TMPL_ELSIF NAME="build6" -->Select how you want the report ordered
   <!-- /TMPL_IF -->
@@ -19,6 +19,7 @@
 <style type="text/css">
 	#sql { width: 90%; height: 9em; border: 1px solid #EEE; }
 </style>
+<script src="<!-- TMPL_VAR NAME="themelang"-->/lib/jquery/plugins/jquery.asmselect.js" type="text/javascript"></script>
 <script type="text/javascript">
 //<![CDATA[
 $(document).ready(function(){
@@ -37,6 +38,14 @@ $(document).ready(function(){
 			return false;
 		}
 	});
+<!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="build4" -->
+    $( '.criteria-select' ).each( function () {
+        if ( this.options.length > 1 ) {
+            $( this ).attr( 'multiple', true ).find( ":selected" ).attr( "selected", false );
+            $( this ).asmSelect();
+        }
+    } );
 <!-- /TMPL_IF -->
 });
 //]]>
@@ -57,8 +66,8 @@ $(document).ready(function(){
   <!-- TMPL_ELSIF NAME="buildx"  --><a href="/cgi-bin/koha/reports/guided_reports.pl?phase=Build%20new">Build A Report</a> &rsaquo; Step <!-- TMPL_VAR NAME="buildx" --> of 6:
       <!-- TMPL_IF    NAME="build1" -->Choose a Module
       <!-- TMPL_ELSIF NAME="build2" -->Pick a Report Type
-      <!-- TMPL_ELSIF NAME="build3" -->Select Columns for Display
-      <!-- TMPL_ELSIF NAME="build4" -->Select Criteria to Limit on
+      <!-- TMPL_ELSIF NAME="build3" -->Select Information to Display
+      <!-- TMPL_ELSIF NAME="build4" -->Select Limiting Criteria
       <!-- TMPL_ELSIF NAME="build5" -->Pick which columns to total
       <!-- TMPL_ELSIF NAME="build6" -->Select how you want the report ordered
       <!-- /TMPL_IF -->
@@ -151,7 +160,7 @@ canned reports and writing custom SQL reports.</p>
 <fieldset class="rows"><legend>Step 2 of 6: Pick a Report Type</legend>
 <ol><li><label for="types">Choose: </label>
     <select id="types" name="types">
-        <option value="1">Tabular</option>
+        <option value="1">Tabular (one row per checkout/item/etc.)</option>
         <option value="2" disabled="disabled">Summary</option>
         <option value="3" disabled="disabled">Matrix</option>
     </select>
@@ -173,8 +182,8 @@ canned reports and writing custom SQL reports.</p>
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="build3" -->
-<h3>Step 3 of 6: Select Columns for Display</h3>
-<p>Note: Be careful selecting when selecting columns. If your choice is too broad it could result in a very large report that will either not complete, or slow your system down.</p>
+<h3>Step 3 of 6: Select Information to Display</h3>
+<p>Note: Be careful when selecting columns. If you add too many, the report might might be too large, never finish, and slow your system down.</p>
 
 <form id="column_submit" action="/cgi-bin/koha/reports/guided_reports.pl" method="post">
 	<input type="hidden" name="area" value="<!-- TMPL_VAR NAME="area" -->" />
@@ -193,10 +202,7 @@ canned reports and writing custom SQL reports.</p>
 <optgroup label="<!-- TMPL_VAR NAME="table"-->">
 <!-- TMPL_ELSE -->
 <option value="<!-- TMPL_VAR NAME="name" -->">
-<!-- TMPL_IF NAME="description" --><!-- TMPL_VAR NAME="description" -->
-<!-- TMPL_ELSE -->
-<!-- TMPL_VAR NAME="name" -->
-<!-- /TMPL_IF -->
+<!-- TMPL_VAR NAME="description" -->
 </option>
 <!-- /TMPL_IF -->
 <!-- /TMPL_LOOP -->
@@ -226,7 +232,7 @@ canned reports and writing custom SQL reports.</p>
 <input type="hidden" name="area" value="<!-- TMPL_VAR NAME="area" -->" />
 <input type="hidden" name="type" value="<!-- TMPL_VAR NAME="type" -->" />
 <input type="hidden" name="column" value="<!-- TMPL_VAR NAME="column" -->" />
-<fieldset><legend>Step 4 of 6: Select Criteria to Limit on</legend><table>
+<fieldset><legend>Step 4 of 6: Select Limiting Criteria</legend><table>
 <!-- TMPL_LOOP NAME="criteria" -->
 <tr><td><input type="checkbox" name="criteria_column" id="<!-- TMPL_VAR
 NAME="name" -->" value="<!-- TMPL_VAR
@@ -247,11 +253,12 @@ align          : "Tl"
 </script>          
 </td></tr>
 <!-- TMPL_ELSE -->
-<td><select name="<!-- TMPL_VAR NAME="name" -->_value">
+<td><select title="Select a <!-- TMPL_VAR NAME="description" -->" name="<!-- TMPL_VAR NAME="name" -->_value" id="<!-- TMPL_VAR NAME="name" -->_value" class="criteria-select">
 <!-- TMPL_LOOP NAME="values" -->
 <option value="<!-- TMPL_VAR NAME="availablevalues"-->"><!-- TMPL_VAR NAME="availablevalues" --></option>
 <!-- /TMPL_LOOP -->
 </select>
+</script>
 </td></tr>
 <!-- /TMPL_IF -->
 <!-- /TMPL_LOOP -->

@@ -5,12 +5,14 @@
 	.sql {display: none;}
 </style>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script src="<!-- TMPL_VAR NAME="themelang"-->/lib/jquery/plugins/jquery.asmselect.js" type="text/javascript"></script>
 <script type="text/JavaScript" language="JavaScript">
 	//<![CDATA[
     	$(document).ready(function() { 
     		$("#resulttable").tablesorter({
     				widgets : ['zebra']
     			});
+            $('#bookseller, #branchcode').asmSelect({useInput: true});
     	});
 	//]]>
 </script>
@@ -66,8 +68,7 @@
 				<label for="bookseller">
 					Vendor:
 			    </label>
-				<select name="bookseller" id="bookseller">
-					<option value="">Any Vendor</option>
+				<select name="bookseller" id="bookseller" title="Select a bookseller">
     				<!--TMPL_LOOP Name="booksellers"-->
         				<option value="<!--TMPL_VAR Name="aqbooksellerid"-->"><!--TMPL_VAR Name="name"--></option>  
      				<!--/TMPL_LOOP --> 
@@ -76,8 +77,7 @@
 		    	<label for="branch">
 					Branch: 
 		    	</label>
-		    	<select name="branchcode"  id="branchcode">
-		    		<option value="">Any Branch</option>
+		    	<select name="branchcode" id="branchcode" title="Select a branch">
     				<!--TMPL_LOOP Name="branches"-->
         				<option value="<!--TMPL_VAR Name="branchcode"-->"><!--TMPL_VAR Name="branchname"--></option>  
      				<!--/TMPL_LOOP --> 		    	

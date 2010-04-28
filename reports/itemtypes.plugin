@@ -45,10 +45,11 @@ sub set_parameters {
 		$select_branches{$branch} = $branches->{$branch}->{'branchname'};
 	}
 	my $CGIbranch=CGI::scrolling_list( -name     => 'value',
-				-id => 'value',
+				-id => 'value_branches',
 				-values   => \@select_branch,
 				-labels   => \%select_branches,
 				-size     => 1,
+				-title    => 'Select a branch',
 				-multiple => 0 );
 	$template->param(CGIbranch => $CGIbranch);
 	return $template;
@@ -56,16 +57,16 @@ sub set_parameters {
 sub calculate {
 	my ($parameters) = @_;
 	my @results =();
-	my $branch = @$parameters[0];
+	my @branch = split /,/, @$parameters[0];
 	my $dbh = C4::Context->dbh;
 	my $sth;
-	if ($branch) {
+	if (@branch) {
 		if (C4::Context->preference('item-level_itypes')) {
 		$sth = $dbh->prepare("
         SELECT description, items.itype as itemtype, COUNT(*) AS total 
 			FROM itemtypes,items         
 		WHERE items.itype=itemtypes.itemtype         
-		AND items.holdingbranch=?            
+		AND items.holdingbranch IN (" . join( ',', ('?') x scalar(@branch) ) . ")
 		GROUP BY  items.itype");
 
 		}
@@ -75,10 +76,10 @@ sub calculate {
 			FROM itemtypes, biblioitems, items 
 		WHERE biblioitems.itemtype=itemtypes.itemtype 
 		AND items.biblioitemnumber=biblioitems.biblioitemnumber
-		AND items.holdingbranch=?
-			GROUP BY  biblioitems.itemtype");
+		AND items.holdingbranch IN (" . join( ',', ('?') x scalar(@branch) ) . ")
+		GROUP BY  biblioitems.itemtype");
 		}
-		$sth->execute($branch);
+		$sth->execute(@branch);
 	} else {
 		if (C4::Context->preference('item-level_itypes')) {
 		$sth = $dbh->prepare("
@@ -116,7 +117,7 @@ sub calculate {
 	my %globalline;
 	$globalline{loopitemtype} = \@results;
 	$globalline{total} = $grantotal;
-	$globalline{branch} = $branch;
+	$globalline{branch} = join( ', ', @branch );
 	push @mainloop,\%globalline;
 	return \@mainloop;
 }

@@ -295,21 +295,14 @@ if($barcodefilter){
 			$strsth .= " and $line >= ? " ;
 			$strsth .= " and $line <= ? " ;
 		} elsif ($linefilter[0]) {
-			$linefilter[0] =~ s/\*/%/g;
-			$strsth .= " and $line LIKE ? " ;
+            ( $strsth, @linefilter ) = AddCondition( $strsth, $line, $linefilter[0] );
 		}
 	}
 	$strsth .=" order by $linefield";
 	$debug and print STDERR "catalogue_stats SQL: $strsth\n";
 	
 	my $sth = $dbh->prepare( $strsth );
-	if (( @linefilter ) and ($linefilter[1])){
-		$sth->execute($barcodefilter,$linefilter[0],$linefilter[1]);
-	} elsif ($barcodefilter,$linefilter[0]) {
-		$sth->execute($barcodefilter,$linefilter[0]);
-	} else {
-		$sth->execute($barcodefilter);
-	}
+    $sth->execute($barcodefilter, @linefilter);
  	while ( my ($celvalue) = $sth->fetchrow) {
  		my %cell;
 		if ($celvalue) {
@@ -342,19 +335,12 @@ if($barcodefilter){
 	if (( @colfilter ) and ($colfilter[1])) {
 		$strsth2 .= " and $column> ? and $column< ?";
 	}elsif ($colfilter[0]){
-		$colfilter[0] =~ s/\*/%/g;
-		$strsth2 .= " and $column LIKE ? ";
+        ( $strsth2, @colfilter ) = AddCondition( $strsth2, $column, $colfilter[0] );
 	} 
 	$strsth2 .= " order by $colfield";
 	$debug and print STDERR "SQL: $strsth2";
 	my $sth2 = $dbh->prepare( $strsth2 );
-	if ((@colfilter) and ($colfilter[1])) {
-		$sth2->execute($barcodefilter,$colfilter[0],$colfilter[1]);
-	} elsif ($colfilter[0]){
-		$sth2->execute($barcodefilter,$colfilter[0]);
-	} else {
-		$sth2->execute($barcodefilter);
-	}
+    $sth2->execute($barcodefilter, @colfilter);
  	while (my ($celvalue) = $sth2->fetchrow) {
  		my %cell;
 		my %ft;
@@ -410,12 +396,7 @@ if($barcodefilter){
 		$strcalc .= " AND items.itemcallnumber <=" . $dbh->quote(@$filters[5]);
 	}
 	
-	if (@$filters[6]){
-		@$filters[6]=~ s/\*/%/g;
-		$strcalc .= " AND " . 
-			(C4::Context->preference('item-level_itypes') ? 'items.itype' : 'biblioitems.itemtype')
-			. " LIKE '" . @$filters[6] ."'";
-	}
+	$strcalc = AddCondition( $strcalc, (C4::Context->preference('item-level_itypes') ? 'items.itype' : 'biblioitems.itemtype'), @$filters[6], 0 ) if ( @$filters[6] );
 	
 	if (@$filters[7]){
 		@$filters[7]=~ s/\*/%/g;
@@ -430,18 +411,9 @@ if($barcodefilter){
 		@$filters[9]=~ s/\*/%/g;
 		$strcalc .= " AND publicationyear <" . @$filters[9];
 	}
-	if (@$filters[10]){
-		@$filters[10]=~ s/\*/%/g;
-		$strcalc .= " AND items.homebranch LIKE '" . @$filters[10] ."'";
-	}
-	if (@$filters[11]){
-		@$filters[11]=~ s/\*/%/g;
-		$strcalc .= " AND items.location LIKE '" . @$filters[11] ."'";
-	}
-	if (@$filters[12]){
-		@$filters[12]=~ s/\*/%/g;
-		$strcalc .= " AND items.ccode  LIKE '" . @$filters[12] ."'";
-	}
+	$strcalc = AddCondition( $strcalc, 'items.homebranch', @$filters[10], 0 ) if ( @$filters[10] );
+	$strcalc = AddCondition( $strcalc, 'items.location', @$filters[11], 0 ) if ( @$filters[11] );
+	$strcalc = AddCondition( $strcalc, 'items.ccode', @$filters[12], 0 ) if ( @$filters[12] );
 	
 	$strcalc .= " group by $linefield, $colfield order by $linefield,$colfield";
 	$debug and warn "SQL: $strcalc";

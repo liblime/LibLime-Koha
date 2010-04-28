@@ -51,18 +51,18 @@ my $get_items = $params->{'get_items'};
 
 if ( $get_items ) {
     my $orderbyfilter    = $params->{'orderbyfilter'}   || undef;
-    my $branchfilter     = $params->{'branchfilter'}    || undef;
     my $barcodefilter    = $params->{'barcodefilter'}   || undef;
-    my $itemtypesfilter  = $params->{'itemtypesfilter'} || undef;
-    my $loststatusfilter = $params->{'loststatusfilter'} || undef;
+    my @branchfilter     = $query->param('branchfilter');
+    my @itemtypesfilter  = $query->param('itemtypesfilter');
+    my @loststatusfilter = $query->param('loststatusfilter');
 
     my %where;
-    $where{'homebranch'}       = $branchfilter    if defined $branchfilter;
     $where{'barcode'}          = $barcodefilter   if defined $barcodefilter;
-    $where{'authorised_value'} = $loststatusfilter if defined $loststatusfilter;
+    $where{'homebranch'}       = \@branchfilter if @branchfilter;
+    $where{'authorised_value'} = \@loststatusfilter if @loststatusfilter;
     
     my $itype = C4::Context->preference('item-level_itypes') ? "itype" : "itemtype";
-    $where{$itype}            = $itemtypesfilter if defined $itemtypesfilter;
+    $where{$itype}            = \@itemtypesfilter if @itemtypesfilter;
 
     my $items = GetLostItems( \%where, $orderbyfilter ); 
     foreach my $it (@$items) {

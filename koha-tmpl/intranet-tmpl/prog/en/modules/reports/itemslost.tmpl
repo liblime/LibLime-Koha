@@ -1,6 +1,14 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Reports &rsaquo; Lost Items</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script src="<!-- TMPL_VAR NAME="themelang"-->/lib/jquery/plugins/jquery.asmselect.js" type="text/javascript"></script>
+<script type="text/javascript">
+    <!--
+    $( document ).ready( function () {
+        $( '#branchfilter, #itemtypesfilter, #loststatusfilter' ).asmSelect();
+    } );
+    // -->
+</script>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -86,8 +94,7 @@
     </select></li>
 	
 	<li><label for="barcodefilter">Barcode: </label><input type="text" name="barcodefilter" id="barcodefilter" size="6" /></li>
-	<li><label for="branchfilter">Library: </label><select name="branchfilter" id="branchfilter">
-                <option value="">All</option>
+	<li><label for="branchfilter">Library: </label><select name="branchfilter" id="branchfilter" title="Select a library">
             <!-- TMPL_LOOP name="branchloop" -->
                 <!-- TMPL_IF NAME="selected" --><option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="branchname" --></option>
 				<!-- TMPL_ELSE -->
@@ -95,8 +102,7 @@
 				<!-- /TMPL_IF -->
             <!-- /TMPL_LOOP -->
             </select></li>
-	<li><label for="itemtypesfilter">Item Type: </label><select name="itemtypesfilter" id="itemtypesfilter">
-                <option value="">All</option>
+	<li><label for="itemtypesfilter">Item Type: </label><select name="itemtypesfilter" id="itemtypesfilter" title="Select an itemtype">
                 <!-- TMPL_LOOP name="itemtypeloop" -->
                 <!-- TMPL_IF NAME="selected" --><option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="description" --></option>
 				<!-- TMPL_ELSE -->
@@ -105,8 +111,7 @@
                 <!-- /TMPL_LOOP -->
             </select></li>
 
-	<li><label for="loststatusfilter">Lost Status: </label><select name="loststatusfilter" id="loststatusfilter">
-                <option value="">All</option>
+	<li><label for="loststatusfilter">Lost Status: </label><select name="loststatusfilter" id="loststatusfilter" title="Select a lost status">
                 <!-- TMPL_LOOP name="loststatusloop" -->
                 <!-- TMPL_IF NAME="selected" --><option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option>
 		<!-- TMPL_ELSE -->

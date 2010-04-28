@@ -40,7 +40,7 @@ plugin that shows a stats on borrowers
 
 =cut
 
-$debug = 1;
+$debug = 0;
 $debug and open DEBUG, ">/tmp/bor_issues_top.debug.log";
 
 my $input = new CGI;
@@ -252,8 +252,7 @@ sub calculate {
                 $strsth2 .= " AND $column > '$colfilter[0]' " ;
             }
         } elsif ($colfilter[0]) {
-            $colfilter[0] =~ s/\*/%/g;
-            $strsth2 .= " AND $column LIKE '$colfilter[0]' " ;
+            $strsth2 = AddCondition( $strsth2, $column, $colfilter[0], 0 );
         }
         $strsth2 .=" GROUP BY $colfield";
         $strsth2 .=" ORDER BY $colorder";
@@ -303,19 +302,23 @@ sub calculate {
 		'old_issues.timestamp  <',
 		'old_issues.returndate >',
 		'old_issues.returndate <',
-		'old_issues.branchcode  like',
-		'biblioitems.itemtype   like',
-		'borrowers.categorycode like',
+		'old_issues.branchcode',
+		'biblioitems.itemtype',
+		'borrowers.categorycode',
 		'dayname(old_issues.timestamp) like',
 		'monthname(old_issues.timestamp) like',
 		'monthname(old_issues.timestamp) like',
 		'year(old_issues.timestamp) like',
 	);
-    foreach ((@$filters)[0..9]) {
+    for ( my $i = 0; $i <= 9; $i++) {
 		my $term = shift @filterterms;	# go through both arrays in step
-		($_) or next;
-		s/\*/%/g;
-		$strcalc .= " AND $term '$_' ";
+        my $filter = shift @filters;
+		($filter) or next;
+        if ( $i >= 4 && $i <= 6 ) {
+            $strcalc = AddCondition( $strcalc, $term, $filter, 0 );
+        } else {
+            $strcalc .= " AND $term '$_' ";
+        }
 	}
     
     $strcalc .= " GROUP BY borrowers.borrowernumber";
