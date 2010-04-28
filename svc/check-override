@@ -36,7 +36,7 @@ if ( $status eq 'ok' ) {
     my $override_user = $query->param("override_user") || '';
     my $override_pass = $query->param("override_pass") || '';
 
-    $status = 'failed' if( !checkpw( C4::Context->dbh, $override_user, $override_pass, 1 ) );
+    $status = 'failed' if( !checkpw( C4::Context->dbh, $override_user, $override_pass, 0, 1 ) );
 }
 
 print XMLout({ status => $status }, NoAttr => 1, RootName => 'response', XMLDecl => 1);

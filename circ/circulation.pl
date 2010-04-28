@@ -105,6 +105,9 @@ my $searchfield = $query->param('searchfield');
 $branch  = C4::Context->userenv->{'branch'};  
 $printer = C4::Context->userenv->{'branchprinter'};
 
+if (C4::Context->preference("DisableHoldsIssueOverrideUnlessAuthorised") ) {
+    $template->param( DisableHoldsIssueOverrideUnlessAuthorised => 1 );
+}
 
 # If Autolocated is not activated, we show the Circulation Parameters to chage settings of librarian
 if (C4::Context->preference("AutoLocation") != 1) {
@@ -148,6 +151,13 @@ if ( $barcode ) {
     }
 }
 
+if (C4::Context->preference("DisableHoldsIssueOverrideUnlessAuthorised") ) {
+  my $authcode = C4::Auth::checkpw( C4::Context->dbh, $query->param('auth_username'), $query->param('auth_password'), 0, my $bypass_userenv = 1 );
+  my $permissions = C4::Auth::haspermission( $query->param('auth_username'), { 'superlibrarian' => 1 } );
+  unless ( $authcode && $permissions ) {
+    $issueconfirmed = 0;
+  }
+}
 #set up cookie.....
 # my $branchcookie;
 # my $printercookie;
