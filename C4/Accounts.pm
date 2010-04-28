@@ -699,6 +699,21 @@ sub ReversePayment {
   }
 }
 
+sub MemberOwesOnDebtCollection {
+  my ( $borrowernumber ) = @_;
+  my $dbh = C4::Context->dbh;
+  my $sql = "SELECT SUM(amountoutstanding) as stillOwing FROM accountlines, borrowers 
+              WHERE borrowers.borrowernumber = ?
+              AND borrowers.borrowernumber = accountlines.borrowernumber 
+              AND accountlines.date <= borrowers.last_reported_date";
+  my $sth = $dbh->prepare( $sql );
+  $sth->execute( $borrowernumber );
+  my $row = $sth->fetchrow_hashref;
+  my $amount = $row->{'stillOwing'};
+  
+  return $amount;
+}
+
 END { }    # module clean-up code here (global destructor)
 
 1;

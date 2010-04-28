@@ -99,6 +99,9 @@ if ($findborrower) {
 }
 my $borrowernumber = $query->param('borrowernumber');
 
+my $orderby = $query->param('orderby');
+my $searchfield = $query->param('searchfield');
+
 $branch  = C4::Context->userenv->{'branch'};  
 $printer = C4::Context->userenv->{'branchprinter'};
 
@@ -228,7 +231,7 @@ if ( $print && $print eq 'yes' && $borrowernumber ne '' ) {
 my $borrowerslist;
 my $message;
 if ($findborrower) {
-    my ($count, $borrowers) = SearchMember($findborrower, 'cardnumber', 'web');
+    my ($count, $borrowers) = SearchMemberField( $findborrower, $orderby, $searchfield );
     my @borrowers = @$borrowers;
     if (C4::Context->preference("AddPatronLists")) {
         $template->param(
