@@ -434,5 +434,6 @@ $template->param(
 );
 
 $template->param("showinitials" => C4::Context->preference('DisplayInitials'));
+$template->param("showothernames" => C4::Context->preference('DisplayOthernames'));
 
 output_html_with_http_headers $input, $cookie, $template->output;

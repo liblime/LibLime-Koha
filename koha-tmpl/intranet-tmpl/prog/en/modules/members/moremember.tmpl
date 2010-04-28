@@ -156,7 +156,8 @@ if (nodename =="barcodes[]"){
  <div class="yui-u first">
 <div id="patron-information" style="padding : .5em;">
 
-     <!-- TMPL_UNLESS NAME="I" --><!-- TMPL_IF NAME="othernames" -->&ldquo;<!-- TMPL_VAR NAME="othernames" -->&rdquo;<!-- /TMPL_IF -->
+   <!-- TMPL_IF NAME="showothernames" -->
+     <!-- TMPL_UNLESS NAME="I" --><!-- TMPL_IF NAME="othernames" -->&ldquo;<!-- TMPL_VAR NAME="othernames" -->&rdquo;<!-- /TMPL_IF --><!-- /TMPL_IF -->
 
 <p class="address"><!-- TMPL_VAR NAME="streetnumber" -->
         <!--TMPL_IF NAME="roaddetails"-->
