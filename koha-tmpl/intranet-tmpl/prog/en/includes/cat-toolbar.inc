@@ -70,7 +70,7 @@ function confirm_deletion() {
 			{text: _("New Record"), url: "/cgi-bin/koha/cataloguing/addbiblio.pl" },
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
-			{text: _("New Item"), url: "/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#additema" },
+			{text: _("New Item"), url: "/cgi-bin/koha/cataloguing/additem.pl?op=addadditionalitem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="additemnumber" -->#additema" },
         <!-- /TMPL_IF -->
 			{text: _("New Subscription"), url: "/cgi-bin/koha/serials/subscription-add.pl?biblionumber_for_new_subscription=<!-- TMPL_VAR NAME="biblionumber" -->"},
 		];
