@@ -27,6 +27,8 @@ use C4::Output;
 use C4::Print;
 use C4::Auth qw/:DEFAULT get_session check_override_perms/;
 use C4::Dates qw/format_date/;
+use C4::Overdues qw( GetFinesSummary );
+use List::Util qw( sum );
 use C4::Branch; # GetBranches
 use C4::Koha;   # GetPrinter
 use C4::Circulation;
@@ -43,6 +45,43 @@ use Date::Calc qw(
   Date_to_Days
 );
 
+sub FormatFinesSummary {
+    my ( $borrower ) = @_;
+
+    my %type_map = (
+        L => 'lost_fines',
+        F => 'overdue_fines',
+        FU => 'overdue_fines',
+        Res => 'reserve_fees'
+    );
+
+    my $dbh = C4::Context->dbh;
+
+    my $summary = GetFinesSummary( $borrower->{'borrowernumber'} );
+
+    my %params;
+
+    foreach my $type ( keys %type_map ) {
+        next if ( !$summary->{$type} );
+
+        $params{$type_map{$type} . "_total"} = ( $params{ $type_map{$type} .  "_total" } || 0 ) + $summary->{$type};
+
+        delete $summary->{$type};
+    }
+
+    foreach my $type ( keys %$summary ) {
+        next if ( $summary->{$type} > 0 );
+
+        $params{"credits_total"} = ( $params{"credits_total"} || 0 ) - $summary->{$type};
+
+        delete $summary->{$type};
+    }
+
+    # Since the types we care about have already been removed, all that is left is 'Other'
+    $params{'other_fees_total'} = sum( values %$summary );
+
+    return +{ map { $params{$_} ? ( $_ => sprintf( '%0.2f', $params{$_} ) ) : undef } keys %params };
+}
 
 #
 # PARAMETERS READING
@@ -634,6 +673,8 @@ foreach my $flag ( sort keys %{$flags} ) {
             if ( override_can( $circ_session, 'override_max_fines' ) ) {
                 $template->param( charges_override => 1 );
             }
+
+            $template->param( FormatFinesSummary( $borrower ) ) if ( C4::Context->preference( 'CircFinesBreakdown' ) );
         }
         if ( $flag eq 'CREDITS' ) {
             $template->param(
@@ -650,12 +691,16 @@ foreach my $flag ( sort keys %{$flags} ) {
                 chargesmsg => $flags->{'CHARGES'}->{'message'},
                 chargesamount => $flags->{'CHARGES'}->{'amount'},
             );
+
+            $template->param( FormatFinesSummary( $borrower ) ) if ( C4::Context->preference( 'CircFinesBreakdown' ) );
         }
         elsif ( $flag eq 'CREDITS' ) {
             $template->param(
                 credits    => 'true',
                 creditsmsg => $flags->{'CREDITS'}->{'message'}
             );
+
+            $template->param( FormatFinesSummary( $borrower ) ) if ( C4::Context->preference( 'CircFinesBreakdown' ) );
         }
         elsif ( $flag eq 'ODUES' ) {
             $template->param(

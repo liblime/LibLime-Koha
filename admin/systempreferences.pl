@@ -177,6 +177,7 @@ $tabsysprefs{HoldButtonConfirm}              = "Circulation";
 $tabsysprefs{HoldButtonPrintConfirm}         = "Circulation";
 $tabsysprefs{HoldButtonIgnore}               = "Circulation";
 $tabsysprefs{AllowDueDateInPast}             = "Circulation";
+$tabsysprefs{CircFinesBreakdown}             = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}        = "StaffClient";
