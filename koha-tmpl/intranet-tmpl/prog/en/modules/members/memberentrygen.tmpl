@@ -929,6 +929,19 @@
 			</fieldset>
 		<!-- /TMPL_UNLESS -->	
 
+	<!-- TMPL_IF NAME="AllowReadingHistoryAnonymizing" -->
+		<fieldset class="rows">
+			<legend>Disable Borrower Reading History</legend>
+			<ol class="radio">
+				<label class="radio">Yes</label>
+	                        <input type="radio" name="disable_reading_history" value="1" <!--TMPL_IF NAME="disable_reading_history"-->checked<!-- /TMPL_IF-->>
+				<label >&nbsp; No</label>
+        	                <input type="radio" name="disable_reading_history" value="0" <!--TMPL_IF NAME="disable_reading_history"--><!-- TMPL_ELSE -->checked<!-- /TMPL_IF-->>
+                        	<i>If you disable a borrower's reading history, it will be permanently erased.</i>
+			</ol>
+			</fieldset>
+	<!-- /TMPL_IF -->
+
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="step_4" --><!-- TMPL_IF NAME="ExtendedPatronAttributes" --><!-- TMPL_UNLESS NAME="no_patron_attribute_types" -->

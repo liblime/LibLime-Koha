@@ -64,6 +64,12 @@ my ($template, $loggedinuser, $cookie)
        });
 my $guarantorid    = $input->param('guarantorid');
 my $borrowernumber = $input->param('borrowernumber');
+
+my $disable_reading_history = $input->param('disable_reading_history');
+if ( $disable_reading_history ) {
+  C4::Circulation::AnonymiseIssueHistory( '', $borrowernumber );
+}
+
 my $actionType     = $input->param('actionType') || '';
 my $modify         = $input->param('modify');
 my $delete         = $input->param('delete');
@@ -91,6 +97,7 @@ my $borrower_data;
 my $NoUpdateLogin;
 my $userenv = C4::Context->userenv;
 
+$template->param( AllowReadingHistoryAnonymizing => C4::Context->preference('AllowReadingHistoryAnonymizing') );
 $template->param("uppercasesurnames" => C4::Context->preference('uppercasesurnames'));
 
 my $minpw = C4::Context->preference('minPasswordLength');

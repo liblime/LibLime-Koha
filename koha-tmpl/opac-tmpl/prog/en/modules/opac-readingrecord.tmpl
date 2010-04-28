@@ -1,12 +1,26 @@
 <!-- TMPL_INCLUDE name="doc-head-open.inc" --><!-- TMPL_VAR NAME="LibraryNameTitle" DEFAULT="Koha Online" --> Catalog &rsaquo;  Account for <!-- TMPL_LOOP name="BORROWER_INFO" --><!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR name="surname" --><!-- /TMPL_LOOP -->
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
-<!-- TMPL_IF NAME="GoogleJackets" --><script type="text/javascript">
-//<![CDATA[
-$(document).ready(function(){
-    KOHA.Google.GetCoverFromIsbn();
-});
-//]]>
-</script><!-- /TMPL_IF -->
+<script type="text/javascript">
+function show_confirm() {
+  if ( document.historyform.disable_reading_history[1].checked ) {  
+    var r = confirm("Are you sure you want to turn off your checkout history? All titles not currently checked out out will be deleted from your history.");
+    if ( r == true ) {
+      var cardnumber = prompt("To confirm, please enter your library card number");
+      if ( cardnumber == <!-- TMPL_VAR NAME="cardnumber" --> ) {
+  	return true;
+      } else {
+        alert("The card number entered does not match your card number");
+        return false;
+      }
+    } else {
+      return false;
+    }
+  } else {
+    return true;
+  }
+}
+</script>
+
 </head>
 <body id="opac-readingrecord">
 <div id="doc3" class="yui-t1">
@@ -70,6 +84,17 @@ TMPL_ELSE -->Title<!-- /TMPL_UNLESS --></th>
 </table></div></div>
 
 <!-- /TMPL_UNLESS -->
+
+<!-- TMPL_IF NAME="AllowReadingHistoryAnonymizing" -->
+        <p>
+                <form name="historyform" id="historyform" onsubmit="return show_confirm()" method="post" action="opac-update_reading_history.pl">
+                        <label for="disable_reading_history">Enable Reading History?</label>
+                        <input type="radio" name="disable_reading_history" value="0" <!--TMPL_IF NAME="disable_reading_history"-->checked<!-- /TMPL_IF-->>Yes
+                        <input type="radio" name="disable_reading_history" value="1" <!--TMPL_IF NAME="disable_reading_history"--><!-- TMPL_ELSE -->checked<!-- /TMPL_IF-->> No
+                        <input type="submit" value="Save" />
+                </form>
+        </p>
+<!-- /TMPL_IF -->
 </div>
 </div>
 </div>
