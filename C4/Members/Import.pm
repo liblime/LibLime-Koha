@@ -123,7 +123,7 @@ sub ImportFromFH {
         my $status  = $csv->parse($borrowerline);
         my @columns = $csv->fields();
         if (! $status) {
-            push @missing_criticals, {badparse=>1, line=>$., lineraw=>$borrowerline};
+            push @missing_criticals, {badparse=>1, line=>$., lineraw=>$borrowerline} unless @missing_criticals;
         } elsif (@columns == @columnkeys) {
             @borrower{@columnkeys} = @columns;
             # MJR: try to fill blanks gracefully by using default values
@@ -141,7 +141,7 @@ sub ImportFromFH {
             	    $borrower{$key} = $defaults->{$key};
             	} elsif ( scalar grep {$key eq $_} @criticals ) {
             	    # a critical field is undefined
-            	    push @missing_criticals, {key=>$key, line=>$., lineraw=>$borrowerline};
+            	    push @missing_criticals, {key=>$key, line=>$., lineraw=>$borrowerline} unless @missing_criticals;
             	} else {
             		$borrower{$key} = '';
             	}
@@ -149,15 +149,15 @@ sub ImportFromFH {
         }
         if ($borrower{categorycode}) {
             push @missing_criticals, {key=>'categorycode', line=>$. , lineraw=>$borrowerline, value=>$borrower{categorycode}, category_map=>1}
-                unless GetBorrowercategory($borrower{categorycode});
+                unless GetBorrowercategory($borrower{categorycode}) or @missing_criticals;
         } else {
-            push @missing_criticals, {key=>'categorycode', line=>$. , lineraw=>$borrowerline};
+            push @missing_criticals, {key=>'categorycode', line=>$. , lineraw=>$borrowerline} unless @missing_criticals;
         }
         if ($borrower{branchcode}) {
             push @missing_criticals, {key=>'branchcode', line=>$. , lineraw=>$borrowerline, value=>$borrower{branchcode}, branch_map=>1}
-                unless GetBranchName($borrower{branchcode});
+                unless GetBranchName($borrower{branchcode}) or @missing_criticals;
         } else {
-            push @missing_criticals, {key=>'branchcode', line=>$. , lineraw=>$borrowerline};
+            push @missing_criticals, {key=>'branchcode', line=>$. , lineraw=>$borrowerline} unless @missing_criticals;
         }
         if (@missing_criticals) {
             foreach (@missing_criticals) {
@@ -184,7 +184,7 @@ sub ImportFromFH {
                 $borrower{$_} = $tempdate;
             } else {
                 $borrower{$_} = '';
-                push @missing_criticals, {key=>$_, line=>$. , lineraw=>$borrowerline, bad_date=>1};
+                push @missing_criticals, {key=>$_, line=>$. , lineraw=>$borrowerline, bad_date=>1} unless @missing_criticals;
             }
         }
 	$borrower{dateenrolled} = $today_iso unless $borrower{dateenrolled};
