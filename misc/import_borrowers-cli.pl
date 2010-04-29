@@ -41,8 +41,16 @@ use Getopt::Long;
 use C4::Members::Import;
 
 sub usage {
-    #FIXMEctf make a real usage message
-    printf "Usage: blahblahblah\n";
+    printf <<END;
+Usage: import_borrowers-cli.pl [options]
+Options:
+  --infile=<filename>       : read data from filename instead of stdin
+  --defaultsfile=<filename> : read defaults from filename
+  --matchpoint=<string>     : match for collisions on this field
+  --overwrite               : overwrite collisions with new values
+  --verbose                 : be noisier
+  --help                    : show this message
+END
 }
 
 my ($infile, $defaultsfile, $matchpoint, $overwrite_cardnumber, $ext_preserve, $verbose, $showusage) =
@@ -57,32 +65,54 @@ my $optres = GetOptions (
     "help" => \$showusage
     );
 
-if ($infile eq '' or $showusage) {
-    carp "Must supply infile";
+if ($showusage) {
     usage();
-    exit(1);
+    exit(0);
 }
 
-my %defaults;
-#FIXMEctf pull in defaults
+# Get a handle for our input
+my $fh;
+if ($infile) {
+    open(INFILE, "<$infile") || croak "Cannot open input file: $!\n";
+    $fh = *INFILE;
+} else { # default to reading from standard input
+    $fh = *STDIN;
+}
 
-open(INFILE, "<$infile") || die "Cannot open input file: $!\n";
-my %retval = C4::Members::Import::ImportFromFH(\*INFILE,
+# defaults file is formatted as variable/value pairs, one per line, separated
+# by an '=' sign. E.g.:
+# zipcode=97211
+my %defaults;
+if ($defaultsfile) {
+    open(DEFAULTS, "<$defaultsfile") || croak "Cannot open defaults file: $!\n";
+    while(<DEFAULTS>) {
+	my ($var, $val) = split(/=/);
+	chomp($val);
+	$defaults{$var} = $val;
+    }
+}
+
+# Now push the magic button
+my %retval = C4::Members::Import::ImportFromFH($fh,
 					       $matchpoint,
 					       $overwrite_cardnumber,
 					       $ext_preserve,
 					       \%defaults);
-close(INFILE);
+close($fh);
 
+# pull these out for convenience
 my ($errors, $feedback) = ($retval{errors}, $retval{feedback});
 
+# print out any errors that cropped up
 if (@$errors != 0) {
     printf "++++ ERRORS ++++\n";
     foreach my $err (@$errors) {
 
 	if (exists $err->{badheader}) {
+	    # munged header line
 	    printf "* badheader: '%s'\n", $err->{lineraw};
 	} elsif (exists $err->{missing_criticals}) {
+	    # essential fields that were not specified
 	    printf "* missing_criticals:\n";
 	    my $crits = $err->{missing_criticals};
 	    foreach my $crit (@$crits) {
@@ -92,20 +122,25 @@ if (@$errors != 0) {
 		}
 	    }
 	} else {
+	    # I love when programs throw an "unknown error". But what else
+	    # to do here?
 	    printf "* unknown error\n";
 	}
     }
     printf "-------------------------------------------------\nMESSAGES:\n";
 }
 
-foreach my $f (@$feedback) {
-    printf "* %s: %s\n", $f->{name}, $f->{value};
+# Now print out informational messages if requested
+if ($verbose) {
+    foreach my $f (@$feedback) {
+	printf "* %s: %s\n", $f->{name}, $f->{value};
+    }
+    printf "\n";
+    printf "Successful imports: %d\n", $retval{imported};
+    printf "Record overwrites: %d\n", $retval{overwritten};
+    printf "Not overwritten: %d\n", $retval{alreadyindb};
+    printf "Bogus entries: %d\n", $retval{invalid};
 }
 
-printf "\n";
-printf "Successful imports: %d\n", $retval{imported};
-printf "Record overwrites: %d\n", $retval{overwritten};
-printf "Not overwritten: %d\n", $retval{alreadyindb};
-printf "Bogus entries: %d\n", $retval{invalid};
-
+# exit success if no errors, otherwise failure
 exit (@$errors != 0);
