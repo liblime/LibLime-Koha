@@ -1519,14 +1519,14 @@ sub AddReturn {
     }
 
         # For claims-returned items, update the fine to be as-if they returned it for normal overdue
-        if ($iteminformation->{'date_due'} && $iteminformation->{'itemlost'} && $iteminformation->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){
-          my $datedue = C4::Dates->new($iteminformation->{'date_due'},'iso'); 
+        if ($issue->{'date_due'} && $issue->{'itemlost'} && $issue->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){
+          my $datedue = C4::Dates->new($issue->{'date_due'},'iso'); 
           my $due_str = $datedue->output();
           my $today = C4::Dates->new();
           my ($amt, $type, $daycounttotal, $daycount) =
-              C4::Overdues::CalcFine($iteminformation, $borrower->{'categorycode'},$branch, undef, undef,$datedue, $today);
+              C4::Overdues::CalcFine($issue, $borrower->{'categorycode'},$branch, undef, undef,$datedue, $today);
               (defined $type) or $type= '';
-              C4::Overdues::UpdateFine($iteminformation->{'itemnumber'},$iteminformation->{'borrowernumber'},$amt, $type, $due_str) if ($amt > 0); 
+              C4::Overdues::UpdateFine($issue->{'itemnumber'},$issue->{'borrowernumber'},$amt, $type, $due_str) if ($amt > 0); 
         }
 
     # find reserves.....
@@ -1568,15 +1568,14 @@ sub AddReturn {
 
         # fix up the overdues in accounts...
         FixOverduesOnReturn( $borrower->{'borrowernumber'},
-            $iteminformation->{'itemnumber'}, $exemptfine, $dropbox );
+            $issue->{'itemnumber'}, $exemptfine, $dropbox );
 
         # find reserves.....
         # if we don't have a reserve with the status W, we launch the Checkreserves routine
-        my ( $resfound, $resrec ) = C4::Reserves::CheckReserves( $iteminformation->{'itemnumber'} );
+        my ( $resfound, $resrec ) = C4::Reserves::CheckReserves( $issue->{'itemnumber'} );
         if ($resfound) {
               $resrec->{'ResFound'} = $resfound;
             $messages->{'ResFound'} = $resrec;
-            $reserveDone = 1;
         }
     
     # FIXME: make this comment intelligible.
