@@ -335,6 +335,15 @@ sub get_template_and_user {
         } elsif($mylibraryfirst){
             $opac_name = C4::Branch::GetBranchName($mylibraryfirst);
         }
+	my $checkstyle = C4::Context->preference("opaccolorstylesheet");
+	if ($checkstyle =~ /http/)
+	{
+            	$template->param( opacexternalsheet => $checkstyle);
+	} else
+	{
+		my $opaccolorstylesheet = C4::Context->preference("opaccolorstylesheet");  
+            $template->param( opaccolorstylesheet => $opaccolorstylesheet);
+	}
         $template->param(
             AnonSuggestions           => "" . C4::Context->preference("AnonSuggestions"),
             AuthorisedValueImages     => C4::Context->preference("AuthorisedValueImages"),
@@ -373,7 +382,6 @@ sub get_template_and_user {
             hidelostitems             => C4::Context->preference("hidelostitems"),
             mylibraryfirst            => (C4::Context->preference("SearchMyLibraryFirst") && C4::Context->userenv) ? C4::Context->userenv->{'branch'} : '',
             opaclayoutstylesheet      => "" . C4::Context->preference("opaclayoutstylesheet"),
-            opaccolorstylesheet       => "" . C4::Context->preference("opaccolorstylesheet"),
             opacstylesheet            => "" . C4::Context->preference("opacstylesheet"),
             opacbookbag               => "" . C4::Context->preference("opacbookbag"),
             opacbookbagName            =>  $opacbookbagName,
@@ -831,6 +839,15 @@ sub checkauth {
     my $template_name = ( $type eq 'opac' ) ? 'opac-auth.tmpl' : 'auth.tmpl';
     my $template = gettemplate( $template_name, $type, $query );
     $template->param(branchloop => \@branch_loop,);
+    my $checkstyle = C4::Context->preference("opaccolorstylesheet");
+    if ($checkstyle =~ /\//)
+	{
+            	$template->param( opacexternalsheet => $checkstyle);
+	} else
+	{
+		my $opaccolorstylesheet = C4::Context->preference("opaccolorstylesheet");  
+            $template->param( opaccolorstylesheet => $opaccolorstylesheet);
+	}
     $template->param(
     login        => 1,
         INPUTS               => \@inputs,
@@ -843,7 +860,6 @@ sub checkauth {
         opacreadinghistory   => C4::Context->preference("opacreadinghistory"),
         opacsmallimage       => C4::Context->preference("opacsmallimage"),
         opaclayoutstylesheet => C4::Context->preference("opaclayoutstylesheet"),
-        opaccolorstylesheet  => C4::Context->preference("opaccolorstylesheet"),
         opaclanguagesdisplay => C4::Context->preference("opaclanguagesdisplay"),
         opacuserjs           => C4::Context->preference("opacuserjs"),
         opacbookbag          => "" . C4::Context->preference("opacbookbag"),
