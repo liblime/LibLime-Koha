@@ -339,6 +339,9 @@ function GetZ3950Terms(){
                             </td>
                             <td>
                                 <p><!-- TMPL_VAR NAME="result_number" -->.
+                                  <!-- TMPL_IF NAME="XSLTResultsDisplay" -->
+                                    <!-- TMPL_VAR NAME="XSLTResultsRecord" -->
+                                  <!-- TMPL_ELSE -->
                                     <!-- TMPL_IF name="BiblioDefaultViewmarc" -->
                                         <a class="title" href="/cgi-bin/koha/catalogue/MARCdetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" ESCAPE="URL" -->">
                                             <b><!-- TMPL_IF NAME="title" --><!-- TMPL_VAR NAME="title" --><!-- TMPL_ELSE -->No title<!-- /TMPL_IF --></b>
@@ -357,6 +360,7 @@ function GetZ3950Terms(){
                                                 <!-- TMPL_IF NAME="title" --><!-- TMPL_VAR NAME="title" --><!-- TMPL_ELSE -->No title<!-- /TMPL_IF -->
                                             </a> <!-- TMPL_VAR NAME="subtitle" --><!-- TMPL_IF name="volume" -->,<!-- TMPL_VAR name="volume" --><!-- /TMPL_IF --> <!-- TMPL_IF name="volumeddesc" -->, <!-- TMPL_VAR name="volumeddesc" --><!-- /TMPL_IF -->
 									<!-- /TMPL_IF -->
+				  <!-- /TMPL_IF -->
                                 </p>
                                 <!-- TMPL_IF name="summary" -->
                                         <!-- TMPL_IF NAME="author" -->

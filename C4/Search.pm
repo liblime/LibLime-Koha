@@ -1124,7 +1124,7 @@ Format results in a form suitable for passing to the template
 # IMO this subroutine is pretty messy still -- it's responsible for
 # building the HTML output for the template
 sub searchResults {
-    my ( $searchdesc, $hits, $results_per_page, $offset, $scan, @marcresults ) = @_;
+    my ( $searchdesc, $interface, $hits, $results_per_page, $offset, $scan, @marcresults ) = @_;
     my $dbh = C4::Context->dbh;
     my @newresults;
 
@@ -1458,10 +1458,15 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
             push @available_items_loop, $available_items->{$key}
         }
 
-        # XSLT processing of some stuff
-        if (C4::Context->preference("XSLTResultsDisplay") && !$scan) {
+        # XSLT processing of some stuff for staff client
+        if (C4::Context->preference("XSLTResultsDisplay") && !$scan && ($interface eq 'intranet')) {
             $oldbiblio->{XSLTResultsRecord} = XSLTParse4Display(
-                $oldbiblio->{biblionumber}, $marcrecord, 'Results' );
+                $oldbiblio->{biblionumber}, $marcrecord, 'Results', 'intranet');
+        }
+        # XSLT processing of some stuff for OPAC
+        if (C4::Context->preference("OPACXSLTResultsDisplay") && !$scan && ($interface eq 'opac')) {
+            $oldbiblio->{XSLTResultsRecord} = XSLTParse4Display(
+                $oldbiblio->{biblionumber}, $marcrecord, 'Results', 'opac');
         }
 
         # last check for norequest : if itemtype is notforloan, it can't be reserved either, whatever the items

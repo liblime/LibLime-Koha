@@ -281,6 +281,8 @@ sub get_template_and_user {
 			SyndeticsCoverImageSize		 => C4::Context->preference("SyndeticsCoverImageSize"),
             XSLTDetailsDisplay           => C4::Context->preference("XSLTDetailsDisplay"),
             XSLTResultsDisplay           => C4::Context->preference("XSLTResultsDisplay"),
+            OPACXSLTDetailsDisplay       => C4::Context->preference("OPACXSLTDetailsDisplay"),
+            OPACXSLTResultsDisplay       => C4::Context->preference("OPACXSLTResultsDisplay"),
             BranchesLoop                 => GetBranchesLoop(),
             using_https                  => $in->{'query'}->https() ? 1 : 0
     );
