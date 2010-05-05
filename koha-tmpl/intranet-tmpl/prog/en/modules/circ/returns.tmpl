@@ -220,7 +220,26 @@ function Dopop(link) {
         </form>
     <!-- /TMPL_IF -->
     
+    <!-- item is damaged -->
+    <!-- TMPL_IF Name="damaged" -->
+        <!-- damaged -->
+        <div class="dialog message">
+	  <h3>Item Damaged: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a></h3>
+          <h5> Hold will remain on item until repaired </h5>
+          <input type="submit" class="deny" value="OK" onclick="$('.dialog:visible').hide('slow'); $('#barcode').focus(); return false;" />
+        </div>
+    <!-- /TMPL_IF -->
     
+    <!-- item is damaged, but other items are available  -->
+    <!-- TMPL_IF Name="damaged_othersavailable" -->
+        <!-- damaged but others available -->
+        <div class="dialog message">
+	  <h3>Item Damaged: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a>.</h3>
+          <h5>Other items are available to be checked out</h5>
+          <input type="submit" class="deny" value="OK" onclick="$('.dialog:visible').hide('slow'); $('#barcode').focus(); return false;" />
+        </div>
+    <!-- /TMPL_IF -->
+
     <!-- case of simple return no issue or transfer but with a reservation  -->
     <!-- TMPL_IF Name="reserved" -->
 	<!--  reserved  -->

@@ -1429,7 +1429,10 @@ sub AddReturn {
     my $validTransfert = 0;
     
     # get information on item
-    my $itemnumber = GetItemnumberFromBarcode( $barcode );
+    my $itemnumber      = GetItemnumberFromBarcode( $barcode );
+    my $iteminformation = GetItemIssue($itemnumber);
+    my $biblio          = GetBiblioItemData($iteminformation->{'biblioitemnumber'});
+#    use Data::Dumper;warn Data::Dumper::Dumper($iteminformation);
     unless ($itemnumber) {
         return (0, { BadBarcode => $barcode }); # no barcode means no item or borrower.  bail out.
     }
