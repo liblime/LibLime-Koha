@@ -37,6 +37,8 @@ use C4::Stats;
 use C4::Koha;
 use C4::Overdues;
 use C4::Branch; # GetBranches
+use C4::Dates;
+use C4::Items qw( ModItem );
 
 my $input = new CGI;
 
@@ -58,7 +60,7 @@ if ( !$borrowernumber  ) {
 }
 
 # get borrower details
-my $data = GetMember( $borrowernumber,'borrowernumber' );
+our $data = GetMember( $borrowernumber,'borrowernumber' );
 my $user = $input->remote_user;
 $user ||= q{};
 
@@ -92,10 +94,18 @@ for ( my $i = 0 ; $i < @names ; $i++ ) {
     if ( $temp eq 'yes' ) {
 
 # FIXME : using array +4, +5, +6 is dirty. Should use arrays for each accountline
-        my $amount         = $input->param( $names[ $i + 4 ] ); # out
+        my $itemnumber     = $input->param( $names[ $i + 1 ] );
+        my $accounttype    = $input->param( $names[ $i + 2 ] );
+        my $amount         = $input->param( $names[ $i + 4 ] );
         my $borrowernumber = $input->param( $names[ $i + 5 ] );
         my $accountno      = $input->param( $names[ $i + 6 ] );
         makepayment( $borrowernumber, $accountno, $amount, $user, $branch );
+
+        if ( $accounttype eq 'L' && $itemnumber ) {
+            my $bor = "$data->{'firstname'} $data->{'surname'} $data->{'cardnumber'}";
+            ModItem( { paidfor =>  "Paid for by $bor " . C4::Dates->today() }, undef, $itemnumber );
+        }
+        
         $check = 2;
     }
 }
@@ -340,5 +350,9 @@ sub writeoff {
         $itemnum, $amount );
     $sth->finish;
     UpdateStats( $branch, 'writeoff', $amount, '', $itemnum, '', $borrowernumber, $accountnum );
-    return;
+
+    if ( $accounttype eq 'L' && $itemnum ) {
+        my $bor = "$data->{'firstname'} $data->{'surname'} $data->{'cardnumber'}";
+        ModItem( { paidfor =>  "Paid for by $bor " . C4::Dates->today() }, undef, $itemnum );
+    }
 }

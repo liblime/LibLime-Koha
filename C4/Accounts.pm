@@ -128,7 +128,7 @@ sub recordpayment {
     );
     $usth->execute( $borrowernumber, $nextaccntno, 0 - $data, 0 - $amountleft );
     $usth->finish;
-    UpdateStats( $branch, 'payment', $data, '', '', '', $borrowernumber, $nextaccntno );
+    C4::Stats::UpdateStats( $branch, 'payment', $data, '', '', '', $borrowernumber, $nextaccntno );
     $sth->finish;
 }
 
@@ -197,7 +197,7 @@ sub makepayment {
     # FIXME - The second argument to &UpdateStats is supposed to be the
     # branch code.
     # UpdateStats is now being passed $accountno too. MTJ
-    UpdateStats( $user, 'payment', $amount, '', '', '', $borrowernumber,
+    C4::Stats::UpdateStats( $user, 'payment', $amount, '', '', '', $borrowernumber,
         $accountno );
     $sth->finish;
 
@@ -342,15 +342,15 @@ sub chargelostitem{
             my $sth2=$dbh->prepare("INSERT INTO accountlines
             (borrowernumber,accountno,date,amount,description,accounttype,amountoutstanding,itemnumber)
             VALUES (?,?,now(),?,?,'L',?,?)");
-            $sth2->execute($issues->{'borrowernumber'},$accountno,$issues->{'replacementprice'},
+            $sth2->execute($issues->{'borrowernumber'},$accountno,$issues->{'replacementprice'} || 0,
             "Lost Item $issues->{'title'} $issues->{'barcode'}",
-            $issues->{'replacementprice'},$itemnumber);
+            $issues->{'replacementprice'} || 0,$itemnumber);
             $sth2->finish;
         # FIXME: Log this ?
         }
         #FIXME : Should probably have a way to distinguish this from an item that really was returned.
         warn " $issues->{'borrowernumber'}  /  $itemnumber ";
-        C4::Circulation::MarkIssueReturned($issues->{borrowernumber},$itemnumber);
+        C4::Circulation::MarkIssueReturned($issues->{borrowernumber},$itemnumber) if ( C4::Context->preference( 'MarkLostItemsReturned' ) );
 	#  Shouldn't MarkIssueReturned do this?
         ModItem({ onloan => undef }, undef, $itemnumber);
     }
@@ -557,7 +557,7 @@ sub fixcredit {
     }
     $sth->finish;
     $type = "Credit " . $type;
-    UpdateStats( $user, $type, $data, $user, '', '', $borrowernumber );
+    C4::Stats::UpdateStats( $user, $type, $data, $user, '', '', $borrowernumber );
     $amountleft *= -1;
     return ($amountleft);
 
