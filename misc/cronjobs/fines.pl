@@ -77,7 +77,7 @@ use vars qw($filename);
 
 CHECK {
     @borrower_fields = qw(cardnumber categorycode surname firstname email phone address citystate);
-        @item_fields = qw(itemnumber barcode date_due);
+        @item_fields = qw(itemnumber barcode date_due itemlost);
        @other_fields = qw(type days_overdue fine);
     $libname = C4::Context->preference('LibraryName');
     $control = C4::Context->preference('CircControl');
@@ -139,6 +139,12 @@ for (my $i=0; $i<scalar(@$data); $i++) {
       
     ($datedue_days <= $today_days) or next; # or it's not overdue, right?
 
+    my $claimret_item=0;
+    if ($data->[$i]->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){   #this item is claims-returned, don't add more fines
+       $claimret_item=1;
+    }
+    
+
     $overdueItemsCounted++;
     my ($amount,$type,$daycounttotal,$daycount)=
   		CalcFine($data->[$i], $borrower->{'categorycode'}, $branchcode,undef,undef, $datedue, $today);
@@ -146,7 +152,7 @@ for (my $i=0; $i<scalar(@$data); $i++) {
     (defined $type) or $type = '';
 	# Don't update the fine if today is a holiday.  
   	# This ensures that dropbox mode will remove the correct amount of fine.
-	if ($mode eq 'production' and  ! $isHoliday) {
+	if ($mode eq 'production' and  ! $isHoliday  and ! $claimret_item) {
 		UpdateFine($data->[$i]->{'itemnumber'},$data->[$i]->{'borrowernumber'},$amount,$type,$due_str) if( $amount > 0 ) ;
  	}
     my @cells = ();
