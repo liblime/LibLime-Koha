@@ -385,6 +385,7 @@ should be the empty string.
 
 sub manualinvoice {
     my ( $borrowernumber, $itemnum, $desc, $type, $amount, $user ) = @_;
+    
     my $dbh      = C4::Context->dbh;
     my $notifyid = 0;
     my $insert;
@@ -447,6 +448,8 @@ sub manualinvoice {
         $sth->execute( $borrowernumber, $accountno, $amount, $desc, $type,
             $amountleft, $notifyid );
     }
+
+    UpdateStats( my $branch = '', my $stattype = 'maninvoice', $amount, my $other = $type, $itemnum, my $itemtype, $borrowernumber, $accountno);
     return 0;
 }
 

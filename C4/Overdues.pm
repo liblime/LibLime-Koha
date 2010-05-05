@@ -546,6 +546,7 @@ sub UpdateFine {
 			$debug and print STDERR "UpdateFine query: $query\n" .
 				"w/ args: $amount, $out, $diff, $data->{'borrowernumber'}, $data->{'itemnumber'}, \"\%$due\%\"\n";
             $sth2->execute($amount, $out, $diff, $data->{'borrowernumber'}, $data->{'itemnumber'}, "%$due%");
+            UpdateStats( my $branch = '', my $stattype = "fine_update", $amount, my $other = '', $data->{'itemnumber'}, my $itemtype = '', $data->{'borrowernumber'}, my $proccode = '' );
         } else {
             #      print "no update needed $data->{'amount'}"
         }
@@ -581,6 +582,8 @@ sub UpdateFine {
         $borrowernumber,
         "due=".$due."  amount=".$amount." itemnumber=".$itemnum
         ) if C4::Context->preference("FinesLog");
+    UpdateStats( my $branch = '', my $stattype = "fine_new", $amount, my $other = '', $itemnum, my $itemtype = '', $borrowernumber, my $proccode = '' );
+
 }
 
 =head2 BorType
