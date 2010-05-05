@@ -459,6 +459,6 @@ for my $data (@itemtypes) {
 
 $template->param(table=> \@line_loop,
                 itemtable => \@item_line_loop,
-                branchloop => \@branchloop,
+                branchloop   => GetBranchesLoop($input->param("branch") || C4::Context->userenv->{branch}),
                 branch => $branch);
 output_html_with_http_headers $input, $cookie, $template->output;
