@@ -270,8 +270,7 @@ function set_to_today(id, force) {
     <!-- /TMPL_IF  -->
     </ol>
     </fieldset>
-    <input type="hidden" name="indicator" value=" " />
-    <input type="hidden" name="indicator" value=" " />
+    <input type="hidden" name="indicator_0" value="  " />
     <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
 
 <fieldset class="action">    <!-- TMPL_IF name="opisadd" -->
@@ -292,10 +291,17 @@ function set_to_today(id, force) {
     </span>
 
     <!-- TMPL_ELSE -->
+<<<<<<< HEAD:koha-tmpl/intranet-tmpl/prog/en/modules/cataloguing/additem.tmpl
     <input type="hidden" name="tag" value="<!-- TMPL_VAR NAME="itemtagfield" -->" />
     <input type="hidden" name="subfield" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
     <input type="hidden" name="field_value" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
     <input type="submit" value="Save Changes" onclick="return Check(this.form)" />
+=======
+    <input type="hidden" name="tag_0" value="<!-- TMPL_VAR NAME="itemtagfield" -->" />
+    <input type="hidden" name="subfield_0" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
+    <input type="hidden" name="field_value_0" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
+    <input type="submit" value="Save Changes" onclick="return Check(this.form)" /> 
+>>>>>>> Bug4247:koha-tmpl/intranet-tmpl/prog/en/modules/cataloguing/additem.tmpl
     <!-- /TMPL_IF --></fieldset>
 
     </form>

@@ -22,6 +22,7 @@ use warnings;
 
 use C4::Context;
 use C4::Koha;
+use C4::Dates;
 use C4::Biblio;
 use C4::Items;
 use C4::Charset;
@@ -69,6 +70,11 @@ BEGIN {
     SetImportRecordStatus
     GetImportRecordMatches
     SetImportRecordMatches
+    AddImportProfile
+    GetImportProfile
+    GetImportProfileLoop
+    GetImportProfileItems
+    GetImportProfileSubfieldActions
 	);
 }
 
@@ -208,6 +214,44 @@ sub AddBiblioToBatch {
     my $encoding = shift;
     my $z3950random = shift;
     my $update_counts = @_ ? shift : 1;
+    my $subfield_actions = @_ ? shift : [];
+
+    foreach my $action (@$subfield_actions) {
+        my @fields = $marc_record->field($action->{'tag'});
+        if ( $action->{'action'} eq 'delete' ) {
+            foreach my $field (@fields) {
+                $marc_record->delete_field($field);
+            }
+        } elsif ( $action->{'action'} eq 'delete_sub' ) {
+            foreach my $field (@fields) {
+                $field->delete_subfield(code => $action->{'subfield'});
+            }
+        } elsif ( $action->{'action'} eq 'delete_match' ) {
+            foreach my $field (@fields) {
+               if ($field->subfield($action->{'subfield'})){
+                   my $cmp1 = _normalize_string($field->subfield($action->{'subfield'}));
+                   my $cmp2 = _normalize_string($action->{'contents'});
+                   if ($cmp1 eq $cmp2){
+                       $field->delete_subfield(code => $action->{'subfield'});
+                   }
+               }
+            }
+        } elsif ( $action->{'action'} eq 'add_always' ) {
+            $marc_record->insert_grouped_field(MARC::Field->new($action->{'tag'},'','',$action->{'subfield'} => $action->{'contents'})); 
+        } elsif ( $action->{'action'} eq 'add' ) {
+            my $found =0;
+            foreach my $field (@fields) {
+                if ($field->subfield($action->{'subfield'})){
+                    my $cmp1 = _normalize_string($field->subfield($action->{'subfield'}));
+                    my $cmp2 = _normalize_string($action->{'contents'});
+                    $found = 1 if ($cmp1 eq $cmp2);
+                }
+            }
+            if (!$found){
+              $marc_record->insert_grouped_field(MARC::Field->new($action->{'tag'},'','',$action->{'subfield'} => $action->{'contents'}));
+            }
+        }
+    }
 
     my $import_record_id = _create_import_record($batch_id, $record_sequence, $marc_record, 'biblio', $encoding, $z3950random);
     _add_biblio_fields($import_record_id, $marc_record);
@@ -255,6 +299,8 @@ sub  BatchStageMarcRecords {
     my $branch_code = shift;
     my $parse_items = shift;
     my $leave_as_staging = shift;
+    my $added_items = shift;
+    my $subfield_actions = shift;
    
     # optional callback to monitor status 
     # of job
@@ -268,7 +314,8 @@ sub  BatchStageMarcRecords {
     } 
     
     my $batch_id = AddImportBatch('create_new', 'staging', 'batch', $file_name, $comments);
-    if ($parse_items) {
+use Data::Dumper; warn Dumper(@$added_items);
+    if ($parse_items || @$added_items) {
         SetImportBatchItemAction($batch_id, 'always_add');
     } else {
         SetImportBatchItemAction($batch_id, 'ignore');
@@ -279,6 +326,8 @@ sub  BatchStageMarcRecords {
     my $num_items = 0;
     # FIXME - for now, we're dealing only with bibs
     my $rec_num = 0;
+    my ($barcode_tag, $barcode_subfield) = &GetMarcFromKohaField( "items.barcode", '' );
+    my (undef, $dateaccessioned_subfield) = &GetMarcFromKohaField( "items.dateaccessioned", '' );
     foreach my $marc_blob (split(/\x1D/, $marc_records)) {
         $marc_blob =~ s/^\s+//g;
         $marc_blob =~ s/\s+$//g;
@@ -294,8 +343,17 @@ sub  BatchStageMarcRecords {
             push @invalid_records, $marc_blob;
         } else {
             $num_valid++;
-            $import_record_id = AddBiblioToBatch($batch_id, $rec_num, $marc_record, $marc_flavor, int(rand(99999)), 0);
-            if ($parse_items) {
+            $import_record_id = AddBiblioToBatch($batch_id, $rec_num, $marc_record, $marc_flavor, int(rand(99999)), 0, $subfield_actions);
+            if (@$added_items) {
+                foreach my $item ( @$added_items ) {
+                    my $field = $item->field($barcode_tag);
+					$field->add_subfields(
+                        $dateaccessioned_subfield => C4::Dates->today()
+                    ) if ( !$field->subfield( $dateaccessioned_subfield ) );
+					$marc_record->append_fields($field);
+                }
+            }
+            if ($parse_items || @$added_items) {
                 my @import_items_ids = AddItemsToImportBiblio($batch_id, $import_record_id, $marc_record, 0);
                 $num_items += scalar(@import_items_ids);
             }
@@ -1245,8 +1303,151 @@ sub SetImportRecordMatches {
     }
 }
 
+sub AddImportProfile {
+    my ($description, $matcher_id, $template_id, $overlay_action, $nomatch_action, $parse_items, $item_action, $added_items, $subfield_actions) = @_;
+
+    my $dbh = C4::Context->dbh;
+
+    my $profile_id = $dbh->selectrow_array("SELECT profile_id FROM import_profiles WHERE description = ?", {}, $description);
+
+    my $sth;
+
+    if ($profile_id) {
+        $sth = $dbh->prepare("
+            UPDATE
+              import_profiles
+              SET matcher_id = ?, template_id = ?, overlay_action = ?, nomatch_action = ?, parse_items = ?, item_action = ?
+              WHERE profile_id = ?
+        ");
+
+        $sth->execute($matcher_id, $template_id, $overlay_action, $nomatch_action, $parse_items, $item_action, $profile_id);
+        $dbh->do("
+            DELETE
+              FROM import_profile_added_items
+              WHERE profile_id = ?
+        ", {}, $profile_id);
+        $dbh->do("
+            DELETE
+              FROM import_profile_subfield_actions
+              WHERE profile_id = ?
+        ", {}, $profile_id);
+    } else {
+        $sth = $dbh->prepare("
+            INSERT
+              INTO import_profiles(description, matcher_id, template_id, overlay_action, nomatch_action, parse_items, item_action)
+              VALUES(?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $sth->execute($description, $matcher_id, $template_id, $overlay_action, $nomatch_action, $parse_items, $item_action);
+        $profile_id = $dbh->{mysql_insertid};
+    }
+
+    $sth = $dbh->prepare("
+        INSERT
+          INTO import_profile_added_items(profile_id, marcxml)
+          VALUES(?, ?)
+    ");
+
+    foreach my $item (@$added_items) {
+        $sth->execute($profile_id, $item->as_xml());
+    }
+
+    $sth = $dbh->prepare("
+        INSERT
+          INTO import_profile_subfield_actions(profile_id, tag, subfield, action, contents)
+          VALUES(?, ?, ?, ?, ?)
+    ");
+
+    foreach my $action (@$subfield_actions) {
+        $sth->execute($profile_id, $action->{'tag'}, $action->{'subfield'}, $action->{'action'}, $action->{'contents'});
+    }
+}
+
+sub GetImportProfile {
+    my $profile_id = shift;
+
+    my $dbh = C4::Context->dbh;
+
+    my $profile = $dbh->selectrow_hashref( "
+        SELECT
+          description, matcher_id, template_id, overlay_action, nomatch_action, parse_items, item_action
+          FROM import_profiles
+          WHERE profile_id = ?
+    ", {}, $profile_id );
+}
+
+sub GetImportProfileLoop {
+    my $dbh = C4::Context->dbh;
+
+    my $results = $dbh->selectall_arrayref( "
+        SELECT
+          import_profiles.profile_id, description, matcher_id, template_id, overlay_action, nomatch_action, parse_items, item_action, COUNT( marcxml ) AS added_items, ip_actions.tag, ip_actions.subfield
+          FROM import_profiles
+            LEFT JOIN import_profile_added_items AS ip_items ON ( import_profiles.profile_id = ip_items.profile_id )
+            LEFT JOIN import_profile_subfield_actions AS ip_actions ON ( import_profiles.profile_id = ip_actions.profile_id )
+          GROUP BY import_profiles.profile_id, ip_actions.tag, ip_actions.subfield
+    ", { Slice => {} } );
+    return [] unless ( @$results );
+
+    my @profiles;
+    my $current_profile;
+
+    foreach my $result ( @$results ) {
+        if ( $current_profile && $current_profile->{'profile_id'} == $result->{'profile_id'} ) {
+            push @{ $current_profile->{'modified_subfields'} }, { tag => $result->{'tag'}, subfield => $result->{'subfield'} } 
+        } else {
+            push @profiles, $result;
+            $current_profile = $result;
+            $current_profile->{'modified_subfields'} = $result->{'tag'} ? [ { tag => $result->{'tag'}, subfield => $result->{'subfield'} } ] : [];
+        }
+        delete $result->{'tag'};
+        delete $result->{'subfield'};
+    }
+
+    return \@profiles;
+}
+
+sub GetImportProfileItems {
+    my ( $profile_id ) = @_;
+    my $dbh = C4::Context->dbh;
+
+    return map { MARC::Record::new_from_xml( $_, 'UTF-8' ) } @{ $dbh->selectcol_arrayref( "
+        SELECT
+          marcxml
+          FROM import_profile_added_items
+          WHERE profile_id = ?
+    ", {}, $profile_id ) };
+}
+
+sub GetImportProfileSubfieldActions {
+    my ( $profile_id ) = @_;
+    my $dbh = C4::Context->dbh;
+
+    return map {
+        +{
+            "action_type_" . $_->{'action_type'} => 1,
+            %$_
+        };
+    } @{ $dbh->selectall_arrayref( "
+        SELECT
+          tag as action_tag, subfield as action_subfield, action as action_type, contents as action_contents
+          FROM import_profile_subfield_actions
+          WHERE profile_id = ?
+    ", { Slice => {} }, $profile_id ) };  
+}
 
 # internal functions
+sub _normalize_string {
+    my ($str) = @_;
+    $str = uc $str;
+    $str =~ s/^\s+//;
+    $str =~ s/\s+$//;
+    $str =~ s/\W+$//;
+    $str =~ s/\s+$//;
+    $str =~ s/\s+/_/g;
+    $str =~ s/__/_/g;
+    return $str;
+}
 
 sub _create_import_record {
     my ($batch_id, $record_sequence, $marc_record, $record_type, $encoding, $z3950random) = @_;

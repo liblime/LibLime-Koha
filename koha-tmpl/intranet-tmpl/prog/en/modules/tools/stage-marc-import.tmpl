@@ -19,13 +19,224 @@ function CheckForm(f) {
     if ($("#fileToUpload").value == '') {
         alert('Please upload a file first.');
     } else {
+        // This hack is required due to an odd jQuery/AJAX/Firefox Heisenbug where empty fields don't get submitted
+        $( ':input[name=items]' ).each( function () {
+            var item = this.value;
+            var field_values = f['field_value_' + item];
+            for ( var i = field_values.length - 1; i; i-- ) {
+                if ( field_values[i].value == '' ) {
+                    $( field_values[i] ).parents( '.subfield_line' ).find( ':input[name$=_' + item + ']' ).attr('disabled', 'disabled');
+                }
+            }
+        } );
         return submitBackgroundJob(f);
     }
     return false;
 }
 
+<!-- TMPL_IF NAME="available_profiles" -->
+
+var available_profiles = {
+  <!-- TMPL_LOOP NAME="available_profiles" -->
+  <!-- TMPL_VAR NAME="profile_id" -->: {
+    matcher_id: "<!-- TMPL_VAR NAME="matcher_id" -->", 
+    overlay_action: "<!-- TMPL_VAR NAME="overlay_action" -->", 
+    nomatch_action: "<!-- TMPL_VAR NAME="nomatch_action" -->", 
+    parse_items: "<!-- TMPL_VAR NAME="parse_items" -->",
+    item_action: "<!-- TMPL_VAR NAME="item_action" -->",
+    added_items: <!-- TMPL_VAR NAME="added_items" -->,
+    modified_subfields: [ <!-- TMPL_LOOP NAME="modified_subfields" -->[ "<!-- TMPL_VAR NAME="tag" -->", "<!-- TMPL_VAR NAME="subfield" -->" ]<!-- TMPL_UNLESS NAME="__last__" -->, <!-- /TMPL_UNLESS--><!-- /TMPL_LOOP --> ]
+  }<!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
+  <!-- /TMPL_LOOP -->
+};
+
+$( document ).ready( function( ){
+  $( '#profile' ).change( function( ){
+    var profile = $( this ).val( );
+
+    if ( !profile ) return;
+
+    profile = available_profiles[profile];
+
+    $( '#matcher' ).val( profile.matcher_id );
+    $( '#overlay_action' ).val( profile.overlay_action );
+    $( '#nomatch_action' ).val( profile.nomatch_action );
+    $( '#parse_items' + ( profile.parse_items ? 'yes' : 'no' ) ).val( ['parse_items'] );
+    $( '#item_action' ).val( profile.item_action );
+    if ( profile.added_items ) {
+      $( '#profile-items-num-added' ).text( profile.added_items );
+      $( '#profile-items-info' ).show();
+      $( '#add-items input[name=include_items_from_profile]' ).val( 1 );
+    } else {
+      $( '#profile-items-info:visible' ).hide();
+    }
+    if ( profile.modified_subfields.length ) {
+      var modified_subfields = [];
+      $.each( profile.modified_subfields, function ( i, subfield ) {
+        modified_subfields.push( subfield[0] + '$' + subfield[1] );
+      } );
+      console.log( modified_subfields );
+      $( '#profile-actions-subfields' ).text( modified_subfields.join( ', ' ) );
+      $( '#profile-actions-info' ).show();
+        $( '#modify-subfields input[name=include_actions_from_profile]' ).val( 1 );
+    } else {
+      $( '#profile-actions-info:visible' ).hide();
+    }
+  } );
+} );
+
+<!-- /TMPL_IF -->
+
+function change_type() {
+  if ( this.value == 'delete' ) {
+    $( this ).nextAll( '.action-contents-text' ).eq( 0 ).hide();
+    $( this ).nextAll( '.action-contents-subfield' ).eq( 0 ).hide();
+  } else if ( this.value == 'delete_sub' ){
+    $( this ).nextAll( '.action-contents-text' ).eq( 0 ).hide();
+    $( this ).nextAll( '.action-contents-subfield' ).eq( 0 ).show();
+  } else {
+    $( this ).nextAll( '.action-contents-text' ).eq( 0 ).show();
+    $( this ).nextAll( '.action-contents-subfield' ).eq( 0 ).show();
+  }
+}
+
+function verify_tag() {
+  if ( /^[0-9]{3}$/.test( this.value ) ) {
+    $( this ).removeClass( 'alert' );
+  } else {
+    $( this ).addClass( 'alert' );
+  }
+}
+
+function verify_subfield() {
+  if ( /^[0-9a-z]$/.test( this.value ) ) {
+    $( this ).removeClass( 'alert' );
+  } else {
+    $( this ).addClass( 'alert' );
+  }
+}
+
+function remove_action() {
+  $( this ).parent().remove();
+}
+
+function new_action() {
+  var new_row = $( this ).parent().clone();
+
+  bind_subfield_actions( new_row );
+  $( new_row )
+    .find( 'input[type=text]' ).val( '' ).end()
+    .find( 'select' ).val( 'delete' ).change().end()
+    .find( '.remove-action' ).show().end()
+    .insertAfter( $( this ).parent() );
+}
+
+function bind_subfield_actions( selector ) {
+  $( selector )
+    .find( 'select' ).change( change_type ).end()
+    .find( 'input[name=action_tag]' ).keyup( verify_tag ).end()
+    .find( 'input[name=action_subfield]' ).keyup( verify_subfield ).end()
+    .find( '.remove-action' ).click( remove_action ).end()
+    .find( '.new-action' ).click( new_action ).end();
+}
+
+function remove_item() {
+  var parent = $( this ).parents( '.item' );
+  var id = parent.attr( 'id' ).split( '-' )[1];
+
+  $( '#add-items input:hidden[name=items][value=' + id + ']' ).remove();
+  if ( id == 0 ) {
+    parent.hide();
+  } else {
+    parent.remove();
+  }
+}
+
+$( document ).ready( function () {
+  $( '#subfield-actions .remove-action' ).hide();
+  bind_subfield_actions( '#subfield-actions' );
+  $( '#new-item' ).click( function () {
+    if ( $( '#item-0' ).is( ':hidden' ) ) {
+      $( '#item-0' ).show();
+      $( '#add-items' ).append( '<input type="hidden" name="items" value="0" />' );
+    } else {
+      var new_item = $( '#item-0' ).clone();
+
+      var item_id = Math.floor( Math.random() * 100000000 );
+
+      $( new_item ).attr( 'id', 'item-' + item_id ).find( ':text, input:hidden, select' ).attr( 'name', function () {
+        var cur_name = $( this ).attr( 'name').split( '_' );
+        cur_name[cur_name.length - 1] = item_id;
+
+        return cur_name.join( '_' );
+      } );
+
+      $( new_item )
+        .find( ':text' ).val( '' ).end()
+        .find( 'select' ).each( function () { this.selectedIndex = 0 } ).end() // Really need to find a better way of resetting <select>'s
+        .find( '.remove-item' ).click( remove_item ).end()
+        .insertBefore( '#add-item-actions' );
+      $( '#add-items' ).append( '<input type="hidden" name="items" value="' + item_id + '" />' );
+    }
+  } );
+  $( '.remove-item' ).click( remove_item );
+  $( '#profile-items-modify' ).click( function () {
+    $.ajax( {
+      type: 'GET',
+      url: '/cgi-bin/koha/tools/stage-marc-import.pl',
+      dataType: 'html',
+      data: { profile: $( '#profile' ).val(), retrieve: 'profile-items' },
+      success: function ( data ) {
+        $( data )
+          .find( '.remove-item' ).click( remove_item ).end()
+          .insertBefore( '#item-0' );
+        $( '#profile-items-info' ).hide();
+        $( '#modify-subfields input[name=include_items_from_profile]' ).val( 0 );
+      }
+    } );
+    return false;
+  } );
+  $( '#profile-actions-modify' ).click( function () {
+    $.ajax( {
+      type: 'GET',
+      url: '/cgi-bin/koha/tools/stage-marc-import.pl',
+      dataType: 'html',
+      data: { profile: $( '#profile' ).val(), retrieve: 'profile-actions' },
+      success: function ( data ) {
+        var new_actions = $( data );
+        bind_subfield_actions( new_actions );
+        new_actions.appendTo( '#subfield-actions' )
+          .find( 'select' ).change().end();
+        $( '#profile-actions-info' ).hide();
+        $( '#modify-subfields input[name=include_actions_from_profile]' ).val( 0 );
+      }
+    } );
+    return false;
+  } );
+} );
+function set_to_today(id, force) {
+    if (! id) { alert("Bad id " + id + " sent to set_to_today()"); return 0; }
+    if ($("#" + id).val() == '' || $("#" + id).val() == '0000-00-00' || force) {
+        $("#" + id).val("<!-- TMPL_VAR NAME="today_iso" -->");
+    }
+}
 //]]>
 </script>
+<style type="text/css">
+  <!--
+  .item {
+    border-top: 1px solid gray;
+    margin-top: 5px;
+  }
+  .item:after { 
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+  }
+  -->
+</style>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -43,6 +254,7 @@ function CheckForm(f) {
 <!-- TMPL_IF name="uploadmarc" -->
 <p>MARC Staging results :</p>
 <ul>
+  <!-- TMPL_IF NAME="saved_profile" --><li>Saved settings as profile "<!-- TMPL_VAR NAME="saved_profile" -->"</li><!-- /TMPL_IF -->
 	<li><!-- TMPL_VAR name="total" -->  records in file</li>
 	<li><!-- TMPL_VAR name="import_errors" --> records not staged because of MARC error</li>
 	<li><!-- TMPL_VAR name="staged" --> records staged</li>
@@ -88,7 +300,6 @@ function CheckForm(f) {
     <form method="post" id="processfile" action="<!-- TMPL_VAR name="SCRIPT_NAME" -->" enctype="multipart/form-data">
 <fieldset class="rows">
         <input type="hidden" name="uploadedfileid" id="uploadedfileid" value="" />
-        <input type="hidden" name="runinbackground" id="runinbackground" value="" />
         <input type="hidden" name="completedJobID" id="completedJobID" value="" />
 	<ol><li>
 		<label for="comments">Comments about this file: </label>
@@ -105,6 +316,28 @@ function CheckForm(f) {
 		
 	</li>
 </ol></fieldset>
+  <fieldset class="rows">
+    <legend>Import profiles</legend>
+    <ol>
+      <!-- TMPL_IF NAME="available_profiles" -->
+        <li>
+          <label for="profile">Use import profile:</label>
+          <select name="profile" id="profile">
+            <option value="">--</option>
+            <!-- TMPL_LOOP NAME="available_profiles" -->
+              <option value="<!-- TMPL_VAR NAME="profile_id" -->"><!-- TMPL_VAR NAME="description" --></option>
+            <!-- /TMPL_LOOP -->
+          </select>
+        </li>
+      <!-- /TMPL_IF -->
+      <p>
+      </p>
+      <li>
+        <label for="new_profile_name">Save these settings as an import profile named:</label>
+        <input type="text" name="new_profile_name" id="new_profile_name" value="" />
+      </li>
+    </ol>
+  </fieldset>
   <fieldset class="rows">
     <legend>Look for existing records in catalog?</legend>
     <ol><li><label for="matcher">Record matching rule:</label>
@@ -140,6 +373,34 @@ function CheckForm(f) {
       <li><label for="item_action">How to process items: </label>
            <!-- TMPL_INCLUDE NAME="tools-item-action.inc" -->
       </li>
+    </ol>
+  </fieldset>
+  <fieldset class="rows" id="add-items">
+    <legend>Add more items to each record?</legend>
+    <ol style>
+    <input type="hidden" name="include_items_from_profile" value="1" />
+      <li><b>NOTE:  if you select to add new items here, any item records in the incoming bibliographic record will also be unavoidably added!<br/></b></li></ol>
+    <ol style="display: none" id="profile-items-info">
+      <li>Adding <span id="profile-items-num-added"></span> more item(s), from import profile. <a href="#" id="profile-items-modify">Modify</a></li>
+    </ol>
+    <ol style="display: none" id="item-0" class="item">
+      <!-- TMPL_INCLUDE NAME="item-fields.inc" -->
+      <li><input type="button" class="remove-item" value="Remove this item" /></li>
+    </ol>
+    <ol id="add-item-actions">
+      <li><input type="button" id="new-item" value="New item" /></li>
+      <li><b>If you make changes to this form, and want to save them, be sure to save the profile!</b></li>
+
+    </ol>
+  </fieldset>
+  <fieldset class="rows" id="modify-subfields">
+    <legend>Modify subfields of each record?</legend>
+    <input type="hidden" name="include_actions_from_profile" value="1" />
+    <ol style="display: none" id="profile-actions-info">
+      <li>Modifying <span id="profile-actions-subfields"></span> based on import profile. <a href="#" id="profile-actions-modify">Modify</a></li>
+    </ol>
+    <ol id="subfield-actions" class="action">
+      <!-- TMPL_INCLUDE NAME="import-subfield-action-form.inc" -->
     </ol>
   </fieldset>
   <fieldset class="action"><input type="button" id="mainformsubmit" onclick="return CheckForm(this.form);" value="Stage for import" /></fieldset>
