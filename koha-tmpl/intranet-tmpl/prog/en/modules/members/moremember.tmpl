@@ -493,7 +493,11 @@ if (nodename =="barcodes[]"){
                     </script>
                 </p>
                 <p>
-                    <label>Forgive fines on return: <input type="checkbox" name="exemptfine" value="1" /></label>
+                    <!-- TMPL_IF NAME="CAN_user_circulate_exempt_fines" -->
+                    Forgive fines on return: <input type="checkbox" name="exemptfine" value="1" />
+                    <!-- TMPL_ELSE -->
+                    <input type="hidden" name="exemptfine" value="0" />
+                    <!-- /TMPL_IF -->
                 </p>
             </td>
         </tr>
@@ -565,34 +569,6 @@ if (nodename =="barcodes[]"){
       <!-- /TMPL_IF -->
         </tr>
         <!-- /tmpl_loop --></tbody>
-        <tr>
-            <td colspan="4" style="text-align: right; font-weight:bold;">Totals:</td>
-			<td><!-- TMPL_VAR NAME="totaldue" --></td>
-            <td><!-- TMPL_VAR NAME="totalprice" --></td>
-            <td colspan="2">      
-                <p>
-                    Renewal due date: <input type="text" size="8" id="newduedate" name="newduedate" value="<!-- TMPL_VAR Name="newduedate" -->" />
-                    <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" id="newduedate_button" alt="Show Calendar" />
-                    <script type="text/javascript">
-                        //<![CDATA[
-                        Calendar.setup({
-                            inputField : "newduedate",
-                            ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-                            button : "newduedate_button"
-                        });
-                        //]]>
-                    </script>
-                </p>
-                <p>
-                    <!-- TMPL_IF NAME="CAN_user_circulate_exempt_fines" -->
-                    Forgive fines on return: <input type="checkbox" name="exemptfine" value="1" />
-                    <!-- TMPL_ELSE -->
-                    <input type="hidden" name="exemptfine" value="0" />
-                    <!-- /TMPL_IF -->
-
-                </p>
-            </td>
-        </tr>
         </table>
         <fieldset class="action">
         <!-- TMPL_IF NAME="CAN_user_circulate_override_renewals" -->
@@ -626,6 +602,7 @@ if (nodename =="barcodes[]"){
 			<th>Hold Date</th>
 			<th>Hold Expiration Date</th>
 			<th>Title</th>
+                        <th>Item Type</th>
 			<th>Call Number</th>
 			<th>Barcode</th>
 			<th>Priority</th>

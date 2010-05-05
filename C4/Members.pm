@@ -1227,7 +1227,7 @@ sub GetMemberAccountRecords {
           $total += int(100 * $data->{'amountoutstanding'}); # convert float to integer to avoid round-off errors
         }
     }
-    $total /= 1000;
+    $total /= 100;
     $sth->finish;
     return ( $total, \@acctlines,$numlines);
 }

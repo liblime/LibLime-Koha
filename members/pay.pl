@@ -212,9 +212,9 @@ sub add_accounts_to_template {
                     notify_id         => $acct->{notify_id},
                     notify_level      => $acct->{notify_level},
                 };
-                if ($acct->{amountoutstanding} > 0 ) {
-                    $line->{net_balance} = 1;
-                }
+                $line->{'net_balance'} =  1 if($acct->{'amountoutstanding'} > 0);
+                $line->{'net_balance'} = undef if ((C4::Context->preference("EnableOverdueAccruedAmount")) && ($acct->{'accounttype'} eq "FU"));
+
                 push @{ $pay_loop}, $line;
                 ++$line_id;
             }

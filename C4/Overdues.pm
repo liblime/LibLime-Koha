@@ -26,6 +26,7 @@ use C4::Context;
 use C4::Accounts;
 use C4::Log; # logaction
 use C4::Debug;
+use C4::Stats;
 
 use vars qw($VERSION @ISA @EXPORT);
 

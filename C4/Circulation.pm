@@ -58,7 +58,6 @@ BEGIN {
 
 	# FIXME subs that should probably be elsewhere
 	push @EXPORT, qw(
-		&FixOverduesOnReturn
 		&barcodedecode
 	);
 
@@ -1424,7 +1423,6 @@ sub AddReturn {
     $branch = C4::Context->userenv->{'branch'} unless $branch;  # we trust userenv to be a safe fallback/default
     my $messages;
     my $borrower;
-    my $biblio;
     my $doreturn       = 1;
     my $validTransfert = 0;
     
@@ -1617,18 +1615,6 @@ sub AddReturn {
     logaction("CIRCULATION", "RETURN", $borrowernumber, $item->{'biblionumber'})
         if C4::Context->preference("ReturnLog");
 
-        # fix up the overdues in accounts...
-        FixOverduesOnReturn( $borrower->{'borrowernumber'},
-            $issue->{'itemnumber'}, $exemptfine, $dropbox );
-
-        # find reserves.....
-        # if we don't have a reserve with the status W, we launch the Checkreserves routine
-        my ( $resfound, $resrec ) = C4::Reserves::CheckReserves( $issue->{'itemnumber'} );
-        if ($resfound) {
-              $resrec->{'ResFound'} = $resfound;
-            $messages->{'ResFound'} = $resrec;
-        }
-    
     # FIXME: make this comment intelligible.
     #adding message if holdingbranch is non equal a userenv branch to return the document to homebranch
     #we check, if we don't have reserv or transfert for this document, if not, return it to homebranch .
