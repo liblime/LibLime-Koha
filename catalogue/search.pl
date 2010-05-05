@@ -179,6 +179,18 @@ if (C4::Context->preference("marcflavour") eq "UNIMARC" ) {
     $template->param('UNIMARC' => 1);
 }
 
+my $last_borrower_show_button = 0;
+if ( $cgi->cookie('last_borrower_borrowernumber') && $cgi->param('last_borrower_show_button') ) {
+  $last_borrower_show_button = 1;
+}
+$template->param(
+  last_borrower_show_button => $last_borrower_show_button,
+  last_borrower_borrowernumber => $cgi->cookie('last_borrower_borrowernumber'),
+  last_borrower_cardnumber => $cgi->cookie('last_borrower_cardnumber'),
+  last_borrower_firstname => $cgi->cookie('last_borrower_firstname'),
+  last_borrower_surname => $cgi->cookie('last_borrower_surname'),
+);
+
 ## URI Re-Writing
 # Deprecated, but preserved because it's interesting :-)
 # The same thing can be accomplished with mod_rewrite in
@@ -517,7 +529,7 @@ for (my $i=0;$i<@servers;$i++) {
             } elsif  ($defaultview eq 'labeled_marc' && $views->{can_view_labeledMARC}) {
                 print $cgi->redirect("/cgi-bin/koha/catalogue/labeledMARCdetail.pl?biblionumber=$biblionumber");
             } else {
-                print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber");
+                print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber&last_borrower_show_button=$last_borrower_show_button");
             } 
             exit;
         }
@@ -630,6 +642,7 @@ $template->param(
 if ($query_desc || $limit_desc) {
     $template->param(searchdesc => 1);
 }
+
 
 # VI. BUILD THE TEMPLATE
 output_html_with_http_headers $cgi, $cookie, $template->output;
