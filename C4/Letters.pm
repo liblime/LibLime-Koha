@@ -865,6 +865,7 @@ sub _send_message_by_email ($) {
         Subject => $message->{'subject'},
         charset => 'utf8',
         Message => $content,
+        BCC => C4::Context->preference("BCCAllNotices"),
         'content-type' => $message->{'content_type'} || 'text/plain; charset="UTF-8"',
     );
     
