@@ -294,7 +294,7 @@ foreach my $biblionumber (@biblionumbers) {
             $alreadyreserved = 1;
             $biblioloopiter{warn} = 1;
             $biblioloopiter{alreadyres} = 1;
-        }
+        }}
     }
 
     $template->param( alreadyreserved => $alreadyreserved,
