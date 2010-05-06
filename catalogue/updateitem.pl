@@ -41,6 +41,7 @@ my $itemnotes=$cgi->param('itemnotes');
 my $wthdrawn=$cgi->param('wthdrawn');
 my $damaged=$cgi->param('damaged');
 my $otherstatus=$cgi->param('otherstatus');
+my $suppress=$cgi->param('suppress');
 
 my $confirm=$cgi->param('confirm');
 my $dbh = C4::Context->dbh;
@@ -49,7 +50,7 @@ my $dbh = C4::Context->dbh;
 my $item_data_hashref = GetItem($itemnumber, undef);
 
 # make sure item statuses are set to 0 if empty or NULL
-for ($damaged,$itemlost,$wthdrawn) {
+for ($damaged,$itemlost,$wthdrawn,$suppress) {
     if (!$_ or $_ eq "") {
         $_ = 0;
     }
@@ -71,6 +72,8 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
 } elsif ($otherstatus ne $item_data_hashref->{'otherstatus'}) {
     $item_changes->{'otherstatus'} = $otherstatus;
     undef($item_changes->{'otherstatus'}) if ($otherstatus eq '');
+} elsif ($suppress ne $item_data_hashref->{'suppress'}) {
+    $item_changes->{'suppress'} = $suppress;
 } else {
     #nothings changed, so do nothing.
     print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber#item$itemnumber");

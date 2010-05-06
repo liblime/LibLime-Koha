@@ -127,6 +127,7 @@ my $authvalcode_items_itemlost = GetAuthValCode('items.itemlost',$fw);
 my $authvalcode_items_damaged  = GetAuthValCode('items.damaged', $fw);
 my $itemcount=0;
 my $additemnumber;
+my $authvalcode_items_suppress = GetAuthValCode('items.suppress', $fw);
 foreach my $item (@items) {
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
     $itemcount++;
@@ -148,6 +149,9 @@ foreach my $item (@items) {
     $item->{itemlostloop} = GetAuthorisedValues($authvalcode_items_itemlost, $item->{itemlost}) if $authvalcode_items_itemlost;
     if ($item->{damaged}) {
         $item->{itemdamagedloop} = GetAuthorisedValues($authvalcode_items_damaged, $item->{damaged}) if $authvalcode_items_damaged;
+    }
+    if ($item->{suppress}) {
+        $item->{itemsuppressloop} = GetAuthorisedValues($authvalcode_items_suppress, $item->{suppress}) if $authvalcode_items_suppress;
     }
     #get shelf location and collection code description if they are authorised value.
     my $shelfcode = $item->{'location'};

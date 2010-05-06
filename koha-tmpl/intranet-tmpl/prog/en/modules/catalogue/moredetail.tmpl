@@ -58,6 +58,7 @@
                 <!-- TMPL_IF name="itemlost"-->Lost<!-- /TMPL_IF --> 
                 <!-- TMPL_IF NAME="damaged" -->Damaged<!-- /TMPL_IF -->
                 <!-- TMPL_IF NAME="wthdrawn" -->Withdrawn<!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="suppress" -->Suppressed<!-- /TMPL_IF -->
             )<!-- /TMPL_IF --></h4>
             
             <ol class="bibliodetails">
@@ -81,6 +82,7 @@
                     <input type="hidden" name="wthdrawn" value="<!-- TMPL_VAR NAME="wthdrawn" -->" />
                     <input type="hidden" name="damaged" value="<!-- TMPL_VAR NAME="damaged" -->" />
                     <input type="hidden" name="otherstatus" value="<!-- TMPL_VAR NAME="otherstatus" -->" />
+                    <input type="hidden" name="suppress" value="<!-- TMPL_VAR NAME="suppress" -->" />
                     <input type="submit" name="submit" class="submit" value="Set Status" /></form>
                 <!-- TMPL_ELSE -->
                     <!-- TMPL_LOOP NAME="itemlostloop" -->
@@ -109,6 +111,7 @@
                     <input type="hidden" name="wthdrawn" value="<!-- TMPL_VAR NAME="wthdrawn" -->" />
                     <input type="hidden" name="itemlost" value="<!-- TMPL_VAR NAME="itemlost" -->" />
                     <input type="hidden" name="otherstatus" value="<!-- TMPL_VAR NAME="otherstatus" -->" />
+                    <input type="hidden" name="suppress" value="<!-- TMPL_VAR NAME="suppress" -->" />
                     <input type="submit" name="submit" class="submit" value="Set Status" /></form>
                 <!-- TMPL_ELSE -->
                     <!-- TMPL_LOOP NAME="itemdamagedloop" -->
@@ -128,6 +131,7 @@
                     <input type="hidden" name="itemlost" value="<!-- TMPL_VAR NAME="itemlost" -->" />
                     <input type="hidden" name="damaged" value="<!-- TMPL_VAR NAME="damaged" -->" />
                     <input type="hidden" name="otherstatus" value="<!-- TMPL_VAR NAME="otherstatus" -->" />
+                    <input type="hidden" name="suppress" value="<!-- TMPL_VAR NAME="suppress" -->" />
 
             <!-- TMPL_IF NAME="wthdrawn" -->
                     <input type="hidden" name="wthdrawn" value="0" /><!-- TMPL_ELSE --><input type="hidden" name="wthdrawn" value="1" />
@@ -161,6 +165,34 @@
                     <!-- TMPL_LOOP NAME="itemstatusloop" -->
                         <!-- TMPL_IF NAME="selected" -->
                             <!-- TMPL_VAR NAME="description" -->
+                        <!-- /TMPL_IF -->
+                    <!-- /TMPL_LOOP -->
+                    &nbsp;
+                <!-- /TMPL_IF -->
+            </li>
+            <li><span class="label">Suppress Status:</span>
+                <!-- TMPL_IF NAME="CAN_user_circulate" -->
+                    <form action="updateitem.pl" method="post">
+                    <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
+                    <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" />
+                    <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
+                    <select name="suppress" >
+            <!-- TMPL_LOOP NAME="itemsuppressloop" -->
+                <!-- TMPL_IF NAME="selected" -->
+                    <option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option>
+                <!-- TMPL_ELSE -->
+                    <option value="<!-- TMPL_VAR NAME="authorised_value" -->"><!-- TMPL_VAR NAME="lib" --></option>
+                <!-- /TMPL_IF -->
+            <!-- /TMPL_LOOP -->
+                    </select>
+                    <input type="hidden" name="wthdrawn" value="<!-- TMPL_VAR NAME="wthdrawn" -->" />
+                    <input type="hidden" name="itemlost" value="<!-- TMPL_VAR NAME="itemlost" -->" />
+                    <input type="hidden" name="damaged" value="<!-- TMPL_VAR NAME="damaged" -->" />
+                    <input type="submit" name="submit" class="submit" value="Set Status" /></form>
+                <!-- TMPL_ELSE -->
+                    <!-- TMPL_LOOP NAME="itemsuppressloop" -->
+                        <!-- TMPL_IF NAME="selected" -->
+                            <!-- TMPL_VAR NAME="lib" -->
                         <!-- /TMPL_IF -->
                     <!-- /TMPL_LOOP -->
                     &nbsp;
