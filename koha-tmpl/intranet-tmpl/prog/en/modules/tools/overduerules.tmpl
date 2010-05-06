@@ -79,6 +79,7 @@ $(document).ready(function() {
 	</ul>
 
 <div id="first"><table>
+                    <caption>By patron category:</caption>
 					<tr><th>&nbsp;</th><th scope="col">Delay</th><th scope="col">First Letter</th><th scope="col">Debar</th></tr>
                     <!-- TMPL_LOOP NAME="table" -->
                      <!-- TMPL_UNLESS NAME="__odd__" -->
@@ -88,13 +89,13 @@ $(document).ready(function() {
                             <!-- /TMPL_UNLESS -->
                             <th scope="row"><!-- TMPL_VAR NAME="line" --></th>
 <td>
-                                <input name="delay1-<!-- TMPL_VAR NAME="overduename" -->" size="5" value="<!-- TMPL_VAR NAME="delay1" -->" />
+                                <input name="C-delay1-<!-- TMPL_VAR NAME="overduename" -->" size="5" value="<!-- TMPL_VAR NAME="delay1" -->" />
                             </td>
 <td>
                             <!--TMPL_IF Name="noletter" -->
-                                <input type="text" name="letter1-<!-- TMPL_VAR NAME="overduename" -->" value="<!--TMPL_VAR Name="letter1"-->" />
+                                <input type="text" name="C-letter1-<!-- TMPL_VAR NAME="overduename" -->" value="<!--TMPL_VAR Name="letter1"-->" />
                             <!--TMPL_ELSE -->
-                                <select name="letter1-<!-- TMPL_VAR NAME="overduename" -->">
+                                <select name="C-letter1-<!-- TMPL_VAR NAME="overduename" -->">
                                     <option value="">No notice</option>
                                     <!-- TMPL_LOOP name="letterloop1" -->
                                         <!-- TMPL_IF NAME="selected" -->
@@ -108,17 +109,57 @@ $(document).ready(function() {
                             </td>
 <td>
                                 <!-- TMPL_IF NAME="debarred1" -->
-                                    <input type="checkbox" name="debarred1-<!-- TMPL_VAR NAME="overduename" -->" checked="checked" value="1" />
+                                    <input type="checkbox" name="C-debarred1-<!-- TMPL_VAR NAME="overduename" -->" checked="checked" value="1" />
                                 <!-- TMPL_ELSE -->
-                                    <input type="checkbox" name="debarred1-<!-- TMPL_VAR NAME="overduename" -->" value="1" />
+                                    <input type="checkbox" name="C-debarred1-<!-- TMPL_VAR NAME="overduename" -->" value="1" />
                                 <!-- /TMPL_IF -->
                             </td>
-							</tr>
-							<!-- /TMPL_LOOP -->
-							</table>
+				</tr>
+			<!-- /TMPL_LOOP -->
+	</table>
+        <table><br>
+                    <caption>By item type:</caption>
+					<tr><th>&nbsp;</th><th scope="col">Delay</th><th scope="col">First Letter</th><th scope="col">Debar</th></tr>
+                   <!-- TMPL_LOOP NAME="itemtable" -->
+                     <!-- TMPL_UNLESS NAME="__odd__" -->
+                                <tr class="highlight">
+                            <!-- TMPL_ELSE -->
+                                <tr>
+                            <!-- /TMPL_UNLESS -->
+                            <th scope="row"><!-- TMPL_VAR NAME="line" --></th>
+<td>
+                                <input name="I-delay1-<!-- TMPL_VAR NAME="overduename" -->" size="5" value="<!-- TMPL_VAR NAME="delay1" -->" />
+                            </td>
+<td>
+                            <!--TMPL_IF Name="noletter" -->
+                                <input type="text" name="I-letter1-<!-- TMPL_VAR NAME="overduename" -->" value="<!--TMPL_VAR Name="letter1"-->" />
+                            <!--TMPL_ELSE -->
+                                <select name="I-letter1-<!-- TMPL_VAR NAME="overduename" -->">
+                                    <option value="">No notice</option>
+                                    <!-- TMPL_LOOP name="letterloop1" -->
+                                        <!-- TMPL_IF NAME="selected" -->
+                                            <option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="lettername" --></option>
+                                        <!-- TMPL_ELSE -->
+                                            <option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="lettername" --></option>
+                                        <!-- /TMPL_IF -->
+                                    <!-- /TMPL_LOOP -->
+                                </select>
+                            <!--/TMPL_IF -->
+                            </td>
+<td>
+                                <!-- TMPL_IF NAME="debarred1" -->
+                                    <input type="checkbox" name="I-debarred1-<!-- TMPL_VAR NAME="overduename" -->" checked="checked" value="1" />
+                                <!-- TMPL_ELSE -->
+                                    <input type="checkbox" name="I-debarred1-<!-- TMPL_VAR NAME="overduename" -->" value="1" />
+                                <!-- /TMPL_IF -->
+                            </td>
+				</tr>
+		   <!-- /TMPL_LOOP -->
+	</table>
 </div>
 
 <div id="second"><table>
+                    <caption>By patron category:</caption>
 					<tr><th>&nbsp;</th><th scope="col">Delay</th><th scope="col">Second Letter</th><th scope="col">Debar</th></tr>
                     <!-- TMPL_LOOP NAME="table" -->
                      <!-- TMPL_UNLESS NAME="__odd__" -->
@@ -128,13 +169,13 @@ $(document).ready(function() {
                             <!-- /TMPL_UNLESS -->
                             <th scope="row"><!-- TMPL_VAR NAME="line" --></th>
 <td>
-                                <input name="delay2-<!-- TMPL_VAR NAME="overduename" -->" size="5" value="<!-- TMPL_VAR NAME="delay2" -->" />
+                                <input name="C-delay2-<!-- TMPL_VAR NAME="overduename" -->" size="5" value="<!-- TMPL_VAR NAME="delay2" -->" />
                             </td>
 <td>
                             <!--TMPL_IF Name="noletter" -->
-                                <input type="text" name="letter2-<!-- TMPL_VAR NAME="overduename" -->" value="<!--TMPL_VAR Name="letter2"-->" />
+                                <input type="text" name="C-letter2-<!-- TMPL_VAR NAME="overduename" -->" value="<!--TMPL_VAR Name="letter2"-->" />
                             <!--TMPL_ELSE -->
-                                <select name="letter2-<!-- TMPL_VAR NAME="overduename" -->">
+                                <select name="C-letter2-<!-- TMPL_VAR NAME="overduename" -->">
                                     <option value="">No notice</option>
                                         <!-- TMPL_LOOP name="letterloop2" -->
                                             <!-- TMPL_IF NAME="selected" -->
@@ -148,17 +189,57 @@ $(document).ready(function() {
                             </td>
 <td>
                                 <!-- TMPL_IF NAME="debarred2" -->
-                                    <input type="checkbox" name="debarred2-<!-- TMPL_VAR NAME="overduename" -->" checked="checked" value="1" />
+                                    <input type="checkbox" name="C-debarred2-<!-- TMPL_VAR NAME="overduename" -->" checked="checked" value="1" />
                                 <!-- TMPL_ELSE -->
-                                    <input type="checkbox" name="debarred2-<!-- TMPL_VAR NAME="overduename" -->" value="1" />
+                                    <input type="checkbox" name="C-debarred2-<!-- TMPL_VAR NAME="overduename" -->" value="1" />
                                 <!-- /TMPL_IF -->
                             </td>
-							</tr>
-							<!-- /TMPL_LOOP -->
-							</table>
+				</tr>
+			<!-- /TMPL_LOOP -->
+	</table>
+        <table><br>
+                    <caption>By item type:</caption>
+					<tr><th>&nbsp;</th><th scope="col">Delay</th><th scope="col">Second Letter</th><th scope="col">Debar</th></tr>
+                    <!-- TMPL_LOOP NAME="itemtable" -->
+                     <!-- TMPL_UNLESS NAME="__odd__" -->
+                                <tr class="highlight">
+                            <!-- TMPL_ELSE -->
+                                <tr>
+                            <!-- /TMPL_UNLESS -->
+                            <th scope="row"><!-- TMPL_VAR NAME="line" --></th>
+<td>
+                                <input name="I-delay2-<!-- TMPL_VAR NAME="overduename" -->" size="5" value="<!-- TMPL_VAR NAME="delay2" -->" />
+                            </td>
+<td>
+                            <!--TMPL_IF Name="noletter" -->
+                                <input type="text" name="I-letter2-<!-- TMPL_VAR NAME="overduename" -->" value="<!--TMPL_VAR Name="letter2"-->" />
+                            <!--TMPL_ELSE -->
+                                <select name="I-letter2-<!-- TMPL_VAR NAME="overduename" -->">
+                                    <option value="">No notice</option>
+                                        <!-- TMPL_LOOP name="letterloop2" -->
+                                            <!-- TMPL_IF NAME="selected" -->
+                                                <option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="lettername" --></option>
+                                            <!-- TMPL_ELSE -->
+                                                <option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="lettername" --></option>
+                                            <!-- /TMPL_IF -->
+                                        <!-- /TMPL_LOOP -->
+                                </select>
+                            <!--/TMPL_IF -->
+                            </td>
+<td>
+                                <!-- TMPL_IF NAME="debarred2" -->
+                                    <input type="checkbox" name="I-debarred2-<!-- TMPL_VAR NAME="overduename" -->" checked="checked" value="1" />
+                                <!-- TMPL_ELSE -->
+                                    <input type="checkbox" name="I-debarred2-<!-- TMPL_VAR NAME="overduename" -->" value="1" />
+                                <!-- /TMPL_IF -->
+                            </td>
+				</tr>
+			<!-- /TMPL_LOOP -->
+	</table>
 </div>
 
 <div id="third"><table>
+                    <caption>By patron category:</caption>
 					<tr><th>&nbsp;</th><th scope="col">Delay</th><th scope="col">Third Letter</th><th scope="col">Debar</th></tr>
                     <!-- TMPL_LOOP NAME="table" -->
                      <!-- TMPL_UNLESS NAME="__odd__" -->
@@ -168,13 +249,13 @@ $(document).ready(function() {
                             <!-- /TMPL_UNLESS -->
                             <th scope="row"><!-- TMPL_VAR NAME="line" --></th>
 <td>
-                                <input name="delay3-<!-- TMPL_VAR NAME="overduename" -->" size="5" value="<!-- TMPL_VAR NAME="delay3" -->" />
+                                <input name="C-delay3-<!-- TMPL_VAR NAME="overduename" -->" size="5" value="<!-- TMPL_VAR NAME="delay3" -->" />
                             </td>
 <td>
                             <!--TMPL_IF Name="noletter" -->
-                                <input type="text" name="letter3-<!-- TMPL_VAR NAME="overduename" -->" value="<!--TMPL_VAR Name="letter3"-->" />
+                                <input type="text" name="C-letter3-<!-- TMPL_VAR NAME="overduename" -->" value="<!--TMPL_VAR Name="letter3"-->" />
                             <!--TMPL_ELSE -->
-                                <select name="letter3-<!-- TMPL_VAR NAME="overduename" -->">
+                                <select name="C-letter3-<!-- TMPL_VAR NAME="overduename" -->">
                                     <option value="">No notice</option>
                                     <!-- TMPL_LOOP name="letterloop3" -->
                                         <!-- TMPL_IF NAME="selected" -->
@@ -188,9 +269,48 @@ $(document).ready(function() {
                             </td>
 <td>
                                 <!-- TMPL_IF NAME="debarred3" -->
-                                    <input type="checkbox" name="debarred3-<!-- TMPL_VAR NAME="overduename" -->" checked="checked" value="1" />
+                                    <input type="checkbox" name="C-debarred3-<!-- TMPL_VAR NAME="overduename" -->" checked="checked" value="1" />
                                 <!-- TMPL_ELSE -->
-                                    <input type="checkbox" name="debarred3-<!-- TMPL_VAR NAME="overduename" -->" value="1" />
+                                    <input type="checkbox" name="C-debarred3-<!-- TMPL_VAR NAME="overduename" -->" value="1" />
+                                <!-- /TMPL_IF -->
+                            </td>
+                        </tr>
+                    <!-- /TMPL_LOOP -->
+                </table>
+                <table><br>
+                    <caption>By item type:</caption>
+					<tr><th>&nbsp;</th><th scope="col">Delay</th><th scope="col">Third Letter</th><th scope="col">Debar</th></tr>
+                    <!-- TMPL_LOOP NAME="itemtable" -->
+                     <!-- TMPL_UNLESS NAME="__odd__" -->
+                                <tr class="highlight">
+                            <!-- TMPL_ELSE -->
+                                <tr>
+                            <!-- /TMPL_UNLESS -->
+                            <th scope="row"><!-- TMPL_VAR NAME="line" --></th>
+<td>
+                                <input name="I-delay3-<!-- TMPL_VAR NAME="overduename" -->" size="5" value="<!-- TMPL_VAR NAME="delay3" -->" />
+                            </td>
+<td>
+                            <!--TMPL_IF Name="noletter" -->
+                                <input type="text" name="I-letter3-<!-- TMPL_VAR NAME="overduename" -->" value="<!--TMPL_VAR Name="letter3"-->" />
+                            <!--TMPL_ELSE -->
+                                <select name="I-letter3-<!-- TMPL_VAR NAME="overduename" -->">
+                                    <option value="">No notice</option>
+                                    <!-- TMPL_LOOP name="letterloop3" -->
+                                        <!-- TMPL_IF NAME="selected" -->
+                                            <option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="lettername" --></option>
+                                        <!-- TMPL_ELSE -->
+                                            <option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="lettername" --></option>
+                                        <!-- /TMPL_IF -->
+                                    <!-- /TMPL_LOOP -->
+                                </select>
+                            <!--/TMPL_IF -->
+                            </td>
+<td>
+                                <!-- TMPL_IF NAME="debarred3" -->
+                                    <input type="checkbox" name="I-debarred3-<!-- TMPL_VAR NAME="overduename" -->" checked="checked" value="1" />
+                                <!-- TMPL_ELSE -->
+                                    <input type="checkbox" name="I-debarred3-<!-- TMPL_VAR NAME="overduename" -->" value="1" />
                                 <!-- /TMPL_IF -->
                             </td>
                         </tr>

@@ -1576,6 +1576,26 @@ CREATE TABLE `overduerules` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `overdueitemrules`
+--
+
+DROP TABLE IF EXISTS `overdueitemrules`;
+CREATE TABLE `overdueitemrules` (
+  `branchcode` varchar(10) NOT NULL default '',
+  `itemtype` varchar(10) NOT NULL default '',
+  `delay1` int(4) default 0,
+  `letter1` varchar(20) default NULL,
+  `debarred1` varchar(1) default 0,
+  `delay2` int(4) default 0,
+  `debarred2` varchar(1) default 0,
+  `letter2` varchar(20) default NULL,
+  `delay3` int(4) default 0,
+  `letter3` varchar(20) default NULL,
+  `debarred3` int(1) default 0,
+  PRIMARY KEY  (`branchcode`,`itemtype`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `patroncards`
 --
 

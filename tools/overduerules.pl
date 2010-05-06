@@ -36,6 +36,12 @@ my @categories = @{$dbh->selectall_arrayref(
     { Slice => {} }
 )};
 my @category_codes  = map { $_->{categorycode} } @categories;
+# Pull similiar information for item type
+my @itemtypes = @{$dbh->selectall_arrayref(
+    'SELECT description, itemtype FROM itemtypes',
+    { Slice => {} }
+)};
+my @item_types  = map { $_->{itemtype} } @itemtypes;
 my @rule_params     = qw(delay letter debarred);
 
 # blank_row($category_code) - return true if the entire row is blank.
@@ -86,7 +92,7 @@ if ($op eq 'save') {
     my $sth_delete=$dbh->prepare("DELETE FROM overduerules WHERE branchcode=? AND categorycode=?");
     foreach my $key (@names){
             # ISSUES
-            if ($key =~ /(.*)([1-3])-(.*)/) {
+            if ($key =~ /C-(.*)([1-3])-(.*)/) {
                     my $type = $1; # data type
                     my $num = $2; # From 1 to 3
                     my $bor = $3; # borrower category
@@ -101,9 +107,25 @@ if ($op eq 'save') {
     }
 
     # figure out which rows need to be deleted
-    my @rows_to_delete = grep { blank_row($_) } @category_codes;
+#   my @rows_to_delete = grep { blank_row($_) } @category_codes;
+    # Need to get this back to working in subroutine
+    my @rows_to_delete = ();
+    foreach my $category_code (@category_codes) {
+      my $field_value = 0;
+      for my $rp (@rule_params) {
+          for my $n (1 .. 3) {
+              my $key   = "${rp}${n}";
+              my $value = $temphash{$category_code}->{$key};
+              if ($value) {
+                $field_value = 1;
+              }
+          }
+      }
+      push @rows_to_delete, $category_code if (!$field_value);
+    }
 
     foreach my $bor (keys %temphash){
+        warn "BOR: $bor VALUE: $temphash{$bor}->{delay1} $temphash{$bor}->{letter1}\n";
         # get category name if we need it for an error message
         my $bor_category = GetBorrowercategory($bor);
         my $bor_category_name = defined($bor_category) ? $bor_category->{description} : $bor;
@@ -141,6 +163,7 @@ if ($op eq 'save') {
                     $sth_search->execute($branch,$bor);
                     my $res = $sth_search->fetchrow_hashref();
                     if ($res->{'total'}>0) {
+                        warn "CAT UPDATE\n";
                         $sth_update->execute(
                             ($temphash{$bor}->{"delay1"}?$temphash{$bor}->{"delay1"}:0),
                             ($temphash{$bor}->{"letter1"}?$temphash{$bor}->{"letter1"}:""),
@@ -249,7 +272,193 @@ for my $data (@categories) {
     push @line_loop,\%row;
 }
 
+# Pull similiar information via item type
+my @itemtypes = @{$dbh->selectall_arrayref(
+    'SELECT description, itemtype FROM itemtypes',
+    { Slice => {} }
+)};
+my @item_types  = map { $_->{itemtype} } @itemtypes;
+
+# Now do it for item type
+# save the values entered into tables
+my %temphash = ();
+my $input_saved = 0;
+if ($op eq 'save') {
+    my @names=$input->param();
+    my $sth_search = $dbh->prepare("SELECT count(*) AS total FROM overdueitemrules WHERE branchcode=? AND itemtype=?");
+
+    my $sth_insert = $dbh->prepare("INSERT INTO overdueitemrules (branchcode,itemtype, delay1,letter1,debarred1, delay2,letter2,debarred2, delay3,letter3,debarred3) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+    my $sth_update=$dbh->prepare("UPDATE overdueitemrules SET delay1=?, letter1=?, debarred1=?, delay2=?, letter2=?, debarred2=?, delay3=?, letter3=?, debarred3=? WHERE branchcode=? AND itemtype=?");
+    my $sth_delete=$dbh->prepare("DELETE FROM overdueitemrules WHERE branchcode=? AND itemtype=?");
+    foreach my $key (@names){
+            # ISSUES
+            if ($key =~ /I-(.*)([1-3])-(.*)/) {
+                    my $type = $1; # data type
+                    my $num = $2; # From 1 to 3
+                    my $item = $3; # item category
+                    $temphash{$item}->{"$type$num"}=$input->param("$key") if (($input->param("$key") ne "") or ($input->param("$key")>0));
+            }
+    }
+
+    # figure out which rows need to be deleted
+#   my @rows_to_delete = grep { blank_row($_) } @item_types;
+    # Need to get this back to working in subroutine
+    my @rows_to_delete = ();
+    foreach my $category_code (@category_codes) {
+      my $field_value = 0;
+      for my $rp (@rule_params) {
+          for my $n (1 .. 3) {
+              my $key   = "${rp}${n}";
+              my $value = $temphash{$category_code}->{$key};
+              if ($value) {
+                $field_value = 1;
+              }
+          }
+      }
+      push @rows_to_delete, $category_code if (!$field_value);
+    }
+
+    foreach my $item (keys %temphash){
+        # Do some Checking here : delay1 < delay2 <delay3 all of them being numbers
+        # Raise error if not true
+        if ($temphash{$item}->{delay1}=~/[^0-9]/ and $temphash{$item}->{delay1} ne ""){
+            $template->param("ERROR"=>1,"ERRORDELAY"=>"delay1","BORERR"=>$item);
+            $err=1;
+        } elsif ($temphash{$item}->{delay2}=~/[^0-9]/ and $temphash{$item}->{delay2} ne ""){
+            $template->param("ERROR"=>1,"ERRORDELAY"=>"delay2","BORERR"=>$item);
+            $err=1;
+        } elsif ($temphash{$item}->{delay3}=~/[^0-9]/ and $temphash{$item}->{delay3} ne ""){
+            $template->param("ERROR"=>1,"ERRORDELAY"=>"delay3","BORERR"=>$item);
+            $err=1;
+        } elsif ($temphash{$item}->{delay1} and not ($temphash{$item}->{"letter1"} or $temphash{$item}->{"debarred1"})) {
+            $template->param("ERROR"=>1,"ERRORUSELESSDELAY"=>"delay1","BORERR"=>$item);
+            $err=1;
+        } elsif ($temphash{$item}->{delay2} and not ($temphash{$item}->{"letter2"} or $temphash{$item}->{"debarred2"})) {
+            $template->param("ERROR"=>1,"ERRORUSELESSDELAY"=>"delay2","BORERR"=>$item);
+            $err=1;
+        } elsif ($temphash{$item}->{delay3} and not ($temphash{$item}->{"letter3"} or $temphash{$item}->{"debarred3"})) {
+            $template->param("ERROR"=>1,"ERRORUSELESSDELAY"=>"delay3","BORERR"=>$item);
+            $err=1;
+        }elsif ($temphash{$item}->{delay3} and
+                ($temphash{$item}->{delay3}<=$temphash{$item}->{delay2} or $temphash{$item}->{delay3}<=$temphash{$item}->{delay1})
+                or $temphash{$item}->{delay2} and ($temphash{$item}->{delay2}<=$temphash{$item}->{delay1})){
+                    $template->param("ERROR"=>1,"ERRORORDER"=>1,"BORERR"=>$item);
+                        $err=1;
+        }
+        unless ($err){
+            if (($temphash{$item}->{delay1} and ($temphash{$item}->{"letter1"} or $temphash{$item}->{"debarred1"}))
+                or ($temphash{$item}->{delay2} and ($temphash{$item}->{"letter2"} or $temphash{$item}->{"debarred2"}))
+                or ($temphash{$item}->{delay3} and ($temphash{$item}->{"letter3"} or $temphash{$item}->{"debarred3"}))) {
+                    $sth_search->execute($branch,$item);
+                    my $res = $sth_search->fetchrow_hashref();
+                    if ($res->{'total'}>0) {
+                        $sth_update->execute(
+                            ($temphash{$item}->{"delay1"}?$temphash{$item}->{"delay1"}:0),
+                            ($temphash{$item}->{"letter1"}?$temphash{$item}->{"letter1"}:""),
+                            ($temphash{$item}->{"debarred1"}?$temphash{$item}->{"debarred1"}:0),
+                            ($temphash{$item}->{"delay2"}?$temphash{$item}->{"delay2"}:0),
+                            ($temphash{$item}->{"letter2"}?$temphash{$item}->{"letter2"}:""),
+                            ($temphash{$item}->{"debarred2"}?$temphash{$item}->{"debarred2"}:0),
+                            ($temphash{$item}->{"delay3"}?$temphash{$item}->{"delay3"}:0),
+                            ($temphash{$item}->{"letter3"}?$temphash{$item}->{"letter3"}:""),
+                            ($temphash{$item}->{"debarred3"}?$temphash{$item}->{"debarred3"}:0),
+                            $branch ,$item
+                            );
+                    } else {
+                        $sth_insert->execute($branch,$item,
+                            ($temphash{$item}->{"delay1"}?$temphash{$item}->{"delay1"}:0),
+                            ($temphash{$item}->{"letter1"}?$temphash{$item}->{"letter1"}:""),
+                            ($temphash{$item}->{"debarred1"}?$temphash{$item}->{"debarred1"}:0),
+                            ($temphash{$item}->{"delay2"}?$temphash{$item}->{"delay2"}:0),
+                            ($temphash{$item}->{"letter2"}?$temphash{$item}->{"letter2"}:""),
+                            ($temphash{$item}->{"debarred2"}?$temphash{$item}->{"debarred2"}:0),
+                            ($temphash{$item}->{"delay3"}?$temphash{$item}->{"delay3"}:0),
+                            ($temphash{$item}->{"letter3"}?$temphash{$item}->{"letter3"}:""),
+                            ($temphash{$item}->{"debarred3"}?$temphash{$item}->{"debarred3"}:0)
+                            );
+                    }
+                }
+        }
+    }
+    unless ($err) {
+        for my $item_types (@rows_to_delete) {
+            $sth_delete->execute($branch, $item_types);
+        }
+        $template->param(datasaved => 1);
+        $input_saved = 1;
+    }
+}
+
+my @item_line_loop;
+my $toggle = 1;
+
+for my $data (@itemtypes) {
+    if ( $toggle eq 1 ) {
+        $toggle = 0;
+    } else {
+        $toggle = 1;
+    }
+    my %row = (
+        overduename => $data->{'itemtype'},
+        toggle      => $toggle,
+        line        => $data->{'description'}
+    );
+    if (%temphash and not $input_saved){
+        # if we managed to save the form submission, don't
+        # reuse %temphash, but take the values from the
+        # database - this makes it easier to identify
+        # bugs where the form submission was not correctly saved
+        for (my $i=1;$i<=3;$i++){
+            $row{"delay$i"}=$temphash{$data->{'itemtype'}}->{"delay$i"};
+            $row{"debarred$i"}=$temphash{$data->{'itemtype'}}->{"debarred$i"};
+            if ($countletters){
+                my @letterloop;
+                foreach my $thisletter (sort { $letters->{$a} cmp $letters->{$b} } keys %$letters) {
+                    my $selected = 1 if $thisletter eq $temphash{$data->{'itemtype'}}->{"letter$i"};
+                    my %letterrow =(value => $thisletter,
+                                    selected => $selected,
+                                    lettername => $letters->{$thisletter},
+                                    );
+                    push @letterloop, \%letterrow;
+                }
+                $row{"letterloop$i"}=\@letterloop;
+            } else {
+                $row{"noletter"}=1;
+                $row{"letter$i"}=$temphash{$data->{'itemtype'}}->{"letter$i"};
+            }
+        }
+    } else {
+    #getting values from table
+        my $sth2=$dbh->prepare("SELECT * from overdueitemrules WHERE branchcode=? AND itemtype=?");
+        $sth2->execute($branch,$data->{'itemtype'});
+        my $dat=$sth2->fetchrow_hashref;
+        for (my $i=1;$i<=3;$i++){
+            if ($countletters){
+                my @letterloop;
+                foreach my $thisletter (sort { $letters->{$a} cmp $letters->{$b} } keys %$letters) {
+                    my $selected = 1 if $thisletter eq $dat->{"letter$i"};
+                    my %letterrow =(value => $thisletter,
+                                    selected => $selected,
+                                    lettername => $letters->{$thisletter},
+                                    );
+                    push @letterloop, \%letterrow;
+                }
+                $row{"letterloop$i"}=\@letterloop;
+            } else {
+                $row{"noletter"}=1;
+                if ($dat->{"letter$i"}){$row{"letter$i"}=$dat->{"letter$i"};}
+            }
+            if ($dat->{"delay$i"}){$row{"delay$i"}=$dat->{"delay$i"};}
+            if ($dat->{"debarred$i"}){$row{"debarred$i"}=$dat->{"debarred$i"};}
+        }
+        $sth2->finish;
+    }
+    push @item_line_loop,\%row;
+}
+
+
 $template->param(table=> \@line_loop,
-                branchloop => $branchloop,
+                itemtable => \@item_line_loop,
+                branchloop   => GetBranchesLoop($input->param("branch") || C4::Context->userenv->{branch}),
                 branch => $branch);
 output_html_with_http_headers $input, $cookie, $template->output;
