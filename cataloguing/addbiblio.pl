@@ -33,6 +33,7 @@ use C4::Branch;    # XXX subfield_is_koha_internal_p
 use C4::ClassSource;
 use C4::ImportBatch;
 use C4::Charset;
+use C4::ClubsAndServices;
 
 use Date::Calc qw(Today);
 use MARC::File::USMARC;
@@ -926,6 +927,8 @@ if ( $op eq "addbiblio" ) {
         else {
             ( $biblionumber, $oldbibitemnum ) = AddBiblio( $record, $frameworkcode );
         }
+
+        ReserveForBestSellersClub( $biblionumber );
 
         if ($mode ne "popup"){
             print $input->redirect(
