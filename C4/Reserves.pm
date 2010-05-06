@@ -856,6 +856,16 @@ sub CancelReserve {
         ";
         $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
+    UpdateStats(
+      $branchcode,
+      my $type = 'reserve_canceled',
+      my $amount,
+      my $other = $biblio,
+      my $itemnum = $holditem->{'itemnumber'},
+      my $itemtype,
+      my $borrowernumber = $holditem->{'borrowernumber'},
+      my $accountno
+    );
     }
     else {
         # removing a reserve record....
@@ -922,18 +932,18 @@ sub CancelReserve {
 
         # now fix the priority on the others....
         _FixPriority( '', '', $priority, $reservenumber );
-    }
-
     UpdateStats(
       $branchcode,
       my $type = 'reserve_canceled',
       my $amount,
       my $other = $biblio,
-      my $itemnum = $item,
+      my $itemnum = $holditem->{'itemnumber'}||'',
       my $itemtype,
-      my $borrowernumber = $borr,
+      my $borrowernumber = $holditem->{'borrowernumber'},
       my $accountno
     );
+    }
+
     
 }
 
