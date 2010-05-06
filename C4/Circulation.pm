@@ -2115,6 +2115,16 @@ sub AddRenewal {
     my $datedue = shift;
     my $lastreneweddate = shift;
     my $source = shift;
+    my $dbh = C4::Context->dbh;
+    # Find the issues record for this book
+    my $sth =
+      $dbh->prepare("SELECT * FROM issues
+                        WHERE borrowernumber=? 
+                        AND itemnumber=?"
+      );
+    $sth->execute( $borrowernumber, $itemnumber );
+    my $issuedata = $sth->fetchrow_hashref;
+    $sth->finish;
 
     # If the due date wasn't specified, calculate it by adding the
     # book's loan length to today's date.
@@ -2139,16 +2149,6 @@ sub AddRenewal {
         $lastreneweddate = strftime( "%Y-%m-%d", localtime );
     }
 
-    my $dbh = C4::Context->dbh;
-    # Find the issues record for this book
-    my $sth =
-      $dbh->prepare("SELECT * FROM issues
-                        WHERE borrowernumber=? 
-                        AND itemnumber=?"
-      );
-    $sth->execute( $borrowernumber, $itemnumber );
-    my $issuedata = $sth->fetchrow_hashref;
-    $sth->finish;
     if($datedue && ! $datedue->output('iso')){
         warn "Invalid date passed to AddRenewal.";
         return undef;
