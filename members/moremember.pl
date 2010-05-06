@@ -277,6 +277,11 @@ for ( my $i = 0 ; $i < $issuecount ; $i++ ) {
 
     $row{'charge'} = sprintf( "%.2f", $charge );
 
+    if ( $row{'renewals'} ) {
+       ( $row{'renewals_intranet'}, $row{'renewals_opac'} ) = GetRenewalDetails( $row{'itemnumber'}, $row{'renewals'} );
+    }
+
+
 	my ( $renewokay,$renewerror ) = CanBookBeRenewed( $borrowernumber, $issue->[$i]{'itemnumber'}, $override_limit );
 	$row{'norenew'} = !$renewokay;
 	$row{'can_confirm'} = ( !$renewokay && $renewerror ne 'on_reserve' );

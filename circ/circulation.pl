@@ -565,6 +565,10 @@ if ($borrower) {
         # ADDED BY JF: NEW ITEMTYPE COUNT DISPLAY
         $issued_itemtypes_count->{ $it->{'itemtype'} }++;
 
+        if ( $it->{'renewals'} ) {
+          ( $it->{'renewals_intranet'}, $it->{'renewals_opac'} ) = GetRenewalDetails( $it->{'itemnumber'}, $it->{'renewals'} );
+        }
+
         if ( $todaysdate eq $it->{'issuedate'} or $todaysdate eq $it->{'lastreneweddate'} ) {
             push @todaysissues, $it;
         } else {
