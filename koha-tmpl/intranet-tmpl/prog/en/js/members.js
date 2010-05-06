@@ -81,6 +81,13 @@ var myDate2=document.form.dateexpiry.value.split ('/');
 }
 //end function
 
+function confirmSubmit() {
+        if ( confirm( "Are You Sure You Want To Save?" ) ) {
+                return true;
+        } else {
+                return false;
+        }
+}         
 
 // function to test all fields in forms and nav in different forms(1 ,2 or 3)
 function check_form_borrowers(nav){
@@ -144,7 +151,12 @@ function check_form_borrowers(nav){
 		alert(message+"\n"+message_champ);
 		return false;
 	} else {
-		document.form.submit();
+		var doSubmit = confirmSubmit();
+		if ( doSubmit ) {
+			document.form.submit();
+		} else {
+			return false;
+		}
 	}
 }
 
