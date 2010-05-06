@@ -164,8 +164,8 @@ if ($cardnumber) {
                 maxreserves       => $maxreserves,
                 expiry            => $expiry,
                 diffbranch        => $diffbranch,
-				messages => $messages,
-				warnings => $warnings
+                messages => $messages,
+		warnings => $warnings
     );
 }
 
@@ -272,7 +272,8 @@ foreach my $biblionumber (@biblionumbers) {
             $count--;
         }
 
-        if ( defined $borrowerinfo && ($borrowerinfo->{borrowernumber} eq $res->{borrowernumber}) ) {
+        if ( defined $borrowerinfo && ($borrowerinfo->{borrowernumber} eq $res->{borrowernumber}) && !CanHoldMultipleItems($res->{itemtype}) ) {
+        if ( $borrowerinfo->{borrowernumber} eq $res->{borrowernumber} && !CanHoldMultipleItems($res->{itemtype}) ) {
             $warnings = 1;
             $alreadyreserved = 1;
             $biblioloopiter{warn} = 1;
@@ -478,6 +479,12 @@ foreach my $biblionumber (@biblionumbers) {
             while (my $wait_hashref = $sth2->fetchrow_hashref) {
                 $item->{waitingdate} = format_date($wait_hashref->{waitingdate});
             }
+            
+            if ( BorrowerHasReserve( $borrowerinfo->{'borrowernumber'}, '', $itemnumber ) ) {
+              $item->{available} = 0;
+              $item->{override} = 0;
+            }
+            
             push @{ $biblioitem->{itemloop} }, $item;
         }
         
@@ -499,6 +506,9 @@ foreach my $biblionumber (@biblionumbers) {
     ( $count, $reserves ) = GetReservesFromBiblionumber($biblionumber);
     foreach my $res ( sort { $a->{found} cmp $b->{found} } @$reserves ) {
         my %reserve;
+
+        $reserve{'reservenumber'}   = $res->{'reservenumber'};
+
         my @optionloop;
         if ($populate_option_loop ) {
             for ( my $i = 1 ; $i <= $totalcount ; $i++ ) {

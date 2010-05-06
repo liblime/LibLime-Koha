@@ -617,6 +617,11 @@ if (nodename =="barcodes[]"){
                    <td><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
                    <td><!-- TMPL_VAR NAME="itemtype" --></td>
                    <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
+                   <td>
+                       <!-- TMPL_IF name="barcodereserv" -->
+                         <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
+                       <!-- /TMPL_IF -->
+                   </td>
                    <td><!-- TMPL_IF name="waiting" -->
                          <em>Item is <strong>waiting</strong></em>
                        <!-- /TMPL_IF -->
@@ -649,6 +654,7 @@ if (nodename =="barcodes[]"){
 			            <option value="del">Yes</option>
 			        </select>
                     <!-- /TMPL_IF -->
+		<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR name="reservenumber" -->" />
 		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
 		<input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" /></td>
 			</tr>

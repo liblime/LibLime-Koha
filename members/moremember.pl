@@ -46,7 +46,6 @@ use C4::Circulation;
 use C4::Koha;
 use C4::Letters;
 use C4::Biblio;
-use C4::Reserves;
 use C4::Branch; # GetBranchName
 use C4::Form::MessagingPreferences;
 
@@ -354,9 +353,10 @@ if ($borrowernumber) {
             $getreserv{nottransfered}   = 0;
             $getreserv{itemtype}        = $getbibtype->{'description'};
             $getreserv{author}          = $getbibinfo->{'author'};
-            $getreserv{biblionumber}  = $num_res->{'biblionumber'};	
+            $getreserv{biblionumber}    = $num_res->{'biblionumber'};	
         }
         $getreserv{waitingposition} = $num_res->{'priority'};
+        $getreserv{reservenumber}    = $num_res->{'reservenumber'};	
 
         push( @reservloop, \%getreserv );
     }

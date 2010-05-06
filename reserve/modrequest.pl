@@ -42,6 +42,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 
 my @rank=$query->param('rank-request');
+my @reservenumber=$query->param('reservenumber');
 my @biblionumber=$query->param('biblionumber');
 my @borrower=$query->param('borrowernumber');
 my @branch=$query->param('pickup');
@@ -54,9 +55,9 @@ my $CancelBiblioNumber=$query->param('CancelBiblioNumber');
 my $CancelBorrowerNumber=$query->param('CancelBorrowerNumber');
 my $CancelItemnumber=$query->param('CancelItemnumber');
 
-# 2 possibilitys : cancel an item reservation, or modify or cancel the queded list
+# 2 possibilitys : cancel an item reservation, or modify or cancel the queued list
 
-# 1) cancel an item reservation by fonction ModReserveCancelAll (in reserves.pm)
+# 1) cancel an item reservation by function ModReserveCancelAll (in reserves.pm)
 if ($CancelBorrowerNumber) {
     ModReserveCancelAll($CancelItemnumber, $CancelBorrowerNumber);
     $biblionumber[0] = $CancelBiblioNumber,
@@ -66,7 +67,7 @@ if ($CancelBorrowerNumber) {
 else {
     for (my $i=0;$i<$count;$i++){
         undef $itemnumber[$i] unless $itemnumber[$i] ne '';
-        ModReserve($rank[$i],$biblionumber[$i],$borrower[$i],$branch[$i],$itemnumber[$i]); #from C4::Reserves
+        ModReserve($rank[$i],$biblionumber[$i],$borrower[$i],$branch[$i],$itemnumber[$i],$reservenumber[$i]); #from C4::Reserves
     }
 }
 my $from=$query->param('from');
