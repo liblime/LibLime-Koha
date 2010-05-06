@@ -235,37 +235,12 @@ function set_to_today(id, force) {
 	<ol>
     <!-- TMPL_IF name="opisadd" -->
     <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
-        <!-- TMPL_LOOP NAME="item" -->
-               <li><div class="subfield_line" style="<!-- TMPL_VAR NAME='visibility' -->" id="subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->">
-
-               <label><!-- TMPL_VAR NAME="subfield" --> - <!-- TMPL_IF name="mandatory" --><b><!-- /TMPL_IF --><!-- TMPL_VAR NAME="marc_lib" --><!-- TMPL_IF name="mandatory" --> *</b><!-- /TMPL_IF --></label>
-                <!-- TMPL_VAR NAME="marc_value" -->
-                <input type="hidden" name="tag"       value="<!-- TMPL_VAR NAME="tag" -->" />
-                <input type="hidden" name="subfield"  value="<!-- TMPL_VAR NAME="subfield" -->" />
-                <input type="hidden" name="mandatory" value="<!-- TMPL_VAR NAME="mandatory" -->" />
-                <!-- TMPL_IF NAME="repeatable" -->
-                    <span class="buttonPlus" onclick="CloneSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->')">+</span>
-                <!-- /TMPL_IF -->
-
-            </div></li>
-        <!-- /tmpl_loop -->
+         <!-- TMPL_INCLUDE NAME="item-fields.inc" -->
     <!-- TMPL_ELSE -->
          <li>&nbsp;</li>
     <!-- /TMPL_IF  -->
     <!-- TMPL_ELSE -->
-        <!-- TMPL_LOOP NAME="item" -->
-               <li><div class="subfield_line" style="<!-- TMPL_VAR NAME='visibility' -->" id="subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->">
-
-               <label><!-- TMPL_VAR NAME="subfield" --> - <!-- TMPL_IF name="mandatory" --><b><!-- /TMPL_IF --><!-- TMPL_VAR NAME="marc_lib" --><!-- TMPL_IF name="mandatory" --> *</b><!-- /TMPL_IF --></label>
-                <!-- TMPL_VAR NAME="marc_value" -->
-                <input type="hidden" name="tag"       value="<!-- TMPL_VAR NAME="tag" -->" />
-                <input type="hidden" name="subfield"  value="<!-- TMPL_VAR NAME="subfield" -->" />
-                <input type="hidden" name="mandatory" value="<!-- TMPL_VAR NAME="mandatory" -->" />
-                <!-- TMPL_IF NAME="repeatable" -->
-                    <span class="buttonPlus" onclick="CloneSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->')">+</span>
-                <!-- /TMPL_IF -->
-
-            </div></li>
+         <!-- TMPL_INCLUDE NAME="item-fields.inc" -->
         <!-- /TMPL_LOOP -->
     <!-- /TMPL_IF  -->
     </ol>
@@ -291,17 +266,10 @@ function set_to_today(id, force) {
     </span>
 
     <!-- TMPL_ELSE -->
-<<<<<<< HEAD:koha-tmpl/intranet-tmpl/prog/en/modules/cataloguing/additem.tmpl
-    <input type="hidden" name="tag" value="<!-- TMPL_VAR NAME="itemtagfield" -->" />
-    <input type="hidden" name="subfield" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
-    <input type="hidden" name="field_value" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
-    <input type="submit" value="Save Changes" onclick="return Check(this.form)" />
-=======
     <input type="hidden" name="tag_0" value="<!-- TMPL_VAR NAME="itemtagfield" -->" />
     <input type="hidden" name="subfield_0" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
     <input type="hidden" name="field_value_0" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
     <input type="submit" value="Save Changes" onclick="return Check(this.form)" /> 
->>>>>>> Bug4247:koha-tmpl/intranet-tmpl/prog/en/modules/cataloguing/additem.tmpl
     <!-- /TMPL_IF --></fieldset>
 
     </form>
