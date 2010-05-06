@@ -74,6 +74,7 @@ my $actionType     = $input->param('actionType') || '';
 my $modify         = $input->param('modify');
 my $delete         = $input->param('delete');
 my $op             = $input->param('op');
+my $copy           = $input->param('copy');
 my $destination    = $input->param('destination');
 my $cardnumber     = $input->param('cardnumber');
 my $check_member   = $input->param('check_member');
@@ -207,6 +208,15 @@ if (($op eq 'insert') and !$nodouble){
       my $tmpborrowercategory=GetBorrowercategory($check_category);
       $check_categorytype=$tmpborrowercategory->{'category_type'};
     }   
+}
+
+# Copy the patron record
+if ($copy) {
+  my $borrowerdata=GetMember($borrowernumber);
+  foreach (qw(surname title streetnumber address streettype address2 zipcode city phone phonepro mobile fax email emailpro branchcode)) {
+    $newdata{$_} = $borrowerdata->{$_};
+  }
+  $template->param("copy"=>1);
 }
 
   #recover all data from guarantor address phone ,fax... 
@@ -605,7 +615,7 @@ foreach (qw(dateenrolled dateexpiry dateofbirth)) {
 
 if (C4::Context->preference('ExtendedPatronAttributes')) {
     $template->param(ExtendedPatronAttributes => 1);
-    patron_attributes_form($template, $borrowernumber);
+    patron_attributes_form($template, $borrowernumber, $copy);
 }
 
 if (C4::Context->preference('EnhancedMessagingPreferences')) {
@@ -688,6 +698,7 @@ sub  parse_extended_patron_attributes {
 sub patron_attributes_form {
     my $template = shift;
     my $borrowernumber = shift;
+    my $copy = shift;
 
     my @types = C4::Members::AttributeTypes::GetAttributeTypes();
     if (scalar(@types) == 0) {
@@ -717,7 +728,7 @@ sub patron_attributes_form {
         if (exists $attr_hash{$attr_type->code()}) {
             foreach my $attr (@{ $attr_hash{$attr_type->code()} }) {
                 my $newentry = { map { $_ => $entry->{$_} } %$entry };
-                $newentry->{value} = $attr->{value};
+                $newentry->{value} = ($copy) ? '' : $attr->{value};
                 $newentry->{password} = $attr->{password};
                 $newentry->{use_dropdown} = 0;
                 if ($attr_type->authorised_value_category()) {

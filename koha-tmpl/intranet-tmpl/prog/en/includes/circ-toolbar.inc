@@ -69,6 +69,7 @@ function update_child() {
             <!-- TMPL_IF NAME="CAN_user_borrowers_delete_borrowers" --> 
             { text: _("Delete"), <!-- TMPL_IF NAME="StaffMember" --><!-- TMPL_UNLESS NAME="CAN_user_staffaccess" -->disabled: true, <!-- /TMPL_UNLESS --><!-- /TMPL_IF --> onclick: { fn: confirm_deletion } },
             <!-- /TMPL_IF -->
+                        { text: _("Copy Patron"), url: "/cgi-bin/koha/members/memberentry.pl?op=add&borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&category_type=<!-- TMPL_VAR NAME="category_type" -->&categorycode=<!-- TMPL_VAR NAME="categorycode" -->&copy=1"},
 			{ text: _("Update Child to Adult Patron") , onclick: { fn: update_child }<!-- TMPL_UNLESS NAME="is_child" -->, disabled: true<!-- /TMPL_UNLESS -->}
 		];
 

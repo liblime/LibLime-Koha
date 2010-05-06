@@ -1058,10 +1058,14 @@
     <fieldset class="action">
         <input type="submit" name="save" onclick="return check_form_borrowers();" value="Save" />
       <!-- TMPL_IF NAME="opadd" -->
-       <a class="cancel" href="/cgi-bin/koha/members/member.pl">Cancel</a>
-	   <!-- TMPL_ELSE -->
-	  <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a>
-	   <!-- /TMPL_IF -->
+         <!-- TMPL_IF NAME="copy" -->
+	   <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a>
+         <!-- TMPL_ELSE -->
+           <a class="cancel" href="/cgi-bin/koha/members/member.pl">Cancel</a>
+         <!-- /TMPL_IF -->
+      <!-- TMPL_ELSE -->
+         <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a>
+      <!-- /TMPL_IF -->
     </fieldset>
 </form>
   
