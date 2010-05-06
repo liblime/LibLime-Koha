@@ -19,7 +19,7 @@ function holdMultiple() {
     var checkedCount = 0;
     if(document.bookbag_form.biblionumber.length > 0) {
         for (var i=0; i < document.bookbag_form.biblionumber.length; i++) {
-            if (document.bookbag_form.biblionumber[i].checked) {
+            if ((document.bookbag_form.biblionumber[i].checked) && (!document.bookbag_form.biblionumber[i].disabled)) {
                 checkedBiblioNums += (document.bookbag_form.biblionumber[i].value + "/");
                 checkedCount++;
             }
@@ -337,7 +337,7 @@ $(document).ready(function(){
                 <tr>
             <!-- /TMPL_UNLESS -->
 
-                <td class="select selectcol"><!--TMPL_IF EXPR="opacbookbag || virtualshelves" --><input type="checkbox" id="bib<!-- TMPL_VAR NAME="biblionumber" -->" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" title="Click to add to <TMPL_VAR NAME="opacbookbagName">" /> <label for="bib<!-- TMPL_VAR NAME="biblionumber" -->"></label><!-- /TMPL_IF --></td>
+                <td class="select selectcol"><!--TMPL_IF EXPR="opacbookbag || virtualshelves" --><input type="checkbox" id="bib<!-- TMPL_VAR NAME="biblionumber" -->" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" title="Click to add to <TMPL_VAR NAME="opacbookbagName">" <!-- TMPL_IF NAME="norequests" --> DISABLED<!-- /TMPL_IF -->/> <label for="bib<!-- TMPL_VAR NAME="biblionumber" -->"></label><!-- /TMPL_IF --></td>
                 <td class="select selectcol"><!-- TMPL_VAR NAME="result_number" -->.</td>
 
 				<!-- TMPL_UNLESS NAME="item-level_itypes" -->
@@ -391,7 +391,7 @@ $(document).ready(function(){
 				<span class="results_summary">
                 <span class="label">Availability:</span>
                     <!-- TMPL_IF NAME="available_items_loop" -->
-                    <span class="available"><strong>Copies available:</strong>
+                    <span class="available"><strong>Copies available <!-- TMPL_IF NAME="OPACstatusdisplay" -->w/ status<!-- TMPL_VAR NAME="otherstatus" --><!-- /TMPL_IF -->:</strong>
                     <!-- TMPL_LOOP NAME="available_items_loop" -->
 
                     <!-- TMPL_IF NAME="singleBranchMode" -->
@@ -399,7 +399,9 @@ $(document).ready(function(){
                     <!-- TMPL_ELSE -->
                         <!-- TMPL_VAR NAME="branchname" -->
                     <!-- /TMPL_IF -->
-
+                    <!-- TMPL_IF NAME="OPACstatusdisplay" -->
+                       w/ <!-- TMPL_VAR NAME="otherstatus" --> status
+                    <!-- /TMPL_IF -->
                     <!-- TMPL_IF name="OPACItemsResultsDisplay" -->
 					    <!-- TMPL_UNLESS NAME="singleBranchMode" --><!-- TMPL_VAR NAME="location" --><!-- /TMPL_UNLESS -->
                         <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/opac-search.pl?q=callnum:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
@@ -418,6 +420,7 @@ $(document).ready(function(){
                     <!-- TMPL_IF NAME="orderedcount" --> On order (<!-- TMPL_VAR NAME="orderedcount" -->),<!-- /TMPL_IF -->
                     <!-- TMPL_IF NAME="intransitcount" --> In transit (<!-- TMPL_VAR NAME="intransitcount" -->),<!-- /TMPL_IF -->
                     <!-- TMPL_IF NAME="reservecount" --> On hold (<!-- TMPL_VAR NAME="reservecount" -->),<!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="other_otherstatus" --> [ <!-- TMPL_VAR NAME="other_otherstatus" --> ] (<!-- TMPL_VAR NAME="other_otherstatuscount" -->)<!-- /TMPL_IF -->
                     </span>
                 </span>
 

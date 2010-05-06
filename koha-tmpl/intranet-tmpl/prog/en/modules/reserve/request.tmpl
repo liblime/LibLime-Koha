@@ -411,6 +411,10 @@ function checkMultiHold() {
             Not for loan (<!-- TMPL_VAR NAME="notforloanvalue" -->)
         	<!-- /TMPL_IF -->
 
+                <!-- TMPL_IF Name="noresstatus" -->
+            Current status can't be held.
+                <!-- /TMPL_IF -->
+
             <!-- TMPL_IF NAME="reservedate"-->
                     <!-- TMPL_IF NAME="nocancel" -->
                             Can't be cancelled when item is in transit
@@ -479,10 +483,10 @@ function checkMultiHold() {
           <td>
             <!-- TMPL_IF NAME="alreadyres" -->
               <ul>
-            <!-- TMPL_ELSE -->
-              <!-- TMPL_IF NAME="none_avail" -->
-                <ul>
-              <!-- /TMPL_IF -->
+            <!-- TMPL_ELSIF NAME="none_avail" -->
+              <ul>
+            <!-- TMPL_ELSIF NAME="noresstatus" -->
+              <ul>
             <!-- /TMPL_IF -->
 
           <!-- TMPL_IF NAME="alreadyres" -->
@@ -491,13 +495,16 @@ function checkMultiHold() {
           <!-- TMPL_IF NAME="none_avail" -->
               <li> <strong>No copies are available</strong> to be placed on hold</li>
           <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="noresstatus" -->
+          <li> Other item status of <strong><!-- TMPL_VAR NAME="otherstatus_description" --></strong> cannot be held</li>
+        <!-- /TMPL_IF -->
 
             <!-- TMPL_IF NAME="alreadyres" -->
               </ul>
-            <!-- TMPL_ELSE -->
-              <!-- TMPL_IF NAME="none_avail" -->
-                </ul>
-              <!-- /TMPL_IF -->
+            <!-- TMPL_ELSIF NAME="none_avail" -->
+              </ul>
+            <!-- TMPL_ELSIF NAME="noresstatus" -->
+              </ul>
             <!-- /TMPL_IF -->
 
           </td>

@@ -1274,6 +1274,8 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
           ( C4::Context->preference('maxItemsinSearchResults') )
           ? C4::Context->preference('maxItemsinSearchResults') - 1
           : 1;
+        my $other_otherstatus = '';
+        my $other_otherstatus_count = 0;
 
         # loop through every item
         my $itemcount = 0;
@@ -1293,6 +1295,25 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
             }
             elsif ($item->{$otherbranch}) {	# Last resort
                 $item->{'branchname'} = $branches{$item->{$otherbranch}}; 
+            }
+
+            my $sth = $dbh->prepare(
+            "SELECT description,holdsallowed
+               FROM itemstatus
+                 LEFT JOIN items ON itemstatus.statuscode=items.otherstatus
+               WHERE itemnumber = ?"
+            );
+            $sth->execute($item->{itemnumber});
+            my @statusvalue = $sth->fetchrow;
+            my ($otherstatus,$holdsallowed,$OPACstatusdisplay);
+            if (@statusvalue) {
+              ($otherstatus,$holdsallowed) = @statusvalue;
+              $OPACstatusdisplay = 1;
+            }
+            else {
+              $otherstatus = '';
+              $holdsallowed = 1;
+              $OPACstatusdisplay = 0;
             }
 
 			my $prefix = $item->{$hbranch} . '--' . $item->{location} . $item->{itype} . $item->{itemcallnumber};
@@ -1331,6 +1352,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                         || $item->{itemlost}
                         || $item->{damaged}
                         || $item->{notforloan}
+                        || ($holdsallowed == 0)
                         || $items_count > 20) {
 
                     # A couple heuristics to limit how many times
@@ -1356,6 +1378,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     || $item->{itemlost}
                     || $item->{damaged}
                     || $item->{notforloan} 
+                    || ($holdsallowed == 0)
                     || ($transfertwhen ne '')
                     || ($restype{$item->{itemnumber}} eq "Attached")
                     || ($restype{$item->{itemnumber}} eq "Reserved") )
@@ -1370,6 +1393,15 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     $item_in_transit_count++ if $transfertwhen ne '';
                     $item->{status} = $item->{wthdrawn} . "-" . $item->{itemlost} . "-" . $item->{damaged} . "-" . $item->{notforloan};
                     $other_count++;
+                    if ($holdsallowed == 0) {
+                      $other_otherstatus_count++;
+                      if ($other_otherstatus eq '') {
+                        $other_otherstatus = $otherstatus;
+                      }
+                      else {
+                        $other_otherstatus .= ', ' . $otherstatus;
+                      }
+                    }
 
 					my $key = $prefix . $item->{status};
 					foreach (qw(wthdrawn itemlost damaged branchname itemcallnumber)) {
@@ -1381,6 +1413,13 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 					$other_items->{$key}->{count}++ if $item->{$hbranch};
 					$other_items->{$key}->{location} = $shelflocations->{ $item->{location} };
 					$other_items->{$key}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
+                                        $other_items->{$key}->{OPACstatusdisplay} = $OPACstatusdisplay;
+                                        if (!defined($other_items->{$key}->{otherstatus})) {
+                                          $other_items->{$key}->{otherstatus} = $otherstatus;
+                                        }
+                                        else {
+                                          $other_items->{$key}->{otherstatus} .=', ' . $otherstatus;
+                                        }
                 }
                 # item is available
                 else {
@@ -1392,6 +1431,8 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 					}
 					$available_items->{$prefix}->{location} = $shelflocations->{ $item->{location} };
 					$available_items->{$prefix}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
+                                        $available_items->{$prefix}->{OPACstatusdisplay} = $OPACstatusdisplay;
+                                        $available_items->{$prefix}->{otherstatus} = $otherstatus;
                 }
             }
         }    # notforloan, item level and biblioitem level
@@ -1440,6 +1481,8 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
         $oldbiblio->{intransitcount}       = $item_in_transit_count;
         $oldbiblio->{orderedcount}         = $ordered_count;
         $oldbiblio->{reservecount}         = $item_reserve_count;
+        $oldbiblio->{other_otherstatus}    = $other_otherstatus;
+        $oldbiblio->{other_otherstatuscount} = $other_otherstatus_count;
         push( @newresults, $oldbiblio );
     }
     return @newresults;

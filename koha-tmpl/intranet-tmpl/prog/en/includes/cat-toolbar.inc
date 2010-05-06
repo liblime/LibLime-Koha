@@ -80,7 +80,7 @@ function confirm_deletion() {
 	        { text: _("Edit Record"), url: "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=&amp;op=" },
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
-	        { text: _("Edit Items"), url: "/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" },
+	        { text: _("Edit Items"), url: "/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" },
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
 	        { text: _("Edit as New (Duplicate)"), url: "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=&amp;op=duplicate" },

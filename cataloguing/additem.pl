@@ -442,6 +442,24 @@ foreach my $tag (sort keys %{$tagslib}) {
 
           #---- "true" authorised value
       }
+      elsif ( $tagslib->{$tag}->{$subfield}->{authorised_value} eq "otherstatus" ) {
+        push @authorised_values, "" unless ( $tagslib->{$tag}->{$subfield}->{mandatory} );
+        my $sth = $dbh->prepare("SELECT statuscode,description FROM itemstatus ORDER BY description");
+        $sth->execute;
+        while ( my ( $statuscode, $description ) = $sth->fetchrow_array ) {
+          push @authorised_values, $statuscode;
+          $authorised_lib{$statuscode} = $description;
+        }
+
+        unless ( $value ) {
+          my $default_itemstatus;
+          my $istatus_sth = $dbh->prepare("SELECT otherstatus FROM items WHERE itemnumber = ?");
+          $istatus_sth->execute( $itemnumber );
+          ( $default_itemstatus ) = $istatus_sth->fetchrow_array;
+          $value = $default_itemstatus;
+        }
+
+      }
       else {
           push @authorised_values, "" unless ( $tagslib->{$tag}->{$subfield}->{mandatory} );
           $authorised_values_sth->execute( $tagslib->{$tag}->{$subfield}->{authorised_value} );

@@ -2394,6 +2394,19 @@ CREATE TABLE itemdeletelist (
     PRIMARY KEY  (list_id, itemnumber)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Table structure for table `itemstatus`
+--
+
+DROP TABLE IF EXISTS `itemstatus`;
+CREATE TABLE `itemstatus` (
+  `statuscode_id` int(11) NOT NULL auto_increment,
+  `statuscode` varchar(10) NOT NULL default '',
+  `description` varchar(25) default NULL,
+  `holdsallowed` tinyint(1) NOT NULL default 0,
+  PRIMARY KEY  (`statuscode_id`),
+  UNIQUE KEY `statuscode` (`statuscode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
