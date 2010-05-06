@@ -656,11 +656,7 @@ function isValidDate(theField){
                         <!-- TMPL_IF name="nottransfered" -->
                         <em>Item hasn't been transfered yet from <!-- TMPL_VAR NAME="nottransferedby" --></em>
                         <!-- /TMPL_IF -->
-						<!-- TMPL_IF name="barcodereserv" -->
-						<a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
-						<!-- /TMPL_IF -->
-					</td>
-					<td><!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
+			<!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
                     <!-- TMPL_IF NAME="waiting" -->
                             <!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_waiting_holds" -->
                         <td><select name="rank-request">
@@ -696,6 +692,9 @@ function isValidDate(theField){
 	</table>
 			<fieldset class="action"><input type="submit" class="cancel" name="submit" value="Update Holds" /></fieldset>
 	</form>
+	<!-- TMPL_ELSE -->
+	<p>Patron has nothing on hold.</p>
+<!-- /TMPL_IF -->
 
 
 <!-- TMPL_IF NAME="suspended_reserves_loop" -->
@@ -748,7 +747,7 @@ function isValidDate(theField){
 	</table>
 	<!-- /TMPL_IF -->
 	<!-- TMPL_ELSE -->
-	<p>Patron has nothing on hold.</p>
+	<p>Patron has no suspended holds.</p>
 	<!-- /TMPL_IF -->
 </div>
 <!-- /TMPL_IF -->
