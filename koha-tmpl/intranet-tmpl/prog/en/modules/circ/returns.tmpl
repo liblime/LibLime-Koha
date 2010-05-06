@@ -235,7 +235,7 @@ function Dopop(link) {
         <!-- damaged but others available -->
         <div class="dialog message">
 	  <h3>Item Damaged: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a>.</h3>
-          <h5>Other items are available to be checked out</h5>
+          <h5>Other items are available to fill pending holds; please retrieve one of those and check it in to trigger the hold.</h5>
           <input type="submit" class="deny" value="OK" onclick="$('.dialog:visible').hide('slow'); $('#barcode').focus(); return false;" />
         </div>
     <!-- /TMPL_IF -->
