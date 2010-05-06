@@ -264,7 +264,7 @@ my $branchcount = scalar(@branches);
 my @overduebranches    = C4::Overdues::GetBranchcodesWithOverdueRules();	# Branches with overdue rules
 
 my $overduebranch_word = scalar @overduebranches > 1 ? 'branches' : 'branch';
-my $branchcodes_word = scalar @branchcodes > 1 ? 'branches' : 'branch';
+my $branches_word = scalar @branches > 1 ? 'branches' : 'branch';
 
 my $PrintNoticesMaxLines = C4::Context->preference('PrintNoticesMaxLines');
 

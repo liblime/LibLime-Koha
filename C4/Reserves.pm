@@ -580,7 +580,7 @@ sub GetReserveFee {
     my $data = $sth->fetchrow_hashref;
     $sth->finish();
     my $fee      = $data->{'reservefee'};
-    my $query = qq/
+    $query = qq/
       SELECT * FROM items
     LEFT JOIN itemtypes ON items.itype = itemtypes.itemtype
     WHERE biblionumber = ?
