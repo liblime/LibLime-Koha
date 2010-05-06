@@ -455,7 +455,7 @@ if (nodename =="barcodes[]"){
       <!-- TMPL_IF NAME="renew_failed" -->
             <td class="problem">Renewal Failed</td>
       <!-- TMPL_ELSE -->
-            <td><span style="padding: 0 1em;"><!-- TMPL_VAR NAME="renewals" --></span>
+            <td><span style="padding: 0 1em;"><!-- TMPL_VAR NAME="renewals" --> <!-- TMPL_IF NAME="renewals_opac" -->( <!-- TMPL_VAR NAME="renewals_opac" --> via OPAC ) <!-- /TMPL_IF --></span>
             <!-- TMPL_IF name="norenew" -->
                 <!-- TMPL_IF NAME="can_confirm" --><span class="renewals-allowed" style="display: none">
                     <input type="checkbox" name="all_items[]" value="<!-- TMPL_VAR NAME="itemnumber" -->" checked="checked" style="display: none;" />
