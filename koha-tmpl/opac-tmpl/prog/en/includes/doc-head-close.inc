@@ -85,3 +85,17 @@
         <script type="text/javascript" language="javascript" src="<!-- TMPL_VAR NAME="themelang" -->/js/googleindictransliteration.js"></script>
 <!-- /TMPL_IF -->
 
+<!-- TMPL_IF NAME="ResetOpacInactivityTimeout" -->
+<script type="text/javascript" language="javascript" src="<!-- TMPL_VAR NAME="themelang" -->/js/screensaver.js"></script>
+<script type="text/javascript">
+window.onload=function (){
+	var ss = new ScreenSaver( <!-- TMPL_VAR NAME="ResetOpacInactivityTimeout" --> * 1000);
+
+	ss.onstart = function () {
+		document.location = '/cgi-bin/koha/opac-main.pl?logout.x=1';
+                updateBasket(0,null);
+                delCookie("bib_list");
+	};
+}
+</script>
+<!-- /TMPL_IF -->
