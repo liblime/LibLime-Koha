@@ -69,7 +69,10 @@ for my $branch_hash (keys %$branches) {
 my $itemtypes = GetItemTypes;
 my @itemtypesloop;
 foreach my $thisitemtype (sort keys %$itemtypes) {
-    my $selected = 1 if $thisitemtype eq $itemtype;
+    my $selected;
+    if ($thisitemtype eq $itemtype) {
+        $selected = 1;
+    }
     my %row =(value => $thisitemtype,
                 selected => $selected,
                 description => $itemtypes->{$thisitemtype}->{'description'},
