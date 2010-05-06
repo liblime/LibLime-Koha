@@ -147,7 +147,7 @@ my $itemtypes = GetItemTypes;
 # the index parameter is different for item-level itemtypes
 my $itype_or_itemtype = (C4::Context->preference("item-level_itypes"))?'itype':'itemtype';
 my @itemtypesloop;
-my $selected=1;
+$selected=1;
 my $cnt;
 my $advanced_search_types = C4::Context->preference("OPACAdvancedSearchTypes");
 
