@@ -4,6 +4,7 @@
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.min.js"></script>
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/dates.js"></script>
 <script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
 $.tablesorter.addParser({
@@ -92,6 +93,28 @@ if (nodename =="barcodes[]"){
 }
 
 //]]>
+
+function checkDates(){
+  var AllDatesValid = true;
+  <!-- TMPL_LOOP NAME="reservloop" -->
+      reserve_date = document.getElementById('resumedate_<!-- TMPL_VAR NAME="reservenumber" -->');
+      reserve_date.style.backgroundColor = 'white';
+      if ( reserve_date.value.length > 0 ) {
+        if (isDate(reserve_date.value)==false){
+	  reserve_date.style.backgroundColor = 'red';
+          AllDatesValid = false;
+        }
+      }
+  <!-- /TMPL_LOOP -->
+  return AllDatesValid;
+}
+
+function isValidDate(theField){
+      if ( theField.value.length > 0 ) {
+        return isDate(theField.value);
+      }
+}
+
 </script>
 
 </head>
@@ -596,8 +619,7 @@ if (nodename =="barcodes[]"){
 <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 <div id="onhold">
 <!-- TMPL_IF NAME="reservloop" -->
-<!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_holds" -->
-<form action="/cgi-bin/koha/reserve/modrequest.pl" method="post">
+<form name="modifyReservesForm" action="/cgi-bin/koha/reserve/modrequest.pl" method="post" onSubmit="return checkDates()">
 	<input type="hidden" name="from" value="borrower" />
 	<table id="holdst">
 		<thead><tr>
@@ -609,6 +631,7 @@ if (nodename =="barcodes[]"){
 			<th>Barcode</th>
 			<th>Priority</th>
 			<th>Delete?</th>
+			<th>Suspend?</th>
 		</tr></thead>
 		<tbody><!-- TMPL_LOOP NAME="reservloop" -->
 		<tr class="<!-- TMPL_VAR NAME="color" -->">
@@ -657,12 +680,26 @@ if (nodename =="barcodes[]"){
 		<input type="hidden" name="reservenumber" value="<!-- TMPL_VAR name="reservenumber" -->" />
 		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
 		<input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" /></td>
+			<td>
+				<!-- TMPL_IF NAME="waiting" -->
+					Cannot Suspend Waiting Items
+				<!-- TMPL_ELSE -->
+			                <input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" value="1" />
+			                <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />                                                 
+			                <label>Resume on:</label>                                                                  
+			                <input type="text" onblur="isValidDate(this)" size="10" maxlength="10" id="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
+			                <label for="resumedate" >( Optional, use format MM-DD-YYYY )</label>                                                    
+				<!-- /TMPL_IF -->
+			</td>
 			</tr>
 		<!-- /TMPL_LOOP --></tbody>
 	</table>
-			<fieldset class="action"><input type="submit" class="cancel" name="submit" value="Cancel Marked Requests" /></fieldset>
+			<fieldset class="action"><input type="submit" class="cancel" name="submit" value="Update Holds" /></fieldset>
 	</form>
-	<!-- TMPL_ELSE -->  <!-- Show table read only -->
+
+
+<!-- TMPL_IF NAME="suspended_reserves_loop" -->
+<h2>Patron suspended holds</h2>
 	<table id="holdst">
 		<thead><tr>
 			<th>Hold date</th>
@@ -671,8 +708,10 @@ if (nodename =="barcodes[]"){
 			<th>Call Number</th>
 			<th>Barcode</th>
 			<th>Priority</th>
+			<th>Resume Date</th>
+			<th>Resume?</th>
 		</tr></thead>
-		<tbody><!-- TMPL_LOOP NAME="reservloop" -->
+		<tbody><!-- TMPL_LOOP NAME="suspended_reserves_loop" -->
 		<tr class="<!-- TMPL_VAR NAME="color" -->">
 					<td>
 						<!-- TMPL_VAR NAME="reservedate" -->
@@ -702,6 +741,8 @@ if (nodename =="barcodes[]"){
         <input type="hidden" name="rank-request" value="n" />
 		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
 		<input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" /></td>
+					<td><!-- TMPL_VAR NAME="waitingdate" --></td>
+					<td><a href="/cgi-bin/koha/reserve/request.pl?action=resume&reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Resume</td>
 			</tr>
 		<!-- /TMPL_LOOP --></tbody>
 	</table>

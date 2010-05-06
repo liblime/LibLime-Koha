@@ -295,6 +295,8 @@ for ( my $i = 0 ; $i < $issuecount ; $i++ ) {
 # show all reserves of this borrower, and the position of the reservation ....
 if ($borrowernumber) {
 
+
+
     # new op dev
     # now we show the status of the borrower's reservations
     my @borrowerreserv = GetReservesFromBorrowernumber($borrowernumber );
@@ -356,8 +358,7 @@ if ($borrowernumber) {
             $getreserv{biblionumber}    = $num_res->{'biblionumber'};	
         }
         $getreserv{waitingposition} = $num_res->{'priority'};
-        $getreserv{reservenumber}    = $num_res->{'reservenumber'};	
-
+        $getreserv{reservenumber} = $num_res->{'reservenumber'};
         push( @reservloop, \%getreserv );
     }
 
@@ -365,6 +366,67 @@ if ($borrowernumber) {
     $template->param( reservloop => \@reservloop,
         countreserv => scalar @reservloop,
 	 );
+
+    my @suspended_reserves = GetSuspendedReservesFromBorrowernumber($borrowernumber );
+    my @suspended_reserves_loop;
+    foreach my $num_res ( @suspended_reserves ) {
+        my %getreserv;
+        $getreserv{waitingdate} = C4::Dates::format_date( $num_res->{'waitingdate'} );
+        $getreserv{reservenumber} = $num_res->{'reservenumber'};
+        my $getiteminfo  = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
+        my $itemtypeinfo = getitemtypeinfo( $getiteminfo->{'itemtype'} );
+        my ( $transfertwhen, $transfertfrom, $transfertto ) =
+            GetTransfers( $num_res->{'itemnumber'} );
+
+		foreach (qw(waiting transfered nottransfered)) {
+				$getreserv{$_} = 0;
+		}
+        $getreserv{reservedate}  = C4::Dates->new($num_res->{'reservedate'},'iso')->output('syspref');
+		foreach (qw(biblionumber title author itemcallnumber )) {
+				$getreserv{$_} = $getiteminfo->{$_};
+		}
+        $getreserv{barcodereserv}  = $getiteminfo->{'barcode'};
+        $getreserv{itemtype}  = $itemtypeinfo->{'description'};
+
+        # 		check if we have a waitin status for reservations
+        if ( $num_res->{'found'} eq 'W' ) {
+            $getreserv{color}   = 'reserved';
+            $getreserv{waiting} = 1;
+        }
+
+        # 		check transfers with the itemnumber foud in th reservation loop
+        if ($transfertwhen) {
+            $getreserv{color}      = 'transfered';
+            $getreserv{transfered} = 1;
+            $getreserv{datesent}   = C4::Dates->new($transfertwhen, 'iso')->output('syspref') or die "Cannot get new($transfertwhen, 'iso') from C4::Dates";
+            $getreserv{frombranch} = GetBranchName($transfertfrom);
+        }
+
+        if ( ( $getiteminfo->{'holdingbranch'} ne $num_res->{'branchcode'} )
+            and not $transfertwhen )
+        {
+            $getreserv{nottransfered}   = 1;
+            $getreserv{nottransferedby} =
+                GetBranchName( $getiteminfo->{'holdingbranch'} );
+        }
+
+# 		if we don't have a reserv on item, we put the biblio infos and the waiting position
+        if ( $getiteminfo->{'title'} eq '' ) {
+            my $getbibinfo = GetBiblioData( $num_res->{'biblionumber'} );
+            my $getbibtype = getitemtypeinfo( $getbibinfo->{'itemtype'} );
+            $getreserv{color}           = 'inwait';
+            $getreserv{title}           = $getbibinfo->{'title'};
+            $getreserv{nottransfered}   = 0;
+            $getreserv{itemtype}        = $getbibtype->{'description'};
+            $getreserv{author}          = $getbibinfo->{'author'};
+            $getreserv{biblionumber}  = $num_res->{'biblionumber'};	
+        }
+        $getreserv{waitingposition} = $num_res->{'priority'};
+
+        push( @suspended_reserves_loop, \%getreserv );
+    }
+    $template->param( suspended_reserves_loop => \@suspended_reserves_loop );
+
 }
 
 # current alert subscriptions
