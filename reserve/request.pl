@@ -354,7 +354,8 @@ foreach my $biblionumber (@biblionumbers) {
     foreach my $biblioitemnumber (@biblioitemnumbers) {
         my $biblioitem = $biblioiteminfos_of->{$biblioitemnumber};
         my $num_available = 0;
-        my $num_override  = 0;
+        my $num_override = 0;
+        my $num_policy_blocked = 0;
         
         $biblioitem->{description} =
           $itemtypes->{ $biblioitem->{itemtype} }{description} if (defined($biblioitem->{itemtype}));
@@ -468,20 +469,24 @@ foreach my $biblionumber (@biblionumbers) {
                 }
             }
             
-            my $branchitemrule = GetBranchItemRule( $item->{'homebranch'}, $item->{'itype'} );
+			my $issuingrule = GetIssuingRule( $borrowerinfo->{'categorycode'}, $item->{'itype'}, $borrowerinfo->{'branchcode'} );
             my $policy_holdallowed = 1;
             
-            $item->{'holdallowed'} = $branchitemrule->{'holdallowed'};
+            $item->{'holdallowed'} = $issuingrule->{'holdallowed'};
             
-            if ( $branchitemrule->{'holdallowed'} == 0 ||
-                 ( $branchitemrule->{'holdallowed'} == 1 && defined($borrowerinfo) && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) ) {
+            if ( $issuingrule->{'holdallowed'} == 0 ||
+                 ( $issuingrule->{'holdallowed'} == 1 && defined($borrowerinfo) && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) ) {
                 $policy_holdallowed = 0;
             }
             
             if (IsAvailableForItemLevelRequest($itemnumber) and not $item->{cantreserve}) {
-                if ( not $policy_holdallowed and C4::Context->preference( 'AllowHoldPolicyOverride' ) ) {
-                    $item->{override} = 1;
-                    $num_override++;
+                if ( not $policy_holdallowed ) {
+					if ( C4::Context->preference( 'AllowHoldPolicyOverride' ) ) {
+						$item->{override} = 1;
+						$num_override++;
+					} else {
+						$num_policy_blocked++;
+					}
                 } elsif (( $policy_holdallowed ) && (!$item->{noresstatus} )) {
                     $item->{available} = 1;
                     $num_available++;
@@ -508,6 +513,7 @@ foreach my $biblionumber (@biblionumbers) {
             $template->param( override_required => 1 );
         } elsif ( $num_available == 0 ) {
             $template->param( none_available => 1 );
+			$template->param( num_policy_blocked => $num_policy_blocked );
             $template->param( warnings => 1 );
             $biblioloopiter{warn} = 1;
             $biblioloopiter{none_avail} = 1;

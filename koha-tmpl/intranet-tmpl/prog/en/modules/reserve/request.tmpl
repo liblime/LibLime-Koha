@@ -235,7 +235,10 @@ function checkMultiHold() {
           <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> <strong>already has a hold</strong> on this item </li>
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="none_available" -->
-          <li> <strong>No copies are available</strong> to be placed on hold</li>
+          <li>
+            <strong>No copies are available</strong> to be placed on hold<!-- TMPL_IF NAME="num_policy_blocked" -->.<br />
+            Some cannot be placed on hold because this library's rules for this patron type prevent it.<!-- /TMPL_IF -->
+          </li>
         <!-- /TMPL_IF -->
 	  </ul>
     <!-- TMPL_ELSE -->

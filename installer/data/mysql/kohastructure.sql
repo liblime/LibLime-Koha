@@ -1148,6 +1148,7 @@ CREATE TABLE `issuingrules` (
   `restrictedtype` tinyint(1) default NULL,
   `rentaldiscount` decimal(28,6) default NULL,
   `reservecharge` decimal(28,6) default NULL,
+  `holdallowed` tinyint(1) default NULL,
   `fine` decimal(28,6) default NULL,
   `firstremind` int(11) default NULL,
   `chargeperiod` int(11) default NULL,

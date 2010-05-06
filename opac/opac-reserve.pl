@@ -339,6 +339,7 @@ my $notforloan_label_of = get_notforloan_label_of();
 my $biblioLoop = [];
 my $numBibsAvailable = 0;
 my $itemdata_enumchron = 0;
+my $numPolicyBlocked = 0;
 my $itemLevelTypes = C4::Context->preference('item-level_itypes');
 $template->param('item-level_itypes' => $itemLevelTypes);
 
@@ -490,17 +491,21 @@ foreach my $biblioNum (@biblionumbers) {
         # If there is no loan, return and transfer, we show a checkbox.
         $itemLoopIter->{notforloan} = $itemLoopIter->{notforloan} || 0;
 
-        my $branchitemrule = GetBranchItemRule( $borr->{'branchcode'}, $itemInfo->{'itype'} );
+        my $issuingrule = GetIssuingRule( $borr->{'categorycode'}, $itemInfo->{'itype'}, $borr->{'branchcode'} );
         my $policy_holdallowed = 1;
 
-        if ( $branchitemrule->{'holdallowed'} == 0 ||
-                ( $branchitemrule->{'holdallowed'} == 1 && $borr->{'branchcode'} ne $itemInfo->{'homebranch'} ) ) {
+        if ( $issuingrule->{'holdallowed'} == 0 ||
+                ( $issuingrule->{'holdallowed'} == 1 && $borr->{'branchcode'} ne $itemInfo->{'homebranch'} ) ) {
             $policy_holdallowed = 0;
         }
 
-        if (IsAvailableForItemLevelRequest($itemNum) and $policy_holdallowed and not $itemInfo->{noresstatus}) {
-            $itemLoopIter->{available} = 1;
-            $numCopiesAvailable++;
+        if (IsAvailableForItemLevelRequest($itemNum) and not $itemInfo->{noresstatus}) {
+            if ($policy_holdallowed) {
+                $itemLoopIter->{available} = 1;
+                $numCopiesAvailable++;
+            } else {
+                $numPolicyBlocked++;
+            }
         }
 
 	# FIXME: move this to a pm
@@ -535,7 +540,7 @@ foreach my $biblioNum (@biblionumbers) {
 }
 
 if ( $numBibsAvailable == 0 ) {
-    $template->param( none_available => 1, message => 1 );
+    $template->param( none_available => 1, num_policy_blocked => $numPolicyBlocked, message => 1 );
 }
 
 my $itemTableColspan = 5;
