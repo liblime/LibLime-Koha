@@ -1155,9 +1155,11 @@ sub GetItemInfosOf {
     my @itemnumbers = @_;
 
     my $query = '
-        SELECT *
+        SELECT items.*, serial.publisheddate, serial.serialseq
         FROM items
-        WHERE itemnumber IN (' . join( ',', @itemnumbers ) . ')
+          LEFT JOIN serialitems ON (serialitems.itemnumber = items.itemnumber)
+          LEFT JOIN serial ON (serial.serialid = serialitems.serialid)
+        WHERE items.itemnumber IN (' . join( ',', @itemnumbers ) . ')
     ';
     return get_infos_of( $query, 'itemnumber' );
 }
