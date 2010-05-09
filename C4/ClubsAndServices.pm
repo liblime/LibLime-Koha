@@ -531,7 +531,7 @@ sub EnrollInClubOrService {
   my $casa = GetClubOrServiceArchetype( $casaId, 1 );
   if ( $casa->{'caseRequireEmail'} ) {
     my $AutoEmailPrimaryAddress = C4::Context->preference('AutoEmailPrimaryAddress');    
-    unless( $member->{ $AutoEmailPrimaryAddress } ) {
+    unless( $member->{ $AutoEmailPrimaryAddress } && ($member->{$AutoEmailPrimaryAddress} ne "") ) {
       return( 0, 4, "Email Address Required: No Valid Email Address In Borrower Record" );
     }
   }
@@ -1165,6 +1165,7 @@ sub ReserveForBestSellersClub {
       my $constraint = 'a',
       my $bibitems,
       $priority,
+      '',
       my $notes = "Automatic Reserve for Bestsellers Club",
       $title,
       my $checkitem,
