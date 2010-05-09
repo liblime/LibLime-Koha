@@ -46,7 +46,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 </script><!-- /TMPL_IF --><!-- /TMPL_IF -->
 <div id="header_search">
 	<div id="patron_search" class="residentsearch">
-		<p class="tip">Enter first and/or last name or card number for standard search. For email or phone, you may enter partial text with a * for truncation (e.g., myemail* or *111-2222).</p>
+		<p class="tip">Enter first and/or last name or card number for standard search. <br/>For email or phone, you may enter partial text with a * for truncation (e.g., myemail* or *111-2222).</p>
 		<form action="/cgi-bin/koha/members/member.pl" method="post">
     			<input id="searchmember" class="focus" name="member" type="text" />
 			<label for="searchfield">Search Fields:</label>
@@ -67,7 +67,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 
 	<!-- TMPL_IF NAME="CAN_user_circulate" -->
 		<div id="circ_search" class="residentsearch" style="display:none;">
-			<p class="tip">Enter first and/or last name or card number for standard search. For email or phone, you may enter partial text with a * for truncation (e.g., myemail* or *111-2222).</p>
+			<p class="tip">Enter first and/or last name or card number for standard search. <br/>For email or phone, you may enter partial text with a * for truncation (e.g., myemail* or *111-2222).</p>
 			<form action="/cgi-bin/koha/circ/circulation.pl" method="post">
 				<!-- TMPL_IF NAME="CircAutocompl" -->
 					<nobr>
