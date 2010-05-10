@@ -493,8 +493,6 @@ CREATE TABLE `borrowers` (
   `altcontactcountry` text default NULL,
   `altcontactphone` varchar(50) default NULL,
   `smsalertnumber` varchar(50) default NULL,
-  `disable_reading_history` tinyint(1) default NULL,
-  `amount_notify_date` date default NULL,
   UNIQUE KEY `cardnumber` (`cardnumber`),
   PRIMARY KEY `borrowernumber` (`borrowernumber`),
   KEY `categorycode` (`categorycode`),
@@ -1148,7 +1146,6 @@ CREATE TABLE `issuingrules` (
   `restrictedtype` tinyint(1) default NULL,
   `rentaldiscount` decimal(28,6) default NULL,
   `reservecharge` decimal(28,6) default NULL,
-  `holdallowed` tinyint(1) default NULL,
   `fine` decimal(28,6) default NULL,
   `firstremind` int(11) default NULL,
   `chargeperiod` int(11) default NULL,
@@ -1157,8 +1154,6 @@ CREATE TABLE `issuingrules` (
   `maxissueqty` int(4) default NULL,
   `issuelength` int(4) default NULL,
   `branchcode` varchar(10) NOT NULL default '',
-  `max_fine` decimal(28,6) default NULL,
-  `max_holds` int(4) default NULL,
   PRIMARY KEY  (`branchcode`,`categorycode`,`itemtype`),
   KEY `categorycode` (`categorycode`),
   KEY `itemtype` (`itemtype`)
@@ -1188,7 +1183,6 @@ CREATE TABLE `items` (
   `itemlost` tinyint(1) NOT NULL default 0,
   `wthdrawn` tinyint(1) NOT NULL default 0,
   `itemcallnumber` varchar(255) default NULL,
-  `suppress` tinyint(1) NOT NULL default 0,
   `issues` smallint(6) default NULL,
   `renewals` smallint(6) default NULL,
   `reserves` smallint(6) default NULL,
@@ -1527,7 +1521,6 @@ CREATE TABLE `old_reserves` (
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `itemnumber` int(11) default NULL,
   `waitingdate` date default NULL,
-  `expirationdate` date default NULL,
   KEY `old_reserves_borrowernumber` (`borrowernumber`),
   KEY `old_reserves_biblionumber` (`biblionumber`),
   KEY `old_reserves_itemnumber` (`itemnumber`),
@@ -1574,26 +1567,6 @@ CREATE TABLE `overduerules` (
   `letter3` varchar(20) default NULL,
   `debarred3` int(1) default 0,
   PRIMARY KEY  (`branchcode`,`categorycode`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `overdueitemrules`
---
-
-DROP TABLE IF EXISTS `overdueitemrules`;
-CREATE TABLE `overdueitemrules` (
-  `branchcode` varchar(10) NOT NULL default '',
-  `itemtype` varchar(10) NOT NULL default '',
-  `delay1` int(4) default 0,
-  `letter1` varchar(20) default NULL,
-  `debarred1` varchar(1) default 0,
-  `delay2` int(4) default 0,
-  `debarred2` varchar(1) default 0,
-  `letter2` varchar(20) default NULL,
-  `delay3` int(4) default 0,
-  `letter3` varchar(20) default NULL,
-  `debarred3` int(1) default 0,
-  PRIMARY KEY  (`branchcode`,`itemtype`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1706,7 +1679,6 @@ CREATE TABLE `reserveconstraints` (
 
 DROP TABLE IF EXISTS `reserves`;
 CREATE TABLE `reserves` (
-  `reservenumber` int(11) NOT NULL auto_increment,
   `borrowernumber` int(11) NOT NULL default 0,
   `reservedate` date default NULL,
   `biblionumber` int(11) NOT NULL default 0,
@@ -1721,8 +1693,6 @@ CREATE TABLE `reserves` (
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `itemnumber` int(11) default NULL,
   `waitingdate` date default NULL,
-  `expirationdate` date default NULL,
-  PRIMARY KEY  (`reservenumber`),
   KEY `borrowernumber` (`borrowernumber`),
   KEY `biblionumber` (`biblionumber`),
   KEY `itemnumber` (`itemnumber`),
@@ -1731,39 +1701,6 @@ CREATE TABLE `reserves` (
   CONSTRAINT `reserves_ibfk_2` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `reserves_ibfk_3` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `reserves_ibfk_4` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `reserves_suspended`
---
-
-DROP TABLE IF EXISTS `reserves_suspended`;
-CREATE TABLE `reserves_suspended` (
-  `reservenumber` int(11) NOT NULL auto_increment,
-  `borrowernumber` int(11) NOT NULL default 0,
-  `reservedate` date default NULL,
-  `biblionumber` int(11) NOT NULL default 0,
-  `constrainttype` varchar(1) default NULL,
-  `branchcode` varchar(10) default NULL,
-  `notificationdate` date default NULL,
-  `reminderdate` date default NULL,
-  `cancellationdate` date default NULL,
-  `reservenotes` mediumtext,
-  `priority` smallint(6) default NULL,
-  `found` varchar(1) default NULL,
-  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  `itemnumber` int(11) default NULL,
-  `waitingdate` date default NULL,
-  `expirationdate` date default NULL,
-  PRIMARY KEY  (`reservenumber`),
-  KEY `borrowernumber` (`borrowernumber`),
-  KEY `biblionumber` (`biblionumber`),
-  KEY `itemnumber` (`itemnumber`),
-  KEY `branchcode` (`branchcode`),
-  CONSTRAINT `reserves_susp_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `reserves_susp_ibfk_2` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `reserves_susp_ibfk_3` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `reserves_susp_ibfk_4` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -2443,104 +2380,7 @@ CREATE TABLE `messages` (
   `message_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`message_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-DROP TABLE IF EXISTS itemdeletelist;
-CREATE TABLE itemdeletelist (
-    list_id      int(11) NOT NULL,
-    itemnumber   int(11) NOT NULL,
-    biblionumber int(11) NOT NULL,
-    PRIMARY KEY  (list_id, itemnumber)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Table structure for table `itemstatus`
---
-
-DROP TABLE IF EXISTS `itemstatus`;
-CREATE TABLE `itemstatus` (
-  `statuscode_id` int(11) NOT NULL auto_increment,
-  `statuscode` varchar(10) NOT NULL default '',
-  `description` varchar(25) default NULL,
-  `holdsallowed` tinyint(1) NOT NULL default 0,
-  PRIMARY KEY  (`statuscode_id`),
-  UNIQUE KEY `statuscode` (`statuscode`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- Table structure for table `clubsAndServices`
--- 
-
-DROP TABLE IF EXISTS `clubsAndServices`;
-CREATE TABLE `clubsAndServices` (
-  `casId` int(11) NOT NULL auto_increment,
-  `casaId` int(11) NOT NULL default '0' COMMENT 'foreign key to clubsAndServicesArchetypes',
-  `title` text NOT NULL,
-  `description` text,
-  `casData1` text COMMENT 'Data described in casa.casData1Title',
-  `casData2` text COMMENT 'Data described in casa.casData2Title',
-  `casData3` text COMMENT 'Data described in casa.casData3Title',
-  `startDate` date NOT NULL default '0000-00-00',
-  `endDate` date default NULL,
-  `branchcode` varchar(4) NOT NULL COMMENT 'branch where club or service was created.',
-  `last_updated` timestamp NOT NULL default CURRENT_TIMESTAMP,
-  PRIMARY KEY  (`casId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
-
--- 
--- Table structure for table `clubsAndServicesArchetypes`
--- 
-
-DROP TABLE IF EXISTS `clubsAndServicesArchetypes`;
-CREATE TABLE `clubsAndServicesArchetypes` (
-  `casaId` int(11) NOT NULL auto_increment,
-  `type` enum('club','service') NOT NULL default 'club',
-  `title` text NOT NULL COMMENT 'title of this archetype',
-  `description` text NOT NULL COMMENT 'long description of this archetype',
-  `publicEnrollment` tinyint(1) NOT NULL default '0' COMMENT 'If 1, patron should be able to enroll in club or service from OPAC, if 0, only a librarian should be able to enroll a patron in the club or service.',
-  `casData1Title` text COMMENT 'Title of contents in cas.data1',
-  `casData2Title` text COMMENT 'Title of contents in cas.data2',
-  `casData3Title` text COMMENT 'Title of contents in cas.data3',
-  `caseData1Title` text COMMENT 'Name of what is stored in cAsE.data1',
-  `caseData2Title` text COMMENT 'Name of what is stored in cAsE.data2',
-  `caseData3Title` text COMMENT 'Name of what is stored in cAsE.data3',
-  `casData1Desc` text,
-  `casData2Desc` text,
-  `casData3Desc` text,
-  `caseData1Desc` text,
-  `caseData2Desc` text,
-  `caseData3Desc` text,
-  `caseRequireEmail` tinyint(1) NOT NULL default '0',
-  `branchcode` varchar(4) default NULL COMMENT 'branch where archetype was created.',
-  `last_updated` timestamp NOT NULL default CURRENT_TIMESTAMP,
-  PRIMARY KEY  (`casaId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
-
---
--- Preset data for ClubsAndServicesArchetypes
---
-
-INSERT INTO `clubsAndServicesArchetypes` ( `type` , `title` , `description` , `publicEnrollment` , `casData1Title` , `casData2Title` , `casData3Title` , `caseData1Title` , `caseData2Title` , `caseData3Title` , `casData1Desc` , `casData2Desc` , `casData3Desc` , `caseData1Desc` , `caseData2Desc` , `caseData3Desc`   )
-VALUES (  'club', 'Bestsellers Club', 'This club archetype gives the patrons the ability join a club for a given author and for staff to batch generate a holds list which shuffles the holds queue when specific titles or books by certain authors are received.', '0', 'Title', 'Author', 'Item Types', '', '', '', 'If filled in, the the club will only apply to books where the title matches this field. Must be identical to the MARC field mapped to title.', 'If filled in, the the club will only apply to books where the author matches this field. Must be identical to the MARC field mapped to author.', 'Put a list of space separated Item Types here for that this club should work for. Leave it blank for all item types.', '', '', '' );
-INSERT INTO `clubsAndServicesArchetypes` ( `type`, `title`, `description`, `publicEnrollment`, `casData1Title`, `casData2Title`, `casData3Title`, `caseData1Title`, `caseData2Title`, `caseData3Title`, `casData1Desc`, `casData2Desc`, `casData3Desc`, `caseData1Desc`, `caseData2Desc`, `caseData3Desc`) 
-VALUES (  'service', 'New Items E-mail List', 'This club archetype gives the patrons the ability join a mailing list which will e-mail weekly lists of new items for the given itemtype and callnumber combination given.', 0, 'Itemtype', 'Callnumber', NULL, NULL, NULL, NULL, 'The Itemtype to be looked up. Use % for all itemtypes.', 'The callnumber to look up. Use % as wildcard.', NULL, NULL, NULL, NULL); 
-
--- 
--- Table structure for table `clubsAndServicesEnrollments`
--- 
-
-DROP TABLE IF EXISTS `clubsAndServicesEnrollments`;
-CREATE TABLE `clubsAndServicesEnrollments` (
-  `caseId` int(11) NOT NULL auto_increment,
-  `casaId` int(11) NOT NULL default '0' COMMENT 'foreign key to clubsAndServicesArchtypes',
-  `casId` int(11) NOT NULL default '0' COMMENT 'foreign key to clubsAndServices',
-  `borrowernumber` int(11) NOT NULL default '0' COMMENT 'foreign key to borrowers',
-  `data1` text COMMENT 'data described in casa.data1description',
-  `data2` text,
-  `data3` text,
-  `dateEnrolled` date NOT NULL default '0000-00-00' COMMENT 'date borrowers service begins',
-  `dateCanceled` date default NULL COMMENT 'date borrower decided to end service',
-  `last_updated` timestamp NOT NULL default CURRENT_TIMESTAMP,
-  `branchcode` varchar(4) default NULL COMMENT 'foreign key to branches',
-  PRIMARY KEY  (`caseId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
-                  
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
