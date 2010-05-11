@@ -711,6 +711,76 @@ sub dbh
     return $context->{"dbh"};
 }
 
+# _new_slave_dbh
+# Internal helper function (not a method!). This creates a new
+# database connection from the data given in the current context, and
+# returns it.
+sub _new_slave_dbh
+{
+
+    ## $context
+    ## correct name for db_schme        
+    my $db_driver;
+    if ($context->config("db_scheme")){
+        $db_driver=db_scheme2dbi($context->config("db_scheme"));
+    }else{
+        $db_driver="mysql";
+    }
+
+    my $db_name   = $context->config("slave_database") || $context->config("database");
+    my $db_host   = $context->config("slave_hostname") || $context->config("hostname");
+    my $db_port   = $context->config("slave_port") || ($context->config("port") || '');
+    my $db_user   = $context->config("slave_user") || $context->config("user");
+    my $db_passwd = $context->config("slave_pass") ||  $context->config("pass");
+    # MJR added or die here, as we can't work without dbh
+    my $dbh= DBI->connect("DBI:$db_driver:dbname=$db_name;host=$db_host;port=$db_port",
+	$db_user, $db_passwd) or die $DBI::errstr;
+	my $tz = $ENV{TZ};
+    if ( $db_driver eq 'mysql' ) { 
+        # Koha 3.0 is utf-8, so force utf8 communication between mySQL and koha, whatever the mysql default config.
+        # this is better than modifying my.cnf (and forcing all communications to be in utf8)
+        $dbh->{'mysql_enable_utf8'}=1; #enable
+        $dbh->do("set NAMES 'utf8'");
+        ($tz) and $dbh->do(qq(SET time_zone = "$tz"));
+    }
+    elsif ( $db_driver eq 'Pg' ) {
+	    $dbh->do( "set client_encoding = 'UTF8';" );
+        ($tz) and $dbh->do(qq(SET TIME ZONE = "$tz"));
+    }
+    return $dbh;
+}
+
+=item slave_dbh
+
+  $dbh = C4::Context->dbh;
+
+Returns a database handle connected to the Koha database for the
+current context. If no connection has yet been made, this method
+creates one, and connects to the database.
+
+This database handle is cached for future use: if you call
+C<C4::Context-E<gt>dbh> twice, you will get the same handle both
+times. If you need a second database handle, use C<&new_dbh> and
+possibly C<&set_dbh>.
+
+=cut
+
+#'
+sub slave_dbh
+{
+    my $self = shift;
+    my $sth;
+
+    if (defined($context->{"slave_dbh"}) && $context->{"slave_dbh"}->ping()) {
+	return $context->{"slave_dbh"};
+    }
+
+    # No database handle or it died . Create one.
+    $context->{"slave_dbh"} = &_new_slave_dbh();
+
+    return $context->{"slave_dbh"};
+}
+
 =item new_dbh
 
   $dbh = C4::Context->new_dbh;
