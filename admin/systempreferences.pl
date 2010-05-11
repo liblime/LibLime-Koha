@@ -194,6 +194,7 @@ $tabsysprefs{viewLabeledMARC}         = "StaffClient";
 $tabsysprefs{viewISBD}                = "StaffClient";
 $tabsysprefs{XSLTDetailsDisplay}      = "StaffClient";
 $tabsysprefs{XSLTResultsDisplay}      = "StaffClient";
+$tabsysprefs{DisplayStafficonsXSLT}   = "StaffClient";
 
 # Patrons
 $tabsysprefs{autoMemberNum}                = "Patrons";

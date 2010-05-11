@@ -18,7 +18,7 @@
         <!-- Option: Display Alternate Graphic Representation (MARC 880)  -->
         <xsl:variable name="display880" select="boolean(marc:datafield[@tag=880])"/>
 
-    <xsl:variable name="DisplayOPACiconsXSLT" select="marc:sysprefs/marc:syspref[@name='DisplayOPACiconsXSLT']"/>
+    <xsl:variable name="DisplayStafficonsXSLT" select="marc:sysprefs/marc:syspref[@name='DisplayStafficonsXSLT']"/>
     <xsl:variable name="OPACURLOpenInNewWindow" select="marc:sysprefs/marc:syspref[@name='OPACURLOpenInNewWindow']"/>
     <xsl:variable name="URLLinkText" select="marc:sysprefs/marc:syspref[@name='URLLinkText']"/>
         <xsl:variable name="leader" select="marc:leader"/>
@@ -409,6 +409,7 @@
                         <xsl:call-template name="subfieldSelect">
                             <xsl:with-param name="codes">h</xsl:with-param>
                         </xsl:call-template>
+                        <xsl:text> </xsl:text>
                     </xsl:if>
                 <xsl:text> </xsl:text>
                     <xsl:call-template name="subfieldSelect">
@@ -507,7 +508,7 @@
 	</span>
     </xsl:if>
 
-<xsl:if test="$DisplayOPACiconsXSLT!='0'">
+<xsl:if test="$DisplayStafficonsXSLT!='0'">
     <span class="results_summary">
     <xsl:if test="$typeOf008!=''">
         <span class="label">Type: </span>
