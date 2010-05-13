@@ -146,6 +146,7 @@ use C4::Languages qw(getAllLanguages);
 use C4::Koha;
 use POSIX qw(ceil floor);
 use C4::Branch; # GetBranches
+use Text::Aspell;
 
 my $DisplayMultiPlaceHold = C4::Context->preference("DisplayMultiPlaceHold");
 # create a new CGI object
@@ -379,6 +380,51 @@ if ($indexes[0] && !$indexes[1]) {
 # an operand can be a single term, a phrase, or a complete ccl query
 my @operands;
 @operands = split("\0",$params->{'q'}) if $params->{'q'};
+
+# invoke a spell check
+my $suggest_count = C4::Context->preference('StaffSearchSuggestionsCount');
+if ($suggest_count) {
+  my $speller = Text::Aspell->new;
+  $speller->set_option('lang','en_US');
+  $speller->set_option('sug-mode','fast');
+  my @spellcheckarray = ();
+  my $spellpattern = '';
+  my $misspell = 0;
+  foreach my $operand (@operands) {
+    my @suboperands = split(/\s+/,$operand);
+    foreach my $suboperand (@suboperands) {
+      if (!$speller->check($suboperand)) {
+        $misspell = 1;
+        $template->param(koha_spsuggest => 1);
+        my @suggestions = $speller->suggest($suboperand);
+        my $count = 0;
+        foreach my $suggestion (@suggestions) {
+          $count++;
+          my %spellcheck = ();
+          $spellcheck{spsuggestion} = $spellpattern . ' ' . $suggestion;
+          push @spellcheckarray, \%spellcheck;
+          last if ($count >= $suggest_count);
+        }
+      }
+      else {
+        if (!$misspell) {
+          if ($spellpattern) {
+            $spellpattern .= ' ' . $suboperand;
+          }
+          else {
+            $spellpattern .= $suboperand;
+          }
+        }
+        else {
+          foreach my $spellcheck (@spellcheckarray) {
+            ${$spellcheck}{'spsuggestion'} .= ' ' . $suboperand;
+          }
+        }
+      }
+    }
+  }
+  $template->param(SPELL_SUGGEST => \@spellcheckarray) if (@spellcheckarray);
+}
 
 # limits are use to limit to results to a pre-defined category such as branch or language
 my @limits;
