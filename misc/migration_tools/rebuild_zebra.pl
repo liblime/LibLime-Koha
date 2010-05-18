@@ -8,6 +8,7 @@ use File::Temp qw/ tempdir /;
 use File::Path;
 use C4::Biblio;
 use C4::AuthoritiesMarc;
+use Business::ISBN;
 
 # 
 # script that checks zebradir structure & create directories & mandatory files if needed
@@ -380,6 +381,7 @@ sub get_corrected_marc_record {
         if ($record_type eq 'biblio') {
             my $succeeded = fix_biblio_ids($marc, $record_number);
             return unless $succeeded;
+            add_isbn13s($marc);
         } else {
             fix_authority_id($marc, $record_number);
         }
@@ -475,6 +477,37 @@ sub fix_biblio_ids {
     C4::Biblio::_koha_marc_update_bib_ids($marc, '', $biblionumber, $biblioitemnumber);
 
     return 1;
+}
+
+sub add_isbn13s {
+    my $marc = shift;
+
+    my ($isbntag, $isbnsubfield) = GetMarcFromKohaField('biblioitems.isbn', '');
+    return unless $isbntag and $isbnsubfield;
+    my %isbns =();
+    foreach my $field ($marc->field($isbntag)) {
+        my $sfa = $field->subfield('a');
+        next unless $sfa;
+        my ($isbn_str) = $sfa =~ /^([0-9-]+[0-9xX])/;
+        next unless defined $isbn_str;
+        $isbn_str =~ s/-//;
+        $isbns{$isbn_str}++;
+        my $isbn = Business::ISBN->new($isbn_str);
+        next unless defined $isbn;
+        next unless $isbn->is_valid();
+        next unless $isbn->is_valid();
+        my $isbn13_str = $isbn->as_isbn13()->as_string([]);
+        $isbns{$isbn13_str}++;
+        my $isbn10 = $isbn->as_isbn10();
+        next unless defined $isbn10;
+        $isbns{$isbn10->as_string([])}++;
+    }
+    return unless %isbns;
+    if (my $f999 = $marc->field('999')) {
+        $f999->add_subfields(map { ('e' => $_) } keys %isbns);
+    } else {
+        $marc->append_field(MARC::Field->new('999', ' ', ' ', map { ('e' => $_) } keys %isbns));
+    }
 }
 
 sub fix_authority_id {

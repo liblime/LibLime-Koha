@@ -538,6 +538,7 @@ WriteMakefile(
               PREREQ_PM => {
                             'Algorithm::CheckDigits'           => 0.50,
                             'Biblio::EndnoteStyle'             => 0.05,
+                            'Business::ISBN'                   => 2.05,
                             'CGI'                              => 3.15,
                             'CGI::Carp'                        => 1.29,
                             'CGI::Session'                     => 4.20,

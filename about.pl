@@ -64,6 +64,7 @@ my @component_names =
     qw/
 Algorithm::CheckDigits
 Biblio::EndnoteStyle
+Business::ISBN
 CGI
 CGI::Carp
 CGI::Session
