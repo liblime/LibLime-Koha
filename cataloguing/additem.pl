@@ -352,7 +352,7 @@ foreach my $tag (sort keys %{$tagslib}) {
     $subfield_data{repeatable} = $tagslib->{$tag}->{$subfield}->{repeatable};
     my ($x,$value);
     ($x,$value) = find_value($tag,$subfield,$itemrecord) if ($itemrecord);
-    $value =~ s/"/&quot;/g;
+    $value =~ s/"/&quot;/g if (defined $value);
     unless ($value) {
         $value = $tagslib->{$tag}->{$subfield}->{defaultvalue};
         # get today date & replace YYYY, MM, DD if provided in the default value
