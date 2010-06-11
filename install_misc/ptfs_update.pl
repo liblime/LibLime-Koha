@@ -410,20 +410,28 @@ print "done!\n";
 print "==========\n";
 
 print "Altering MARC subfield structure for item suppression and other item status\n";
-my $frames = $dbh->selectall_arrayref("SELECT frameworkcode FROM biblio_framework");
+my $frames_sth = $dbh -> prepare("SELECT frameworkcode FROM biblio_framework");
 
 my $insert_sth = $dbh -> prepare("
 INSERT INTO marc_subfield_structure 
   (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
   VALUES 
   ('952', 'i', 'Supressed','',0,0,'item.suppress',-1,'I_SUPPRESS','','',0,0,?,NULL,'','');
+");
+my $insert_sth_2 = $dbh ->prepare("
+  (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
+  VALUES 
   ('952', 'k', 'Other item status', 'Other item status', 0, 0, 'items.otherstatus', 10, 'otherstatus', '', '', 0, 0, ?, NULL, '', '');
 ");
 
-for my $frame (@{$frames}){
-  $insert_sth -> execute($frame,$frame); 
-  print ".";
-}
+$frames_sth->execute;
+  while (my $frame = $frames_sth->fetchrow_hashref) {
+
+    $insert_sth -> execute($frame->{frameworkcode});
+    $insert_sth_2 -> execute($frame->{frameworkcode});
+
+    print ".";
+  }
 print "done!\n";
 print "==========\n";
 
