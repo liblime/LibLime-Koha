@@ -416,7 +416,7 @@ my $insert_sth = $dbh -> prepare("
 INSERT INTO marc_subfield_structure 
   (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
   VALUES 
-  ('952', 'i', 'Supressed','',0,0,'item.suppress',-1,'I_SUPPRESS','','',0,0,?,NULL,'','');
+  ('952', 'i', 'Supressed','',0,0,'items.suppress',-1,'I_SUPPRESS','','',0,0,?,NULL,'','');
 ");
 my $insert_sth_2 = $dbh ->prepare("
 INSERT INTO marc_subfield_structure 
