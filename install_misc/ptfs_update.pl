@@ -419,6 +419,7 @@ INSERT INTO marc_subfield_structure
   ('952', 'i', 'Supressed','',0,0,'item.suppress',-1,'I_SUPPRESS','','',0,0,?,NULL,'','');
 ");
 my $insert_sth_2 = $dbh ->prepare("
+INSERT INTO marc_subfield_structure 
   (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
   VALUES 
   ('952', 'k', 'Other item status', 'Other item status', 0, 0, 'items.otherstatus', 10, 'otherstatus', '', '', 0, 0, ?, NULL, '', '');
