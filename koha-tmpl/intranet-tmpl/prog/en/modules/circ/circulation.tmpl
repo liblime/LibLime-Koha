@@ -558,10 +558,6 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
                         <input type="hidden" name="charges" value="yes" />
                         <input type="hidden" name="oldamount" value="<!-- TMPL_VAR NAME="amountold" -->" />
                 <!-- /TMPL_IF -->
-<fieldset style="width: 10px;">
-<input type="button" value="Search To Hold" id="searchtohold" name="searchtohold" onclick="return GB_showFullScreen('Search To Hold', '/cgi-bin/koha/catalogue/search.pl?last_borrower_show_button=1')" />
-</fieldset>
-
 </fieldset>
 
 </form></div><!-- /TMPL_UNLESS --><!-- /unless noissues -->
@@ -818,7 +814,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
             <td><!-- TMPL_VAR NAME="charge" --></td>
             <td><!-- TMPL_VAR NAME="replacementprice" --></td>
         <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
-        <td><!-- TMPL_VAR NAME="renewals" --> <!-- TMPL_IF NAME="renewals_opac" -->( <!-- TMPL_VAR NAME="renewals_opac" --> via OPAC ) <!-- /TMPL_IF --></td>
+        <td><!-- TMPL_VAR NAME="renewals" --> <!-- TMPL_IF NAME="renewals_opac" -->( <!-- TMPL_VAR NAME="renewals_opac" --> via OPAC ) <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="can_renew" -->
         <input type="checkbox" name="all_items[]" value="<!-- TMPL_VAR NAME="itemnumber" -->" checked="checked" style="display: none;" />
         <!-- TMPL_IF NAME="od" -->
