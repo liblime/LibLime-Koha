@@ -432,6 +432,7 @@ for my $data (@itemtypes) {
         my $sth2=$dbh->prepare("SELECT * from overdueitemrules WHERE branchcode=? AND itemtype=?");
         $sth2->execute($branch,$data->{'itemtype'});
         my $dat=$sth2->fetchrow_hashref;
+        if ($dat){
         for (my $i=1;$i<=3;$i++){
             if ($countletters){
                 my @letterloop;
@@ -450,7 +451,7 @@ for my $data (@itemtypes) {
             }
             if ($dat->{"delay$i"}){$row{"delay$i"}=$dat->{"delay$i"};}
             if ($dat->{"debarred$i"}){$row{"debarred$i"}=$dat->{"debarred$i"};}
-        }
+        }}
         $sth2->finish;
     }
     push @item_line_loop,\%row;
@@ -459,6 +460,6 @@ for my $data (@itemtypes) {
 
 $template->param(table=> \@line_loop,
                 itemtable => \@item_line_loop,
-                branchloop   => GetBranchesLoop($input->param("branch") || C4::Context->userenv->{branch}),
+                branchloop   => GetBranchesLoop($input->param("branch")),
                 branch => $branch);
 output_html_with_http_headers $input, $cookie, $template->output;
