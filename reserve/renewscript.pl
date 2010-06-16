@@ -108,6 +108,6 @@ if ($input->param('destination') eq "circ"){
 }
 else {
     print $input->redirect(
-        "/cgi-bin/koha/members/moremember.pl?borrowernumber='.$borrowernumber.$failedrenews.$failedreturn
+        "/cgi-bin/koha/members/moremember.pl?borrowernumber=".$borrowernumber.$failedrenews.$failedreturn
     );
 }
