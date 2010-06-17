@@ -26,7 +26,7 @@ use C4::Debug;
 use C4::Dates;
 use C4::ClassSource;
 use C4::Biblio;
-use C4::Branch qw( GetBranches );
+use C4::Branch qw( GetBranchesLoop );
 use C4::Koha qw( subfield_is_koha_internal_p ); # XXX subfield_is_koha_internal_p
 use MARC::Record;
 use MARC::File::XML;
@@ -164,7 +164,7 @@ sub get_form_values {
                    C4::Context->userenv                           && 
                    C4::Context->userenv->{flags} % 2 == 0         && 
                    C4::Context->userenv->{branch};
-    my $branches = GetBranches( $onlymine );  # build once ahead of time, instead of multiple times later.
+    my $branches = GetBranchesLoop();  # build once ahead of time, instead of multiple times later.
 
     foreach my $tag ( sort keys %{$tagslib} ) {
         # loop through each subfield
@@ -230,9 +230,10 @@ sub get_form_values {
                 # builds list, depending on authorised value...
 
                 if ( $subfieldlib->{authorised_value} eq "branches" ) {
-                    foreach my $thisbranch ( sort keys %$branches ) {
-                        push @authorised_values, $thisbranch;
-                        $authorised_lib{$thisbranch} = $branches->{$thisbranch}->{'branchname'};
+                    foreach my $thisbranch (@$branches ) {
+                        push @authorised_values, $thisbranch->{value};
+                        $authorised_lib{$thisbranch->{value}} = $thisbranch->{'branchname'};
+                        $value = $thisbranch->{value} if ( !$value && $thisbranch->{selected});
                     }
                 }
                 elsif ( $subfieldlib->{authorised_value} eq "itemtypes" ) {
