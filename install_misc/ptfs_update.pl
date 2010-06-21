@@ -541,3 +541,16 @@ if (!$current_version) {
 
 }
 
+$current_version= (C4::Context->preference("KohaPTFSVersion"));
+
+if ($current_version == "harley"){
+
+print "Upgrade to 'ptfs-master 1.1' beginning.\n==========\n";
+print "Adding new system preferences\n";
+$dbh->do("INSERT INTO systempreferences (variable,value,explanation,type) VALUES ('DisplayStafficonsXSLT','0',
+     'If ON, displays the format, audience, type icons in the staff XSLT MARC21 result and display pages.','YesNo')");
+print ".";
+print "done!\n";
+
+$dbh -> do("UPDATE systempreferences SET value='harley' WHERE variable='KohaPTFSVersion'");
+}
