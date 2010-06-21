@@ -302,19 +302,6 @@ function refocus(calendar) {
 
 <form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="confirm">
 
-<!-- TMPL_IF NAME="RESERVED" -->
-	<!-- TMPL_IF NAME="DisableHoldsIssueOverrideUnlessAuthorised" -->
-	    <p>
-	    <label><strong>Superlibrarian Authorization Required</strong></label>
-	    </p><p>
-	    <label for="auth_username">Username:</label>
-	    <input type="text" id="auth_username" name="auth_username" /></p><p>
-	    <label for="auth_password">Password:</label>
-	    <input type="password" id="auth_password" name="auth_password" />
-	    </p>
-	<!-- /TMPL_IF -->
-<!-- /TMPL_IF -->    
-
 <!-- TMPL_IF NAME="DisableHoldsIssueOverrideUnlessAuthorised" -->
     <p>
     <label><strong>Superlibrarian Authorization Required</strong></label>
