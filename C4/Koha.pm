@@ -52,6 +52,7 @@ BEGIN {
 		&GetAuthorisedValues
 		&GetAuthorisedValueCategories
 		&GetKohaAuthorisedValues
+                &GetAuthorisedValue
 		&GetAuthValCode
 		&GetNormalizedUPC
 		&GetNormalizedISBN
@@ -981,6 +982,18 @@ sub GetAuthValCode {
 	$sth->execute($kohafield,$fwcode);
 	my ($authvalcode) = $sth->fetchrow_array;
 	return $authvalcode;
+}
+
+=head2 GetAuthorisedValue
+
+=cut
+
+sub GetAuthorisedValue {
+    my ($category, $authorised_value) = @_;
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM authorised_values WHERE category=? AND authorised_value=?");
+    $sth->execute($category, $authorised_value);
+    return $sth->fetchrow_hashref;
 }
 
 =head2 GetAuthorisedValues

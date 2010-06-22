@@ -85,6 +85,7 @@
 <!-- TMPL_IF NAME="TagsEnabled"     --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-tags.pl">Tag Cloud</a><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="OpacCloud"       --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-tags_subject.pl">Subject Cloud</a><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="OpacTopissue"    --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-topissues.pl">Most Popular</a><!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="CourseReserves"     --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-coursereserves.pl">Course Reserves</a><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="suggestion" -->
   <!-- TMPL_IF NAME="AnonSuggestions" --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-suggestions.pl">Purchase Suggestions</a>
   <!-- TMPL_ELSIF NAME="OPACViewOthersSuggestions" --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-suggestions.pl">Purchase Suggestions</a>

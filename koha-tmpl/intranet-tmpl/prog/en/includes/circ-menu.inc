@@ -69,6 +69,11 @@
         <!-- TMPL_IF NAME="EnhancedMessagingPreferences" -->
           <!-- TMPL_IF NAME="messagingview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/messaging.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Messaging</a></li>
         <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="CourseReserves" -->
+        <!-- TMPL_IF NAME="CAN_user_circulate_put_coursereserves" -->
+        <li><a href="/cgi-bin/koha/circ/courses.pl">Course Reserves</a></li>
+        <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
 </ul></div>
 <!-- /TMPL_IF -->
 

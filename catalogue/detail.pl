@@ -37,6 +37,7 @@ use C4::External::Amazon;
 use C4::Search;		# enabled_staff_search_views
 use C4::VirtualShelves;
 use C4::XSLT;
+use C4::Courses qw/GetCourseReservesForBiblio/;
 
 # use Smart::Comments;
 
@@ -221,6 +222,14 @@ foreach my $item (@items) {
     }
 
     push @itemloop, $item;
+}
+
+if (C4::Context->preference('CourseReserves')) {
+    my ($course_reserves,$course_reserves_exist) = GetCourseReservesForBiblio($biblionumber);
+    $template->param(
+        CourseReservesExist => $course_reserves_exist,
+        CourseReservesLoop => $course_reserves
+    );
 }
 
 $template->param( norequests => $norequests );

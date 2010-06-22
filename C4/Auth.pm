@@ -187,6 +187,9 @@ sub get_template_and_user {
             $template->param( CAN_user_serials          => 1 );
             $template->param( CAN_user_reports          => 1 );
             $template->param( CAN_user_staffaccess      => 1 );
+            $template->param( CAN_user_manage_courses      => 1 );
+            $template->param( CAN_user_put_coursereserves      => 1 );
+            $template->param( CAN_user_remove_coursereserves      => 1 );
             foreach my $module (keys %$all_perms) {
                 foreach my $subperm (keys %{ $all_perms->{$module} }) {
                     $template->param( "CAN_user_${module}_${subperm}" => 1 );
@@ -283,6 +286,7 @@ sub get_template_and_user {
             XSLTResultsDisplay           => C4::Context->preference("XSLTResultsDisplay"),
             OPACXSLTDetailsDisplay       => C4::Context->preference("OPACXSLTDetailsDisplay"),
             OPACXSLTResultsDisplay       => C4::Context->preference("OPACXSLTResultsDisplay"),
+            CourseReserves               => C4::Context->preference("CourseReserves"),
             BranchesLoop                 => GetBranchesLoop(),
             using_https                  => $in->{'query'}->https() ? 1 : 0
     );

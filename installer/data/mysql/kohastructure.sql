@@ -2381,6 +2381,49 @@ CREATE TABLE `messages` (
   PRIMARY KEY (`message_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `courses`;
+CREATE TABLE `courses` (
+    `course_id` INT(11) NOT NULL auto_increment,
+    `department` VARCHAR(20),       -- req, auth value
+    `course_number` VARCHAR(255),    -- req, free text
+    `section` VARCHAR(255),          -- free text
+    `course_name` VARCHAR(255),      -- req, free text
+    `term` VARCHAR(20),             -- req, auth value
+    `staff_note` mediumtext,
+    `public_note` mediumtext,
+    `students_count` VARCHAR(20),
+    `course_status` enum('enabled','disabled') NOT NULL DEFAULT 'enabled',
+    `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`course_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `instructor_course_link`;
+CREATE TABLE `instructor_course_link` (
+    `instructor_course_link_id` INT(11) NOT NULL auto_increment,
+    `course_id` INT(11) NOT NULL default 0,
+    `instructor_borrowernumber` INT(11) NOT NULL default 0,
+    PRIMARY KEY (`instructor_course_link_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `course_reserves`;
+CREATE TABLE `course_reserves` (
+    `course_reserve_id` INT(11) NOT NULL auto_increment,
+    `course_id` INT(11) NOT NULL,
+    `itemnumber` INT(11) NOT NULL,
+    `staff_note` mediumtext,
+    `public_note` mediumtext,
+    `itemtype` VARCHAR(10) default NULL,
+    `ccode` VARCHAR(10) default NULL,
+    `location` varchar(80) default NULL,
+    `branchcode` varchar(10) NOT NULL,
+    `original_itemtype` VARCHAR(10) default NULL,
+    `original_ccode` VARCHAR(10) default NULL,
+    `original_branchcode` varchar(10) NOT NULL,
+    `original_location` varchar(80) default NULL,
+    `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`course_reserve_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

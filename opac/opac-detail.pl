@@ -31,6 +31,7 @@ use C4::Biblio;
 use C4::Items;
 use C4::Circulation;
 use C4::Tags qw(get_tags);
+use C4::Courses qw/GetCourseReservesForBiblio/;
 use C4::Dates qw/format_date/;
 use C4::XISBN qw(get_xisbns get_biblionumber_from_isbn);
 use C4::External::Amazon;
@@ -566,6 +567,14 @@ if (C4::Context->preference('TagsEnabled') and $tag_quantity = C4::Context->pref
 	);
 	$template->param(TagLoop => get_tags({biblionumber=>$biblionumber, approved=>1,
 								'sort'=>'-weight', limit=>$tag_quantity}));
+}
+
+if (C4::Context->preference('CourseReserves')) {
+    my ($course_reserves,$course_reserves_exist) = GetCourseReservesForBiblio($biblionumber,'OPAC');
+    $template->param(
+        CourseReservesExist => $course_reserves_exist,
+        CourseReservesLoop => $course_reserves
+    );
 }
 
 #Search for title in links

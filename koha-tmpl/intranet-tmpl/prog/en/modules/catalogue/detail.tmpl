@@ -164,6 +164,19 @@ function verify_images() {
                 <!-- /TMPL_LOOP -->
             </li>
         <!-- /TMPL_IF -->
+
+<!-- TMPL_IF NAME="CourseReserves" -->
+<!-- TMPL_IF NAME="CourseReservesExist" -->
+    <div class="results_summary">
+        <span class="label">Course Reserves:</span>
+            <ul><!-- TMPL_LOOP NAME="CourseReservesLoop" -->
+            <li><a href="/cgi-bin/koha/circ/courses.pl?course_id=<!-- TMPL_VAR NAME="course_id" -->&amp;op=view_course_reserves"><!-- TMPL_VAR NAME="course_name" --></a>; Department: <!-- TMPL_VAR NAME="department" -->; Course Number: <!-- TMPL_VAR NAME="course_number" -->; Section: <!-- TMPL_VAR NAME="section" -->; Term: <!-- TMPL_VAR NAME="term" -->; Staff Notes: <!-- TMPL_VAR NAME="staff_notes" -->; Public Notes: <!-- TMPL_VAR NAME="public_note" -->; Instructors: <!-- TMPL_VAR NAME="instructors" --></li>
+            <!-- /TMPL_LOOP -->
+            </ul>
+    </div>
+<!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
+
         <!--This grabs all of the lists a bib record appears in -->
         <!-- TMPL_IF NAME="GetShelves" -->
 	        <li><strong>Lists that include this title: </strong>

@@ -216,6 +216,18 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
     </span>
 <!-- /TMPL_IF --> 
 
+<!-- TMPL_IF NAME="CourseReserves" -->
+<!-- TMPL_IF NAME="CourseReservesExist" -->
+    <div class="results_summary">
+        <span class="label">Course Reserves:</span>
+            <ul><!-- TMPL_LOOP NAME="CourseReservesLoop" -->
+            <li style="display:block;">&nbsp;&nbsp;<a href="/cgi-bin/koha/opac-coursereserves.pl?course_id=<!-- TMPL_VAR NAME="course_id" -->&amp;op=view_course_reserves"><!-- TMPL_VAR NAME="course_name" --></a>; Department: <!-- TMPL_IF NAME="department_opacdescription" --><!-- TMPL_VAR NAME="department_opacdescription" --><!-- TMPL_ELSE --><!-- TMPL_VAR NAME="department_description" --><!-- /TMPL_IF -->; Course Number: <!-- TMPL_VAR NAME="course_number" -->; Section: <!-- TMPL_VAR NAME="section" -->; Term: <!-- TMPL_IF NAME="term_opacdescription" --><!-- TMPL_VAR NAME="term_opacdescription" --><!-- TMPL_ELSE --><!-- TMPL_VAR NAME="term_description" --><!-- /TMPL_IF -->; Notes: <!-- TMPL_VAR NAME="public_note" -->; Instructors: <!-- TMPL_VAR NAME="instructors" --></li>
+            <!-- /TMPL_LOOP -->
+            </ul>
+    </div>
+<!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
+
 <!--This grabs all of the lists a bib record appears in -->
 <!-- TMPL_IF NAME="GetShelves" -->
 	<span class="results_summary"><span class="label">List(s) this item appears in: </span>
