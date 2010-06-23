@@ -164,7 +164,8 @@ if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {
     	$selected = 0; # set to zero after first pass through
     	push @itemtypesloop, \%row;
 	}
-} else {
+        $template->param(itemtypeloop => \@itemtypesloop, DisplayAdvancedSearchLimits => 1);
+} elsif ($advanced_search_types eq 'ccode') {
     my $advsearchtypes = GetAuthorisedValues($advanced_search_types);
 	for my $thisitemtype (sort {$a->{'lib'} cmp $b->{'lib'}} @$advsearchtypes) {
 		my %row =(
@@ -177,9 +178,11 @@ if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {
                 imageurl=> getitemtypeimagelocation( 'opac', $thisitemtype->{'imageurl'} ),
             );
 		push @itemtypesloop, \%row;
+        $template->param(itemtypeloop => \@itemtypesloop, DisplayAdvancedSearchLimits => 1);
 	}
+} else {
+    #$template->param(DisplayAdvancedSearchLimits => 0);
 }
-$template->param(itemtypeloop => \@itemtypesloop);
 
 # # load the itypes (Called item types in the template -- just authorized values for searching)
 # my ($itypecount,@itype_loop) = GetCcodes();

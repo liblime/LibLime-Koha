@@ -249,8 +249,8 @@ if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {         
         $selected = 0 if ($selected) ;
         push @itemtypesloop, \%row;
     }
-    $template->param(itemtypeloop => \@itemtypesloop);
-} else {
+    $template->param(itemtypeloop => \@itemtypesloop,DisplayAdvancedSearchLimits => 1);
+} elsif ($advanced_search_types eq 'ccode') {
     my $advsearchtypes = GetAuthorisedValues($advanced_search_types);
     for my $thisitemtype (sort {$a->{'lib'} cmp $b->{'lib'}} @$advsearchtypes) {
         my %row =(
@@ -264,7 +264,9 @@ if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {         
             );
         push @itemtypesloop, \%row;
     }
-    $template->param(itemtypeloop => \@itemtypesloop);
+    $template->param(itemtypeloop => \@itemtypesloop,DisplayAdvancedSearchLimits => 1);
+} else {
+    # Don't enable DisplayAdvancedSearchLimits
 }
 
 # The following should only be loaded if we're bringing up the advanced search template
