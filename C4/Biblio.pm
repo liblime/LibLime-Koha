@@ -1190,7 +1190,7 @@ my $auth_value_desc =GetAuthorisedValueDesc(
 =cut
 
 sub GetAuthorisedValueDesc {
-    my ( $tag, $subfield, $value, $framework, $tagslib, $category ) = @_;
+    my ( $tag, $subfield, $value, $framework, $tagslib, $category, $opac ) = @_;
     my $dbh = C4::Context->dbh;
 
     if (!$category) {
@@ -1214,11 +1214,11 @@ sub GetAuthorisedValueDesc {
     if ( $category ne "" ) {
         my $sth =
             $dbh->prepare(
-                    "SELECT lib FROM authorised_values WHERE category = ? AND authorised_value = ?"
+                    "SELECT opaclib,lib FROM authorised_values WHERE category = ? AND authorised_value = ?"
                     );
         $sth->execute( $category, $value );
         my $data = $sth->fetchrow_hashref;
-        return $data->{'lib'};
+        return ($opac && $data->{'opaclib'}) ? $data->{'opaclib'} : $data->{'lib'};
     }
     else {
         return $value;    # if nothing is found return the original value

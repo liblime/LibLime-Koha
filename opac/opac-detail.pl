@@ -103,8 +103,8 @@ if ( $itemtype ) {
     $dat->{'imageurl'}    = getitemtypeimagelocation( 'opac', $itemtypes->{$itemtype}->{'imageurl'} );
     $dat->{'description'} = $itemtypes->{$itemtype}->{'description'};
 }
-my $shelflocations =GetKohaAuthorisedValues('items.location',$dat->{'frameworkcode'});
-my $collections =  GetKohaAuthorisedValues('items.ccode',$dat->{'frameworkcode'} );
+my $shelflocations =GetKohaAuthorisedValues('items.location',$dat->{'frameworkcode'},undef,1);
+my $collections =  GetKohaAuthorisedValues('items.ccode',$dat->{'frameworkcode'},undef,1);
 
 #coping with subscriptions
 my $subscriptionsnumber = CountSubscriptionFromBiblionumber($biblionumber);
@@ -439,7 +439,7 @@ if (C4::Context->preference("OPACShelfBrowser")) {
         $starting_homebranch->{code} = $result->{'homebranch'};
         $starting_homebranch->{description} = $branches->{$result->{'homebranch'}}{branchname};
         $starting_location->{code} = $result->{'location'};
-        $starting_location->{description} = GetAuthorisedValueDesc('','',   $result->{'location'} ,'','','LOC');
+        $starting_location->{description} = GetAuthorisedValueDesc('','',   $result->{'location'} ,'','','LOC','1');
     
     }
     

@@ -70,7 +70,7 @@ sub transformMARCXML4XSLT {
                 my @new_subfields = ();
                 for my $subfield ( $field->subfields() ) {
                     my ( $letter, $value ) = @$subfield;
-                    $value = GetAuthorisedValueDesc( $tag, $letter, $value, '', $tagslib )
+                    $value = GetAuthorisedValueDesc( $tag, $letter, $value, '', $tagslib,undef,1 )
                         if $av->{ $tag }->{ $letter };
                     push( @new_subfields, $letter, $value );
                 } 

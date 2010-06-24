@@ -1055,16 +1055,16 @@ sub GetAuthorisedValueCategories {
 =cut
 
 sub GetKohaAuthorisedValues {
-  my ($kohafield,$fwcode,$codedvalue) = @_;
+  my ($kohafield,$fwcode,$codedvalue,$opac) = @_;
   $fwcode='' unless $fwcode;
   my %values;
   my $dbh = C4::Context->dbh;
   my $avcode = GetAuthValCode($kohafield,$fwcode);
   if ($avcode) {  
-	my $sth = $dbh->prepare("select authorised_value, lib from authorised_values where category=? ");
+	my $sth = $dbh->prepare("select authorised_value,opaclib,lib from authorised_values where category=? ");
    	$sth->execute($avcode);
-	while ( my ($val, $lib) = $sth->fetchrow_array ) { 
-   		$values{$val}= $lib;
+	while ( my ($val,$opaclib,$lib) = $sth->fetchrow_array ) {
+          $values{$val} = ($opac && $opaclib) ? $opaclib : $lib;
    	}
    	return \%values;
   } else {
