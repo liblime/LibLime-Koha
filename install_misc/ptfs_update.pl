@@ -515,21 +515,17 @@ files  The line can be at the end of the file, in each case.  For a "dev"
 install, ZEBRADIR is at ~/koha-dev/etc/zebradb
 
 In $ZEBRADIR/biblios/etc/bib1.att:
-
 att 8033    suppress
 
-
 In $ZEBRADIR/ccl.properties:
-
 suppress 1=8033
 
-
 In $ZEBRADIR/marc_defs/marc21/biblios/record.abs:
-
 melm 952$i suppress,suppress:n
 
-Then suppress one item in the staff interface, and reindex.  (You can then un-suppress the item.)
+If you don't mind overlaying your current indexing configuration, you can copy those three files from your kohaclone/etc/zebradb tree.
 
+Then suppress one item in the staff interface, and reindex.  (You can then un-suppress the item.)
 EOF
 ;
 
@@ -551,6 +547,71 @@ $dbh->do("INSERT INTO systempreferences (variable,value,explanation,type) VALUES
      'If ON, displays the format, audience, type icons in the staff XSLT MARC21 result and display pages.','YesNo')");
 print ".";
 print "done!\n";
+print "==========\n";
 
-$dbh -> do("UPDATE systempreferences SET value='harley' WHERE variable='KohaPTFSVersion'");
+print "Altering MARC subfield structure for curriculum indexing\n";
+my $frames_sth = $dbh -> prepare("SELECT frameworkcode FROM biblio_framework");
+
+my $insert_sth = $dbh -> prepare("
+INSERT INTO marc_subfield_structure
+  (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue)
+  VALUES
+               ('658', 'a', 'Main curriculum objective', 'Main curriculum objective', 0, 0, '', 6, '', 'TOPIC_TERM', '', NULL, 0, ?, '', '', NULL);
+");
+my $insert_sth_2 = $dbh ->prepare("
+INSERT INTO marc_subfield_structure
+  (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue)
+  VALUES
+               ('658', 'b', 'Subordinate curriculum objective', 'Subordinate curriculum objective', 1, 0, '', 6, '', '', '', NULL, 0, ?, '', '', NULL);
+");
+my $insert_sth_3 = $dbh ->prepare("
+INSERT INTO marc_subfield_structure
+  (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue)
+  VALUES
+               ('658', 'c', 'Curriculum code', 'Curriculum code', 0, 0, '', 6, '', '', '', NULL, 0, ?, '', '', NULL);
+");
+my $insert_sth_4 = $dbh ->prepare("
+INSERT INTO marc_tag_structure
+  (tagfield, liblibrarian,libopac,repeatable,mandatory,authorised_value,frameworkcode)
+  VALUES
+     ('658','SUBJECT--CURRICULUM OBJECTIVE','SUBJECT--CURRICULUM OBJECTIVE',1,0,NULL,?);
+");
+
+$frames_sth->execute;
+  while (my $frame = $frames_sth->fetchrow_hashref) {
+
+    $insert_sth -> execute($frame->{frameworkcode});
+    $insert_sth_2 -> execute($frame->{frameworkcode});
+    $insert_sth_3 -> execute($frame->{frameworkcode});
+    $insert_sth_4 -> execute($frame->{frameworkcode});
+
+    print ".";
+  }
+print "done!\n";
+print "==========\n";
+print <<EOF2
+Remaining tasks must be done manually!
+
+You have to modify your Zebra configuration, adding lines to each of three 
+files  The lines can be at the end of the file, in each case.  For a "dev" 
+install, ZEBRADIR is at ~/koha-dev/etc/zebradb
+
+In $ZEBRADIR/biblios/etc/bib1.att:
+att 9658    curriculum
+
+In $ZEBRADIR/ccl.properties:
+curriculum 1=9658
+
+In $ZEBRADIR/marc_defs/marc21/biblios/record.abs:
+melm 658$a     curriculum:w,curriculum:p
+melm 658$b     curriculum:w,curriculum:p
+melm 658$c     curriculum:w,curriculum:p
+
+If you don't mind overlaying your current indexing configuration, you can copy those three files from your kohaclone/etc/zebradb tree.
+
+Then, reindex the database.
+EOF2
+;
+
+$dbh -> do("UPDATE systempreferences SET value='PTFS1.1' WHERE variable='KohaPTFSVersion'");
 }
