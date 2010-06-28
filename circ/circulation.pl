@@ -878,19 +878,19 @@ output_html_with_http_headers $query, $cookie, $template->output;
 sub granular_overrides {
     my ($circ_session, $error, $question) = @_;
     if ($question->{TOO_MANY} ) {
-        if (!override_can('override_checkout_max')) {
+        if (!override_can($circ_session,'override_checkout_max')) {
             $error->{TOO_MANY} = $question->{TOO_MANY};
             delete $question->{TOO_MANY};
         }
     }
     if ($question->{NOT_FOR_LOAN_FORCING} ) {
-        if (!override_can('override_non_circ')) {
+        if (!override_can($circ_session,'override_non_circ')) {
             $error->{NOT_FOR_LOAN} = $question->{NOT_FOR_LOAN_FORCING};
             delete $question->{NOT_FOR_LOAN_FORCING};
         }
     }
     if ($error->{NO_MORE_RENEWALS} ) {
-        if (override_can('override_max_renewals')) {
+        if (override_can($circ_session,'override_max_renewals')) {
             $question->{NO_MORE_RENEWALS_FORCING} = $error->{NO_MORE_RENEWALS};
             delete $error->{NO_MORE_RENEWALS};
         }
