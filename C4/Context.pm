@@ -711,6 +711,92 @@ sub dbh
     return $context->{"dbh"};
 }
 
+# _new_replica_dbh
+# Internal helper function (not a method!). This creates a new
+# database connection from the data given in the current context, and
+# returns it.
+sub _new_replica_dbh
+{
+    warn "Using replica_dbh\n";
+    ## $context
+    ## correct name for db_schme
+    my $db_driver;
+    if ($context->config("db_scheme")){
+        $db_driver=db_scheme2dbi($context->config("db_scheme"));
+    }else{
+        $db_driver="mysql";
+    }
+
+    my $dbh;
+    if ($context -> preference("Replica_DSN")){
+      my $db_user   = $context->preference("Replica_user") || $context->config("user");
+      my $db_passwd = $context->preference("Replica_pass") || $context->config("pass");
+      $dbh = DBI ->connect($context -> preference("Replica_DSN"), $db_user, $db_passwd) or die $DBI::errstr;
+    } else {
+      my $db_name   = $context->config("database");
+      my $db_host   = $context->config("hostname");
+      my $db_port   = $context->config("port") || '';
+      my $db_user   = $context->config("user");
+      my $db_passwd = $context->config("pass");
+      # MJR added or die here, as we can't work without dbh
+      $dbh= DBI->connect("DBI:$db_driver:dbname=$db_name;host=$db_host;port=$db_port",
+       $db_user, $db_passwd) or die $DBI::errstr;
+    }
+
+    # Find the time zone
+    my $sth = $dbh->prepare("SELECT value FROM systempreferences WHERE variable='TZ'");
+    $sth->execute();
+    my $timezone = $sth->fetchrow_hashref;
+    my $tz;
+    if ($timezone and $timezone->{value}) {
+        $tz = $timezone->{value};
+        # Set the Perl System environment's timezone
+        $ENV{TZ} = $tz;
+        tzset;
+    }
+    else {
+        # Fall back to the system environment
+        $tz = $ENV{TZ};
+    }
+    if ( $db_driver eq 'mysql' ) {
+        # Koha 3.0 is utf-8, so force utf8 communication between mySQL and koha, whatever the mysql default config.
+        # this is better than modifying my.cnf (and forcing all communications to be in utf8)
+        $dbh->{'mysql_enable_utf8'}=1; #enable
+        $dbh->do("set NAMES 'utf8'");
+        ($tz) and $dbh->do(qq(SET time_zone = "$tz"));
+    }
+    elsif ( $db_driver eq 'Pg' ) {
+           $dbh->do( "set client_encoding = 'UTF8';" );
+        ($tz) and $dbh->do(qq(SET TIME ZONE = "$tz"));
+    }
+    return $dbh;
+}
+
+=item replica_dbh
+
+  $dbh = C4::Context->replica_dbh;
+
+Returns a database handle connected to the Koha database for the
+current context. If no connection has yet been made, this method
+creates one, and connects to the database.
+
+This database handle is cached for future use: if you call
+C<C4::Context-E<gt>dbh> twice, you will get the same handle both
+times. If you need a second database handle, use C<&new_dbh> and
+possibly C<&set_dbh>.
+
+=cut
+
+#'
+sub replica_dbh
+{
+    my $self = shift;
+    if( ! defined($context->{"replica_dbh"}) || ( $context->{'safe_mode'} && ! $context->{"replica_dbh"}->ping())){
+        $context->{"replica_dbh"} = &_new_replica_dbh();
+    }
+    return $context->{"replica_dbh"};
+}
+
 =item new_dbh
 
   $dbh = C4::Context->new_dbh;

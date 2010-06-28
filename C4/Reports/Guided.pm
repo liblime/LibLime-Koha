@@ -415,7 +415,7 @@ sub execute_query ($;$$$) {
     }
     $sql .= " LIMIT ?, ?";
 
-    my $sth = C4::Context->dbh->prepare($sql);
+    my $sth = C4::Context->replica_dbh->prepare($sql);
     $sth->execute($offset, $limit);
     return ( $sth );
     # my @xmlarray = ... ;
