@@ -38,6 +38,7 @@ use C4::ClubsAndServices;
 use Date::Calc qw(Today);
 use MARC::File::USMARC;
 use MARC::File::XML;
+use Business::ISBN;
 
 if ( C4::Context->preference('marcflavour') eq 'UNIMARC' ) {
     MARC::File::XML->default_record_format('UNIMARC');
@@ -910,6 +911,35 @@ if ( $op eq "addbiblio" ) {
     # getting html input
     my @params = $input->param();
     $record = TransformHtmlToMarc( \@params , $input );
+
+    # check ISBN validity
+    my $invalid_isbn = 0;
+    my $result = TransformMarcToKoha($dbh,$record,'');
+    if ($result->{isbn}) {
+      my $isbn_str = $result->{isbn};
+      $isbn_str =~ s/-//;
+      my $isbn = Business::ISBN->new($isbn_str);
+      $invalid_isbn = 1 if (!$isbn->is_valid());
+      if ($invalid_isbn) {
+        my $oldbibnum;
+        my $oldbibitemnum;
+        if (C4::Context->preference("BiblioAddsAuthorities")){
+          my ($countlinked,$countcreated)=BiblioAddAuthorities($record,$frameworkcode);
+        }
+        if ( $is_a_modif ) {
+            ModBiblioframework( $biblionumber, $frameworkcode );
+            ModBiblio( $record, $biblionumber, $frameworkcode );
+        }
+        else {
+            ( $biblionumber, $oldbibitemnum ) = AddBiblio( $record, $frameworkcode );
+        }
+        $template->param( invalid_isbn => $invalid_isbn,
+                          biblionumber => $biblionumber);
+        output_html_with_http_headers $input, $cookie, $template->output;
+        exit;
+      }
+    }
+
     # check for a duplicate
     my ($duplicatebiblionumber,$duplicatetitle) = FindDuplicate($record) if (!$is_a_modif);
     my $confirm_not_duplicate = $input->param('confirm_not_duplicate');

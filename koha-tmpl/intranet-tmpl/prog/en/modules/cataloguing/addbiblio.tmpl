@@ -592,6 +592,20 @@ function unHideSubfield(index,labelindex) { // FIXME :: is it used ?
 
 <h1><!-- TMPL_IF NAME="biblionumber" -->Editing <em><!-- TMPL_VAR NAME="title" escape="html" --></em> (Record Number <!-- TMPL_VAR name="biblionumber" -->)</h1><!-- TMPL_ELSE -->Add MARC Record</h1><!-- /TMPL_IF -->
 
+<!-- TMPL_IF NAME="invalid_isbn" -->
+  <div class="dialog alert">
+    <h4>Possible Invalid ISBN</h4>
+    <form action="/cgi-bin/koha/cataloguing/additem.pl" method="get">
+      <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
+      <input type="submit" class="edit" value="Continue" />
+    </form>
+    <form action="/cgi-bin/koha/cataloguing/addbiblio.pl" method="get">
+      <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
+      <input type="submit" class="edit" value="Return" />
+    </form>
+  </div>
+<!-- /TMPL_IF -->
+
 <!-- TMPL_UNLESS name="number" -->
     <!-- show duplicate warning on tab 0 only -->
         <!-- TMPL_IF name="duplicatebiblionumber" -->

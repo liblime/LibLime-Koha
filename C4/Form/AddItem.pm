@@ -191,7 +191,7 @@ sub get_form_values {
             $subfield_data{repeatable} = $subfieldlib->{repeatable} && $options->{'allow_repeatable'};
             my ( $indicator, $value ) = ( '', '' );
             ( $indicator, $value ) = _find_value( $tag,$subfield, $options->{'item'} ) if ( $options->{'item'} );
-            $value =~ s/"/&quot;/g;
+            $value =~ s/"/&quot;/g if (defined $value);
             unless ( $value ) {
                 $value = $subfieldlib->{defaultvalue} || '';
                 # get today date & replace YYYY, MM, DD if provided in the default value
