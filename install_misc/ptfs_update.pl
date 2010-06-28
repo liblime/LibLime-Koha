@@ -549,6 +549,15 @@ print ".";
 $dbh->do("INSERT INTO `systempreferences` (variable,value,options,explanation,type) VALUES ('CourseReserves','0','',
       'Turn ON Course Reserves functionality','YesNo');");
 print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('Replica_DSN','',
+    'DSN for reporting database replica','','Textarea');");
+print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('Replica_user','',
+    'Username for reporting database replica','','Textarea');");
+print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('Replica_pass','',
+    'Password for reporting database replica','','Textarea');");
+print ".";
 print "done!\n";
 print "==========\n";
 
