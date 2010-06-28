@@ -42,119 +42,6 @@
    </div>
 <!-- TMPL_ELSE -->
 
- <form method="get" name="messaging" action="/cgi-bin/koha/members/messaging.pl">
-
-<input type="hidden" name="modify" value="yes" />
-<input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
-  <!-- TMPL_IF NAME= "settings_updated" -->
-  <div class="dialog message"><h4>Settings Updated</h4>
-    The patron settings have been updated</div>
-  <!-- /TMPL_IF -->
- 
- <h3>Manage patron messaging settings</h3>
-
-  <table>
-    <tr><th></th><th>Days in advance</th><!-- TMPL_IF NAME="SMSSendDriver" --><th>SMS</th><!-- /TMPL_IF --><th>Email</th><th>Digests only?</th><!-- <th>RSS</th> --><th>Do not notify</th></tr>
-    <!-- TMPL_LOOP name="messaging_preferences" -->
-    <tr>
-      <td><!-- TMPL_VAR NAME="message_name" --></td>
-      <!-- TMPL_IF NAME="takes_days" -->
-      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
-      <td><select name="<!-- TMPL_VAR NAME="message_attribute_id" -->-DAYS">
-      <!-- TMPL_ELSE -->
-      <td><select disabled="1" name="<!-- TMPL_VAR NAME="message_attribute_id" -->-DAYS">
-      <!-- /TMPL_IF -->
-          <!-- TMPL_LOOP name="select_days" -->
-          <!-- TMPL_IF NAME="selected" --><option value="<!-- TMPL_VAR NAME="day" -->" selected="selected"><!-- TMPL_VAR NAME="day" --></option><!-- TMPL_ELSE -->
-          <option value="<!-- TMPL_VAR NAME="day" -->"><!-- TMPL_VAR NAME="day" --></option>
-      <!-- /TMPL_IF -->
-          <!-- /TMPL_LOOP -->
-        </select>
-      </td>
-      <!-- TMPL_ELSE -->
-      <td>-</td>
-      <!-- /TMPL_IF -->
-      <!-- TMPL_IF NAME="transport-sms" -->
-      <!-- TMPL_IF NAME="SMSSendDriver" -->
-      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
-                 <td><input type="checkbox" id="sms<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 name="<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 value="sms" <!-- TMPL_VAR NAME="transport-sms"   --> onclick = "document.messaging.none<!-- TMPL_VAR NAME="message_attribute_id" -->.checked=false;" />
-      </td>
-      <!-- TMPL_ELSE -->
-         <td>
-          <input type="checkbox" readonly="true" value="sms" <!-- TMPL_VAR NAME="transport-sms" --> />
-         </td>
-      <!-- /TMPL_IF -->
-      <!-- /TMPL_IF -->
-      <!-- TMPL_ELSE -->
-      <td>-</td>
-      <!-- /TMPL_IF -->
-
-      <!-- TMPL_IF NAME="transport-email" -->
-      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
-      <td><input type="checkbox"
-                 id="email<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 name="<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 value="email"   <!-- TMPL_VAR NAME="transport-email"   --> onclick = "document.messaging.none<!-- TMPL_VAR NAME="message_attribute_id" -->.checked=false;" />
-      </td>
-      <!-- TMPL_ELSE -->
-         <td>
-          <input type="checkbox" readonly="true" value="email" <!-- TMPL_VAR NAME="transport-email" --> />
-         </td>
-      <!-- /TMPL_IF -->
-      <!-- TMPL_ELSE -->
-      <td>-</td>
-      <!-- /TMPL_IF -->
-
-      <!-- TMPL_IF NAME="has_digest" -->
-      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
-      <td><input type="checkbox"
-                 id="digest<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 value="<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 name="digest"   <!-- TMPL_VAR NAME="digest" --> onclick = "document.messaging.none<!-- TMPL_VAR NAME="message_attribute_id" -->.checked=false;" />
-      </td>
-      <!-- TMPL_ELSE -->
-         <td>
-          <input type="checkbox" readonly="true" value="digest" <!-- TMPL_VAR NAME="digest" --> />
-         </td>
-      <!-- /TMPL_IF -->
-      <!-- TMPL_ELSE -->
-      <td>-</td>
-      <!-- /TMPL_IF -->
-
-<!--       <!-- TMPL_IF NAME="transport-rss" -->
-      <td><input type="checkbox"
-                 id="rss<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 name="<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 value="rss"  <!-- TMPL_VAR NAME="transport-rss"   --> onclick = "document.messaging.none<!-- TMPL_VAR NAME="message_attribute_id" -->.checked=false;" />
-      </td>
-      <!-- TMPL_ELSE -->
-      <td>-</td>
-      <!-- /TMPL_IF --> -->
-
-      <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
-      <td><input type="checkbox" class="none" id="none<!-- TMPL_VAR NAME="message_attribute_id" -->" /></td>
-      <!-- TMPL_ELSE -->
-      <td><input type="checkbox" readonly="true" class="none" id="none<!-- TMPL_VAR NAME="message_attribute_id" -->" /></td>
-      <!-- /TMPL_IF -->
-    </tr>
-    <!-- /TMPL_LOOP -->
-  </table>
-<!-- TMPL_IF NAME="transport-sms" -->
-<!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
-<p><label for="SMSnumber">SMS number:</label> <input type="text" id="SMSnumber" name="SMSnumber" value="<!-- TMPL_VAR NAME="SMSnumber"  -->" /></p>
-<!-- TMPL_ELSE -->
-<p><label for="SMSnumber">SMS number:</label> <input type="text" readonly="true" id="SMSnumber" name="SMSnumber" value="<!-- TMPL_VAR NAME="SMSnumber"  -->" /></p>
-<!-- /TMPL_IF -->
-<!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
-<fieldset class="action">
-  <input type="submit" value="Submit Changes" /> <a class="cancel" href="/cgi-bin/koha/opac-user.pl">Cancel</a>
-</fieldset>
-<!-- /TMPL_IF -->
-
-<!-- TMPL_IF NAME="message_queue" -->
 <table>
   <caption>Message Queue</caption>
   <tr><th>Type</th><th>Subject</th><th>Status</th><th>Time Prepared</th></tr>
@@ -167,15 +54,16 @@
 <!-- /TMPL_IF -->
 </table>
 
-</div>
 
 <!-- /TMPL_IF --> <!-- unknowuser -->
 
 
 </div>
 </div>
+</div>
 <div class="yui-b">
 <!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
+</div>
 </div>
 </div>
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
