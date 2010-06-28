@@ -546,6 +546,73 @@ print "Adding new system preferences\n";
 $dbh->do("INSERT INTO systempreferences (variable,value,explanation,type) VALUES ('DisplayStafficonsXSLT','0',
      'If ON, displays the format, audience, type icons in the staff XSLT MARC21 result and display pages.','YesNo')");
 print ".";
+$dbh->do("INSERT INTO `systempreferences` (variable,value,options,explanation,type) VALUES ('CourseReserves','0','',
+      'Turn ON Course Reserves functionality','YesNo');");
+print ".";
+print "done!\n";
+print "==========\n";
+
+print "Adding new tables for course reserves\n";
+$dbh->do("DROP TABLE IF EXISTS `courses`;");
+$dbh->do("CREATE TABLE `courses` (
+        `course_id` INT(11) NOT NULL auto_increment,
+        `department` VARCHAR(20),       -- req, auth value
+        `course_number` VARCHAR(255),    -- req, free text
+        `section` VARCHAR(255),          -- free text
+        `course_name` VARCHAR(255),      -- req, free text
+        `term` VARCHAR(20),             -- req, auth value
+        `staff_note` mediumtext,
+        `public_note` mediumtext,
+        `students_count` VARCHAR(20),
+        `course_status` enum('enabled','disabled') NOT NULL DEFAULT 'enabled',
+        `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`course_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+print ".";
+$dbh->do("DROP TABLE IF EXISTS `instructor_course_link`;");
+$dbh->do("CREATE TABLE `instructor_course_link` (
+        `instructor_course_link_id` INT(11) NOT NULL auto_increment,
+        `course_id` INT(11) NOT NULL default 0,
+        `instructor_borrowernumber` INT(11) NOT NULL default 0,
+        PRIMARY KEY (`instructor_course_link_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+print ".";
+$dbh->do("DROP TABLE IF EXISTS `course_reserves`;");
+$dbh->do("CREATE TABLE `course_reserves` (
+        `course_reserve_id` INT(11) NOT NULL auto_increment,
+        `course_id` INT(11) NOT NULL,
+        `itemnumber` INT(11) NOT NULL,
+        `staff_note` mediumtext,
+        `public_note` mediumtext,
+        `itemtype` VARCHAR(10) default NULL,
+        `ccode` VARCHAR(10) default NULL,
+        `location` varchar(80) default NULL,
+        `branchcode` varchar(10) NOT NULL,
+        `original_itemtype` VARCHAR(10) default NULL,
+        `original_ccode` VARCHAR(10) default NULL,
+        `original_branchcode` varchar(10) NOT NULL,
+        `original_location` varchar(80) default NULL,
+        `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`course_reserve_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+print ".";
+print "done!\n";
+print "==========\n";
+
+print "Adding new authorised values and permissions for course reserves\n";
+$dbh->do("INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'DEPARTMENT', 'Default', 'Default Department' );");
+print ".";
+$dbh->do("INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'TERM', 'Default', 'Default Term' );");
+print ".";
+$dbh->do("INSERT INTO permissions (module_bit,code,description) VALUES 
+     ( 1, 'manage_courses', 'View, Create, Edit and Delete Courses'), 
+     ( 1, 'put_coursereserves', 'Basic Course Reserves access,  user can put items on course reserve'), 
+     ( 1, 'remove_coursereserves', 'Take items off course reserve'), 
+     ( 1, 'checkout_via_proxy', 'Checkout via Proxy'), 
+     ( 4, 'create_proxy_relationships', 'Create Proxy Relationships'), 
+     ( 4, 'edit_proxy_relationships', 'Edit Proxy Relationships'), 
+     ( 4, 'delete_proxy_relationships', 'Delete Proxy Relationships');");
+print ".";
 print "done!\n";
 print "==========\n";
 
