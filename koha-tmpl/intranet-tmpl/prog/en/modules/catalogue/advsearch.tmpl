@@ -94,8 +94,9 @@
             </p>
 <!-- /SEARCH BUTTONS -->
 
-    <div id="itemtypelist">
 <!-- ITEMTYPE LIMITS -->
+<!-- TMPL_IF NAME="DisplayAdvancedSearchLimits" -->
+    <div id="itemtypelist">
 	<fieldset>
      <legend>Limit to any of the following:</legend>
     <table>
@@ -111,8 +112,9 @@
       </tr>
     </table>
 	</fieldset>
-<!-- /ITEMTYPE LIMITS -->
     </div>
+<!-- /ITEMTYPE LIMITS -->
+<!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="expanded_options" -->
 <div id="basiclimits" class="container">

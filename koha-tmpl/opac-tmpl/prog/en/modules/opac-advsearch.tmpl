@@ -128,6 +128,7 @@
 </div>
 	<div class="yui-g">
 <!-- /BOOLEAN SEARCH OPTIONS -->
+    <!-- TMPL_IF NAME="DisplayAdvancedSearchLimits" -->
     <div id="advsearch-itemtype" class="container">
 	<fieldset>
     <legend>Limit to any of the following:</legend>
@@ -142,6 +143,7 @@
     </table>
 	</fieldset>
     </div>
+    <!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="expanded_options" -->
     <div id="advsearch-shelvingloc" class="container">
 	<fieldset>
