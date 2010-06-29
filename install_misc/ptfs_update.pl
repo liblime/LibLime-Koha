@@ -669,6 +669,8 @@ print "==========\n";
 print "Purging useless EVENT messages\n";
 $dbh->do("DELETE FROM message_attributes WHERE message_attribute_id=3;");
 print ".";
+$dbh->do("DELETE FROM message_transports WHERE message_attribute_id=3;");
+print ".";
 $dbh->do("DELETE FROM letter WHERE code='EVENT' AND title='Upcoming Library Event");
 print ".";
 print "done!\n";
