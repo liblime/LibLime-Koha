@@ -675,6 +675,13 @@ $dbh->do("DELETE FROM letter WHERE code='EVENT' AND title='Upcoming Library Even
 print ".";
 print "done!\n";
 print "==========\n";
+
+print "Adding OPAC descriptions to authorized values\n";
+$dbh->do("ALTER TABLE authorised_values ADD opaclib varchar(80) default NULL;");
+print ".";
+print "done!\n";
+print "==========\n";
+
 print <<EOF2
 Remaining tasks must be done manually!
 
