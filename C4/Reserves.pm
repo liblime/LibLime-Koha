@@ -1275,8 +1275,7 @@ sub ModReserveAffect {
                     found = 'W',
                     waitingdate=now(),
                     itemnumber = ?
-            WHERE borrowernumber = ?
-              AND biblionumber = ?
+            WHERE reservenumber = ?
         ";
       }
       else {
@@ -1284,8 +1283,8 @@ sub ModReserveAffect {
         my $holdstartdate = C4::Dates->new(sprintf "%02d/%02d/%04d",$holdexpmonth,$holdexpday,$holdexpyear, 'us');
 
         # Grab branch for calendar purposes
-        $sth = $dbh->prepare("SELECT branchcode FROM reserves WHERE borrowernumber=? AND biblionumber=?");
-        $sth->execute($borrowernumber,$biblionumber);
+        $sth = $dbh->prepare("SELECT branchcode FROM reserves WHERE reservenumber=?");
+        $sth->execute($reservenumber);
         my ($branch) = $sth->fetchrow;
 
         # Check to see if hold expiration date falls on a closed library day.
