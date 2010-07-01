@@ -752,7 +752,7 @@ sub _new_replica_dbh
         $tz = $timezone->{value};
         # Set the Perl System environment's timezone
         $ENV{TZ} = $tz;
-        tzset;
+        POSIX::tzset;
     }
     else {
         # Fall back to the system environment
