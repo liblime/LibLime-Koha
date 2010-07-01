@@ -95,6 +95,7 @@ my $record = GetMarcBiblio($biblionumber);
 my $oldrecord = TransformMarcToKoha($dbh,$record);
 my $itemrecord;
 my @omissions=();
+my @today_fields();
 my $nextop="additem";
 my @errors; # store errors found while checking data BEFORE saving item.
 #-------------------------------------------------------------------------------
@@ -216,7 +217,10 @@ if ($op eq "additem") {
 #-------------------------------------------------------------------------------
 # retrieve marc_value field of an existing record
     $itemrecord = C4::Items::GetMarcItem($biblionumber,$itemnumber);
-    @omissions=('items.barcode','items.itemlost','items.damaged','items.wthdrawn'); 
+    @omissions=('items.barcode','items.itemlost','items.damaged','items.wthdrawn','items.datelastborrowed',
+                'items.notforloan','items.issues','items.renewals','items.reserves','items.restricted','items.onloan',
+                'items.materials','items.copynumber');
+    @today_fields=('items.datelastseen','items.dateaccessioned');
 
     $nextop="additem";
 #-------------------------------------------------------------------------------
@@ -336,6 +340,7 @@ $template->param(
         item => $itemrecord,
         biblio => $temp,
         wipe => \@omissions ,
+        make_today => \@today_fields,
         frameworkcode => $frameworkcode,
     }),
     itemnumber       => $itemnumber,

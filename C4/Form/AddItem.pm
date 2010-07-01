@@ -151,6 +151,7 @@ sub get_form_values {
         frameworkcode => '',
         omit => [],
         wipe => [],
+        make_today => [],
         allow_repeatable => 1,
         %$options
     };
@@ -203,9 +204,9 @@ sub get_form_values {
             if ($subfieldlib->{'kohafield'} && $options->{'wipe'} && grep ( {$_ eq $subfieldlib->{'kohafield'} } @{ $options->{'wipe'} }) ) {
                 $value = "";
             }
-
-
-
+            if ($subfieldlib->{'kohafield'} && $options->{'make_today'} && grep ( {$_ eq $subfieldlib->{'kohafield'} } @{ $options->{'
+                $value = C4::Dates->today('iso');
+            }
 
             $subfield_data{visibility} = "display:none;" if ( ($subfieldlib->{hidden} > 4 ) || ( $subfieldlib->{hidden} < -4 ));
             # testing branch value if IndependantBranches.
