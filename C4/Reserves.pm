@@ -1052,7 +1052,7 @@ warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumb
             WHERE  reservenumber   = ?
         /;
         $sth = $dbh->prepare($query);
-        $sth->execute( $biblio, $borrower );
+        $sth->execute( $reservenumber );
         my $holditem = $sth->fetchrow_hashref;
         my $insert_fields = '';
         my $value_fields = '';
