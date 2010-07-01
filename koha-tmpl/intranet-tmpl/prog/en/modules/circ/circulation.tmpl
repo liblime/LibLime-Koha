@@ -65,7 +65,6 @@ $.tablesorter.addParser({
             });
 			}
 		});
-	 });
 
 var allcheckboxes = $(".checkboxed");
 	$("#renew_all").click(function(){
@@ -123,6 +122,7 @@ var allcheckboxes = $(".checkboxed");
         $(this).hide();
 		$("#add_message_form").show();
 	 });
+});
 function uncheck_sibling(me){
 nodename=me.getAttribute("name");
 if (nodename =="barcodes[]"){
