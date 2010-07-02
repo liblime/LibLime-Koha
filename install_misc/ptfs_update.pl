@@ -5,7 +5,7 @@ my $dbh = C4::Context->dbh;
 
 my $current_version= (C4::Context->preference("KohaPTFSVersion"));
 
-if (!$current_version || ($current_version == "pre_harley")){
+if (!$current_version || ($current_version < 1.0 )){
 
 print "Upgrade to 'harley' beginning.\n==========\n";
 print "Adding new system preferences\n";
@@ -530,16 +530,16 @@ EOF
 ;
 
 if (!$current_version) {
-   $dbh -> do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('KohaPTFSVersion','harley','Currently installed PTFS version information','','free');");
+   $dbh -> do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('KohaPTFSVersion','1.0','Currently installed PTFS version information','','free');");
 } else {
-   $dbh -> do("UPDATE systempreferences SET value='harley' WHERE variable='KohaPTFSVersion'");
+   $dbh -> do("UPDATE systempreferences SET value='1.0' WHERE variable='KohaPTFSVersion'");
 }
 
 }
 
 $current_version= (C4::Context->preference("KohaPTFSVersion"));
 
-if ($current_version == "harley"){
+if ($current_version < 1.1){
 
 print "Upgrade to 'ptfs-master 1.1' beginning.\n==========\n";
 print "Adding new system preferences\n";
@@ -706,5 +706,5 @@ Then, reindex the database.
 EOF2
 ;
 
-$dbh -> do("UPDATE systempreferences SET value='PTFS1.1' WHERE variable='KohaPTFSVersion'");
+$dbh -> do("UPDATE systempreferences SET value='1.1' WHERE variable='KohaPTFSVersion'");
 }
