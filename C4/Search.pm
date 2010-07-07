@@ -1124,7 +1124,7 @@ Format results in a form suitable for passing to the template
 # IMO this subroutine is pretty messy still -- it's responsible for
 # building the HTML output for the template
 sub searchResults {
-    my ( $searchdesc, $hits, $results_per_page, $offset, $scan, @marcresults, $opac ) = @_;
+    my ( $searchdesc, $hits, $results_per_page, $offset, $scan, $opac, @marcresults ) = @_;
     my $dbh = C4::Context->dbh;
     my @newresults;
 
