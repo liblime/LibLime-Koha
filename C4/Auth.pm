@@ -640,7 +640,7 @@ sub checkauth {
             }
         }
     }
-    unless ($userid || $sessionID) {
+    unless ($userid) {
         #we initiate a session prior to checking for a username to allow for anonymous sessions...
         my $session = get_session("") or die "Auth ERROR: Cannot get_session()";
         my $sessionID = $session->id;
