@@ -95,7 +95,7 @@ my $record = GetMarcBiblio($biblionumber);
 my $oldrecord = TransformMarcToKoha($dbh,$record);
 my $itemrecord;
 my @omissions=();
-my @today_fields();
+my @today_fields=();
 my $nextop="additem";
 my @errors; # store errors found while checking data BEFORE saving item.
 #-------------------------------------------------------------------------------

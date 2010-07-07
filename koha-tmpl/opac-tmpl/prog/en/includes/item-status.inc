@@ -22,6 +22,8 @@
                     Item withdrawn
                 <!-- TMPL_ELSIF NAME="damaged" -->
                     Item damaged
+                <!-- TMPL_ELSIF NAME="otherstatus_description" -->
+                    <!-- TMPL_VAR NAME="otherstatus_description" -->
                 <!-- TMPL_ELSIF Name="transfertwhen" -->
                     In transit from <!-- TMPL_VAR NAME="transfertfrom" -->
                     to <!-- TMPL_VAR NAME="transfertto" --> since <!-- TMPL_VAR NAME="transfertwhen" -->
