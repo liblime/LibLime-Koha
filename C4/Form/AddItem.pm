@@ -204,7 +204,7 @@ sub get_form_values {
             if ($subfieldlib->{'kohafield'} && $options->{'wipe'} && grep ( {$_ eq $subfieldlib->{'kohafield'} } @{ $options->{'wipe'} }) ) {
                 $value = "";
             }
-            if ($subfieldlib->{'kohafield'} && $options->{'make_today'} && grep ( {$_ eq $subfieldlib->{'kohafield'} } @{ $options->{'
+            if ($subfieldlib->{'kohafield'} && $options->{'make_today'} && grep ( {$_ eq $subfieldlib->{'kohafield'} } @{ $options->{'make_today'}})) {
                 $value = C4::Dates->today('iso');
             }
 
