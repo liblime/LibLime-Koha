@@ -211,7 +211,7 @@ sub default_form {
 	#reorder the list
 	@category_list = sort {$a cmp $b} @category_list;
 	my $tab_list = CGI::scrolling_list(-name=>'searchfield',
-	        -id=>'searchfield',
+	        -id=>'catsearchfield',
 			-values=> \@category_list,
 			-default=>"",
 			-size=>1,
