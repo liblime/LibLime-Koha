@@ -558,6 +558,11 @@ print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('Replica_pass','',
     'Password for reporting database replica','','Textarea');");
 print ".";
+$dbh -> do("update systempreferences set options='itemtypes|ccode|none' where variable = 'OPACAdvancedSearchTypes';");
+print ".";
+$dbh -> do("update systempreferences set options='itemtypes|ccode|none' where variable = 'AdvancedSearchTypes';");
+print ".";
+
 print "done!\n";
 print "==========\n";
 
