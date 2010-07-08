@@ -456,6 +456,7 @@ if ($borrowernumber) {
         $getreserv{transfered}    = 0;
         $getreserv{nottransfered} = 0;
 
+        $getreserv{reservenumber}    = $num_res->{'reservenumber'};
         $getreserv{reservedate}    = format_date( $num_res->{'reservedate'} );
         $getreserv{title}          = $getiteminfo->{'title'};
         $getreserv{itemtype}       = $itemtypeinfo->{'description'};

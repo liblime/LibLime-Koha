@@ -71,7 +71,7 @@ print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('DisplayOthernames','1','','Ability to turn the othernames field on/off in patron screen','YesNo');");
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('AllowReadingHistoryAnonymizing','1','','Allows a borrower to optionally delete his or her reading history.','YesNo');");
 print ".";
-$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('ClaimsReturnedValue','','','Lost value of Claims Returned,to be ignored by fines cron job','Integer');");
+$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('ClaimsReturnedValue',5,'','Lost value of Claims Returned,to be ignored by fines cron job','Integer');");
 print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('MarkLostItemsReturned',0,'','If ON,will check in items (removing them from a patron list of checked out items) when they are marked as lost','YesNo');");
 print ".";
@@ -87,8 +87,6 @@ $dbh -> do("ALTER TABLE reserves ADD COLUMN reservenumber int(11) NOT NULL FIRST
 print ".";
 $dbh -> do("ALTER TABLE reserves ADD COLUMN expirationdate date;");
 print ".";
-$dbh -> do("ALTER TABLE reserves ADD PRIMARY KEY (reservenumber);");
-print ".";
 print "done!\n";
 print "==========\n";
 
@@ -97,13 +95,49 @@ $dbh -> do("ALTER TABLE old_reserves ADD COLUMN reservenumber int(11) NOT NULL F
 print ".";
 $dbh -> do("ALTER TABLE old_reserves ADD COLUMN expirationdate date;");
 print ".";
-$dbh -> do("ALTER TABLE old_reserves ADD PRIMARY KEY (reservenumber);");
-print ".";
-$dbh -> do("ALTER TABLE old_reserves DROP FOREIGN KEY old_reserves_ibfk_3;");
 print ".";
 print "done!\n";
 print "==========\n";
+##
+print "Adding reserve numbers\n";
+ $dbh->{AutoCommit} = 0 ;
+ $dbh->do("LOCK TABLES reserves WRITE, old_reserves WRITE" );
+# now populate unique keys in reserves & old_reserves.
+my $sth_old_reserves = $dbh->prepare("SELECT borrowernumber,priority,biblionumber ,reservedate,timestamp FROM old_reserves");
+my $sth_reserves = $dbh->prepare("SELECT borrowernumber,priority, biblionumber ,reservedate,timestamp FROM reserves");
+my $sth_old_reserves_update = $dbh->prepare("UPDATE `old_reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? limit 1");
+my $sth_reserves_update = $dbh->prepare("UPDATE `reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? limit 1");
+my $id = 0;
+$sth_old_reserves->execute();
+my ($bornum, $priority , $biblionumber, $reservedate, $timestamp);
+$sth_old_reserves->bind_columns(\$bornum,\$priority ,\$biblionumber ,\$reservedate,\$timestamp);
+while($sth_old_reserves->fetchrow_arrayref){
+    $sth_old_reserves_update->execute(++$id,$bornum,$priority, $biblionumber , $reservedate, $timestamp);
+}
+$sth_old_reserves->finish();
 
+$sth_reserves->execute();
+$sth_reserves->bind_columns(\$bornum,\$priority,\$biblionumber ,\$reservedate,\$timestamp);
+while($sth_reserves->fetchrow_arrayref){
+    print ".";
+    $sth_reserves_update->execute(++$id,$bornum,$priority, $biblionumber , $reservedate, $timestamp);
+}
+$sth_reserves->finish();
+my $sth_delete_old_reserves = $dbh->prepare("delete from old_reserves where reservenumber is null or reservenumber = 0");
+$sth_delete_old_reserves->execute();
+$sth_delete_old_reserves->finish();
+
+my $sth_delete_reserves = $dbh->prepare("delete from reserves where reservenumber is null or reservenumber = 0 ");
+$sth_delete_reserves->execute();
+$sth_delete_reserves->finish();
+
+$dbh->do("COMMIT ");
+$dbh->do("UNLOCK TABLES");
+# Now that we have unique keys, we can add the PK.
+#   
+$dbh->do("ALTER TABLE reserves MODIFY COLUMN reservenumber INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY");   
+print "done!\n";
+print "==========\n";
 
 print "Creating reserves_suspended table\n";
 $dbh -> do(" 
@@ -311,6 +345,8 @@ CREATE TABLE overdueitemrules (
   letter3 varchar(20) default NULL,
   debarred3 int(1) default 0,
   PRIMARY KEY  (branchcode,itemtype)
+  CONSTRAINT overdueitemrules_ibfk_1 FOREIGN KEY (branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT overdueitemrules_ibfk_2 FOREIGN KEY (itemtype) REFERENCES itemtypes(itemtype) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ");
 print ".";
@@ -424,14 +460,19 @@ INSERT INTO marc_subfield_structure
   VALUES 
   ('952', 'k', 'Other item status', 'Other item status', 0, 0, 'items.otherstatus', 10, 'otherstatus', '', '', 0, 0, ?, NULL, '', '');
 ");
+my $insert_sth_3 = $dbh ->prepare("
+INSERT INTO marc_subfield_structure (tagfield,tagsubfield,liblibrarian,libopac,repeatable,mandatory,kohafield,tab,authorised_value,isurl,hidden,frameworkcode) VALUES ('952','C','Permanent shelving location','Permanent shelving location',0,0,'items.permanent_location',10,'LOC',0,0,?);
+");
 
 $insert_sth -> execute("");
 $insert_sth_2 -> execute("");
+$insert_sth_3 -> execute("");
 $frames_sth->execute;
   while (my $frame = $frames_sth->fetchrow_hashref) {
 
     $insert_sth -> execute($frame->{frameworkcode});
     $insert_sth_2 -> execute($frame->{frameworkcode});
+    $insert_sth_3 -> execute($frame->{frameworkcode});
 
     print ".";
   }
@@ -511,6 +552,8 @@ print "==========\n";
 
 print <<EOF
 Remaining tasks must be done manually!
+
+You will need to run misc/maintenance/sync_items_in_marc_bib.pl with the --run-update option!
 
 You have to modify your Zebra configuration, adding one line to each of three 
 files  The line can be at the end of the file, in each case.  For a "dev" 
@@ -631,6 +674,14 @@ $dbh->do("INSERT INTO permissions (module_bit,code,description) VALUES
 print ".";
 print "done!\n";
 print "==========\n";
+
+print "Adding authorised value for Claims Returned\n";
+$dbh->do("INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'LOST', '5', 'Claims Returned' );");
+print ".";
+
+
+
+
 
 print "Altering MARC subfield structure for curriculum indexing\n";
 my $frames_sth = $dbh -> prepare("SELECT frameworkcode FROM biblio_framework");
