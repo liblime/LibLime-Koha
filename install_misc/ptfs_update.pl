@@ -71,7 +71,7 @@ print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('DisplayOthernames','1','','Ability to turn the othernames field on/off in patron screen','YesNo');");
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('AllowReadingHistoryAnonymizing','1','','Allows a borrower to optionally delete his or her reading history.','YesNo');");
 print ".";
-$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('ClaimsReturnedValue','','','Lost value of Claims Returned,to be ignored by fines cron job','Integer');");
+$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('ClaimsReturnedValue',5,'','Lost value of Claims Returned,to be ignored by fines cron job','Integer');");
 print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('MarkLostItemsReturned',0,'','If ON,will check in items (removing them from a patron list of checked out items) when they are marked as lost','YesNo');");
 print ".";
@@ -460,14 +460,19 @@ INSERT INTO marc_subfield_structure
   VALUES 
   ('952', 'k', 'Other item status', 'Other item status', 0, 0, 'items.otherstatus', 10, 'otherstatus', '', '', 0, 0, ?, NULL, '', '');
 ");
+my $insert_sth_3 = $dbh ->prepare("
+INSERT INTO marc_subfield_structure (tagfield,tagsubfield,liblibrarian,libopac,repeatable,mandatory,kohafield,tab,authorised_value,isurl,hidden,frameworkcode) VALUES ('952','C','Permanent shelving location','Permanent shelving location',0,0,'items.permanent_location',10,'LOC',0,0,?);
+");
 
 $insert_sth -> execute("");
 $insert_sth_2 -> execute("");
+$insert_sth_3 -> execute("");
 $frames_sth->execute;
   while (my $frame = $frames_sth->fetchrow_hashref) {
 
     $insert_sth -> execute($frame->{frameworkcode});
     $insert_sth_2 -> execute($frame->{frameworkcode});
+    $insert_sth_3 -> execute($frame->{frameworkcode});
 
     print ".";
   }
@@ -547,6 +552,8 @@ print "==========\n";
 
 print <<EOF
 Remaining tasks must be done manually!
+
+You will need to run misc/maintenance/sync_items_in_marc_bib.pl with the --run-update option!
 
 You have to modify your Zebra configuration, adding one line to each of three 
 files  The line can be at the end of the file, in each case.  For a "dev" 
@@ -667,6 +674,14 @@ $dbh->do("INSERT INTO permissions (module_bit,code,description) VALUES
 print ".";
 print "done!\n";
 print "==========\n";
+
+print "Adding authorised value for Claims Returned\n";
+$dbh->do("INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'LOST', '5', 'Claims Returned' );");
+print ".";
+
+
+
+
 
 print "Altering MARC subfield structure for curriculum indexing\n";
 my $frames_sth = $dbh -> prepare("SELECT frameworkcode FROM biblio_framework");
