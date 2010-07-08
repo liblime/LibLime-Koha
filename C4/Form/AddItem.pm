@@ -269,9 +269,17 @@ sub get_form_values {
                         $authorised_lib{$class_source} = $class_sources->{$class_source}->{'description'};
                     }
                     $value = $default_source unless ( $value );
-
-                    #---- "true" authorised value
                 }
+                elsif ( $subfieldlib->{authorised_value} eq "otherstatus" ) {
+                     push @authorised_values, "" unless ( $subfieldlib->{mandatory} );
+                     my $sth = $dbh->prepare("SELECT statuscode,description FROM itemstatus ORDER BY description");
+                     $sth->execute;
+                     while ( my ( $statuscode, $description ) = $sth->fetchrow_array ) {
+                          push @authorised_values, $statuscode;
+                          $authorised_lib{$statuscode} = $description;
+                     }
+                }
+                    #---- "true" authorised value
                 else {
                     push @authorised_values, "" unless ( $subfieldlib->{mandatory} );
                     $authorised_values_sth->execute( $subfieldlib->{authorised_value} );
