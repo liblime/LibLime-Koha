@@ -344,7 +344,7 @@ CREATE TABLE overdueitemrules (
   delay3 int(4) default 0,
   letter3 varchar(20) default NULL,
   debarred3 int(1) default 0,
-  PRIMARY KEY  (branchcode,itemtype)
+  PRIMARY KEY  (branchcode,itemtype),
   CONSTRAINT overdueitemrules_ibfk_1 FOREIGN KEY (branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT overdueitemrules_ibfk_2 FOREIGN KEY (itemtype) REFERENCES itemtypes(itemtype) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
