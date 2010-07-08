@@ -87,8 +87,6 @@ $dbh -> do("ALTER TABLE reserves ADD COLUMN reservenumber int(11) NOT NULL FIRST
 print ".";
 $dbh -> do("ALTER TABLE reserves ADD COLUMN expirationdate date;");
 print ".";
-$dbh -> do("ALTER TABLE reserves ADD PRIMARY KEY (reservenumber);");
-print ".";
 print "done!\n";
 print "==========\n";
 
@@ -97,13 +95,49 @@ $dbh -> do("ALTER TABLE old_reserves ADD COLUMN reservenumber int(11) NOT NULL F
 print ".";
 $dbh -> do("ALTER TABLE old_reserves ADD COLUMN expirationdate date;");
 print ".";
-$dbh -> do("ALTER TABLE old_reserves ADD PRIMARY KEY (reservenumber);");
-print ".";
-$dbh -> do("ALTER TABLE old_reserves DROP FOREIGN KEY old_reserves_ibfk_3;");
 print ".";
 print "done!\n";
 print "==========\n";
+##
+print "Adding reserve numbers\n";
+ $dbh->{AutoCommit} = 0 ;
+ $dbh->do("LOCK TABLES reserves WRITE, old_reserves WRITE" );
+# now populate unique keys in reserves & old_reserves.
+my $sth_old_reserves = $dbh->prepare("SELECT borrowernumber,priority,biblionumber ,reservedate,timestamp FROM old_reserves");
+my $sth_reserves = $dbh->prepare("SELECT borrowernumber,priority, biblionumber ,reservedate,timestamp FROM reserves");
+my $sth_old_reserves_update = $dbh->prepare("UPDATE `old_reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? limit 1");
+my $sth_reserves_update = $dbh->prepare("UPDATE `reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? limit 1");
+my $id = 0;
+$sth_old_reserves->execute();
+my ($bornum, $priority , $biblionumber, $reservedate, $timestamp);
+$sth_old_reserves->bind_columns(\$bornum,\$priority ,\$biblionumber ,\$reservedate,\$timestamp);
+while($sth_old_reserves->fetchrow_arrayref){
+    $sth_old_reserves_update->execute(++$id,$bornum,$priority, $biblionumber , $reservedate, $timestamp);
+}
+$sth_old_reserves->finish();
 
+$sth_reserves->execute();
+$sth_reserves->bind_columns(\$bornum,\$priority,\$biblionumber ,\$reservedate,\$timestamp);
+while($sth_reserves->fetchrow_arrayref){
+    print ".";
+    $sth_reserves_update->execute(++$id,$bornum,$priority, $biblionumber , $reservedate, $timestamp);
+}
+$sth_reserves->finish();
+my $sth_delete_old_reserves = $dbh->prepare("delete from old_reserves where reservenumber is null or reservenumber = 0");
+$sth_delete_old_reserves->execute();
+$sth_delete_old_reserves->finish();
+
+my $sth_delete_reserves = $dbh->prepare("delete from reserves where reservenumber is null or reservenumber = 0 ");
+$sth_delete_reserves->execute();
+$sth_delete_reserves->finish();
+
+$dbh->do("COMMIT ");
+$dbh->do("UNLOCK TABLES");
+# Now that we have unique keys, we can add the PK.
+#   
+$dbh->do("ALTER TABLE reserves MODIFY COLUMN reservenumber INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY");   
+print "done!\n";
+print "==========\n";
 
 print "Creating reserves_suspended table\n";
 $dbh -> do(" 
@@ -311,6 +345,8 @@ CREATE TABLE overdueitemrules (
   letter3 varchar(20) default NULL,
   debarred3 int(1) default 0,
   PRIMARY KEY  (branchcode,itemtype)
+  CONSTRAINT overdueitemrules_ibfk_1 FOREIGN KEY (branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT overdueitemrules_ibfk_2 FOREIGN KEY (itemtype) REFERENCES itemtypes(itemtype) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ");
 print ".";
