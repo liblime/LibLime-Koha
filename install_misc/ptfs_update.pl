@@ -83,6 +83,10 @@ $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,ty
 print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('OPACXSLTResultsDisplay',1,NULL,' Enable XSL stylesheet control over results page display on OPAC','YesNo');");
 print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,explanation,type) VALUES ('OPACSearchSuggestionsCount','5','If greater than 0, sets the number of search suggestions provided.','Integer');");
+print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,explanation,type) VALUES ('StaffSearchSuggestionsCount','5','If greater than 0, sets the number of search suggestions provided.','Integer');");
+print ".";
 print "done!\n";
 print "==========\n";
 
