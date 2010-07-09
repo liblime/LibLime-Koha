@@ -79,6 +79,10 @@ $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,ty
 print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('AllowMultipleHoldsPerBib','','','This allows multiple items per record to be placed on hold by a single patron. To enable,enter a list of space separated itemtype codes in the field (i.e. MAG JMAG YMAG). Useful for magazines,encyclopedias and other bibs where the attached items are not identical.','');");
 print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('OPACXSLTDetailsDisplay',1,NULL,' Enable XSL stylesheet control over details page display on OPAC','YesNo');");
+print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('OPACXSLTResultsDisplay',1,NULL,' Enable XSL stylesheet control over results page display on OPAC','YesNo');");
+print ".";
 print "done!\n";
 print "==========\n";
 
