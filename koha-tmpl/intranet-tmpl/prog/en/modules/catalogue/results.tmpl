@@ -145,15 +145,13 @@ function GetZ3950Terms(){
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF NAME="koha_spsuggest" -->
-        <div style="font-size: 12px;">Did you mean: 
-            <ul style="list-style: none;">
+        <div style="font-size: 12px;"> <i>Did you mean: </i>
             <!-- TMPL_LOOP NAME="SPELL_SUGGEST" -->
-            <li>
-                <a href="/cgi-bin/koha/catalogue/search.pl?q=<!-- TMPL_VAR NAME="spsuggestion" -->"><!-- TMPL_VAR NAME="spsuggestion" --></a>
-            </li>
+                <a href="/cgi-bin/koha/catalogue/search.pl?q=<!-- TMPL_VAR NAME="spsuggestion" -->"><!-- TMPL_VAR NAME="spsuggestion" --></a> &nbsp;
             <!-- /TMPL_LOOP -->
             </ul>
         </div>
+        <p>
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF NAME="total" -->
