@@ -71,7 +71,7 @@ sub process_batch {
     print "... staging MARC records -- please wait\n";
     my ($batch_id, $num_valid, $num_items, @import_errors) = 
         BatchStageMarcRecords($marc_flavor, $marc_records, $input_file, $batch_comment, '', $add_items, 0,
-                              100, \&print_progress_and_commit);
+                              [], [], 100, \&print_progress_and_commit);
     print "... finished staging MARC records\n";
 
     my $num_with_matches = 0;
