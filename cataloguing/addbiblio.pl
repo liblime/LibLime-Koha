@@ -916,10 +916,12 @@ if ( $op eq "addbiblio" ) {
     my $invalid_isbn = 0;
     my $result = TransformMarcToKoha($dbh,$record,'');
     if ($result->{isbn}) {
-      my $isbn_str = $result->{isbn};
-      $isbn_str =~ s/-//;
-      my $isbn = Business::ISBN->new($isbn_str);
-      $invalid_isbn = 1 if (!$isbn->is_valid());
+     foreach my $isbn_str (split /\|/, $result->{isbn}){
+      $isbn_str =~ s/-//g;
+      $isbn_str =~ s/ //g;
+       my $isbn = Business::ISBN->new($isbn_str);
+       $invalid_isbn = 1 if (!$isbn->is_valid());
+     }
       if ($invalid_isbn) {
         my $oldbibnum;
         my $oldbibitemnum;
