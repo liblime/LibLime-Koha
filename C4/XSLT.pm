@@ -70,7 +70,7 @@ sub transformMARCXML4XSLT {
                 my @new_subfields = ();
                 for my $subfield ( $field->subfields() ) {
                     my ( $letter, $value ) = @$subfield;
-                    $value = GetAuthorisedValueDesc( $tag, $letter, $value, '', $tagslib )
+                    $value = GetAuthorisedValueDesc( $tag, $letter, $value, '', $tagslib,undef,1 )
                         if $av->{ $tag }->{ $letter };
                     push( @new_subfields, $letter, $value );
                 } 
@@ -132,6 +132,7 @@ sub XSLTParse4Display {
     }
     $sysxml .= "</sysprefs>\n";
     $xmlrecord =~ s/\<\/record\>/$itemsxml$sysxml\<\/record\>/;
+    $xmlrecord =~ s/\& /\&amp\; /;
 
     my $parser = XML::LibXML->new();
     # don't die when you find &, >, etc

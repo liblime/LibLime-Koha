@@ -151,6 +151,7 @@ sub get_form_values {
         frameworkcode => '',
         omit => [],
         wipe => [],
+        make_today => [],
         allow_repeatable => 1,
         %$options
     };
@@ -203,9 +204,9 @@ sub get_form_values {
             if ($subfieldlib->{'kohafield'} && $options->{'wipe'} && grep ( {$_ eq $subfieldlib->{'kohafield'} } @{ $options->{'wipe'} }) ) {
                 $value = "";
             }
-
-
-
+            if ($subfieldlib->{'kohafield'} && $options->{'make_today'} && grep ( {$_ eq $subfieldlib->{'kohafield'} } @{ $options->{'make_today'}})) {
+                $value = C4::Dates->today('iso');
+            }
 
             $subfield_data{visibility} = "display:none;" if ( ($subfieldlib->{hidden} > 4 ) || ( $subfieldlib->{hidden} < -4 ));
             # testing branch value if IndependantBranches.
@@ -268,9 +269,17 @@ sub get_form_values {
                         $authorised_lib{$class_source} = $class_sources->{$class_source}->{'description'};
                     }
                     $value = $default_source unless ( $value );
-
-                    #---- "true" authorised value
                 }
+                elsif ( $subfieldlib->{authorised_value} eq "otherstatus" ) {
+                     push @authorised_values, "" unless ( $subfieldlib->{mandatory} );
+                     my $sth = $dbh->prepare("SELECT statuscode,description FROM itemstatus ORDER BY description");
+                     $sth->execute;
+                     while ( my ( $statuscode, $description ) = $sth->fetchrow_array ) {
+                          push @authorised_values, $statuscode;
+                          $authorised_lib{$statuscode} = $description;
+                     }
+                }
+                    #---- "true" authorised value
                 else {
                     push @authorised_values, "" unless ( $subfieldlib->{mandatory} );
                     $authorised_values_sth->execute( $subfieldlib->{authorised_value} );

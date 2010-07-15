@@ -546,7 +546,7 @@ foreach my $biblionumber (@biblionumbers) {
             push @optionloop, { num => $res->{priority}, selected => 1, };
         }
         
-        if ( defined $res->{'found'} && $res->{'found'} eq 'W' ) {
+        if ( defined $res->{'found'} && $res->{'found'} eq 'W' || $res->{'found'} eq 'T' ) {
             my $item = $res->{'itemnumber'};
             $item = GetBiblioFromItemNumber($item,undef);
             $reserve{'wait'}= 1; 
@@ -561,6 +561,7 @@ foreach my $biblionumber (@biblionumbers) {
             }
             # set found to 1 if reserve is waiting for patron pickup
             $reserve{'found'} = 1 if $res->{'found'} eq 'W';
+            $reserve{'intransit'} = 1 if $res->{'found'} eq 'T';
         } elsif ($res->{priority} > 0) {
             if (defined($res->{itemnumber})) {
                 my $item = GetItem($res->{itemnumber});

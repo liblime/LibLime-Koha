@@ -48,7 +48,6 @@ my @borrower=$query->param('borrowernumber');
 my @branch=$query->param('pickup');
 my @itemnumber=$query->param('itemnumber');
 my @suspend=$query->param('suspend');
-my @reservenumber=$query->param('reservenumber');
 my $multi_hold = $query->param('multi_hold');
 my $biblionumbers = $query->param('biblionumbers');
 my $count=@rank;

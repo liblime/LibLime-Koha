@@ -293,8 +293,9 @@ sub get_template_and_user {
 
     if ( $in->{'type'} eq "intranet" ) {
         $template->param(
-            AmazonEnabled               => C4::Context->preference("AmazonEnabled"),
+            AmazonContent               => C4::Context->preference("AmazonContent"),
             AmazonCoverImages           => C4::Context->preference("AmazonCoverImages"),
+            AmazonEnabled               => C4::Context->preference("AmazonEnabled"),
             AmazonSimilarItems          => C4::Context->preference("AmazonSimilarItems"),
             AutoLocation                => C4::Context->preference("AutoLocation"),
             "BiblioDefaultView".C4::Context->preference("IntranetBiblioDefaultView") => 1,
@@ -335,6 +336,15 @@ sub get_template_and_user {
         } elsif($mylibraryfirst){
             $opac_name = C4::Branch::GetBranchName($mylibraryfirst);
         }
+	my $checkstyle = C4::Context->preference("opaccolorstylesheet");
+	if ($checkstyle =~ /http/)
+	{
+            	$template->param( opacexternalsheet => $checkstyle);
+	} else
+	{
+		my $opaccolorstylesheet = C4::Context->preference("opaccolorstylesheet");  
+            $template->param( opaccolorstylesheet => $opaccolorstylesheet);
+	}
         $template->param(
             AnonSuggestions           => "" . C4::Context->preference("AnonSuggestions"),
             AuthorisedValueImages     => C4::Context->preference("AuthorisedValueImages"),
@@ -344,6 +354,7 @@ sub get_template_and_user {
             OPACAmazonEnabled         => C4::Context->preference("OPACAmazonEnabled"),
             OPACAmazonCoverImages     => C4::Context->preference("OPACAmazonCoverImages"),
             OPACAmazonSimilarItems    => "" . C4::Context->preference("OPACAmazonSimilarItems"),
+            OPACAmazonReviews         => C4::Context->preference("OPACAmazonReviews"),
             OPACFRBRizeEditions       => C4::Context->preference("OPACFRBRizeEditions"),
             OPACItemHolds             => C4::Context->preference("OPACItemHolds"),
             OPACShelfBrowser          => "". C4::Context->preference("OPACShelfBrowser"),
@@ -354,6 +365,7 @@ sub get_template_and_user {
             OPACBaseURL               => ($in->{'query'}->https() ? "https://" : "http://") . $ENV{'SERVER_NAME'} .
                    ($ENV{'SERVER_PORT'} eq ($in->{'query'}->https() ? "443" : "80") ? '' : ":$ENV{'SERVER_PORT'}"),
             opac_name             => $opac_name,
+            opacexternalsheet         => $ENV{'OPAC_CSS_EXTERNAL'},
             opac_css_override           => $ENV{'OPAC_CSS_OVERRIDE'},
             opac_search_limit         => $opac_search_limit,
             opac_limit_override       => $opac_limit_override,
@@ -373,7 +385,6 @@ sub get_template_and_user {
             hidelostitems             => C4::Context->preference("hidelostitems"),
             mylibraryfirst            => (C4::Context->preference("SearchMyLibraryFirst") && C4::Context->userenv) ? C4::Context->userenv->{'branch'} : '',
             opaclayoutstylesheet      => "" . C4::Context->preference("opaclayoutstylesheet"),
-            opaccolorstylesheet       => "" . C4::Context->preference("opaccolorstylesheet"),
             opacstylesheet            => "" . C4::Context->preference("opacstylesheet"),
             opacbookbag               => "" . C4::Context->preference("opacbookbag"),
             opacbookbagName            =>  $opacbookbagName,
@@ -630,7 +641,7 @@ sub checkauth {
             }
         }
     }
-    unless ($userid || $sessionID) {
+    unless ($userid) {
         #we initiate a session prior to checking for a username to allow for anonymous sessions...
         my $session = get_session("") or die "Auth ERROR: Cannot get_session()";
         my $sessionID = $session->id;
@@ -831,6 +842,15 @@ sub checkauth {
     my $template_name = ( $type eq 'opac' ) ? 'opac-auth.tmpl' : 'auth.tmpl';
     my $template = gettemplate( $template_name, $type, $query );
     $template->param(branchloop => \@branch_loop,);
+    my $checkstyle = C4::Context->preference("opaccolorstylesheet");
+    if ($checkstyle =~ /\//)
+	{
+            	$template->param( opacexternalsheet => $checkstyle);
+	} else
+	{
+		my $opaccolorstylesheet = C4::Context->preference("opaccolorstylesheet");  
+            $template->param( opaccolorstylesheet => $opaccolorstylesheet);
+	}
     $template->param(
     login        => 1,
         INPUTS               => \@inputs,
@@ -843,7 +863,6 @@ sub checkauth {
         opacreadinghistory   => C4::Context->preference("opacreadinghistory"),
         opacsmallimage       => C4::Context->preference("opacsmallimage"),
         opaclayoutstylesheet => C4::Context->preference("opaclayoutstylesheet"),
-        opaccolorstylesheet  => C4::Context->preference("opaccolorstylesheet"),
         opaclanguagesdisplay => C4::Context->preference("opaclanguagesdisplay"),
         opacuserjs           => C4::Context->preference("opacuserjs"),
         opacbookbag          => "" . C4::Context->preference("opacbookbag"),

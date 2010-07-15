@@ -1,3 +1,4 @@
+truncate letter;
 INSERT INTO `letter`
 (module, code, name, title, content)
 VALUES
@@ -18,4 +19,9 @@ VALUES
 
 ('circulation','PREDUEDGST','Попереднє повідомлення про заборгованість одиниці (збірка)','Попереднє повідомлення про заборгованість одиниці','В найближчому часі Вам потрібно повернути <<count>> одиниць'),
 
-('circulation','EVENT','Майбутня бібліотечна подія','Майбутня бібліотечна подія','Добродій <<borrowers.firstname>> <<borrowers.surname>>,\r\n\r\nЦе нагадування про майбутню бібліотечну подію, до якої Ви проявили інтерес.');
+('reserves', 'HOLD', 'Hold Available for Pickup', 'Hold Available for Pickup at <<branches.branchname>>', 'Dear <<borrowers.firstname>> <<borrowers.surname>>,\r\n\r\nYou have a hold available for pickup as of <<reserves.waitingdate>>:\r\n\r\nTitle: <<biblio.title>>\r\nAuthor: <<biblio.author>>\r\nCopy: <<items.copynumber>>\r\nLocation: <<branches.branchname>>\r\n<<branches.branchaddress1>>\r\n<<branches.branchaddress2>>\r\n<<branches.branchaddress3>>'),
+
+('circulation','CHECKIN','Item Check-in (Digest)','Check-ins','The following items have been checked in:\r\n----\r\n<<biblio.title>>\r\n----\r\nThank you.'),
+
+('circulation','CHECKOUT','Item Check-out (Digest)','Checkouts','The following items have been checked out:\r\n----\r\n<<biblio.title>>\r\n----\r\nThank you for visiting <<branches.branchname>>.')
+;

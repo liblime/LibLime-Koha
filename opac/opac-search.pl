@@ -308,46 +308,49 @@ if ($operands[0] && !$operands[1]) {
 }
 
 # invoke a spell check
-my $speller = Text::Aspell->new;
-$speller->set_option('lang','en_US');
-$speller->set_option('sug-mode','fast');
-my @spellcheckarray = ();
-my $spellpattern = '';
-my $misspell = 0;
-foreach my $operand (@operands) {
-  my @suboperands = split(/\s+/,$operand);
-  foreach my $suboperand (@suboperands) {
-    if (!$speller->check($suboperand)) {
-      $misspell = 1;
-      $template->param(koha_spsuggest => 1);
-      my @suggestions = $speller->suggest($suboperand);
-      my $count = 0;
-      foreach my $suggestion (@suggestions) {
-        $count++;
-        my %spellcheck = ();
-        $spellcheck{spsuggestion} = $spellpattern . ' ' . $suggestion;
-        push @spellcheckarray, \%spellcheck;
-        last if ($count >= 5);
-      }
-    }
-    else {
-      if (!$misspell) {
-        if ($spellpattern) {
-          $spellpattern .= ' ' . $suboperand;
-        }
-        else {
-          $spellpattern .= $suboperand;
+my $suggest_count = C4::Context->preference('OPACSearchSuggestionsCount');
+if ($suggest_count) {
+  my $speller = Text::Aspell->new;
+  $speller->set_option('lang','en_US');
+  $speller->set_option('sug-mode','fast');
+  my @spellcheckarray = ();
+  my $spellpattern = '';
+  my $misspell = 0;
+  foreach my $operand (@operands) {
+    my @suboperands = split(/\s+/,$operand);
+    foreach my $suboperand (@suboperands) {
+      if (!$speller->check($suboperand)) {
+        $misspell = 1;
+        $template->param(koha_spsuggest => 1);
+        my @suggestions = $speller->suggest($suboperand);
+        my $count = 0;
+        foreach my $suggestion (@suggestions) {
+          $count++;
+          my %spellcheck = ();
+          $spellcheck{spsuggestion} = $spellpattern . ' ' . $suggestion;
+          push @spellcheckarray, \%spellcheck;
+          last if ($count >= $suggest_count);
         }
       }
       else {
-        foreach my $spellcheck (@spellcheckarray) {
-          ${$spellcheck}{'spsuggestion'} .= ' ' . $suboperand;
+        if (!$misspell) {
+          if ($spellpattern) {
+            $spellpattern .= ' ' . $suboperand;
+          }
+          else {
+            $spellpattern .= $suboperand;
+          }
+        }
+        else {
+          foreach my $spellcheck (@spellcheckarray) {
+            ${$spellcheck}{'spsuggestion'} .= ' ' . $suboperand;
+          }
         }
       }
     }
   }
+  $template->param(SPELL_SUGGEST => \@spellcheckarray) if (@spellcheckarray);
 }
-$template->param(SPELL_SUGGEST => \@spellcheckarray) if (@spellcheckarray);
 
 # limits are use to limit to results to a pre-defined category such as branch or language
 my @limits;
@@ -484,12 +487,12 @@ for (my $i=0;$i<=@servers;$i++) {
                 # because pazGetRecords handles retieving only the records
                 # we want as specified by $offset and $results_per_page,
                 # we need to set the offset parameter of searchResults to 0
-                my @group_results = searchResults( $query_desc, 'opac', $group->{'group_count'},$results_per_page, 0, $scan, 
-                                                   @{ $group->{"RECORDS"} });
+                my @group_results = searchResults( $query_desc, $group->{'group_count'},$results_per_page, 0, $scan,1,
+                                                   @{ $group->{"RECORDS"} } );
                 push @newresults, { group_label => $group->{'group_label'}, GROUP_RESULTS => \@group_results };
             }
         } else {
-            @newresults = searchResults( $query_desc,'opac',$hits,$results_per_page,$offset,$scan,@{$results_hashref->{$server}->{"RECORDS"}});
+            @newresults = searchResults( $query_desc,$hits,$results_per_page,$offset,$scan,1,@{$results_hashref->{$server}->{"RECORDS"}});
         }
 		my $tag_quantity;
 		if (C4::Context->preference('TagsEnabled') and

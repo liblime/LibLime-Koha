@@ -141,7 +141,7 @@ elsif ( $op eq 'add_validate' ) {
             INSERT INTO itemstatus
                 (statuscode,description,holdsallowed)
             VALUES
-                (?,?,?,?);
+                (?,?,?);
             ";
         my $sth = $dbh->prepare($query);
         $sth->execute(

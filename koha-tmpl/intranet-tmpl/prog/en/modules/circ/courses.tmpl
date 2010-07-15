@@ -18,13 +18,13 @@ function disableEnterKey(e)
 
 $(document).ready(function()
     {
-        $("#reservest").tablesorter({sortList: [[0,0]]});
+        $("#reservest:has(tbody tr)").tablesorter({sortList: [[0,0]]});
     }
 );
 
 $(document).ready(function()
     {
-        $("#coursest").tablesorter({sortList: [[2,0],[3,0]]});
+        $("#coursest:has(tbody tr)").tablesorter({sortList: [[2,0],[3,0]]});
     }
 );
 </script>

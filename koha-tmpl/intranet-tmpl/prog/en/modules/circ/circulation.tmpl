@@ -65,7 +65,6 @@ $.tablesorter.addParser({
             });
 			}
 		});
-	 });
 
 var allcheckboxes = $(".checkboxed");
 	$("#renew_all").click(function(){
@@ -123,6 +122,7 @@ var allcheckboxes = $(".checkboxed");
         $(this).hide();
 		$("#add_message_form").show();
 	 });
+});
 function uncheck_sibling(me){
 nodename=me.getAttribute("name");
 if (nodename =="barcodes[]"){
@@ -869,7 +869,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
         <td><!-- TMPL_VAR NAME="charge" --></td>
         <td><!-- TMPL_VAR NAME="replacementprice" --></td>
         <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
-        <td><!-- TMPL_VAR NAME="renewals" --> <!-- TMPL_IF NAME="renewals_opac" -->( <!-- TMPL_VAR NAME="renewals_opac" --> via OPAC ) <!-- /TMPL_IF --></td>
+        <td><!-- TMPL_VAR NAME="renewals" --> <!-- TMPL_IF NAME="renewals_opac" -->( <!-- TMPL_VAR NAME="renewals_opac" --> via OPAC ) <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="can_renew" -->
         <input type="checkbox" name="all_items[]" value="<!-- TMPL_VAR NAME="itemnumber" -->" checked="checked" style="display: none;" />
         <!-- TMPL_IF NAME="od" -->
@@ -953,6 +953,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
             <th>Hold Date</th>
             <th>Hold Expiration Date</th>
             <th>Title</th>
+            <th>Item Type</th>
             <th>Call Number</th>
 			<th>Barcode</th>
             <th>Priority</th>
@@ -981,6 +982,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
                     <option value="n">No</option>
                     <option value="del">Yes</option>
                 </select>
+                <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR name="reservenumber" -->" />
                 <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
                 <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" />
             </td>

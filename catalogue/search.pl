@@ -146,6 +146,7 @@ use C4::Languages qw(getAllLanguages);
 use C4::Koha;
 use POSIX qw(ceil floor);
 use C4::Branch; # GetBranches
+use Text::Aspell;
 
 my $DisplayMultiPlaceHold = C4::Context->preference("DisplayMultiPlaceHold");
 # create a new CGI object
@@ -380,6 +381,51 @@ if ($indexes[0] && !$indexes[1]) {
 my @operands;
 @operands = split("\0",$params->{'q'}) if $params->{'q'};
 
+# invoke a spell check
+my $suggest_count = C4::Context->preference('StaffSearchSuggestionsCount');
+if ($suggest_count) {
+  my $speller = Text::Aspell->new;
+  $speller->set_option('lang','en_US');
+  $speller->set_option('sug-mode','fast');
+  my @spellcheckarray = ();
+  my $spellpattern = '';
+  my $misspell = 0;
+  foreach my $operand (@operands) {
+    my @suboperands = split(/\s+/,$operand);
+    foreach my $suboperand (@suboperands) {
+      if (!$speller->check($suboperand)) {
+        $misspell = 1;
+        $template->param(koha_spsuggest => 1);
+        my @suggestions = $speller->suggest($suboperand);
+        my $count = 0;
+        foreach my $suggestion (@suggestions) {
+          $count++;
+          my %spellcheck = ();
+          $spellcheck{spsuggestion} = $spellpattern . ' ' . $suggestion;
+          push @spellcheckarray, \%spellcheck;
+          last if ($count >= $suggest_count);
+        }
+      }
+      else {
+        if (!$misspell) {
+          if ($spellpattern) {
+            $spellpattern .= ' ' . $suboperand;
+          }
+          else {
+            $spellpattern .= $suboperand;
+          }
+        }
+        else {
+          foreach my $spellcheck (@spellcheckarray) {
+            ${$spellcheck}{'spsuggestion'} .= ' ' . $suboperand;
+          }
+        }
+      }
+    }
+  }
+  $template->param(SPELL_SUGGEST => \@spellcheckarray) if (@spellcheckarray);
+}
+
 # limits are use to limit to results to a pre-defined category such as branch or language
 my @limits;
 @limits = split("\0",$params->{'limit'}) if $params->{'limit'};
@@ -517,7 +563,7 @@ for (my $i=0;$i<@servers;$i++) {
     if ($server =~/biblioserver/) { # this is the local bibliographic server
         $hits = $results_hashref->{$server}->{"hits"};
         my $page = $cgi->param('page') || 0;
-        my @newresults = searchResults( $query_desc,'intranet',$hits,$results_per_page,$offset,$scan,@{$results_hashref->{$server}->{"RECORDS"}});
+        my @newresults = searchResults( $query_desc,$hits,$results_per_page,$offset,$scan,0,@{$results_hashref->{$server}->{"RECORDS"}});
         $total = $total + $results_hashref->{$server}->{"hits"};
         ## If there's just one result, redirect to the detail page
         if ($total == 1) {         

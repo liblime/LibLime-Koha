@@ -181,20 +181,18 @@ $tabsysprefs{CircFinesBreakdown}             = "Circulation";
 $tabsysprefs{MarkLostItemsReturned}          = "Circulation";
 
 # Staff Client
-$tabsysprefs{TemplateEncoding}        = "StaffClient";
-$tabsysprefs{template}                = "StaffClient";
-$tabsysprefs{intranetstylesheet}      = "StaffClient";
-$tabsysprefs{IntranetNav}             = "StaffClient";
-$tabsysprefs{intranetcolorstylesheet} = "StaffClient";
-$tabsysprefs{intranetuserjs}          = "StaffClient";
-$tabsysprefs{yuipath}                 = "StaffClient";
-$tabsysprefs{IntranetmainUserblock}   = "StaffClient";
-$tabsysprefs{viewMARC}                = "StaffClient";
-$tabsysprefs{viewLabeledMARC}         = "StaffClient";
-$tabsysprefs{viewISBD}                = "StaffClient";
-$tabsysprefs{XSLTDetailsDisplay}      = "StaffClient";
-$tabsysprefs{XSLTResultsDisplay}      = "StaffClient";
-$tabsysprefs{DisplayStafficonsXSLT}   = "StaffClient";
+$tabsysprefs{TemplateEncoding}            = "StaffClient";
+$tabsysprefs{template}                    = "StaffClient";
+$tabsysprefs{intranetstylesheet}          = "StaffClient";
+$tabsysprefs{IntranetNav}                 = "StaffClient";
+$tabsysprefs{intranetcolorstylesheet}     = "StaffClient";
+$tabsysprefs{intranetuserjs}              = "StaffClient";
+$tabsysprefs{yuipath}                     = "StaffClient";
+$tabsysprefs{IntranetmainUserblock}       = "StaffClient";
+$tabsysprefs{viewMARC}                    = "StaffClient";
+$tabsysprefs{viewLabeledMARC}             = "StaffClient";
+$tabsysprefs{viewISBD}                    = "StaffClient";
+$tabsysprefs{StaffSearchSuggestionsCount} = "StaffClient";
 
 # Patrons
 $tabsysprefs{autoMemberNum}                = "Patrons";
@@ -341,6 +339,7 @@ $tabsysprefs{opacmsgtab}	         = "OPAC";
 $tabsysprefs{AutoSelfCheckAllowed}       = "OPAC";
 $tabsysprefs{AutoSelfCheckID}            = "OPAC";
 $tabsysprefs{AutoSelfCheckPass}          = "OPAC";
+$tabsysprefs{OPACSearchSuggestionsCount} = "OPAC";
 
 # OPAC
 $tabsysprefs{SearchMyLibraryFirst}   = "OPAC";

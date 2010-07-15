@@ -1124,7 +1124,7 @@ Format results in a form suitable for passing to the template
 # IMO this subroutine is pretty messy still -- it's responsible for
 # building the HTML output for the template
 sub searchResults {
-    my ( $searchdesc, $interface, $hits, $results_per_page, $offset, $scan, @marcresults ) = @_;
+    my ( $searchdesc, $hits, $results_per_page, $offset, $scan, $opac, @marcresults ) = @_;
     my $dbh = C4::Context->dbh;
     my @newresults;
 
@@ -1140,7 +1140,7 @@ sub searchResults {
 # FIXME - We build an authorised values hash here, using the default framework
 # though it is possible to have different authvals for different fws.
 
-    my $shelflocations =GetKohaAuthorisedValues('items.location','');
+    my $shelflocations =GetKohaAuthorisedValues('items.location','',undef,$opac);
 
     # get notforloan authorised value list (see $shelflocations  FIXME)
     my $notforloan_authorised_value = GetAuthValCode('items.notforloan','');
@@ -1413,7 +1413,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 					}
                     $other_items->{$key}->{intransit} = ($transfertwhen ne '') ? 1 : 0;
                     $other_items->{$key}->{reserved} = (($restype{$item->{itemnumber}} eq "Attached") || ($restype{$item->{itemnumber}} eq "Reserved")) ? 1 : 0;
-					$other_items->{$key}->{notforloan} = GetAuthorisedValueDesc('','',$item->{notforloan},'','',$notforloan_authorised_value) if $notforloan_authorised_value;
+					$other_items->{$key}->{notforloan} = GetAuthorisedValueDesc('','',$item->{notforloan},'','',$notforloan_authorised_value,$opac) if $notforloan_authorised_value;
 					$other_items->{$key}->{count}++ if $item->{$hbranch};
 					$other_items->{$key}->{location} = $shelflocations->{ $item->{location} };
 					$other_items->{$key}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
@@ -1459,12 +1459,12 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
         }
 
         # XSLT processing of some stuff for staff client
-        if (C4::Context->preference("XSLTResultsDisplay") && !$scan && ($interface eq 'intranet')) {
+        if (C4::Context->preference("XSLTResultsDisplay") && !$scan && (!$opac)) {
             $oldbiblio->{XSLTResultsRecord} = XSLTParse4Display(
                 $oldbiblio->{biblionumber}, $marcrecord, 'Results', 'intranet');
         }
         # XSLT processing of some stuff for OPAC
-        if (C4::Context->preference("OPACXSLTResultsDisplay") && !$scan && ($interface eq 'opac')) {
+        if (C4::Context->preference("OPACXSLTResultsDisplay") && !$scan && ($opac)) {
             $oldbiblio->{XSLTResultsRecord} = XSLTParse4Display(
                 $oldbiblio->{biblionumber}, $marcrecord, 'Results', 'opac');
         }

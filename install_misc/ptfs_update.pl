@@ -5,7 +5,7 @@ my $dbh = C4::Context->dbh;
 
 my $current_version= (C4::Context->preference("KohaPTFSVersion"));
 
-if (!$current_version || ($current_version == "pre_harley")){
+if (!$current_version || ($current_version < 1.0 )){
 
 print "Upgrade to 'harley' beginning.\n==========\n";
 print "Adding new system preferences\n";
@@ -71,13 +71,21 @@ print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('DisplayOthernames','1','','Ability to turn the othernames field on/off in patron screen','YesNo');");
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('AllowReadingHistoryAnonymizing','1','','Allows a borrower to optionally delete his or her reading history.','YesNo');");
 print ".";
-$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('ClaimsReturnedValue','','','Lost value of Claims Returned,to be ignored by fines cron job','Integer');");
+$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('ClaimsReturnedValue',5,'','Lost value of Claims Returned,to be ignored by fines cron job','Integer');");
 print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('MarkLostItemsReturned',0,'','If ON,will check in items (removing them from a patron list of checked out items) when they are marked as lost','YesNo');");
 print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('ResetOpacInactivityTimeout','0','','This will set an inactivity timer that will reset the OPAC to the main OPAC screen after the specified amount of time has passed since mouse movement was last detected. The value is 0 for disabled,or a positive integer for the number of seconds of inactivity before resetting the OPAC.','Integer');");
 print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('AllowMultipleHoldsPerBib','','','This allows multiple items per record to be placed on hold by a single patron. To enable,enter a list of space separated itemtype codes in the field (i.e. MAG JMAG YMAG). Useful for magazines,encyclopedias and other bibs where the attached items are not identical.','');");
+print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('OPACXSLTDetailsDisplay',1,NULL,' Enable XSL stylesheet control over details page display on OPAC','YesNo');");
+print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES ('OPACXSLTResultsDisplay',1,NULL,' Enable XSL stylesheet control over results page display on OPAC','YesNo');");
+print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,explanation,type) VALUES ('OPACSearchSuggestionsCount','5','If greater than 0, sets the number of search suggestions provided.','Integer');");
+print ".";
+$dbh -> do("INSERT INTO systempreferences (variable,value,explanation,type) VALUES ('StaffSearchSuggestionsCount','5','If greater than 0, sets the number of search suggestions provided.','Integer');");
 print ".";
 print "done!\n";
 print "==========\n";
@@ -87,8 +95,6 @@ $dbh -> do("ALTER TABLE reserves ADD COLUMN reservenumber int(11) NOT NULL FIRST
 print ".";
 $dbh -> do("ALTER TABLE reserves ADD COLUMN expirationdate date;");
 print ".";
-$dbh -> do("ALTER TABLE reserves ADD PRIMARY KEY (reservenumber);");
-print ".";
 print "done!\n";
 print "==========\n";
 
@@ -97,13 +103,49 @@ $dbh -> do("ALTER TABLE old_reserves ADD COLUMN reservenumber int(11) NOT NULL F
 print ".";
 $dbh -> do("ALTER TABLE old_reserves ADD COLUMN expirationdate date;");
 print ".";
-$dbh -> do("ALTER TABLE old_reserves ADD PRIMARY KEY (reservenumber);");
-print ".";
-$dbh -> do("ALTER TABLE old_reserves DROP FOREIGN KEY old_reserves_ibfk_3;");
 print ".";
 print "done!\n";
 print "==========\n";
+##
+print "Adding reserve numbers\n";
+ $dbh->{AutoCommit} = 0 ;
+ $dbh->do("LOCK TABLES reserves WRITE, old_reserves WRITE" );
+# now populate unique keys in reserves & old_reserves.
+my $sth_old_reserves = $dbh->prepare("SELECT borrowernumber,priority,biblionumber ,reservedate,timestamp FROM old_reserves");
+my $sth_reserves = $dbh->prepare("SELECT borrowernumber,priority, biblionumber ,reservedate,timestamp FROM reserves");
+my $sth_old_reserves_update = $dbh->prepare("UPDATE `old_reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? limit 1");
+my $sth_reserves_update = $dbh->prepare("UPDATE `reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? limit 1");
+my $id = 0;
+$sth_old_reserves->execute();
+my ($bornum, $priority , $biblionumber, $reservedate, $timestamp);
+$sth_old_reserves->bind_columns(\$bornum,\$priority ,\$biblionumber ,\$reservedate,\$timestamp);
+while($sth_old_reserves->fetchrow_arrayref){
+    $sth_old_reserves_update->execute(++$id,$bornum,$priority, $biblionumber , $reservedate, $timestamp);
+}
+$sth_old_reserves->finish();
 
+$sth_reserves->execute();
+$sth_reserves->bind_columns(\$bornum,\$priority,\$biblionumber ,\$reservedate,\$timestamp);
+while($sth_reserves->fetchrow_arrayref){
+    print ".";
+    $sth_reserves_update->execute(++$id,$bornum,$priority, $biblionumber , $reservedate, $timestamp);
+}
+$sth_reserves->finish();
+my $sth_delete_old_reserves = $dbh->prepare("delete from old_reserves where reservenumber is null or reservenumber = 0");
+$sth_delete_old_reserves->execute();
+$sth_delete_old_reserves->finish();
+
+my $sth_delete_reserves = $dbh->prepare("delete from reserves where reservenumber is null or reservenumber = 0 ");
+$sth_delete_reserves->execute();
+$sth_delete_reserves->finish();
+
+$dbh->do("COMMIT ");
+$dbh->do("UNLOCK TABLES");
+# Now that we have unique keys, we can add the PK.
+#   
+$dbh->do("ALTER TABLE reserves MODIFY COLUMN reservenumber INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY");   
+print "done!\n";
+print "==========\n";
 
 print "Creating reserves_suspended table\n";
 $dbh -> do(" 
@@ -310,7 +352,9 @@ CREATE TABLE overdueitemrules (
   delay3 int(4) default 0,
   letter3 varchar(20) default NULL,
   debarred3 int(1) default 0,
-  PRIMARY KEY  (branchcode,itemtype)
+  PRIMARY KEY  (branchcode,itemtype),
+  CONSTRAINT overdueitemrules_ibfk_1 FOREIGN KEY (branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT overdueitemrules_ibfk_2 FOREIGN KEY (itemtype) REFERENCES itemtypes(itemtype) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ");
 print ".";
@@ -416,7 +460,7 @@ my $insert_sth = $dbh -> prepare("
 INSERT INTO marc_subfield_structure 
   (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
   VALUES 
-  ('952', 'i', 'Supressed','',0,0,'items.suppress',-1,'I_SUPPRESS','','',0,0,?,NULL,'','');
+  ('952', 'i', 'Supressed','',0,0,'items.suppress',10,'I_SUPPRESS','','',0,0,?,NULL,'','');
 ");
 my $insert_sth_2 = $dbh ->prepare("
 INSERT INTO marc_subfield_structure 
@@ -424,12 +468,19 @@ INSERT INTO marc_subfield_structure
   VALUES 
   ('952', 'k', 'Other item status', 'Other item status', 0, 0, 'items.otherstatus', 10, 'otherstatus', '', '', 0, 0, ?, NULL, '', '');
 ");
+my $insert_sth_3 = $dbh ->prepare("
+INSERT INTO marc_subfield_structure (tagfield,tagsubfield,liblibrarian,libopac,repeatable,mandatory,kohafield,tab,authorised_value,isurl,hidden,frameworkcode) VALUES ('952','C','Permanent shelving location','Permanent shelving location',0,0,'items.permanent_location',10,'LOC',0,0,?);
+");
 
+$insert_sth -> execute("");
+$insert_sth_2 -> execute("");
+$insert_sth_3 -> execute("");
 $frames_sth->execute;
   while (my $frame = $frames_sth->fetchrow_hashref) {
 
     $insert_sth -> execute($frame->{frameworkcode});
     $insert_sth_2 -> execute($frame->{frameworkcode});
+    $insert_sth_3 -> execute($frame->{frameworkcode});
 
     print ".";
   }
@@ -510,6 +561,8 @@ print "==========\n";
 print <<EOF
 Remaining tasks must be done manually!
 
+You will need to run misc/maintenance/sync_items_in_marc_bib.pl with the --run-update option!
+
 You have to modify your Zebra configuration, adding one line to each of three 
 files  The line can be at the end of the file, in each case.  For a "dev" 
 install, ZEBRADIR is at ~/koha-dev/etc/zebradb
@@ -530,16 +583,16 @@ EOF
 ;
 
 if (!$current_version) {
-   $dbh -> do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('KohaPTFSVersion','harley','Currently installed PTFS version information','','free');");
+   $dbh -> do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('KohaPTFSVersion','1.0','Currently installed PTFS version information','','free');");
 } else {
-   $dbh -> do("UPDATE systempreferences SET value='harley' WHERE variable='KohaPTFSVersion'");
+   $dbh -> do("UPDATE systempreferences SET value='1.0' WHERE variable='KohaPTFSVersion'");
 }
 
 }
 
 $current_version= (C4::Context->preference("KohaPTFSVersion"));
 
-if ($current_version == "harley"){
+if ($current_version < 1.1){
 
 print "Upgrade to 'ptfs-master 1.1' beginning.\n==========\n";
 print "Adding new system preferences\n";
@@ -558,6 +611,11 @@ print ".";
 $dbh -> do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('Replica_pass','',
     'Password for reporting database replica','','Textarea');");
 print ".";
+$dbh -> do("update systempreferences set options='itemtypes|ccode|none' where variable = 'OPACAdvancedSearchTypes';");
+print ".";
+$dbh -> do("update systempreferences set options='itemtypes|ccode|none' where variable = 'AdvancedSearchTypes';");
+print ".";
+
 print "done!\n";
 print "==========\n";
 
@@ -625,6 +683,14 @@ print ".";
 print "done!\n";
 print "==========\n";
 
+print "Adding authorised value for Claims Returned\n";
+$dbh->do("INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'LOST', '5', 'Claims Returned' );");
+print ".";
+
+
+
+
+
 print "Altering MARC subfield structure for curriculum indexing\n";
 my $frames_sth = $dbh -> prepare("SELECT frameworkcode FROM biblio_framework");
 
@@ -665,6 +731,23 @@ $frames_sth->execute;
   }
 print "done!\n";
 print "==========\n";
+
+print "Purging useless EVENT messages\n";
+$dbh->do("DELETE FROM message_attributes WHERE message_attribute_id=3;");
+print ".";
+$dbh->do("DELETE FROM message_transports WHERE message_attribute_id=3;");
+print ".";
+$dbh->do("DELETE FROM letter WHERE code='EVENT' AND title='Upcoming Library Event';");
+print ".";
+print "done!\n";
+print "==========\n";
+
+print "Adding OPAC descriptions to authorized values\n";
+$dbh->do("ALTER TABLE authorised_values ADD opaclib varchar(80) default NULL;");
+print ".";
+print "done!\n";
+print "==========\n";
+
 print <<EOF2
 Remaining tasks must be done manually!
 
@@ -689,5 +772,5 @@ Then, reindex the database.
 EOF2
 ;
 
-$dbh -> do("UPDATE systempreferences SET value='PTFS1.1' WHERE variable='KohaPTFSVersion'");
+$dbh -> do("UPDATE systempreferences SET value='1.1' WHERE variable='KohaPTFSVersion'");
 }
