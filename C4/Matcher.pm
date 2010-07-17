@@ -732,11 +732,14 @@ sub dump {
 
 sub _passes_required_checks {
     my ($source_record, $target_blob, $matchchecks) = @_;
-    my $target_record = MARC::Record->new_from_usmarc($target_blob); # FIXME -- need to avoid parsing record twice
+    my $target_record;
+    # FIXME -- need to avoid parsing record twice
+    eval{ $target_record = MARC::Record->new_from_xml($target_blob,'UTF-8'); };
+    if($@){ warn $@; }
 
     # no checks supplied == automatic pass
     return 1 if $#{ $matchchecks } == -1;
-
+    return 0 unless(defined $target_record);
     foreach my $matchcheck (@{ $matchchecks }) {
         my $source_key = join "", _get_match_keys($source_record, $matchcheck->{'source_matchpoint'});
         my $target_key = join "", _get_match_keys($target_record, $matchcheck->{'target_matchpoint'});
@@ -786,6 +789,14 @@ sub _get_match_keys {
                     if (exists $component->{'subfields'}->{$subfield->[0]}) {
                         $key .= " " . $subfield->[1];
                     }
+                }
+                # FIXME : This should be part of _normalize
+                if ($component->{'tag'} eq "020"){                     
+                     my ($isbn) = $key =~ /^\s*(\d[-0-9]+[0-9x])/i;
+                     if (defined $isbn) {
+                        $isbn =~ s/-//g;
+                     }
+                     $key = $isbn; 
                 }
                 $key = _normalize($key);
                 if ($component->{'length'}){
