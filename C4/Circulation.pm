@@ -2255,6 +2255,13 @@ sub AddRenewal {
             'Rent', $charge, $itemnumber );
         $sth->finish;
     }
+
+    # was item lost?  Clear that.
+    if ($item->{'itemlost'}) {
+         _FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $item->{'barcode'});
+        ModItem({itemlost => 0}, $item->{'biblionumber'}, $item->{'itemnumber'});
+    }
+
     # Log the renewal
     UpdateStats( $branch, 'renew', $charge, $source, $itemnumber, $item->{itype}, $borrowernumber);
 	return $datedue;
