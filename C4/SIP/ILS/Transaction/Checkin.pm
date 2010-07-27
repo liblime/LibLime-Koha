@@ -77,6 +77,29 @@ sub do_checkin {
         $self->hold($messages->{ResFound});
         $debug and warn "Item returned at $branch reserved at $messages->{ResFound}->{branchcode}";
         $self->alert_type(($branch eq $messages->{ResFound}->{branchcode}) ? '01' : '02');
+=======
+        my $do_transfer;
+        if ($branch eq $messages->{ResFound}->{branchcode}) {
+            $self->alert_type('01');
+            $self->screen_msg('Hold for patron');
+        } else {
+            $self->alert_type('02');
+            $do_transfer = 1;
+            $self->screen_msg('Hold for patron at ' . $messages->{ResFound}->{branchcode});
+        }
+        C4::Reserves::ModReserveAffect($messages->{ResFound}->{itemnumber},
+            $messages->{ResFound}->{borrowernumber},
+            $do_transfer,$messages->{ResFound}->{reservenumber});
+        if ($do_transfer) {
+            C4::Reserves::ModReserveMinusPriority(
+                $messages->{ResFound}->{itemnumber},
+                $messages->{ResFound}->{borrowernumber},
+                $messages->{ResFound}->{biblionumber},
+                $messages->{ResFound}->{reservenumber});
+            C4::Items::ModItemTransfer($messages->{ResFound}->{itemnumber},
+                $branch,
+                $messages->{ResFound}->{branchcode});
+        }
     }
     $self->alert(1) if defined $self->alert_type;  # alert_type could be "00", hypothetically
     $self->ok($return);

@@ -790,6 +790,14 @@ sub _get_match_keys {
                         $key .= " " . $subfield->[1];
                     }
                 }
+                # FIXME : This should be part of _normalize
+                if ($component->{'tag'} eq "020"){                     
+                     my ($isbn) = $key =~ /^\s*(\d[-0-9]+[0-9x])/i;
+                     if (defined $isbn) {
+                        $isbn =~ s/-//g;
+                     }
+                     $key = $isbn; 
+                }
                 $key = _normalize($key);
                 if ($component->{'length'}){
                    if (length($key) > $component->{'length'}){
