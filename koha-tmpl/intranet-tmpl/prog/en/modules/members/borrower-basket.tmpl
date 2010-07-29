@@ -6,28 +6,40 @@
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.pack.js"></script>
 <script type="text/javascript">
-	//<![CDATA[
-	$(document).ready(function(){
-		$("#CheckAll").click(function(){
-		var checked = [];
-		$("#bookbag_form").checkCheckboxes("*", true).each(
-		    function() {
-				selRecord(this.value,true); 
-			}
-		); 
-	        return false;
-	    });
-	    $("#CheckNone").click(function(){
-	    var checked = [];
-		$("#bookbag_form").unCheckCheckboxes("*",true).each(
-		    function() {
-				selRecord(this.value,false);
-			}
-		);
-	        return false;
-	    });
-	});
-	//]]>
+//==========================================
+// Check All boxes
+//==========================================
+function CheckAll(fmobj) {
+  for (var i=0;i<fmobj.elements.length;i++) {
+    var e = fmobj.elements[i];
+    if ( (e.name != 'allbox') && (e.type=='checkbox') && (!e.disabled) ) {
+      e.checked = fmobj.allbox.checked;
+    }
+  }
+}
+
+//==========================================
+// Check all or uncheck all?
+//==========================================
+function CheckCheckAll(fmobj) {
+  var TotalBoxes = 0;
+  var TotalOn = 0;
+  for (var i=0;i<fmobj.elements.length;i++) {
+    var e = fmobj.elements[i];
+    if ((e.name != 'allbox') && (e.type=='checkbox')) {
+      TotalBoxes++;
+      if (e.checked) {
+       TotalOn++;
+      }
+    }
+  }
+  if (TotalBoxes==TotalOn) {
+    fmobj.allbox.checked=true;
+  }
+  else {
+   fmobj.allbox.checked=false;
+  }
+}
 </script>
 
 <script type="text/javascript" language="javascript">
@@ -83,14 +95,12 @@
 <div class="searchresults">
 
 <p style="padding: 7px 0; border-top : 1px solid #E8E8E8;">
-  <a id="CheckAll" href="#">Select All</a> 
-  <a id="CheckNone" href="#">Clear All</a> | <b>Selected items :</b>
-  <a href="#" onclick="delSelRecords(); return false;">Remove</a>
+  <b>Selected items :</b><a href="#" onclick="delSelRecords(); return false;">Remove from cart</a>
 </p>
 
     <table style="width:100%">
     <tr>
-	    <th>&nbsp;</th>
+	    <th><input name="allbox" type="checkbox" value="Check All" onclick="CheckAll(document.bookbag_form);" /></th>
 	    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=cardnumber">Card</a></th>
 	    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=surname">Name</a></th>
 	    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=borrowers.categorycode">Cat</a></th>
@@ -133,3 +143,4 @@
 
 </body>
 </html>
+
