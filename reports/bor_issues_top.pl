@@ -113,7 +113,7 @@ my @mime  = ( map { +{type =>$_} } (split /[;:]/,C4::Context->preference("MIME")
 my $delims = GetDelimiterChoices;
 my $branches = GetBranches;
 my @branchloop;
-foreach (sort keys %$branches) {
+foreach (sort {$branches->{$a}->{branchname} cmp $branches->{$b}->{branchname}} keys %$branches) {
 # 	my $selected = 1 if $thisbranch eq $branch;
 	my %row = ( value => $_,
 #				selected => $selected,
@@ -181,7 +181,17 @@ sub calculate {
                 $cell{err} = 1 if (@$filters[$i]<@$filters[$i-1]) ;
             }
             # format the dates filters, otherwise just fill as is
-            $cell{filter} .= ($i>=4) ? @$filters[$i] : format_date(@$filters[$i]);
+
+            if ($i<4){
+                $cell{filter} .= format_date(@filters[$i]);
+            }
+            elsif ($i==4){
+                $cell{filter} .= C4::Branch::GetBranchName(@$filters[$i]);
+            }
+            else {
+                $cell{filter} .= @$filters[$i];
+            }
+
 			defined ($cellmap[$i]) and
 				$cell{crit} .= $cellmap[$i];
             push @loopfilter, \%cell;
@@ -317,7 +327,7 @@ sub calculate {
         if ( $i >= 4 && $i <= 6 ) {
             $strcalc = AddCondition( $strcalc, $term, $filter, 0 );
         } else {
-            $strcalc .= " AND $term '$_' ";
+            $strcalc .= " AND $term '$filter' ";
         }
 	}
     
@@ -392,10 +402,12 @@ sub calculate {
 				reference => $id,
 			};
         }
+        if ($i <= $line){
         push @looprow,{ 'rowtitle' => $i++ ,
                         'loopcell' => \@loopcell,
                         'hilighted' => ($i%2),
                     };
+        }
     }
 	
     # the header of the table

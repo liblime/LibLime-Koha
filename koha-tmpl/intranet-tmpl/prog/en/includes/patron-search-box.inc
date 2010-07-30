@@ -75,6 +75,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 	<!-- TMPL_ELSE -->
             <input id="findborrower" name="findborrower" size="40" class="focus" type="text" />
             <input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
+            <input name="orderby" value="surname,firstname" type="hidden" />
             <input name="printer" value="" type="hidden" />
             <!-- TMPL_IF NAME="stickyduedate" -->
             <input type="hidden" name="duedatespec" value="<!-- TMPL_VAR NAME="duedatespec" -->" />

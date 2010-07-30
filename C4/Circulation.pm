@@ -1561,7 +1561,8 @@ sub AddReturn {
             );
             $sth->execute( $item->{'itemnumber'} );
             # if we have a reservation with valid transfer, we can set it's status to 'W'
-            C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W');
+            my ($resfound,$resrec,$rescnt) = C4::Reserves::CheckReserves($item->{'itemnumber'});
+            C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W', $resrec->{'reservenumber'}) if ($resfound);
         } else {
             $messages->{'WrongTransfer'}     = $tobranch;
             $messages->{'WrongTransferItem'} = $item->{'itemnumber'};
@@ -2255,6 +2256,13 @@ sub AddRenewal {
             'Rent', $charge, $itemnumber );
         $sth->finish;
     }
+
+    # was item lost?  Clear that.
+    if ($item->{'itemlost'}) {
+         _FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $item->{'barcode'});
+        ModItem({itemlost => 0}, $item->{'biblionumber'}, $item->{'itemnumber'});
+    }
+
     # Log the renewal
     UpdateStats( $branch, 'renew', $charge, $source, $itemnumber, $item->{itype}, $borrowernumber);
 	return $datedue;
