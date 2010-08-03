@@ -1499,6 +1499,7 @@ sub AddReturn {
     # Set items.otherstatus back to NULL on check in regardless of whether the
     # item was actually checked out.
     ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
+    ModItem({ onloan => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
 
     # case of a return of document (deal with issues and holdingbranch)
     if ($doreturn) {
