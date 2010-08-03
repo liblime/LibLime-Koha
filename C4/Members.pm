@@ -2383,6 +2383,7 @@ sub DeleteMessage {
     my $query = "DELETE FROM messages WHERE message_id = ?";
     my $sth = $dbh->prepare($query);
     $sth->execute( $message_id );
+}
 
 =head2 _prefix_cardnum
 
