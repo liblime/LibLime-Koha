@@ -33,6 +33,7 @@ use C4::Branch;    # XXX subfield_is_koha_internal_p
 use C4::ClassSource;
 use C4::ImportBatch;
 use C4::Charset;
+use C4::Reserves;
 use C4::ClubsAndServices;
 
 use Date::Calc qw(Today);
@@ -996,6 +997,8 @@ if ( $op eq "addbiblio" ) {
 }
 elsif ( $op eq "delete" ) {
     
+    CancelReserves({ biblionumber => $biblionumber });
+
     my $error = &DelBiblio($biblionumber);
     if ($error) {
         warn "ERROR when DELETING BIBLIO $biblionumber : $error";

@@ -116,6 +116,7 @@ BEGIN {
         
         &CheckReserves
         &CancelReserve
+        &CancelReserves
 
         &SuspendReserve
         &ResumeReserve
@@ -580,7 +581,7 @@ sub GetReserveFee {
     my $fee      = $data->{'reservefee'};
     $query = qq/
       SELECT * FROM items
-    LEFT JOIN itemtypes ON items.itype = itemtypes.itemtype
+    LEFT JOIN itemtypes ON items.itemtype = itemtypes.itemtype
     WHERE biblionumber = ?
     /;
     my $isth = $dbh->prepare($query);
@@ -837,6 +838,47 @@ sub CheckReserves {
     }
 }
 
+=item CancelReserves
+  &CancelReserves({
+    [ biblionumber => $biblionumber, ]
+    [ itemnumber => $itemnumber, ]
+  });
+  
+  Cancels all the reserves for the given itemnumber
+  or biblionumber. If both are supllied, all the reserves
+  for the given biblio are deleted, as the reserves for
+  the given itemnumber would be included.
+  
+=cut
+
+sub CancelReserves {
+    my ( $params ) = @_;
+    my $biblionumber = $params->{'biblionumber'};
+    my $itemnumber   = $params->{'itemnumber'};
+    
+    my $dbh = C4::Context->dbh;
+    
+    return unless $biblionumber || $itemnumber;
+
+    my @sql_params;
+
+    my $sql = "SELECT reservenumber, biblionumber FROM reserves WHERE ";
+    if ( $itemnumber ) {
+      $sql .= " itemnumber = ? ";
+      push( @sql_params, $itemnumber );
+    } else {
+      $sql .= " biblionumber = ?";
+      push( @sql_params, $biblionumber );
+    }
+    
+    my $sth = $dbh->prepare( $sql );
+    $sth->execute( @sql_params );
+    
+    while ( my $reserve = $sth->fetchrow_hashref() ) {
+      CancelReserve( $reserve->{'reservenumber'}, $reserve->{'biblionumber'} );
+    }
+}
+
 =item CancelReserve
 
   &CancelReserve( $reservenumber, $biblionumber );
@@ -854,11 +896,14 @@ sub CancelReserve {
     my ( $reservenumber, $biblio ) = @_;
     my $dbh = C4::Context->dbh;
 
-    my $branchcode;
+    my $branchcode = C4::Context->userenv->{'branch'};
+    warn "BRANCHCODE: $branchcode";
     
     my $sth = $dbh->prepare('SELECT * FROM reserves WHERE reservenumber = ?');
     $sth->execute( $reservenumber );
     my $reserve = $sth->fetchrow_hashref();
+
+    my $borrowernumber = $reserve->{'borrowernumber'};
     
     if ( $reserve->{'found'} eq 'W' ) {
         # removing a waiting reserve record....
@@ -996,8 +1041,38 @@ sub CancelReserve {
       my $accountno
     );
     }
-
     
+    # Send cancelation message, if neccessary
+    my $mprefs = C4::Members::Messaging::GetMessagingPreferences( { 
+      borrowernumber => $borrowernumber,
+      message_name   => 'Hold Canceled' 
+    } );
+    if ( $mprefs->{'transports'} ) {
+        my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
+        my $biblio   = GetBiblioData($biblio);
+        my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELED');
+        my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');                
+
+        my %keys = (%$borrower, %$biblio);
+        $keys{'branchname'} = C4::Branch::GetBranchName( $branchcode );
+        foreach my $key (keys %keys) {
+            my $replacefield = "<<$key>>";
+            $letter->{content} =~ s/$replacefield/$keys{$key}/g;
+            $letter->{title} =~ s/$replacefield/$keys{$key}/g;
+        }
+        
+        C4::Letters::EnqueueLetter(
+                            {   letter                 => $letter,
+                                borrowernumber         => $borrower->{'borrowernumber'},
+                                message_transport_type => $mprefs->{'transports'}->[0],
+                                from_address           => $admin_email_address,
+                                to_address           => $borrower->{'email'},
+                            }
+                        );
+        
+
+    }
+
 }
 
 =item ModReserve
@@ -1043,60 +1118,7 @@ warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumb
      return if $rank eq "n";
     my $dbh = C4::Context->dbh;
     if ( $rank eq "del" ) {
-        my $query = qq/
-            UPDATE reserves
-            SET    cancellationdate=now(),
-                   expirationdate = NULL
-            WHERE  reservenumber   = ?
-        /;
-        my $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-        $sth->finish;
-        $query = qq/
-            SELECT * FROM reserves
-            WHERE  reservenumber   = ?
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-        my $holditem = $sth->fetchrow_hashref;
-        my $insert_fields = '';
-        my $value_fields = '';
-        foreach my $column ('borrowernumber','reservedate','biblionumber','constrainttype','branchcode','notificationdate','reminderdate','cancellationdate','reservenotes','priority','found','itemnumber','waitingdate','expirationdate') {
-          if (defined($holditem->{$column})) {
-            if (length($insert_fields)) {
-              $insert_fields .= ",$column";
-              $value_fields .= ",\'$holditem->{$column}\'";
-            }
-            else {
-              $insert_fields .= "$column";
-              $value_fields .= "\'$holditem->{$column}\'";
-            }
-          }
-        }
-        $query = qq/
-            INSERT INTO old_reserves ($insert_fields)
-            VALUES ($value_fields)
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute();
-        $query = qq/
-            DELETE FROM reserves 
-            WHERE  reservenumber   = ?
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-        
-        UpdateStats(
-          my $branchcode = $branch,
-          my $type = 'reserve_canceled',
-          my $amount,
-          my $other = $biblio,
-          my $itemnum = $itemnumber,
-          my $itemtype,
-          my $borrowernumber = $borrower,
-          my $accountno
-        );
-
+      CancelReserve( $reservenumber, $biblio );
     }
     elsif ($rank =~ /^\d+/ and $rank > 0) {
         my $query = qq/
@@ -1494,7 +1516,7 @@ sub IsAvailableForItemLevelRequest {
         $notforloan_query = "SELECT itemtypes.notforloan
                              FROM items
                              JOIN biblioitems USING (biblioitemnumber)
-                             JOIN itemtypes USING (itemtype)
+                             JOIN itemtypes ON ( itemtypes.itemtype = biblioitems.itemtype )
                              WHERE itemnumber = ?";
     }
     my $sth = $dbh->prepare($notforloan_query);

@@ -26,10 +26,18 @@
 	}
 function confirm_deletion() {
 		var count = <!-- TMPL_VAR NAME="count" -->;
+		var totalreserves = <!-- TMPL_IF NAME="totalreserves" --><!-- TMPL_VAR NAME="totalreserves" --><!-- TMPL_ELSE -->0<!-- /TMPL_IF -->;
+		var del_reserves_perm = <!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_holds" -->1<!-- TMPL_ELSE -->0<!-- /TMPL_IF -->;
         var is_confirmed;
 	if (count>0){
 		    is_confirmed= alert(_('There are [ '+ count +' ] item(s) attached to this record \n You must delete all items before deleting this record.'));
-		    } else{
+	} else if ( totalreserves ) {
+		if ( del_reserves_perm ) {
+			is_confirmed = confirm(_('This record has holds placed on it. Are you sure you want to delete this record and associated holds? '));
+		} else {
+			is_confirmed = alert(_('Unable to delete. This record has holds on it which you do not have permission to delete.'));
+		}
+	} else {
 		    is_confirmed= confirm(_('Are you sure you want to delete this record? '));
 	}
 

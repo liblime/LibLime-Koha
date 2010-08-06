@@ -103,6 +103,10 @@ my $dbh = C4::Context->dbh;
 my @items = &GetItemsInfo( $biblionumber, 'intra' );
 my $dat = &GetBiblioData($biblionumber);
 
+# Get number of holds place on bib and/or items
+my ($rescount,$res) = GetReservesFromBiblionumber($biblionumber);
+$template->param( totalreserves => $rescount );
+
 #coping with subscriptions
 my $subscriptionsnumber = CountSubscriptionFromBiblionumber($biblionumber);
 my @subscriptions       = GetSubscriptions( $dat->{title}, $dat->{issn}, $biblionumber );

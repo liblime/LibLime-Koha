@@ -26,6 +26,7 @@ use C4::Dates;
 use C4::Biblio;
 use C4::Items;
 use C4::Charset;
+use C4::Reserves;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -695,6 +696,7 @@ sub BatchRevertBibRecords {
 
         if ($bib_result eq 'delete') {
             $num_items_deleted += BatchRevertItems($rowref->{'import_record_id'}, $rowref->{'matched_biblionumber'});
+            CancelReserves({ biblionumber => $rowref->{matched_biblionumber} });
             my $error = DelBiblio($rowref->{'matched_biblionumber'});
             if (defined $error) {
                 $num_errors++;

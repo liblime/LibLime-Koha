@@ -31,6 +31,7 @@ use C4::Form::AddItem;
 use C4::Branch;
 use C4::Koha;
 use C4::ClassSource;
+use C4::Reserves;
 
 use MARC::File::XML;
 
@@ -232,17 +233,25 @@ if ($op eq "additem") {
     my $onloan=$sth->fetchrow;
 	$sth->finish();
     $nextop="additem";
+
+    my $delete_holds_permission = $template->param('CAN_user_reserveforothers_delete_holds');    
+    
     if ($onloan){
         push @errors,"book_on_loan";
+    } elsif ( GetReservesFromItemnumber( $itemnumber ) && !$delete_holds_permission ) {
+        push @errors,"item_has_holds";
     } else {
 		# check it doesnt have a waiting reserve
 		$sth=$dbh->prepare("SELECT * FROM reserves WHERE found = 'W' AND itemnumber = ?");
 		$sth->execute($itemnumber);
 		my $reserve=$sth->fetchrow;
-		unless ($reserve){
+		if ($reserve) {
+		  push @errors, "item_waiting";
+		} else {
+		        CancelReserves({ itemnumber => $itemnumber });
 			&DelItem($dbh,$biblionumber,$itemnumber);
 			print $input->redirect("additem.pl?biblionumber=$biblionumber&frameworkcode=$frameworkcode");
-            exit;
+			exit;
 		}
         push @errors,"book_reserved";
     }
@@ -319,6 +328,7 @@ for my $row ( @big_array ) {
     my @item_fields = map +{ field => $_ || '' }, @$row{ sort keys(%witness) };
     $row_data{item_value} = [ @item_fields ];
     $row_data{itemnumber} = $row->{itemnumber};
+    $row_data{holds} = ( GetReservesFromItemnumber( $row->{itemnumber} ) );
     #reporting this_row values
     $row_data{'nomod'} = $row->{'nomod'};
     push(@item_value_loop,\%row_data);
