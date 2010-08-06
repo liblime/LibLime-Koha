@@ -49,6 +49,7 @@ BEGIN {
         AddItemBatchFromMarc
         ModItemFromMarc
         ModItem
+        MoveItemToAnotherBiblio
         ModDateLastSeen
         ModItemLost
         ModItemTransfer
@@ -549,6 +550,44 @@ sub ModItem {
 
     # TODO: Separate Item data modification from Cataloguing Log.
     logaction("CATALOGUING", "MODIFY", $itemnumber, Data::Dumper->Dump( [$item],['item'] )) if C4::Context->preference("CataloguingLog");
+}
+
+=head2 MoveItemToAnotherBiblio
+
+=over 4
+
+MoveItemToAnotherBiblio( $itenumber, $to_biblionumber );
+
+=back
+
+Moves the item from it's current bibliographic record
+to the gien bibliographic record.
+
+=cut
+
+sub MoveItemToAnotherBiblio {
+  my ( $itemnumber, $to_biblionumber ) = @_;
+  
+  my $item = GetItem( $itemnumber );
+  my $old_bib = GetBiblioData( $item->{'biblionumber'} );
+  my $new_bib = GetBiblioData( $to_biblionumber );
+  
+  warn "BibItemNumb: " . $new_bib->{'biblioitemnumber'};
+
+  my $dbh = C4::Context->dbh;
+  
+  $dbh->do('SET FOREIGN_KEY_CHECKS=0');
+  my $sql = "UPDATE items SET biblionumber = ?, biblioitemnumber = ? WHERE itemnumber = ?";
+  my $sth = $dbh->prepare( $sql );
+  $sth->execute( $new_bib->{'biblionumber'}, $new_bib->{'biblionumbernumber'}, $itemnumber );
+  $dbh->do('SET FOREIGN_KEY_CHECKS=1');
+  
+  $sql = "UPDATE reserves SET biblionumber = ? WHERE itemnumber = ?";
+  $sth = $dbh->prepare( $sql );
+  $sth->execute( $new_bib->{'biblionumber'}, $itemnumber );
+  
+  ModZebra($old_bib->{'biblionumber'},"specialUpdate","biblioserver");
+  ModZebra($new_bib->{'biblionumber'},"specialUpdate","biblioserver");
 }
 
 =head2 ModItemTransfer

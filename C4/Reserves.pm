@@ -229,6 +229,7 @@ of the reserves and an arrayref pointing to the reserves for C<$biblionumber>.
 sub GetReservesFromBiblionumber {
     my ($biblionumber) = shift or return (0, []);
     my ($all_dates) = shift;
+    my ($bib_level_only) = shift;
     my $dbh   = C4::Context->dbh;
 
     # Find the desired items in the reserves
@@ -249,7 +250,10 @@ sub GetReservesFromBiblionumber {
         LEFT JOIN biblioitems ON biblioitems.biblionumber = reserves.biblionumber
         WHERE reserves.biblionumber = ? ";
     unless ( $all_dates ) {
-        $query .= "AND reservedate <= CURRENT_DATE()";
+        $query .= "AND reservedate <= CURRENT_DATE() ";
+    }
+    if ( $bib_level_only ) {
+        $query .= "AND reserves.itemnumber IS NULL ";
     }
     $query .= "ORDER BY reserves.priority";
     my $sth = $dbh->prepare($query);

@@ -223,6 +223,7 @@ if ($op eq "additem") {
                 'items.materials','items.copynumber');
     @today_fields=('items.datelastseen','items.dateaccessioned');
 
+
     $nextop="additem";
 #-------------------------------------------------------------------------------
 } elsif ($op eq "delitem") {
@@ -258,6 +259,8 @@ if ($op eq "additem") {
 #-------------------------------------------------------------------------------
 } elsif ($op eq "saveitem") {
 #-------------------------------------------------------------------------------
+    MoveItemToAnotherBiblio( $itemnumber, $biblionumber );
+    
     # rebuild
     my ( $itemtosave, $barcode_not_unique ) = C4::Form::AddItem::get_item_record( $input, $frameworkcode, 0, $itemnumber );
     if ( $barcode_not_unique ) {
@@ -268,6 +271,9 @@ if ($op eq "additem") {
     }
     $nextop="additem";
 }
+
+## Check to see if we are working on a new item for the record
+$template->param( newitem => 1 ) if ( $op eq '' );
 
 #
 #-------------------------------------------------------------------------------
@@ -339,21 +345,39 @@ foreach my $subfield_code (sort keys(%witness)) {
     push(@header_value_loop, \%header_value);
 }
 
+my $item = C4::Form::AddItem::get_form_values( $tagslib, 0, {
+                                                item => $itemrecord,
+                                                biblio => $temp,
+                                                wipe => \@omissions ,
+                                                make_today => \@today_fields,   
+                                                frameworkcode => $frameworkcode,
+
+                                              });
+
+## Move barcode field to the top of the list.
+my $barcode_index = 0;                                              
+foreach my $i ( @$item ) {
+  if ( $i->{'marc_lib'} =~ m/Barcode/ ) {
+    last;
+  } else {
+    $barcode_index++;
+  }
+}
+my @tmp = splice( @$item, $barcode_index, 1 );
+my $t = $tmp[0];
+my $barcode_id = $t->{id};
+unshift( @$item, $t );
+
 # what's the next op ? it's what we are not in : an add if we're editing, otherwise, and edit.
 $template->param( title => $record->title() ) if ($record ne "-1");
 $template->param(
+    barcode_id   => $barcode_id,
     biblionumber => $biblionumber,
     title        => $oldrecord->{title},
     author       => $oldrecord->{author},
     item_loop        => \@item_value_loop,
     item_header_loop => \@header_value_loop,
-    item             => C4::Form::AddItem::get_form_values( $tagslib, 0, {
-        item => $itemrecord,
-        biblio => $temp,
-        wipe => \@omissions ,
-        make_today => \@today_fields,
-        frameworkcode => $frameworkcode,
-    }),
+    item             => $item,
     itemnumber       => $itemnumber,
     itemtagfield     => $itemtagfield,
     itemtagsubfield  => $itemtagsubfield,

@@ -5,7 +5,16 @@
 //<![CDATA[
 $(document).ready(function(){
 		$("fieldset.rows input").keydown(function(e){ return checkEnter(e); });
+		$("#ajax_spinner").center();
 });
+
+jQuery.fn.center = function () {
+    this.css("position","absolute");
+    this.css("top", ( $(window).height() - this.height() ) / 2+$(window).scrollTop() + "px");
+    this.css("left", ( $(window).width() - this.width() ) / 2+$(window).scrollLeft() + "px");
+    return this;
+}
+
 function active(numlayer)
 {
     for (i=10; i < 11 ; i++ ) {
@@ -165,6 +174,7 @@ function set_to_today(id, force) {
         $("#" + id).val("<!-- TMPL_VAR NAME="today_iso" -->");
     }
 }
+
 //]]>
 </script>
 <link type="text/css" rel="stylesheet" href="<!-- TMPL_VAR NAME="themelang" -->/css/addbiblio.css" />
@@ -177,6 +187,7 @@ function set_to_today(id, force) {
  &rsaquo; Edit <a href="/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR name="title" escape="html" --> <!-- TMPL_IF NAME="author" --> by <!-- TMPL_VAR name="author" --><!-- /TMPL_IF --> (Record #<!-- TMPL_VAR NAME="biblionumber" -->)</a>
  &rsaquo; <a href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Items</a>
 </div>
+
 
 <div id="doc3" class="yui-t2">
 
@@ -291,4 +302,82 @@ function set_to_today(id, force) {
 <!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
 </div>
 </div>
+
+<div id="ajax_spinner" style="display: none;">
+	<p>CHECKING BARCODE</p>
+</div>
+
+<!-- TMPL_IF NAME="newitem" -->
+	<script>
+		$('#<!-- TMPL_VAR NAME="barcode_id" -->').blur(function() {
+			checkBarcode();
+		});
+
+		$('#<!-- TMPL_VAR NAME="barcode_id" -->').keypress(function(event) {
+			if (event.keyCode == '13') {
+				checkBarcode();
+			}
+		});
+
+		// show the spinner for AJAX requests
+		$("#ajax_spinner").ajaxStart(function(){
+			$(this).show();
+		});
+
+		$("#ajax_spinner").ajaxStop(function(){
+			$(this).hide();
+		});
+
+		function checkBarcode() {
+			if ( $('#<!-- TMPL_VAR NAME="barcode_id" -->').val() ) {
+				$.getJSON( 'check_barcode.pl', { 'barcode' : $('#<!-- TMPL_VAR NAME="barcode_id" -->').val() }, processCheckBarcode );
+			}
+		}
+
+		function processCheckBarcode( data ) {
+			if ( data.itemnumber ) {
+
+				var itemData = '';
+				itemData += "Title: " + data.title + "\n";
+				itemData += "Holding Branch: " + data.holdingbranch + "\n";
+				itemData += "Home Branch: " + data.homebranch + "\n";
+
+				if ( data.date_due ) {
+					itemData += "\n";
+					itemData += "Currently checked out.\n";
+					itemData += "Due back on " + data.date_due + "\n\n";
+				}
+
+				if ( data.bib_level_reserves ) {
+					itemData += "\n";
+					itemData += "This item has bibliographic-level holds.\n";
+				}
+
+				if ( data.item_level_reserves ) {
+					itemData += "This item has item-level holds.\n";
+				}
+
+				var answer = confirm (
+"This barcode is currently being used by the following item: \n\
+\n" +
+itemData
++ "\n\
+Do you want to move this item from its current bibliographic record to this one?\n\
+\n\
+'OK' will load the data from the existing item, 'Cancel' will retain any data you may have entered except for this barcode.\n\
+\n\
+After the item's data has been loaded, you may review and edit the data, then choose 'Save' to commit the changes.\
+				");
+
+				if (answer) {
+					window.location="additem.pl?op=edititem&biblionumber=<!--TMPL_VAR NAME="biblionumber"-->&itemnumber=" + data.itemnumber;
+				} else {
+					$('#<!-- TMPL_VAR NAME="barcode_id" -->').attr('value','');
+					$('#<!-- TMPL_VAR NAME="barcode_id" -->').focus();
+				}
+			}
+		}
+	</script>
+<!-- /TMPL_IF -->
+
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
