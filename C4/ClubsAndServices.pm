@@ -1063,28 +1063,28 @@ sub ReserveForBestSellersClub {
   
   my $dbh = C4::Context->dbh;
   my $sth;
+  my @clubs;
 
   ## Grab the bib for this biblionumber, we will need the author and title to find the relevent clubs
   my $biblio_data = C4::Biblio::GetBiblioData( $biblionumber );
   my $author = $biblio_data->{'author'};
+  $author =~ s/\.$//;
   my $title = $biblio_data->{'title'};
   my $itemtype = $biblio_data->{'itemtype'};
   
   ## Find the casaId for the Bestsellers Club archetype
-  $sth = $dbh->prepare("SELECT * FROM clubsAndServicesArchetypes WHERE title LIKE 'Bestsellers Club' ");
+  $sth = $dbh->prepare("SELECT * FROM clubsAndServicesArchetypes WHERE title LIKE '%Bestsellers Club%' ");
   $sth->execute();
   my $casa = $sth->fetchrow_hashref();
-  my $casaId = $casa->{'casaId'};
-  $sth->finish();
+  while ( my $casaId = $casa->{'casaId'}){
 
   unless( $casaId ) { return; }
     
   ## Find all the relevent bestsellers clubs
   ## casData1 is title, casData2 is author
-  $sth = $dbh->prepare("SELECT * FROM clubsAndServices WHERE casaId = ?");
-  $sth->execute( $casaId );
-  my @clubs;
-  while ( my $club = $sth->fetchrow_hashref() ) {
+  my $sth2 = $dbh->prepare("SELECT * FROM clubsAndServices WHERE casaId = ?");
+  $sth2->execute( $casaId );
+  while ( my $club = $sth2->fetchrow_hashref() ) {
     #warn "Author/casData2 : '$author'/ " . $club->{'casData2'} . "'";
     #warn "Title/casData1 : '$title'/" . $club->{'casData1'} . "'";
 
@@ -1125,8 +1125,7 @@ sub ReserveForBestSellersClub {
       
       if ( $all_match ) { push( @clubs, $club ); }
     }
-  }
-  $sth->finish();
+  }}
   
   unless( scalar( @clubs ) ) { return; }
   
