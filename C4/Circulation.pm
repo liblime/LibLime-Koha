@@ -2229,7 +2229,7 @@ sub AddRenewal {
         $datedue = (C4::Context->preference('RenewalPeriodBase') eq 'date_due') ?
                                         C4::Dates->new($issuedata->{date_due}, 'iso') :
                                         C4::Dates->new();
-		$datedue =  CalcDateDue(C4::Dates->new(),$loanlength,$branch);	# this branch is the transactional branch.
+		$datedue =  CalcDateDue(C4::Dates->new(),$loanlength,$branch,$borrower);	# this branch is the transactional branch.
 								# The question of whether to use item's homebranch calendar is open.
     }
 
