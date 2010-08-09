@@ -116,7 +116,20 @@
         <li><label for="branchfax">Fax</label><input type="text" name="branchfax" id="branchfax" value="<!-- TMPL_VAR name="branchfax" escape="HTML" -->" /></li>
         <li><label for="branchemail">Email</label><input type="text" name="branchemail" id="branchemail" value="<!-- TMPL_VAR name="branchemail" escape="HTML" -->" /></li>
         <li><label for="branchurl">URL</label><input type="text" name="branchurl" id="branchurl" value="<!-- TMPL_VAR name="branchurl" escape="HTML" -->" /></li>
-        <li><label for="branchip">IP</label><input type="text" name="branchip" id="branchip" value="<!-- TMPL_VAR name="branchip" escape="HTML" -->" /> <span class="hint">Can be entered as a single IP, or a subnet such as 192.168.1.*</span></li>
+        <li>
+		<label for="branchip">IP Address</label>
+		<!-- <input size='100' type="text" name="branchip" id="branchip" value="<!-- TMPL_VAR name="branchip" escape="HTML" -->" /> -->
+		<textarea name="branchip" id="branchip" cols="20" rows="5"><!-- TMPL_VAR name="branchip" escape="HTML" --></textarea>
+		<span class="hint">
+			Can be entered as one IP ( e.g. 192.168.1.1 ) or a subnet ( e.g. 192.168.1.* ).
+			For multiple IPs and/or subnets, put each one on a separate line.
+		</span>
+	</li>
+        <li><label for="branchonshelfholds">Allow On Shelf Holds in Library</label>
+		<input type="radio" name="branchonshelfholds" value="1" <!-- TMPL_IF NAME="branchonshelfholds" -->checked<!-- /TMPL_IF --> >Yes <input type="radio" name="branchonshelfholds" value="0" <!-- TMPL_UNLESS NAME="branchonshelfholds" -->checked<!-- /TMPL_UNLESS --> >No 
+		<span class="hint"><i>If set to 'No', Koha will prevent a patron from placing an on shelf hold if the requesting ip address matches on the ip addresses of this branch.</i></span>
+		<!-- TMPL_UNLESS NAME="AllowOnShelfHolds" --><span style="color:red">Warning: The system preference AllowOnShelfHolds is <i>disabled</i>. This means that all shelf holds will be disabled, reguardless of whether the hold is placed inside or outside the library.</span><!-- /TMPL_UNLESS -->
+	</li>
         <!-- TMPL_IF NAME="itembarcodelength" --><li><label for="itembarcodeprefix">Item barcode prefix</label><input type="text" name="itembarcodeprefix" id="itembarcodeprefix" value="<!-- TMPL_VAR name="itembarcodeprefix" -->" /></li><!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="patronbarcodelength" --><li><label for="patronbarcodeprefix">Patron barcode prefix</label><input type="text" name="patronbarcodeprefix" id="patronbarcodeprefix" value="<!-- TMPL_VAR name="patronbarcodeprefix" -->" /></li><!-- /TMPL_IF -->
 		<!--
@@ -169,6 +182,7 @@
             <th>Address</th>
             <th>Properties</th>
             <th>IP</th>
+	    <th>Allow On Shelf<br/>Holds in Library</th>
             <!-- <th>Printer</th> -->
             <th colspan="2">&nbsp;</th>
         </tr></thead><tbody>
@@ -217,6 +231,13 @@
                 </td>
                 <td>
                     <!-- TMPL_VAR NAME="branchip" -->
+                </td>
+                <td>
+                    <!-- TMPL_IF NAME="branchonshelfholds" -->
+			<input type="checkbox" checked disabled />
+		    <!-- TMPL_ELSE -->
+			<input type="checkbox" disabled />
+		    <!-- /TMPL_IF -->
                 </td>
                 <!-- <td>
                     <!-- TMPL_VAR NAME="branchprinter" -->

@@ -196,6 +196,8 @@ else {
     default("",$template);
 }
 
+$template->param( AllowOnShelfHolds => C4::Context->preference('AllowOnShelfHolds') );
+
 ################################################################################
 #
 # html output functions....
@@ -239,9 +241,11 @@ sub editbranchform {
              branchurl      => $data->{'branchurl'},
              branchip       => $data->{'branchip'},
              branchnotes    => $data->{'branchnotes'}, 
-             itembarcodeprefix       => $data->{'itembarcodeprefix'},
-             patronbarcodeprefix       => $data->{'patronbarcodeprefix'},
+             branchonshelfholds	=> $data->{'branchonshelfholds'},
+             itembarcodeprefix	=> $data->{'itembarcodeprefix'},
+             patronbarcodeprefix	=> $data->{'patronbarcodeprefix'},
         );
+        
     }
 
     foreach my $thisprinter ( keys %$printers ) {
@@ -347,7 +351,8 @@ sub branchinfotable {
             'branchcity', 'branchcountry',
             'branchphone', 'branchfax',
             'branchemail', 'branchurl',
-            'branchip',       'branchprinter', 'branchnotes'
+            'branchip', 'branchonshelfholds',
+            'branchprinter', 'branchnotes'
           )
         {
             $row{$field} = $branch->{$field};

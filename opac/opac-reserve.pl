@@ -312,6 +312,17 @@ if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
   }                                                                                              
 } 
 
+my $inBranchcode = IsIpInLibrary();
+if ( $inBranchcode && C4::Context->preference('AllowOnShelfHolds') && !$branches->{ $inBranchcode }->{'branchonshelfholds'} ) {
+  foreach my $biblionumber ( @biblionumbers ) {
+    if ( GetAvailableItemsCount( $biblionumber, $inBranchcode ) ) {
+      $noreserves = 1;
+      $template->param( message => 1 );
+      $template->param( no_on_shelf_holds_in_library => 1 );
+    }
+  }
+}
+
 foreach my $res (@reserves) {
     foreach my $biblionumber (@biblionumbers) {
         if ( $res->{'biblionumber'} == $biblionumber && $res->{'borrowernumber'} == $borrowernumber) {

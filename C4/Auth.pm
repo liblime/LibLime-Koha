@@ -38,7 +38,7 @@ BEGIN {
     $VERSION = 3.02;        # set version for version checking
     $debug = $ENV{DEBUG} || 0 ;
     @ISA   = qw(Exporter);
-    @EXPORT    = qw(&checkauth &get_template_and_user);
+    @EXPORT    = qw(&checkauth &get_template_and_user &IsIpInLibrary);
     @EXPORT_OK = qw(&check_api_auth &get_session &check_cookie_auth &checkpw &check_override_perms &get_all_subpermissions &get_user_subpermissions);
     %EXPORT_TAGS = (EditPermissions => [qw(get_all_subpermissions get_user_subpermissions)]);
     $ldap = C4::Context->config('useldapserver') || 0;
@@ -708,7 +708,7 @@ sub checkauth {
                     if (C4::Context->boolean_preference('IndependantBranches') && C4::Context->boolean_preference('Autolocation')){
                         # we have to check they are coming from the right ip range
                         my $domain = $branches->{$branchcode}->{'branchip'};
-                        if ($ip !~ /^$domain/){
+                        if ( !IsIpInLibrary({ ip => $ip, branchcode => $branchcode }) ) {
                             $loggedin=0;
                             $info{'wrongip'} = 1;
                         }
@@ -718,7 +718,7 @@ sub checkauth {
                     foreach my $br ( keys %$branches ) {
                         #     now we work with the treatment of ip
                         my $domain = $branches->{$br}->{'branchip'};
-                        if ( $domain && $ip =~ /^$domain/ ) {
+                        if ( $domain && IsIpInLibrary({ ip => $ip, branchcode => $br }) ) {
                             $branchcode = $branches->{$br}->{'branchcode'};
 
                             # new op dev : add the branchprinter and branchname in the cookie
@@ -1084,7 +1084,7 @@ sub check_api_auth {
                 foreach my $br ( keys %$branches ) {
                     #     now we work with the treatment of ip
                     my $domain = $branches->{$br}->{'branchip'};
-                    if ( $domain && $ip =~ /^$domain/ ) {
+                    if ( $domain && IsIpInLibrary({ ip => $ip, branchcode => $br }) ) {
                         $branchcode = $branches->{$br}->{'branchcode'};
 
                         # new op dev : add the branchprinter and branchname in the cookie
@@ -1530,6 +1530,52 @@ sub getborrowernumber {
         }
     }
     return 0;
+}
+
+=item IsIpInLibrary
+
+  $bool = IsIpInLibrary({
+    [ ip => $ip_address, ]
+    [ branchcode => $branchcode, ]
+  });
+  
+  Checks to see of the given ip address matches the
+  ip address list for the given branchcode. 
+  
+  If no ip address is given, it will default to
+  the ip address contained in $ENV{'REMOTE_ADDR'};
+  
+  if 'onlymine' is set, the function will only check
+  to see if the ip matches one of the ip address for
+  the logged in branch.
+  
+  Returns the branchcode of the first match found,
+  no value otherwise.
+  
+=cut
+  
+sub IsIpInLibrary {
+  my ( $params ) = @_;
+  my $ip 		= $params->{'ip'} || $ENV{'REMOTE_ADDR'};
+  my $branchcode	= $params->{'branchcode'};
+  
+  my $match = 0;
+
+  my $branches = GetBranches( my $onlymine = 0, $branchcode);
+  
+  foreach my $key ( keys %$branches ) {
+    my $domain = $branches->{ $key }->{'branchip'};
+    my @domain = split( /\n/, $domain );
+    
+    foreach my $d ( @domain ) {
+      $d =~ s/\r//g; ## Strip carriage return aka "\r";
+      if ( $ip =~ m/^$d/ ) {
+        return $key; ## Return immediately for speed
+      }
+    }
+  }
+  
+  return;
 }
 
 END { }    # module clean-up code here (global destructor)

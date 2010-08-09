@@ -199,6 +199,10 @@
         	<div class="dialog alert">Sorry, you cannot place more than <!-- TMPL_VAR NAME="too_many_shelf_holds_per_day" --> holds on available items in a single day.
 	        </div>
 	    <!-- /TMPL_IF -->            
+	    <!-- TMPL_IF NAME="no_on_shelf_holds_in_library" -->
+        	<div class="dialog alert">Sorry, you cannot place holds on available items while inside the library.
+	        </div>
+	    <!-- /TMPL_IF -->            
 	    <!-- TMPL_IF NAME="bad_biblionumber" -->
               <div class="dialog alert">ERROR: No biblio record found for biblionumber <!-- TMPL_VAR NAME="bad_biblionumber" -->.</div>
             <!-- /TMPL_IF -->

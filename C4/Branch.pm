@@ -98,7 +98,7 @@ The functions in this module deal with branches.
 =cut
 
 sub GetBranches {
-    my ($onlymine)=@_;
+    my ( $onlymine, $branchcode )=@_;
     # returns a reference to a hash of references to ALL branches...
     my %branches;
     my $dbh = C4::Context->dbh;
@@ -108,6 +108,9 @@ sub GetBranches {
     if ($onlymine && C4::Context->userenv && C4::Context->userenv->{branch}){
       $query .= ' WHERE branchcode = ? ';
       push @bind_parameters, C4::Context->userenv->{branch};
+    } elsif ( $branchcode ){
+      $query .= ' WHERE branchcode = ? ';
+      push @bind_parameters, $branchcode;
     }
         $query.=" ORDER BY branchname";
     $sth = $dbh->prepare($query);
@@ -197,7 +200,7 @@ problem here.
 sub ModBranch {
     my ($data) = @_;
     my @columns = qw/branchname branchaddress1 branchaddress2 branchaddress3 branchphone branchfax
-                     branchemail branchip branchprinter itembarcodeprefix patronbarcodeprefix/;
+                     branchemail branchip branchonshelfholds branchprinter itembarcodeprefix patronbarcodeprefix/;
     
     my $dbh    = C4::Context->dbh;
     my (@qterms, @bind, $sth);

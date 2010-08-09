@@ -438,17 +438,25 @@ sub DelBiblio {
 }
 
 sub GetAvailableItemsCount {
-  my ( $biblionumber ) = @_;
-  warn "GetAvailableItemsCount( $biblionumber )";
+  my ( $biblionumber, $branchcode ) = @_;
+#  warn "GetAvailableItemsCount( $biblionumber, $branchcode )";
   my $dbh = C4::Context->dbh;
+  my @params;
   
   my $query = "SELECT COUNT( * ) AS ItemsAvailableCount
               FROM items
               LEFT JOIN issues ON issues.itemnumber = items.itemnumber
               WHERE issues.timestamp IS NULL
               AND items.biblionumber = ?";
+  push( @params, $biblionumber );
+              
+  if ( $branchcode ) {
+    $query .= " AND items.holdingbranch = ?";
+    push( @params, $branchcode ) if ( $branchcode );
+  }
+  
   my $sth = $dbh->prepare( $query );
-  $sth->execute( $biblionumber );
+  $sth->execute( @params );
   
   my $row = $sth->fetchrow_hashref();
   my $items_available_count = $row->{'ItemsAvailableCount'};
