@@ -977,13 +977,35 @@ $(document).ready(function() {
         </li>
         <li class="radio">
             <!-- TMPL_IF name="serialsadditems" -->
-                <p><input type="radio" id="serialsadditems-yes" name="serialsadditems" value="1" checked="checked" /><label class="widelabel" for="serialsadditems-yes">create an item record when receiving this serial</label></p>
-                <p><input type="radio" id="serialsadditems-no" name="serialsadditems" value="0" /><label class="widelabel" for="serialsadditems-no">do not create an item record when receiving this serial </label></p>
+                <p><input type="radio" id="serialsadditems-yes" name="serialsadditems" value="1" onclick="document.getElementById('item_defaults').style.display = 'block'" checked="checked" /><label class="widelabel" for="serialsadditems-yes">create an item record when receiving this serial</label></p>
+                <p><input type="radio" id="serialsadditems-no" name="serialsadditems" value="0" onclick="document.getElementById('item_defaults').style.display = 'none'" /><label class="widelabel" for="serialsadditems-no">do not create an item record when receiving this serial </label></p>
             <!-- TMPL_ELSE -->
-                <p><input type="radio" id="serialsadditems-yes" name="serialsadditems" value="1"/><label class="widelabel" for="serialsadditems-yes">create an item record when receiving this serial</label></p>
-                <p><input type="radio" id="serialsadditems-no" name="serialsadditems" value="0" checked="checked" /><label class="widelabel" for="serialsadditems-no">do not create an item record when receiving this serial</label></p>
+                <p><input type="radio" id="serialsadditems-yes" name="serialsadditems" value="1" onclick="document.getElementById('item_defaults').style.display = 'block'" /><label class="widelabel" for="serialsadditems-yes">create an item record when receiving this serial</label></p>
+                <p><input type="radio" id="serialsadditems-no" name="serialsadditems" value="0" onclick="document.getElementById('item_defaults').style.display = 'none'" checked="checked" /><label class="widelabel" for="serialsadditems-no">do not create an item record when receiving this serial</label></p>
             <!-- /TMPL_IF -->
         </li>
+<div id="item_defaults" <!-- TMPL_UNLESS name="serialsadditems" -->style="display:none"<!-- /TMPL_UNLESS --> >
+	<fieldset class="rows">
+		<legend>Item Defaults</legend>
+
+		<!-- TMPL_LOOP NAME="defaults_loop" -->
+			<li>
+				<span class="label"><!-- TMPL_VAR NAME="tagsubfield" --> - <!-- TMPL_VAR NAME="liblibrarian" --></span> 
+
+				<!-- TMPL_IF NAME="authorised_values" -->
+					<select name="defaults_<!--TMPL_VAR name="kohafield" -->" id="defaults_<!--TMPL_VAR name="kohafield" -->" >
+						<!-- TMPL_LOOP NAME="authorised_values" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="lib" --></option>
+						<!-- /TMPL_LOOP -->
+					</select>
+				<!-- TMPL_ELSE -->
+					<input name="defaults_<!--TMPL_VAR name="kohafield" -->" id="defaults_<!--TMPL_VAR name="kohafield" -->" value="<!-- TMPL_VAR NAME="value" -->" type=text />
+				<!-- /TMPL_IF -->
+			</li>
+		<!-- /TMPL_LOOP -->
+	</fieldset>
+</div>
+
         <li>
             <label for="location">Location:</label>
             <input type="text" name="location" id="location" value="<!-- TMPL_VAR name="location" -->" size="30" />
@@ -1059,6 +1081,7 @@ $(document).ready(function() {
 	</fieldset>
 	</div>
 	
+
 <div class="yui-u">
 <div id="subscription_form_planning">
 	<fieldset class="rows">

@@ -65,6 +65,7 @@ function unHideItems(index,labelindex) {
 	subfield.style.display = 'block';
 	label = document.getElementById(labelindex);
 	label.style.display='none';	
+	document.getElementById('items.barcode').focus();
 }
 function HideItems(index,labelindex) {
 	subfield = document.getElementById(index);

@@ -110,8 +110,7 @@ unless (scalar(@serialids)){
 #  warn $string;
   print $query->redirect($string);
 }
-my ($template, $loggedinuser, $cookie)
-= get_template_and_user({template_name => "serials/serials-edit.tmpl",
+my ($template, $loggedinuser, $cookie) = get_template_and_user({template_name => "serials/serials-edit.tmpl",
                 query => $query,
                 type => "intranet",
                 authnotrequired => 0,
@@ -147,7 +146,7 @@ foreach my $subscriptionid (@subscriptionids){
     if ($serialdatalist[0]->{'serialsadditems'}){
     #Create New empty item
         $cell =
-        PrepareItemrecordDisplay( $serialdatalist[0]->{'biblionumber'},'', GetSubscription($subscriptionid));
+        PrepareItemrecordDisplay( $serialdatalist[0]->{'biblionumber'},'', GetSubscriptionDefaults($subscriptionid));
         $cell->{serialsadditems} = 1;
     }
     $cell->{'subscriptionid'}=$subscriptionid;

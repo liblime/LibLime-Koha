@@ -59,6 +59,7 @@ BEGIN {
 		&GetNormalizedEAN
 		&GetNormalizedOCLCNumber
                 &GetOtherItemStatus
+                &GetMarcSubfieldStructure
 
 		$DEBUG
 	);
@@ -1228,6 +1229,39 @@ sub GetOtherItemStatus {
     push @results, $data;
   }
   return \@results; #$data;
+}
+
+=head2 GetMarcSubfieldStructure
+
+  @subfields = GetMarcSubfieldStructure( [ $kohafield[, $frameworkcode[, $exceptions_arrayref ] ] ] );
+  
+=cut
+
+sub GetMarcSubfieldStructure {
+  my ( $kohafield, $frameworkcode, $exceptions ) = @_;
+  $kohafield .= '%';
+  
+  my $exceptions_sql;
+  if ( $exceptions ) {
+    foreach my $e ( @$exceptions ) {
+      $e = "'$e'";
+    }
+    $exceptions_sql = join( ',', @$exceptions );
+  }
+  
+  my $dbh = C4::Context->dbh;
+  my $sql = "SELECT * FROM marc_subfield_structure WHERE kohafield LIKE ? AND frameworkcode LIKE '$frameworkcode' ";
+  $sql .= " AND kohafield NOT IN ( $exceptions_sql ) " if ( $exceptions );
+  $sql .= " ORDER BY tagfield, tagsubfield ";
+  my $sth = $dbh->prepare( $sql );
+  $sth->execute( $kohafield );
+
+  my @results;
+  while ( my $row = $sth->fetchrow_hashref() ) {
+    push( @results, $row );
+  }
+  
+  return @results;
 }
 
 sub _normalize_match_point {

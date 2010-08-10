@@ -2233,7 +2233,6 @@ Returns a hash with all the fields for Display a given item data in a template
 sub PrepareItemrecordDisplay {
 
     my ( $bibnum, $itemnum, $defaultvalues ) = @_;
-
     my $dbh = C4::Context->dbh;
     my $frameworkcode = &GetFrameworkCode( $bibnum );
     my ( $itemtagfield, $itemtagsubfield ) =
@@ -2276,6 +2275,10 @@ sub PrepareItemrecordDisplay {
                       $value = q||;
                   }
                   $value =~ s/"/&quot;/g;
+
+                my $key = $tagslib->{$tag}->{$subfield}->{kohafield};
+                my ( $table, $column ) = split( /\./, $key );
+                $value = $defaultvalues->{ $column };
 
                 # search for itemcallnumber if applicable
                 if ( $tagslib->{$tag}->{$subfield}->{kohafield} eq
@@ -2400,7 +2403,7 @@ sub PrepareItemrecordDisplay {
                 }
                 else {
                     $subfield_data{marc_value} =
-"<input type=\"text\" name=\"field_value\" value=\"$value\" size=\"50\" maxlength=\"255\" />";
+"<input type=\"text\" name=\"field_value\" id=\"$subfield_data{kohafield}\"value=\"$value\" size=\"50\" maxlength=\"255\" />";
                 }
                 push( @loop_data, \%subfield_data );
             }

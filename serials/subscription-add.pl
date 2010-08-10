@@ -45,8 +45,8 @@ my ($subscriptionid,$auser,$branchcode,$librarian,$cost,$aqbooksellerid, $aqbook
 	$bibliotitle, $callnumber, $notes, $hemisphere, $letter, $manualhistory,$serialsadditems, $location,$auto_summ,$use_chron);
 
 	my @budgets;
-my ($template, $loggedinuser, $cookie)
-= get_template_and_user({template_name => "serials/subscription-add.tmpl",
+my ($template, $loggedinuser, $cookie) = 
+  get_template_and_user({template_name => "serials/subscription-add.tmpl",
 				query => $query,
 				type => "intranet",
 				authnotrequired => 0,
@@ -54,7 +54,31 @@ my ($template, $loggedinuser, $cookie)
 				debug => 1,
 				});
 
+$subscriptionid = $query->param('subscriptionid');
 
+## Item Defaults
+my @subfields = GetMarcSubfieldStructure( 'items', '', ['items.itemnumber', 'items.biblionumber', 'items.biblioitemnumber', 'items.barcode', 'items.callnumber', 'items.homebranch', 'items.holdingbranch'] );
+my $defaults = GetSubscriptionDefaults( $subscriptionid ) if ( $subscriptionid );
+foreach my $s ( @subfields ) {
+  my ( $table, $column ) = split( /\./, $s->{'kohafield'} );
+  $s->{'value'} = $defaults->{ $column };
+  $s->{'authorised_values'} = GetAuthorisedValues( $s->{'authorised_value'}, $defaults->{ $column } ) if ( $s->{'authorised_value'} );
+
+  if ( $column eq 'itype' ) {
+    my @itemtypes = C4::ItemType->all;
+    my @authorised_values;
+    foreach my $i ( @itemtypes ) {
+      my $v;
+      $v->{'authorised_value'} = $i->{'itemtype'};
+      $v->{'lib'} = $i->{'description'};
+      $v->{'selected'} = 1 if ( $i->{'itemtype'} eq $defaults->{ $column } );
+      push( @authorised_values, $v );
+    }
+    $s->{'authorised_values'} = \@authorised_values;
+  }  
+}
+$template->param( defaults_loop => \@subfields );
+## /Item Defaults
 
 my $sub_on;
 my @subscription_types = (
@@ -208,6 +232,8 @@ if ($op eq 'addsubscription') {
                     $serialsadditems,$staffdisplaycount,$opacdisplaycount,$graceperiod,$location,$auto_summary,$usechrono
 				);
 
+    _update_subscription_defaults( $subscriptionid, $query );
+
     print $query->redirect("/cgi-bin/koha/serials/subscription-detail.pl?subscriptionid=$subscriptionid");
 } elsif ($op eq 'modsubscription') {
     my $subscriptionid = $query->param('subscriptionid');
@@ -302,6 +328,9 @@ if ($op eq 'addsubscription') {
             $serialsadditems, $subscriptionid,$staffdisplaycount,$opacdisplaycount,$graceperiod,$location,$auto_summary,$usechrono
         );
     }
+    
+    _update_subscription_defaults( $subscriptionid, $query );
+    
     print $query->redirect("/cgi-bin/koha/serials/subscription-detail.pl?subscriptionid=$subscriptionid");
 } else {
         while (@subscription_types) {
@@ -342,4 +371,19 @@ sub letter_loop {
     }
     $template->param(letterloop => \@letterloop) if @letterloop;
     return;
+}
+
+sub _update_subscription_defaults {
+    my ( $subscriptionid, $query ) = @_;
+    warn "_update_subscription_defaults( $subscriptionid, $query )";
+
+    my @subfields = GetMarcSubfieldStructure( 'items', '', ['items.itemnumber', 'items.biblionumber', 'items.biblioitemnumber', 'items.barcode', 'items.callnumber'] );
+    my $defaults;
+    foreach my $s ( @subfields ) {
+      my $key = $s->{'kohafield'};
+      my ( $tablename, $fieldname ) = split(/\./, $key );
+      
+      $defaults->{ $fieldname } = $query->param( "defaults_$key" );
+    }
+    SetSubscriptionDefaults( $subscriptionid, $defaults );
 }

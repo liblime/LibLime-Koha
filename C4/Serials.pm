@@ -53,7 +53,8 @@ BEGIN {
     &GetSuppliersWithLateIssues             &getsupplierbyserialid
     &getroutinglist     &delroutingmember   &addroutingmember
     &reorder_members
-    &check_routing &updateClaim &removeMissingIssue
+    &check_routing &updateClaim &removeMissingIssue &SetSubscriptionDefaults &GetSubscriptionDefaults
+    
     
 	);
 }
@@ -249,6 +250,12 @@ sub GetSerialInformation {
     my $rq = $dbh->prepare($query);
     $rq->execute($serialid);
     my $data = $rq->fetchrow_hashref;
+
+    my $subscription_defaults = GetSubscriptionDefaults( $data->{'subscriptionid'}  );            
+    foreach my $key ( keys %$subscription_defaults ) {
+      $data->{ $key } = $subscription_defaults->{ $key } unless ( $data->{ $key } );
+    }
+    
     # create item information if we have serialsadditems for this subscription
     if ( $data->{'serialsadditems'} ) {
         my $queryitem=$dbh->prepare("SELECT itemnumber from serialitems where serialid=?");
@@ -265,6 +272,9 @@ sub GetSerialInformation {
                 $itemprocessed->{'itemid'}       = $itemnum->[0];
                 $itemprocessed->{'serialid'}     = $serialid;
                 $itemprocessed->{'biblionumber'} = $data->{'biblionumber'};
+                
+                my $subscription_defaults = GetSubscriptionDefaults( $data->{'subscriptionid'}  );
+                
                 push @{ $data->{'items'} }, $itemprocessed;
             }
         }
@@ -2540,6 +2550,48 @@ sub GetNextDate(@) {
 #     warn "dateNEXTSEQ : ".$resultdate;
     return "$resultdate";
 }
+
+sub SetSubscriptionDefaults {
+  my ( $subscriptionid, $defaults ) = @_;
+
+  $defaults->{'subscriptionid'} = $subscriptionid;
+    
+  my @columns;
+  my @values;
+  my @placeholders;
+  foreach my $k ( keys %$defaults ) {
+    if ( $defaults->{ $k } ) {
+      push( @columns, $k );
+      push( @values, "'$defaults->{ $k }'" );
+      push( @placeholders, '?' );
+    }
+  }
+  
+  my $columns = join( ',', @columns );
+  my $placeholders = join( ',', @placeholders );
+  my $values = join( ',', @values );
+
+  my $sql = "REPLACE INTO subscription_defaults ( $columns ) VALUES ( $values )";
+  my $dbh = C4::Context->dbh;
+  my $sth = $dbh->prepare( $sql );
+  $sth->execute();
+}
+
+sub GetSubscriptionDefaults {
+  my ( $subscriptionid ) = @_;
+  
+  my $sql = "SELECT * FROM subscription_defaults WHERE subscriptionid = ?";
+  my $dbh = C4::Context->dbh;
+  my $sth = $dbh->prepare( $sql );
+  $sth->execute( $subscriptionid );
+  
+  my $row = $sth->fetchrow_hashref();
+
+  my $sub = GetSubscription($subscriptionid);
+  $row->{'callnumber'} = $sub->{'callnumber'};
+  
+  return $row;
+}    
 
 =head2 itemdata
 
