@@ -1077,7 +1077,7 @@ sub ReserveForBestSellersClub {
   $sth->execute();
   while (my $casa = $sth->fetchrow_hashref()){
 
-     my $casaId = $casa->{'casaId'});
+     my $casaId = $casa->{'casaId'};
 
      unless( $casaId ) { return; }
     
