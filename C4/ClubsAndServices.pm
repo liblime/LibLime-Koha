@@ -1075,57 +1075,59 @@ sub ReserveForBestSellersClub {
   ## Find the casaId for the Bestsellers Club archetype
   $sth = $dbh->prepare("SELECT * FROM clubsAndServicesArchetypes WHERE title LIKE '%Bestsellers Club%' ");
   $sth->execute();
-  my $casa = $sth->fetchrow_hashref();
-  while ( my $casaId = $casa->{'casaId'}){
+  while (my $casa = $sth->fetchrow_hashref()){
 
-  unless( $casaId ) { return; }
+     my $casaId = $casa->{'casaId'});
+
+     unless( $casaId ) { return; }
     
-  ## Find all the relevent bestsellers clubs
-  ## casData1 is title, casData2 is author
-  my $sth2 = $dbh->prepare("SELECT * FROM clubsAndServices WHERE casaId = ?");
-  $sth2->execute( $casaId );
-  while ( my $club = $sth2->fetchrow_hashref() ) {
-    #warn "Author/casData2 : '$author'/ " . $club->{'casData2'} . "'";
-    #warn "Title/casData1 : '$title'/" . $club->{'casData1'} . "'";
+     ## Find all the relevent bestsellers clubs
+     ## casData1 is title, casData2 is author
+     my $sth2 = $dbh->prepare("SELECT * FROM clubsAndServices WHERE casaId = ?");
+     $sth2->execute( $casaId );
+     while ( my $club = $sth2->fetchrow_hashref() ) {
+         #warn "Author/casData2 : '$author'/ " . $club->{'casData2'} . "'";
+         #warn "Title/casData1 : '$title'/" . $club->{'casData1'} . "'";
 
-    ## If the author, title or both match, keep it.
-    if ( ($club->{'casData1'} eq $title) || ($club->{'casData2'} eq $author) ) {
-      push( @clubs, $club );
-      #warn "casId" . $club->{'casId'};
-    } elsif ( $club->{'casData1'} =~ m/%/ ) { # Title is using % as a wildcard
-      my @substrings = split(/%/, $club->{'casData1'} );
-      my $all_match = 1;
-      foreach my $sub ( @substrings ) {
-        unless( $title =~ m/\Q$sub/) {
-          $all_match = 0;
-        }
-      }
-      if ( $all_match ) { push( @clubs, $club ); }
-    } elsif ( $club->{'casData2'} =~ m/%/ ) { # Author is using % as a wildcard
-      my @substrings = split(/%/, $club->{'casData2'} );
-      my $all_match = 1;
-      foreach my $sub ( @substrings ) {
-        unless( $author =~ m/\Q$sub/) {
-          $all_match = 0;
-        }
-      }
+         ## If the author, title or both match, keep it.
+         if ( ($club->{'casData1'} eq $title) || ($club->{'casData2'} eq $author) ) {
+            push( @clubs, $club );
+            #warn "casId" . $club->{'casId'};
+         } elsif ( $club->{'casData1'} =~ m/%/ ) { # Title is using % as a wildcard
+            my @substrings = split(/%/, $club->{'casData1'} );
+            my $all_match = 1;
+            foreach my $sub ( @substrings ) {
+               unless( $title =~ m/\Q$sub/) {
+                  $all_match = 0;
+               }
+            }
+           if ( $all_match ) { push( @clubs, $club ); }
+         } elsif ( $club->{'casData2'} =~ m/%/ ) { # Author is using % as a wildcard
+            my @substrings = split(/%/, $club->{'casData2'} );
+            my $all_match = 1;
+            foreach my $sub ( @substrings ) {
+               unless( $author =~ m/\Q$sub/) {
+                  $all_match = 0;
+               }
+            }
       
-      ## Make sure the bib is in the list of itemtypes to use
-      my @itemtypes = split( / /, $club->{'casData3'} );
-      my $found_itemtype_match = 0;
-      if ( @itemtypes ) { ## If no itemtypes are listed, all itemtypes are valid, skip test.
-        foreach my $it ( @itemtypes ) {
-          if ( $it eq $itemtype ) {
-            $found_itemtype_match = 1;
-            last; ## Short circuit for speed.
-          }
-        }
-        $all_match = 0 unless ( $found_itemtype_match ); 
-      }
+            ## Make sure the bib is in the list of itemtypes to use
+            my @itemtypes = split( / /, $club->{'casData3'} );
+            my $found_itemtype_match = 0;
+            if ( @itemtypes ) { ## If no itemtypes are listed, all itemtypes are valid, skip test.
+               foreach my $it ( @itemtypes ) {
+                  if ( $it eq $itemtype ) {
+                     $found_itemtype_match = 1;
+                     last; ## Short circuit for speed.
+                  }
+               }
+               $all_match = 0 unless ( $found_itemtype_match ); 
+            }
       
-      if ( $all_match ) { push( @clubs, $club ); }
-    }
-  }}
+            if ( $all_match ) { push( @clubs, $club ); }
+         }
+     }
+   }
   
   unless( scalar( @clubs ) ) { return; }
   
