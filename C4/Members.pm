@@ -215,30 +215,30 @@ sub SearchMember {
             $query.=" borrowers.branchcode =".$dbh->quote(C4::Context->userenv->{'branch'})." AND " unless (C4::Context->userenv->{'branch'} eq "insecure");
           }      
         }     
-        $query.="((surname LIKE ? OR (surname LIKE ? AND surname REGEXP ?)
-                OR firstname  LIKE ? OR (firstname LIKE ? AND firstname REGEXP ?)
-                OR othernames LIKE ? OR (othernames LIKE ? AND othernames REGEXP ?)
-                OR initials LIKE ? OR (initials LIKE ? AND initials REGEXP ?))
+        $query.="((surname LIKE ?
+                OR firstname  LIKE ?
+                OR othernames LIKE ?
+                OR initials LIKE ?)
         " .
         ($category_type?" AND category_type = ".$dbh->quote($category_type):"");
-        my $regex = '[[:punct:][:space:]]'.$data[0];
+#        my $regex = '[[:punct:][:space:]]'.$data[0];
         @bind = (
-            "$data[0]%", "%$data[0]%", $regex, 
-            "$data[0]%", "%$data[0]%", $regex, 
-            "$data[0]%", "%$data[0]%", $regex, 
-            "$data[0]%", "%$data[0]%", $regex 
+            "$data[0]%", 
+            "$data[0]%", 
+            "$data[0]%", 
+            "$data[0]%" 
         );
         for ( my $i = 1 ; $i < $count ; $i++ ) {
-            $query = $query . " AND (" . " surname LIKE ? OR (surname LIKE ? AND surname REGEXP ?)
-                OR firstname  LIKE ? OR (firstname LIKE ? AND firstname REGEXP ?)
-                OR othernames LIKE ? OR (othernames LIKE ? AND othernames REGEXP ?)
-                OR initials LIKE ? OR (initials LIKE ? AND initials REGEXP ?))";
-            $regex = '[[:punct:][:space:]]'.$data[$i];
+            $query = $query . " AND (" . " surname LIKE
+                OR firstname  LIKE ?
+                OR othernames LIKE ?
+                OR initials LIKE ? )";
+            #$regex = '[[:punct:][:space:]]'.$data[$i];
             push( @bind,
-              "$data[$i]%", "%$data[$i]%", $regex,
-              "$data[$i]%", "%$data[$i]%", $regex,
-              "$data[$i]%", "%$data[$i]%", $regex,
-              "$data[$i]%", "%$data[$i]%", $regex
+              "$data[$i]%",
+              "$data[$i]%",
+              "$data[$i]%",
+              "$data[$i]%"
             );
 
             # FIXME - .= <<EOT;
