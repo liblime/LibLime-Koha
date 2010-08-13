@@ -229,7 +229,7 @@ sub SearchMember {
             "$data[0]%" 
         );
         for ( my $i = 1 ; $i < $count ; $i++ ) {
-            $query = $query . " AND (" . " surname LIKE
+            $query = $query . " AND (" . " surname LIKE ?
                 OR firstname  LIKE ?
                 OR othernames LIKE ?
                 OR initials LIKE ? )";
