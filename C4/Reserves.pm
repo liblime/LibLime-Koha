@@ -1554,9 +1554,6 @@ sub _FixPriority {
             SET    priority = 0
             WHERE reservenumber = ?
               AND found IN ('W', 'T')
-            WHERE biblionumber = ?
-              AND borrowernumber = ?
-              AND found IN ('W', 'T')
         /;
         my $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
