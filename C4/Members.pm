@@ -1373,6 +1373,7 @@ sub GetLostStats {
     }
 
     return [ map { $_->{'total_amount'} = sprintf( '%0.2f', $_->{'total_amount'} ); $_ } values %summary ];
+}
 
 sub GetNotifiedMembers {
     my ( $wait, $max_wait, $branchcode, @ignored_categories ) = @_;
