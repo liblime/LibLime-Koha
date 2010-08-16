@@ -52,6 +52,7 @@ BEGIN {
 		&GetMemberIssuesAndFines
 		&GetPendingIssues
 		&GetAllIssues
+        &GetEarliestDueDate
 
 		&get_institutions 
 		&getzipnamecity 
@@ -73,6 +74,7 @@ BEGIN {
 		&GetMemberAccountRecords
 		&GetBorNotifyAcctRecord
         &GetLostStats
+        &GetNotifiedMembers
 
 		&GetborCatFromCatType 
 		&GetBorrowercategory
@@ -94,6 +96,7 @@ BEGIN {
 	push @EXPORT, qw(
 		&ModMember
 		&changepassword
+        &MarkMemberReported
 	);
 
 	#Delete data
@@ -814,6 +817,7 @@ sub AddMember {
       . ",B_streetnumber=" . $dbh->quote( $data{'B_streetnumber'} )
       . ",B_streettype=" . $dbh->quote( $data{'B_streettype'} )
       . ",gonenoaddress=" . $dbh->quote( $data{'gonenoaddress'} )
+      . ",exclude_from_collection=" . $dbh->quote( $data{'exclude_from_collection'} )
       . ",lost="        . $dbh->quote( $data{'lost'} )
       . ",debarred="    . $dbh->quote( $data{'debarred'} )
       . ",ethnicity="   . $dbh->quote( $data{'ethnicity'} )
@@ -1226,6 +1230,19 @@ sub GetAllIssues {
     return ( $i, \@result );
 }
 
+sub GetEarliestDueDate {
+    my ( $borrowernumber ) = @_;
+    my $dbh = C4::Context->dbh;
+
+    return $dbh->selectrow_array( "
+        SELECT
+          date_due
+          FROM issues
+          WHERE borrowernumber = ?
+          ORDER BY date_due ASC
+          LIMIT 1
+    ", {}, $borrowernumber );
+}
 
 =head2 GetMemberAccountRecords
 
@@ -1356,6 +1373,45 @@ sub GetLostStats {
     }
 
     return [ map { $_->{'total_amount'} = sprintf( '%0.2f', $_->{'total_amount'} ); $_ } values %summary ];
+
+sub GetNotifiedMembers {
+    my ( $wait, $max_wait, $branchcode, @ignored_categories ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $query = "
+        SELECT
+          borrowers.borrowernumber, cardnumber,
+          surname, firstname, address, address2, city, zipcode, dateofbirth,
+          phone, phonepro, contactfirstname, contactname, categorycode,
+          last_reported_date, last_reported_amount, exclude_from_collection
+          FROM borrowers
+          WHERE
+            amount_notify_date IS NOT NULL
+            AND CURRENT_DATE BETWEEN DATE_ADD(amount_notify_date, INTERVAL ? DAY) AND DATE_ADD(amount_notify_date, INTERVAL ? DAY)
+          GROUP BY borrowers.borrowernumber
+    ";
+
+    $query .= " AND categorycode NOT IN (" . join( ", ", map( { "?" } @ignored_categories ) ) . ")" if ( @ignored_categories );
+
+    if ( $branchcode ) {
+        $query .= " AND borrowers.branchcode = ?";
+        push @ignored_categories, $branchcode; # Just to get it in the right place
+    }
+
+    return $dbh->selectall_arrayref( $query, { Slice => {} }, $wait, $max_wait, @ignored_categories );
+}
+
+sub MarkMemberReported {
+    my ( $borrowernumber, $amount ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare( "
+        UPDATE borrowers
+          SET last_reported_date = CURRENT_DATE,
+            last_reported_amount = ?
+          WHERE borrowernumber = ?
+    " );
+    $sth->execute( $amount, $borrowernumber );
 }
 
 =head2 checkuniquemember (OUEST-PROVENCE)

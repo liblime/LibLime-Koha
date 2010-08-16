@@ -53,6 +53,7 @@ BEGIN {
         &GetOverdueDelays
         &GetOverduerules
         &GetFine
+        &GetFineByDescription
         &CreateItemAccountLine
         &ReplacementCost2
         
@@ -659,6 +660,19 @@ sub GetFine {
     return ( $data->{'sum(amountoutstanding)'} );
 }
 
+sub GetFineByDescription {
+    my ( $borrowernumber, $type, $description ) = @_;
+    my $dbh = C4::Context->dbh;
+
+    return $dbh->selectrow_hashref( "
+        SELECT
+          accountno, itemnumber, date, description, amount, amountoutstanding, DATE(timestamp) as update_date
+          FROM accountlines
+          WHERE borrowernumber = ? AND accounttype = ? AND description LIKE ?
+          ORDER BY date DESC
+          LIMIT 1
+    ", {}, $borrowernumber, $type, '%' . $description . '%' );
+}
 
 =head2 GetIssuingRules
 
