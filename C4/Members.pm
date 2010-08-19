@@ -243,7 +243,7 @@ sub SearchMember {
                 )";
             push (@bind, $searchstring);
         }
-        $query .= "order by $orderby";
+        $query .= "order by $orderby" if $orderby;
     }
 
     $sth = $dbh->prepare($query);
