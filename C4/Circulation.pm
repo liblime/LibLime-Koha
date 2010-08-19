@@ -1469,7 +1469,7 @@ sub AddReturn {
             $messages->{'NotIssued'} = $barcode;
             # even though item is not on loan, it may still
             # be transferred; therefore, get current branch information
-            my $curr_iteminfo = GetItem($issue->{'itemnumber'});
+            my $curr_iteminfo = GetItem($itemnumber);
             $issue->{'homebranch'} = $curr_iteminfo->{'homebranch'};
             $issue->{'holdingbranch'} = $curr_iteminfo->{'holdingbranch'};
             $issue->{'itemlost'} = $curr_iteminfo->{'itemlost'};
@@ -1648,14 +1648,14 @@ sub AddReturn {
     #adding message if holdingbranch is non equal a userenv branch to return the document to homebranch
     #we check, if we don't have reserv or transfert for this document, if not, return it to homebranch .
 
-    if ($doreturn and ($branch ne $hbr) and not $messages->{'WrongTransfer'} and ($validTransfert ne 1) ){
+    if (($branch ne $issue->{'homebranch'}) and not $messages->{'WrongTransfer'} and ($validTransfert ne 1) ){
         if ( C4::Context->preference("AutomaticItemReturn"    ) or
             (C4::Context->preference("UseBranchTransferLimits") and
              ! IsBranchTransferAllowed($branch, $hbr, $item->{C4::Context->preference("BranchTransferLimitsType")} )
            )) {
-            $debug and warn sprintf "about to call ModItemTransfer(%s, %s, %s)", $item->{'itemnumber'},$branch, $hbr;
+            $debug and warn sprintf "about to call ModItemTransfer(%s, %s, %s)", $item->{'itemnumber'},$branch, $issue->{'homebranch'};
             $debug and warn "item: " . Dumper($item);
-            ModItemTransfer($item->{'itemnumber'}, $branch, $hbr);
+            ModItemTransfer($item->{'itemnumber'}, $branch, $issue->{'homebranch'});
             $messages->{'WasTransfered'} = 1;
         } else {
             $messages->{'NeedsTransfer'} = 1;   # TODO: instead of 1, specify branchcode that the transfer SHOULD go to, $item->{homebranch}
