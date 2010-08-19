@@ -181,7 +181,10 @@ sub SearchMember {
     my $count;
     my @data;
     my @bind = ();
-    
+
+    # FIXME: find where in members.pl this function is being called a second time with no args
+    return (0, undef) if not defined $searchstring or $searchstring eq '';
+
     # this is used by circulation everytime a new borrowers cardnumber is scanned
     # so we can check an exact match first, if that works return, otherwise do the rest
     my $cardnum = _prefix_cardnum($searchstring);
@@ -218,49 +221,29 @@ sub SearchMember {
             $query.=" borrowers.branchcode =".$dbh->quote(C4::Context->userenv->{'branch'})." AND " unless (C4::Context->userenv->{'branch'} eq "insecure");
           }      
         }     
-        $query.="((surname LIKE ?
+        $query .= '(';
+        for ( my $i = 0 ; $i < $count ; $i++ ) {
+            $query .= "(surname LIKE ?
                 OR firstname  LIKE ?
                 OR othernames LIKE ?
-                OR initials LIKE ?)
-        " .
-        ($category_type?" AND category_type = ".$dbh->quote($category_type):"");
-#        my $regex = '[[:punct:][:space:]]'.$data[0];
-        @bind = (
-            "$data[0]%", 
-            "$data[0]%", 
-            "$data[0]%", 
-            "$data[0]%" 
-        );
-        for ( my $i = 1 ; $i < $count ; $i++ ) {
-            $query = $query . " AND (" . " surname LIKE ?
-                OR firstname  LIKE ?
-                OR othernames LIKE ?
-                OR initials LIKE ? )";
-            #$regex = '[[:punct:][:space:]]'.$data[$i];
-            push( @bind,
-              "$data[$i]%",
-              "$data[$i]%",
-              "$data[$i]%",
-              "$data[$i]%"
-            );
-
-            # FIXME - .= <<EOT;
+                OR initials LIKE ? ) AND ";
+            push( @bind, "$data[$i]%", "$data[$i]%", "$data[$i]%", "$data[$i]%" );
         }
-        $query = $query . ") OR cardnumber LIKE ? ";
+        $query =~ s/ AND $/ /;
+        ($category_type?" AND category_type = ".$dbh->quote($category_type):"");
+        $query .= ") OR cardnumber LIKE ? ";
         push( @bind, $searchstring );
         if (C4::Context->preference('ExtendedPatronAttributes')) {
             $query .= "OR borrowernumber IN (
-SELECT borrowernumber
-FROM borrower_attributes
-JOIN borrower_attribute_types USING (code)
-WHERE staff_searchable = 1
-AND attribute like ?
-)";
+                SELECT borrowernumber
+                FROM borrower_attributes
+                JOIN borrower_attribute_types USING (code)
+                WHERE staff_searchable = 1
+                AND attribute like ?
+                )";
             push (@bind, $searchstring);
         }
         $query .= "order by $orderby";
-
-        # FIXME - .= <<EOT;
     }
 
     $sth = $dbh->prepare($query);
@@ -275,7 +258,7 @@ AND attribute like ?
     $query = "SELECT borrowers.*, categories.* FROM borrowers 
     LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
     LEFT JOIN statistics ON borrowers.borrowernumber = statistics.borrowernumber
-    WHERE statistics.type = 'card_replaced' AND statistics.other = ? GROUP BY statistics.other";
+    WHERE statistics.type = 'card_replaced' AND statistics.other = ?";
     $sth = $dbh->prepare( $query );
     $sth->execute( $searchstring );
     my $prevcards_data = $sth->fetchall_arrayref({});

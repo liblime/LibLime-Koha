@@ -1981,7 +1981,8 @@ CREATE TABLE `statistics` (
   `itemtype` varchar(10) default NULL,
   `borrowernumber` int(11) default NULL,
   `associatedborrower` int(11) default NULL,
-  KEY `timeidx` (`datetime`)
+  KEY `timeidx` (`datetime`),
+  KEY `s_lostcard` (`borrowernumber`,`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

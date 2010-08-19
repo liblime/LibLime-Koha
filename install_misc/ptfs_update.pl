@@ -772,5 +772,11 @@ Then, reindex the database.
 EOF2
 ;
 
+print "Adding index to statistics table for lost card number extraction.\n";
+$dbh->do("create index s_lostcard on statistics (borrowernumber, type)");
+print ".";
+print "done!\n";
+print "==========\n";
+
 $dbh -> do("UPDATE systempreferences SET value='1.1' WHERE variable='KohaPTFSVersion'");
 }
