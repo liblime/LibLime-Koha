@@ -2459,27 +2459,27 @@ sub GetTransfersFromTo {
 
 =head2 GetRenewalDetails
 
-( $intranet_renewals, $opac_renewals ) = GetRenewalDetails( $itemnumber, $renewals_limit );
+( $intranet_renewals, $opac_renewals ) = GetRenewalDetails( $itemnumber, $borrowernumber );
 
 Returns the number of renewals through intranet and opac for the given itemnumber, limited by $renewals_limit
 
 =cut
 
 sub GetRenewalDetails {
-    my ( $itemnumber, $renewals_limit ) = @_;
+    my ( $itemnumber, $borrowernumber ) = @_;
     my $dbh   = C4::Context->dbh;
-    my $query = "SELECT * FROM statistics WHERE type = 'renew' AND itemnumber = ? ORDER BY datetime DESC LIMIT ?";
+    my $query = "SELECT other,count(*) as counter FROM statistics WHERE type = 'renew' AND borrowernumber = ? AND itemnumber= ? GROUP BY other";
     my $sth = $dbh->prepare($query);
-    $sth->execute( $itemnumber, $renewals_limit );
+    $sth->execute( $borrowernumber, $itemnumber );
 
     my $renewals_intranet = 0;
     my $renewals_opac = 0;
 
     while ( my $data = $sth->fetchrow_hashref ) {
       if ( $data->{'other'} eq 'opac' ) {
-        $renewals_opac++;
+	$renewals_opac+= $data->{'counter'};
       } else {
-        $renewals_intranet++;
+        $renewals_intranet+= $data->{'counter'};
       }
     }
 
