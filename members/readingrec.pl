@@ -144,7 +144,30 @@ $sth->execute( $borrowernumber );
 my $notices_sent_stats = $sth->fetchall_arrayref({});
 $template->param( notices_sent_stats_loop => $notices_sent_stats );
 
+## Get patron blocks
+$query = "SELECT *
+	     FROM borrower_edits
+	     WHERE borrowernumber = ?
+             AND field NOT LIKE '%note%'
+	     ORDER BY timestamp DESC
+	     ";
+$sth = $dbh->prepare( $query );
+$sth->execute( $borrowernumber );
+my $patron_edit_stats = $sth->fetchall_arrayref({});
+$template->param( patron_edit_stats_loop => $patron_edit_stats );
+
+## Get patron blocks
+$query = "SELECT *
+             FROM messages
+	     WHERE (messages.auth_value LIKE 'A_%'
+                 OR messages.auth_value LIKE 'B_%'
+                 OR messages.message LIKE 'Unblocked%')
+	     AND borrowernumber = ?
+	     ORDER BY message_date DESC
+	     ";
+$sth = $dbh->prepare( $query );
+$sth->execute( $borrowernumber );
+my $patron_block_stats = $sth->fetchall_arrayref({});
+$template->param( patron_block_stats_loop => $patron_block_stats );
+
 output_html_with_http_headers $input, $cookie, $template->output;
-
-
-

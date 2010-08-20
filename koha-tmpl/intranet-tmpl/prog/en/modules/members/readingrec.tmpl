@@ -1,6 +1,26 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Reading Record for <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script type="text/JavaScript" language="JavaScript">
+//<![CDATA[
+$.tablesorter.addParser({
+    id: 'articles',
+    is: function(s) {return false;  },
+    format: function(s) { return s.toLowerCase().replace(/^(the|an|a) /,''); },
+    type: 'text'
+});
+  $(document).ready(function() {
+    $("#user-circ-reports").tabs();
+    $.tablesorter.defaults.widgets = ['zebra'];
+    $("#readingrecordt").tablesorter();
+    $("#reservest").tablesorter();
+    $("#sentnoticet").tablesorter();
+    $("#patroneditt").tablesorter();
+    $("#patronblockt").tablesorter();
+  });
+//]]>
+</script>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -14,27 +34,34 @@
 	<div id="yui-main">
 	<div class="yui-b">
 <!-- TMPL_INCLUDE NAME="circ-toolbar.inc" -->
+<div id="user-circ-reports" class="toptabs">
+  <ul class="ui-tabs-nav">
+     <li><a href="#reading-record">Reading Record</a></li>
+     <li><a href="#reserves-history">Reserves History</a></li>
+     <li><a href="#sent-notices">Sent Notices History</a></li>
+     <li><a href="#patron-edits">Patron Edit History</a></li>
+     <li><a href="#patron-block">Patron Block History</a></li>
+  </ul>
+
+<div id="reading-record">
 <h1>Reading Record</h1>
 <form action="/cgi-bin/koha/members/readingrec.pl" method="get"><input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" /></form>
 <p><!-- TMPL_IF NAME="showfulllink" -->Showing All Items |
 	<a href="readingrec.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->&amp;limit=50">Show Last 50 Items Only</a> <!-- TMPL_ELSE -->	Showing Last 50 Items | 
 	<a href="readingrec.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->&amp;limit=full">Show All Items</a><!-- /TMPL_IF --></p>
-<table>
+<table id="readingrecordt">
+<thead>
 <tr>
-	<th>
-		<a href="readingrec.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->&amp;order=title&amp;limit=<!-- TMPL_VAR name="limit" -->">Title</a>
-	</th>
-	<th>
-		<a href="readingrec.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->&amp;order=author&amp;limit=<!-- TMPL_VAR name="limit" -->">Author</a>
-	</th>
+	<th>Title</th>
+	<th>Author</th>
 	<th>Call No.</th>
 	<th>Barcode</th>
 	<th>Number of Renewals</th>
 	<th>Date Due</th>
-	<th>
-		<a href="readingrec.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->&amp;order=returndate%20DESC&amp;limit=<!-- TMPL_VAR name="limit" -->">Return Date</a>
-	</th>
+	<th>Return Date</th>
 </tr>
+</thead>
+<tbody>
 <!-- TMPL_LOOP name="loop_reading" -->
 <!-- TMPL_UNLESS NAME="__odd__" -->
     <!-- TMPL_IF NAME="returndate" --><tr class="highlight"><!-- TMPL_ELSE --><tr class="highlight onissue"><!-- /TMPL_IF -->
@@ -69,11 +96,13 @@
 	</td>
 </tr>
 <!-- /TMPL_LOOP -->
-</table>
+</tbody>
+</table></div>
 
+<div id="reserves-history">
 <h2>Reserves History</h2>
 <!-- TMPL_IF NAME="reserves_stats_loop" -->
-	<table>
+	<table id="reservest">
 		<thead>
 		<tr>
 			<th>Action</th>
@@ -95,10 +124,12 @@
 		</tbody>
 	</table>
 <!-- /TMPL_IF -->
+</div>
 
+<div id="sent-notices">
 <h2>Sent Notices History</h2>
 <!-- TMPL_IF NAME="notices_sent_stats_loop" -->
-	<table>
+	<table id="sentnoticet">
 		<thead>
 		<tr>
 			<th>Notices</th>
@@ -116,7 +147,65 @@
 		</tbody>
 	</table>
 <!-- /TMPL_IF -->
+</div>
 
+<div id="patron-edits">
+<p>
+<h2>Patron Edit History</h2>
+<!-- TMPL_IF NAME="patron_edit_stats_loop" -->
+	<table id="patroneditt">
+		<thead>
+		<tr>
+			<th>Edit Date</th>
+			<th>Staff</th>
+			<th>Field</th>
+			<th>Before</th>
+			<th>After</th>
+		</tr>
+		</thead>
+
+		<tbody>
+		<!-- TMPL_LOOP NAME="patron_edit_stats_loop" -->
+			<tr>
+				<td><!-- TMPL_VAR NAME="timestamp" --></td>
+				<td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="staffnumber" -->"><!-- TMPL_VAR NAME="staffnumber" --></a></td>
+				<td><!-- TMPL_VAR NAME="field" --></td>
+				<td><!-- TMPL_VAR NAME="before_value" --></td>
+				<td><!-- TMPL_VAR NAME="after_value" --></td>
+			</tr>
+		<!-- /TMPL_LOOP -->
+		</tbody>
+	</table>
+<!-- /TMPL_IF -->
+</div>
+
+<div id="patron-block">
+<p>
+<h2>Patron Block History</h2>
+<!-- TMPL_IF NAME="patron_block_stats_loop" -->
+	<table id="patronblockt">
+		<thead>
+		<tr>
+			<th>Timestamp</th>
+                        <th>Staff</th>
+			<th>Block Reason</th>
+		</tr>
+		</thead>
+
+		<tbody>
+		<!-- TMPL_LOOP NAME="patron_block_stats_loop" -->
+			<tr>
+				<td><!-- TMPL_VAR NAME="message_date" --></td>
+				<td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="staffnumber" -->"><!-- TMPL_VAR NAME="staffnumber" --></a></td>
+				<td><!-- TMPL_VAR NAME="message" --></td>
+			</tr>
+		<!-- /TMPL_LOOP -->
+		</tbody>
+	</table>
+<!-- /TMPL_IF -->
+</div>
+
+</div>
 </div>
 </div>
 

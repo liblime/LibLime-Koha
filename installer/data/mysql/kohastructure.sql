@@ -15,19 +15,44 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
-
 --
--- Table structure for table `accounttypes`
+-- Table structure for table `accountlines`
 --
 
-DROP TABLE IF EXISTS `accounttypes`;
-CREATE TABLE `accounttypes` (
-  `id` int(11) NOT NULL auto_increment,
-  `accounttype` varchar(16) NOT NULL default '',
+DROP TABLE IF EXISTS `accountlines`;
+CREATE TABLE `accountlines` (
+  `borrowernumber` int(11) NOT NULL default 0,
+  `accountno` smallint(6) NOT NULL default 0,
+  `itemnumber` int(11) default NULL,
+  `date` date default NULL,
+  `amount` decimal(28,6) default NULL,
   `description` mediumtext,
-  `class`  enum('fee', 'payment', 'transaction', 'allocation', 'status') NOT NULL default 'fee',
-  PRIMARY KEY (`id`),
-  KEY `accounttypes_acctype` (`accounttype`)
+  `dispute` mediumtext,
+  `accounttype` varchar(5) default NULL,
+  `amountoutstanding` decimal(28,6) default NULL,
+  `lastincrement` decimal(28,6) default NULL,
+  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  `notify_id` int(11) NOT NULL default 0,
+  `notify_level` int(2) NOT NULL default 0,
+  KEY `acctsborridx` (`borrowernumber`),
+  KEY `timeidx` (`timestamp`),
+  KEY `itemnumber` (`itemnumber`),
+  CONSTRAINT `accountlines_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `accountlines_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `accountoffsets`
+--
+
+DROP TABLE IF EXISTS `accountoffsets`;
+CREATE TABLE `accountoffsets` (
+  `borrowernumber` int(11) NOT NULL default 0,
+  `accountno` smallint(6) NOT NULL default 0,
+  `offsetaccount` smallint(6) NOT NULL default 0,
+  `offsetamount` decimal(28,6) default NULL,
+  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  CONSTRAINT `accountoffsets_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -314,6 +339,7 @@ CREATE TABLE `authorised_values` (
   `category` varchar(10) NOT NULL default '',
   `authorised_value` varchar(80) NOT NULL default '',
   `lib` varchar(80) default NULL,
+  `opaclib` varchar(80) default NULL,
   `imageurl` varchar(200) default NULL,
   PRIMARY KEY  (`id`),
   KEY `name` (`category`),
@@ -419,6 +445,7 @@ CREATE TABLE `borrowers` (
   `address2` text,
   `city` mediumtext NOT NULL,
   `zipcode` varchar(25) default NULL,
+  `country` text,
   `email` mediumtext,
   `phone` text,
   `mobile` varchar(50) default NULL,
@@ -428,8 +455,10 @@ CREATE TABLE `borrowers` (
   `B_streetnumber` varchar(10) default NULL,
   `B_streettype` varchar(50) default NULL,
   `B_address` varchar(100) default NULL,
+  `B_address2` text default NULL,
   `B_city` mediumtext,
   `B_zipcode` varchar(25) default NULL,
+  `B_country` text,
   `B_email` text,
   `B_phone` mediumtext,
   `dateofbirth` date default NULL,
@@ -462,11 +491,9 @@ CREATE TABLE `borrowers` (
   `altcontactaddress2` varchar(255) default NULL,
   `altcontactaddress3` varchar(255) default NULL,
   `altcontactzipcode` varchar(50) default NULL,
+  `altcontactcountry` text default NULL,
   `altcontactphone` varchar(50) default NULL,
   `smsalertnumber` varchar(50) default NULL,
-  `last_reported_date` date default NULL,
-  `last_reported_amount` decimal(30,6) default NULL,
-  `exclude_from_collection` tinyint(1) default NULL,
   UNIQUE KEY `cardnumber` (`cardnumber`),
   PRIMARY KEY `borrowernumber` (`borrowernumber`),
   KEY `categorycode` (`categorycode`),
@@ -511,7 +538,6 @@ CREATE TABLE `borrower_attributes` (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `branch_item_rules`;
 CREATE TABLE `branch_item_rules` (
   `branchcode` varchar(10) NOT NULL,
   `itemtype` varchar(10) NOT NULL,
@@ -548,14 +574,17 @@ CREATE TABLE `branches` (
   `branchaddress1` mediumtext,
   `branchaddress2` mediumtext,
   `branchaddress3` mediumtext,
+  `branchzip` varchar(25) default NULL,  
+  `branchcity` mediumtext,
+  `branchcountry` text,
   `branchphone` mediumtext,
   `branchfax` mediumtext,
   `branchemail` mediumtext,
+  `branchurl` mediumtext,
   `issuing` tinyint(4) default NULL,
   `branchip` varchar(15) default NULL,
   `branchprinter` varchar(100) default NULL,
-  `itembarcodeprefix` varchar(10) default NULL,
-  `patronbarcodeprefix` varchar(10) default NULL,
+  `branchnotes` mediumtext,
   UNIQUE KEY `branchcode` (`branchcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -608,54 +637,6 @@ CREATE TABLE `browser` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `callslips`
---
-DROP TABLE IF EXISTS `callslips`;
-CREATE TABLE `callslips` (
-  `callslip_id` int(11) NOT NULL auto_increment,
-  `request_type` enum('callslip', 'doc_del') NOT NULL default 'callslip',
-  `borrowernumber` int(11) NOT NULL,
-  `pickup_branch` varchar(10) NOT NULL,
-  `request_status` enum('requested', 'not_filled', 'in_transit', 'on_hold', 'completed', 'cancelled', 'expired') 
-    NOT NULL default 'requested',
-  `request_time` timestamp NOT NULL default CURRENT_TIMESTAMP,
-  `not_needed_after` date,
-  `hold_period` int(11) NOT NULL default 0,
-  `no_fill_reason` varchar(50),
-  `biblionumber` int(11) NOT NULL default 0,
-  `requested_itemnumber` int(11) default NULL,
-  `filled_itemnumber` int(11) default NULL,
-  `opac_requested` tinyint(1) NOT NULL default 0,
-  `article_authors` varchar(255),
-  `article_title` varchar(255),
-  `issue_date` varchar(50),
-  `article_pages` varchar(50),
-  `chapter` varchar(50),
-  `request_note` varchar(255),
-  `reply_note` varchar(255),
-  `requesting_staff_borrowernumber` int(11) default NULL,
-  `processing_staff_borrowernumber` int(11) default NULL,
-  `procesing_time` datetime default NULL,
-  `on_hold_time` datetime default NULL,
-  `on_hold_staff_borrowernumber` int(11) default NULL,
-  `keep_on_hold_time` datetime default NULL,
-  `on_hold_expiration_time` datetime default NULL,
-  `request_expiration_time` datetime default NULL,
-  `cancellation_time` datetime default NULL,
-  `cancelled_via_opac` tinyint(1) NOT NULL default 0,
-  `completed_time` datetime default NULL,
-  PRIMARY KEY (`callslip_id`),
-  CONSTRAINT `callslips_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`)
-    ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `slips_ibfk_2` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`)
-    ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `callslips_ibfk_3` FOREIGN KEY (`requested_itemnumber`) REFERENCES `items` (`itemnumber`)
-    ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `callslips_ibfk_4` FOREIGN KEY (`filled_itemnumber`) REFERENCES `items` (`itemnumber`)
-    ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
 -- Table structure for table `categories`
 --
 
@@ -676,63 +657,6 @@ CREATE TABLE `categories` (
   PRIMARY KEY  (`categorycode`),
   UNIQUE KEY `categorycode` (`categorycode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
---
--- Table structure for table `circ_policies`
---
-
-DROP TABLE IF EXISTS `circ_policies`;
-CREATE TABLE `circ_policies` (
-  `id` int(11) NOT NULL auto_increment,
-  `description` varchar(80) NOT NULL,
-  `branchcode` varchar(10) default NULL,
-  `rentalcharge` decimal(28,6) default NULL,
-  `replacement_fee` decimal(28,6) default NULL,
-  `overdue_fine` decimal(28,6) default NULL,
-  `issue_length` int(11) NOT NULL,
-  `issue_length_unit` enum('days','hours','minutes') NOT NULL default 'days',
-  `grace_period` int(11) NOT NULL,
-  `grace_period_unit` enum('days','hours','minutes') NOT NULL default 'days',
-  `fine_period` int(11) NOT NULL,
-  `fine_period_unit` enum('days','hours','minutes') NOT NULL default 'days',
-  `loan_type` enum('daily','hourly') NOT NULL default 'daily',
-  `maxissueqty` int(11) default NULL,
-  `maxrenewals` int(11) default NULL,
-  `maxfine` decimal(28,6) default NULL,
-  `hourly_incr` int(11) default NULL,
-  `allow_overnight` tinyint default NULL,
-  `allow_over_closed` tinyint default NULL,
-  `overnight_due` int(11) default NULL,
-  `overnight_window` int(11) default NULL,
-  `allow_callslip` tinyint(4) default NULL,
-  `allow_doc_del` tinyint(4) default NULL,
-  PRIMARY KEY  (`id`),
-  CONSTRAINT `circ_policies_fk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
-
-
---
--- Table structure for table `circ_rules`
---
-
-DROP TABLE IF EXISTS `circ_rules`;
-CREATE TABLE `circ_rules` (
-  `id` int(11) NOT NULL auto_increment,
-  `categorycode` varchar(10) default NULL,
-  `branchcode` varchar(10) default NULL,
-  `itemtype` varchar(10) default NULL,
-  `circ_policies_id` int(11) NOT NULL,
-  `circ_termsets_id` int(11) default NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `circ_rule` (`categorycode`,`branchcode`,`itemtype`),
-  CONSTRAINT `circ_rules_fk_1` FOREIGN KEY (`categorycode`) REFERENCES `categories` (`categorycode`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `circ_rules_fk_2` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `circ_rules_fk_3` FOREIGN KEY (`itemtype`) REFERENCES `itemtypes` (`itemtype`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `circ_rules_fk_4` FOREIGN KEY (`circ_policies_id`) REFERENCES `circ_policies` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `circ_rules_fk_5` FOREIGN KEY (`circ_termsets_id`) REFERENCES `circ_termsets` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 
 --
 -- Table structure for table `borrower_branch_circ_rules`
@@ -780,7 +704,7 @@ CREATE TABLE `default_branch_circ_rules` (
 --
 -- Table structure for table `default_branch_item_rules`
 --
-DROP TABLE IF EXISTS `default_branch_item_rules`;
+
 CREATE TABLE `default_branch_item_rules` (
   `itemtype` varchar(10) NOT NULL,
   `holdallowed` tinyint(1) default NULL,
@@ -941,6 +865,7 @@ CREATE TABLE `deletedborrowers` (
   `address2` text,
   `city` mediumtext NOT NULL,
   `zipcode` varchar(25) default NULL,
+  `country` text,
   `email` mediumtext,
   `phone` text,
   `mobile` varchar(50) default NULL,
@@ -950,8 +875,10 @@ CREATE TABLE `deletedborrowers` (
   `B_streetnumber` varchar(10) default NULL,
   `B_streettype` varchar(50) default NULL,
   `B_address` varchar(100) default NULL,
+  `B_address2` text default NULL,
   `B_city` mediumtext,
   `B_zipcode` varchar(25) default NULL,
+  `B_country` text,
   `B_email` text,
   `B_phone` mediumtext,
   `dateofbirth` date default NULL,
@@ -984,11 +911,9 @@ CREATE TABLE `deletedborrowers` (
   `altcontactaddress2` varchar(255) default NULL,
   `altcontactaddress3` varchar(255) default NULL,
   `altcontactzipcode` varchar(50) default NULL,
+  `altcontactcountry` text default NULL,
   `altcontactphone` varchar(50) default NULL,
   `smsalertnumber` varchar(50) default NULL,
-  `last_reported_date` date default NULL,
-  `last_reported_amount` decimal(30,6) default NULL,
-  `exclude_from_collection` tinyint(1) default NULL,
   KEY `borrowernumber` (`borrowernumber`),
   KEY `cardnumber` (`cardnumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1016,7 +941,7 @@ CREATE TABLE `deleteditems` (
   `damaged` tinyint(1) NOT NULL default 0,
   `itemlost` tinyint(1) NOT NULL default 0,
   `wthdrawn` tinyint(1) NOT NULL default 0,
-  `itemcallnumber` varchar(30) default NULL,
+  `itemcallnumber` varchar(255) default NULL,
   `issues` smallint(6) default NULL,
   `renewals` smallint(6) default NULL,
   `reserves` smallint(6) default NULL,
@@ -1026,13 +951,14 @@ CREATE TABLE `deleteditems` (
   `paidfor` mediumtext,
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `location` varchar(80) default NULL,
+  `permanent_location` varchar(80) default NULL,
   `onloan` date default NULL,
   `cn_source` varchar(10) default NULL,
   `cn_sort` varchar(30) default NULL,
   `ccode` varchar(10) default NULL,
   `materials` varchar(10) default NULL,
   `uri` varchar(255) default NULL,
-  `itemtype` varchar(10) default NULL,
+  `itype` varchar(10) default NULL,
   `more_subfields_xml` longtext default NULL,
   `enumchron` varchar(80) default NULL,
   `copynumber` varchar(32) default NULL,
@@ -1042,11 +968,7 @@ CREATE TABLE `deleteditems` (
   KEY `delitembinoidx` (`biblioitemnumber`),
   KEY `delitembibnoidx` (`biblionumber`),
   KEY `delhomebranch` (`homebranch`),
-  KEY `delholdingbranch` (`holdingbranch`),
-  KEY `delitemtype` (`itemtype`),
-  CONSTRAINT `deleteditems_ibfk_1` FOREIGN KEY (`itemtype`)
-    REFERENCES `itemtypes` (`itemtype`) ON DELETE SET NULL ON UPDATE CASCADE
-
+  KEY `delholdingbranch` (`holdingbranch`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1058,23 +980,6 @@ CREATE TABLE `ethnicity` (
   `code` varchar(10) NOT NULL default '',
   `name` varchar(255) default NULL,
   PRIMARY KEY  (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `fine_thresholds`
---
-
-DROP TABLE IF EXISTS `fine_thresholds`;
-CREATE TABLE `fine_thresholds` (
-  `id` int(11) NOT NULL auto_increment,
-  `name` varchar(50) NOT NULL,
-  `branchcode` varchar(10) default NULL,
-  `itemtype` varchar(10) default NULL,
-  `patron_category` varchar(10) default NULL,
-  `accounttype` varchar(16) default NULL,
-  `amount` decimal(28,6) default '0.000000',
-  PRIMARY KEY  (`id`),
-  KEY `fine_thresholds_branchcode` (`branchcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1112,7 +1017,6 @@ CREATE TABLE `import_batches` (
   `branchcode` varchar(10) default NULL,
   `num_biblios` int(11) NOT NULL default 0,
   `num_items` int(11) NOT NULL default 0,
-  `num_summaries` int(11) NOT NULL default '0',
   `upload_timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `overlay_action` enum('replace', 'create_new', 'use_template', 'ignore') NOT NULL default 'create_new',
   `nomatch_action` enum('create_new', 'ignore') NOT NULL default 'create_new',
@@ -1214,22 +1118,22 @@ CREATE TABLE `import_items` (
 
 DROP TABLE IF EXISTS `issues`;
 CREATE TABLE `issues` (
-  `id` int(11) not NULL auto_increment,
   `borrowernumber` int(11) default NULL,
   `itemnumber` int(11) default NULL,
+  `date_due` date default NULL,
   `branchcode` varchar(10) default NULL,
-  `duedate` datetime default NULL,
-  `issuedate` datetime NOT NULL,
-  `lastreneweddate` datetime default NULL,
+  `issuingbranch` varchar(18) default NULL,
+  `returndate` date default NULL,
+  `lastreneweddate` date default NULL,
+  `return` varchar(4) default NULL,
   `renewals` tinyint(4) default NULL,
-  `loan_type` enum('daily','hourly') NOT NULL default 'daily',
-  PRIMARY KEY (`id`),
+  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  `issuedate` date default NULL,
   KEY `issuesborridx` (`borrowernumber`),
   KEY `issuesitemidx` (`itemnumber`),
-  KEY `bordate` (`borrowernumber`,`issuedate`),
+  KEY `bordate` (`borrowernumber`,`timestamp`),
   CONSTRAINT `issues_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE SET NULL,
-  CONSTRAINT `issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE SET NULL,
-  CONSTRAINT `issues_ibfk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL
+  CONSTRAINT `issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1251,37 +1155,10 @@ CREATE TABLE `issuingrules` (
   `maxissueqty` int(4) default NULL,
   `issuelength` int(4) default NULL,
   `branchcode` varchar(10) NOT NULL default '',
-  `circ_termsets_id` int(11) default NULL,
   PRIMARY KEY  (`branchcode`,`categorycode`,`itemtype`),
   KEY `categorycode` (`categorycode`),
-  KEY `itemtype` (`itemtype`),
-    CONSTRAINT `issuingrules_fk_1` FOREIGN KEY (`circ_termsets_id`) REFERENCES `circ_termsets` (`id`)  ON DELETE SET NULL ON UPDATE SET NULL
+  KEY `itemtype` (`itemtype`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `circ_term_dates`
---
-CREATE TABLE `circ_term_dates` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `circ_termsets_id` INT(11) NOT NULL,
-    `startdate` date default NULL,
-    `enddate` date default NULL,
-    `duedate` date NOT NULL,
-    PRIMARY KEY (`id`),
-    CONSTRAINT `circ_termset_dates_fk_1` FOREIGN KEY (`circ_termsets_id`) REFERENCES `circ_termsets` (`id`)  ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `circ_termsets`
---
-CREATE TABLE `circ_termsets` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `description` VARCHAR(64) default NULL,
-    `branchcode` VARCHAR(10) default NULL,
-    PRIMARY KEY (`id`),
-    CONSTRAINT `circ_termsets_fk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 
 --
 -- Table structure for table `items`
@@ -1306,7 +1183,7 @@ CREATE TABLE `items` (
   `damaged` tinyint(1) NOT NULL default 0,
   `itemlost` tinyint(1) NOT NULL default 0,
   `wthdrawn` tinyint(1) NOT NULL default 0,
-  `itemcallnumber` varchar(30) default NULL,
+  `itemcallnumber` varchar(255) default NULL,
   `issues` smallint(6) default NULL,
   `renewals` smallint(6) default NULL,
   `reserves` smallint(6) default NULL,
@@ -1316,31 +1193,26 @@ CREATE TABLE `items` (
   `paidfor` mediumtext,
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `location` varchar(80) default NULL,
+  `permanent_location` varchar(80) default NULL,
   `onloan` date default NULL,
   `cn_source` varchar(10) default NULL,
   `cn_sort` varchar(30) default NULL,
   `ccode` varchar(10) default NULL,
   `materials` varchar(10) default NULL,
   `uri` varchar(255) default NULL,
-  `itemtype` varchar(10) default NULL,
+  `itype` varchar(10) default NULL,
   `more_subfields_xml` longtext default NULL,
   `enumchron` varchar(80) default NULL,
   `copynumber` varchar(32) default NULL,
-  `summary_id` int(11) default NULL,
   PRIMARY KEY  (`itemnumber`),
   UNIQUE KEY `itembarcodeidx` (`barcode`),
   KEY `itembinoidx` (`biblioitemnumber`),
   KEY `itembibnoidx` (`biblionumber`),
   KEY `homebranch` (`homebranch`),
   KEY `holdingbranch` (`holdingbranch`),
-  KEY `items_ibfk_4` (`summary_id`),
-  KEY `itemtype` (`itemtype`),
-  KEY `cn_sort` (`cn_sort`),
   CONSTRAINT `items_ibfk_1` FOREIGN KEY (`biblioitemnumber`) REFERENCES `biblioitems` (`biblioitemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `items_ibfk_2` FOREIGN KEY (`homebranch`) REFERENCES `branches` (`branchcode`) ON UPDATE CASCADE,
-  CONSTRAINT `items_ibfk_3` FOREIGN KEY (`holdingbranch`) REFERENCES `branches` (`branchcode`) ON UPDATE CASCADE,
-  CONSTRAINT `items_ibfk_4` FOREIGN KEY (`summary_id`) REFERENCES `summaries` (`summary_id`),
-  CONSTRAINT `items_ibfk_5` FOREIGN KEY (`itemtype`)  REFERENCES `itemtypes` (`itemtype`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `items_ibfk_3` FOREIGN KEY (`holdingbranch`) REFERENCES `branches` (`branchcode`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1353,70 +1225,48 @@ CREATE TABLE `itemtypes` (
   `description` mediumtext,
   `renewalsallowed` smallint(6) default NULL,
   `rentalcharge` double(16,4) default NULL,
-  `replacement_price` decimal(8,2) default '0.00',
   `notforloan` smallint(6) default NULL,
   `imageurl` varchar(200) default NULL,
   `summary` text,
-  `replacementprice` decimal(28,6) default NULL,
   PRIMARY KEY  (`itemtype`),
   UNIQUE KEY `itemtype` (`itemtype`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `labels`
+-- Table structure for table `labels_batches`
 --
 
-DROP TABLE IF EXISTS `labels`;
-CREATE TABLE `labels` (
-  `labelid` int(11) NOT NULL auto_increment,
-  `batch_id` int(10) NOT NULL default 1,
-  `itemnumber` varchar(100) NOT NULL default '',
+DROP TABLE IF EXISTS `labels_batches`;
+CREATE TABLE `labels_batches` (
+  `label_id` int(11) NOT NULL auto_increment,
+  `batch_id` int(10) NOT NULL default '1',
+  `item_number` int(11) NOT NULL default '0',
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  PRIMARY KEY  (`labelid`)
+  `branch_code` varchar(10) NOT NULL default 'NB',
+  PRIMARY KEY  USING BTREE (`label_id`),
+  KEY `branch_fk` (`branch_code`),
+  KEY `item_fk` (`item_number`),
+  CONSTRAINT `item_fk_constraint` FOREIGN KEY (`item_number`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE,
+  CONSTRAINT `branch_fk_constraint` FOREIGN KEY (`branch_code`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `labels_conf`
+-- Table structure for table `labels_layouts`
 --
 
-DROP TABLE IF EXISTS `labels_conf`;
-CREATE TABLE `labels_conf` (
- `id` int(4) NOT NULL auto_increment,
-  `barcodetype` char(100) default '',
-  `title` int(1) default '0',
-  `subtitle` int(1) default '0',
-  `itemtype` int(1) default '0',
-  `barcode` int(1) default '0',
-  `dewey` int(1) default '0',
-  `classification` int(1) default NULL,
-  `subclass` int(1) default '0',
-  `itemcallnumber` int(1) default '0',
-  `author` int(1) default '0',
-  `issn` int(1) default '0',
-  `isbn` int(1) default '0',
-  `startlabel` int(2) NOT NULL default '1',
-  `printingtype` char(32) default 'BAR',
-  `formatstring` mediumtext default NULL,
-  `layoutname` char(20) NOT NULL default 'TEST',
+DROP TABLE IF EXISTS `labels_layouts`;
+CREATE TABLE `labels_layouts` (
+  `layout_id` int(4) NOT NULL auto_increment,
+  `barcode_type` char(100) NOT NULL default 'CODE39',
+  `printing_type` char(32) NOT NULL default 'BAR',
+  `layout_name` char(20) NOT NULL default 'DEFAULT',
   `guidebox` int(1) default '0',
-  `active` tinyint(1) default '1',
-  `fonttype` char(10) collate utf8_unicode_ci default NULL,
-  `ccode` char(4) collate utf8_unicode_ci default NULL,
-  `callnum_split` int(1) default NULL,
-  `text_justify` char(1) collate utf8_unicode_ci default NULL,
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `labels_profile`
---
-
-DROP TABLE IF EXISTS `labels_profile`;
-CREATE TABLE `labels_profile` (
-  `tmpl_id` int(4) NOT NULL,
-  `prof_id` int(4) NOT NULL,
-  UNIQUE KEY `tmpl_id` (`tmpl_id`),
-  UNIQUE KEY `prof_id` (`prof_id`)
+  `font` char(10) character set utf8 collate utf8_unicode_ci NOT NULL default 'TR',
+  `font_size` int(4) NOT NULL default '10',
+  `callnum_split` int(1) default '0',
+  `text_justify` char(1) character set utf8 collate utf8_unicode_ci NOT NULL default 'L',
+  `format_string` varchar(210) NOT NULL default 'barcode',
+  PRIMARY KEY  USING BTREE (`layout_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1425,24 +1275,25 @@ CREATE TABLE `labels_profile` (
 
 DROP TABLE IF EXISTS `labels_templates`;
 CREATE TABLE `labels_templates` (
-`tmpl_id` int(4) NOT NULL auto_increment,
-  `tmpl_code` char(100)  default '',
-  `tmpl_desc` char(100) default '',
-  `page_width` float default '0',
-  `page_height` float default '0',
-  `label_width` float default '0',
-  `label_height` float default '0',
-  `topmargin` float default '0',
-  `leftmargin` float default '0',
-  `cols` int(2) default '0',
-  `rows` int(2) default '0',
-  `colgap` float default '0',
-  `rowgap` float default '0',
-  `active` int(1) default NULL,
-  `units` char(20)  default 'PX',
-  `fontsize` int(4) NOT NULL default '3',
-  `font` char(10) NOT NULL default 'TR',
-  PRIMARY KEY  (`tmpl_id`)
+  `template_id` int(4) NOT NULL auto_increment,
+  `profile_id` int(4) default NULL,
+  `template_code` char(100) NOT NULL default 'DEFAULT TEMPLATE',
+  `template_desc` char(100) NOT NULL default 'Default description',
+  `page_width` float NOT NULL default '0',
+  `page_height` float NOT NULL default '0',
+  `label_width` float NOT NULL default '0',
+  `label_height` float NOT NULL default '0',
+  `top_text_margin` float NOT NULL default '0',
+  `left_text_margin` float NOT NULL default '0',
+  `top_margin` float NOT NULL default '0',
+  `left_margin` float NOT NULL default '0',
+  `cols` int(2) NOT NULL default '0',
+  `rows` int(2) NOT NULL default '0',
+  `col_gap` float NOT NULL default '0',
+  `row_gap` float NOT NULL default '0',
+  `units` char(20) NOT NULL default 'POINT',
+  PRIMARY KEY  (`template_id`),
+  KEY `template_profile_fk_constraint` (`profile_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1632,25 +1483,23 @@ CREATE TABLE `nozebra` (
 
 DROP TABLE IF EXISTS `old_issues`;
 CREATE TABLE `old_issues` (
-  `id` bigint NOT NULL,
   `borrowernumber` int(11) default NULL,
   `itemnumber` int(11) default NULL,
+  `date_due` date default NULL,
   `branchcode` varchar(10) default NULL,
-  `duedate` datetime NOT NULL,
-  `returndate` datetime default NULL,
-  `issuedate` datetime NOT NULL,
-  `lastreneweddate` datetime default NULL,
+  `issuingbranch` varchar(18) default NULL,
+  `returndate` date default NULL,
+  `lastreneweddate` date default NULL,
+  `return` varchar(4) default NULL,
   `renewals` tinyint(4) default NULL,
-  `loan_type` enum('daily','hourly') NOT NULL default 'daily',
-  PRIMARY KEY (`id`),
+  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  `issuedate` date default NULL,
   KEY `old_issuesborridx` (`borrowernumber`),
   KEY `old_issuesitemidx` (`itemnumber`),
-  KEY `old_bordate` (`borrowernumber`,`issuedate`),
+  KEY `old_bordate` (`borrowernumber`,`timestamp`),
   CONSTRAINT `old_issues_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) 
     ON DELETE SET NULL ON UPDATE SET NULL,
   CONSTRAINT `old_issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) 
-    ON DELETE SET NULL ON UPDATE SET NULL,
-  CONSTRAINT `old_issues_ibfk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
     ON DELETE SET NULL ON UPDATE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1767,18 +1616,17 @@ CREATE TABLE `printers` (
 
 DROP TABLE IF EXISTS `printers_profile`;
 CREATE TABLE `printers_profile` (
-  `prof_id` int(4) NOT NULL auto_increment,
-  `printername` varchar(40) NOT NULL,
-  `tmpl_id` int(4) NOT NULL,
-  `paper_bin` varchar(20) NOT NULL,
-  `offset_horz` float default NULL,
-  `offset_vert` float default NULL,
-  `creep_horz` float default NULL,
-  `creep_vert` float default NULL,
-  `unit` char(20) NOT NULL default 'POINT',
-  PRIMARY KEY  (`prof_id`),
-  UNIQUE KEY `printername` (`printername`,`tmpl_id`,`paper_bin`),
-  CONSTRAINT `printers_profile_pnfk_1` FOREIGN KEY (`tmpl_id`) REFERENCES `labels_templates` (`tmpl_id`) ON DELETE CASCADE ON UPDATE CASCADE
+  `profile_id` int(4) NOT NULL auto_increment,
+  `printer_name` varchar(40) NOT NULL default 'Default Printer',
+  `template_id` int(4) NOT NULL default '0',
+  `paper_bin` varchar(20) NOT NULL default 'Bypass',
+  `offset_horz` float NOT NULL default '0',
+  `offset_vert` float NOT NULL default '0',
+  `creep_horz` float NOT NULL default '0',
+  `creep_vert` float NOT NULL default '0',
+  `units` char(20) NOT NULL default 'POINT',
+  PRIMARY KEY  (`profile_id`),
+  UNIQUE KEY `printername` (`printer_name`,`template_id`,`paper_bin`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1981,8 +1829,7 @@ CREATE TABLE `statistics` (
   `itemtype` varchar(10) default NULL,
   `borrowernumber` int(11) default NULL,
   `associatedborrower` int(11) default NULL,
-  KEY `timeidx` (`datetime`),
-  KEY `s_lostcard` (`borrowernumber`,`type`)
+  KEY `timeidx` (`datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -2292,6 +2139,8 @@ CREATE TABLE language_subtag_registry (
         type varchar(25), -- language-script-region-variant-extension-privateuse
         description varchar(25), -- only one of the possible descriptions for ease of reference, see language_descriptions for the complete list
         added date,
+        id int(11) NOT NULL auto_increment,
+        PRIMARY KEY  (`id`),
         KEY `subtag` (`subtag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -2302,6 +2151,8 @@ DROP TABLE IF EXISTS language_rfc4646_to_iso639;
 CREATE TABLE language_rfc4646_to_iso639 (
         rfc4646_subtag varchar(25),
         iso639_2_code varchar(25),
+        id int(11) NOT NULL auto_increment,
+        PRIMARY KEY  (`id`),
         KEY `rfc4646_subtag` (`rfc4646_subtag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -2311,6 +2162,8 @@ CREATE TABLE language_descriptions (
         type varchar(25),
         lang varchar(25),
         description varchar(255),
+        id int(11) NOT NULL auto_increment,
+        PRIMARY KEY  (`id`),
         KEY `lang` (`lang`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -2377,7 +2230,7 @@ CREATE TABLE `tmp_holdsqueue` (
   `cardnumber` varchar(16) default NULL,
   `reservedate` date default NULL,
   `title` mediumtext,
-  `itemcallnumber` varchar(30) default NULL,
+  `itemcallnumber` varchar(255) default NULL,
   `holdingbranch` varchar(10) default NULL,
   `pickbranch` varchar(10) default NULL,
   `notes` text,
@@ -2515,88 +2368,74 @@ CREATE TABLE `item_circulation_alert_preferences` (
   KEY `branchcode` (`branchcode`,`categorycode`,`item_type`, `notification`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `fees`;
-CREATE TABLE `fees` (
-    id int(11) NOT NULL auto_increment,
-    borrowernumber int(11) NOT NULL,
-    itemnumber int(11) default NULL,
-    branchcode varchar(10) default NULL,
-    description mediumtext default NULL,
-    curr_totaldue decimal(28,6) default 0,
-    orig_totaldue decimal(28,6) default 0,
-    date date default NULL,
-    accounttype varchar(16) default NULL,
-    notify_id int(11) default NULL,
-    notify_level int(2) NOT NULL default 0,
-    dispute mediumtext default NULL,
-    last_updated timestamp NOT NULL default CURRENT_TIMESTAMP,
-    orig_timestamp timestamp NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT `fees_ibfk1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT `fees_ibfk2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT `fees_ibfk3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT `fees_ibfk4` FOREIGN KEY (`accounttype`) REFERENCES `accounttypes` (`accounttype`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-DROP TABLE IF EXISTS `payments`;
-CREATE TABLE `payments` (
-    id int(11) NOT NULL auto_increment,
-    borrowernumber int(11) NOT NULL,
-    branchcode varchar(10) default NULL,
-    description mediumtext default NULL,
-    amount decimal(28,6) default 0,
-    accounttype varchar(16) default NULL,
-    date date default NULL,
-    unallocated decimal(28,6) default 0,
-    timestamp timestamp NOT NULL,
-    operator_id int(11) default NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT `payments_operator` FOREIGN KEY (`operator_id`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE SET NULL,
-    CONSTRAINT `payments_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT `payments_acct` FOREIGN KEY (`accounttype`) REFERENCES `accounttypes` (`accounttype`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-DROP TABLE IF EXISTS `fee_transactions`;
-CREATE TABLE `fee_transactions` (
-    id int(11) NOT NULL auto_increment,
-    fee_id int(11) default NULL,
-    payment_id int(11) default NULL,
-    borrowernumber int(11) NOT NULL,
-    description mediumtext default NULL,
-    amount decimal(28,6) default 0,
-    accounttype varchar(16) default NULL,
-    operator_id int(11) default NULL,
-    branchcode varchar(10) default NULL,
-    date date default NULL,
-    timestamp timestamp NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT `fee_trans_ibfk1` FOREIGN KEY (`fee_id`) REFERENCES `fees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT `fee_trans_ibfk2` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT `fee_trans_operator` FOREIGN KEY (`operator_id`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT `fee_trans_borrower` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT `fee_trans_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT `fee_trans_acct` FOREIGN KEY (`accounttype`) REFERENCES `accounttypes` (`accounttype`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
 --
--- Table structure for the table library_hours
+-- Table structure for table `messages`
 --
 
-DROP TABLE IF EXISTS `library_hours`;
-CREATE TABLE `library_hours` (
+CREATE TABLE `messages` (
+  `message_id` int(11) NOT NULL auto_increment,
+  `borrowernumber` int(11) NOT NULL,
+  `branchcode` varchar(4) default NULL,
+  `message_type` varchar(1) NOT NULL,
+  `message` text NOT NULL,
+  `message_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`message_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `borrower_edits`;
+CREATE TABLE `borrower_edits` (
   `id` int(11) NOT NULL auto_increment,
-  `branchcode` varchar(10) default NULL,
-  `date`     date default NULL,
-  `weekday` smallint(6) default NULL,
-  `open`  time default NULL,
-  `close` time default NULL,
-  PRIMARY KEY  (`id`),
-  UNIQUE KEY  (`branchcode`,`date`),
-  UNIQUE KEY  (`branchcode`,`weekday`),
-  CONSTRAINT `library_hours_fk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `borrowernumber` int(11) NOT NULL,
+  `staffnumber` int(11) NOT NULL,
+  `field` text NOT NULL,
+  `before_value` mediumtext DEFAULT NULL,
+  `after_value` mediumtext DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `bnumber` (`borrowernumber`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `courses`;
+CREATE TABLE `courses` (
+    `course_id` INT(11) NOT NULL auto_increment,
+    `department` VARCHAR(20),       -- req, auth value
+    `course_number` VARCHAR(255),    -- req, free text
+    `section` VARCHAR(255),          -- free text
+    `course_name` VARCHAR(255),      -- req, free text
+    `term` VARCHAR(20),             -- req, auth value
+    `staff_note` mediumtext,
+    `public_note` mediumtext,
+    `students_count` VARCHAR(20),
+    `course_status` enum('enabled','disabled') NOT NULL DEFAULT 'enabled',
+    `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`course_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `instructor_course_link`;
+CREATE TABLE `instructor_course_link` (
+    `instructor_course_link_id` INT(11) NOT NULL auto_increment,
+    `course_id` INT(11) NOT NULL default 0,
+    `instructor_borrowernumber` INT(11) NOT NULL default 0,
+    PRIMARY KEY (`instructor_course_link_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `course_reserves`;
+CREATE TABLE `course_reserves` (
+    `course_reserve_id` INT(11) NOT NULL auto_increment,
+    `course_id` INT(11) NOT NULL,
+    `itemnumber` INT(11) NOT NULL,
+    `staff_note` mediumtext,
+    `public_note` mediumtext,
+    `itemtype` VARCHAR(10) default NULL,
+    `ccode` VARCHAR(10) default NULL,
+    `location` varchar(80) default NULL,
+    `branchcode` varchar(10) NOT NULL,
+    `original_itemtype` VARCHAR(10) default NULL,
+    `original_ccode` VARCHAR(10) default NULL,
+    `original_branchcode` varchar(10) NOT NULL,
+    `original_location` varchar(80) default NULL,
+    `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`course_reserve_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -2607,141 +2446,4 @@ CREATE TABLE `library_hours` (
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
-DROP TABLE IF EXISTS `summaries`;
-CREATE TABLE `summaries` (
-`summary_id` INTEGER auto_increment ,
-`biblionumber` int(11) DEFAULT NULL,
-`homebranch` VARCHAR(10) default NULL,
-`holdingbranch` VARCHAR(10) default NULL,
-`callnumber` char (30) default '',
-`shelvinglocation` int (11) default NULL,
-`call_number_source` char (10) default '',
-`collection_code` int (11) default NULL,
-`URI` char (255) default '',
-`itemtype` varchar(10) default NULL,
-`copy_number` INTEGER default '0',
-`last_modified_by` INTEGER default '0',
-`last_modified_timestamp` TIMESTAMP NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-`created_by` INTEGER default '0',
-`created_timestamp` TIMESTAMP,
-PRIMARY KEY (`summary_id`),
-CONSTRAINT `summaries_ibfk_1` FOREIGN KEY (`biblionumber`)        REFERENCES `biblio`    (`biblionumber`)   ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summaries_ibfk_2` FOREIGN KEY (`homebranch`)          REFERENCES `branches`  (`branchcode`)     ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summaries_ibfk_3` FOREIGN KEY (`holdingbranch`)       REFERENCES `branches`  (`branchcode`)     ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summaries_ibfk_4` FOREIGN KEY (`shelvinglocation`)    REFERENCES `authorised_values` (`id`)     ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summaries_ibfk_5` FOREIGN KEY (`call_number_source`)  REFERENCES `class_sources` (`cn_source`)  ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summaries_ibfk_6` FOREIGN KEY (`collection_code`)     REFERENCES `authorised_values` (`id`)     ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summaries_ibfk_7` FOREIGN KEY (`itemtype`)            REFERENCES `itemtypes` (`itemtype`)       ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summaries_ibfk_8` FOREIGN KEY (`last_modified_by`)    REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summaries_ibfk_9` FOREIGN KEY (`created_by`)          REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `unstructured_summary_holdings_statements`;
-CREATE TABLE `unstructured_summary_holdings_statements` (
-`unstructured_summary_holdings_statement_id` INTEGER auto_increment ,
-`summary_id` INTEGER default '0',
-`sequence_number` INTEGER NOT NULL default '0',
-`public_note` char (100) default '',
-`staff_note` char (100) default '',
-`statement` MEDIUMTEXT NOT NULL default '',
-PRIMARY KEY (`unstructured_summary_holdings_statement_id`),
-CONSTRAINT `unstructured_summary_holdings_statements_ibfk_1` FOREIGN KEY (`summary_id`) REFERENCES `summaries` (`summary_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `structured_summary_holdings_statements`;
-CREATE TABLE `structured_summary_holdings_statements` (
-`structured_summary_holdings_statement_id` INTEGER auto_increment ,
-`summary_id` INTEGER default '0',
-`sequence_number` INTEGER NOT NULL default '0',
-`public_note` char (100) NOT NULL default '',
-`staff_note` char (100) NOT NULL default '',
-`display_template` MEDIUMTEXT NOT NULL default '',
-PRIMARY KEY (`structured_summary_holdings_statement_id`),
-CONSTRAINT `structured_summary_holdings_statements` FOREIGN KEY (`summary_id`) REFERENCES `summaries` (`summary_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-DROP TABLE IF EXISTS `structured_summary_holdings_statement_levels`;
-CREATE TABLE `structured_summary_holdings_statement_levels` (
-`id` INTEGER NOT NULL auto_increment ,
-`structured_summary_holdings_statement_id` INTEGER default '0',
-`level` INTEGER NOT NULL default '0',
-`beginning_label` char (32) NOT NULL default '',
-`beginning_value` char (32) NOT NULL default '',
-`ending_label` char (32) NOT NULL default '',
-`ending_value` char (32) NOT NULL default '',
-PRIMARY KEY (`id`),
-CONSTRAINT `structured_summary_holdings_statement_levels_ibfk_1` FOREIGN KEY (`structured_summary_holdings_statement_id`) REFERENCES `structured_summary_holdings_statements` (`structured_summary_holdings_statement_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `summary_record_templates`;
-CREATE TABLE `summary_record_templates` (
-`id` INTEGER auto_increment ,
-`homebranch` varchar(10) NOT NULL default '',
-`holdingbranch` varchar(10) NOT NULL default '',
-`itemtype` varchar(10) NOT NULL default '',
-`shelvinglocation` char (80) NOT NULL default '',
-`call_number_source` char (10) NOT NULL default '',
-`collection_code` char (10) NOT NULL default '',
-`URI` char (255) NOT NULL default '',
-PRIMARY KEY (`id`),
-CONSTRAINT `summary_record_templates_ibfk_1` FOREIGN KEY (`homebranch`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summary_record_templates_ibfk_2` FOREIGN KEY (`holdingbranch`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
-CONSTRAINT `summary_record_templates_ibfk_3` FOREIGN KEY (`itemtype`) REFERENCES `itemtypes` (`itemtype`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `import_summaries`;
-CREATE TABLE `import_summaries` (
-  `import_record_id` int(11) NOT NULL,
-  `control_number` varchar(25) default NULL,
-  `biblio_control_number` varchar(25) default NULL,
-  `original_source` varchar(25) default NULL,
-  KEY `import_record_ibfk_1` (`import_record_id`),
-  KEY `biblio_control_number` (`biblio_control_number`),
-  CONSTRAINT `import_summaries_ibfk_1` FOREIGN KEY (`import_record_id`) REFERENCES `import_records` (`import_record_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `callslips`;
-CREATE TABLE `callslips` (
-          `callslip_id` int(11) NOT NULL auto_increment,
-          `request_type` enum('callslip','doc_del') NOT NULL default 'callslip',
-          `borrowernumber` int(11) NOT NULL,
-          `pickup_branch` varchar(10) NOT NULL,
-          `request_status` enum('requested','not_filled','in_process','in_transit','on_hold','completed','cancelled','expired') NOT NULL default 'requested',
-          `request_time` timestamp NOT NULL default CURRENT_TIMESTAMP,
-          `not_needed_after` date default NULL,
-          `no_fill_reason` varchar(50) default NULL,
-          `biblionumber` int(11) NOT NULL default '0',
-          `requested_itemnumber` int(11) default NULL,
-          `filled_itemnumber` int(11) default NULL,
-          `opac_requested` tinyint(1) NOT NULL default '0',
-          `article_authors` varchar(255) default NULL,
-          `article_title` varchar(255) default NULL,
-          `issue_date` varchar(50) default NULL,
-          `article_pages` varchar(50) default NULL,
-          `chapter` varchar(50) default NULL,
-          `request_note` varchar(255) default NULL,
-          `reply_note` varchar(255) default NULL,
-          `requesting_staff_borrowernumber` int(11) default NULL,
-          `processing_staff_borrowernumber` int(11) default NULL,
-          `procesing_time` datetime default NULL,
-          `on_hold_staff_borrowernumber` int(11) default NULL,
-          `keep_on_hold_time` datetime default NULL,
-          `on_hold_expiration_time` datetime default NULL,
-          `request_expiration_time` datetime default NULL,
-          `cancellation_time` datetime default NULL,
-          `cancelled_via_opac` tinyint(1) NOT NULL default '0',
-          `completed_time` datetime default NULL,
-      PRIMARY KEY  (`callslip_id`),
-      KEY `callslips_ibfk_1` (`borrowernumber`),
-      KEY `slips_ibfk_2` (`biblionumber`),
-      KEY `callslips_ibfk_3` (`requested_itemnumber`),
-      KEY `callslips_ibfk_4` (`filled_itemnumber`),
-      KEY `callslips_lookup` (`request_status`,`requested_itemnumber`),
-      CONSTRAINT `callslips_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-      CONSTRAINT `callslips_ibfk_3` FOREIGN KEY (`requested_itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE,
-      CONSTRAINT `callslips_ibfk_4` FOREIGN KEY (`filled_itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE,
-      CONSTRAINT `callslips_ibfk_2` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -653,6 +653,23 @@ sub ModMember {
       C4::Stats::UpdateStats( C4::Context->userenv->{branch}, 'card_replaced', '', $member->{'cardnumber'}, '', '', $data{'borrowernumber'} );
     }
 
+    my ($oldval,$newval);
+    my $staffnumber = $data{'staffnumber'};
+    delete $data{'staffnumber'};
+    my $sth;
+    my $query = "
+      INSERT INTO borrower_edits
+        (borrowernumber,staffnumber,field,before_value,after_value)
+      VALUES (?,?,?,?,?)";
+    foreach (keys %data) {
+      if ($member->{$_} ne $data{$_}) {
+        $oldval = $member->{$_};
+        $newval = $data{$_};
+        next if ($_ eq 'password' && ($newval eq '****'));
+        $sth = $dbh->prepare($query);
+        $sth->execute($data{'borrowernumber'},$staffnumber,$_,$oldval,$newval);
+      }
+    }
     my $iso_re = C4::Dates->new()->regexp('iso');
     foreach (qw(dateofbirth dateexpiry dateenrolled)) {
         if (my $tempdate = $data{$_}) {                                 # assignment, not comparison
@@ -671,8 +688,8 @@ sub ModMember {
     }
     my @columns = &columns;
     my %hashborrowerfields = (map {$_=>1} @columns);
-    my $query = "UPDATE borrowers SET \n";
-    my $sth;
+    $query = "UPDATE borrowers SET \n";
+    $sth;
     my @parameters;  
     
     # test to know if you must update or not the borrower password
@@ -2295,7 +2312,7 @@ sub DebarMember {
 
 =over 4
 
-AddMessage( $borrowernumber, $message_type, $message, $branchcode );
+AddMessage( $borrowernumber, $message_type, $message, $branchcode, $staffnumber );
 
 Adds a message to the messages table for the given borrower.
 
@@ -2308,7 +2325,7 @@ Returns:
 =cut
 
 sub AddMessage {
-    my ( $borrowernumber, $message_type, $message, $branchcode ) = @_;
+    my ( $borrowernumber, $message_type, $message, $branchcode, $staffnumber, $checkout_display ) = @_;
 
     my $dbh  = C4::Context->dbh;
 
@@ -2316,9 +2333,27 @@ sub AddMessage {
       return;
     }
 
-    my $query = "INSERT INTO messages ( borrowernumber, branchcode, message_type, message ) VALUES ( ?, ?, ?, ? )";
+    my $query = "SELECT * FROM authorised_values WHERE category = 'BOR_NOTES'";
     my $sth = $dbh->prepare($query);
-    $sth->execute( $borrowernumber, $branchcode, $message_type, $message );
+    $sth->execute();
+    my $auth_val;
+    while (my $row = $sth->fetchrow_hashref) {
+      if ($row->{lib} eq $message) {
+        $auth_val = $row->{authorised_value};
+        last;
+      }
+    }
+
+    if ($auth_val) {
+      $query = "INSERT INTO messages ( borrowernumber, branchcode, message_type, message, staffnumber, auth_value, checkout_display ) VALUES ( ?, ?, ?, ?, ?, ?,? )";
+      $sth = $dbh->prepare($query);
+      $sth->execute( $borrowernumber, $branchcode, $message_type, $message, $staffnumber, $auth_val, $checkout_display );
+    }
+    else {
+      $query = "INSERT INTO messages ( borrowernumber, branchcode, message_type, message, staffnumber, checkout_display ) VALUES ( ?, ?, ?, ?, ?, ?)";
+      $sth = $dbh->prepare($query);
+      $sth->execute( $borrowernumber, $branchcode, $message_type, $message, $staffnumber, $checkout_display );
+    }
 
     return 1;
 }
@@ -2356,6 +2391,7 @@ sub GetMessages {
                   WHERE borrowernumber = ?
                   AND message_type LIKE ?
                   AND messages.branchcode = branches.branchcode
+                  AND checkout_display = 1
                   ORDER BY message_date DESC";
     my $sth = $dbh->prepare($query);
     $sth->execute( $borrowernumber, $type ) ;
@@ -2409,20 +2445,34 @@ sub GetMessagesCount {
 
 =over 4
 
-DeleteMessage( $message_id );
+DeleteMessage( $message_id, $staffnumber );
 
 =back
 
 =cut
 
 sub DeleteMessage {
-    my ( $message_id ) = @_;
+
+    my ( $message_id, $staffnumber ) = @_;
 
     my $dbh = C4::Context->dbh;
 
-    my $query = "DELETE FROM messages WHERE message_id = ?";
+    my $query = "UPDATE messages
+                   SET checkout_display = 0
+                   WHERE message_id = ?";
     my $sth = $dbh->prepare($query);
     $sth->execute( $message_id );
+
+    $query = "SELECT * FROM messages
+                WHERE message_id = ?";
+    $sth = $dbh->prepare($query);
+    $sth->execute( $message_id );
+
+    my $message = $sth->fetchrow_hashref;
+    if ($message->{auth_value} =~ /^B_/) {
+      AddMessage($message->{borrowernumber},$message->{message_type},'Unblocked',$message->{branchcode},$staffnumber,0);
+    }
+
 }
 
 =head2 _prefix_cardnum

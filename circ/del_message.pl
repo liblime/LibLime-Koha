@@ -47,7 +47,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 my $borrowernumber = $input->param('borrowernumber');
 my $message_id     = $input->param('message_id');
 
-DeleteMessage($message_id);
+DeleteMessage($message_id, $loggedinuser);
 
 print $input->redirect(
     "/cgi-bin/koha/circ/circulation.pl?borrowernumber=$borrowernumber");

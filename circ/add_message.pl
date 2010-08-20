@@ -49,7 +49,7 @@ my $branchcode       = $input->param('branchcode');
 my $message_type     = $input->param('message_type');
 my $borrower_message = $input->param('borrower_message');
 
-AddMessage( $borrowernumber, $message_type, $borrower_message, $branchcode );
+AddMessage( $borrowernumber, $message_type, $borrower_message, $branchcode, $loggedinuser, 1 );
 
 print $input->redirect(
     "/cgi-bin/koha/circ/circulation.pl?borrowernumber=$borrowernumber");

@@ -779,4 +779,28 @@ print "done!\n";
 print "==========\n";
 
 $dbh -> do("UPDATE systempreferences SET value='1.1' WHERE variable='KohaPTFSVersion'");
+
+print "Adding table for patron edits tracking.\n";
+$dbh->do(qq/
+    CREATE TABLE `borrower_edits` (
+      `id` int(11) NOT NULL auto_increment,
+      `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `borrowernumber` int(11) NOT NULL,
+      `staffnumber` int(11) NOT NULL,
+      `field` text NOT NULL,
+      `before_value` mediumtext DEFAULT NULL,
+      `after_value` mediumtext DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      KEY `bnumber` (`borrowernumber`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/);
+    
+$dbh->do("ALTER TABLE messages ADD COLUMN checkout_display tinyint(1) NOT NULL default 1;");
+$dbh->do("ALTER TABLE messages ADD COLUMN auth_value varchar(80) default NULL;");
+$dbh->do("ALTER TABLE messages ADD COLUMN staffnumber int(11) NOT NULL;");
+print ".";
+print "done!\n";
+print "==========\n";
+
+$dbh -> do("UPDATE systempreferences SET value='1.1.0.1' WHERE variable='KohaPTFSVersion'");
 }
