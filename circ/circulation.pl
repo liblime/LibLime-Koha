@@ -567,7 +567,7 @@ if ($borrower) {
         $issued_itemtypes_count->{ $it->{'itemtype'} }++;
 
         if ( $it->{'renewals'} ) {
-          ( $it->{'renewals_intranet'}, $it->{'renewals_opac'} ) = GetRenewalDetails( $it->{'itemnumber'}, $it->{'renewals'} );
+          ( $it->{'renewals_intranet'}, $it->{'renewals_opac'} ) = GetRenewalDetails( $it->{'itemnumber'}, $borrower->{'borrowernumber'} );
         }
 
         if ( $todaysdate eq $it->{'issuedate'} or $todaysdate eq $it->{'lastreneweddate'} ) {

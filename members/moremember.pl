@@ -277,7 +277,7 @@ for ( my $i = 0 ; $i < $issuecount ; $i++ ) {
     $row{'charge'} = sprintf( "%.2f", $charge );
 
     if ( $row{'renewals'} ) {
-       ( $row{'renewals_intranet'}, $row{'renewals_opac'} ) = GetRenewalDetails( $row{'itemnumber'}, $row{'renewals'} );
+       ( $row{'renewals_intranet'}, $row{'renewals_opac'} ) = GetRenewalDetails( $row{'itemnumber'}, $borrowernumber );
     }
 
 
