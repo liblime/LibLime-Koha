@@ -94,7 +94,7 @@ foreach my $br ( keys %$branches ) {
             # we check if we have a reserv for this transfer
             my @checkreserv = GetReservesFromItemnumber($num->{'itemnumber'} );
             if ( $checkreserv[0] ) {
-                my $getborrower = GetMemberDetails( $checkreserv[1] );
+                my $getborrower = GetMemberDetails( $checkreserv[2] );
                 $getransf{'borrowernum'}       = $getborrower->{'borrowernumber'};
                 $getransf{'borrowername'}      = $getborrower->{'surname'};
                 $getransf{'borrowerfirstname'} = $getborrower->{'firstname'};

@@ -56,6 +56,7 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 );
 
 my $action = $input->param('action');
+$action = '' if not defined $action;
 if ( $action eq 'suspend' ) {
   my $resumedate = $input->param('resumedate');
   
@@ -288,13 +289,15 @@ foreach my $biblionumber (@biblionumbers) {
             $count--;
         }
 
-        if ( defined $borrowerinfo && ($borrowerinfo->{borrowernumber} eq $res->{borrowernumber}) && !CanHoldMultipleItems($res->{itemtype}) ) {
-        if ( $borrowerinfo->{borrowernumber} eq $res->{borrowernumber} && !CanHoldMultipleItems($res->{itemtype}) ) {
-            $warnings = 1;
-            $alreadyreserved = 1;
-            $biblioloopiter{warn} = 1;
-            $biblioloopiter{alreadyres} = 1;
-        }}
+        if ( defined $borrowerinfo && exists $borrowerinfo->{'borrowernumber'} &&
+          ($borrowerinfo->{borrowernumber} eq $res->{borrowernumber}) && !CanHoldMultipleItems($res->{itemtype}) ) {
+            if ( $borrowerinfo->{borrowernumber} eq $res->{borrowernumber} && !CanHoldMultipleItems($res->{itemtype}) ) {
+                $warnings = 1;
+                $alreadyreserved = 1;
+                $biblioloopiter{warn} = 1;
+                $biblioloopiter{alreadyres} = 1;
+            }
+        }
     }
 
     $template->param( alreadyreserved => $alreadyreserved,
@@ -394,7 +397,7 @@ foreach my $biblionumber (@biblionumbers) {
             }
             
             # checking reserve
-            my ($reservedate,$reservedfor,$expectedAt) = GetReservesFromItemnumber($itemnumber);
+            my ($reservenumber,$reservedate,$reservedfor,$expectedAt) = GetReservesFromItemnumber($itemnumber);
             my $ItemBorrowerReserveInfo = GetMemberDetails( $reservedfor, 0);
             
             if ( defined $reservedate ) {
@@ -473,8 +476,9 @@ foreach my $biblionumber (@biblionumbers) {
             my $policy_holdallowed = 1;
             
             $item->{'holdallowed'} = $issuingrule->{'holdallowed'};
-            
-            if ( $issuingrule->{'holdallowed'} == 0 ||
+
+            if ( ! exists $issuingrule->{'holdallowed'} ||
+                 $issuingrule->{'holdallowed'} == 0 ||
                  ( $issuingrule->{'holdallowed'} == 1 && defined($borrowerinfo) && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) ) {
                 $policy_holdallowed = 0;
             }

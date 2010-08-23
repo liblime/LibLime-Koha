@@ -298,7 +298,6 @@ sub GetReservesFromBiblionumber {
 
 sub GetSuspendedReservesFromBiblionumber {
     my ( $biblionumber ) = @_;
-warn "GetSuspendedReservesFromBiblionumber";
     my $dbh   = C4::Context->dbh;
 
     # Find the desired items in the reserves
@@ -311,7 +310,6 @@ warn "GetSuspendedReservesFromBiblionumber";
     $sth->execute($biblionumber);
     my @results;
     while ( my $data = $sth->fetchrow_hashref ) {
-warn "Found res " . $data->{'reservenumber'};
         push @results, $data;
     }
     return ( $#results + 1, \@results );
@@ -319,7 +317,7 @@ warn "Found res " . $data->{'reservenumber'};
 
 =item GetReservesFromItemnumber
 
- ( $reservedate, $borrowernumber, $branchcode ) = GetReservesFromItemnumber($itemnumber);
+ ( $reservenumber, $reservedate, $borrowernumber, $branchcode ) = GetReservesFromItemnumber($itemnumber);
 
    TODO :: Description here
 
@@ -338,8 +336,8 @@ sub GetReservesFromItemnumber {
     }
     my $sth_res = $dbh->prepare($query);
     $sth_res->execute($itemnumber);
-    my ( $reservedate, $borrowernumber,$branchcode ) = $sth_res->fetchrow_array;
-    return ( $reservedate, $borrowernumber, $branchcode );
+    my ( $reservenumber, $reservedate, $borrowernumber,$branchcode ) = $sth_res->fetchrow_array;
+    return ( $reservenumber, $reservedate, $borrowernumber, $branchcode );
 }
 
 =item GetReservesFromBorrowernumber
@@ -501,7 +499,6 @@ sub GetReserveCount {
     my $row = $sth->fetchrow_hashref;
 
     my $res_count = $row->{counter};
-    warn "GetReservesCount: Found $res_count holds, shelf: $shelf_holds_only";
     return $res_count;
 }
 
