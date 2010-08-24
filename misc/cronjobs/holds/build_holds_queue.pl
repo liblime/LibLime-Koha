@@ -425,7 +425,7 @@ Looks up the issuing rule (for holdallowed) for a given request and item.
 sub _get_issuing_rule {
     my ($request, $item) = @_;
 
-    my ($branch, $categorycode, $itemtype) = ($request->{'borrowerbranch'}, $request->{'borrowercategory'}, $item->{'itype'});
+    my ($branch, $categorycode, $itemtype) = ($item->{'holdingbranch'}, $request->{'borrowercategory'}, $item->{'itype'});
 
     $issuingrules{$branch}{$categorycode}{$itemtype} ||= GetIssuingRule( $categorycode, $itemtype, $branch );
 
