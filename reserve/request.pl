@@ -550,7 +550,7 @@ foreach my $biblionumber (@biblionumbers) {
             push @optionloop, { num => $res->{priority}, selected => 1, };
         }
         
-        if ( defined $res->{'found'} && $res->{'found'} eq 'W' || $res->{'found'} eq 'T' ) {
+        if ( defined $res->{'found'} && ( $res->{'found'} eq 'W' || $res->{'found'} eq 'T' ) ) {
             my $item = $res->{'itemnumber'};
             $item = GetBiblioFromItemNumber($item,undef);
             $reserve{'wait'}= 1; 
