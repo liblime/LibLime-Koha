@@ -230,7 +230,7 @@ sub SearchMember {
             push( @bind, "$data[$i]%", "$data[$i]%", "$data[$i]%", "$data[$i]%" );
         }
         $query =~ s/ AND $/ /;
-        ($category_type?" AND category_type = ".$dbh->quote($category_type):"");
+        $query .= " AND category_type = '" . $dbh->quote($category_type) . "' " if $category_type;
         $query .= ") OR cardnumber LIKE ? ";
         push( @bind, $searchstring );
         if (C4::Context->preference('ExtendedPatronAttributes')) {
@@ -648,9 +648,11 @@ sub ModMember {
     my $dbh = C4::Context->dbh;
     
     my $member = GetMemberDetails( $data{'borrowernumber'} );
-    
-    if ( $member->{'cardnumber'} ne  $data{'cardnumber'} ) {
-      C4::Stats::UpdateStats( C4::Context->userenv->{branch}, 'card_replaced', '', $member->{'cardnumber'}, '', '', $data{'borrowernumber'} );
+    return if not defined $member;
+
+    if ( exists $data{'cardnumber'} and $member->{'cardnumber'} ne $data{'cardnumber'} ) {
+        my $branch = (C4::Context->userenv) ? C4::Context->userenv->{branch} : undef;
+        C4::Stats::UpdateStats( $branch, 'card_replaced', '', $member->{'cardnumber'}, '', '', $data{'borrowernumber'} );
     }
 
     my ($oldval,$newval);
@@ -689,7 +691,6 @@ sub ModMember {
     my @columns = &columns;
     my %hashborrowerfields = (map {$_=>1} @columns);
     $query = "UPDATE borrowers SET \n";
-    $sth;
     my @parameters;  
     
     # test to know if you must update or not the borrower password
