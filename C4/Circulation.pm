@@ -1562,6 +1562,8 @@ sub AddReturn {
             $messages->{'WasReturned'} = 1;    # FIXME is the "= 1" right?
     }
 
+    ModItem({ onloan => undef }, $issue->{'biblionumber'}, $item->{'itemnumber'
+
     # the holdingbranch is updated if the document is returned to another location.
     # this is always done regardless of whether the item was on loan or not
     if ($item->{'holdingbranch'} ne $branch) {
