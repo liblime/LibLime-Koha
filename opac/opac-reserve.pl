@@ -428,7 +428,7 @@ foreach my $biblioNum (@biblionumbers) {
         }
 
         # checking reserve
-        my ($reservedate,$reservedfor,$expectedAt) = GetReservesFromItemnumber($itemNum);
+        my ($reservenumber, $reservedate,$reservedfor,$expectedAt) = GetReservesFromItemnumber($itemNum);
         my $ItemBorrowerReserveInfo = GetMemberDetails( $reservedfor, 0);
         if ( defined $reservedate ) {
             $itemLoopIter->{backgroundcolor} = 'reserved';
