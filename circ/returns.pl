@@ -596,6 +596,7 @@ $template->param(
     dropboxmode             => $dropboxmode,
     dropboxdate				=> $dropboxdate->output(),
 	overduecharges          => $overduecharges,
+    soundon                 => C4::Context->preference("SoundOn"),
     DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
     AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange'),
 );
