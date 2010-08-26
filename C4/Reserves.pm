@@ -764,7 +764,9 @@ sub CheckReserves {
            items.biblioitemnumber,
            itemtypes.notforloan,
            items.notforloan AS itemnotforloan,
-           items.itemnumber
+           items.itemnumber,
+           items.itype,
+           items.homebranch
     FROM   items
     LEFT JOIN biblioitems ON items.biblioitemnumber = biblioitems.biblioitemnumber
     LEFT JOIN itemtypes   ON biblioitems.itemtype   = itemtypes.itemtype
@@ -779,7 +781,7 @@ sub CheckReserves {
         $sth->execute($barcode);
     }
     # note: we get the itemnumber because we might have started w/ just the barcode.  Now we know for sure we have it.
-    my ( $biblio, $bibitem, $notforloan_per_itemtype, $notforloan_per_item, $itemnumber ) = $sth->fetchrow_array;
+    my ( $biblio, $bibitem, $notforloan_per_itemtype, $notforloan_per_item, $itemnumber, $itemtype, $itembranch ) = $sth->fetchrow_array;
 
     return ( 0, 0 ) unless $itemnumber; # bail if we got nothing.
 
@@ -799,6 +801,12 @@ sub CheckReserves {
     if ($count) {
         my $priority = 10000000;
         foreach my $res (@reserves) {
+            my $issuingrule = C4::Circulation::GetIssuingRule ($res->{'borrowercategory'},$itemtype,$itembranch);
+            next unless $issuingrule;
+            if ($issuingrule -> {'holdallowed'} == 0 || 
+                ($issuingrule->{'holdallowed'} == 1 && $itembranch ne $res->{'borrowerbranch'})){
+              next;
+            }
             # FIXME - $item might be undefined or empty: the caller
             # might be searching by barcode.
             if ( $res->{'itemnumber'} == $item && $res->{'priority'} == 0) {
@@ -1649,14 +1657,20 @@ sub _Findgroupreserve {
                reserves.priority AS priority,
                reserves.timestamp AS timestamp,
                biblioitems.biblioitemnumber AS biblioitemnumber,
-               reserves.itemnumber          AS itemnumber
+               reserves.itemnumber          AS itemnumber,
+               borrowers.categorycode       AS borrowercategory,
+               borrowers.branchcode         AS borrowerbranch
         FROM reserves
         JOIN biblioitems USING (biblionumber)
-        JOIN hold_fill_targets USING (biblionumber, borrowernumber, itemnumber)
+        JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
+        JOIN hold_fill_targets ON 
+             (reserves.biblionumber=hold_fill_targets.biblionumber AND
+              reserves.borrowernumber=hold_fill_targets.borrowernumber AND
+              reserves.itemnumber=hold_fill_targets.itemnumber)
         WHERE found IS NULL
         AND priority > 0
         AND item_level_request = 1
-        AND itemnumber = ?
+        AND reserves.itemnumber = ?
         AND reservedate <= CURRENT_DATE()
     /;
     my $sth = $dbh->prepare($item_level_target_query);
@@ -1680,10 +1694,16 @@ sub _Findgroupreserve {
                reserves.priority AS priority,
                reserves.timestamp AS timestamp,
                biblioitems.biblioitemnumber AS biblioitemnumber,
-               reserves.itemnumber          AS itemnumber
+               reserves.itemnumber          AS itemnumber,
+               borrowers.categorycode       AS borrowercategory,
+               borrowers.branchcode         AS borrowerbranch
         FROM reserves
         JOIN biblioitems USING (biblionumber)
-        JOIN hold_fill_targets USING (biblionumber, borrowernumber)
+        JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
+        JOIN hold_fill_targets ON 
+             (reserves.biblionumber=hold_fill_targets.biblionumber AND
+              reserves.borrowernumber=hold_fill_targets.borrowernumber AND
+              reserves.itemnumber=hold_fill_targets.itemnumber)
         WHERE found IS NULL
         AND priority > 0
         AND item_level_request = 0
@@ -1710,9 +1730,12 @@ sub _Findgroupreserve {
                reserves.priority AS priority,
                reserves.timestamp AS timestamp,
                reserveconstraints.biblioitemnumber AS biblioitemnumber,
-               reserves.itemnumber                 AS itemnumber
+               reserves.itemnumber                 AS itemnumber,
+               borrowers.categorycode       AS borrowercategory,
+               borrowers.branchcode         AS borrowerbranch
         FROM reserves
           LEFT JOIN reserveconstraints ON reserves.biblionumber = reserveconstraints.biblionumber
+        JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
         WHERE reserves.biblionumber = ?
           AND ( ( reserveconstraints.biblioitemnumber = ?
           AND reserves.borrowernumber = reserveconstraints.borrowernumber
