@@ -65,7 +65,7 @@ if ($item) {
     my ( $messages, $nextreservinfo ) = ModReserveCancelAll( $item, $borrowernumber );
     # if we have a result
     if ($nextreservinfo) {
-        my $borrowerinfo = GetMemberDetails( $nextreservinfo );
+        my $borrowerinfo = GetMember( $borrowernumber, 'borrowernumber' );
         my $iteminfo = GetBiblioFromItemNumber($item);
         if ( $messages->{'transfert'} ) {
             $template->param(
@@ -102,7 +102,7 @@ foreach my $num (@getreserves) {
     my $gettitle     = GetBiblioFromItemNumber( $num->{'itemnumber'} );
     # fix up item type for display
     $gettitle->{'itemtype'} = C4::Context->preference('item-level_itypes') ? $gettitle->{'itype'} : $gettitle->{'itemtype'};
-    my $getborrower  = GetMemberDetails( $num->{'borrowernumber'} );
+    my $getborrower  = GetMember( $num->{'borrowernumber'}, 'borrowernumber');
     my $itemtypeinfo = getitemtypeinfo( $gettitle->{'itemtype'} );  # using the fixed up itype/itemtype
     $getreserv{'waitingdate'} = format_date( $num->{'waitingdate'} );
 
@@ -130,11 +130,13 @@ foreach my $num (@getreserves) {
     $getreserv{'borrowername'}      = $getborrower->{'surname'};
     $getreserv{'borrowerfirstname'} = $getborrower->{'firstname'};
     $getreserv{'borrowerphone'}     = $getborrower->{'phone'};
-    if ( $getborrower->{'emailaddress'} ) {
-        $getreserv{'borrowermail'}  = $getborrower->{'emailaddress'};
+    if ( $getborrower->{'email'} ) {
+        $getreserv{'borrowermail'}  = $getborrower->{'email'};
     }
     push @reservloop, \%getreserv;
 }
+
+@reservloop = sort {$a->{'homebranch'} . $a->{'itemcallnumber'} cmp $b->{'homebranch'} . $b->{'itemcallnumber'}} @reservloop;
 
 $template->param(
     reserveloop => \@reservloop,
