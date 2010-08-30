@@ -2216,21 +2216,27 @@ sub AddRenewal {
     $sth->finish;
 
     # If the due date wasn't specified, calculate it by adding the
-    # book's loan length to today's date.
+    # book's loan length to today's date using the CircControl branch
     unless ($datedue && $datedue->output('iso')) {
 
-        my $borrower = C4::Members::GetMemberDetails( $borrowernumber, 0 ) or return undef;
+        my $borrower = C4::Members::GetMember( $borrowernumber ) or die "Unable to find member '$borrowernumber'";
+        if ( C4::Context->preference('CircControl') eq 'PickupLibrary' ) {
+            $branch = $issuedata->{'branchcode'};
+        } elsif ( C4::Context->preference('CircControl') eq 'PatronLibrary' ) {
+            $branch = $borrower->{'categorycode'};
+        } else {
+            $branch = $item->{homebranch};
+        }
+
         my $loanlength = GetLoanLength(
             $borrower->{'categorycode'},
              (C4::Context->preference('item-level_itypes')) ? $biblio->{'itype'} : $biblio->{'itemtype'} ,
-			$item->{homebranch}			# item's homebranch determines loanlength OR do we want the branch specified by the AddRenewal argument?
+			$branch
         );
-		#FIXME -- use circControl?
         $datedue = (C4::Context->preference('RenewalPeriodBase') eq 'date_due') ?
                                         C4::Dates->new($issuedata->{date_due}, 'iso') :
                                         C4::Dates->new();
-		$datedue =  CalcDateDue(C4::Dates->new(),$loanlength,$branch,$borrower);	# this branch is the transactional branch.
-								# The question of whether to use item's homebranch calendar is open.
+		$datedue =  CalcDateDue(C4::Dates->new(),$loanlength,$branch,$borrower);
     }
 
     # $lastreneweddate defaults to today.
