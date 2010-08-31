@@ -682,7 +682,6 @@ function isValidDate(theField){
 					Cannot Suspend Waiting Items
 				<!-- TMPL_ELSE -->
 			                <input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" value="1" />
-			                <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />                                                 
 			                <label>Resume on:</label>                                                                  
 			                <input type="text" onblur="isValidDate(this)" size="10" maxlength="10" id="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
 			                <label for="resumedate" >( Optional, use format MM-DD-YYYY )</label>                                                    
