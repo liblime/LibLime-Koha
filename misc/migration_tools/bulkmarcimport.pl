@@ -189,7 +189,15 @@ RECORD: while (  ) {
 
     unless ($test_parameter) {
         my ( $biblionumber, $biblioitemnumber, $itemnumbers_ref, $errors_ref );
-        eval { ( $biblionumber, $biblioitemnumber ) = AddBiblio($record, '', { defer_marc_save => 1 }) };
+        # clone bib, and remove embedded items.
+        # note that AddItemBatchFromMarc removes the items, but it needs to know
+        # the biblionumber, we do it twice.
+        my $marcbib = $record->clone();
+        my ($itemtag, $itemsubfield) = &GetMarcFromKohaField("items.itemnumber",'');
+        for my $marcitem ( $marcbib->field($itemtag) ){
+            $marcbib->delete_field($marcitem);
+        }
+        eval { ( $biblionumber, $biblioitemnumber ) = AddBiblio($marcbib, '') };
         if ( $@ ) {
             warn "ERROR: Adding biblio $biblionumber failed: $@\n";
             next RECORD;
