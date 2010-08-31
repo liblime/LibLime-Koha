@@ -920,7 +920,7 @@ if ( $op eq "addbiblio" ) {
       $isbn_str =~ s/-//g;
       $isbn_str =~ s/ //g;
        my $isbn = Business::ISBN->new($isbn_str);
-       $invalid_isbn = 1 if (!$isbn->is_valid());
+       $invalid_isbn = 1 if (not defined $isbn or not $isbn->is_valid());
      }
       if ($invalid_isbn) {
         my $oldbibnum;
