@@ -78,7 +78,7 @@ BEGIN {
 			$main::SIG{__DIE__} = \&CGI::Carp::confess;
 		}
     }  	# else there is no browser to send fatals to!
-	$VERSION = '3.00.00.036';
+	$VERSION = '4.01.00.009';
 }
 
 use DBI;
@@ -464,6 +464,10 @@ with this method.
 # flushing the caching mechanism.
 
 my %sysprefs;
+
+sub flush_preferences {
+    %sysprefs = ();
+}
 
 sub preference {
     my $self = shift;
