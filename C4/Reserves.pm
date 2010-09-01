@@ -703,7 +703,7 @@ sub GetReservesToBranch {
 sub GetReservesForBranch {
     my ($frombranch) = @_;
     my $dbh          = C4::Context->dbh;
-	my $query        = "SELECT borrowernumber,reservedate,itemnumber,waitingdate
+	my $query        = "SELECT borrowernumber,reservedate,itemnumber,waitingdate,reservenumber
         FROM   reserves 
         WHERE   priority='0'
             AND found='W' ";
@@ -873,7 +873,7 @@ sub CancelReserve {
              AND   borrowernumber   = ?
         ";
         my $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
+        $sth->execute( $reservenumber, $reserve->{'itemnumber'} );
 
         # get reserve information to place into old_reserves
         $query = "
@@ -1370,12 +1370,12 @@ sub ModReserveAffect {
 =cut
 
 sub ModReserveCancelAll {
+    my ( $reservenumber, $itemnumber ) = @_;
     my $messages;
     my $nextreservinfo;
-    my ( $itemnumber, $borrowernumber ) = @_;
 
     #step 1 : cancel the reservation
-    my $CancelReserve = CancelReserve( undef, $itemnumber, $borrowernumber );
+    my $CancelReserve = CancelReserve( $reservenumber );
 
     #step 2 launch the subroutine of the others reserves
     ( $messages, $nextreservinfo ) = GetOtherReserves($itemnumber);

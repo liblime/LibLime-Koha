@@ -44,6 +44,7 @@ my $item           = $input->param('itemnumber');
 my $borrowernumber = $input->param('borrowernumber');
 my $fbr            = $input->param('fbr') || '';
 my $tbr            = $input->param('tbr') || '';
+my $reservenumber  = $input->param('reservenumber') || '';
 
 my $cancel;
 
@@ -62,10 +63,10 @@ my $default = C4::Context->userenv->{'branch'};
 
 # if we have a return from the form we launch the subroutine CancelReserve
 if ($item) {
-    my ( $messages, $nextreservinfo ) = ModReserveCancelAll( $item, $borrowernumber );
+    my ( $messages, $nextreservinfo ) = ModReserveCancelAll( $reservenumber, $item );
     # if we have a result
     if ($nextreservinfo) {
-        my $borrowerinfo = GetMember( $borrowernumber, 'borrowernumber' );
+        my $borrowerinfo = GetMember( $nextreservinfo, 'borrowernumber' );
         my $iteminfo = GetBiblioFromItemNumber($item);
         if ( $messages->{'transfert'} ) {
             $template->param(
@@ -114,6 +115,7 @@ foreach my $num (@getreserves) {
     if ($today > $calcDate) {
         $getreserv{'messcompa'} = 1;
     }
+    $getreserv{'reservenumber'}  = $num->{'reservenumber'};
     $getreserv{'itemtype'}       = $itemtypeinfo->{'description'};
     $getreserv{'title'}          = $gettitle->{'title'};
     $getreserv{'itemnumber'}     = $gettitle->{'itemnumber'};
