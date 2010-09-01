@@ -92,8 +92,7 @@ if ($item) {
 }
 
 my @reservloop;
-my @getreserves = C4::Context->preference('IndependantBranches') ? GetReservesForBranch($default) : GetReservesForBranch();
-# get reserves for the branch we are logged into, or for all branches
+my @getreserves = GetReservesForBranch($default);
 	
 my $today = Date_to_Days(&Today);
 foreach my $num (@getreserves) {
