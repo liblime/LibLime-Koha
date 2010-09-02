@@ -77,7 +77,6 @@ sub do_checkin {
         $self->hold($messages->{ResFound});
         $debug and warn "Item returned at $branch reserved at $messages->{ResFound}->{branchcode}";
         $self->alert_type(($branch eq $messages->{ResFound}->{branchcode}) ? '01' : '02');
-=======
         my $do_transfer;
         if ($branch eq $messages->{ResFound}->{branchcode}) {
             $self->alert_type('01');
