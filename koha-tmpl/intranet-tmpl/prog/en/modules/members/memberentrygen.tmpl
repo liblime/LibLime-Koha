@@ -27,7 +27,7 @@
 
     function clear_entry(node) {
         var original = node.parentNode.parentNode;
-        $("input", original).attr('value', '');
+        $("input[type=text]", original).attr('value', '');
         $("select", original).attr('value', '');
     }
 
