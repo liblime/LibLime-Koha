@@ -255,7 +255,7 @@ sub AddBiblioToBatch {
 
     my $import_record_id = _create_import_record($batch_id, $record_sequence, $marc_record, 'biblio', $encoding, $z3950random);
     _add_biblio_fields($import_record_id, $marc_record);
-    _update_batch_record_counts($batch_id) if $update_counts;
+    _update_batch_record_counts($batch_id, 1, 0) if $update_counts;
     return $import_record_id;
 }
 
@@ -314,7 +314,6 @@ sub  BatchStageMarcRecords {
     } 
     
     my $batch_id = AddImportBatch('create_new', 'staging', 'batch', $file_name, $comments);
-use Data::Dumper; warn Dumper(@$added_items);
     if ($parse_items || @$added_items) {
         SetImportBatchItemAction($batch_id, 'always_add');
     } else {
@@ -363,7 +362,7 @@ use Data::Dumper; warn Dumper(@$added_items);
         SetImportBatchStatus($batch_id, 'staged');
     }
     # FIXME branch_code, number of bibs, number of items
-    _update_batch_record_counts($batch_id);
+    _update_batch_record_counts($batch_id, $num_valid, $num_items);
     return ($batch_id, $num_valid, $num_items, @invalid_records);
 }
 
@@ -403,7 +402,7 @@ sub AddItemsToImportBiblio {
     }
 
     if ($#import_items_ids > -1) {
-        _update_batch_record_counts($batch_id) if $update_counts;
+        _update_batch_record_counts($batch_id, 0, scalar @import_items_ids) if $update_counts;
         _update_import_record_marc($import_record_id, $marc_record);
     }
     return @import_items_ids;
@@ -1512,29 +1511,21 @@ sub _parse_biblio_fields {
 }
 
 sub _update_batch_record_counts {
-    my ($batch_id) = @_;
+    my ($batch_id, $num_bibs, $num_items) = @_;
 
     my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare_cached("UPDATE import_batches SET num_biblios = (
-                                    SELECT COUNT(*)
-                                    FROM import_records
-                                    WHERE import_batch_id = import_batches.import_batch_id
-                                    AND record_type = 'biblio')
-                                    WHERE import_batch_id = ?");
-    $sth->bind_param(1, $batch_id);
-    $sth->execute();
-    $sth->finish();
-    $sth = $dbh->prepare_cached("UPDATE import_batches SET num_items = (
-                                    SELECT COUNT(*)
-                                    FROM import_records
-                                    JOIN import_items USING (import_record_id)
-                                    WHERE import_batch_id = import_batches.import_batch_id
-                                    AND record_type = 'biblio')
-                                    WHERE import_batch_id = ?");
-    $sth->bind_param(1, $batch_id);
-    $sth->execute();
-    $sth->finish();
+    $num_bibs = 0 if (!defined $num_bibs);
+    $num_items = 0 if (!defined $num_items);
 
+    my $sth = $dbh->prepare_cached("UPDATE import_batches SET
+                                    num_biblios = num_biblios + ?,
+                                    num_items = num_items + ?
+                                    WHERE import_batch_id = ?");
+    $sth->bind_param(1, $num_bibs);
+    $sth->bind_param(2, $num_items);
+    $sth->bind_param(3, $batch_id);
+    $sth->execute();
+    $sth->finish();
 }
 
 sub _get_commit_action {
