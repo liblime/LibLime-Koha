@@ -21,6 +21,7 @@ package C4::Members::Import;
 use strict;
 
 use C4::Branch;
+use C4::Dates qw(format_date_in_iso);
 
 our ($VERSION,@ISA,@EXPORT,@EXPORT_OK,$debug);
 
