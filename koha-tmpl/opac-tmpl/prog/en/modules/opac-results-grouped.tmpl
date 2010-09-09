@@ -92,7 +92,7 @@ function highlightOn() {
     <ul style="list-style: none;">
         <!-- TMPL_LOOP NAME="SPELL_SUGGEST" -->
         <li>
-            <a href="/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR NAME="spsuggestion" -->"><!-- TMPL_VAR NAME="spsuggestion" --></a>
+            <a href="/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR NAME="spsuggestion" --><!-- TMPL_IF NAME="opac_search_limit" -->&limit=<!-- TMPL_VAR name="opac_search_limit" --><!-- /TMPL_IF -->"><!-- TMPL_VAR NAME="spsuggestion" --></a>
         </li>
         <!-- /TMPL_LOOP -->
     </ul>

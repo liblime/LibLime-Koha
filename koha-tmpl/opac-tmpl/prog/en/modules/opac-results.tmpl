@@ -212,7 +212,7 @@ $(document).ready(function(){
 <!-- TMPL_IF NAME="koha_spsuggest" -->
     <i>Did you mean: </i>
     <!-- TMPL_LOOP NAME="SPELL_SUGGEST" -->
-        <a href="/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR NAME="spsuggestion" -->"><!-- TMPL_VAR NAME="spsuggestion" --></a> &nbsp;
+        <a href="/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR NAME="spsuggestion" --><!-- TMPL_IF NAME="opac_search_limit" -->&limit=<!-- TMPL_VAR name="opac_search_limit" --><!-- /TMPL_IF -->"><!-- TMPL_VAR NAME="spsuggestion" --></a> &nbsp;
     <!-- /TMPL_LOOP -->
     <p>
 <!-- /TMPL_IF -->
