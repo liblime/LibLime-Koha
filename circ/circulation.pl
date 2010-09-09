@@ -630,6 +630,7 @@ my @values;
 my %labels;
 my $CGIselectborrower;
 $template->param( showinitials => C4::Context->preference('DisplayInitials') );
+$template->param( showothernames => C4::Context->preference('DisplayOtherNames') );
 if ($borrowerslist) {
     foreach (
         sort {(lc $a->{'surname'} cmp lc $b->{'surname'} || lc $a->{'firstname'} cmp lc $b->{'firstname'})
@@ -804,6 +805,7 @@ $template->param(
     firstname                   => $borrower->{'firstname'},
     surname                     => $borrower->{'surname'},
     initials                    => $borrower->{'initials'},
+    othernames                  => $borrower->{'othernames'},
     dateexpiry        => format_date($newexpiry),
     expiry            => format_date($borrower->{'dateexpiry'}),
     categorycode      => $borrower->{'categorycode'},

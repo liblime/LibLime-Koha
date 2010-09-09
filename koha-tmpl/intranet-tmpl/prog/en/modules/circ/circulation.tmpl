@@ -486,7 +486,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 	    <input type=button value="Clear Screen" onClick="window.location = '/cgi-bin/koha/circ/circulation.pl'">
     <!-- /TMPL_IF -->
 
-    <label for="barcode">Checking out to <!-- TMPL_VAR name="firstname" --> <!-- TMPL_IF NAME="showinitials" --><!-- TMPL_VAR NAME="initials" --><!-- /TMPL_IF --> <!-- TMPL_VAR name="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->) </label>
+    <label for="barcode">Checking out to <!-- TMPL_VAR name="firstname" --> <!-- TMPL_IF NAME="showinitials" --><!-- TMPL_VAR NAME="initials" --><!-- /TMPL_IF --> <!-- TMPL_VAR name="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->) <!-- TMPL_IF NAME="showothernames" --><!-- TMPL_IF NAME="othernames" -->&ldquo;<!-- TMPL_VAR NAME="othernames" -->&rdquo;<!-- /TMPL_IF --> <!-- /TMPL_IF --></label>
     <!-- TMPL_IF NAME="PreviousCardnumber" --><div><span class="circ-hlt">Warning: Scanned Old Card</span></div><!-- /TMPL_IF -->
 	<div class="hint">Enter item barcode:</div>
 
