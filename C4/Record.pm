@@ -29,6 +29,7 @@ use Biblio::EndnoteStyle;
 use Unicode::Normalize; # _entity_encode
 use XML::LibXSLT;
 use XML::LibXML;
+use C4::Biblio; #marc2bibtex
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -46,6 +47,7 @@ $VERSION = 3.00;
   &marcxml2marc
   &marc2dcxml
   &marc2modsxml
+  &marc2bibtex
 
   &html2marcxml
   &html2marc

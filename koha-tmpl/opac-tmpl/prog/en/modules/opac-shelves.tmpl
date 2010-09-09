@@ -167,10 +167,10 @@ $(function() {
             <!-- TMPL_IF NAME="viewshelf" --><!--  Viewing a particular shelf -->
               <h3><a href="/cgi-bin/koha/opac-shelves.pl">Lists</a> <img src="<!-- TMPL_VAR NAME="themelang" -->/../images/caret.gif" width="16" height="16" alt="&gt;" border="0" /> <em><!-- TMPL_VAR NAME="shelfname" ESCAPE="html" --></em></h3>
               <!-- TMPL_IF NAME="itemsloop" -->
-                  <div id="toolbar" class="list-actions"> <span class="checkall"></span>
+                  <div id="toolbar" class="list-actions">
+                    <span class="checkall"></span>
                     <span class="clearall"></span>
-                    |
-						<span class="sendlist"><a href="#" class="send tag_hides" onclick="open(CGIBIN+'opac-sendshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelfnumber" -->','win_form','dependant=yes,scrollbars=no,resizable=no,height=300,width=450,top=50,left=100'); return false; ">Send List</a></span>
+			<span class="sendlist"><a href="#" class="send tag_hides" onclick="open(CGIBIN+'opac-sendshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelfnumber" -->','win_form','dependant=yes,scrollbars=no,resizable=no,height=300,width=450,top=50,left=100'); return false; ">Send List</a></span>
                       <a class="editshelf tag_hides" href="/cgi-bin/koha/opac-shelves.pl?shelfnumber=<!-- TMPL_VAR NAME="shelfnumber" -->&amp;op=modif">Edit List</a>
                       <form method="post" action="opac-shelves.pl" class="tag_hides">
                         <input type="hidden" value="1" name="shelves"/>
@@ -200,17 +200,6 @@ $(function() {
 <span class="sendlist"><a href="/cgi-bin/koha/opac-sendshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelfnumber" -->" class="send tag_hides" onclick="open(CGIBIN+'opac-sendshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelfnumber" -->','win_form','dependant=yes,scrollbars=no,resizable=no,height=300,width=450,top=50,left=100'); return false; ">Send List</a></span>
 
 <a class="print tag_hides" href="opac-shelves.pl" onclick="print(); return false;">Print List</a>
-
-                <!-- TMPL_IF NAME="manageshelf" --> | <a class="editshelf tag_hides" href="/cgi-bin/koha/opac-shelves.pl?shelfnumber=<!-- TMPL_VAR NAME="shelfnumber" -->&amp;op=modif">Edit List</a>
-                      <form method="post" action="opac-shelves.pl" class="tag_hides">
-                        <input type="hidden" value="1" name="shelves"/>
-                    <!-- TMPL_IF NAME="showprivateshelves" -->
-                         <input type="hidden" name="display" value="privateshelves" />
-                    <!-- /TMPL_IF -->
-                         <input type="hidden" value="1" name="DEL-<!-- TMPL_VAR NAME="shelfnumber" -->"/>
-                         <input type="submit" class="deleteshelf" value="Delete List" onclick="return confirmDelete(MSG_CONFIRM_DELETE_LIST);"/>
-                      </form> <!-- /TMPL_IF -->
-
 
                   </div>
 
