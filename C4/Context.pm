@@ -701,20 +701,13 @@ possibly C<&set_dbh>.
 
 =cut
 
-#'
 sub dbh
 {
     my $self = shift;
-    my $sth;
-
-    if (defined($context->{"dbh"}) && $context->{"dbh"}->ping()) {
-	return $context->{"dbh"};
+    if ( ! defined($context->{'dbh'}) || ( $context->{'safe_mode'} && ! $context->{'dbh'}->ping() )) {
+        $context->{'dbh'} = &_new_dbh();
     }
-
-    # No database handle or it died . Create one.
-    $context->{"dbh"} = &_new_dbh();
-
-    return $context->{"dbh"};
+    return $context->{'dbh'};
 }
 
 # _new_replica_dbh
@@ -881,6 +874,28 @@ sub restore_dbh
     # FIXME - If it is determined that restore_context should
     # return something, then this function should, too.
 }
+ 
+=item safe_mode
+
+  C4::Context->safe_mode(1);
+
+get or set 'safe_mode' for current $context.
+This setting causes any calls to C4::Context->dbh
+to first ping the database server to ensure that
+the dbh is still valid.  Useful for long-running
+scripts where the dbh may actually expire during
+the life of the script.
+
+=cut
+
+sub safe_mode
+{
+    my $self = shift;
+    my $set = shift;
+    $context->{'safe_mode'} = $set if(defined $set);
+    return $context->{'safe_mode'} || 0;
+}
+
 
 =item marcfromkohafield
 

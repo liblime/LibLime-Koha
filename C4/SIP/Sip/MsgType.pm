@@ -17,6 +17,7 @@ use Sip::Checksum qw(verify_cksum);
 
 use Data::Dumper;
 use CGI;
+use C4::Context;
 use C4::Auth qw(&check_api_auth);
 
 use UNIVERSAL qw(can);	# make sure this is *after* C4 modules.
@@ -28,6 +29,8 @@ BEGIN {
 	@ISA = qw(Exporter);
 	@EXPORT_OK = qw(handle);
 }
+
+C4::Context->safe_mode(1); # guard against a stale dbh from C4::Context.
 
 # Predeclare handler subroutines
 use subs qw(handle_patron_status handle_checkout handle_checkin
