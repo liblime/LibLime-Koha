@@ -463,7 +463,7 @@ with this method.
 # FIXME: running this under mod_perl will require a means of
 # flushing the caching mechanism.
 
-my %sysprefs;
+my %sysprefs = ();
 
 sub flush_preferences {
     %sysprefs = ();
@@ -473,21 +473,18 @@ sub preference {
     my $self = shift;
     my $var  = shift;                          # The system preference to return
 
-    if (exists $sysprefs{$var}) {
-        return $sysprefs{$var};
+    if (!%sysprefs) {
+        my $sql = "SELECT variable,value FROM systempreferences";
+        my $dbh = C4::Context->dbh;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+        my $matrix_ref = $sth->fetchall_arrayref();
+        my $rows = (!defined ($matrix_ref) ? 0 : scalar (@{$matrix_ref}));
+        for(my $i = 0; $i < $rows; $i++) {
+            $sysprefs{lc($matrix_ref->[$i][0])} = $matrix_ref->[$i][1];
+        }
     }
-
-    my $dbh  = C4::Context->dbh or return 0;
-
-    # Look up systempreferences.variable==$var
-    my $sql = <<'END_SQL';
-        SELECT    value
-        FROM    systempreferences
-        WHERE    variable=?
-        LIMIT    1
-END_SQL
-    $sysprefs{$var} = $dbh->selectrow_array( $sql, {}, $var );
-    return $sysprefs{$var};
+    return $sysprefs{lc($var)};
 }
 
 sub boolean_preference ($) {
