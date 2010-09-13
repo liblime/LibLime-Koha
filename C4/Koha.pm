@@ -58,9 +58,9 @@ BEGIN {
 		&GetNormalizedISBN
 		&GetNormalizedEAN
 		&GetNormalizedOCLCNumber
-                &GetOtherItemStatus
-                &GetMarcSubfieldStructure
-
+        &GetOtherItemStatus
+        &GetMarcSubfieldStructure
+        &GetTableDescription
 		$DEBUG
 	);
 	$DEBUG = 0;
@@ -1267,6 +1267,38 @@ sub GetMarcSubfieldStructure {
   }
   
   return @results;
+}
+
+=head2 GetTableDescription
+
+my $table = GetTableDescription({ table => $table_name[, column => $column_name ] });
+
+This function returns the results of the DESCRIBE command
+on the given table.
+
+=cut
+
+sub GetTableDescription {
+  my ( $params ) = @_;
+  my $table = $params->{'table'};
+  my $column = $params->{'column'};
+  
+  return unless ( $table );
+  
+  my @sql_params;
+  
+  my $sql = "DESCRIBE $table ";
+  
+  if ( $column ) {
+    $sql .= "$column";
+  }
+  
+  my $dbh = C4::Context->dbh;
+  my $sth = $dbh->prepare( $sql );
+  $sth->execute( @sql_params );  
+
+  my $description = $sth->fetchall_arrayref({});
+  return $description;
 }
 
 sub _normalize_match_point {

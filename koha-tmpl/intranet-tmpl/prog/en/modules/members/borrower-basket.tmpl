@@ -91,7 +91,16 @@ function CheckCheckAll(fmobj) {
     </div>
 
     <form action="borrower-basket.pl" method="get" name="bookbag_form" id="bookbag_form">
-
+	<input type="hidden" name="borrower_list" id="borrower_list" value="<!-- TMPL_VAR NAME="borrower_list" -->" />
+	<input type="hidden" name="op" id="op" value="add_to_list" />
+	<input type="submit" name="add_to_list_button" id="add_to_list_button" value="Add Selected Borrowers to" />
+	<select name="list_id" id="list_id">
+		<option value="">A New List Named</option>
+		<!-- TMPL_LOOP NAME="BorrowerListsLoop" -->
+			<option value="<!-- TMPL_VAR NAME="list_id" -->"><!-- TMPL_VAR NAME="list_name" --></option>
+		<!-- /TMPL_LOOP -->
+	</select>
+	<input type="text" name="list_name" id="list_name" />
 <div class="searchresults">
 
 <p style="padding: 7px 0; border-top : 1px solid #E8E8E8;">
@@ -111,7 +120,7 @@ function CheckCheckAll(fmobj) {
 
     <!-- TMPL_LOOP NAME="borrowers_loop" -->
 	<tr>
-	    <td><input type="checkbox" id="bor<!-- TMPL_VAR NAME="borrowernumber" -->" name="borrower" value="<!-- TMPL_VAR NAME="borrowernumber" -->" title="Click to add to Borrower Cart" onclick="selRecord(value,checked);" /></td>
+	    <td><input type="checkbox" id="bor<!-- TMPL_VAR NAME="borrowernumber" -->" name="borrower<!-- TMPL_VAR NAME="borrowernumber" -->" value="<!-- TMPL_VAR NAME="borrowernumber" -->" title="Click to add to Borrower Cart" onclick="selRecord(value,checked);" /></td>
 	    <td><!-- TMPL_VAR NAME="cardnumber" --></td>
 	    <td style="white-space: nowrap;"><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR NAME="firstname" --></a> <br /> <!-- TMPL_VAR NAME="address" --><!-- TMPL_IF NAME="address2" --><br /><!-- TMPL_VAR NAME="address2" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="city" --><br /><!-- TMPL_VAR NAME=city --><!-- /TMPL_IF --><!-- TMPL_IF NAME="zipcode" -->  <!-- TMPL_VAR NAME="zipcode" --><!-- /TMPL_IF --></td>
 	    <td><!-- TMPL_VAR NAME="category_description" --> (<!-- TMPL_VAR name="category_type" -->)</td>

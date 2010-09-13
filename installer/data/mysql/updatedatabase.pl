@@ -3651,6 +3651,18 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     /);
         
     print "Upgrade to $DBversion done ( Add systempreferences FillRequestsAtPickupLibrary, HoldsTransportationReductionThreshold, and FillRequestsAtPickupLibraryAge )\n";
+}
+
+$DBversion = '4.03.00.006';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(qq/
+      INSERT INTO `permissions` (`module_bit`, `code`, `description`) VALUES 
+      ('4', 'lists', 'Create & Edit Borrower Lists'), 
+      ('4', 'lists_bulk_modify', 'Modify All Accounts on a Borrower List'), 
+      ('4', 'lists_bulk_delete', 'Delete Accounts on a Borrower Lists during a Bulk Modification');
+    /); 
+
+	print "Upgrade to $DBversion done ( Added permissions for Patron Lists )\n";
     SetVersion ($DBversion);
 }
 

@@ -42,6 +42,7 @@ BEGIN {
 	#Get data
 	push @EXPORT, qw(
 		&SearchMember 
+		&SearchMemberAdvanced
 		&SearchMemberField
 		&SearchMemberBySQL
 		&GetMemberDetails
@@ -2553,6 +2554,239 @@ sub SetDisableReadingHistory {
 
     return;
 
+}
+
+=head SearchMemberAdvanced
+  ( $count, $results ) = SearchMemberAdvanced({ 
+    [ param => $param, ]
+  });
+=cut
+
+sub SearchMemberAdvanced {
+  my ( $params ) = @_;
+  warn Data::Dumper::Dumper( $params );
+      
+  my $orderby = $params->{'orderby'} || 'borrowers.surname';
+  
+  my $sql = "SELECT * FROM borrowers LEFT JOIN categories ON borrowers.categorycode = categories.categorycode WHERE ";
+  my @sql_params;
+  
+  my @limits;
+  
+  if ( defined $params->{'borrowernumber'} ) {
+    push( @limits, "borrowers.borrowernumber = ?" );
+    push( @sql_params, $params->{'borrowernumber'} );
+  }
+  
+  if ( defined $params->{'cardnumber'} ) {
+    push( @limits, "borrowers.cardnumber = ?" );
+    push( @sql_params, $params->{'cardnumber'} );
+  }
+  
+  if ( defined $params->{'categorycode'} ) {
+    push( @limits, "borrowers.categorycode = ?" );
+    push( @sql_params, $params->{'categorycode'} );
+  }
+
+  if ( defined $params->{'dateenrolled_after'} ) {
+    push( @limits, "borrowers.dateenrolled >= DATE(?)" );
+    push( @sql_params, C4::Dates->new($params->{'dateenrolled_after'})->output("iso") );
+  }
+
+  if ( defined $params->{'dateenrolled_before'} ) {
+    push( @limits, "borrowers.dateenrolled <= DATE(?)" );
+    push( @sql_params, C4::Dates->new($params->{'dateenrolled_before'})->output("iso") );
+  }
+
+  if ( defined $params->{'dateexpiry_after'} ) {
+    push( @limits, "borrowers.dateexpiry >= DATE(?)" );
+    push( @sql_params, C4::Dates->new($params->{'dateexpiry_after'})->output("iso") );
+  }
+
+  if ( defined $params->{'dateexpiry_before'} ) {
+    push( @limits, "borrowers.dateexpiry <= DATE(?)" );
+    push( @sql_params, C4::Dates->new($params->{'dateexpiry_before'})->output("iso") );
+  }
+
+  if ( defined $params->{'branchcode'} ) {
+    push( @limits, "borrowers.branchcode = ?" );
+    push( @sql_params, $params->{'branchcode'} );
+  }
+
+  if ( defined $params->{'sort1'} ) {
+    push( @limits, "borrowers.sort1 = ?" );
+    push( @sql_params, $params->{'sort1'} );
+  }
+
+  if ( defined $params->{'sort2'} ) {
+    push( @limits, "borrowers.sort2 = ?" );
+    push( @sql_params, $params->{'sort2'} );
+  }
+
+  if ( defined $params->{'userid'} ) {
+    push( @limits, "borrowers.userid = ?" );
+    push( @sql_params, $params->{'userid'} );
+  }
+
+  if ( defined $params->{'dateofbirth_after'} ) {
+    push( @limits, "borrowers.dateofbirth >= DATE(?)" );
+    push( @sql_params, C4::Dates->new($params->{'dateofbirth_after'})->output("iso") );
+  }
+
+  if ( defined $params->{'dateofbirth_before'} ) {
+    push( @limits, "borrowers.dateofbirth <= DATE(?)" );
+    push( @sql_params, C4::Dates->new($params->{'dateofbirth_before'})->output("iso") );
+  }
+
+  if ( defined $params->{'surname'} ) {
+    push( @limits, "borrowers.surname LIKE ?" );
+    push( @sql_params, "$params->{'surname'}%" );
+  }
+
+  if ( defined $params->{'firstname'} ) {
+    push( @limits, "borrowers.firstname LIKE ?" );
+    push( @sql_params, "$params->{'firstname'}%" );
+  }
+
+  if ( defined $params->{'address'} ) {
+    push( @limits, "borrowers.address LIKE ?" );
+    push( @sql_params, "%$params->{'address'}%" );
+  }
+
+  if ( defined $params->{'city'} ) {
+    push( @limits, "( borrowers.city LIKE ? OR borrowers.city LIKE ? )" );
+    if ( $params->{'city'} ) {
+      push( @sql_params, "%$params->{'city'}" );
+      push( @sql_params, "$params->{'city'}%" );
+    } else {
+      push( @sql_params, '' );
+      push( @sql_params, '' );
+    }
+  }
+
+  if ( defined $params->{'zipcode'} ) {
+    push( @limits, "borrowers.zipcode = ?" );
+    push( @sql_params, $params->{'zipcode'} );
+  }
+
+  if ( defined $params->{'B_address'} ) {
+    push( @limits, "borrowers.B_address LIKE ?" );
+    push( @sql_params, "%$params->{'B_address'}%" );
+  }
+
+  if ( defined $params->{'B_city'} ) {
+    push( @limits, "( borrowers.B_city LIKE ? OR borrowers.B_city LIKE ? )" );
+    if ( $params->{'B_city'} ) {
+      push( @sql_params, "%$params->{'B_city'}" );
+      push( @sql_params, "$params->{'B_city'}%" );
+    } else {
+      push( @sql_params, '' );
+      push( @sql_params, '' );
+    }
+  }
+
+  if ( defined $params->{'B_zipcode'} ) {
+    push( @limits, "borrowers.B_zipcode = ?" );
+    push( @sql_params, $params->{'B_zipcode'} );
+  }
+
+  if ( defined $params->{'email'} ) {
+    push( @limits, "( borrowers.email LIKE ? OR borrowers.email LIKE ? )" );
+    if ( $params->{'email'} ) {
+      push( @sql_params, "%$params->{'email'}" );
+      push( @sql_params, "$params->{'email'}%" );
+    } else {
+      push( @sql_params, '' );
+      push( @sql_params, '' );
+    }
+  }
+
+  if ( defined $params->{'emailpro'} ) {
+    push( @limits, "( borrowers.emailpro LIKE ? OR borrowers.emailpro LIKE ? )" );
+    if ( $params->{'emailpro'} ) {
+      push( @sql_params, "%$params->{'emailpro'}" );
+      push( @sql_params, "$params->{'emailpro'}%" );
+    } else {
+      push( @sql_params, '' );
+      push( @sql_params, '' );
+    }
+  }
+
+  if ( defined $params->{'phone'} ) {
+    push( @limits, "( borrowers.phone LIKE ? OR borrowers.phone LIKE ? )" );
+    if ( $params->{'phone'} ) {
+      push( @sql_params, "%$params->{'phone'}" );
+      push( @sql_params, "$params->{'phone'}%" );
+    } else {
+      push( @sql_params, '' );
+      push( @sql_params, '' );
+    }
+  }
+
+  if ( defined $params->{'opacnotes'} ) {
+    push( @limits, "borrowers.opacnotes LIKE ?" );
+    push( @sql_params, "%$params->{'opacnotes'}%" );
+  }
+
+  if ( defined $params->{'borrowernotes'} ) {
+    push( @limits, "borrowers.borrowernotes LIKE ?" );
+    push( @sql_params, "%$params->{'borrowernotes'}%" );
+  }
+
+  if ( defined $params->{'debarred'} ) {
+    push( @limits, "borrowers.debarred = ?" );
+    push( @sql_params, $params->{'debarred'} );
+  }
+
+  if ( defined $params->{'gonenoaddress'} ) {
+    push( @limits, "borrowers.gonenoaddress = ?" );
+    push( @sql_params, $params->{'gonenoaddress'} );
+  }
+
+  if ( defined $params->{'lost'} ) {
+    push( @limits, "borrowers.lost = ?" );
+    push( @sql_params, $params->{'lost'} );
+  }
+
+  if ( defined $params->{'list_id'} ) {
+    my $list_sql = "borrowers.borrowernumber IN ( SELECT borrowernumber FROM borrower_lists_tracking WHERE list_id = ? )";
+    push( @limits, $list_sql );
+    push( @sql_params, $params->{'list_id'} );
+  }
+
+  if ( defined $params->{'attributes'} ) {
+    my $attributes = $params->{'attributes'};
+    
+    foreach my $key ( keys %$attributes ) {
+      push( @limits , "borrowernumber IN ( 
+                        SELECT borrowernumber FROM borrower_attributes 
+                        JOIN borrower_attribute_types USING ( code )
+                        WHERE code = ? AND attribute LIKE ? 
+                      )"
+      );
+      push( @sql_params, $key );
+      push( @sql_params, $attributes->{$key} );                                                                                                                
+    }
+  }
+  
+  my $limits = join( ' AND ', @limits );
+  
+  $sql .= $limits;
+
+  $sql .= " ORDER BY ? ";
+  push( @sql_params, $orderby );
+
+  warn "SearchMemberAdvanced::SQL = '$sql'";
+  warn Data::Dumper::Dumper( @sql_params );
+
+  my $dbh = C4::Context->dbh;
+  my $sth = $dbh->prepare( $sql );
+  $sth->execute( @sql_params );
+  
+  my $data = $sth->fetchall_arrayref({});
+
+  return ( scalar(@$data), $data );
+  
 }
 
 =head2 _prefix_cardnum

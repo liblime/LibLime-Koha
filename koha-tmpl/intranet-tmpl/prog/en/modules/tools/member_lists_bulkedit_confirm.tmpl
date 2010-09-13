@@ -1,0 +1,251 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>
+	Koha &rsaquo; Tools &rsaquo; Patron Lists &rsaquo; Bulk Modify
+</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+<style type="text/css">
+#simplemodal-container {
+	z-index:3200;
+	background-color: white;
+}
+
+#simplemodal-container a.modalCloseImg {
+	background:url(/intranet-tmpl/prog/img/x.png) no-repeat; /* adjust url as required */
+	width:25px;
+	height:29px;
+	display:inline;
+	z-index:3300;
+	position:absolute;
+	right:-18px;
+	cursor:pointer;
+}
+
+.modified {
+	font-weight: bold;
+	color: red;
+}
+</style>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<div id="breadcrumbs">
+	<a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a> &rsaquo; Patron Lists &rsaquo; Bulk Modify
+</div>
+
+<div id="doc3" class="yui-t2">
+	<div id="bd">
+		<div id="yui-main">
+			<div class="yui-b">
+				<h1>Bulk Modify Patrons on list <i><!-- TMPL_VAR NAME="list_name" --></i></h1>
+
+				<h2><!-- TMPL_UNLESS NAME="confirmed" -->Test <!-- /TMPL_UNLESS -->Results</h2>
+				<p>
+					<ul>
+						<li>Total Accounts Checked: <!-- TMPL_VAR NAME="MembersCount" --></li>
+						<li>Accounts Deleted: <!-- TMPL_VAR NAME="MembersDeleted" --> ( <!-- TMPL_VAR NAME="MembersDeletedFailed" --> Failed )</li>
+						<li>Accounts Updated: <!-- TMPL_VAR NAME="MembersUpdated" --></li>
+						<li>Total Accounts Modified: <!-- TMPL_VAR NAME="MembersModified" --></li>
+					</ul>
+				</p>
+
+				<!-- TMPL_UNLESS NAME="confirmed" --><p><form method="post">
+					<!-- TMPL_LOOP NAME="ActionsLoop" -->
+						<input type="hidden" name="field_<!-- TMPL_VAR NAME="index" -->" value="<!-- TMPL_VAR NAME="field" -->" />
+						<input type="hidden" name="old_value_<!-- TMPL_VAR NAME="index" -->" value="<!-- TMPL_VAR NAME="old_value" -->" />
+						<input type="hidden" name="new_value_<!-- TMPL_VAR NAME="index" -->" value="<!-- TMPL_VAR NAME="new_value" -->" />
+						<input type="hidden" name="delete_<!-- TMPL_VAR NAME="index" -->" value="<!-- TMPL_VAR NAME="delete" -->" />
+					<!-- /TMPL_LOOP -->
+					<input type="hidden" name="list_id" value="<!-- TMPL_VAR NAME="list_id" -->" />
+					<input type="hidden" name="confirmed" value="1" />
+					<input type="submit" value="Confirm & Implement Modifications" />
+				</form></p><!-- /TMPL_UNLESS -->
+
+				<h2><!-- TMPL_UNLESS NAME="confirmed" -->Test <!-- /TMPL_UNLESS -->Results</h2>
+
+				<table>
+					<thead>
+						<tr>
+							<th>Deleted</th>
+							<th>Modified</th>
+							<th>Card</th>
+							<th>Name</th>
+							<th>Category</th>
+							<th>Library</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						<!-- TMPL_LOOP NAME="BorrowersLoop" -->
+							<tr>
+								<td>
+									<!-- TMPL_IF NAME="member_deleted" -->
+										<span 
+											<!-- TMPL_IF NAME="member_deleted_failure" -->
+												title="Attempt to delete this account has failed.
+													<!-- TMPL_IF NAME="member_deleted_failure_issues" -->Patron has open issues.<!-- /TMPL_IF -->
+													<!-- TMPL_IF NAME="member_deleted_failure_fines" -->Patron has outstanding fines.<!-- /TMPL_IF -->
+													"
+											<!-- TMPL_ELSE -->
+												class="modified"
+											<!-- /TMPL_IF --> 
+										> &#10008; </span>
+									<!-- /TMPL_IF -->
+								</td>
+								<td>
+									<!-- TMPL_IF NAME="member_updated" -->
+										<span class="modified">&#10004;</span>
+									<!-- /TMPL_IF -->
+								</td>
+								<td>
+									<a href="#" onclick='$("#popup_<!-- TMPL_VAR NAME="borrowernumber" -->").modal();'><span<!-- TMPL_IF NAME="cardnumber_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="cardnumber" --></a></span>
+								</td>
+								<td>
+									<span<!-- TMPL_IF NAME="surname_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="surname" --></span>
+									,
+									<span<!-- TMPL_IF NAME="firstname_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="firstname" --></span>
+								</td>
+								<td>
+									<span<!-- TMPL_IF NAME="categorycode_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="categorycode" --></span>
+								</td>
+								<td>
+									<span<!-- TMPL_IF NAME="branchcode_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="branchcode" --></span>
+								</td>
+
+							</tr>
+
+							<div id="popup_<!-- TMPL_VAR NAME="borrowernumber" -->" class="popup_block" style="display:none">
+								<fieldset>
+									<legend>Personal</legend>
+
+									<p>Name: 
+									<span<!-- TMPL_IF NAME="title_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="title" --></span>
+									<span<!-- TMPL_IF NAME="firstname_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="firstname" --></span>
+									<span<!-- TMPL_IF NAME="surname_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="surname" --></span>
+									<!-- TMPL_IF NAME="othernames" --> ( <span<!-- TMPL_IF NAME="othernames_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="othernames" --></span> ) <!-- /TMPL_IF -->
+									<!-- TMPL_IF NAME="initials" --> <p>Initials:<span<!-- TMPL_IF NAME="initials_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="initials" --></span> <!-- /TMPL_IF -->
+
+									<p>Address:
+									<span<!-- TMPL_IF NAME="streetnumber_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="streetnumber" --></span>
+									<span<!-- TMPL_IF NAME="address_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="address" --></span>
+									<span<!-- TMPL_IF NAME="address2_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="address2" --></span>
+									<span<!-- TMPL_IF NAME="streettype_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="streettype" --></span>
+									<span<!-- TMPL_IF NAME="city_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="city" --></span>
+									<span<!-- TMPL_IF NAME="zipcode_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="zipcode" --></span>
+									<span<!-- TMPL_IF NAME="country_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="country" --></span>
+
+									<p>Alternate Address:
+									<span<!-- TMPL_IF NAME="B_streetnumber_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="B_streetnumber" --></span>
+									<span<!-- TMPL_IF NAME="B_address_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="B_address" --></span>
+									<span<!-- TMPL_IF NAME="B_address2_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="B_address2" --></span>
+									<span<!-- TMPL_IF NAME="B_streettype_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="B_streettype" --></span>
+									<span<!-- TMPL_IF NAME="B_city_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="B_city" --></span>
+									<span<!-- TMPL_IF NAME="B_zipcode_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="B_zipcode" --></span>
+									<span<!-- TMPL_IF NAME="B_country_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="B_country" --></span>
+
+									<p>Notes: <span<!-- TMPL_IF NAME="borrowernotes_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="borrowernotes" --></span>
+									<p>OPAC Notes: <span<!-- TMPL_IF NAME="opacnotes_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="opacnotes" --></span>
+									<p>Contact Notes: <span<!-- TMPL_IF NAME="contactnotes_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="contactnotes" --></span>
+
+									<p>Sex: <span<!-- TMPL_IF NAME="sex_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="sex" --></span>
+								</fieldset>
+
+								<fieldset>
+									<legend>Contact</legend>
+
+									<!-- TMPL_IF NAME="email" --> <p>Email: <span<!-- TMPL_IF NAME="email_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="email" --></span> <!-- /TMPL_IF -->
+									<!-- TMPL_IF NAME="phone" --> <p>Phone: <span<!-- TMPL_IF NAME="phone_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="phone" --></span> <!-- /TMPL_IF -->
+									<!-- TMPL_IF NAME="mobile" --> <p>Phone (Cellular): <span<!-- TMPL_IF NAME="mobile_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="mobile" --></span> <!-- /TMPL_IF -->
+									<!-- TMPL_IF NAME="fax" --> <p>Fax: <span<!-- TMPL_IF NAME="fax_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="fax" --></span> <!-- /TMPL_IF -->
+									<!-- TMPL_IF NAME="emailpro" --> <p>Email (Work): <span<!-- TMPL_IF NAME="emailpro_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="emailpro" --></span> <!-- /TMPL_IF -->
+									<!-- TMPL_IF NAME="phonepro" --> <p>Phone (Work): <span<!-- TMPL_IF NAME="phonepro_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="phonepro" --></span> <!-- /TMPL_IF -->
+									<!-- TMPL_IF NAME="B_email" --> <p>Email (Alternate): <span<!-- TMPL_IF NAME="B_email_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="B_email" --></span> <!-- /TMPL_IF -->
+									<!-- TMPL_IF NAME="B_phone" --> <p>Phone (Alternate): <span<!-- TMPL_IF NAME="B_phone_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="B_phone" --></span> <!-- /TMPL_IF -->
+
+									<!-- TMPL_IF NAME="contactnotes" --> <p>Contact Notes: <span<!-- TMPL_IF NAME="contactnotes_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="contactnotes" --></span> <!-- /TMPL_IF -->
+								</fieldset>
+
+								<fieldset>
+									<legend>Library Use</legend>
+
+									<p>Card number: <span<!-- TMPL_IF NAME="cardnumber_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="cardnumber" --></span>
+									<p>Borrowernumber: <span<!-- TMPL_IF NAME="borrowernumber_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="borrowernumber" --></span>
+									<p>Category: <span<!-- TMPL_IF NAME="categorycode_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="categorycode" --></span>
+									<p>Registration Date: <span<!-- TMPL_IF NAME="dateenrolled_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="dateenrolled" --></span>
+									<p>Expiration Date: <span<!-- TMPL_IF NAME="dateexpiry_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="dateexpiry" --></span>
+									<p>Library: <span<!-- TMPL_IF NAME="branchcode_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="branchcode" --></span>
+									<p>OPAC Login: <span<!-- TMPL_IF NAME="userid_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="userid" --></span>
+								</fieldset>
+
+								<fieldset>
+									<legend>Flags Set</legend>
+
+									<p>Gone, No Address: <span<!-- TMPL_IF NAME="gonenoaddress_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="gonenoaddress" --></span>
+									<p>Lost: <span<!-- TMPL_IF NAME="lost_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="lost" --></span>
+									<p>Debarred: <span<!-- TMPL_IF NAME="debarred_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="debarred" --></span>
+								</fieldset>
+
+								<fieldset>
+									<legend>Contact</legend>
+
+									<p>Name: 
+									<span<!-- TMPL_IF NAME="contactfirstname_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="contactfirstname" --></span>
+									<span<!-- TMPL_IF NAME="contactname_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="contactname" --></span>
+									<span<!-- TMPL_IF NAME="contacttitle_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="contacttitle" --></span>
+									<span<!-- TMPL_IF NAME="contactfirstname_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="contactfirstname" --></span>
+								</fieldset>
+
+								<fieldset>
+									<legend>Alternative Contact</legend>
+
+									<p>Name: 
+									<span<!-- TMPL_IF NAME="altcontactfirstname_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactfirstname" --></span>
+									<span<!-- TMPL_IF NAME="altcontactsurname_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactsurname" --></span>
+
+									<p>Address:
+									<span<!-- TMPL_IF NAME="altcontactstreetnumber_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactstreetnumber" --></span>
+									<span<!-- TMPL_IF NAME="altcontactaddress_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactaddress" --></span>
+									<span<!-- TMPL_IF NAME="altcontactaddress2_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactaddress2" --></span>
+									<span<!-- TMPL_IF NAME="altcontactstreettype_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactstreettype" --></span>
+									<span<!-- TMPL_IF NAME="altcontactcity_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactcity" --></span>
+									<span<!-- TMPL_IF NAME="altcontactzipcode_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactzipcode" --></span>
+									<span<!-- TMPL_IF NAME="altcontactcountry_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactcountry" --></span>
+
+									<!-- TMPL_IF NAME="altcontactphone" --> <p>Phone: <span<!-- TMPL_IF NAME="altcontactphone_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="altcontactphone" --></span> <!-- /TMPL_IF -->
+								</fieldset>
+
+								<fieldset>
+									<legend>Sort</legend>
+
+									<p>Sort1: <span<!-- TMPL_IF NAME="sort1_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="sort1" --></span>
+									<p>Sort2: <span<!-- TMPL_IF NAME="sort2_altered" --> class='modified'<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="sort2" --></span>
+								</fieldset>
+
+							</div>
+
+						<!-- /TMPL_LOOP -->
+					</tbody>
+				</table>
+
+				<i>
+					<p>Red text inicates what has changed. Click card number link to see more details.</p>
+					<p>Black X's indicate a failure. Hover mouse cursor over 'X' to discover the issue.</p>
+				</i>
+			</div>
+		</div>
+		<div class="yui-b noprint">
+			<!-- TMPL_IF NAME="menu" -->
+				<!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
+			<!-- TMPL_ELSE -->
+				<!-- TMPL_IF NAME="CATALOGUING" -->
+					<!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
+				<!-- TMPL_ELSE -->
+					<!-- TMPL_INCLUDE NAME="tools-menu.inc" -->
+				<!-- /TMPL_IF -->
+			<!-- /TMPL_IF -->
+		</div>
+	</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

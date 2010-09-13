@@ -1,0 +1,122 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>
+	Koha &rsaquo; Tools &rsaquo; Patron Lists
+</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+<script type="text/javascript">
+$(document).ready(function() {
+  $("#member").focus();
+});
+</script>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<div id="breadcrumbs">
+	<a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a> &rsaquo; Patron Lists
+</div>
+
+<div id="doc3" class="yui-t2">
+	<div id="bd">
+		<div id="yui-main">
+			<div class="yui-b">
+				<h1>Manage Patron Lists</h1>
+
+				<table>
+					<thead>
+						<th>List Name</th>
+						<th># of Patrons on List</th>
+						<th>&nbsp;</th>
+						<th>&nbsp;</th>
+						<th>&nbsp;</th>
+					</thead>
+
+					<tbody>
+						<!-- TMPL_LOOP NAME="ListsLoop" -->
+							<tr>
+								<td><!-- TMPL_VAR NAME="list_name" --></td>
+								<td><!-- TMPL_VAR NAME="count" --></td>
+								<td><a href="/cgi-bin/koha/members/member.pl?&from_list_id=<!-- TMPL_VAR NAME="list_id" -->&advanced_patron_search=1">View Patrons</a></td>
+								<td><a href="member_lists.pl?op=delete&list_id=<!-- TMPL_VAR NAME="list_id" -->">Delete</a></td>
+								<!-- TMPL_IF NAME="CAN_user_borrowers_lists_bulk_modify" -->        
+									<td><a href="member_lists_bulkedit.pl?list_id=<!-- TMPL_VAR NAME="list_id" -->">Bulk Edit</a></td>
+								<!-- TMPL_ELSE -->
+									&nbsp;
+								<!-- /TMPL_IF -->
+							</tr>
+						<!-- /TMPL_LOOP -->
+					</tbody>
+				</table>
+
+				<fieldset>
+					<legend>Add Patron To List</legend>
+
+					<form>
+						<label for="member">Add Patron </label>
+
+						<!-- TMPL_IF NAME="BorrowersLoop" -->
+							<select name="member" id="member" size="7" class="focus">
+								<!-- TMPL_LOOP NAME="BorrowersLoop" -->
+									<option value="<!-- TMPL_VAR NAME="cardnumber" -->" >
+										<!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR NAME="firstname" --> ... <!-- TMPL_VAR NAME="cardnumber" --> ... <!-- TMPL_VAR NAME="address" -->
+									</option>
+								<!-- /TMPL_LOOP -->
+							</select>
+						<!-- TMPL_ELSE -->
+							<input type="text" name="member" id="member" />
+						<!-- /TMPL_IF -->
+
+						<label for="list_id"> To </label>
+			                        <select name="list_id" id="add_to_list_id">
+                                			<!-- TMPL_LOOP NAME="ListsLoop" -->
+			                                        <option value="<!-- TMPL_VAR NAME="list_id" -->" <!-- TMPL_IF NAME="selected" -->selected<!-- /TMPL_IF --> >
+									<!-- TMPL_VAR NAME="list_name" -->
+								</option>
+			                                <!-- /TMPL_LOOP -->
+			                        </select>
+
+						<input type="hidden" name="op" value="add_to_list" />
+						<input type="submit" value="Add Patron to List" />
+
+						<!-- TMPL_IF NAME="borrower_cardnumber" -->
+							<p style="color:green"><strong>Added <!-- TMPL_VAR NAME="borrower_firstname" --> <!-- TMPL_VAR NAME="borrower_surname" --> ( <!-- TMPL_VAR NAME="borrower_cardnumber" --> ) to list.</strong></p>
+						<!-- /TMPL_IF -->
+
+						<!-- TMPL_IF NAME="NoBorrowersFound" -->
+							<p style="color:red"><strong>No borrowers were found.</strong></p>
+						<!-- /TMPL_IF -->
+					</form>
+
+				</fieldset>
+
+				<fieldset>
+					<legend>Create New List</legend>
+	
+					<form>
+						<input type="hidden" name="op" value="create" />
+	
+						<label for="list_name">List Name: </label>
+			                        <input type="text" name="list_name" id="list_name" />
+	
+						<input type="submit" value="Create New List" />
+					</form>
+				</fieldset>
+
+			</div>
+		</div>
+		<div class="yui-b noprint">
+			<!-- TMPL_IF NAME="menu" -->
+				<!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
+			<!-- TMPL_ELSE -->
+				<!-- TMPL_IF NAME="CATALOGUING" -->
+					<!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
+				<!-- TMPL_ELSE -->
+					<!-- TMPL_INCLUDE NAME="tools-menu.inc" -->
+				<!-- /TMPL_IF -->
+			<!-- /TMPL_IF -->
+		</div>
+	</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

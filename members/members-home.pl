@@ -23,6 +23,9 @@ use C4::Auth;
 use C4::Output;
 use C4::Context;
 use C4::Members;
+use C4::Members::Lists;
+use C4::Branch;
+use C4::Members::AttributeTypes;
 
 my $query = new CGI;
 my $quicksearch = $query->param('quicksearch');
@@ -57,6 +60,19 @@ if (C4::Context->preference("AddPatronLists")=~/code/){
     $template->param(categories=>$categories);  
 }  
 
+## Advanced Patron Search
+my @attributes = C4::Members::AttributeTypes::GetAttributeTypes() if ( C4::Context->preference('ExtendedPatronAttributes') );
+$template->param(
+  CategoriesLoop => GetBorrowercategoryList(),
+  BranchesLoop => GetBranchesLoop(),
+  AttributesLoop => \@attributes,   
+);
+
+$template->param( 
+ BorrowerListsLoop => GetLists(),
+ SearchBorrowerListsLoop => GetLists(),
+);
+      
 $template->param( ShowPatronSearchBySQL => C4::Context->preference('ShowPatronSearchBySQL') );
 
 output_html_with_http_headers $query, $cookie, $template->output;

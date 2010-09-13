@@ -40,6 +40,7 @@ use C4::Output;
 use C4::Members;
 use C4::Members::Attributes;
 use C4::Members::AttributeTypes;
+use C4::Members::Lists;
 use C4::Dates qw/format_date/;
 use C4::Reserves;
 use C4::Circulation;
@@ -601,5 +602,10 @@ $template->param(
 
 $template->param("showinitials" => C4::Context->preference('DisplayInitials'));
 $template->param("showothernames" => C4::Context->preference('DisplayOthernames'));
+
+$template->param(
+    ListsLoop => GetLists(),
+    MemberListsLoop => GetListsForMember({ borrowernumber => $borrowernumber }),
+);
 
 output_html_with_http_headers $input, $cookie, $template->output;

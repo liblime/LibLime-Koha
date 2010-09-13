@@ -3,6 +3,10 @@
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/borrower-basket.js"></script>
 
+<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/calendar/calendar.js"></script>
+<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/calendar/calendar-en.js"></script>
+<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/calendar/calendar-setup.js"></script>
+
 <script type="text/javascript" language="javascript">
     var MSG_BASKET_EMPTY = _("Your cart is currently empty");                                   
     var MSG_RECORD_IN_BASKET = _("This item is already in your cart");
@@ -50,7 +54,6 @@ function CheckCheckAll(fmobj) {
    fmobj.allbox.checked=false;
   }
 }
-
 </script>
 
 </head>
@@ -112,6 +115,237 @@ function CheckCheckAll(fmobj) {
     <a href="/cgi-bin/koha/members/member.pl?member=z">Z</a>
 </div>
 
+<div id="advanced_search" name="advanced_search">
+	<form action="member.pl" id="advanced_search_form" name="advanced_search_form" method="post">
+		<fieldset>
+			<legend id="advanced_search_legend">Advanced Patron Search</legend>
+
+			<a href="#" id="show_advanced_search_link" onclick="$('#advanced_search_elements').show('slow'); $('#show_advanced_search_link').hide();">
+				Show Advanced Search Options
+			</a>
+
+		    <div id="advanced_search_elements" style="display:none;">
+			<a href="#" onclick="$('#advanced_search_elements').hide(); $('#show_advanced_search_link').show();" >Hide Advanced Search Options</a>
+
+			<fieldset>
+				<legend>Patron Identity</legend>
+
+				<label for="borrowernumber">Borrower number:</label>
+				<input name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
+				<p>
+				<label for="cardnumber">Borrower Cardnumber:</label>
+				<input name="cardnumber" id="cardnumber" value="<!-- TMPL_VAR NAME="cardnumber" -->" />
+				<p>				
+				<label for="surname">Surname:</label>
+				<input name="surname" id="surname" value="<!-- TMPL_VAR NAME="surname" -->"/>
+				<p>
+				<label for="firstname">Firstname:</label>
+				<input name="firstname" id="firstname" value="<!-- TMPL_VAR NAME="firstname" -->" />
+				<p>
+				<label for="branchcode">Patron Branch:</label>
+				<select name="branchcode" id="branchcode">
+					<option value="">All Branches</option>
+					<!-- TMPL_LOOP NAME="BranchesLoop" -->
+						<option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="branchname" --></option>
+					<!-- /TMPL_LOOP -->
+				</select>
+				<p>
+				<label for="categorycode">Category:</label>
+				<select name="categorycode" id="categorycode">
+					<option value="">All Categories</option>
+					<!-- TMPL_LOOP NAME="CategoriesLoop" -->
+						<option value="<!-- TMPL_VAR NAME="categorycode" -->" <!-- TMPL_IF NAME="selected" -->selected<!-- /TMPL_IF --> >
+							<!-- TMPL_VAR NAME="description" -->
+						</option>
+					<!-- /TMPL_LOOP -->
+				</select>
+				<p>				
+				<label for="userid">OPAC Login:</label>
+				<input name="userid" id="userid" value="<!-- TMPL_VAR NAME="userid" -->" />
+				<input type="checkbox" name="userid_empty" <!-- TMPL_IF NAME="userid_empty" -->checked<!-- /TMPL_IF --> /><i>No Value</i>
+				<p>			
+				<label for="sort1">Sort Field 1:</label>
+				<input name="sort1" id="sort1" value="<!-- TMPL_VAR NAME="sort1" -->" />
+				<input type="checkbox" name="sort1_empty" <!-- TMPL_IF NAME="sort1_empty" -->checked<!-- /TMPL_IF --> /><i>No Value</i>
+				<p>				
+				<label for="sort2">Sort Field 2:</label>
+				<input name="sort2" id="sort2" value="<!-- TMPL_VAR NAME="sort2" -->" />
+				<input type="checkbox" name="sort2_empty" <!-- TMPL_IF NAME="sort2_empty" -->checked<!-- /TMPL_IF --> /><i>No Value</i>
+			</fieldset>
+
+			<fieldset>
+				<legend>Registration</legend>
+
+				<label for="dateenrolled_after">After Date:<label>
+				<input name="dateenrolled_after" id="dateenrolled_after" size="10" value="<!-- TMPL_VAR NAME="dateenrolled_after" -->" />
+		
+				<img src="/intranet-tmpl/prog/en/lib/calendar/cal.gif" id="dateenrolled_after_button" alt="Show Calendar" />
+				<script language="JavaScript" type="text/javascript">
+					Calendar.setup({inputField:"dateenrolled_after",ifFormat:"%m/%d/%Y",button:"dateenrolled_after_button"});
+				</script>
+				<p>				
+				<label for="dateenrolled_before">Before Date:<label>
+				<input name="dateenrolled_before" id="dateenrolled_before" size="10" value="<!-- TMPL_VAR NAME="dateenrolled_before" -->" />
+
+				<img src="/intranet-tmpl/prog/en/lib/calendar/cal.gif" id="dateenrolled_before_button" alt="Show Calendar" />
+				<script language="JavaScript" type="text/javascript">
+					Calendar.setup({inputField:"dateenrolled_before",ifFormat:"%m/%d/%Y",button:"dateenrolled_before_button"});
+				</script>
+				<p>
+			</fieldset>
+
+			<fieldset>
+				<legend>Expiry</legend>
+
+				<label for="dateexpiry_after">After Date:<label>
+				<input name="dateexpiry_after" id="dateexpiry_after" size="10" value="<!-- TMPL_VAR NAME="dateexpiry_after" -->" />
+
+				<img src="/intranet-tmpl/prog/en/lib/calendar/cal.gif" id="dateexpiry_after_button" alt="Show Calendar" />
+				<script language="JavaScript" type="text/javascript">
+					Calendar.setup({inputField:"dateexpiry_after",ifFormat:"%m/%d/%Y",button:"dateexpiry_after_button"});
+				</script>
+				<p>				
+				<label for="dateexpiry_before">Before Date:<label>
+				<input name="dateexpiry_before" id="dateexpiry_before" size="10" value="<!-- TMPL_VAR NAME="dateexpiry_before" -->" />
+
+				<img src="/intranet-tmpl/prog/en/lib/calendar/cal.gif" id="dateexpiry_before_button" alt="Show Calendar" />
+				<script language="JavaScript" type="text/javascript">
+					Calendar.setup({inputField:"dateexpiry_before",ifFormat:"%m/%d/%Y",button:"dateexpiry_before_button"});
+				</script>
+				<p>				
+			</fieldset>
+
+			<fieldset>
+				<legend>Date of Birth</legend>
+
+				<label for="dateofbirth_after">After Date:<label>
+				<input name="dateofbirth_after" id="dateofbirth_after" size="10" value="<!-- TMPL_VAR NAME="dateofbirth_after" -->" />
+
+				<img src="/intranet-tmpl/prog/en/lib/calendar/cal.gif" id="dateofbirth_after_button" alt="Show Calendar" />
+				<script language="JavaScript" type="text/javascript">
+					Calendar.setup({inputField:"dateofbirth_after",ifFormat:"%m/%d/%Y",button:"dateofbirth_after_button"});
+				</script>
+
+				<p>							
+
+				<label for="dateofbirth_before">Before Date:<label>
+				<input name="dateofbirth_before" id="dateofbirth_before" size="10" value="<!-- TMPL_VAR NAME="dateofbirth_before" -->" />
+
+				<img src="/intranet-tmpl/prog/en/lib/calendar/cal.gif" id="dateofbirth_before_button" alt="Show Calendar" />
+				<script language="JavaScript" type="text/javascript">
+					Calendar.setup({inputField:"dateofbirth_before",ifFormat:"%m/%d/%Y",button:"dateofbirth_before_button"});
+				</script>
+			</fieldset>
+	
+			<fieldset>
+				<legend>Main Address</legend>
+
+				<label for="address">Address:</label>
+				<input name="address" id="address" value="<!-- TMPL_VAR NAME="address" -->" />
+			<p>
+				<label for="city">City, State:</label>
+				<input name="city" id="city" value="<!-- TMPL_VAR NAME="city" -->" />
+			<p>
+				<label for="zipcode">Zip Code:</label>
+				<input name="zipcode" id="zipcode" value="<!-- TMPL_VAR NAME="zipcode" -->" />
+			</fieldset>
+
+			<fieldset>
+				<legend>Alternate Address</legend>
+
+				<label for="address">Address:</label>
+				<input name="B_address" id="B_address" value="<!-- TMPL_VAR NAME="B_address" -->" />
+			<p>
+				<label for="B_city">City, State:</label>
+				<input name="B_city" id="B_city" value="<!-- TMPL_VAR NAME="B_city" -->" />
+			<p>
+				<label for="B_zipcode">Zip Code:</label>
+				<input name="B_zipcode" id="B_zipcode" value="<!-- TMPL_VAR NAME="B_zipcode" -->" />
+			</fieldset>
+
+			<fieldset>
+				<legend>Contact</legend>
+			
+				<label for="email">Email (Home):</label>
+				<input name="email" id="email" value="<!-- TMPL_VAR NAME="email" -->" />
+				<input type="checkbox" name="email_empty" <!-- TMPL_IF NAME="email_empty" -->checked<!-- /TMPL_IF --> /><i>No Value</i>
+				<p>
+				<label for="email">Email (Work):</label>
+				<input name="emailpro" id="emailpro" value="<!-- TMPL_VAR NAME="emailpro" -->" />
+				<input type="checkbox" name="emailpro_empty" <!-- TMPL_IF NAME="emailpro_empty" -->checked<!-- /TMPL_IF --> /><i>No Value</i>
+				<p>
+				<label for="phone">Phone:</label>
+				<input name="phone" id="phone" value="<!-- TMPL_VAR NAME="phone" -->" />
+				<input type="checkbox" name="phone_empty" <!-- TMPL_IF NAME="phone_empty" -->checked<!-- /TMPL_IF --> /><i>No Value</i>
+			</fieldset>
+
+			<fieldset>
+				<legend>Notes</legend>
+
+				<label for="opacnotes">OPAC Note:</label>
+				<input name="opacnotes" id="opacnotes" value="<!-- TMPL_VAR NAME="opacnotes" -->" />
+				<p>
+				<label for="borrowernotes">Circulation Note:</label>
+				<input name="borrowernotes" id="borrowernotes" value="<!-- TMPL_VAR NAME="borrowernotes" -->" />
+			</fieldset>
+
+			<fieldset>
+				<legend>Flags</legend>
+
+				<input type="checkbox" name="debarred" id="debarred" <!-- TMPL_IF NAME="debarred" -->checked<!-- /TMPL_IF --> />
+				<label for="debarred">Debarred:</label>
+				<p>
+				<input type="checkbox" name="gonenoaddress" id="gonenoaddress" <!-- TMPL_IF NAME="gonenoaddress" -->checked<!-- /TMPL_IF --> />
+				<label for="gonenoaddress">Gone, No Address:</label>
+				<p>
+				<input type="checkbox" name="lost" id="lost" <!-- TMPL_IF NAME="lost" -->checked<!-- /TMPL_IF --> />
+				<label for="lost">Lost Card:</label>
+			</fieldset>
+
+			<!-- TMPL_IF NAME="AttributesLoop" -->
+				<fieldset>
+					<legend>Extended Attributes</legend>
+	
+					<!-- TMPL_LOOP NAME="AttributesLoop" -->
+						<p>
+							<label for="<!-- TMPL_VAR NAME="code" -->" ><!--TMPL_VAR NAME="description" --></label>
+							<input name="<!-- TMPL_VAR NAME="code" -->" value="<!-- TMPL_VAR NAME="value" -->" />
+					<!-- /TMPL_LOOP -->
+				</fieldset>
+			<!-- /TMPL_IF -->
+
+			<!-- TMPL_IF NAME="SearchBorrowerListsLoop" -->
+				<fieldset>
+					<legend>Patron Lists</legend>
+	
+					<label for="from_list_id">Patrons in list: </label>
+				        <select name="from_list_id" id="from_list_id">
+				                <option value=""></option>
+				                <!-- TMPL_LOOP NAME="SearchBorrowerListsLoop" -->
+				                        <option value="<!-- TMPL_VAR NAME="list_id" -->" <!-- TMPL_IF NAME="selected" -->selected<!-- /TMPL_IF --> ><!-- TMPL_VAR NAME="list_name" --></option>
+				                <!-- /TMPL_LOOP -->
+				        </select>
+				</fieldset>
+			<!-- /TMPL_IF -->
+
+			<input type="hidden" name="advanced_patron_search" value="1" />
+			<input type="submit" value="Search Patrons" />
+			&nbsp; &nbsp;
+			<!-- TMPL_IF NAME="CAN_user_borrowers_lists" -->
+			        <input type="checkbox" name="add_to_list" id="add_to_list" value="1" />
+				<label for="add_to_list">Add Results to a List</label>
+			        <select name="list_id" id="list_id">
+			                <option value="">A New List Named</option>
+			                <!-- TMPL_LOOP NAME="BorrowerListsLoop" -->
+			                        <option value="<!-- TMPL_VAR NAME="list_id" -->"><!-- TMPL_VAR NAME="list_name" --></option>
+			                <!-- /TMPL_LOOP -->
+			        </select>
+			        <input type="text" name="list_name" id="list_name" />
+			<!-- /TMPL_IF -->
+		    </div>
+		</fieldset>
+	</form>
+</div>
 
 <!-- TMPL_IF NAME="resultsloop" -->
    <div id="searchheader"> <h3>Results <!-- TMPL_VAR Name ="from" --> to <!-- TMPL_VAR Name ="to" --> of <!-- TMPL_VAR Name ="numresults" --> found for '<span class="ex"><!-- TMPL_VAR NAME="member" --></span>'</h3></div>
@@ -123,10 +357,10 @@ function CheckCheckAll(fmobj) {
     <table style="width:100%">
     <tr>
     <th><input style="border:inset 1px;" name="allbox" type="checkbox" value="Check All" onclick="CheckAll(document.bookbag_form);" /></th>
-    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=cardnumber">Card</a></th>
-    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=surname">Name</a></th>
-    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=borrowers.categorycode">Cat</a></th>
-    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=branchcode">Library</a></th>
+    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=cardnumber<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->">Card</a></th>
+    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=surname<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->">Name</a></th>
+    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=borrowers.categorycode<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->">Cat</a></th>
+    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=branchcode<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->">Library</a></th>
     <th>Expires on</th>
     <th>OD/Issues</th>
     <th>Fines</th>

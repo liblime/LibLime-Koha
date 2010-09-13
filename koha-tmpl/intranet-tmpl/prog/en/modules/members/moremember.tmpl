@@ -327,6 +327,38 @@ function isValidDate(theField){
 <!-- /TMPL_UNLESS -->
 <!-- /TMPL_IF -->
 
+<div id="patron-lists" style="padding-top: 1em;">
+	<h3>Patron Lists</h3>
+
+	<table>
+	    <tr>
+	        <th>Name</th>
+	        <th>&nbsp;</th>
+	    </tr>
+	    <!-- TMPL_LOOP NAME="MemberListsLoop" -->
+	    <tr>
+	        <td><!-- TMPL_VAR NAME="list_name" --></td>
+		<td><a href="mod_member_lists.pl?op=remove&list_id=<!-- TMPL_VAR NAME="list_id" -->&borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Remove</a></td>
+	    </tr>
+	    <!-- /TMPL_LOOP -->
+	</table>
+
+	<form action="mod_member_lists.pl">
+		<label for="list_id">Add patron to list: </label>
+		<select name="list_id">
+	        	<!-- TMPL_LOOP NAME="ListsLoop" -->
+	                	<option value="<!-- TMPL_VAR NAME="list_id" -->" <!-- TMPL_IF NAME="selected" -->selected<!-- /TMPL_IF --> > 
+	                        	<!-- TMPL_VAR NAME="list_name" -->
+	                        </option>
+	                <!-- /TMPL_LOOP -->
+	        </select>
+		<input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
+		<input type="hidden" name="op" value="add" />
+		<input type="submit" value="Add" />
+	</form>
+
+</div>
+
 <!-- TMPL_IF NAME="EnhancedMessagingPreferences" -->
 <div id="patron-messaging-prefs" style="padding-top: 1em;">
 <h3>Patron messaging preferences</h3>

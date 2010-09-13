@@ -1,0 +1,122 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>
+	Koha &rsaquo; Tools &rsaquo; Patron Lists &rsaquo; Bulk Modify
+</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+<script type="text/javascript">
+function swap_rows( id1, id2 ){
+	field_id1 = $('#field_'+id1).val();
+	field_id2 = $('#field_'+id2).val();
+	$('#field_'+id1).val(field_id2);
+	$('#field_'+id2).val(field_id1);
+
+	old_value_id1 = $('#old_value_'+id1).val();
+	old_value_id2 = $('#old_value_'+id2).val();
+	$('#old_value_'+id1).val(old_value_id2);
+	$('#old_value_'+id2).val(old_value_id1);
+
+	new_value_id1 = $('#new_value_'+id1).val();
+	new_value_id2 = $('#new_value_'+id2).val();
+	$('#new_value_'+id1).val(new_value_id2);
+	$('#new_value_'+id2).val(new_value_id1);
+
+	delete_id1 = $('#delete_'+id1).val();
+	delete_id2 = $('#delete_'+id2).val();
+	$('#delete_'+id1).attr('checked', delete_id2);
+	$('#delete_'+id2).attr('checked', delete_id1);
+}
+
+function add_row( index ) {
+	next_index = index + 1;
+
+	$("#tr_" + next_index ).show();
+	$("#down_" + index ).show();
+	$("#add_link_" + index ).hide();
+	$("#field_" + next_index ).attr('disabled', '');
+}
+</script>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<div id="breadcrumbs">
+	<a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a> &rsaquo; Patron Lists &rsaquo; Bulk Modify
+</div>
+
+<div id="doc3" class="yui-t2">
+	<div id="bd">
+		<div id="yui-main">
+			<div class="yui-b">
+				<h1>Bulk Modify Patrons on list <i><!-- TMPL_VAR NAME="list_name" --></i></h1>
+
+				<form action="member_lists_bulkedit_confirm.pl" method="post">
+
+				<table>
+					<thead>
+						<th>&nbsp</th>
+						<th>Field</th>
+						<th>Old Value</th>
+						<th>New Value</th>
+						<th>Delete?</th>
+						<th>&nbsp</th>
+					</thead>
+
+					<tbody>
+						<tr>
+							<td><a style="visibility:hidden;">&uArr;</a> <a id="down_1" href="#" style="display:none;" onclick="swap_rows('1','2')">&dArr;</a></td>
+							<td>
+								<select name="field_1" id="field_1">
+									<!-- TMPL_LOOP NAME="BorrowerFieldsLoop" -->
+										<option value="<!-- TMPL_VAR NAME="Field" -->"><!-- TMPL_VAR NAME="Field" --></option>
+									<!-- /TMPL_LOOP -->
+								</select>
+							</td>
+							<td><input type="text" name="old_value_1" id="old_value_1" /></td>
+							<td><input type="text" name="new_value_1" id="new_value_1" /></td>
+							<td><input type="checkbox" name="delete_1" id="delete_1" <!-- TMPL_UNLESS NAME="CAN_user_borrowers_lists_bulk_delete" -->disabled<!-- /TMPL_UNLESS --> /></td>
+							<td><a id="add_link_1" href="#" onclick='add_row( 1 )'>Add</a></td>
+						</tr>
+
+						<!-- TMPL_LOOP NAME="IndexLoop" -->
+							<tr id="tr_<!-- TMPL_VAR NAME="index" -->" style="display: none;">
+								<td><a id="up_<!-- TMPL_VAR NAME="index" -->" href="#" onclick="swap_rows('<!-- TMPL_VAR NAME="index" -->','<!-- TMPL_VAR NAME="prev_index" -->')">&uArr;</a> <a id="down_<!-- TMPL_VAR NAME="index" -->" href="#" style="display:none;" onclick="swap_rows('<!-- TMPL_VAR NAME="index" -->','<!-- TMPL_VAR NAME="next_index" -->')">&dArr;</a></td>
+								<td>
+									<select name="field_<!-- TMPL_VAR NAME="index" -->" id="field_<!-- TMPL_VAR NAME="index" -->" disabled>
+										<!-- TMPL_LOOP NAME="BorrowerFieldsLoop" -->
+											<option value="<!-- TMPL_VAR NAME="Field" -->"><!-- TMPL_VAR NAME="Field" --></option>
+										<!-- /TMPL_LOOP -->
+									</select>
+								</td>
+								<td><input type="text" name="old_value_<!-- TMPL_VAR NAME="index" -->" id="old_value_<!-- TMPL_VAR NAME="index" -->" /></td>
+								<td><input type="text" name="new_value_<!-- TMPL_VAR NAME="index" -->" id="new_value_<!-- TMPL_VAR NAME="index" -->" /></td>
+								<td><input type="checkbox" name="delete_<!-- TMPL_VAR NAME="index" -->" id="delete_<!-- TMPL_VAR NAME="index" -->" <!-- TMPL_UNLESS NAME="CAN_user_borrowers_lists_bulk_delete" -->disabled<!-- /TMPL_UNLESS --> /></td>
+								<td><a id="add_link_<!-- TMPL_VAR NAME="index" -->" href="#" onclick='add_row(<!-- TMPL_VAR NAME="index" -->);'>Add</a></td>
+							</tr>
+						<!-- /TMPL_LOOP -->
+					</tbody>
+				</table>
+
+				<p>
+					<input type="hidden" name="list_id" value="<!-- TMPL_VAR NAME="list_id" -->" />
+					<input type="submit" value="Test Modifications" />
+				</p>
+
+				</form>
+			</div>
+		</div>
+		<div class="yui-b noprint">
+			<!-- TMPL_IF NAME="menu" -->
+				<!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
+			<!-- TMPL_ELSE -->
+				<!-- TMPL_IF NAME="CATALOGUING" -->
+					<!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
+				<!-- TMPL_ELSE -->
+					<!-- TMPL_INCLUDE NAME="tools-menu.inc" -->
+				<!-- /TMPL_IF -->
+			<!-- /TMPL_IF -->
+		</div>
+	</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
