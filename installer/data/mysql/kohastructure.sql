@@ -585,6 +585,8 @@ CREATE TABLE `branches` (
   `branchip` varchar(15) default NULL,
   `branchprinter` varchar(100) default NULL,
   `branchnotes` mediumtext,
+  `patronbarcodeprefix` char(15) default NULL,
+  `itembarcodeprefix` char(19) default NULL,
   UNIQUE KEY `branchcode` (`branchcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

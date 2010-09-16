@@ -3350,6 +3350,25 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.00.010';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(qq/
+        ALTER TABLE branches ADD COLUMN patronbarcodeprefix char(15);
+    /); 
+    $dbh->do(qq/
+        ALTER TABLE branches ADD COLUMN itembarcodeprefix char(19);
+    /); 
+    $dbh->do(qq/
+        INSERT INTO `systempreferences` (variable,value,explanation,options,type)
+        VALUES ('patronbarcodelength','0','Length of branch-based cardnumber prefix','','Integer'),
+        ('itembarcodelength','0','Length of branch-based item barcode prefix.','','Integer')
+    /); 
+
+
+	print "Upgrade to $DBversion done ( Add barcode prefix sysprefs and related columns to branches table )\n";
+    SetVersion ($DBversion);
+}
+
 
 =item DropAllForeignKeys($table)
 
