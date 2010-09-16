@@ -125,7 +125,6 @@ if ($op eq 'save') {
     }
 
     foreach my $bor (keys %temphash){
-        warn "BOR: $bor VALUE: $temphash{$bor}->{delay1} $temphash{$bor}->{letter1}\n";
         # get category name if we need it for an error message
         my $bor_category = GetBorrowercategory($bor);
         my $bor_category_name = defined($bor_category) ? $bor_category->{description} : $bor;
@@ -273,16 +272,16 @@ for my $data (@categories) {
 }
 
 # Pull similiar information via item type
-my @itemtypes = @{$dbh->selectall_arrayref(
+@itemtypes = @{$dbh->selectall_arrayref(
     'SELECT description, itemtype FROM itemtypes',
     { Slice => {} }
 )};
-my @item_types  = map { $_->{itemtype} } @itemtypes;
+@item_types  = map { $_->{itemtype} } @itemtypes;
 
 # Now do it for item type
 # save the values entered into tables
-my %temphash = ();
-my $input_saved = 0;
+%temphash = ();
+$input_saved = 0;
 if ($op eq 'save') {
     my @names=$input->param();
     my $sth_search = $dbh->prepare("SELECT count(*) AS total FROM overdueitemrules WHERE branchcode=? AND itemtype=?");
@@ -296,7 +295,13 @@ if ($op eq 'save') {
                     my $type = $1; # data type
                     my $num = $2; # From 1 to 3
                     my $item = $3; # item category
-                    $temphash{$item}->{"$type$num"}=$input->param("$key") if (($input->param("$key") ne "") or ($input->param("$key")>0));
+                    my $value = $input->param($key);
+                    if ($type eq 'delay') {
+                      $temphash{$item}->{"$type$num"} = ($value =~ /^\d+$/ && int($value) > 0) ? int($value) : '';
+                    } else {
+                      # type is letter
+                      $temphash{$item}->{"$type$num"} = $value if $value ne '';
+                    }
             }
     }
 
@@ -304,18 +309,18 @@ if ($op eq 'save') {
 #   my @rows_to_delete = grep { blank_row($_) } @item_types;
     # Need to get this back to working in subroutine
     my @rows_to_delete = ();
-    foreach my $category_code (@category_codes) {
+    foreach my $item_type (@item_types) {
       my $field_value = 0;
       for my $rp (@rule_params) {
           for my $n (1 .. 3) {
               my $key   = "${rp}${n}";
-              my $value = $temphash{$category_code}->{$key};
+              my $value = $temphash{$item_type}->{$key};
               if ($value) {
                 $field_value = 1;
               }
           }
       }
-      push @rows_to_delete, $category_code if (!$field_value);
+      push @rows_to_delete, $item_type if (!$field_value);
     }
 
     foreach my $item (keys %temphash){
@@ -432,12 +437,11 @@ for my $data (@itemtypes) {
         my $sth2=$dbh->prepare("SELECT * from overdueitemrules WHERE branchcode=? AND itemtype=?");
         $sth2->execute($branch,$data->{'itemtype'});
         my $dat=$sth2->fetchrow_hashref;
-        if ($dat){
         for (my $i=1;$i<=3;$i++){
             if ($countletters){
                 my @letterloop;
                 foreach my $thisletter (sort { $letters->{$a} cmp $letters->{$b} } keys %$letters) {
-                    my $selected = 1 if $thisletter eq $dat->{"letter$i"};
+                    my $selected = 1 if ($dat->{"letter$i"} && $thisletter eq $dat->{"letter$i"});
                     my %letterrow =(value => $thisletter,
                                     selected => $selected,
                                     lettername => $letters->{$thisletter},
@@ -451,7 +455,7 @@ for my $data (@itemtypes) {
             }
             if ($dat->{"delay$i"}){$row{"delay$i"}=$dat->{"delay$i"};}
             if ($dat->{"debarred$i"}){$row{"debarred$i"}=$dat->{"debarred$i"};}
-        }}
+        }
         $sth2->finish;
     }
     push @item_line_loop,\%row;
