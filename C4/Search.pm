@@ -447,8 +447,7 @@ sub getRecords {
 
                         # Fill the facets while we're looping, but only for the biblioserver
                         if($servers[ $i - 1 ] =~ /biblioserver/){
-                            # LLEK uses new_from_xml...change $record content in the future?
-                            $facet_record = eval { MARC::Record->new_from_usmarc($record) };
+                            $facet_record = eval { MARC::Record->new_from_xml($record,'UTF-8') };
                             if($@){
                                 warn "Bad record returned. $@";
                                 next;
