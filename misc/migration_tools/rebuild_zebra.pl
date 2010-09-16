@@ -10,6 +10,7 @@ use C4::Biblio;
 use C4::Items;
 use C4::AuthoritiesMarc;
 use Business::ISBN;
+use Unicode::Normalize;
 
 # 
 # script that checks zebradir structure & create directories & mandatory files if needed
