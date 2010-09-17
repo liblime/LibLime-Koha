@@ -65,7 +65,7 @@ if (not $biblios and not $authorities) {
     die $msg;
 }
 
-if ($authorities and $as_xml) {
+if ($authorities and $as_xml and not $biblios) {
     my $msg = "Cannot specify both -a and -x\n";
     $msg   .= "Please do '$0 --help' to see usage.\n";
     die $msg;
@@ -130,7 +130,7 @@ if ($do_munge) {
 }
 
 if ($authorities) {
-    index_records('authority', $directory, $skip_export, $process_zebraqueue, $as_xml, $noxml, $nosanitize, $do_not_clear_zebraqueue, $verbose_logging, $zebraidx_log_opt);
+    index_records('authority', $directory, $skip_export, $process_zebraqueue, undef, $noxml, $nosanitize, $do_not_clear_zebraqueue, $verbose_logging, $zebraidx_log_opt);
 } else {
     print "skipping authorities\n" if ( $verbose_logging );
 }
