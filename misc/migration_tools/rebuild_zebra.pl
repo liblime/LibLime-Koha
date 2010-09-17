@@ -275,7 +275,7 @@ sub select_all_authorities {
 }
 
 sub select_all_biblios {
-    my $sth = $dbh->prepare("SELECT biblionumber FROM biblioitems where biblionumber < 1000 ORDER BY biblionumber");
+    my $sth = $dbh->prepare("SELECT biblionumber FROM biblioitems ORDER BY biblionumber");
     $sth->execute();
     return $sth;
 }
