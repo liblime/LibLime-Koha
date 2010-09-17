@@ -1596,6 +1596,13 @@ sub AddReturn {
         $messages->{'WasLost'} = 1;
     }
 
+    # fix up the overdues in accounts...
+    if ($borrowernumber) {
+        my $fix = _FixOverduesOnReturn($borrowernumber, $item->{itemnumber}, $exemptfine, $dropbox);
+        defined($fix) or warn "_FixOverduesOnReturn($borrowernumber, $item->{itemnumber}...) failed!";  # zero is OK, check defined
+    }
+
+
         # For claims-returned items, update the fine to be as-if they returned it for normal overdue
         if ($issue->{'date_due'} && $issue->{'itemlost'} && $issue->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){
           my $datedue = C4::Dates->new($issue->{'date_due'},'iso'); 
