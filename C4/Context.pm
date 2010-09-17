@@ -557,6 +557,8 @@ sub Zconn {
     my $auth=shift;
     my $piggyback=shift;
     my $syntax=shift;
+    my $explain=shift;
+
     if ( defined($context->{"Zconn"}->{$server}) && (0 == $context->{"Zconn"}->{$server}->errcode()) ) {
         return $context->{"Zconn"}->{$server};
     # No connection object or it died. Create one.
@@ -569,7 +571,7 @@ sub Zconn {
         # the basic health of a ZOOM::Connection
         $context->{"Zconn"}->{$server}->destroy() if defined($context->{"Zconn"}->{$server});
 
-        $context->{"Zconn"}->{$server} = &_new_Zconn($server,$async,$auth,$piggyback,$syntax);
+        $context->{"Zconn"}->{$server} = &_new_Zconn($server,$async,$auth,$piggyback,$syntax,$explain);
         return $context->{"Zconn"}->{$server};
     }
 }
@@ -589,20 +591,23 @@ C<$auth> whether this connection has rw access (1) or just r access (0 or NULL)
 =cut
 
 sub _new_Zconn {
-    my ($server,$async,$auth,$piggyback,$syntax) = @_;
+    my ($server,$async,$auth,$piggyback,$syntax,$explain) = @_;
 
     my $tried=0; # first attempt
     my $Zconn; # connection object
     $server = "biblioserver" unless $server;
-    if(!$syntax){
-        $syntax = ($server eq 'biblioserver') ? 'xml' : 'usmarc';
+    if (!$syntax) {
+      $syntax = ($server eq 'biblioserver') ? 'xml' : 'usmarc';
     }
-
     my $host = $context->{'listen'}->{$server}->{'content'};
     my $servername = $context->{"config"}->{$server};
     my $user = $context->{"serverinfo"}->{$server}->{"user"};
     my $password = $context->{"serverinfo"}->{$server}->{"password"};
- $auth = 1 if($user && $password);   
+    $auth = 1 if($user && $password);
+    if ($explain) {
+      $servername = 'IR-Explain-1';
+      $syntax = 'xml';
+    }
     retry:
     eval {
         # set options
