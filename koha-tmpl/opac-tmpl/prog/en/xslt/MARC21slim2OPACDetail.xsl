@@ -601,7 +601,49 @@
         </xsl:for-each>
         </xsl:if>
 
-    </xsl:template>
+        <xsl:if test="marc:datafield[@tag=866] or marc:datafield[@tag=867]">
+        <span class="results_summary"><span class="label">Serials Summary holdings: </span><br /><ul>
+            <xsl:for-each select="marc:datafield[@tag=866]">
+                <li><xsl:call-template name="chopPunctuation">
+                    <xsl:with-param name="chopString">
+                      <xsl:call-template name="subfieldSelect">
+                         <xsl:with-param name="codes">7</xsl:with-param>
+                      </xsl:call-template>
+                   </xsl:with-param>
+                </xsl:call-template>:&nbsp;&nbsp;
+                <xsl:call-template name="chopPunctuation">
+                    <xsl:with-param name="chopString">
+                      <xsl:call-template name="subfieldSelect">
+                         <xsl:with-param name="codes">a</xsl:with-param>
+                      </xsl:call-template>
+                   </xsl:with-param>
+                </xsl:call-template></li>
+            </xsl:for-each>
+            <xsl:if test="marc:datafield[@tag=867]">
+            <li><span class="label">Supplements: </span><br /><ul>
+               <xsl:for-each select="marc:datafield[@tag=867]">
+                   <li><xsl:call-template name="chopPunctuation">
+                       <xsl:with-param name="chopString">
+                         <xsl:call-template name="subfieldSelect">
+                            <xsl:with-param name="codes">7</xsl:with-param>
+                         </xsl:call-template>
+                      </xsl:with-param>
+                   </xsl:call-template>:&nbsp;&nbsp;
+                   <xsl:call-template name="chopPunctuation">
+                       <xsl:with-param name="chopString">
+                         <xsl:call-template name="subfieldSelect">
+                            <xsl:with-param name="codes">a</xsl:with-param>
+                         </xsl:call-template>
+                       </xsl:with-param>
+                   </xsl:call-template></li>
+               </xsl:for-each></ul></li>
+            </xsl:if>
+            </ul></span>
+        </xsl:if>
+
+
+</xsl:template>
+
 
     <xsl:template name="nameABCDQ">
             <xsl:call-template name="chopPunctuation">

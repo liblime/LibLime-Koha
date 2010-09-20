@@ -66,6 +66,7 @@ BEGIN {
 		&GetMarcSeries
 		GetMarcUrls
 		&GetUsedMarcStructure
+        &GetMarcSeriesSummaries
 		&GetXmlBiblio
 		&GetCOinSBiblio
 
@@ -1527,6 +1528,29 @@ sub GetMarcSeries {
     my $marcseriessarray=\@marcseries;
     return $marcseriessarray;
 }  #end getMARCseriess
+
+=head2 GetMarcSeriesSummaries
+
+=over 4
+
+$marcurls = GetMarcSeriesSummaries($record,$marcflavour,$whichfield);
+Returns an array of hashes of the serials summaries from 866 or 867.
+
+=back
+
+=cut
+
+sub GetMarcSeriesSummaries {
+    my ( $record, $marcflavour , $whichfield) = @_;
+    my @summaries;
+    for my $field ( $record->field($whichfield) ) {
+        my $summary;
+        $summary->{'summary'} = $field->subfield('a');
+        $summary->{'librarycode'} = C4::Branch::GetBranchName($field->subfield('7')) || '';
+        push @summaries, $summary;
+    }
+    return \@summaries;
+}
 
 =head2 GetFrameworkCode
 

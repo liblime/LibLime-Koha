@@ -42,7 +42,7 @@ my ($subscriptionid,$auser,$branchcode,$librarian,$cost,$aqbooksellerid, $aqbook
 	$add2,$every2,$whenmorethan2,$setto2,$lastvalue2,$innerloop2,
 	$add3,$every3,$whenmorethan3,$setto3,$lastvalue3,$innerloop3,
 	$numberingmethod, $status, $biblionumber,
-	$bibliotitle, $callnumber, $notes, $hemisphere, $letter, $manualhistory,$serialsadditems, $location);
+	$bibliotitle, $callnumber, $notes, $hemisphere, $letter, $manualhistory,$serialsadditems, $location,$auto_summ,$use_chron);
 
 	my @budgets;
 my ($template, $loggedinuser, $cookie)
@@ -138,7 +138,6 @@ my $count = 0;
 # prepare template variables common to all $op conditions:
 $template->param(  'dateformat_' . C4::Context->preference('dateformat') => 1 ,
                 );
-
 if ($op eq 'addsubscription') {
     my $auser           = $query->param('user');
     my $branchcode      = $query->param('branchcode');
@@ -150,6 +149,8 @@ if ($op eq 'addsubscription') {
     my $periodicity     = $query->param('periodicity');
     my $dow             = $query->param('dow');
     my @irregularity    = $query->param('irregularity_select');
+    my $auto_summary    = $query->param('autosummary');
+    my $usechrono       = $query->param('usechron');
     my $numberlength    = 0;
     my $weeklength      = 0;
     my $monthlength     = 0;
@@ -204,7 +205,7 @@ if ($op eq 'addsubscription') {
 					$add3,$every3,$whenmorethan3,$setto3,$lastvalue3,$innerloop3,
 					$numberingmethod, $status, $notes,$letter,$firstacquidate,join(",",@irregularity),
                     $numberpattern, $callnumber, $hemisphere,($manualhistory?$manualhistory:0),$internalnotes,
-                    $serialsadditems,$staffdisplaycount,$opacdisplaycount,$graceperiod,$location
+                    $serialsadditems,$staffdisplaycount,$opacdisplaycount,$graceperiod,$location,$auto_summary,$usechrono
 				);
 
     print $query->redirect("/cgi-bin/koha/serials/subscription-detail.pl?subscriptionid=$subscriptionid");
@@ -275,6 +276,8 @@ if ($op eq 'addsubscription') {
 	my $opacdisplaycount = $query->param('opacdisplaycount');
     my $graceperiod     = $query->param('graceperiod') || 0;
     my $location = $query->param('location');
+    my $auto_summary    = $query->param('autosummary');
+    my $usechrono       = $query->param('usechron');
 	#  If it's  a mod, we need to check the current 'expected' issue, and mod it in the serials table if necessary.
     if ( $nextacquidate ne $nextexpected->{planneddate}->output('iso') ) {
         ModNextExpected($subscriptionid,C4::Dates->new($nextacquidate,'iso'));
@@ -293,15 +296,14 @@ if ($op eq 'addsubscription') {
             $whenmorethan1,   $setto1,       $lastvalue1,     $innerloop1,
             $add2,            $every2,       $whenmorethan2,  $setto2,
             $lastvalue2,      $innerloop2,   $add3,           $every3,
-            $whenmorethan3,   $setto3,       $lastvalue3,     $innerloop3,
+       $whenmorethan3,   $setto3,       $lastvalue3,     $innerloop3,
             $numberingmethod, $status,       $biblionumber,   $callnumber,
             $notes,           $letter,       $hemisphere,     $manualhistory,$internalnotes,
-            $serialsadditems, $subscriptionid,$staffdisplaycount,$opacdisplaycount,$graceperiod,$location
+            $serialsadditems, $subscriptionid,$staffdisplaycount,$opacdisplaycount,$graceperiod,$location,$auto_summary,$usechrono
         );
     }
     print $query->redirect("/cgi-bin/koha/serials/subscription-detail.pl?subscriptionid=$subscriptionid");
 } else {
-
         while (@subscription_types) {
            my $sub_type = shift @subscription_types;
            my %row = ( 'name' => $sub_type );

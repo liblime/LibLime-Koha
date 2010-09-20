@@ -1199,6 +1199,22 @@ $(document).ready(function() {
                         <input type="checkbox" name="manualhist" id="manuallist" value="1" />
                     <!-- /TMPL_IF -->
                 </li>
+                <li>
+                    <label for="autosumm"> Automatically update summary holdings in MARC:</label>
+                    <!-- TMPL_IF name="auto_summarize" -->
+                        <input type="checkbox" name="autosummary" id="autosumm" value="1" checked="checked" />
+                    <!-- TMPL_ELSE -->
+                        <input type="checkbox" name="autosummary" id="autosumm" value="1" />
+                    <!-- /TMPL_IF -->
+                </li>
+                <li>
+                    <label for="use_chr"> Use chronology in MARC holdings statements:</label>
+                    <!-- TMPL_IF name="use_chron" -->
+                        <input type="checkbox" name="usechron" id="use_chr" value="1" checked="checked" />
+                    <!-- TMPL_ELSE -->
+                        <input type="checkbox" name="usechron" id="use_chr" value="1" />
+                    <!-- /TMPL_IF -->
+                </li>
         <li>
            <label for="numberpattern"> Numbering pattern:</label>
             

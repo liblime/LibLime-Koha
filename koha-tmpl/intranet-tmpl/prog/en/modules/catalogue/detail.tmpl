@@ -112,6 +112,19 @@ function verify_images() {
     	<a href="http://<!-- TMPL_VAR name="OpacUrl" -->/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" target="_blank">Open in new window</a>
 		</li>
 	<!-- /TMPL_IF -->
+
+<!-- TMPL_IF NAME="serials_summaries" -->
+    <li><strong>Serials Summary Holdings</strong><ul>
+    <!-- TMPL_LOOP name="serials_summaries" -->
+        <li><!-- TMPL_VAR NAME="librarycode" -->:&nbsp;&nbsp;<!-- TMPL_VAR NAME="summary" --></li>
+    <!-- /TMPL_LOOP -->
+    <!-- TMPL_IF NAME="serials_supplements" -->
+        <li><strong>Supplemental issues:</strong><ul>
+        <!-- TMPL_LOOP name= "serials_supplements" -->
+            <li><!-- TMPL_VAR NAME="librarycode" -->:&nbsp;&nbsp;<!-- TMPL_VAR NAME="summary" --></li>
+        <!-- /TMPL_LOOP --></ul></li>
+    <!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
         </ul>
 
 <!-- TMPL_IF NAME="last_borrower_show_button" -->

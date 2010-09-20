@@ -294,6 +294,10 @@ if ($op and $op eq 'serialchangestatus') {
    }
 }
 
+foreach(@subscriptionids){
+    C4::Serials::AutoSummarizeHoldings($_);
+}
+
 $template->param(
 	serialsadditems => $serialdatalist[0]->{'serialsadditems'},
 	bibliotitle  => $bibdata->{'title'},

@@ -210,6 +210,8 @@ my $marcauthorsarray = GetMarcAuthors ($record,$marcflavour);
 my $marcsubjctsarray = GetMarcSubjects($record,$marcflavour);
 my $marcseriesarray  = GetMarcSeries  ($record,$marcflavour);
 my $marcurlsarray    = GetMarcUrls    ($record,$marcflavour);
+my $marcserialsarray= GetMarcSeriesSummaries($record,$marcflavour,"866");
+my $marcserialssupplementsarray = GetMarcSeriesSummaries($record,$marcflavour,"867");
 my $subtitle         = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 'subtitle', $record, '');
 
     $template->param(
@@ -218,6 +220,8 @@ my $subtitle         = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 's
                      MARCAUTHORS             => $marcauthorsarray,
                      MARCSERIES              => $marcseriesarray,
                      MARCURLS                => $marcurlsarray,
+                     serials_summaries       => $marcserialsarray,
+                     serials_supplements     => $marcserialssupplementsarray,
                      norequests              => $norequests,
                      RequestOnOpac           => C4::Context->preference("RequestOnOpac"),
                      itemdata_ccode          => $itemfields{ccode},

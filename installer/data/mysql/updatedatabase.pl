@@ -3369,6 +3369,42 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.00.011';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+        ALTER TABLE `subscription`
+            ADD COLUMN `auto_summarize` BOOLEAN DEFAULT 1,
+            ADD COLUMN `use_chron` BOOLEAN DEFAULT 1;
+    /);
+
+    my $frames_sth = $dbh -> prepare("SELECT frameworkcode FROM biblio_framework");
+
+    my $insert_sth = $dbh -> prepare("
+        INSERT INTO marc_subfield_structure
+        (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue)
+        VALUES (?, '7', 'Branch Code','',0,0,'',8,'','','',0,5,?,NULL,'','');");
+
+    my $insert_sth_2 = $dbh ->prepare("
+        INSERT INTO marc_subfield_structure
+        (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue)
+        VALUES (?, '9', 'subscription ID link','',0,0,'',8,'','','',0,5,?,NULL,'','');");
+
+    $insert_sth -> execute('866',"");
+    $insert_sth_2 -> execute('866',"");
+    $insert_sth -> execute('867',"");
+    $insert_sth_2 -> execute('867',"");
+    $frames_sth->execute;
+    while (my $frame = $frames_sth->fetchrow_hashref) {
+        $insert_sth -> execute('866',$frame->{frameworkcode});
+        $insert_sth_2 -> execute('866',$frame->{frameworkcode});
+        $insert_sth -> execute('867',$frame->{frameworkcode});
+        $insert_sth_2 -> execute('867',$frame->{frameworkcode});
+    }
+    print "Upgrade to $DBversion done ( Set up capability of automated serials summary holdings )\n";
+    SetVersion ($DBversion);
+}
+
 
 =item DropAllForeignKeys($table)
 

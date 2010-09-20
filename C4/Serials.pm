@@ -1194,6 +1194,7 @@ sub ModSerialStatus {
             SendAlerts( 'issue', $val->{subscriptionid}, $val->{letter} );
         }
     }
+    AutoSummarizeHoldings($subscriptionid);
 }
 
 =head2 GetNextExpected
@@ -1280,7 +1281,7 @@ sub ModSubscription {
         $numberingmethod, $status,       $biblionumber,   $callnumber,
         $notes,           $letter,       $hemisphere,     $manualhistory,
         $internalnotes,   $serialsadditems,$subscriptionid,
-        $staffdisplaycount,$opacdisplaycount, $graceperiod, $location
+        $staffdisplaycount,$opacdisplaycount, $graceperiod, $location, $auto_summ, $use_chron
     ) = @_;
 #     warn $irregularity;
     my $dbh   = C4::Context->dbh;
@@ -1290,7 +1291,8 @@ sub ModSubscription {
                         add1=?,every1=?,whenmorethan1=?,setto1=?,lastvalue1=?,innerloop1=?,
                         add2=?,every2=?,whenmorethan2=?,setto2=?,lastvalue2=?,innerloop2=?,
                         add3=?,every3=?,whenmorethan3=?,setto3=?,lastvalue3=?,innerloop3=?,
-                        numberingmethod=?, status=?, biblionumber=?, callnumber=?, notes=?, letter=?, hemisphere=?,manualhistory=?,internalnotes=?,serialsadditems=?,staffdisplaycount = ?,opacdisplaycount = ?, graceperiod = ?, location = ?
+                        numberingmethod=?, status=?, biblionumber=?, callnumber=?, notes=?, letter=?, hemisphere=?,manualhistory=?,internalnotes=?,serialsadditems=?,staffdisplaycount = ?,opacdisplaycount = ?, graceperiod = ?, location = ?,
+                        auto_summarize=?, use_chron=?
                     WHERE subscriptionid = ?";
      #warn "query :".$query;
     my $sth = $dbh->prepare($query);
@@ -1306,11 +1308,12 @@ sub ModSubscription {
         $numberingmethod, $status,       $biblionumber,   $callnumber,
         $notes,           $letter,       $hemisphere,     ($manualhistory?$manualhistory:0),
         $internalnotes,   $serialsadditems,
-        $staffdisplaycount, $opacdisplaycount, $graceperiod, $location,
+        $staffdisplaycount, $opacdisplaycount, $graceperiod, $location, $auto_summ, $use_chron,
         $subscriptionid
     );
     my $rows=$sth->rows;
     $sth->finish;
+    AutoSummarizeHoldings($subscriptionid);
     
     logaction("SERIAL", "MODIFY", $subscriptionid, "") if C4::Context->preference("SubscriptionLog");
     return $rows;
@@ -1350,7 +1353,7 @@ sub NewSubscription {
         $notes,         $letter,       $firstacquidate,  $irregularity,
         $numberpattern, $callnumber,   $hemisphere,      $manualhistory,
         $internalnotes, $serialsadditems, $staffdisplaycount, $opacdisplaycount,
-        $graceperiod, $location
+        $graceperiod, $location, $auto_summ, $use_chrono
     ) = @_;
     my $dbh = C4::Context->dbh;
 
@@ -1364,8 +1367,8 @@ sub NewSubscription {
             add3,every3,whenmorethan3,setto3,lastvalue3,innerloop3,
             numberingmethod, status, notes, letter,firstacquidate,irregularity,
             numberpattern, callnumber, hemisphere,manualhistory,internalnotes,serialsadditems,
-            staffdisplaycount,opacdisplaycount,graceperiod,location)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            staffdisplaycount,opacdisplaycount,graceperiod,location,auto_summarize,use_chron)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         |;
     my $sth = $dbh->prepare($query);
     $sth->execute(
@@ -1392,6 +1395,7 @@ sub NewSubscription {
         $internalnotes,                 $serialsadditems,
 		$staffdisplaycount,				$opacdisplaycount,
         $graceperiod,                   $location,
+        $auto_summ,                     $use_chrono
     );
 
     #then create the 1st waited number
@@ -1822,12 +1826,25 @@ this function delete the subscription which has $subscriptionid as id.
 
 sub DelSubscription {
     my ($subscriptionid) = @_;
+    my $sub_data = C4::Serials::GetSubscription($subscriptionid);
     my $dbh = C4::Context->dbh;
     $subscriptionid = $dbh->quote($subscriptionid);
     $dbh->do("DELETE FROM subscription WHERE subscriptionid=$subscriptionid");
     $dbh->do(
         "DELETE FROM subscriptionhistory WHERE subscriptionid=$subscriptionid");
     $dbh->do("DELETE FROM serial WHERE subscriptionid=$subscriptionid");
+
+    my @delfields;
+    my $record = C4::Biblio::GetMarcBiblio($sub_data->{'bibnum'});
+    my $framework = C4::Biblio::GetFrameworkCode($sub_data->{'bibnum'});
+
+    foreach my $thisfield ($record->field('86.')){  #find and mark for removal all of the summary holdings for this subs.
+        if (($thisfield->tag() eq "866" or $thisfield->tag() eq "867") and $thisfield->subfield('9') eq $subscriptionid){
+            push @delfields, $thisfield;
+        }
+    }
+    $record->delete_fields(@delfields);
+    C4::Biblio::ModBiblioMarc($record,$sub_data->{'bibnum'},$framework);
     
     logaction("SERIAL", "DELETE", $subscriptionid, "") if C4::Context->preference("SubscriptionLog");
 }
@@ -1879,6 +1896,7 @@ sub DelIssue {
         $sth = $dbh->prepare($strsth);
         $sth->execute($dataissue->{'subscriptionid'});
     }
+    AutoSummarizeHoldings($dataissue->{'subscriptionid'});
     
     return $mainsth->rows;
 }
@@ -2546,6 +2564,149 @@ sub itemdata {
     my $data = $sth->fetchrow_hashref;
     $sth->finish;
     return ($data);
+}
+
+
+=head2 AutoSummarizeHoldings
+
+    AutoSummarizeHoldings($subscriptionid)
+
+Create an automatic summary holdings statement for a serial subscription, and put it
+in the MARC/MARCXML of the related biblio.  It is *not* super-intelligent; it's going to
+stick with the chronology format and such that it knows about for the subscription, and record
+variances as supplements.
+
+=cut
+
+sub AutoSummarizeHoldings{
+    my ($subscriptionid) = @_;
+    my $sub_data = C4::Serials::GetSubscription($subscriptionid);
+    return if (!$sub_data->{'auto_summarize'});
+
+    my $issue_data = GetSerialsInPubOrder($subscriptionid);
+
+    my $curstatus = 0;
+    my $summary = "";
+    my @supplements  ;
+    my $lastissue = "";
+    my $lastchron = "";
+    my $laststatus = "";
+    my $pattern = $sub_data->{'numberingmethod'};
+    $pattern =~ s/\{.\}/(\\d\+)/g;
+
+# Loop through the issues in pubdate order, and put them in the summary.
+
+    while (my $thisissue = shift(@$issue_data)){
+
+        if ($thisissue->{'serialseq'} =~ m/$pattern/){
+            if ($thisissue->{'status'} == 2){
+                if ($curstatus == 0){
+                    $summary .= ', ' if $summary;
+                    $summary .= $thisissue->{'serialseq'};
+                    $summary .= ' ('.$thisissue->{'publisheddate'}.')' if $sub_data->{'use_chron'};
+                    $curstatus = 1;
+                }
+            }
+        else{
+            if ($thisissue->{'status'} == 1){   #should always be the last one; the one we expect!
+                $summary .= ' -';
+                last;
+            }
+            if ($curstatus){
+                $summary .= ' - ' . $lastissue;
+                $summary .= ' ('.$lastchron.')' if $sub_data->{'use_chron'};
+                $curstatus=0;
+           }
+        }
+        $lastissue = $thisissue->{'serialseq'};
+        $lastchron = $thisissue->{'publisheddate'} if $sub_data->{'use_chron'};
+        $laststatus = $thisissue->{'status'};
+        }
+        else {
+            if ($thisissue->{'status'} == 2){
+                my $supplementstr = $thisissue->{'serialseq'};
+                $supplementstr .= ' ('.$thisissue->{'publisheddate'}.')' if $sub_data->{'use_chron'};
+                push @supplements, $supplementstr;
+            }
+        }
+    }
+
+# Handle the ending of the summary, if we had a valid issue at the end,
+
+    if ($laststatus == 2 && HasSubscriptionExpired($subscriptionid)){
+        if ($curstatus){
+            $summary .= ' - ' . $lastissue;
+            $summary .= ' ('.$lastchron.')' if $sub_data->{'use_chron'};
+        }
+        else {
+            $summary .= ", " if $summary;
+            $summary .= $lastissue;
+            $summary .= ' ('.$lastchron.')' if $sub_data->{'use_chron'};
+        }
+    }
+
+# We now have the summary statement, and are ready to put it in the MARC/MARCXML.
+
+    my @fields;
+    my @delfields;
+
+    my $record = C4::Biblio::GetMarcBiblio($sub_data->{'bibnum'});
+    my $framework = C4::Biblio::GetFrameworkCode($sub_data->{'bibnum'});
+
+    foreach my $thisfield ($record->field('86.')){  #find and mark for removal all of the summary holdings for this subs.
+        if (($thisfield->tag() eq "866" or $thisfield->tag() eq "867") and $thisfield->subfield('9') eq $subscriptionid){
+            push @delfields, $thisfield;
+        }
+    }
+    $record->delete_fields(@delfields);
+
+    my $field = MARC::Field->new(
+        866, ' ', '0',
+        'a' => $summary,
+        '7' => "$sub_data->{'branchcode'}",
+        '9' => $subscriptionid
+    );
+    push @fields, $field;
+    foreach my $str (@supplements){
+        my $field = MARC::Field->new(
+            867, ' ', '0',
+            'a' => $str,
+            '7' => "$sub_data->{'branchcode'}",
+            '9' => $subscriptionid
+        );
+        push @fields, $field;
+    }
+    $record->insert_fields_ordered(@fields);
+
+    C4::Biblio::ModBiblioMarc($record,$sub_data->{'bibnum'},$framework);
+}
+
+=head2 GetSerialsInPubOrder
+
+    GetSerialsInPubOrder($subscriptionid)
+
+Returns an arrayref with the issues related to a subscription, in publication-date order.
+
+=cut
+
+sub GetSerialsInPubOrder{
+    my ($subscriptionid) = @_;
+    my $dbh            = C4::Context->dbh;
+    my $query          = qq|
+        SELECT    serial.serialid,
+                  serial.serialseq,
+                  serial.planneddate,
+                  serial.publisheddate,
+                  serial.status,
+                  year(IF(serial.publisheddate="00-00-0000",serial.planneddate,serial.publisheddate)) as year
+                  FROM      serial
+                  WHERE     serial.subscriptionid = ?
+                  ORDER BY year,
+                  IF(serial.publisheddate="00-00-0000",serial.planneddate,serial.publisheddate)
+        |;
+    my $sth = $dbh->prepare($query);
+    $sth->execute($subscriptionid);
+    return $sth->fetchall_arrayref({});
 }
 
 1;

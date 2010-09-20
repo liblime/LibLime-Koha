@@ -1899,6 +1899,8 @@ CREATE TABLE `subscription` (
   `staffdisplaycount` VARCHAR(10) NULL,
   `opacdisplaycount` VARCHAR(10) NULL,
   `graceperiod` int(11) NOT NULL default '0',
+  `auto_summarize` boolean default '1',
+  `use_chron` boolean defaults '1',
   PRIMARY KEY  (`subscriptionid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

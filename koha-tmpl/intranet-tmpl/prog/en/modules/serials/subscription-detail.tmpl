@@ -129,8 +129,20 @@ function popup(subscriptionid) {
                 <!--TMPL_IF name="periodicity11" -->
                         1/2 years
                 <!-- /TMPL_IF -->
-              Manual history :
+              <br>Manual history :
                 <!--TMPL_IF Name="manualhistory"-->
+                    <input type="checkbox" checked="checked" disabled="disabled" />
+                <!-- TMPL_ELSE -->
+                    <input type="checkbox" disabled="disabled" />
+                <!--/TMPL_IF-->
+              <br>Auto-summarize holdings in MARC record :
+                <!--TMPL_IF Name="auto_summarize"-->
+                    <input type="checkbox" checked="checked" disabled="disabled" />
+                <!-- TMPL_ELSE -->
+                    <input type="checkbox" disabled="disabled" />
+                <!--/TMPL_IF-->
+              <br>Use chronology in MARC summary holdings :
+                <!--TMPL_IF Name="use_chron"-->
                     <input type="checkbox" checked="checked" disabled="disabled" />
                 <!-- TMPL_ELSE -->
                     <input type="checkbox" disabled="disabled" />
