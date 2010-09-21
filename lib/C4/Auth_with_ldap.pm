@@ -17,8 +17,8 @@ package C4::Auth_with_ldap;
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-# use warnings; almost?
+use Koha;
+
 use Digest::MD5 qw(md5_base64);
 
 use C4::Debug;
@@ -29,15 +29,6 @@ use C4::Utils qw( :all );
 use Net::LDAP;
 use Net::LDAP::Filter;
 
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $debug);
-
-BEGIN {
-	require Exporter;
-	$VERSION = 3.10;	# set the version for version checking
-	@ISA    = qw(Exporter);
-	@EXPORT = qw( checkpw_ldap );
-}
-
 # Redefine checkpw_ldap:
 # connect to LDAP (named or anonymous)
 # ~ retrieves $userid from KOHA_CONF mapping
@@ -46,67 +37,57 @@ BEGIN {
 # ~ and calls the memberadd if necessary
 
 sub ldapserver_error ($) {
-	return sprintf('No ldapserver "%s" defined in KOHA_CONF: ' . $ENV{KOHA_CONF}, shift);
+    return sprintf('No ldapserver "%s" defined in KOHA_CONF: ' . $ENV{KOHA_CONF}, shift);
 }
 
-use vars qw($mapping @ldaphosts $base $ldapname $ldappassword);
-my $context = C4::Context->new() 	or die 'C4::Context->new failed';
-my $ldap = C4::Context->config("ldapserver") or die 'No "ldapserver" in server hash from KOHA_CONF: ' . $ENV{KOHA_CONF};
-my $prefhost  = $ldap->{hostname}	or die ldapserver_error('hostname');
-my $base      = $ldap->{base}		or die ldapserver_error('base');
-$ldapname     = $ldap->{user}		;
-$ldappassword = $ldap->{pass}		;
-our %mapping  = %{$ldap->{mapping}} || (); #	or die ldapserver_error('mapping');
-my @mapkeys = keys %mapping;
-$debug and print STDERR "Got ", scalar(@mapkeys), " ldap mapkeys (  total  ): ", join ' ', @mapkeys, "\n";
-@mapkeys = grep {defined $mapping{$_}->{is}} @mapkeys;
-$debug and print STDERR "Got ", scalar(@mapkeys), " ldap mapkeys (populated): ", join ' ', @mapkeys, "\n";
-
-my %config = (
-	anonymous => ($ldapname and $ldappassword) ? 0 : 1,
-    replicate => defined($ldap->{replicate}) ? $ldap->{replicate} : 1,  #    add from LDAP to Koha database for new user
-       update => defined($ldap->{update}   ) ? $ldap->{update}    : 1,  # update from LDAP to Koha database for existing user
-);
-
 sub description ($) {
-	my $result = shift or return undef;
-	return "LDAP error #" . $result->code
-			. ": " . $result->error_name . "\n"
-			. "# " . $result->error_text . "\n";
+    my $result = shift or return undef;
+    return "LDAP error #" . $result->code
+        . ": " . $result->error_name . "\n"
+        . "# " . $result->error_text . "\n";
 }
 
 sub search_method {
+    my $ldap   = shift or die;
+    my $config = shift or die;
     my $db     = shift or return;
     my $userid = shift or return;
-	my $uid_field = $mapping{userid}->{is} or die ldapserver_error("mapping for 'userid'");
-	my $filter = Net::LDAP::Filter->new("$uid_field=$userid") or die "Failed to create new Net::LDAP::Filter";
-    my $res = ($config{anonymous}) ? $db->bind : $db->bind($ldapname, password=>$ldappassword);
+
+    my $uid_field = $ldap->{mapping}{userid}{is} or die ldapserver_error("no mapping for 'userid'");
+    my $filter = Net::LDAP::Filter->new("$uid_field=$userid") or die "Failed to create new Net::LDAP::Filter";
+    my $res = ($config->{anonymous}) ? $db->bind : $db->bind($ldap->{user}, password=>$ldap->{pass});
     if ($res->code) {		# connection refused
-        warn "LDAP bind failed as ldapuser " . ($ldapname || '[ANONYMOUS]') . ": " . description($res);
+        warn "LDAP bind failed as ldapuser " . ($ldap->{user} || '[ANONYMOUS]') . ": " . description($res);
         return 0;
     }
-	my $search = $db->search(
-		  base => $base,
-	 	filter => $filter,
-		# attrs => ['*'],
+    my $search = $db->search(
+        base   => $ldap->{base},
+        filter => $filter,
+        #attrs => ['*'],
 	) or die "LDAP search failed to return object.";
-	my $count = $search->count;
-	if ($search->code > 0) {
-		warn sprintf("LDAP Auth rejected : %s gets %d hits\n", $filter->as_string, $count) . description($search);
-		return 0;
-	}
-	if ($count != 1) {
-		warn sprintf("LDAP Auth rejected : %s gets %d hits\n", $filter->as_string, $count);
-		return 0;
-	}
+    my $count = $search->count;
+    if ($search->code > 0) {
+        warn sprintf("LDAP Auth rejected : %s gets %d hits\n", $filter->as_string, $count) . description($search);
+        return 0;
+    }
+    if ($count != 1) {
+        warn sprintf("LDAP Auth rejected : %s gets %d hits\n", $filter->as_string, $count);
+        return 0;
+    }
     return $search;
 }
 
 sub checkpw_ldap {
     my ($dbh, $userid, $password) = @_;
-    my @hosts = split(',', $prefhost);
-    my $db = Net::LDAP->new(\@hosts);
-	#$debug and $db->debug(5);
+    my $ldap = C4::Context->config("ldapserver") or die 'No "ldapserver" in server hash from KOHA_CONF: ' . $ENV{KOHA_CONF};
+    my %config = (
+        anonymous => ($ldap->{user} and $ldap->{pass}) ? 0 : 1,
+        replicate => defined($ldap->{replicate}) ? $ldap->{replicate} : 1,
+        update    => defined($ldap->{update}) ? $ldap->{update} : 1,
+        );
+
+    my @hosts = split(',', $ldap->{hostname});
+    my $db = Net::LDAP->new( \@hosts, verify => 'none' );
     my $userldapentry;
 	if ( $ldap->{auth_by_bind} ) {
         my $principal_name = $ldap->{principal_name};
@@ -117,11 +98,13 @@ sub checkpw_ldap {
         }
 		my $res = $db->bind( $principal_name, password => $password );
         if ( $res->code ) {
-            $debug and warn "LDAP bind failed as kohauser $principal_name: ". description($res);
+            warn "LDAP bind failed as kohauser $principal_name: ". description($res);
             return 0;
         }
+        my $search = search_method($ldap, \%config, $db, $userid) or return 0;   # warnings are in the sub
+        $userldapentry = $search->shift_entry;
 	} else {
-        my $search = search_method($db, $userid) or return 0;   # warnings are in the sub
+        my $search = search_method($ldap, \%config, $db, $userid) or return 0;   # warnings are in the sub
         $userldapentry = $search->shift_entry;
 		my $cmpmesg = $db->compare( $userldapentry, attr=>'userpassword', value => $password );
 		if ($cmpmesg->code != 6) {
@@ -138,7 +121,7 @@ sub checkpw_ldap {
 
     if (( $borrowernumber and $config{update}   ) or
         (!$borrowernumber and $config{replicate})   ) {
-        %borrower = ldap_entry_2_hash($userldapentry,$userid);
+        %borrower = ldap_entry_2_hash($ldap, $userldapentry,$userid);
         $debug and print STDERR "checkpw_ldap received \%borrower w/ " . keys(%borrower), " keys: ", join(' ', keys %borrower), "\n";
     }
 
@@ -162,8 +145,9 @@ sub checkpw_ldap {
 # Edit KOHA_CONF so $memberhash{'xxx'} fits your ldap structure.
 # Ensure that mandatory fields are correctly filled!
 #
-sub ldap_entry_2_hash ($$) {
-	my $userldapentry = shift;
+sub ldap_entry_2_hash ($$$) {
+        my $ldap = shift or die;
+	my $userldapentry = shift or die "ldap_entry_2_hash: no user entry to act upon.";
 	my %borrower = ( cardnumber => shift );
 	my %memberhash;
 	$userldapentry->exists('uid');	# This is bad, but required!  By side-effect, this initializes the attrs hash. 
@@ -180,12 +164,12 @@ sub ldap_entry_2_hash ($$) {
 		$debug and print STDERR sprintf("building \$memberhash{%s} = ", $_, join(' ', @{$x->{$_}})), "\n";
 	}
 	$debug and print STDERR "Finsihed \%memberhash has ", scalar(keys %memberhash), " keys\n",
-					"Referencing \%mapping with ", scalar(keys %mapping), " keys\n";
-	foreach my $key (keys %mapping) {
-		my  $data = $memberhash{$mapping{$key}->{is}}; 
-		$debug and printf STDERR "mapping %20s ==> %-20s (%s)\n", $key, $mapping{$key}->{is}, $data;
+					"Referencing \%mapping with ", scalar(keys %{$ldap->{mapping}}), " keys\n";
+	foreach my $key (keys %{$ldap->{mapping}}) {
+		my  $data = $memberhash{$ldap->{mapping}{$key}{is}}; 
+		$debug and printf STDERR "mapping %20s ==> %-20s (%s)\n", $key, $ldap->{mapping}{$key}{is}, $data;
 		unless (defined $data) { 
-			$data = $mapping{$key}->{content} || '';	# default or failsafe ''
+			$data = $ldap->{mapping}{$key}{content} || '';	# default or failsafe ''
 		}
 		$borrower{$key} = ($data ne '') ? $data : ' ' ;
 	}

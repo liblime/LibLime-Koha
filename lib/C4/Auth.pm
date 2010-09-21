@@ -36,20 +36,14 @@ use C4::View::Util;
 use POSIX qw/strftime/;
 
 # use utf8;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $debug $ldap);
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $debug);
 
 BEGIN {
-    $VERSION = 3.02;        # set version for version checking
     $debug = $ENV{DEBUG} || 0 ;
     @ISA   = qw(Exporter);
     @EXPORT    = qw(&checkauth &get_template_and_user &IsIpInLibrary &GetUserGroupBranches);
     @EXPORT_OK = qw(&check_api_auth &get_session &check_cookie_auth &checkpw &check_override_perms &get_all_subpermissions &get_user_subpermissions &haspermission);
     %EXPORT_TAGS = (EditPermissions => [qw(get_all_subpermissions get_user_subpermissions)]);
-    $ldap = C4::Context->config('useldapserver') || 0;
-    if ($ldap) {
-        require C4::Auth_with_ldap;             # no import
-        import  C4::Auth_with_ldap qw(checkpw_ldap);
-    }
 }
 
 =head1 NAME
@@ -1293,11 +1287,14 @@ sub get_session {
 }
 
 sub checkpw {
-
     my ( $dbh, $userid, $password, $prehashed , $bypass_userenv) = @_;
-    if ($ldap) {
+
+    if (C4::Context->config('useldapserver')) {
+        eval {require C4::Auth_with_ldap;};
+        die "Failure loading LDAP: $@" if $@;
+
         $debug and print STDERR "## checkpw - checking LDAP\n";
-        my ($retval,$retcard) = checkpw_ldap(@_);    # EXTERNAL AUTH
+        my ($retval,$retcard) = eval { C4::Auth_with_ldap::checkpw_ldap(@_); };
         ($retval) and return ($retval,$retcard);
     }
 
