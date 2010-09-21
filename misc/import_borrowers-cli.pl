@@ -58,7 +58,7 @@ my ($infile, $defaultsfile, $matchpoint, $overwrite_cardnumber, $ext_preserve, $
 my $optres = GetOptions (
     "infile=s" => \$infile,
     "defaultsfile=s" => \$defaultsfile,
-    "matchpoint=s" => \$matchpoint,
+    "matchpoint:s" => \$matchpoint,
     "overwrite!" => \$overwrite_cardnumber,
     "preserve!" => \$ext_preserve,
     "verbose!" => \$verbose,
