@@ -3405,6 +3405,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.00.012';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+        ALTER TABLE `aqbudget` MODIFY COLUMN `aqbudgetid` int NOT NULL auto_increment;
+    /);
+    print "Upgrade to $DBversion done ( change way-too-small key on aqbudget to an int )\n";
+    SetVersion ($DBversion);
+}
+
 
 =item DropAllForeignKeys($table)
 
