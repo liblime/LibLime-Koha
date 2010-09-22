@@ -512,13 +512,12 @@
              <a><xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=<xsl:value-of select="translate($f780, '()', '')"/></xsl:attribute>
                 <xsl:value-of select="translate($f780, '()', '')"/>
             </a>
-        </span>
- 
         <xsl:choose>
         <xsl:when test="@ind1=0">
-            <span class="results_summary"><xsl:value-of select="marc:subfield[@code='n']"/></span>
+            <span class="results_summary"><xsl:value-of select="marc:subfield[@code='n']" /><xsl:text> </xsl:text></span>
         </xsl:when>
         </xsl:choose>
+        </span>
 
         </xsl:for-each>
         </xsl:if>
