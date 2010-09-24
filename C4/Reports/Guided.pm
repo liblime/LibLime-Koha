@@ -389,8 +389,6 @@ sub execute_query ($;$$$) {
         carp "execute_query() called without SQL argument";
         return;
     }
-    $offset = 0    unless $offset;
-    $limit  = 9999 unless $limit;
     $debug and print STDERR "execute_query($sql, $offset, $limit)\n";
     if ($sql =~ /;?\W?(UPDATE|DELETE|DROP|INSERT|SHOW|CREATE)\W/i) {
         return (undef, {  sqlerr => $1} );
@@ -398,23 +396,32 @@ sub execute_query ($;$$$) {
         return (undef, { queryerr => 'Missing SELECT'} );
     }
 
-    my ($useroffset, $userlimit);
+    my $sth;
+    unless($no_count){
+      $offset = 0    unless $offset;
+      $limit  = 9999 unless $limit;
+      my ($useroffset, $userlimit);
 
-    # Grab offset/limit from user supplied LIMIT and drop the LIMIT so we can control pagination
-    ($sql, $useroffset, $userlimit) = strip_limit($sql);
-    $debug and warn sprintf "User has supplied (OFFSET,) LIMIT = %s, %s",
-        $useroffset,
-        (defined($userlimit ) ? $userlimit  : 'UNDEF');
-    $offset += $useroffset;
-    if (defined($userlimit)) {
-        if ($offset + $limit > $userlimit ) {
-            $limit = $userlimit - $offset;
-        }
+      # Grab offset/limit from user supplied LIMIT and drop the LIMIT so we can control pagination
+      ($sql, $useroffset, $userlimit) = strip_limit($sql);
+      $debug and warn sprintf "User has supplied (OFFSET,) LIMIT = %s, %s",
+          $useroffset,
+          (defined($userlimit ) ? $userlimit  : 'UNDEF');
+      $offset += $useroffset;
+      if (defined($userlimit)) {
+          if ($offset + $limit > $userlimit ) {
+              $limit = $userlimit - $offset;
+          }
+      }
+      $sql .= " LIMIT ?, ?";
+      $sth = C4::Context->replica_dbh->prepare($sql);
+      $sth->execute($offset, $limit);
     }
-    $sql .= " LIMIT ?, ?";
+    else{
+      $sth = C4::Context->replica_dbh->prepare($sql);
+      $sth->execute();
+    }
 
-    my $sth = C4::Context->replica_dbh->prepare($sql);
-    $sth->execute($offset, $limit);
     return ( $sth );
     # my @xmlarray = ... ;
     # my $url = "/cgi-bin/koha/reports/guided_reports.pl?phase=retrieve%20results&id=$id";

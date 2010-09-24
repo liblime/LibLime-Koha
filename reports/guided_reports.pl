@@ -393,7 +393,7 @@ elsif ($phase eq 'Export'){
 	# export results to tab separated text or CSV
 	my $sql    = $input->param('sql');  # FIXME: use sql from saved report ID#, not new user-supplied SQL!
     my $format = $input->param('format');
-	my ($sth, $q_errors) = execute_query($sql);
+	my ($sth, $q_errors) = execute_query($sql,0,0,1);
     unless ($q_errors and @$q_errors) {
         print $input->header(       -type => 'application/octet-stream',
                                     -attachment=>"reportresults.$format"

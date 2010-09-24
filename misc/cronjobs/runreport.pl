@@ -156,7 +156,7 @@ foreach my $report (@ARGV) {
     }
     $verbose and print "SQL: $sql\n\n";
     # my $results = execute_query($sql, undef, 0, 99999, $format, $report); 
-    my ($sth) = execute_query($sql);
+    my ($sth) = execute_query($sql,0,0,1);
     # execute_query(sql, , 0, 20, , )
     my $count = scalar($sth->rows);
     unless ($count) {
