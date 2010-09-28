@@ -818,7 +818,7 @@ sub AddMember {
       . ",B_streetnumber=" . $dbh->quote( $data{'B_streetnumber'} )
       . ",B_streettype=" . $dbh->quote( $data{'B_streettype'} )
       . ",gonenoaddress=" . $dbh->quote( $data{'gonenoaddress'} )
-      . ",exclude_from_collection=" . $dbh->quote( $data{'exclude_from_collection'} )
+      . ",exclude_from_collection=" . $dbh->quote( $data{'exclude_from_collection'} or 0)
       . ",lost="        . $dbh->quote( $data{'lost'} )
       . ",debarred="    . $dbh->quote( $data{'debarred'} )
       . ",ethnicity="   . $dbh->quote( $data{'ethnicity'} )
@@ -834,7 +834,7 @@ sub AddMember {
     $debug and print STDERR "AddMember SQL: ($query)\n";
     my $sth = $dbh->prepare($query);
     #   print "Executing SQL: $query\n";
-    $sth->execute();
+    $sth->execute() or die sprintf "Failed to insert member data: %s\n", $dbh->errstr;
     $sth->finish;
     $data{'borrowernumber'} = $dbh->{'mysql_insertid'};     # unneeded w/ autoincrement ?  
     # mysql_insertid is probably bad.  not necessarily accurate and mysql-specific at best.
