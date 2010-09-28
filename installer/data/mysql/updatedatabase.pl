@@ -3415,6 +3415,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.00.013';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+        ALTER TABLE `borrowers` ADD COLUMN `exclude_from_collection` BOOL NOT NULL DEFAULT FALSE;
+    /);
+    print "Upgrade to $DBversion done ( Add missing exclude_from_collection borrowers column )\n";
+    SetVersion ($DBversion);
+}
+
 
 =item DropAllForeignKeys($table)
 
