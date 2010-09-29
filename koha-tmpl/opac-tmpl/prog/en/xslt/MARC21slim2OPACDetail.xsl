@@ -11,6 +11,96 @@
             <xsl:apply-templates/>
     </xsl:template>
 
+
+    <xsl:template name="nameABCDQ">
+            <xsl:call-template name="chopPunctuation">
+                <xsl:with-param name="chopString">
+                    <xsl:call-template name="subfieldSelect">
+                        <xsl:with-param name="codes">aq</xsl:with-param>
+                    </xsl:call-template>
+                </xsl:with-param>
+                <xsl:with-param name="punctuation">
+                    <xsl:text>:,;/ </xsl:text>
+                </xsl:with-param>
+            </xsl:call-template>
+        <xsl:call-template name="termsOfAddress"/>
+    </xsl:template>
+
+    <xsl:template name="nameABCDN">
+        <xsl:for-each select="marc:subfield[@code='a']">
+                <xsl:call-template name="chopPunctuation">
+                    <xsl:with-param name="chopString" select="."/>
+                </xsl:call-template>
+        </xsl:for-each>
+        <xsl:for-each select="marc:subfield[@code='b']">
+                <xsl:value-of select="."/>
+        </xsl:for-each>
+        <xsl:if test="marc:subfield[@code='c'] or marc:subfield[@code='d'] or marc:subfield[@code='n']">
+                <xsl:call-template name="subfieldSelect">
+                    <xsl:with-param name="codes">cdn</xsl:with-param>
+                </xsl:call-template>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template name="nameACDEQ">
+            <xsl:call-template name="subfieldSelect">
+                <xsl:with-param name="codes">acdeq</xsl:with-param>
+            </xsl:call-template>
+    </xsl:template>
+    <xsl:template name="termsOfAddress">
+        <xsl:if test="marc:subfield[@code='b' or @code='c']">
+            <xsl:call-template name="chopPunctuation">
+                <xsl:with-param name="chopString">
+                    <xsl:call-template name="subfieldSelect">
+                        <xsl:with-param name="codes">bc</xsl:with-param>
+                    </xsl:call-template>
+                </xsl:with-param>
+            </xsl:call-template>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template name="part">
+        <xsl:variable name="partNumber">
+            <xsl:call-template name="specialSubfieldSelect">
+                <xsl:with-param name="axis">n</xsl:with-param>
+                <xsl:with-param name="anyCodes">n</xsl:with-param>
+                <xsl:with-param name="afterCodes">fghkdlmor</xsl:with-param>
+            </xsl:call-template>
+        </xsl:variable>
+        <xsl:variable name="partName">
+            <xsl:call-template name="specialSubfieldSelect">
+                <xsl:with-param name="axis">p</xsl:with-param>
+                <xsl:with-param name="anyCodes">p</xsl:with-param>
+                <xsl:with-param name="afterCodes">fghkdlmor</xsl:with-param>
+            </xsl:call-template>
+        </xsl:variable>
+        <xsl:if test="string-length(normalize-space($partNumber))">
+                <xsl:call-template name="chopPunctuation">
+                    <xsl:with-param name="chopString" select="$partNumber"/>
+                </xsl:call-template>
+        </xsl:if>
+        <xsl:if test="string-length(normalize-space($partName))">
+                <xsl:call-template name="chopPunctuation">
+                    <xsl:with-param name="chopString" select="$partName"/>
+                </xsl:call-template>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template name="specialSubfieldSelect">
+        <xsl:param name="anyCodes"/>
+        <xsl:param name="axis"/>
+        <xsl:param name="beforeCodes"/>
+        <xsl:param name="afterCodes"/>
+        <xsl:variable name="str">
+            <xsl:for-each select="marc:subfield">
+                <xsl:if test="contains($anyCodes, @code)      or (contains($beforeCodes,@code) and following-sibling::marc:subfield[@code=$axis])      or (contains($afterCodes,@code) and preceding-sibling::marc:subfield[@code=$axis])">
+                    <xsl:value-of select="text()"/>
+                    <xsl:text> </xsl:text>
+                </xsl:if>
+            </xsl:for-each>
+        </xsl:variable>
+        <xsl:value-of select="substring($str,1,string-length($str)-1)"/>
+    </xsl:template>
     <xsl:template match="marc:record">
 
         <!-- Option: Display Alternate Graphic Representation (MARC 880)  -->
@@ -696,94 +786,4 @@
 
 </xsl:template>
 
-
-    <xsl:template name="nameABCDQ">
-            <xsl:call-template name="chopPunctuation">
-                <xsl:with-param name="chopString">
-                    <xsl:call-template name="subfieldSelect">
-                        <xsl:with-param name="codes">aq</xsl:with-param>
-                    </xsl:call-template>
-                </xsl:with-param>
-                <xsl:with-param name="punctuation">
-                    <xsl:text>:,;/ </xsl:text>
-                </xsl:with-param>
-            </xsl:call-template>
-        <xsl:call-template name="termsOfAddress"/>
-    </xsl:template>
-
-    <xsl:template name="nameABCDN">
-        <xsl:for-each select="marc:subfield[@code='a']">
-                <xsl:call-template name="chopPunctuation">
-                    <xsl:with-param name="chopString" select="."/>
-                </xsl:call-template>
-        </xsl:for-each>
-        <xsl:for-each select="marc:subfield[@code='b']">
-                <xsl:value-of select="."/>
-        </xsl:for-each>
-        <xsl:if test="marc:subfield[@code='c'] or marc:subfield[@code='d'] or marc:subfield[@code='n']">
-                <xsl:call-template name="subfieldSelect">
-                    <xsl:with-param name="codes">cdn</xsl:with-param>
-                </xsl:call-template>
-        </xsl:if>
-    </xsl:template>
-
-    <xsl:template name="nameACDEQ">
-            <xsl:call-template name="subfieldSelect">
-                <xsl:with-param name="codes">acdeq</xsl:with-param>
-            </xsl:call-template>
-    </xsl:template>
-    <xsl:template name="termsOfAddress">
-        <xsl:if test="marc:subfield[@code='b' or @code='c']">
-            <xsl:call-template name="chopPunctuation">
-                <xsl:with-param name="chopString">
-                    <xsl:call-template name="subfieldSelect">
-                        <xsl:with-param name="codes">bc</xsl:with-param>
-                    </xsl:call-template>
-                </xsl:with-param>
-            </xsl:call-template>
-        </xsl:if>
-    </xsl:template>
-
-    <xsl:template name="part">
-        <xsl:variable name="partNumber">
-            <xsl:call-template name="specialSubfieldSelect">
-                <xsl:with-param name="axis">n</xsl:with-param>
-                <xsl:with-param name="anyCodes">n</xsl:with-param>
-                <xsl:with-param name="afterCodes">fghkdlmor</xsl:with-param>
-            </xsl:call-template>
-        </xsl:variable>
-        <xsl:variable name="partName">
-            <xsl:call-template name="specialSubfieldSelect">
-                <xsl:with-param name="axis">p</xsl:with-param>
-                <xsl:with-param name="anyCodes">p</xsl:with-param>
-                <xsl:with-param name="afterCodes">fghkdlmor</xsl:with-param>
-            </xsl:call-template>
-        </xsl:variable>
-        <xsl:if test="string-length(normalize-space($partNumber))">
-                <xsl:call-template name="chopPunctuation">
-                    <xsl:with-param name="chopString" select="$partNumber"/>
-                </xsl:call-template>
-        </xsl:if>
-        <xsl:if test="string-length(normalize-space($partName))">
-                <xsl:call-template name="chopPunctuation">
-                    <xsl:with-param name="chopString" select="$partName"/>
-                </xsl:call-template>
-        </xsl:if>
-    </xsl:template>
-
-    <xsl:template name="specialSubfieldSelect">
-        <xsl:param name="anyCodes"/>
-        <xsl:param name="axis"/>
-        <xsl:param name="beforeCodes"/>
-        <xsl:param name="afterCodes"/>
-        <xsl:variable name="str">
-            <xsl:for-each select="marc:subfield">
-                <xsl:if test="contains($anyCodes, @code)      or (contains($beforeCodes,@code) and following-sibling::marc:subfield[@code=$axis])      or (contains($afterCodes,@code) and preceding-sibling::marc:subfield[@code=$axis])">
-                    <xsl:value-of select="text()"/>
-                    <xsl:text> </xsl:text>
-                </xsl:if>
-            </xsl:for-each>
-        </xsl:variable>
-        <xsl:value-of select="substring($str,1,string-length($str)-1)"/>
-    </xsl:template>
 </xsl:stylesheet>
