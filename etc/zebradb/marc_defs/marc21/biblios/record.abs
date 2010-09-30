@@ -52,10 +52,9 @@ melm 015        BNB-card-number,BGF-number,Number-db,Number-natl-biblio,Identifi
 melm 017        Number-legal-deposit,Identifier-standard
 melm 018        Identifier-standard
 melm 020$a      ISBN:w,Identifier-standard:w
-melm 999$e      ISBN:w,Identifier-standard:w
-melm 020        ISBN,Identifier-standard
+melm 020        Identifier-standard
 melm 022$a      ISSN:w,ISBN:w
-melm 022        ISSN,Identifier-standard
+melm 022        Identifier-standard
 melm 023        Identifier-standard
 melm 024$a      Identifier-other
 melm 024        Identifier-standard
@@ -66,6 +65,7 @@ melm 030        CODEN,Identifier-standard
 #melm 033       Date
 melm 034        Map-scale
 #melm 035       Local-number,Identifier-standard
+melm 035$a      Utility,Identifier-standard
 melm 037        Identifier-standard,Stock-number
 melm 040        Code-institution,Record-source
 melm 041        ln
@@ -250,8 +250,10 @@ melm 840        Title,Title-series
 
 ###############################
 # Koha Local-Use Biblio Indexes
-melm 999$c      Local-Number:n,Local-Number:w,Local-Number:s
+melm 910        source-control-number
+melm 999$c      biblionumber:n,biblionumber:w,biblionumber:s,Local-Number:n,Local-Number:w,Local-Number:s
 melm 999$d      biblioitemnumber:n,biblioitemnumber:w,biblioitemnumber:s
+melm 999$e      ISBN:w,Identifier-standard:w
 melm 942$0      totalissues:n,totalissues:s
 melm 942$2      cn-bib-source
 melm 942$6      cn-bib-sort:n,cn-bib-sort:s
