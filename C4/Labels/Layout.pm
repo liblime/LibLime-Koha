@@ -71,7 +71,7 @@ sub new {
         font_size       =>      3,
         callnum_split   =>      0,
         text_justify    =>      'L',
-        format_string   =>      'title, author, isbn, issn, itemtype, barcode, callnumber',
+        format_string   =>      'title, author, isbn, issn, itemtype, barcode, itemcallnumber',
         @_,
     };
     bless ($self, $type);
