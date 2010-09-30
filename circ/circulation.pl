@@ -414,7 +414,7 @@ if ($barcode) {
        	    }
 		}
         unless($confirm_required) {
-            AddIssue( $borrower, $barcode, $datedue, $cancelreserve );
+            AddIssue( $borrower, $barcode, $datedue, $cancelreserve, undef, 0 );
 			$inprocess = 1;
             if($globalduedate && ! $stickyduedate && $duedatespec_allow ){
                 $duedatespec = $globalduedate->output();

@@ -99,6 +99,8 @@ BEGIN {
         &GetReservesFromItemnumber
         &GetReservesFromBiblionumber
         &GetReservesFromBorrowernumber
+        &GetOldReservesFromBorrowernumber
+        &ModOldReservesDisplay
         &GetReservesForBranch
         &GetReservesToBranch
         &GetReserveCount
@@ -347,9 +349,9 @@ sub GetReservesFromItemnumber {
 
 =item GetReservesFromBorrowernumber
 
-    $borrowerreserv = GetReservesFromBorrowernumber($borrowernumber,$tatus);
+    $borrowerreserv = GetReservesFromBorrowernumber($borrowernumber,$status);
     
-    TODO :: Descritpion
+    TODO :: Description
     
 =cut
 
@@ -377,6 +379,62 @@ sub GetReservesFromBorrowernumber {
     }
     my $data = $sth->fetchall_arrayref({});
     return @$data;
+}
+
+=item GetOldReservesFromBorrowernumber
+
+    $borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,$type);
+
+    where $type = 'cancellation|expiration';
+
+    TODO :: Description
+
+=cut
+
+sub GetOldReservesFromBorrowernumber {
+    my ( $borrowernumber, $type) = @_;
+    my $dbh   = C4::Context->dbh;
+    my $sth;
+    if ($type eq 'expiration') {
+        $sth = $dbh->prepare("
+            SELECT *
+            FROM   old_reserves
+            WHERE  borrowernumber=?
+                AND expirationdate IS NOT NULL
+            ORDER BY reservedate
+        ");
+        $sth->execute($borrowernumber);
+    } else {
+        $sth = $dbh->prepare("
+            SELECT *
+            FROM   old_reserves
+            WHERE  borrowernumber=?
+                AND cancellationdate IS NOT NULL
+            ORDER BY reservedate
+        ");
+        $sth->execute($borrowernumber);
+    }
+    my $data = $sth->fetchall_arrayref({});
+    return @$data;
+}
+
+=item ModOldReservesDisplay
+
+  ModOldReservesDisplay($reservenumber);
+
+=cut
+
+sub ModOldReservesDisplay {
+    my ($reservenumber) = @_;
+    my $dbh = C4::Context->dbh;
+    my $sth;
+    $sth = $dbh->prepare("
+        UPDATE old_reserves
+        SET displayexpired = 0
+        WHERE reservenumber = ?
+    ");
+    $sth->execute($reservenumber);
+    return();
 }
 
 =item GetReservesByBorrowernumberAndItemtype
@@ -885,28 +943,32 @@ sub CancelReserves {
 
 =item CancelReserve
 
-  &CancelReserve( $reservenumber, $biblionumber );
+  &CancelReserve( $reservenumber );
 
 Cancels a reserve.
 
 C<$reservenumber> is the unique key for the reserve to be canceled.
 
-If C<$biblionumber> was given, C<&CancelReserve> also adjusts the
-priorities of the other people who are waiting on the book.
+C<&CancelReserve> also adjusts the priorities of the other people
+who are waiting on the book.
 
 =cut
 
 sub CancelReserve {
-    my ( $reservenumber, $biblionumber, $borrowernumber ) = @_;
+    my ( $reservenumber ) = @_;
     my $dbh = C4::Context->dbh;
 
     my $branchcode = C4::Context->userenv->{'branch'};
+ 
+    # Pull borrowernumber of the user performing the action for logging
+    my $moduser = C4::Context->userenv->{'number'};
     
     my $sth = $dbh->prepare('SELECT * FROM reserves WHERE reservenumber = ?');
     $sth->execute( $reservenumber );
     my $reserve = $sth->fetchrow_hashref();
 
-    $borrowernumber = $reserve->{'borrowernumber'} if not $borrowernumber;
+    my $borrowernumber = $reserve->{'borrowernumber'};
+    my $biblionumber = $reserve->{'biblionumber'};
     if ( $reserve->{'found'} eq 'W' ) {
         # removing a waiting reserve record....
         # update the database...
@@ -916,11 +978,10 @@ sub CancelReserve {
                    found            = Null,
                    priority         = 0,
                    expirationdate   = NULL
-            WHERE  itemnumber       = ?
-             AND   borrowernumber   = ?
+            WHERE  reservenumber    = ?
         ";
         my $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber, $reserve->{'itemnumber'} );
+        $sth->execute( $reservenumber );
 
         # get reserve information to place into old_reserves
         $query = "
@@ -944,6 +1005,7 @@ sub CancelReserve {
             }
           }
         }
+        my $biblio = $holditem->{'biblionumber'};
         $query = qq/
             INSERT INTO old_reserves ($insert_fields)
             VALUES ($value_fields)
@@ -956,7 +1018,7 @@ sub CancelReserve {
         ";
         $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
-    UpdateStats(
+    UpdateReserveCancelledStats(
       $branchcode,
       my $type = 'reserve_canceled',
       my $amount,
@@ -964,7 +1026,8 @@ sub CancelReserve {
       my $itemnum = $holditem->{'itemnumber'},
       my $itemtype,
       my $borrowernumber = $holditem->{'borrowernumber'},
-      my $accountno
+      my $accountno,
+      my $modusernumber = $moduser
     );
     }
     else {
@@ -1016,6 +1079,7 @@ sub CancelReserve {
             }
           }
         }
+        my $biblio = $holditem->{'biblionumber'};
         $query = qq/
             INSERT INTO old_reserves ($insert_fields)
             VALUES ($value_fields)
@@ -1032,7 +1096,7 @@ sub CancelReserve {
 
         # now fix the priority on the others....
         _FixPriority( '', '', $priority, $reservenumber );
-    UpdateStats(
+    UpdateReserveCancelledStats(
       $branchcode,
       my $type = 'reserve_canceled',
       my $amount,
@@ -1040,7 +1104,8 @@ sub CancelReserve {
       my $itemnum = $holditem->{'itemnumber'}||'',
       my $itemtype,
       my $borrowernumber = $holditem->{'borrowernumber'},
-      my $accountno
+      my $accountno,
+      my $modusernumber = $moduser
     );
     }
     
@@ -1114,13 +1179,69 @@ itemnumber and supplying itemnumber.
 
 sub ModReserve {
     #subroutine to update a reserve
-    my ( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumber) = @_;
-warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumber)";
+    my ( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumber ) = @_;
+warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumber )";
+    # Pull borrowernumber of the user performing the action for logging
+    my $moduser = C4::Context->userenv->{'number'};
      return if $rank eq "W";
      return if $rank eq "n";
     my $dbh = C4::Context->dbh;
     if ( $rank eq "del" ) {
-      CancelReserve( $reservenumber, $biblio );
+        my $query = qq/
+            UPDATE reserves
+            SET    cancellationdate=now(),
+                   expirationdate = NULL
+            WHERE  reservenumber   = ?
+        /;
+        my $sth = $dbh->prepare($query);
+        $sth->execute( $reservenumber );
+        $sth->finish;
+        $query = qq/
+            SELECT * FROM reserves
+            WHERE  reservenumber   = ?
+        /;
+        $sth = $dbh->prepare($query);
+        $sth->execute( $reservenumber );
+        my $holditem = $sth->fetchrow_hashref;
+        my $insert_fields = '';
+        my $value_fields = '';
+        foreach my $column ('borrowernumber','reservedate','biblionumber','constrainttype','branchcode','notificationdate','reminderdate','cancellationdate','reservenotes','priority','found','itemnumber','waitingdate','expirationdate') {
+          if (defined($holditem->{$column})) {
+            if (length($insert_fields)) {
+              $insert_fields .= ",$column";
+              $value_fields .= ",\'$holditem->{$column}\'";
+            }
+            else {
+              $insert_fields .= "$column";
+              $value_fields .= "\'$holditem->{$column}\'";
+            }
+          }
+        }
+        $query = qq/
+            INSERT INTO old_reserves ($insert_fields)
+            VALUES ($value_fields)
+        /;
+        $sth = $dbh->prepare($query);
+        $sth->execute();
+        $query = qq/
+            DELETE FROM reserves 
+            WHERE  reservenumber   = ?
+        /;
+        $sth = $dbh->prepare($query);
+        $sth->execute( $reservenumber );
+        
+        UpdateReserveCancelledStats(
+          my $branchcode = $branch,
+          my $type = 'reserve_canceled',
+          my $amount,
+          my $other = $biblio,
+          my $itemnum = $itemnumber,
+          my $itemtype,
+          my $borrowernumber = $borrower,
+          my $accountno,
+          my $modusernumber = $moduser
+        );
+
     }
     elsif ($rank =~ /^\d+/ and $rank > 0) {
         my $query = qq/
@@ -1130,7 +1251,7 @@ warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumb
         my $sth = $dbh->prepare($query);
         $sth->execute( $rank, $branch, $itemnumber, $reservenumber );
         $sth->finish;
-        _FixPriority( $biblio, $borrower, $rank, $reservenumber);
+        _FixPriority( $biblio, $borrower, $rank, $reservenumber );
     }
 }
 
@@ -1152,7 +1273,8 @@ warn "ModReserveFill($res)";
     my $dbh = C4::Context->dbh;
     # fill in a reserve record....
     my $biblionumber = $res->{'biblionumber'};
-    my $borrowernumber    = $res->{'borrowernumber'};
+    my $borrowernumber = $res->{'borrowernumber'};
+    my $reservenumber = $res->{'reservenumber'};
     my $resdate = $res->{'reservedate'};
 
     # get the priority on this record....
@@ -1220,7 +1342,7 @@ warn "ModReserveFill($res)";
     # now fix the priority on the others (if the priority wasn't
     # already sorted!)....
     unless ( $priority == 0 ) {
-        _FixPriority( $priority, $biblionumber );
+        _FixPriority( $biblionumber, $borrowernumber, $priority, $reservenumber );
     }
 }
 
@@ -1387,7 +1509,7 @@ sub ModReserveAffect {
 
 =item ModReserveCancelAll
 
-($messages,$nextreservinfo) = &ModReserveCancelAll($itemnumber,$borrowernumber);
+($messages,$nextreservinfo) = &ModReserveCancelAll($reservenumber,$itemnumber);
 
     function to cancel reserv,check other reserves, and transfer document if it's necessary
 
@@ -1409,7 +1531,7 @@ sub ModReserveCancelAll {
 
 =item ModReserveMinusPriority
 
-&ModReserveMinusPriority($itemnumber,$borrowernumber,$biblionumber)
+&ModReserveMinusPriority($itemnumber,$borrowernumber,$biblionumber,$reservenumber)
 
 Reduce the values of queuded list     
 
@@ -1428,7 +1550,7 @@ warn "ModReserveMinusPriority( $itemnumber, $borrowernumber, $biblionumber )";
     my $sth_upd = $dbh->prepare($query);
     $sth_upd->execute( $itemnumber, $reservenumber );
     # second step update all others reservs
-    _FixPriority($biblionumber, $borrowernumber, '0', $reservenumber);
+    _FixPriority($biblionumber, $borrowernumber, '0', $reservenumber );
 }
 
 =item GetReserveInfo
@@ -1558,7 +1680,7 @@ sub CanHoldMultipleItems {
 
 =item _FixPriority
 
-&_FixPriority($biblio,$borrowernumber,$rank);
+&_FixPriority($biblio,$borrowernumber,$rank,$reservenumber);
 
  Only used internally (so don't export it)
  Changed how this functions works #
@@ -1573,7 +1695,7 @@ sub _FixPriority {
     my ( $biblio, $borrowernumber, $rank, $reservenumber ) = @_;
     my $dbh = C4::Context->dbh;
      if ( $rank eq "del" ) {
-         CancelReserve( $biblio, undef, $borrowernumber );
+         CancelReserve( $reservenumber );
      }
     if ( $rank eq "W" || $rank eq "0" ) {
 
@@ -1953,7 +2075,7 @@ sub SuspendReserve {
       $sth->finish();
     }
     
-    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $reserve->{'priority'} );    
+    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $reserve->{'priority'}, $reservenumber );
 }
 
 sub ResumeReserve {
@@ -1997,7 +2119,7 @@ sub ResumeReserve {
     my $reserve = $sth->fetchrow_hashref();
     $sth->finish();
 
-    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $new_priority );    
+    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $new_priority, $reservenumber );
 }
 
 sub ResumeSuspendedReservesWithResumeDate {

@@ -116,7 +116,7 @@ sub do_checkout {
 	$debug and warn "do_checkout: calling AddIssue(\$borrower,$barcode, undef, 0)\n"
 		# . "w/ \$borrower: " . Dumper($borrower)
 		. "w/ C4::Context->userenv: " . Dumper(C4::Context->userenv);
-	my $c4due  = AddIssue($borrower, $barcode, undef, 0);
+	my $c4due  = AddIssue($borrower, $barcode, undef, 0, undef, 1);
 	my $due  = $c4due->output('iso') || undef;
 	$debug and warn "Item due: $due";
 	$self->{'due'} = $due;

@@ -1527,6 +1527,9 @@ CREATE TABLE `old_reserves` (
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `itemnumber` int(11) default NULL,
   `waitingdate` date default NULL,
+  `expirationdate` date default NULL,
+  `lowestPriority` tinyint(1) NOT NULL,
+  `displayexpired` tinyint(1) NOT NULL default 1
   KEY `old_reserves_borrowernumber` (`borrowernumber`),
   KEY `old_reserves_biblionumber` (`biblionumber`),
   KEY `old_reserves_itemnumber` (`itemnumber`),

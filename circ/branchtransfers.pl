@@ -75,13 +75,14 @@ my $setwaiting;
 my $request        = $query->param('request')        || '';
 my $borrowernumber = $query->param('borrowernumber') ||  0;
 my $tobranchcd     = $query->param('tobranchcd')     || '';
+my $reservenumber  = $query->param('reservenumber')  || '';
 
 my $ignoreRs = 0;
 ############
 # Deal with the requests....
 if ( $request eq "KillWaiting" ) {
     my $item = $query->param('itemnumber');
-    CancelReserve( 0, $item, $borrowernumber );
+    CancelReserve( $reservenumber );
     $cancelled   = 1;
     $reqmessage  = 1;
 }
@@ -94,7 +95,7 @@ elsif ( $request eq "SetWaiting" ) {
 }
 elsif ( $request eq 'KillReserved' ) {
     my $biblio = $query->param('biblionumber');
-    CancelReserve( $biblio, 0, $borrowernumber );
+    CancelReserve( $reservenumber );
     $cancelled   = 1;
     $reqmessage  = 1;
 }
@@ -166,6 +167,7 @@ my $biblionumber;
 
 if ($found) {
     my $res = $messages->{'ResFound'};
+    my $reservenumber = $res->{'reservenumber'};
     $itemnumber = $res->{'itemnumber'};
 
     if ( $res->{'ResFound'} eq "Waiting" ) {
@@ -227,6 +229,7 @@ $template->param(
     waiting                 => $waiting,
     borrowernumber          => $borrowernumber,
     itemnumber              => $itemnumber,
+    reservenumber           => $reservenumber,
     barcode                 => $barcode,
     biblionumber            => $biblionumber,
     tobranchcd              => $tobranchcd,

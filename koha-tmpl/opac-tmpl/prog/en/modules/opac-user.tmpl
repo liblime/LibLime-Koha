@@ -150,6 +150,8 @@ function isValidDate(theFieldName){
 <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="waiting_count" --><!-- TMPL_IF NAME="atdestination" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-waiting">Waiting</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
             <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-holds">Holds</a></li>
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-expired-holds">Expired Holds</a></li>
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-cancelled-holds">Cancelled Holds</a></li>
         </ul>
         
 <!-- TMPL_IF NAME="OPACFinesTab" -->
@@ -438,7 +440,79 @@ function isValidDate(theFieldName){
             <!-- /TMPL_LOOP -->
 			</tbody>
         </table>
+        </div>
 
+        <div id="opac-user-expired-holds">
+        <!-- TMPL_IF NAME="EXPIREDRESERVES" -->
+        <form name="modifyExpiredReservesForm" action="/cgi-bin/koha/opac-moddisplay.pl" method="post" >
+        <table id="expiredholdst">
+        <caption>Expired Holds <span class="count">(<!-- TMPL_VAR NAME="expiredreserves_count" --> total)</span></caption>
+            <!-- EXPIREDRESERVES TABLE ROWS -->
+            <thead><tr>
+                <th>Title</th>
+                <th>Placed On</th>
+                <th>Expired On</th>
+                <th>Delete From Display?</th>
+            </tr></thead>
+			<tbody>
+            <!-- TMPL_LOOP NAME="EXPIREDRESERVES" -->
+            <tr>
+                <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
+                    <!-- TMPL_VAR NAME="author" -->
+                </td>
+                <td align=center><!-- TMPL_VAR NAME="reservedate" --></td>
+                <td align=center><!-- TMPL_VAR NAME="holdexpdate" --></td>
+                <td><select name="delete-display">
+                   <option value="n">No</option>
+                   <option value="del">Yes</option>
+                </select>
+                <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR name="reservenumber" -->" />
+                <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
+                <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" />
+                </td>
+            </tr>
+            <!-- /TMPL_LOOP -->
+            </tbody>
+        </table>
+        <fieldset class="action"><input type="submit" class="cancel" name="submit" value="Update Expired Holds" /></fieldset>
+        </form>
+        <!-- TMPL_ELSE -->
+          <p>You have no expired holds!</p>
+        <!-- /TMPL_IF -->
+        </div>
+
+        <div id="opac-user-cancelled-holds">
+        <!-- TMPL_IF NAME="CANCELLEDRESERVES" -->
+        <table id="cancelledholdst">
+        <caption>Cancelled Holds <span class="count">(<!-- TMPL_VAR NAME="cancelledreserves_count" --> total)</span></caption>
+            <!-- CANCELLEDRESERVES TABLE ROWS -->
+            <thead><tr>
+                <th>Title</th>
+                <th>Placed On</th>
+                <th>Cancelled On</th>
+            </tr></thead>
+			<tbody>
+            <!-- TMPL_LOOP NAME="CANCELLEDRESERVES" -->
+            <tr>
+                <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
+                    <!-- TMPL_VAR NAME="author" -->
+                </td>
+                <td align=center><!-- TMPL_VAR NAME="reservedate" --></td>
+                <!-- TMPL_IF NAME="linkcancellationdate" -->
+                  <td align=center><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" title="Cancelled by <!-- TMPL_VAR NAME="modresfirstname" --> <!-- TMPL_VAR NAME="modressurname" -->"><!-- TMPL_VAR NAME="cancellationdate" --></a></td>
+                <!-- TMPL_ELSE -->
+                  <td align=center><!-- TMPL_VAR NAME="cancellationdate" --></td>
+                <!-- /TMPL_IF -->
+            </tr>
+            <!-- /TMPL_LOOP -->
+            </tbody>
+        </table>
+        <!-- TMPL_ELSE -->
+          <p>You have no cancelled holds!</p>
+        <!-- /TMPL_IF -->
+        </div>
+
+        <div>
 	<!-- TMPL_IF NAME="suspended_reserves_count" -->
        <table id="holdst"> 
         <caption>Suspended Holds <span class="count">(<!-- TMPL_VAR NAME="suspended_reserves_count" --> total)</span></caption>

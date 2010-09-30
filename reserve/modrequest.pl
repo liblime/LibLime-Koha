@@ -55,13 +55,14 @@ my $count=@rank;
 my $CancelBiblioNumber=$query->param('CancelBiblioNumber');
 my $CancelBorrowerNumber=$query->param('CancelBorrowerNumber');
 my $CancelItemnumber=$query->param('CancelItemnumber');
+my $CancelReservenumber=$query->param('CancelReservenumber');
 
 # 2 possibilitys : cancel an item reservation, or modify or cancel the queued list
 
 # 1) cancel an item reservation by function ModReserveCancelAll (in reserves.pm)
 if ($CancelBorrowerNumber) {
-    ModReserveCancelAll($CancelItemnumber, $CancelBorrowerNumber);
-    $biblionumber[0] = $CancelBiblioNumber,
+    ModReserveCancelAll($CancelReservenumber, $CancelItemnumber);
+    $biblionumber[0] = $CancelBiblioNumber;
 }
 
 # 2) Cancel or modify the queue list of reserves (without item linked)

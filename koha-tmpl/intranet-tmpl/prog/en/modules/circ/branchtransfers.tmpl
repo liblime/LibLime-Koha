@@ -39,6 +39,7 @@
                     <!-- TMPL_IF Name="waiting" -->
                         <input type="hidden" name="barcode" value="<!-- TMPL_VAR Name="barcode" -->" />
                         <input type="hidden" name="request" value="KillWaiting" />
+                        <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
                         <input type="submit" value="Cancel" />
                     <!-- /TMPL_IF -->
                     <!-- TMPL_IF Name="reserved" -->
@@ -63,6 +64,7 @@
                             <input type="hidden" name="tobranchcd" value="<!-- TMPL_VAR Name="tobranchcd" -->" />
                             <input type="hidden" name="barcode" value="<!-- TMPL_VAR Name="barcode" -->" />
                             <input type="hidden" name="request" value="KillReserved" />
+                            <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
                             <input type="submit" value="Cancel" />
                         </form>
                     </td>

@@ -367,6 +367,77 @@ if ($borrowernumber) {
         countreserv => scalar @reservloop,
 	 );
 
+    # show the borrower's old expired reservations on Expired Holds tab
+    my @borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'expiration');
+    my @expiredreservloop;
+    foreach my $num_res (@borroweroldreserv) {
+        my %getreserv;
+        my $getiteminfo  = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
+        my $itemtypeinfo = getitemtypeinfo( $getiteminfo->{'itemtype'} );
+
+        $getreserv{reservedate} = C4::Dates->new($num_res->{'reservedate'},'iso')->output('syspref');
+        $getreserv{holdexpdate} = format_date($num_res->{'expirationdate'});
+	foreach (qw(biblionumber title author itemcallnumber )) {
+		$getreserv{$_} = $getiteminfo->{$_};
+	}
+        $getreserv{barcodereserv}  = $getiteminfo->{'barcode'};
+        $getreserv{itemtype}  = $itemtypeinfo->{'description'};
+        $getreserv{waitingposition} = $num_res->{'priority'};
+        $getreserv{reservenumber} = $num_res->{'reservenumber'};
+        push( @expiredreservloop, \%getreserv );
+    }
+
+    # return result to the template
+    $template->param( expiredreservloop => \@expiredreservloop,
+        countexpiredreserv => scalar @expiredreservloop,
+	 );
+
+    # show the borrower's old cancelled reservations on Cancelled Holds tab
+    @borroweroldreserv = ();
+    @borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'cancellation');
+    my @cancelledreservloop;
+    my ($sth,$modresnumber);
+    foreach my $num_res (@borroweroldreserv) {
+        my %getreserv;
+        my (@bind,$query);
+        $query = "SELECT usercode FROM statistics WHERE type='reserve_canceled' AND other = ? AND borrowernumber = ? AND datetime LIKE ? ";
+        push(@bind,"$num_res->{'biblionumber'}","$borrowernumber","$num_res->{'cancellationdate'}%");
+        $sth = $dbh->prepare($query);
+        $sth->execute(@bind);
+        $modresnumber = $sth->fetchrow;
+        if (defined($modresnumber)) {
+          $getreserv{linkcancellationdate} = 1;
+          $getreserv{modresnumber} = $modresnumber;
+          my $modresborrower = GetMember($modresnumber);
+          $getreserv{modresfirstname} = $modresborrower->{'firstname'};
+          $getreserv{modressurname} = $modresborrower->{'surname'};
+        }
+        # Determine if itemnumber is available.  If so, then fetch iteminfo
+        # like above.
+        if (defined ($num_res->{'itemnumber'})) {
+          my $getiteminfo = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
+          my $itemtypeinfo = getitemtypeinfo( $getiteminfo->{'itemtype'} );
+          $getreserv{barcodereserv} = $getiteminfo->{'barcode'};
+          $getreserv{itemtype} = $itemtypeinfo->{'description'};
+          $getreserv{itemcallnumber} = $getiteminfo->{'itemcallnumber'};
+        }
+        my ($bibliocnt, @biblio) = GetBiblio( $num_res->{'biblionumber'} );
+        $getreserv{reservedate} = C4::Dates->new($num_res->{'reservedate'},'iso')->output('syspref');
+        $getreserv{cancellationdate} = format_date($num_res->{'cancellationdate'});
+	foreach (qw(biblionumber title author )) {
+		$getreserv{$_} = $biblio[0]->{$_};
+	}
+        $getreserv{waitingposition} = $num_res->{'priority'};
+        $getreserv{reservenumber} = $num_res->{'reservenumber'};
+        push( @cancelledreservloop, \%getreserv );
+    }
+
+    # return result to the template
+    $template->param( cancelledreservloop => \@cancelledreservloop,
+        countcancelledreserv => scalar @cancelledreservloop,
+	 );
+
+    my @suspended_reserves = GetSuspendedReservesFromBorrowernumber($borrowernumber );
     my @suspended_reserves = GetSuspendedReservesFromBorrowernumber($borrowernumber );
     my @suspended_reserves_loop;
     foreach my $num_res ( @suspended_reserves ) {

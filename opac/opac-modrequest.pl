@@ -61,7 +61,7 @@ if ( $resume && $reservenumber && $borrowernumber) {
         } else {              
         	SuspendReserve( $reservenumber );
         } 
-} elsif ($reservenumber and $borrowernumber) {
-	CancelReserve($reservenumber, $biblionumber, $borrowernumber);
+} elsif ($reservenumber) {
+	CancelReserve($reservenumber);
 }
 print $query->redirect("/cgi-bin/koha/opac-user.pl#opac-user-holds");

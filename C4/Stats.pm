@@ -33,6 +33,7 @@ BEGIN {
 	@ISA    = qw(Exporter);
 	@EXPORT = qw(
 		&UpdateStats
+		&UpdateReserveCancelledStats
 		&TotalPaid
 	);
 }
@@ -90,6 +91,29 @@ sub UpdateStats {
         $branch,    $type,    $amount,
         $other,     $itemnum, $itemtype, $borrowernumber,
 		$accountno
+    );
+}
+
+sub UpdateReserveCancelledStats {
+
+    #module to insert stats data into stats table
+    my (
+        $branch,         $type,
+        $amount,   $other,          $itemnum,
+        $itemtype, $borrowernumber, $accountno, $modusernumber
+      )
+      = @_;
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare(
+        "INSERT INTO statistics
+        (datetime, branch, type, value,
+         other, itemnumber, itemtype, borrowernumber, proccode, usercode)
+         VALUES (now(),?,?,?,?,?,?,?,?,?)"
+    );
+    $sth->execute(
+        $branch,    $type,    $amount,
+        $other,     $itemnum, $itemtype, $borrowernumber,
+	$accountno, $modusernumber
     );
 }
 

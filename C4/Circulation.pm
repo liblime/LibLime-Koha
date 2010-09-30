@@ -918,7 +918,7 @@ AddIssue does the following things :
 =cut
 
 sub AddIssue {
-    my ( $borrower, $barcode, $datedue, $cancelreserve, $issuedate, $sipmode) = @_;
+    my ( $borrower, $barcode, $datedue, $cancelreserve, $issuedate, $sipmode ) = @_;
     my $dbh = C4::Context->dbh;
 	my $barcodecheck=CheckValidBarcode($barcode);
 
@@ -985,12 +985,11 @@ sub AddIssue {
 					# warn "Reserved";
 					# The item is reserved by someone else.
 					if ($cancelreserve) { # cancel reserves on this item
-                       CancelReserve($res->{'reservenumber'}, $res->{'biblionumber'});
-
+						CancelReserve($res->{'reservenumber'});
 					}
 				}
 				if ($cancelreserve) {
-                       CancelReserve($res->{'reservenumber'}, $res->{'biblionumber'});
+					CancelReserve($res->{'reservenumber'});
 				}
 				else {
 					# set waiting reserve to first in reserve queue as book isn't waiting now

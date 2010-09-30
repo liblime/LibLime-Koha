@@ -9,7 +9,7 @@ use strict;
 use ILS;
 use ILS::Transaction;
 
-use C4::Reserves;	# AddReserve
+use C4::Reserves;	# AddReserve GetReservesFromItemnumber
 use C4::Members;	# GetMember
 use C4::Biblio;		# GetBiblioFromItemNumber GetBiblioItemByBiblioNumber
 
@@ -88,10 +88,8 @@ sub drop_hold {
 		$self->ok(0);
 		return $self;
 	}
-	my $bib = GetBiblioFromItemNumber(undef, $self->{item}->id);
-	# FIXME: figure out if it is a item or title hold.  Till then, cancel both.
-	CancelReserve($bib->{biblionumber}, undef, $borrower->{borrowernumber});
-	CancelReserve(undef, $self->{item}->id, $borrower->{borrowernumber});
+        my $res = GetReservesFromItemnumber($self->{item}->id);
+	CancelReserve($res->{reservenumber});
 		# unfortunately no meaningful return value here either
 	$self->ok(1);
 	return $self;

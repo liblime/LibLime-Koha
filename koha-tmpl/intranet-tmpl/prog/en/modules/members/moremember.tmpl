@@ -466,6 +466,8 @@ function isValidDate(theField){
 		<li><a href="#onhold">On Hold</a></li>
 <!-- /TMPL_IF -->
 		<li><a href="#revisionhistory">Revision History</a></li>
+		<li><a href="#expiredholds">Expired Holds</a></li>
+		<li><a href="#cancelledholds">Cancelled Holds</a></li>
 	</ul>
 </div>
 	
@@ -719,8 +721,78 @@ function isValidDate(theField){
 	<!-- TMPL_ELSE -->
 	<p>Patron has nothing on hold.</p>
 <!-- /TMPL_IF -->
+</div>
 
+<div id="expiredholds">
+<!-- TMPL_IF NAME="expiredreservloop" -->
+        <form name="modifyExpiredReservesForm" action="/cgi-bin/koha/reserve/moddisplay.pl" method="post" >
+	<table id="expiredholdst">
+		<thead><tr>
+			<th>Hold Date</th>
+			<th>Hold Expiration Date</th>
+			<th>Title</th>
+                        <th>Item Type</th>
+			<th>Call Number</th>
+			<th>Barcode</th>
+		</tr></thead>
+		<tbody><!-- TMPL_LOOP NAME="expiredreservloop" -->
+		<tr class="<!-- TMPL_VAR NAME="color" -->">
+                   <td><!-- TMPL_VAR NAME="reservedate" --></td>
+                   <td align=center><!-- TMPL_VAR NAME="holdexpdate" --></td>
+                   <td><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
+                   <td><!-- TMPL_VAR NAME="itemtype" --></td>
+                   <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
+                   <td>
+                       <!-- TMPL_IF name="barcodereserv" -->
+                         <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
+                       <!-- /TMPL_IF -->
+                   </td>
+                 </tr>
+                 <!-- /TMPL_LOOP -->
+                 </tbody>
+        </table>
+	<!-- TMPL_ELSE -->
+	<p>Patron has no expired holds.</p>
+<!-- /TMPL_IF -->
+</div>
 
+<div id="cancelledholds">
+<!-- TMPL_IF NAME="cancelledreservloop" -->
+	<table id="cancelledholdst">
+		<thead><tr>
+			<th>Hold Date</th>
+			<th>Hold Cancellation Date</th>
+			<th>Title</th>
+                        <th>Item Type</th>
+			<th>Call Number</th>
+			<th>Barcode</th>
+		</tr></thead>
+		<tbody><!-- TMPL_LOOP NAME="cancelledreservloop" -->
+		<tr class="<!-- TMPL_VAR NAME="color" -->">
+                   <td><!-- TMPL_VAR NAME="reservedate" --></td>
+                   <!-- TMPL_IF NAME="linkcancellationdate" -->
+                     <td align=center><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="modresnumber" -->" title="Cancelled by <!-- TMPL_VAR NAME="modresfirstname" --> <!-- TMPL_VAR NAME="modressurname" -->"><!-- TMPL_VAR NAME="cancellationdate" --></a></td>
+                   <!-- TMPL_ELSE -->
+                     <td align=center><!-- TMPL_VAR NAME="cancellationdate" --></td>
+                   <!-- /TMPL_IF -->
+                   <td><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
+                   <td><!-- TMPL_VAR NAME="itemtype" --></td>
+                   <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
+                   <td>
+                       <!-- TMPL_IF name="barcodereserv" -->
+                         <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
+                       <!-- /TMPL_IF -->
+                   </td>
+                 </tr>
+                 <!-- /TMPL_LOOP -->
+                 </tbody>
+        </table>
+	<!-- TMPL_ELSE -->
+	<p>Patron has no cancelled holds.</p>
+<!-- /TMPL_IF -->
+</div>
+
+<div>
 <!-- TMPL_IF NAME="suspended_reserves_loop" -->
 <h2>Patron suspended holds</h2>
 	<table id="holdst">

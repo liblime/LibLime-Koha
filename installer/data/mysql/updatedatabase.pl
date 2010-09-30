@@ -3553,6 +3553,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.00.000';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+        ALTER TABLE old_reserves ADD COLUMN displayexpired TINYINT(1) NOT NULL DEFAULT 1;
+    /);
+
+	print "Upgrade to $DBversion done ( Add displayexpired column to the old_reserves table )\n";
+    SetVersion ($DBversion);
+}
 
 =item DropAllForeignKeys($table)
 
