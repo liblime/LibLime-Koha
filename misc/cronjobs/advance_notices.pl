@@ -181,7 +181,7 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
 
         if ( $borrower_preferences->{'wants_digest'} ) {
             # cache this one to process after we've run through all of the items.
-            push @{$due_digest->{$upcoming->{borrowernumber}}}, $upcoming->{itemnumber};
+            push @{$upcoming_digest->{$upcoming->{borrowernumber}}}, $upcoming->{itemnumber};
         } else {
             my $biblio = C4::Biblio::GetBiblioFromItemNumber( $upcoming->{'itemnumber'} );
             my $letter_type = 'PREDUE';
@@ -272,8 +272,8 @@ PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
 }
 
 # Now, run through all the people that want digests and send them
-PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
-    my @items = @{$upcoming_digest->{$borrowernumber}};
+PATRON: for my $borrowernumber ( keys %{ $due_digest} ) {
+    my @items = @{$due_digest->{$borrowernumber}};
     my $count = scalar @items;
     my $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $borrowernumber,
                                                                                   message_name   => 'item due' } );
