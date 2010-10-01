@@ -157,6 +157,7 @@ to fill a hold request if and only if:
     * it is not on loan
     * it is not withdrawn
     * it is not marked notforloan
+    * it is not damaged (if syspref AllowHoldsOnDamagedItems = Off)
     * it is not currently in transit
     * it is not lost
     * it is not sitting on the hold shelf
@@ -191,6 +192,7 @@ sub GetItemsAvailableToFillHoldRequestsForBib {
                            AND (found IS NOT NULL OR priority = 0)
                         )
                        AND biblionumber = ?";
+    $items_query .= " AND damaged = 0" if (!C4::Context->preference('AllowHoldsOnDamagedItems'));
     my @params = ($biblionumber, $biblionumber);
     if ($#branches_to_use > -1) {
         $items_query .= " AND holdingbranch IN (" . join (",", map { "?" } @branches_to_use) . ")";
