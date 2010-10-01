@@ -223,11 +223,12 @@ sub SearchMember {
         }     
         $query .= '(';
         for ( my $i = 0 ; $i < $count ; $i++ ) {
-            $query .= "(surname LIKE ?
-                OR firstname  LIKE ?
+            my $term = $data[$i];
+            $query .= "(surname LIKE ? OR surname LIKE ?
+                OR firstname LIKE ? OR firstname LIKE ?
                 OR othernames LIKE ?
                 OR initials LIKE ? ) AND ";
-            push( @bind, "$data[$i]%", "$data[$i]%", "$data[$i]%", "$data[$i]%" );
+            push( @bind, "$term%", "% $term%", "$term%", "% $term%", "$term%", "$term%" );
         }
         $query =~ s/ AND $/ /;
         $query .= " AND category_type = '" . $dbh->quote($category_type) . "' " if $category_type;
@@ -249,7 +250,7 @@ sub SearchMember {
     $sth = $dbh->prepare($query);
 
     $debug and print STDERR "Q $orderby : $query\n";
-    $sth->execute(@bind);
+    $sth->execute(@bind) or die "failed to execute search: ". $dbh->errstr;
     my @results;
     $data = $sth->fetchall_arrayref({});
 
