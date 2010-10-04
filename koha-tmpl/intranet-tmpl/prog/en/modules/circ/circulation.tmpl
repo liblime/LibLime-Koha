@@ -302,6 +302,7 @@ function refocus(calendar) {
 
 <form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="confirm">
 
+<!-- TMPL_IF NAME="RESERVE_WAITING" -->
 <!-- TMPL_IF NAME="DisableHoldsIssueOverrideUnlessAuthorised" -->
     <p>
     <label><strong>Superlibrarian Authorization Required</strong></label>
@@ -311,6 +312,7 @@ function refocus(calendar) {
     <label for="auth_password">Password:</label>
     <input type="password" id="auth_password" name="auth_password" />
     </p>
+<!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="RESERVED" -->
@@ -330,6 +332,7 @@ function refocus(calendar) {
     <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME="barcode" -->" />
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
     <input type="hidden" name="issueconfirmed" value="1" />
+    <!-- TMPL_IF NAME="RESERVE_WAITING" --><input type="hidden" name="reserve_confirmed" value="1" /><!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="DEBT" --><input type="hidden" name="debt_confirmed" value="1" /><!-- /TMPL_IF -->
     <input type="hidden" name="charges_overridden" value="<!-- TMPL_VAR NAME="charges_overridden" -->" />
     <input type="hidden" name="override_user" value="<!-- TMPL_VAR NAME="override_user" -->" />
