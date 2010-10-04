@@ -3426,6 +3426,17 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 }
 
 
+$DBversion = '4.01.00.014';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+        INSERT INTO `systempreferences` (variable,value,explanation,options,type)
+        VALUES ('EnableClubsAndServices','1','Turn on the Clubs and Services module','','YesNo')
+    /);
+    print "Upgrade to $DBversion done ( Add system preference to enable/disable Clubs and Services )\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table
