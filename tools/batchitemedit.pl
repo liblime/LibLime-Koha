@@ -90,8 +90,9 @@ if ( $op eq 'Proceed' ) {
     } elsif ( $columns_to_edit && $reading_from_file ) {
         while ( my $barcode = <$uploadbarcodes> ) {
             chomp $barcode;
+            $barcode =~ s/\r//g;
             my $rep = { barcode => $barcode, };
-            my $item = GetItem( q{}, $barcode );
+            my $item = GetItem( "", $barcode );
             if ($item) {
                 ModItem( $columns_to_edit, $item->{biblionumber},
                     $item->{itemnumber} );
@@ -123,6 +124,7 @@ if ( $op eq 'Proceed' ) {
     if ($reading_from_file) {
         while ( my $barcode = <$uploadbarcodes> ) {
             chomp $barcode;
+            $barcode =~ s/\r//g;
             my $rep = { barcode => $barcode, };
             my $item = GetItem( q{}, $barcode );
             $idl->append(
