@@ -61,7 +61,9 @@
 	 <!-- TMPL_IF NAME="CAN_user_updatecharges" -->
 	<!-- TMPL_IF NAME="finesview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Fines</a></li>
 	<!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="ClubsAndServices" -->
 	<!-- TMPL_IF NAME="clubs_services" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/clubs_services.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Clubs &amp; Services</a></li>
+	<!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
 	<!-- TMPL_IF NAME="intranetreadinghistory" --><!-- TMPL_IF NAME="readingrecordview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/readingrec.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Circulation History</a></li><!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
