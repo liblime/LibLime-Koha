@@ -847,6 +847,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
+$template->param( z3950 => $z3950 );
 # Getting the list of all frameworks
 # get framework list
 my $frameworks = getframeworks;

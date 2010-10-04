@@ -186,7 +186,7 @@ function GetZ3950Terms(){
 
 function Changefwk(FwkList) {
 	var fwk = FwkList.options[FwkList.selectedIndex].value;
- 	window.location = "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!--TMPL_VAR Name="biblionumber"-->&breedingid=<!-- TMPL_VAR name="breedingid" -->&frameworkcode="+fwk;
+ 	window.location = "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!--TMPL_VAR Name="biblionumber"-->&breedingid=<!-- TMPL_VAR name="breedingid" -->&z3950=<!-- TMPL_VAR NAME="z3950" -->&frameworkcode="+fwk;
 
 }
 
@@ -558,6 +558,30 @@ function unHideSubfield(index,labelindex) { // FIXME :: is it used ?
     label = document.getElementById(labelindex);
     label.style.display='none';	
 }
+
+function disableForm(){
+	$('#f :input').attr('disabled', true);
+	$('#addbiblio').attr('disabled', false);
+	$('#Frameworks').attr('disabled', false);
+}
+
+function enableForm(){
+	$('#f :input').removeAttr('disabled');
+}
+
+function submitForm(){
+	enableForm();
+	$('#f').submit();
+}
+
+$(document).ready(function() {
+	<!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic_z3950_only" -->
+		disableForm();
+		<!-- TMPL_UNLESS NAME="z3950" -->
+			$('#addbiblio').attr('disabled', true);
+		<!-- /TMPL_UNLESS -->
+	<!-- /TMPL_IF -->
+});
 //]]>
 </script>
 <link type="text/css" rel="stylesheet" href="<!-- TMPL_VAR NAME="themelang" -->/css/addbiblio.css" />
@@ -649,7 +673,7 @@ function unHideSubfield(index,labelindex) { // FIXME :: is it used ?
 	// YUI Toolbar Functions
 
 	function yuiToolbar() {
-	    new YAHOO.widget.Button("addbiblio");
+	    new YAHOO.widget.Button("addbiblio", { onclick: { fn: submitForm } });
 		new YAHOO.widget.Button({
                                             id: "z3950search", 
                                             type: "button", 
@@ -663,7 +687,7 @@ function unHideSubfield(index,labelindex) { // FIXME :: is it used ?
 	</script>
 
 		<ul class="toolbar">
-			<li><input id="addbiblio" type="submit" value="Save" /></li>
+			<li><input id="addbiblio" type="button" value="Save" /></li>
 			<li id="z3950searchc"><input type="button" id="z3950search" value="z39.50 Search" onclick="PopupZ3950(); return false;" /></li>
 			<li id="changeframework"><label for="Frameworks">Change framework: </label>
 			<select name="Frameworks" id="Frameworks" onchange="Changefwk(this);">
