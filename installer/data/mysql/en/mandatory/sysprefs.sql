@@ -267,3 +267,4 @@ INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES('
 INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('ShowPatronImageInWebBasedSelfCheck', '0', 'If ON, displays patron image when a patron uses web-based self-checkout', '', 'YesNo');
 INSERT INTO `systempreferences` (variable,value,options,explanation,type) VALUES ('CourseReserves','0','','Turn ON Course Reserves functionality','YesNo');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('soundon','0','Enable to turn on circulation sounds. Not available on all browsers.','','YesNo');
+INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('EnableClubsAndServices','1','Turn on the Clubs and Services module','','YesNo');
