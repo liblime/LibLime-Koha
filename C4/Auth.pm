@@ -346,6 +346,12 @@ sub get_template_and_user {
 		my $opaccolorstylesheet = C4::Context->preference("opaccolorstylesheet");  
             $template->param( opaccolorstylesheet => $opaccolorstylesheet);
 	}
+    if ($ENV{'OPAC_CSS_EXTERNAL'}){
+        $template->param(
+            opacexternalsheet         => $ENV{'OPAC_CSS_EXTERNAL'}
+        );
+    }
+
         $template->param(
             AnonSuggestions           => "" . C4::Context->preference("AnonSuggestions"),
             AuthorisedValueImages     => C4::Context->preference("AuthorisedValueImages"),
@@ -366,7 +372,6 @@ sub get_template_and_user {
             OPACBaseURL               => ($in->{'query'}->https() ? "https://" : "http://") . $ENV{'SERVER_NAME'} .
                    ($ENV{'SERVER_PORT'} eq ($in->{'query'}->https() ? "443" : "80") ? '' : ":$ENV{'SERVER_PORT'}"),
             opac_name             => $opac_name,
-            opacexternalsheet         => $ENV{'OPAC_CSS_EXTERNAL'},
             opac_css_override           => $ENV{'OPAC_CSS_OVERRIDE'},
             opac_search_limit         => $opac_search_limit,
             opac_limit_override       => $opac_limit_override,
