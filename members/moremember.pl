@@ -429,6 +429,19 @@ if ($borrowernumber) {
 
 }
 
+# extract staff activity on patron record
+my $revisions = &GetMemberRevisions($borrowernumber);
+my $revision_count = scalar(@$revisions);
+my @revisiondata;
+for ( my $i = 0; $i < $revision_count; $i++) {
+  my %row = %{ $revisions->[$i] };
+  $row{'staffnumber'} = $revisions->[$i]{'user'};
+  $row{'staffaction'} = $revisions->[$i]{'action'};
+  $row{'timestamp'} = $revisions->[$i]{'timestamp'};
+  push( @revisiondata, \%row );
+}
+$template->param( revisionloop => \@revisiondata );
+
 # current alert subscriptions
 my $alerts = getalert($borrowernumber);
 foreach (@$alerts) {

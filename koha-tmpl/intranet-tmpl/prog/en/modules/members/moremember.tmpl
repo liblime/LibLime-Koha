@@ -465,6 +465,7 @@ function isValidDate(theField){
 <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 		<li><a href="#onhold">On Hold</a></li>
 <!-- /TMPL_IF -->
+		<li><a href="#revisionhistory">Revision History</a></li>
 	</ul>
 </div>
 	
@@ -477,6 +478,29 @@ function isValidDate(theField){
     <!-- /TMPL_IF -->
 </div>
 <!-- /TMPL_IF -->
+
+<div id="revisionhistory">
+    <h2>Revision History</h2>
+    <!-- TMPL_IF NAME="revisionloop" -->
+      <table id="revisionst">
+        <thead><tr>
+          <th>Staff</th>
+          <th>Action</th>
+          <th>Date/Time</th>
+        </tr></thead>
+        <tbody><!-- TMPL_LOOP NAME="revisionloop" -->
+          <tr>
+          <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="staffnumber" -->" title="display detail for this librarian.">
+          <!-- TMPL_VAR NAME="staffnumber" --> </a></td>
+          <td><!-- TMPL_VAR NAME="staffaction" --></td>
+          <td><!-- TMPL_VAR NAME="timestamp" --></td>
+          </tr>
+        <!-- /TMPL_LOOP --></tbody>
+      </table>
+    <!-- TMPL_ELSE -->
+      <p>Patron has no revisions.</p>
+    <!-- /TMPL_IF -->
+</div>
 
 <!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
 <div id="checkedout">

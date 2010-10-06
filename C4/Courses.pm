@@ -332,11 +332,10 @@ sub DeleteCourseReserve {
     my $course_reserve = GetCourseReserve($course_reserve_id);
     my $biblio = GetBiblioFromItemNumber($course_reserve->{itemnumber});
     my $item = GetItem($course_reserve->{itemnumber});
-    my $item_status = C4::XSLT::_item_status($item);
-    if ($item_status eq 'Checked out') {
+    if ($item->{'onloan'}){
         return "ErrorItemCheckedOut";
     }
-    elsif ($item_status eq 'Lost') {
+    elsif ($item->{'itemlost'}){
         return "ErrorItemLost";
     }
 
