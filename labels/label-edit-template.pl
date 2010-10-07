@@ -55,7 +55,7 @@ if ($op eq 'edit') {
 elsif ($op eq 'save') {
     my @params = (      profile_id      => $cgi->param('profile_id') || '',
                         template_code   => $cgi->param('template_code'),
-                        template_desc   => $cgi->param('template_desc'),
+                        template_desc   => $cgi->param('template_desc') || '',
                         page_width      => $cgi->param('page_width'),
                         page_height     => $cgi->param('page_height'),
                         label_width     => $cgi->param('label_width'),
