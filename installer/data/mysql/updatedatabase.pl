@@ -3486,6 +3486,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.00.016';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh -> do("INSERT INTO letter (module,code,name,title,content) VALUES ('reserves','HOLD_CANCELED','Hold canceled','Hold canceled','The hold on the following item was canceled due to its removal from circulation.\r\n\r\n<<biblio.title>>\r\n\r\n');");
+
+    print "Upgrade to $DBversion done ( Creation of default reserves/HOLD_CANCELED letter)\n";
+    SetVersion ($DBversion);
+}
+
 
 =item DropAllForeignKeys($table)
 
