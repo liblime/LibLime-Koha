@@ -30,7 +30,7 @@ BEGIN {
 	@EXPORT_OK = qw(handle);
 }
 
-C4::Context->safe_mode(1); # guard against a stale dbh from C4::Context.
+C4::Context->database_paranoia_mode(1); # guard against a stale dbh from C4::Context.
 
 # Predeclare handler subroutines
 use subs qw(handle_patron_status handle_checkout handle_checkin

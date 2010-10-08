@@ -879,7 +879,7 @@ sub restore_dbh
  
 =item safe_mode
 
-  C4::Context->safe_mode(1);
+  C4::Context->database_paranoia_mode(1);
 
 get or set 'safe_mode' for current $context.
 This setting causes any calls to C4::Context->dbh
@@ -890,12 +890,12 @@ the life of the script.
 
 =cut
 
-sub safe_mode
+sub database_paranoia_mode
 {
     my $self = shift;
     my $set = shift;
-    $context->{'safe_mode'} = $set if(defined $set);
-    return $context->{'safe_mode'} || 0;
+    $context->{'database_paranoia_mode'} = $set if(defined $set);
+    return $context->{'database_paranoia_mode'} || 0;
 }
 
 
