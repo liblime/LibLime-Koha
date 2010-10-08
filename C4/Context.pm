@@ -465,10 +465,6 @@ with this method.
 
 my %sysprefs = ();
 
-sub flush_preferences {
-    %sysprefs = ();
-}
-
 sub preference {
     my $self = shift;
     my $var  = shift;                          # The system preference to return
@@ -505,7 +501,16 @@ sub boolean_preference ($) {
 =cut
 
 sub clear_syspref_cache {
-    %sysprefs = ();
+    my $self = shift;
+
+    if ( not @_ ) {
+        %sysprefs = ();
+        return;
+    }
+
+    foreach my $syspref (@_) {
+        delete $sysprefs{$syspref};
+    }
 }
 
 # AUTOLOAD

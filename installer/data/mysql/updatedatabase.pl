@@ -2695,7 +2695,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     }
     printf "Found KohaPTFSVersion %s. Updating to %s.\n", $version, $newversion;
     SetVersion($newversion);
-    C4::Context->flush_preferences();
+    C4::Context->clear_syspref_cache('Version');
 }
 
 $DBversion = '4.00.00.000';
