@@ -3437,6 +3437,56 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.00.015';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(qq/
+      CREATE TABLE IF NOT EXISTS `subscription_defaults` (
+        `subscriptionid` int(11) NOT NULL,
+        `dateaccessioned` date default NULL,
+        `booksellerid` mediumtext,
+        `homebranch` varchar(10) default NULL,
+        `price` decimal(8,2) default NULL,
+        `replacementprice` decimal(8,2) default NULL,
+        `replacementpricedate` date default NULL,
+        `datelastborrowed` date default NULL,
+        `datelastseen` date default NULL,
+        `stack` tinyint(1) default NULL,
+        `notforloan` tinyint(1) NOT NULL default '0',
+        `damaged` tinyint(1) NOT NULL default '0',
+        `itemlost` tinyint(1) NOT NULL default '0',
+        `wthdrawn` tinyint(1) NOT NULL default '0',
+        `suppress` tinyint(1) NOT NULL default '0',
+        `itemcallnumber` varchar(255) default NULL,
+        `issues` smallint(6) default NULL,
+        `renewals` smallint(6) default NULL,
+        `reserves` smallint(6) default NULL,
+        `restricted` tinyint(1) default NULL,
+        `itemnotes` mediumtext,
+        `holdingbranch` varchar(10) default NULL,
+        `paidfor` mediumtext,
+        `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+        `location` varchar(80) default NULL,
+        `onloan` date default NULL,
+        `cn_source` varchar(10) default NULL,
+        `cn_sort` varchar(30) default NULL,
+        `ccode` varchar(10) default NULL,
+        `materials` varchar(10) default NULL,
+        `uri` varchar(255) default NULL,
+        `itype` varchar(10) default NULL,
+        `more_subfields_xml` longtext,
+        `enumchron` varchar(80) default NULL,
+        `copynumber` varchar(32) default NULL,
+        `permanent_location` varchar(80) default NULL,
+        `otherstatus` varchar(10) default NULL,
+        `coded_location_qualifier` varchar(25) NOT NULL,
+        PRIMARY KEY  (`subscriptionid`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    /);
+    print "Upgrade to $DBversion done ( Creation of subscription_defaults table )\n";
+    SetVersion ($DBversion);
+}
+
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

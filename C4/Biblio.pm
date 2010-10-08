@@ -2391,6 +2391,7 @@ sub PrepareItemrecordDisplay {
                             $authorised_lib{$value} = $lib;
                         }
                     }
+                    $value = '' if (!defined $value);
                     $subfield_data{marc_value} = CGI::scrolling_list(
                         -name     => 'field_value',
                         -values   => \@authorised_values,
@@ -2402,6 +2403,7 @@ sub PrepareItemrecordDisplay {
                     );
                 }
                 else {
+                    $value = '' if (!defined $value);
                     $subfield_data{marc_value} =
 "<input type=\"text\" name=\"field_value\" id=\"$subfield_data{kohafield}\"value=\"$value\" size=\"50\" maxlength=\"255\" />";
                 }
