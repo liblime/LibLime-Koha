@@ -2443,6 +2443,48 @@ CREATE TABLE `course_reserves` (
     PRIMARY KEY (`course_reserve_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `subscription_defaults` (
+  `subscriptionid` int(11) NOT NULL,
+  `dateaccessioned` date default NULL,
+  `booksellerid` mediumtext,
+  `homebranch` varchar(10) default NULL,
+  `price` decimal(8,2) default NULL,
+  `replacementprice` decimal(8,2) default NULL,
+  `replacementpricedate` date default NULL,
+  `datelastborrowed` date default NULL,
+  `datelastseen` date default NULL,
+  `stack` tinyint(1) default NULL,
+  `notforloan` tinyint(1) NOT NULL default '0',
+  `damaged` tinyint(1) NOT NULL default '0',
+  `itemlost` tinyint(1) NOT NULL default '0',
+  `wthdrawn` tinyint(1) NOT NULL default '0',
+  `suppress` tinyint(1) NOT NULL default '0',
+  `itemcallnumber` varchar(255) default NULL,
+  `issues` smallint(6) default NULL,
+  `renewals` smallint(6) default NULL,
+  `reserves` smallint(6) default NULL,
+  `restricted` tinyint(1) default NULL,
+  `itemnotes` mediumtext,
+  `holdingbranch` varchar(10) default NULL,
+  `paidfor` mediumtext,
+  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  `location` varchar(80) default NULL,
+  `onloan` date default NULL,
+  `cn_source` varchar(10) default NULL,
+  `cn_sort` varchar(30) default NULL,
+  `ccode` varchar(10) default NULL,
+  `materials` varchar(10) default NULL,
+  `uri` varchar(255) default NULL,
+  `itype` varchar(10) default NULL,
+  `more_subfields_xml` longtext,
+  `enumchron` varchar(80) default NULL,
+  `copynumber` varchar(32) default NULL,
+  `permanent_location` varchar(80) default NULL,
+  `otherstatus` varchar(10) default NULL,
+  `coded_location_qualifier` varchar(25) NOT NULL,
+  PRIMARY KEY  (`subscriptionid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
