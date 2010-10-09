@@ -623,65 +623,40 @@ a table of hashref. Each hash containt the subscription.
 
 sub GetSubscriptions {
     my ( $title, $ISSN, $biblionumber ) = @_;
-    #return unless $title or $ISSN or $biblionumber;
     my $dbh = C4::Context->dbh;
     my $sth;
-    if ($biblionumber) {
-        my $query = qq(
-            SELECT subscription.*,biblio.title,biblioitems.issn,biblio.biblionumber
-            FROM   subscription
-            LEFT JOIN biblio ON biblio.biblionumber = subscription.biblionumber
-            LEFT JOIN biblioitems ON biblio.biblionumber = biblioitems.biblionumber
-            WHERE biblio.biblionumber=?
-        );
-        $query.=" ORDER BY title";
-        $debug and warn "GetSubscriptions query: $query";
-        $sth = $dbh->prepare($query);
-        $sth->execute($biblionumber);
+    my @bind;
+    my $query;
+
+    $query = qq|
+        SELECT subscription.*,biblio.title,biblioitems.issn,biblio.biblionumber
+        FROM subscription
+        LEFT JOIN biblio ON biblio.biblionumber = subscription.biblionumber
+        LEFT JOIN biblioitems ON biblio.biblionumber = biblioitems.biblionumber
+    |;
+    $query .= ' WHERE' if defined $biblionumber or defined $ISSN or $title;
+    if (defined $biblionumber) {
+        $query .= ' biblio.biblionumber = ? OR';
+        push(@bind, $biblionumber);
     }
-    else {
-        if ( $ISSN and $title ) {
-            my $query = qq|
-                SELECT subscription.*,biblio.title,biblioitems.issn,biblio.biblionumber        
-                FROM   subscription
-                LEFT JOIN biblio ON biblio.biblionumber = subscription.biblionumber
-                LEFT JOIN biblioitems ON biblio.biblionumber = biblioitems.biblionumber
-                WHERE (biblioitems.issn = ? or|. join('and ',map{"biblio.title LIKE \"%$_%\""}split (" ",$title))." )";
-            $query.=" ORDER BY title";
-        	$debug and warn "GetSubscriptions query: $query";
-            $sth = $dbh->prepare($query);
-            $sth->execute( $ISSN );
-        }
-        else {
-            if ($ISSN) {
-                my $query = qq(
-                    SELECT subscription.*,biblio.title,biblioitems.issn,biblio.biblionumber
-                    FROM   subscription
-                    LEFT JOIN biblio ON biblio.biblionumber = subscription.biblionumber
-                    LEFT JOIN biblioitems ON biblio.biblionumber = biblioitems.biblionumber
-                    WHERE biblioitems.issn LIKE ?
-                );
-                $query.=" ORDER BY title";
-        		$debug and warn "GetSubscriptions query: $query";
-                $sth = $dbh->prepare($query);
-                $sth->execute( "%" . $ISSN . "%" );
-            }
-            else {
-                my $query = qq(
-                    SELECT subscription.*,biblio.title,biblioitems.issn,biblio.biblionumber
-                    FROM   subscription
-                    LEFT JOIN biblio ON biblio.biblionumber = subscription.biblionumber
-                    LEFT JOIN biblioitems ON biblio.biblionumber = biblioitems.biblionumber
-                    WHERE 1
-                    ).($title?" and ":""). join('and ',map{"biblio.title LIKE \"%$_%\""} split (" ",$title) );
-                
-                $query.=" ORDER BY title";
-        		$debug and warn "GetSubscriptions query: $query";
-                $sth = $dbh->prepare($query);
-                $sth->execute;
-            }
-        }
+    if (defined $ISSN) {
+        $query .= ' biblioitems.issn LIKE ? OR';
+        push(@bind, $ISSN);
     }
+    if ($title) {
+        $query .= ' (';
+        foreach my $title_element (split(/\s+/, $title)) {
+            $query .= ' biblio.title LIKE ? AND';
+            push(@bind, "%$title_element%");
+        }
+        $query =~ s/ AND$/)/;
+    }
+    $query =~ s/ OR$//;
+    $query .= ' ORDER BY title';
+    $debug and warn "GetSubscriptions query: $query";
+    $sth = $dbh->prepare($query);
+    $sth->execute(@bind) or die sprintf "%s: '%s'\n", $dbh->errstr, $query;
+
     my @results;
     my $previoustitle = "";
     my $odd           = 1;
