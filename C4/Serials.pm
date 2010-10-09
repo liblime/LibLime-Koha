@@ -159,23 +159,22 @@ sub GetLateIssues {
 =over 4
 
 $sth = GetSubscriptionHistoryFromSubscriptionId()
-this function just prepare the SQL request.
-After this function, don't forget to execute it by using $sth->execute($subscriptionid)
-return :
-$sth = $dbh->prepare($query).
 
 =back
 
 =cut
 
-sub GetSubscriptionHistoryFromSubscriptionId() {
+sub GetSubscriptionHistoryFromSubscriptionId($) {
+    my ($subscriptionid) = shift;
     my $dbh   = C4::Context->dbh;
     my $query = qq|
         SELECT *
         FROM   subscriptionhistory
         WHERE  subscriptionid = ?
     |;
-    return $dbh->prepare($query);
+    my $sth = $dbh->prepare($query);
+    $sth->execute(($subscriptionid)) or die $dbh->errstr;
+    return $sth->fetchrow_hashref;
 }
 
 =head2 GetSerialStatusFromSerialId
