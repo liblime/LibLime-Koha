@@ -127,46 +127,31 @@ name,title,planneddate,serialseq,serial.subscriptionid from tables : subscriptio
 sub GetLateIssues {
     my ($supplierid) = @_;
     my $dbh = C4::Context->dbh;
-    my $sth;
-    if ($supplierid) {
-        my $query = qq|
-            SELECT     name,title,planneddate,serialseq,serial.subscriptionid
-            FROM       subscription
-            LEFT JOIN  serial ON subscription.subscriptionid = serial.subscriptionid
-            LEFT JOIN  biblio ON biblio.biblionumber = subscription.biblionumber
-            LEFT JOIN  aqbooksellers ON subscription.aqbooksellerid = aqbooksellers.id
-            WHERE      ((planneddate < now() AND serial.STATUS =1) OR serial.STATUS = 3)
-            AND        subscription.aqbooksellerid=$supplierid
-            ORDER BY   title
-        |;
-        $sth = $dbh->prepare($query);
-    }
-    else {
-        my $query = qq|
-            SELECT     name,title,planneddate,serialseq,serial.subscriptionid
-            FROM       subscription
-            LEFT JOIN  serial ON subscription.subscriptionid = serial.subscriptionid
-            LEFT JOIN  biblio ON biblio.biblionumber = subscription.biblionumber
-            LEFT JOIN  aqbooksellers ON subscription.aqbooksellerid = aqbooksellers.id
-            WHERE      ((planneddate < now() AND serial.STATUS =1) OR serial.STATUS = 3)
-            ORDER BY   title
-        |;
-        $sth = $dbh->prepare($query);
-    }
-    $sth->execute;
+    my @bind;
+
+    my $query = qq|
+        SELECT     name,title,planneddate,serialseq,serial.subscriptionid
+        FROM       subscription
+        LEFT JOIN  serial ON subscription.subscriptionid = serial.subscriptionid
+        LEFT JOIN  biblio ON biblio.biblionumber = subscription.biblionumber
+        LEFT JOIN  aqbooksellers ON subscription.aqbooksellerid = aqbooksellers.id
+        WHERE      ((planneddate < now() AND serial.STATUS = 1) OR serial.STATUS = 3)
+    |;
+    $query .= ' AND subscription.aqbooksellerid=?' and @bind = ($supplierid) if defined $supplierid;
+    $query .= ' ORDER BY title';
+
+    my $sth = $dbh->prepare($query);
+    $sth->execute(@bind) or die sprintf "Unable to execute query: %s\n", $dbh->errstr;
+
     my @issuelist;
     my $last_title;
-    my $odd   = 0;
-    my $count = 0;
     while ( my $line = $sth->fetchrow_hashref ) {
-        $odd++ unless $line->{title} eq $last_title;
         $line->{title} = "" if $line->{title} eq $last_title;
         $last_title = $line->{title} if ( $line->{title} );
         $line->{planneddate} = format_date( $line->{planneddate} );
-        $count++;
         push @issuelist, $line;
     }
-    return $count, @issuelist;
+    return scalar @issuelist, @issuelist;
 }
 
 =head2 GetSubscriptionHistoryFromSubscriptionId
