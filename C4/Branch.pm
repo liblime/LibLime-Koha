@@ -225,7 +225,7 @@ sub ModBranch {
         my $query  = " UPDATE branches SET " . join(',',@qterms) .  " WHERE branchcode=?";
         $sth    = $dbh->prepare($query);
     }
-    $sth->execute(@bind, $data->{branchcode});
+    $sth->execute(@bind, $data->{branchcode}) or die "Cannot add branch: " . $dbh->errstr;
     # sort out the categories....
     my @checkedcats;
     my $cats = GetBranchCategory();

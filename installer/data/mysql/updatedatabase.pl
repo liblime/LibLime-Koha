@@ -3494,6 +3494,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.00.017';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+        ALTER TABLE `branches` ADD COLUMN `branchonshelfholds` tinyint(1) NOT NULL default 1;
+    /);
+    print "Upgrade to $DBversion done ( Add branchonshelfholds field to branches )\n";
+    SetVersion ($DBversion);
+}
+
 
 =item DropAllForeignKeys($table)
 
