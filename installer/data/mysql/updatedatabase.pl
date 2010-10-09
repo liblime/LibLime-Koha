@@ -3109,7 +3109,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         branchcode varchar(4) NOT NULL COMMENT 'branch where club or service was created.',
         last_updated timestamp NOT NULL default CURRENT_TIMESTAMP,
         PRIMARY KEY  (casId)
-        ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;");
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
     $dbh -> do("
         CREATE TABLE clubsAndServicesArchetypes (
         casaId int(11) NOT NULL auto_increment,
@@ -3133,7 +3133,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         branchcode varchar(4) default NULL COMMENT 'branch where archetype was created.',
         last_updated timestamp NOT NULL default CURRENT_TIMESTAMP,
         PRIMARY KEY  (casaId)
-        ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;");
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
     $dbh -> do("
         INSERT INTO clubsAndServicesArchetypes ( type,title,description,publicEnrollment,casData1Title,casData2Title,casData3Title,caseData1Title,caseData2Title,caseData3Title,casData1Desc,casData2Desc,casData3Desc,caseData1Desc,caseData2Desc,caseData3Desc   )
 VALUES 
@@ -3153,7 +3153,7 @@ VALUES
         last_updated timestamp NOT NULL default CURRENT_TIMESTAMP,
         branchcode varchar(4) default NULL COMMENT 'foreign key to branches',
         PRIMARY KEY  (caseId)
-        ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;");
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
 
 	print "Upgrade to $DBversion done ( Clubs and services )\n";
     SetVersion ($DBversion);
