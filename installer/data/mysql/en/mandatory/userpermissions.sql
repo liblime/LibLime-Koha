@@ -41,6 +41,7 @@ INSERT INTO permissions (module_bit, code, description) VALUES
    ( 9, 'add_items', 'Create or copy a new item'),
    ( 9, 'delete_items', 'Delete an item'),
    ( 9, 'edit_items', 'Edit an item record'),
+   ( 9, 'relink_items', 'User can move an item from one bibliographic record to another.'),
    (10, 'view_charges', 'View borrower charges'),
    (10, 'add_charges', 'Add a charge to a patron record'),
    (10, 'edit_charges', 'User can change a fee record'),

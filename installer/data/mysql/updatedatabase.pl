@@ -3504,6 +3504,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.00.018';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+      INSERT INTO permissions (`module_bit`,`code`,`description`) VALUES ('9', 'relink_items', 'User can move an item from one bibliographic record to another.')
+    /);
+    print "Upgrade to $DBversion done ( Add permission relink_items  )\n";
+    SetVersion ($DBversion);
+}
 
 =item DropAllForeignKeys($table)
 

@@ -307,7 +307,7 @@ function set_to_today(id, force) {
 	<p>CHECKING BARCODE</p>
 </div>
 
-<!-- TMPL_IF NAME="newitem" -->
+<!-- TMPL_IF NAME="CAN_user_editcatalogue_relink_items" --><!-- TMPL_IF NAME="newitem" -->
 	<script>
 		$('#<!-- TMPL_VAR NAME="barcode_id" -->').blur(function() {
 			checkBarcode();
@@ -378,6 +378,6 @@ After the item's data has been loaded, you may review and edit the data, then ch
 			}
 		}
 	</script>
-<!-- /TMPL_IF -->
+<!-- /TMPL_IF --><!-- /TMPL_IF -->
 
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
