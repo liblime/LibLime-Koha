@@ -301,13 +301,13 @@ sub get_columns_to_select {
     my @fields_to_update;
     for my $field (@ifields) {
         my $value = $query->param("select_$field");
-        if ($value) {
+        if (defined($value)) {
             push @fields_to_update, $field;
         }
     }
     for my $field (@fields_to_update) {
         my $value = $query->param($field);
-        if ($value) {
+        if (defined($value)) {
             $select_hash->{$field} = $value;
         }
     }
@@ -327,13 +327,13 @@ sub get_columns_to_edit {
     my @fields_to_update;
     for my $field (@ifields) {
         my $value = $query->param("change_$field");
-        if ($value) {
+        if (defined($value)) {
             push @fields_to_update, $field;
         }
     }
     for my $field (@fields_to_update) {
         my $value = $query->param("new_$field");
-        if ($value) {
+        if (defined($value)) {
             $edit_hash->{$field} = $value;
         }
     }
