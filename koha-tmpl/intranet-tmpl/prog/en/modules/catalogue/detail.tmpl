@@ -269,33 +269,24 @@ function verify_images() {
 							<!-- FIXME: the "since" clause is redundant w/ lastseen field -->
                 <!-- /TMPL_IF -->
 
-                <!-- TMPL_IF NAME="itemlost" -->
-                    <!-- TMPL_IF NAME="itemlostloop" -->
-                    <!-- TMPL_LOOP NAME="itemlostloop" -->
-                        <!-- TMPL_IF NAME="selected" -->
-                                        <span class="lost"><!-- TMPL_VAR NAME="lib" --></span>
-                        <!-- /TMPL_IF -->
-                    <!-- /TMPL_LOOP -->
-                    <!-- TMPL_ELSE -->
-                                        <span class="lost">Unavailable (lost or missing)</span>
-                    <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="itemlostdesc" -->
+                    <span class="lost"><!-- TMPL_VAR NAME="itemlostdesc" --></span>
+                <!-- TMPL_ELSIF NAME="itemlost" -->
+                    <span class="lost">Unavailable (lost or missing)</span>
                 <!-- /TMPL_IF -->
 
-                <!-- TMPL_IF NAME="wthdrawn" -->
-                                        <span class="wdn">Withdrawn</span>
+                <!-- TMPL_IF NAME="wthdrawndesc" -->
+                    <span class="wdn"><!-- TMPL_VAR NAME="wthdrawndesc" --></span>
+                <!-- TMPL_ELSIF NAME="wthdrawn" -->
+                    <span class="wdn">Withdrawn</span>
                 <!-- /TMPL_IF -->
 
-                <!-- TMPL_IF NAME="damaged" -->
-                    <!-- TMPL_IF NAME="itemdamagedloop" -->
-                        <!-- TMPL_LOOP NAME="itemdamagedloop" -->
-                        <!-- TMPL_IF NAME="selected" -->
-                                        <span class="dmg"><!-- TMPL_VAR NAME="lib" --></span>
-                        <!-- /TMPL_IF -->
-                        <!-- /TMPL_LOOP -->
-                    <!-- TMPL_ELSE -->
-                                        <span class="dmg">Damaged</span>
-                    <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="damageddesc" -->
+                    <span class="dmg"><!-- TMPL_VAR NAME="damageddesc" --></span>
+                <!-- TMPL_ELSIF NAME="damaged" -->
+                    <span class="dmg">Damaged</span>
                 <!-- /TMPL_IF -->
+
                 <!-- TMPL_IF NAME="otherstatus_description" -->
                    <span class="lost"><!-- TMPL_VAR NAME="otherstatus_description" --></span>
                 <!-- /TMPL_IF -->
@@ -313,9 +304,8 @@ function verify_images() {
                 <!-- /TMPL_IF -->
 
                 <!-- TMPL_IF Name="itemnotforloan" -->
-                    Not for loan 
-                    <!-- TMPL_IF Name="notforloanvalue" -->
-                        (<!-- TMPL_VAR NAME="notforloanvalue" -->)
+                    <!-- TMPL_IF Name="notforloandesc" -->
+                        <!-- TMPL_VAR NAME="notforloandesc" -->
                     <!-- /TMPL_IF -->
                 <!-- /TMPL_IF -->
 

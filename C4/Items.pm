@@ -1432,6 +1432,23 @@ sub GetItemsInfo {
         $data->{'reserve_status'} = $reserve_status;
         $data->{'reserve_count'}  = $rescount + $attached_count;
 
+        # Comment
+        my %authmap = ( 'DAMAGED'   => 'damaged',
+                        'LOST'      => 'itemlost',
+                        'NOT_LOAN'  => 'notforloan',
+                        'WITHDRAWN' => 'wthdrawn' );
+        foreach my $key (keys %authmap) {
+          my $authorised_value_row = &GetAuthorisedValue($key,$data->{$authmap{$key}});
+          my $staffkey = $authmap{$key} . "desc";
+          my $opackey = "opac" . $authmap{$key} . "desc";
+          $data->{$staffkey} = $authorised_value_row->{'lib'}
+             if (defined($authorised_value_row->{'lib'}) &&
+                ($authorised_value_row->{'lib'} ne ''));
+          $data->{$opackey} = $authorised_value_row->{'opaclib'}
+             if (defined($authorised_value_row->{'opaclib'}) &&
+                ($authorised_value_row->{'opaclib'} ne ''));
+        }
+
         # get notforloan complete status if applicable
         my $sthnflstatus = $dbh->prepare(
             'SELECT authorised_value
