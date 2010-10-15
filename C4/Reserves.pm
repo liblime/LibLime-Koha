@@ -585,7 +585,7 @@ sub GetReserveFee {
     my $fee      = $data->{'reservefee'};
     $query = qq/
       SELECT * FROM items
-    LEFT JOIN itemtypes ON items.itemtype = itemtypes.itemtype
+    LEFT JOIN itemtypes ON items.itype = itemtypes.itemtype
     WHERE biblionumber = ?
     /;
     my $isth = $dbh->prepare($query);
@@ -897,18 +897,16 @@ priorities of the other people who are waiting on the book.
 =cut
 
 sub CancelReserve {
-    my ( $reservenumber, $biblio ) = @_;
+    my ( $reservenumber, $biblionumber, $borrowernumber ) = @_;
     my $dbh = C4::Context->dbh;
 
     my $branchcode = C4::Context->userenv->{'branch'};
-    warn "BRANCHCODE: $branchcode";
     
     my $sth = $dbh->prepare('SELECT * FROM reserves WHERE reservenumber = ?');
     $sth->execute( $reservenumber );
     my $reserve = $sth->fetchrow_hashref();
 
-    my $borrowernumber = $reserve->{'borrowernumber'};
-    
+    $borrowernumber = $reserve->{'borrowernumber'} if not $borrowernumber;
     if ( $reserve->{'found'} eq 'W' ) {
         # removing a waiting reserve record....
         # update the database...
@@ -962,7 +960,7 @@ sub CancelReserve {
       $branchcode,
       my $type = 'reserve_canceled',
       my $amount,
-      my $other = $biblio,
+      my $other = $biblionumber,
       my $itemnum = $holditem->{'itemnumber'},
       my $itemtype,
       my $borrowernumber = $holditem->{'borrowernumber'},
@@ -1038,7 +1036,7 @@ sub CancelReserve {
       $branchcode,
       my $type = 'reserve_canceled',
       my $amount,
-      my $other = $biblio,
+      my $other = $biblionumber,
       my $itemnum = $holditem->{'itemnumber'}||'',
       my $itemtype,
       my $borrowernumber = $holditem->{'borrowernumber'},
@@ -1053,7 +1051,7 @@ sub CancelReserve {
     } );
     if ( $mprefs->{'transports'} ) {
         my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
-        my $biblio   = GetBiblioData($biblio);
+        my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
         my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELED');
         my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');                
 
