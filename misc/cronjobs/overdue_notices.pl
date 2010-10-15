@@ -628,7 +628,7 @@ END_SQL
             # $sth gets borrower info if at least one overdue item has triggered the overdue action.
 	    my $sth = $dbh->prepare($itemtype_sql);
             $sth->execute(@itemtype_parameters);
-            $verbose and warn $itemtype_sql . "\n $branchcode | " . $overdue_rules->{'categorycode'} . "\n ($mindays, $maxdays)\nreturns " . $sth->rows . " rows";
+            $verbose and warn $itemtype_sql . "\n $branchcode | " . $overdue_rules->{'itemtype'} . "\n ($mindays, $maxdays)\nreturns " . $sth->rows . " rows";
 
             while( my ( $itemcount, $borrowernumber, $firstname, $lastname, $address1, $address2, $city, $postcode, $email ) = $sth->fetchrow ) {
                 $verbose and warn "borrower $firstname, $lastname ($borrowernumber) has $itemcount items triggering level $i.";
@@ -654,6 +654,7 @@ END_SQL
                 $titles .= join("\t", @item_content_fields) . "\n";
                 $itemcount++;
                 while ( my $item_info = $sth2->fetchrow_hashref() ) {
+                    next if ($item_info->{itype} ne $overdue_rules->{itemtype});
                     my @item_info = map { $_ =~ /^date|date$/ ? format_date( $item_info->{$_} ) : $item_info->{$_} || '' } @item_content_fields;
                     $titles .= join("\t", @item_info) . "\n";
                     $itemcount++;
