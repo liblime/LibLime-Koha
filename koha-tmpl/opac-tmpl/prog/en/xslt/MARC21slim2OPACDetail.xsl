@@ -551,6 +551,7 @@
         </xsl:for-each>
         </span>
         </xsl:if>
+        <xsl:if test="marc:datafield[@tag=505]">
            <xsl:for-each select="marc:datafield[@tag=505]">
               <span class="results_summary">
                  <xsl:choose>
