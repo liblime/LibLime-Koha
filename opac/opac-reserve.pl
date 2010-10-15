@@ -275,7 +275,7 @@ if ( C4::Context->preference('UseGranularMaxHolds') ) {
       ## Disable ability to make a reserve
       my $itemtype;
       my $dbh = C4::Context->dbh;
-      my $sth = $dbh->prepare("SELECT itemtype FROM biblioitems WHERE biblionumber = ?");
+      my $sth = $dbh->prepare("SELECT itype FROM items WHERE biblionumber = ? ORDER BY 1 DESC");
       $sth->execute($biblionumber);
       ($itemtype) = $sth->fetchrow_array;
       
