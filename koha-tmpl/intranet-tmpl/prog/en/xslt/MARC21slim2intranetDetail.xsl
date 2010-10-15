@@ -668,7 +668,8 @@
                          <xsl:with-param name="codes">7</xsl:with-param>
                       </xsl:call-template>
                    </xsl:with-param>
-                </xsl:call-template>:&nbsp;&nbsp;
+                </xsl:call-template>
+                <xsl:text>: </xsl:text>
                 <xsl:call-template name="chopPunctuation">
                     <xsl:with-param name="chopString">
                       <xsl:call-template name="subfieldSelect">
@@ -686,7 +687,8 @@
                             <xsl:with-param name="codes">7</xsl:with-param>
                          </xsl:call-template>
                       </xsl:with-param>
-                   </xsl:call-template>:&nbsp;&nbsp;
+                   </xsl:call-template>
+                   <xsl:text>: </xsl:text>
                    <xsl:call-template name="chopPunctuation">
                        <xsl:with-param name="chopString">
                          <xsl:call-template name="subfieldSelect">
