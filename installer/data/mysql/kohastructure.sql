@@ -1512,6 +1512,7 @@ CREATE TABLE `old_issues` (
 --
 DROP TABLE IF EXISTS `old_reserves`;
 CREATE TABLE `old_reserves` (
+  `reservenumber` int(11) NOT NULL PRIMARY KEY,
   `borrowernumber` int(11) default NULL,
   `reservedate` date default NULL,
   `biblionumber` int(11) default NULL,
@@ -1684,6 +1685,7 @@ CREATE TABLE `reserveconstraints` (
 
 DROP TABLE IF EXISTS `reserves`;
 CREATE TABLE `reserves` (
+  `reservenumber` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `borrowernumber` int(11) NOT NULL default 0,
   `reservedate` date default NULL,
   `biblionumber` int(11) NOT NULL default 0,
@@ -2540,6 +2542,32 @@ CREATE TABLE IF NOT EXISTS clubsAndServicesEnrollments (
   PRIMARY KEY  (caseId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE reserves_suspended (
+  reservenumber int(11) NOT NULL,
+  borrowernumber int(11) NOT NULL default 0,
+  reservedate date default NULL,
+  biblionumber int(11) NOT NULL default 0,
+  constrainttype varchar(1) default NULL,
+  branchcode varchar(10) default NULL,
+  notificationdate date default NULL,
+  reminderdate date default NULL,
+  cancellationdate date default NULL,
+  reservenotes mediumtext,
+  priority smallint(6) default NULL,
+  found varchar(1) default NULL,
+  timestamp timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  itemnumber int(11) default NULL,
+  waitingdate date default NULL,
+  expirationdate date,
+  PRIMARY KEY  (reservenumber),
+  KEY borrowernumber (borrowernumber),
+  KEY biblionumber (biblionumber),
+  KEY itemnumber (itemnumber),
+  KEY branchcode (branchcode),
+  CONSTRAINT reserves_suspended_ibfk_1 FOREIGN KEY (borrowernumber) REFERENCES borrowers (borrowernumber) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT reserves_suspended_ibfk_2 FOREIGN KEY (biblionumber) REFERENCES biblio (biblionumber) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT reserves_suspended_ibfk_4 FOREIGN KEY (branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
