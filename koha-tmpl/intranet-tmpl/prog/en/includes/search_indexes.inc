@@ -21,6 +21,7 @@
     <option value="ln">Language</option>
     <option value="nt">Notes/Comments</option>
     <option value="curriculum">Curriculum</option>
+    <option value="nt,phr">&nbsp;&nbsp;&nbsp;&nbsp;Note Exact Phrase</option>
     <option value="pb">Publisher</option>
     <option value="pl">Publisher Location</option>
     <option value="yr">Publication Date (yyyy)</option>
