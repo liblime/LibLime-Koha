@@ -2804,7 +2804,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         timestamp timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
         itemnumber int(11) default NULL,
         waitingdate date default NULL,
-        expriationdate date,
+        expirationdate date,
         PRIMARY KEY  (reservenumber),
         KEY borrowernumber (borrowernumber),
         KEY biblionumber (biblionumber),
