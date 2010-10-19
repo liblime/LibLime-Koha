@@ -1314,7 +1314,7 @@ PRIMARY KEY (roadtypeid)
 CREATE TABLE serial (
 serialid BIGSERIAL,
 biblionumber varchar(100) NOT NULL default '',
-subscriptionid varchar(100) NOT NULL default '',
+subscriptionid int(11) NOT NULL default '',
 serialseq varchar(100) NOT NULL default '',
 status int NOT NULL default 0,
 planneddate date default NULL,
@@ -1395,7 +1395,7 @@ word varchar(255) default NULL
 
 CREATE TABLE subscription (
 biblionumber int NOT NULL default 0,
-subscriptionid BIGSERIAL,
+subscriptionid int(11) NOT NULL default '',
 librarian varchar(100) default '',
 startdate date default NULL,
 aqbooksellerid int default 0,
@@ -1449,7 +1449,7 @@ PRIMARY KEY (subscriptionid)
 
 CREATE TABLE subscriptionhistory (
 biblionumber int NOT NULL default 0,
-subscriptionid int NOT NULL default 0,
+subscriptionid int(11) NOT NULL default '',
 histstartdate date default NULL,
 enddate date default NULL,
 missinglist text NOT NULL,
@@ -1470,7 +1470,7 @@ CREATE TABLE subscriptionroutinglist (
 routingid BIGSERIAL,
 borrowernumber int default NULL,
 ranking int default NULL,
-subscriptionid int default NULL,
+subscriptionid int(11) default NOT NULL default '',
 PRIMARY KEY (routingid)
 );
 
