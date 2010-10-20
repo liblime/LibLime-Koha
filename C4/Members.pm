@@ -1925,20 +1925,30 @@ sub MoveMemberToDeleted {
           WHERE borrowernumber=?|;
     my $sth = $dbh->prepare($query);
     $sth->execute($member);
-    my @data = $sth->fetchrow_array;
-    (@data) or return;  # if we got a bad borrowernumber, there's nothing to insert
-    $sth =
-      $dbh->prepare( "INSERT INTO deletedborrowers VALUES ("
-          . ( "?," x ( scalar(@data) - 1 ) )
-          . "?)" );
-    $sth->execute(@data);
+    #my @data = $sth->fetchrow_array;
+   my $row = $sth->fetchrow_hashref();
+   return unless $row;
+   delete($$row{password_plaintext});
+   $sth = $dbh->prepare(sprintf("INSERT INTO deletedborrowers(%s) VALUES(%s)",
+         join(',', keys %$row),
+         join(',', map { '?' } keys %$row)
+      )
+   );
+   $sth->execute(values %$row) || die $dbh->errstr();
+
+ #   (@data) or return;  # if we got a bad borrowernumber, there's nothing to insert
+ #   $sth =
+ #     $dbh->prepare( "INSERT INTO deletedborrowers VALUES ("
+ #         . ( "?," x ( scalar(@data) - 1 ) )
+ #         . "?)" );
+ #   $sth->execute(@data);
 }
 
 =head2 DelMember
 
 DelMember($borrowernumber);
 
-This function remove directly a borrower whitout writing it on deleteborrower.
+This function remove directly a borrower whitout writing it on deletedborrower.
 + Deletes reserves for the borrower
 
 =cut
