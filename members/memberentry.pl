@@ -269,7 +269,7 @@ if ($op eq 'save' || $op eq 'insert'){
          my $atLeast = $max+1;
 	      $template->param('ERROR_age_limitations' => "at least $atLeast"); # 18
       }
-      elsif ($max && ($age > $max)) { # child only, not adult
+      elsif ($min && ($age > $max)) { # child only, not adult
          push @errors, 'ERROR_age_limitations';
          $template->param('ERROR_age_limitations' => "$min to $max"); # 0 to 17
       }
