@@ -311,6 +311,12 @@ span.problem {
 	line-height : 1.7em;
 }
 
+p.problem {
+	color : red;
+	font-weight : bold;
+	font-size : large;
+}
+
 fieldset {
 	border : 2px solid #EEEEEE;
 	margin : 1em 1em 1em 0;

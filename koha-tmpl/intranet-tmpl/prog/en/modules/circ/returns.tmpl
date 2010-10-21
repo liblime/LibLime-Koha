@@ -43,6 +43,23 @@ function Dopop(link) {
 	 });
 //]]>
 </script>
+
+<script type="text/javascript">
+function HaltReturns() {
+	$('#barcode').attr("disabled", true);
+	$('#barcode_submit').attr("disabled", true);
+}
+
+function ContinueReturns() {
+	$('#barcode').attr("disabled", false);
+	$('#barcode_submit').attr("disabled", false);
+
+	$('#continue_button').hide();
+
+	$('#barcode').focus();
+}
+</script>
+
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
 </head>
 <body>
@@ -323,6 +340,7 @@ function Dopop(link) {
                         <p class="problem">Not checked out.</p>
                     <!-- /TMPL_IF -->
                     <!-- TMPL_IF Name="waslost" -->
+			<script type="text/javascript">$(document).ready(function() {HaltReturns();});</script>
                         <p class="problem">Item was lost, now found.</p>
                         <!-- TMPL_IF Name="lostreturned" -->
                           <p>
@@ -337,6 +355,7 @@ function Dopop(link) {
                              <input type="submit" value="No" />
                           </form>
                         <!-- /TMPL_IF -->
+			<p><button id="continue_button" onclick="ContinueReturns();">Continue</button></p>
                     <!-- /TMPL_IF -->
                     <!-- TMPL_IF Name="withdrawn" -->
                         <p class="problem">Item is withdrawn.</p>
@@ -373,7 +392,7 @@ function Dopop(link) {
 			<!-- TMPL_ELSE -->
 			<input name="barcode" id="barcode" size="14" class="focus"/>
 			<!-- /TMPL_IF -->
-            <input type="submit" class="submit" value="Submit" />
+            <input id="barcode_submit" type="submit" class="submit" value="Submit" />
             <!-- TMPL_LOOP Name="inputloop" -->
                 <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
                 <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
