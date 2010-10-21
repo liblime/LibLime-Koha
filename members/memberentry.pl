@@ -262,12 +262,18 @@ if ($op eq 'save' || $op eq 'insert'){
   if ($newdata{dateofbirth} && $dateofbirthmandatory) {
     my $age = GetAge($newdata{dateofbirth});
     my $borrowercategory=GetBorrowercategory($newdata{'categorycode'});   
-	my ($low,$high) = ($borrowercategory->{'dateofbirthrequired'}, $borrowercategory->{'upperagelimit'});
-    if (($high && ($age > $high)) or ($age < $low)) {
-      push @errors, 'ERROR_age_limitations';
-	  $template->param('ERROR_age_limitations' => "$low to $high");
-    }
-  }
+	my ($min,$max) = ($borrowercategory->{'dateofbirthrequired'}, $borrowercategory->{'upperagelimit'});
+   
+      if (($max && ($age <= $max)) || ($age < $min)) {
+         push @errors, 'ERROR_age_limitations';
+         my $atLeast = $max+1;
+	      $template->param('ERROR_age_limitations' => "at least $atLeast"); # 18
+      }
+      elsif ($min && ($age > $max)) { # child only, not adult
+         push @errors, 'ERROR_age_limitations';
+         $template->param('ERROR_age_limitations' => "$min to $max"); # 0 to 17
+      }
+   }
   if (C4::Context->preference("IndependantBranches")) {
     if ($userenv && $userenv->{flags} % 2 != 1){
       $debug and print STDERR "  $newdata{'branchcode'} : ".$userenv->{flags}.":".$userenv->{branch};

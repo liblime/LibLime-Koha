@@ -523,7 +523,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
-$DBversion = "3.00.00.018";
+$DBversion = "3.00.00.019";
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do("ALTER TABLE `zebraqueue` 
                     ADD `done` INT NOT NULL DEFAULT '0',
@@ -2303,7 +2303,8 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 $DBversion = "3.01.00.019";
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('OPACShowCheckoutName','0','Displays in the OPAC the name of patron who has checked out the material. WARNING: Most sites should leave this off. It is intended for corporate or special sites which need to track who has the item.','','YesNo')");
-    print "Upgrade to $DBversion done (adding OPACShowCheckoutName systempref)\n";
+ 
+   print "Upgrade to $DBversion done (adding OPACShowCheckoutName systempref)\n";
     SetVersion ($DBversion);
 }
 
@@ -2803,7 +2804,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         timestamp timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
         itemnumber int(11) default NULL,
         waitingdate date default NULL,
-        expriationdate date,
+        expirationdate date,
         PRIMARY KEY  (reservenumber),
         KEY borrowernumber (borrowernumber),
         KEY biblionumber (biblionumber),
@@ -3513,6 +3514,25 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add permission relink_items  )\n";
     SetVersion ($DBversion);
 }
+
+# bug5562058, bug5535860, bug5535879 -hQ
+$DBversion = '4.01.00.019';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+   $dbh->do("ALTER TABLE reserves CHANGE expriationdate expirationdate date null");
+   $dbh->do("ALTER TABLE serial CHANGE
+      subscriptionid subscriptionid int(11) not null default 0");
+   $dbh->do("ALTER TABLE subscriptionhistory CHANGE
+      subscriptionid subscriptionid int(11) not null default 0");
+   $dbh->do("ALTER TABLE subscriptionroutinglist CHANGE
+      subscriptionid subscriptionid int(11) not null default 0");
+   $dbh->do("ALTER TABLE subscription_defaults CHANGE
+      subscriptionid subscriptionid int(11) not null default 0");
+   $dbh->do("ALTER TABLE deletedborrowers CHANGE cardnumber cardnumber varchar(16) null");
+   print "Upgrade to $DBversion done (expirationdate mispeling, subscriptionid and 
+   cardnumber datatype )\n";
+   SetVersion ($DBversion);
+}
+
 
 =item DropAllForeignKeys($table)
 

@@ -1778,7 +1778,7 @@ DROP TABLE IF EXISTS `serial`;
 CREATE TABLE `serial` (
   `serialid` int(11) NOT NULL auto_increment,
   `biblionumber` varchar(100) NOT NULL default '',
-  `subscriptionid` varchar(100) NOT NULL default '',
+  `subscriptionid` int(11) NOT NULL default 0,
   `serialseq` varchar(100) NOT NULL default '',
   `status` tinyint(4) NOT NULL default 0,
   `planneddate` date default NULL,
@@ -1935,7 +1935,7 @@ CREATE TABLE `subscriptionroutinglist` (
   `routingid` int(11) NOT NULL auto_increment,
   `borrowernumber` int(11) default NULL,
   `ranking` int(11) default NULL,
-  `subscriptionid` int(11) default NULL,
+  `subscriptionid` int(11) not null default 0,
   PRIMARY KEY  (`routingid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -2447,7 +2447,7 @@ CREATE TABLE `course_reserves` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `subscription_defaults` (
-  `subscriptionid` int(11) NOT NULL,
+  `subscriptionid` int(11) NOT NULL default 0,
   `dateaccessioned` date default NULL,
   `booksellerid` mediumtext,
   `homebranch` varchar(10) default NULL,

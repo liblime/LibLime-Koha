@@ -734,10 +734,10 @@ function unHideSubfield(index,labelindex) { // FIXME :: is it used ?
 	            <a href="#" tabindex="1" class="expandfield" onclick="ExpandField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Click to Expand this Tag"><!-- TMPL_VAR NAME="tag_lib" --></a>
             <!-- /TMPL_UNLESS -->
             <!-- TMPL_IF name="repeatable" -->
-                <a href="#" tabindex="1" class="buttonPlus" onclick="CloneField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Repeat this Tag">+</a>
+                <a href="javascript:;" tabindex="1" class="buttonPlus" onclick="this.scrollIntoView();CloneField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Repeat this Tag">+</a>
             <!-- /TMPL_IF -->
             <!-- TMPL_UNLESS name="mandatory" -->
-                <a href="#" tabindex="1" class="buttonMinus" onclick="UnCloneField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Delete this Tag">&#8722;</a>
+                <a href="javascript:;" tabindex="1" class="buttonMinus" onclick="this.scrollIntoView();UnCloneField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Delete this Tag">&#8722;</a>
             <!-- /TMPL_UNLESS -->
             
         </div>

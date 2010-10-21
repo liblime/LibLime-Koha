@@ -73,6 +73,10 @@ if (C4::Context->preference("AddPatronLists")=~/code/){
 #                   loop_context_vars => 1 );
 
 my $member = $input->param('member');
+# trim leading and trailing whitespace from input
+$member =~ s/^\s+//;
+$member =~ s/\s+$//;
+
 my $member_orig = $member;
 my $orderby = $input->param('orderby');
 my $searchfield = $input->param('searchfield');
