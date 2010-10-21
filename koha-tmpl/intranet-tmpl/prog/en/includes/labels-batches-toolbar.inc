@@ -29,12 +29,12 @@
                     item_msg = item_num.join(", ");
                     var msg = "Are you sure you want to remove label number(s): " + item_msg + " from this batch?"
                 }
-//                else if (document.items.action.checked) {
-//                    getstr = "label_id="+document.items.action.value;
-//                    var msg = "Are you sure you want to remove selected item from this batch?"
-//                }
+                else if (document.items.action.checked) {
+                    getstr = "label_id="+document.items.action.value;
+                    var msg = "Are you sure you want to remove selected item from this batch?"
+                }
                 else {
-                    alert("Please select at least label to delete.");
+                    alert("Please select at least one label to delete.");
                     return;     // no item selected
                 }
                 var answer = confirm(msg);
