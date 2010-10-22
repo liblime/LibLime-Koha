@@ -39,7 +39,27 @@
                 }
                 var answer = confirm(msg);
                 if (answer) {
-                    window.location = "/cgi-bin/koha/labels/label-edit-batch.pl?op=remove&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->&amp;" + getstr;
+                  var hidestr = '';
+                  for(var i=0;i<document.items.action.length;i++) {
+                     if (document.items.action[i].checked) {
+                        hidestr += '<input type=hidden name="label_id" value="'
+                        + document.items.action[i].value + '">\n';
+                        document.items.action[i].checked = false;
+                     }
+                  }
+                  if (hidestr.length > 0) {
+                     hidestr += '<input type=hidden name="op" value="remove">'
+                     + '<input type=hidden name="batch_id" value="'
+                     + '<!-- TMPL_VAR NAME="batch_id" -->'
+                     + '">';
+                     document.items.setAttribute('method','post');
+                     document.items.setAttribute('action','label-edit-batch.pl');
+                     document.getElementById('hidehere').innerHTML = hidestr;
+                     document.items.submit();
+                  }
+                  else {
+                     window.location = "/cgi-bin/koha/labels/label-edit-batch.pl?op=remove&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->&amp;" + getstr;
+                  }
                 }
                 else {
                     return; // abort delete

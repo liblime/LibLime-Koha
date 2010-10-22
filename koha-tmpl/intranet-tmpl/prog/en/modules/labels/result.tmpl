@@ -17,15 +17,18 @@
             });
             function add_item(item_number,batch_id,type_id){
                 var getstr='';
+                var hidestr = '';
                 if (item_number == 'checked') {
                     items= new Array;
                     if(document.resultform.action.length > 0) {
                         for (var i=0; i < document.resultform.action.length; i++) {
                             if (document.resultform.action[i].checked) {
-                                items.push("item_number=" +  document.resultform.action[i].value);
+                              items.push("item_number=" +  document.resultform.action[i].value);
+                              hidestr += '<input type=hidden name="item_num" value="'
+                              +document.resultform.action[i].value+'">\n';
                             }
                         }
-                        getstr = items.join("&");
+                        //getstr = items.join("&");
                     } else {
                         getstr = "item_number="+document.resultform.action.value;
                     }
@@ -33,10 +36,21 @@
                 else {
                     getstr = "item_number="+item_number;
                 }
-                var myurl = "label-edit-batch.pl?op=add&batch_id="+batch_id+
-                "&"+getstr;
-                window.opener.location.href = myurl;
-                //top.location.href=myurl;
+               
+               if (hidestr.length > 0) {
+                  var doc = window.opener.document;
+                  doc.getElementById('hidehere').innerHTML = '<input type=hidden name="op" value="add">'
+                  +'<input type=hidden name="batch_id" value="'+batch_id+'">'+hidestr;
+                  doc.items.setAttribute('method','post');
+                  doc.items.setAttribute('action','label-edit-batch.pl');
+                  doc.items.submit();
+               }
+               else if (getstr.length > 0) {
+                  var myurl = "label-edit-batch.pl?op=add&batch_id="+batch_id+
+                  "&"+getstr;
+                  window.opener.location.href = myurl;
+               }
+                               //top.location.href=myurl;
             }
             //]]>
     </script>
