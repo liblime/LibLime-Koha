@@ -1512,7 +1512,7 @@ CREATE TABLE `old_issues` (
 --
 DROP TABLE IF EXISTS `old_reserves`;
 CREATE TABLE `old_reserves` (
-  `reservenumber` int(11) NOT NULL PRIMARY KEY,
+  `reservenumber` int(11) AUTO_INCREMENT PRIMARY KEY,
   `borrowernumber` int(11) default NULL,
   `reservedate` date default NULL,
   `biblionumber` int(11) default NULL,

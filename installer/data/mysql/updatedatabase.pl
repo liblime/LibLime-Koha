@@ -3543,6 +3543,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.10.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+        ALTER TABLE old_reserves MODIFY COLUMN reservenumber INT AUTO_INCREMENT NOT NULL
+    /);
+    print "Upgrade to $DBversion done ( Make sure old_reserves.reservenumber is AUTO_INCREMENTed )\n";
+    SetVersion ($DBversion);
+}
+
 
 =item DropAllForeignKeys($table)
 
