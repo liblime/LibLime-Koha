@@ -267,3 +267,4 @@ INSERT INTO systempreferences (variable,value,explanation,options,type)VALUES('S
 INSERT INTO `systempreferences` (variable,value,options,explanation,type) VALUES ('CourseReserves','0','','Turn ON Course Reserves functionality','YesNo');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('soundon','0','Enable to turn on circulation sounds. Not available on all browsers.','','YesNo');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('EnableClubsAndServices','1','Turn on the Clubs and Services module','','YesNo');
+INSERT INTO `systempreferences` ( `variable` , `value` , `options` , `explanation` , `type` ) VALUES ( 'MaxShelfHoldsPerDay', '3', '', 'Maximum number of on-shelf holds each patron can place per day.', 'Integer');

@@ -3533,6 +3533,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
    SetVersion ($DBversion);
 }
 
+$DBversion = '4.01.10.000';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+        INSERT INTO `systempreferences` (variable,value,options,explanation,type) VALUES ('MaxShelfHoldsPerDay','3','','Maximum number of on-shelf holds each patron can place per day.','Integer');
+    /);
+    print "Upgrade to $DBversion done ( Add MaxShelfHoldsPerDay syspref )\n";
+    SetVersion ($DBversion);
+}
+
 
 =item DropAllForeignKeys($table)
 
