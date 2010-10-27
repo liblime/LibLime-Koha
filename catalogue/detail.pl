@@ -176,12 +176,13 @@ foreach my $item (@items) {
     }
 
     # checking for holds
-    my ($reservedate,$reservedfor,$expectedAt);
+    my ($reservedate,$reservedfor,$expectedAt,$waitingdate);
     my $ItemBorrowerReserveInfo;
     my ($rescount,$res) = GetReservesFromBiblionumber($biblionumber);
     my ($restype,$reserves,$reserve_count) = CheckReserves($item->{itemnumber});
     if ($reserves != 0) {
       $reservedate = $reserves->{reservedate};
+      $waitingdate = $reserves->{waitingdate};
       $reservedfor = $reserves->{borrowernumber};
       $expectedAt  = $reserves->{branchcode};
       $ItemBorrowerReserveInfo = GetMemberDetails( $reservedfor, 0);
@@ -192,7 +193,7 @@ foreach my $item (@items) {
 	$item->{'hidepatronname'} = 1;
     }
 
-    if ( defined $reservedate ) {
+    if ( defined $waitingdate ) {
         $item->{backgroundcolor} = 'reserved';
         $item->{reservedate}     = format_date($reservedate);
         $item->{ReservedForBorrowernumber}     = $reservedfor;

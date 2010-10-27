@@ -1124,7 +1124,7 @@ warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumb
     }
     elsif ($rank =~ /^\d+/ and $rank > 0) {
         my $query = qq/
-        UPDATE reserves SET priority = ? ,branchcode = ?, itemnumber = ?, found = NULL, waitingdate = NULL
+        UPDATE reserves SET priority = ? ,branchcode = ?, itemnumber = ?, found = NULL, waitingdate = NULL, expirationdate = NULL
             WHERE reservenumber = ?
         /;
         my $sth = $dbh->prepare($query);
@@ -1678,6 +1678,7 @@ sub _Findgroupreserve {
                reserves.cancellationdate AS cancellationdate,
                reserves.found AS found,
                reserves.reservenotes AS reservenotes,
+               reserves.waitingdate AS waitingdate,
                reserves.priority AS priority,
                reserves.timestamp AS timestamp,
                biblioitems.biblioitemnumber AS biblioitemnumber,
@@ -1715,6 +1716,7 @@ sub _Findgroupreserve {
                reserves.cancellationdate AS cancellationdate,
                reserves.found AS found,
                reserves.reservenotes AS reservenotes,
+               reserves.waitingdate AS waitingdate,
                reserves.priority AS priority,
                reserves.timestamp AS timestamp,
                biblioitems.biblioitemnumber AS biblioitemnumber,
@@ -1751,6 +1753,7 @@ sub _Findgroupreserve {
                reserves.cancellationdate AS cancellationdate,
                reserves.found AS found,
                reserves.reservenotes AS reservenotes,
+               reserves.waitingdate AS waitingdate,
                reserves.priority AS priority,
                reserves.timestamp AS timestamp,
                reserveconstraints.biblioitemnumber AS biblioitemnumber,

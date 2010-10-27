@@ -975,16 +975,22 @@ sub AddIssue {
 					# warn "Waiting";
 					# The item is on reserve and waiting, but has been
 					# reserved by some other patron.
+                    ModReserve(1,$res->{'biblionumber'},
+                                 $res->{'borrowernumber'},
+                                 $res->{'branchcode'},
+                                 $res->{'itemnumber'},
+                                 $res->{'reservenumber'});
 				}
 				elsif ( $restype eq "Reserved" ) {
 					# warn "Reserved";
 					# The item is reserved by someone else.
 					if ($cancelreserve) { # cancel reserves on this item
-						CancelReserve(0, $res->{'itemnumber'}, $res->{'borrowernumber'});
+                       CancelReserve($res->{'reservenumber'}, $res->{'biblionumber'});
+
 					}
 				}
 				if ($cancelreserve) {
-					CancelReserve($res->{'biblionumber'}, 0, $res->{'borrowernumber'});
+                       CancelReserve($res->{'reservenumber'}, $res->{'biblionumber'});
 				}
 				else {
 					# set waiting reserve to first in reserve queue as book isn't waiting now
