@@ -3666,6 +3666,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.00.007';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES('NextLibraryHoldsQueueWeight','0','Specify a list of library location codes separated by commas -- the list of codes will be traversed and weighted with first values given higher weight for holds fulfillment -- alternatively, if RandomizeHoldsQueueWeight is set, the list will be used in order. This preference overrides both StaticHoldsQueueWeight and RandomizeHoldsQueueWeight.',NULL,'TextArea')");
+
+    print "Upgrade to $DBversion done ( Add new system preference NextLibraryHoldsQueueWeight )\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

@@ -160,6 +160,7 @@ $tabsysprefs{todaysIssuesDefaultSortOrder}   = "Circulation";
 $tabsysprefs{HomeOrHoldingBranch}            = "Circulation";
 $tabsysprefs{RandomizeHoldsQueueWeight}      = "Circulation";
 $tabsysprefs{StaticHoldsQueueWeight}         = "Circulation";
+$tabsysprefs{NextLibraryHoldsQueueWeight}    = "Circulation";
 $tabsysprefs{AllowOnShelfHolds}              = "Circulation";
 $tabsysprefs{AllowHoldsOnDamagedItems}       = "Circulation";
 $tabsysprefs{UseBranchTransferLimits}        = "Circulation";

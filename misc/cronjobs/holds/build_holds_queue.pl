@@ -304,6 +304,8 @@ sub MapItemsToHoldRequests {
             my @pull_branches = ();
             if ($#branches_to_use > -1) {
                 @pull_branches = @branches_to_use;
+                
+                ( @pull_branches ) = GetNextLibraryHoldsQueueWeight( $request->{branchcode} ) if C4::Context->preference('NextLibraryHoldsQueueWeight');
             } else {
                 @pull_branches = sort keys %items_by_branch;
             }
@@ -331,6 +333,27 @@ sub MapItemsToHoldRequests {
     return \%item_map;
 }
 
+=head2 GetNextLibraryHoldsQueueWeight 
+
+=cut
+
+sub GetNextLibraryHoldsQueueWeight {
+    my ( $branchcode ) = @_;
+    
+    my $weight_list = C4::Context->preference('NextLibraryHoldsQueueWeight');
+    
+    my @weight_list = split(/,/, $weight_list);
+    
+    my ( $index ) = grep { $weight_list[$_] eq $branchcode } 0..$#weight_list;
+    
+    my @new_weight_list;
+    
+    push( @new_weight_list, @weight_list[ $index, $#weight_list ] ); # First push $branchcode through the end on
+    push( @new_weight_list, @weight_list[ 0, $index - 1 ] ); # Then, push what's left of the beginning onto the end
+    
+    return @new_weight_list;
+}
+
 =head2 CreatePickListFromItemMap 
 
 =cut
@@ -338,7 +361,7 @@ sub MapItemsToHoldRequests {
 sub CreatePicklistFromItemMap {
     my $item_map = shift;
 
-    my $dbh = C4::Context->dbh;
+     my $dbh = C4::Context->dbh;
 
     my $sth_load=$dbh->prepare("
         INSERT INTO tmp_holdsqueue (biblionumber,itemnumber,barcode,surname,firstname,phone,borrowernumber,
