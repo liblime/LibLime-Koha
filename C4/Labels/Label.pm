@@ -35,7 +35,8 @@ sub _check_params {
         'guidebox',
         'font',
         'font_size',
-        'callnum_split',
+        #'callnum_split',
+        'break_rule_string',
         'justify',
         'format_string',
         'text_wrap_cols',
@@ -106,72 +107,66 @@ sub _get_text_fields {
     return \@sorted_fields;
 }
 
-
-sub _split_lccn {
-    my ($lccn) = @_;
-    $_ = $lccn;
-    # lccn examples: 'HE8700.7 .P6T44 1983', 'BS2545.E8 H39 1996';
-    my (@parts) = m/
-        ^([a-zA-Z]+)      # HE          # BS
-        (\d+(?:\.\d)*)    # 8700.7      # 2545
-        \s*
-        (\.*\D+\d*)       # .P6         # .E8
-        \s*
-        (.*)              # T44 1983    # H39 1996   # everything else (except any bracketing spaces)
-        \s*
-        /x;
-    unless (scalar @parts)  {
-        warn sprintf('regexp failed to match string: %s', $_);
-        push @parts, $_;     # if no match, just push the whole string.
-    }
-    push @parts, split /\s+/, pop @parts;   # split the last piece into an arbitrary number of pieces at spaces
-    $debug and warn "split_lccn array: ", join(" | ", @parts), "\n";
-    return @parts;
-}
-
-sub _split_ddcn {
-    my ($ddcn) = @_;
-    $_ = $ddcn;
-    s/\///g;   # in theory we should be able to simply remove all segmentation markers and arrive at the correct call number...
-    my (@parts) = m/
-        ^([-a-zA-Z]*\s?(?:$possible_decimal)?) # R220.3  CD-ROM 787.87 # will require extra splitting
-        \s+
-        (.+)                               # H2793Z H32 c.2 EAS # everything else (except bracketing spaces)
-        \s*
-        /x;
-    unless (scalar @parts)  {
-        warn sprintf('regexp failed to match string: %s', $_);
-        push @parts, $_;     # if no match, just push the whole string.
-    }
-
-    if ($parts[0] =~ /^([-a-zA-Z]+)\s?($possible_decimal)$/) {
-          shift @parts;         # pull off the mathching first element, like example 1
-        unshift @parts, $1, $2; # replace it with the two pieces
-    }
-
-    push @parts, split /\s+/, pop @parts;   # split the last piece into an arbitrary number of pieces at spaces
-    $debug and print STDERR "split_ddcn array: ", join(" | ", @parts), "\n";
-    return @parts;
-}
-
-## NOTE: Custom call number types go here. It may be necessary to create additional splitting algorithms if some custom call numbers
-##      cannot be made to work here. Presently this splits standard non-ddcn, non-lccn fiction and biography call numbers.
-
-sub _split_ccn {
-    my ($fcn) = @_;
-    my @parts = ();
-    # Split call numbers based on spaces
-    push @parts, split /\s+/, $fcn;   # split the call number into an arbitrary number of pieces at spaces
-    if ($parts[-1] !~ /^.*\d-\d.*$/ && $parts[-1] =~ /^(.*\d+)(\D.*)$/) {
-        pop @parts;            # pull off the matching last element
-        push @parts, $1, $2;    # replace it with the two pieces
-    }
-    unless (scalar @parts) {
-        warn sprintf('regexp failed to match string: %s', $_);
-        push (@parts, $_);
-    }
-    $debug and print STDERR "split_ccn array: ", join(" | ", @parts), "\n";
-    return @parts;
+sub _split_rule
+{
+   my($r,$d,$n) = @_;
+   return unless $d;
+   #1:0s,2d;3:10c
+   my @pr = (); # parts to return
+   my @p = split(/\,/, $r);
+   my %wh = (
+      s  => '\s',
+      d  => '\.',
+      h  => '\-',
+      u  => '_',
+      l  => '[a-zA-Z]',
+      n  => '\d',
+      c  => '\w'
+   );
+   PART: {
+      foreach my $p(@p) {
+         my($fieldN,$rule) = split(/\:/,$p,2);
+         last PART if $fieldN != $n;
+         if ($rule =~ /^(\d+)([sdhulnc])$/) {
+            my $nth   = $1;
+            my $what  = $2;
+            my $every = $nth?0:1;
+            if ($every && ($what eq 's')) { # split on every space
+               @pr = split(/\s+/,$d);
+            }
+            elsif ($nth && ($what eq 'c')) { # split on the nth character
+               my($first) = substr($d,0,$nth);
+               my($second)= substr($d,$nth);
+               push @pr, $first, $second;
+            }
+            #######
+            #elsif ($nth && $what) {
+            #   my @a = split(/(?$wh{$what})+/,$d); # split on the nth what
+            #   my $first = my $second = '';
+            #   for my $i(0..$nth-1) {
+            #      $first = join($what,$a[$i]);
+            #      push @pr, $first;
+            #   }
+            #   for my $i($nth..$#a) {
+            #      $second = join($what,$a[$i]);
+            #      push @pr, "$what$second";
+            #   }
+            #}
+            ########
+            else {
+               push @pr, 'ERROR: contact Koha maintainers';
+               last PART;
+            }
+         }
+         else {
+            # can't trap to @! b/c we are printing PDF directly now
+            push @pr, 'ERROR: contact Koha maintainers';
+            last PART;
+         }
+      }
+      ;  # last PART
+   }  # end PART
+   return @pr;
 }
 
 sub _get_barcode_data {
@@ -317,7 +312,8 @@ sub new {
         guidebox                => $params{'guidebox'},
         font                    => $params{'font'},
         font_size               => $params{'font_size'},
-        callnum_split           => $params{'callnum_split'},
+        #callnum_split           => $params{'callnum_split'},
+        break_rule_string       => $params{'break_rule_string'},
         justify                 => $params{'justify'},
         format_string           => $params{'format_string'},
         text_wrap_cols          => $params{'text_wrap_cols'},
@@ -389,6 +385,8 @@ sub draw_label_text {
     # FIXME - returns all items, so you can't get data from an embedded holdings field.
     # TODO - add a GetMarcBiblio1item(bibnum,itemnum) or a GetMarcItem(itemnum).
     my $cn_source = ($item->{'cn_source'} ? $item->{'cn_source'} : C4::Context->preference('DefaultClassificationSource'));
+
+    my $n = 0;
     LABEL_FIELDS:       # process data for requested fields on current label
     for my $field (@$label_fields) {
         if ($field->{'code'} eq 'itemtype') {
@@ -402,43 +400,59 @@ sub draw_label_text {
         if ($field_data) {
             $field_data =~ s/\n//g;
             $field_data =~ s/\r//g;
+            $field_data =~ s/\r\n//g;
         }
-        my @label_lines;
-        my @callnumber_list = ('itemcallnumber', '050a', '050b', '082a', '952o'); # Fields which hold call number data  FIXME: ( 060? 090? 092? 099? )
-        if ((grep {$field->{'code'} =~ m/$_/} @callnumber_list) and ($self->{'printing_type'} eq 'BIB') and ($self->{'callnum_split'})) { # If the field contains the call number, we do some sp
-            if ($cn_source eq 'lcc') {
-                @label_lines = _split_lccn($field_data);
-                @label_lines = _split_ccn($field_data) if !@label_lines;    # If it was not a true lccn, try it as a custom call number
-                push (@label_lines, $field_data) if !@label_lines;         # If it was not that, send it on unsplit
-            } elsif ($cn_source eq 'ddc') {
-                @label_lines = _split_ddcn($field_data);
-                @label_lines = _split_ccn($field_data) if !@label_lines;
-                push (@label_lines, $field_data) if !@label_lines;
-            } else {
-                warn sprintf('Call number splitting failed for: %s. Please add this call number to bug #2500 at bugs.koha.org', $field_data);
-                push @label_lines, $field_data;
-            }
-        }
-        else {
+        $n++;
+        my @label_lines =_split_rule($$self{'break_rule_string'},$field_data,$n);
+
+        #my @callnumber_list = ('itemcallnumber', '050a', '050b', '082a', '952o'); 
+        # Fields which hold call number data  FIXME: ( 060? 090? 092? 099? )
+        ##########
+        #if ((grep {$field->{'code'} =~ m/$_/} @callnumber_list) and 
+        #   ($self->{'printing_type'} eq 'BIB') and ($self->{'callnum_split'})) { 
+        #      # If the field contains the call number, we do some sp
+        #    if ($cn_source eq 'lcc') {
+        #        @label_lines = _split_lccn($field_data);
+        #        @label_lines = _split_ccn($field_data) if !@label_lines;    # If it was not a true lccn, try it as a custom call number
+        #        push (@label_lines, $field_data) if !@label_lines;         # If it was not that, send it on unsplit
+        #    } elsif ($cn_source eq 'ddc') {
+        #        @label_lines = _split_ddcn($field_data);
+        #        @label_lines = _split_ccn($field_data) if !@label_lines;
+        #        push (@label_lines, $field_data) if !@label_lines;
+        #    } else {
+        #        warn sprintf('Call number splitting failed for: %s. Please add this call number to bug #2500 at bugs.koha.org', $field_data);
+        #        push @label_lines, $field_data;
+        #    }
+        #}
+        #else {
             if ($field_data) {
                 $field_data =~ s/\/$//g;       # Here we will strip out all trailing '/' in fields other than the call number...
                 $field_data =~ s/\(/\\\(/g;    # Escape '(' and ')' for the pdf object stream...
                 $field_data =~ s/\)/\\\)/g;
             }
+            else {
+               $field_data = $$field{desc} || $$field{code};
+            }
+
+            ################
             eval{$Text::Wrap::columns = $self->{'text_wrap_cols'};};
             my @line = split(/\n/ ,wrap('', '', $field_data));
-            # If this is a title field, limit to two lines; all others limit to one... FIXME: this is rather arbitrary
-            if ($field->{'code'} eq 'title' && scalar(@line) >= 2) {
-                while (scalar(@line) > 2) {
-                    pop @line;
-                }
-            } else {
-                while (scalar(@line) > 1) {
-                    pop @line;
-                }
-            }
-            push(@label_lines, @line);
-        }
+            # If this is a title field, limit to two lines; 
+            # all others limit to one... FIXME: this is rather arbitrary
+            #
+            #if ($field->{'code'} eq 'title' && scalar(@line) >= 2) {
+            #    while (scalar(@line) > 2) {
+            #        pop @line;
+            #    }
+            #} else {
+            #    while (scalar(@line) > 1) {
+            #        pop @line;
+            #    }
+            #}
+            push(@label_lines, @line) unless @label_lines;
+            ####################
+        #}
+
         LABEL_LINES:    # generate lines of label text for current field
         foreach my $line (@label_lines) {
             next LABEL_LINES if $line eq '';
@@ -466,6 +480,10 @@ sub draw_label_text {
         $font = $self->{'font'};        # reset font for next field
     }	#foreach field
     return \@label_text;
+}
+
+sub draw_guide_box {
+    return $_[0]->{'guidebox'};
 }
 
 sub barcode {
@@ -557,6 +575,76 @@ sub csv_data {
 
 1;
 __END__
+sub _split_lccn {
+    my ($lccn) = @_;
+    $_ = $lccn;
+    # lccn examples: 'HE8700.7 .P6T44 1983', 'BS2545.E8 H39 1996';
+    my (@parts) = m/
+        ^([a-zA-Z]+)      # HE          # BS
+        (\d+(?:\.\d)*)    # 8700.7      # 2545
+        \s*
+        (\.*\D+\d*)       # .P6         # .E8
+        \s*
+      push @pr, "\$p=$p";
+        (.*)              # T44 1983    # H39 1996   # everything else (except any bracketing spaces)
+        \s*
+        /x;
+    unless (scalar @parts)  {
+        warn sprintf('regexp failed to match string: %s', $_);
+        push @parts, $_;     # if no match, just push the whole string.
+    }
+    push @parts, split /\s+/, pop @parts;   # split the last piece into an arbitrary number of pieces at spaces
+    $debug and warn "split_lccn array: ", join(" | ", @parts), "\n";
+    return @parts;
+}
+
+sub _split_ddcn {
+    my ($ddcn) = @_;
+    $_ = $ddcn;
+    s/\///g;   # in theory we should be able to simply remove all segmentation markers and arrive at the correct call number...
+    my (@parts) = m/
+        ^([-a-zA-Z]*\s?(?:$possible_decimal)?) # R220.3  CD-ROM 787.87 # will require extra splitting
+        \s+
+        (.+)                               # H2793Z H32 c.2 EAS # everything else (except bracketing spaces)
+        \s*
+        /x;
+    unless (scalar @parts)  {
+        warn sprintf('regexp failed to match string: %s', $_);
+        push @parts, $_;     # if no match, just push the whole string.
+    }
+
+    if ($parts[0] =~ /^([-a-zA-Z]+)\s?($possible_decimal)$/) {
+          shift @parts;         # pull off the mathching first element, like example 1
+        unshift @parts, $1, $2; # replace it with the two pieces
+    }
+
+    push @parts, split /\s+/, pop @parts;   # split the last piece into an arbitrary number of pieces at spaces
+    $debug and print STDERR "split_ddcn array: ", join(" | ", @parts), "\n";
+    return @parts;
+}
+
+## NOTE: Custom call number types go here. It may be necessary to create additional splitting algorithms if some custom call numbers
+##      cannot be made to work here. Presently this splits standard non-ddcn, non-lccn fiction and biography call numbers.
+
+sub _split_ccn {
+    my ($fcn) = @_;
+    my @parts = ();
+    # Split call numbers based on spaces
+    push @parts, split /\s+/, $fcn;   # split the call number into an arbitrary number of pieces at spaces
+    if ($parts[-1] !~ /^.*\d-\d.*$/ && $parts[-1] =~ /^(.*\d+)(\D.*)$/) {
+        pop @parts;            # pull off the matching last element
+        push @parts, $1, $2;    # replace it with the two pieces
+    }
+    unless (scalar @parts) {
+        warn sprintf('regexp failed to match string: %s', $_);
+        push (@parts, $_);
+    }
+    $debug and print STDERR "split_ccn array: ", join(" | ", @parts), "\n";
+    return @parts;
+}
+
+
+
 
 =head1 NAME
 

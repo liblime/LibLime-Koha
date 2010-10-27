@@ -1270,6 +1270,7 @@ CREATE TABLE `labels_layouts` (
   `callnum_split` int(1) default '0',
   `text_justify` char(1) character set utf8 collate utf8_unicode_ci NOT NULL default 'L',
   `format_string` varchar(210) NOT NULL default 'barcode',
+  `break_rule_string` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY  USING BTREE (`layout_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

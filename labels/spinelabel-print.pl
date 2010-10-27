@@ -86,6 +86,10 @@ while ( my ( $key, $value ) = each(%$data) ) {
 $body = $scheme;
 
 $template->param( autoprint => C4::Context->preference("SpineLabelAutoPrint") );
-$template->param( content   => $body );
+$template->param( 
+   content     => $body,
+   layout_id   => $query->param('layout_id'),
+   profile_id  => $query->param('profile_id')
+);
 
 output_html_with_http_headers $query, $cookie, $template->output;

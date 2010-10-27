@@ -41,45 +41,55 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 
 my $op = $cgi->param('op');
-my $profile_id = $cgi->param('profile_id') || $cgi->param('element_id');
+my $profile_id = $cgi->param('profile_id') || $cgi->param('element_id') || 0;
 my $profile = undef;
 my $template_list = undef;
 my @label_template = ();
-
+my $errs = [];
 my $units = get_unit_values();
 
 if ($op eq 'edit') {
     $profile = C4::Labels::Profile->retrieve(profile_id => $profile_id);
     $template_list = get_all_templates(field_list => 'template_id,template_code, profile_id');
+    $profile_id = $profile->get_attr('profile_id');
 }
 elsif ($op eq 'save') {
     my @params = (
-        printer_name        => $cgi->param('printer_name'),
-        paper_bin           => $cgi->param('paper_bin'),
-        offset_horz         => $cgi->param('offset_horz'),
-        offset_vert         => $cgi->param('offset_vert'),
-        creep_horz          => $cgi->param('creep_horz'),
-        creep_vert          => $cgi->param('creep_vert'),
-        units               => $cgi->param('units'),
+        template_id         => $cgi->param('template_id') || undef,
+        printer_name        => $cgi->param('printer_name') || '',
+        paper_bin           => $cgi->param('paper_bin') || '',
+        offset_horz         => $cgi->param('offset_horz') || 0,
+        offset_vert         => $cgi->param('offset_vert') || 0,
+        creep_horz          => $cgi->param('creep_horz') || 0,
+        creep_vert          => $cgi->param('creep_vert') || 0,
+        units               => $cgi->param('profile_units') || 'POINT',
     );
     if ($profile_id) {   # if a label_id was passed in, this is an update to an existing layout
         $profile = C4::Labels::Profile->retrieve(profile_id => $profile_id);
         $profile->set_attr(@params);
         $profile->save();
+        $errs = $profile->errs();
     }
     else {      # if no label_id, this is a new layout so insert it
         $profile = C4::Labels::Profile->new(@params);
         $profile->save();
+        $errs = $profile->errs();
     }
-    print $cgi->redirect("label-manage.pl?label_element=profile");
-    exit;
+
+    unless(@$errs) {
+      if ($cgi->param('backToTmpl')) {
+         print $cgi->redirect('label-edit-template.pl?template_id='
+         . $cgi->param('template_id') . '&profile_id='
+         . $profile->get_attr('profile_id'));
+      }
+      else {
+         print $cgi->redirect("label-manage.pl?label_element=profile");
+      }
+      exit;
+   }
 }
 else {  # if we get here, this is a new layout
     $profile = C4::Labels::Profile->new();
-}
-
-if ($profile_id) {
-    @label_template = grep{($_->{'profile_id'} == $profile->get_attr('profile_id')) && ($_->{'template_id'} == $profile->get_attr('template_id'))} @$template_list;
 }
 
 foreach my $unit (@$units) {
@@ -88,17 +98,26 @@ foreach my $unit (@$units) {
     }
 }
 
-$template->param(profile_id => $profile->get_attr('profile_id')) if $profile->get_attr('profile_id') > 0;
+my $template_id = $cgi->param('template_id') || $profile->get_attr('template_id');
+my $template_code = '';
+if ($cgi->param('defineProfile') && $cgi->param('template_id')) {
+   $template_id = $cgi->param('template_id');
+   $template_code = C4::Labels::Profile::get_template_code($template_id);
+}
 
 $template->param(
-    label_template      => $label_template[0]->{'template_code'} || '',
-    printer_name        => $profile->get_attr('printer_name'),
-    paper_bin           => $profile->get_attr('paper_bin'),
-    offset_horz         => $profile->get_attr('offset_horz'),
-    offset_vert         => $profile->get_attr('offset_vert'),
-    creep_horz          => $profile->get_attr('creep_horz'),
-    creep_vert          => $profile->get_attr('creep_vert'),
-    units               => $units,
+    errs                => $errs,
+    defineProfile       => $cgi->param('defineProfile')        || 0,
+    template_id         => $template_id                        || 0,
+    template_code       => $template_code                      || '',
+    profile_id          => $profile_id                         || 0,
+    printer_name        => $profile->get_attr('printer_name')  || '',
+    paper_bin           => $profile->get_attr('paper_bin')     || '',
+    offset_horz         => $profile->get_attr('offset_horz')   || 0,
+    offset_vert         => $profile->get_attr('offset_vert')   || 0,
+    creep_horz          => $profile->get_attr('creep_horz')    || 0,
+    creep_vert          => $profile->get_attr('creep_vert')    || 0,
+    profile_units       => $units,
     op                  => $op,
 );
 

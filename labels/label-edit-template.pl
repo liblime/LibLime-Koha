@@ -54,22 +54,25 @@ if ($op eq 'edit') {
 }
 elsif ($op eq 'save') {
     my @params = (      profile_id      => $cgi->param('profile_id') || '',
-                        template_code   => $cgi->param('template_code'),
-                        template_desc   => $cgi->param('template_desc') || '',
-                        page_width      => $cgi->param('page_width'),
-                        page_height     => $cgi->param('page_height'),
-                        label_width     => $cgi->param('label_width'),
-                        label_height    => $cgi->param('label_height'),
-                        top_text_margin => $cgi->param('top_text_margin'),
-                        left_text_margin=> $cgi->param('left_text_margin'),
-                        top_margin      => $cgi->param('top_margin'),
-                        left_margin     => $cgi->param('left_margin'),
-                        cols            => $cgi->param('cols'),
-                        rows            => $cgi->param('rows'),
-                        col_gap         => $cgi->param('col_gap'),
-                        row_gap         => $cgi->param('row_gap'),
-                        units           => $cgi->param('units'),
+                        template_code   => $cgi->param('template_code') || 'DEFAULT_TEMPLATE',
+                        template_desc   => $cgi->param('template_desc') || 'Default description',
+                        page_width      => $cgi->param('page_width') || 0,
+                        page_height     => $cgi->param('page_height') || 0,
+                        label_width     => $cgi->param('label_width') || 0,
+                        label_height    => $cgi->param('label_height') || 0,
+                        top_text_margin => $cgi->param('top_text_margin') || 0,
+                        left_text_margin=> $cgi->param('left_text_margin') || 0,
+                        top_margin      => $cgi->param('top_margin') || 0,
+                        left_margin     => $cgi->param('left_margin') || 0,
+                        cols            => $cgi->param('cols') || 0,
+                        rows            => $cgi->param('rows') || 0,
+                        col_gap         => $cgi->param('col_gap') || 0,
+                        row_gap         => $cgi->param('row_gap') || 0,
+                        units           => $cgi->param('tmpl_units') || 'POINT',
+#Bug 5203 - Creating a label template causes fatal error 
+#if description field is empty:labels/label-edit-template.pl
                         );
+
     if ($template_id) {   # if a label_id was passed in, this is an update to an existing layout
         $label_template = C4::Labels::Template->retrieve(template_id => $template_id);
         if ($cgi->param('profile_id') && ($label_template->get_attr('template_id') != $cgi->param('profile_id'))) {
@@ -78,23 +81,33 @@ elsif ($op eq 'save') {
                 $old_profile->set_attr(template_id => 0);
                 $old_profile->save();
             }
-            my $new_profile = C4::Labels::Profile->retrieve(profile_id => $cgi->param('profile_id'));
-            $new_profile->set_attr(template_id => $label_template->get_attr('template_id'));
-            $new_profile->save();
+            if ($cgi->param('profile_id')) {
+               my $new_profile = C4::Labels::Profile->retrieve(profile_id => $cgi->param('profile_id'));
+               $new_profile->set_attr(template_id => $label_template->get_attr('template_id'));
+               $new_profile->save();
+            }
         }
         $label_template->set_attr(@params);
         $label_template->save();
     }
     else {      # if no label_id, this is a new layout so insert it
         $label_template = C4::Labels::Template->new(@params);
-        my $template_id = $label_template->save();
+        $template_id = $label_template->save();
+        my $profile;
         if ($cgi->param('profile_id')) {
-            my $profile = C4::Labels::Profile->retrieve(profile_id => $cgi->param('profile_id'));
+            $profile = C4::Labels::Profile->retrieve(profile_id => $cgi->param('profile_id'));
             $profile->set_attr(template_id => $template_id) if $template_id != $profile->get_attr('template_id');
             $profile->save();
         }
     }
-    print $cgi->redirect("label-manage.pl?label_element=template");
+    
+    unless($cgi->param('profile_id')) {
+       print $cgi->redirect("label-edit-profile.pl?op=new&defineProfile=1&"
+       . "template_id=$template_id");
+    }
+    else {
+      print $cgi->redirect("label-manage.pl?label_element=template");
+    }
     exit;
 }
 else {  # if we get here, this is a new layout
@@ -134,7 +147,7 @@ $template->param(
     rows                 => $label_template->get_attr('rows'),
     col_gap              => $label_template->get_attr('col_gap'),
     row_gap              => $label_template->get_attr('row_gap'),
-    units                => $units,
+    tmpl_units           => $units,
 );
 
 output_html_with_http_headers $cgi, $cookie, $template->output;

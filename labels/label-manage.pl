@@ -82,7 +82,7 @@ my $branch_code = ($label_element eq 'batch' ? get_branch_code_from_name($templa
 if ($op eq 'delete') {
     if          ($label_element eq 'layout')    {$error = C4::Labels::Layout::delete(layout_id => $element_id);}
     elsif       ($label_element eq 'template')  {$error = C4::Labels::Template::delete(template_id => $element_id);}
-    elsif       ($label_element eq 'profile')   {$error = C4::Labels::Profile::delete(profile_id => $element_id);}
+    elsif       ($label_element eq 'profile')   {C4::Labels::Profile::nuke(profile_id => $element_id);}
     elsif       ($label_element eq 'batch')     {$error = C4::Labels::Batch::delete(batch_id => $element_id, branch_code => $branch_code);}
     else                                        {}      # FIXME: Some error trapping code 
 }

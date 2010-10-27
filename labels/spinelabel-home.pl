@@ -21,7 +21,7 @@ use CGI;
 use C4::Auth;
 use C4::Output;
 use C4::Context;
-
+use C4::Labels::Lib qw(get_all_layouts get_all_profiles);
 # use Smart::Comments;
 
 my $query = new CGI;
@@ -35,4 +35,27 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
+sub _sel
+{
+   my($f,$a) = @_;
+   foreach(@$a) {
+      if ($$_{$f} == $query->param($f)) {
+         $$_{_sel} = 'selected';
+      }
+      else {
+         $$_{_sel} = '';
+      }
+   }
+   return $a;
+}
+
+my $layouts = _sel(get_all_layouts());
+my $profiles = _sel(get_all_profiles());
+$template->param(
+   barcode     => $query->param('barcode')    || '',
+   layout_id   => $query->param('layout_id')  || 0,
+   profile_id  => $query->param('profile_id') || 0,
+   layouts     => _sel('layout_id',get_all_layouts()),
+   profiles    => _sel('profile_id',get_all_profiles())
+);
 output_html_with_http_headers $query, $cookie, $template->output;

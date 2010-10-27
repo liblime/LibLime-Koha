@@ -3564,6 +3564,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.00.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+   $dbh->do(qq|ALTER TABLE labels_layouts ADD break_rule_string varchar(255) NOT NULL DEFAULT ''|);
+   print "Upate to $DBversion done ( added labels_layouts.break_rule_string )\n";
+   SetVersion ($DBversion);
+}
+
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

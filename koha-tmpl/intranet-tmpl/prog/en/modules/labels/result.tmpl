@@ -24,8 +24,10 @@
                         for (var i=0; i < document.resultform.action.length; i++) {
                             if (document.resultform.action[i].checked) {
                               items.push("item_number=" +  document.resultform.action[i].value);
-                              hidestr += '<input type=hidden name="item_num" value="'
+                              hidestr += '<input type=hidden name="item_number" value="'
                               +document.resultform.action[i].value+'">\n';
+                              // unset action(s) for form post
+                              document.resultform.action[i].checked = false;
                             }
                         }
                         //getstr = items.join("&");

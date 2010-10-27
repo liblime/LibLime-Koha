@@ -12,7 +12,9 @@
 	<!-- TMPL_IF NAME="BarcodeNotFound" -->
 		<body>
 			<p>The barcode <!-- TMPL_VAR NAME="Barcode" --> was not found.</p>
-			<p><a href="spinelabel-home.pl">Return To Spine Label Printer</a></p>
+			<p><a href="spinelabel-home.pl?layout_id=<!-- TMPL_VAR 
+         NAME="layout_id" -->&profile_id=<!-- TMPL_VAR
+         NAME="profile_id" -->">Return To Spine Label Printer</a></p>
 		</body>
 	<!-- TMPL_ELSE -->
 		<body <!-- TMPL_IF NAME="autoprint">onLoad="window.print()"<!-- /TMPL_IF> >

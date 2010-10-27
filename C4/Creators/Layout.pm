@@ -1,13 +1,13 @@
-package C4::Labels::Layout;
+package C4::Creators::Layout;
 
 use strict;
 use warnings;
 
-use DBI qw(neat);
+use autouse 'Data::Dumper' => qw(Dumper);
 
 use C4::Context;
 use C4::Debug;
-use C4::Labels::PDF;
+use C4::Creators::PDF;
 
 BEGIN {
     use version; our $VERSION = qv('1.0.0_1');
@@ -16,9 +16,9 @@ BEGIN {
 # FIXME: Consider this style parameter verification instead...
 #  my %param = @_;
 #   for (keys %param)
-#    {   my $lc = lc($_); 
+#    {   my $lc = lc($_);
 #        if (exists $default{$lc})
-#        {  $default{$lc} = $param{$_}; 
+#        {  $default{$lc} = $param{$_};
 #        }
 #        else
 #        {  print STDERR "Unknown parameter $_ , not used \n";
@@ -28,16 +28,18 @@ BEGIN {
 sub _check_params {
     my $exit_code = 0;
     my @valtmpl_id_params = (
+        'layout_id',
         'barcode_type',
         'printing_type',
         'layout_name',
         'guidebox',
         'font',
         'font_size',
-        #'callnum_split',
-        'break_rule_string',
+        'callnum_split',
         'text_justify',
         'format_string',
+        'layout_xml',           # FIXME: all layouts should be stored in xml format to greatly simplify handling -chris_n
+        'creator',
     );
     if (scalar(@_) >1) {
         my %given_params = @_;
@@ -59,23 +61,31 @@ sub _check_params {
 
 sub new {
     my $invocant = shift;
+    my $self = '';
     if (_check_params(@_) eq 1) {
         return -1;
     }
     my $type = ref($invocant) || $invocant;
-    my $self = {
-        barcode_type    =>      'CODE39',
-        printing_type   =>      'BAR',
-        layout_name     =>      'DEFAULT',
-        guidebox        =>      0,
-        font            =>      'TR',
-        font_size       =>      3,
-        #callnum_split   =>      0,
-        break_rule_string =>      '1:*0s',
-        text_justify    =>      'L',
-        format_string   =>      'title, author, isbn, issn, itemtype, barcode, itemcallnumber',
-        @_,
-    };
+    if (grep {$_ eq 'Labels'} @_) {
+       $self = {
+            barcode_type    =>      'CODE39',
+            printing_type   =>      'BAR',
+            layout_name     =>      'DEFAULT',
+            guidebox        =>      0,
+            font            =>      'TR',
+            font_size       =>      3,
+            callnum_split   =>      0,
+            text_justify    =>      'L',
+            format_string   =>      'title, author, isbn, issn, itemtype, barcode, callnumber',
+            @_,
+        };
+    }
+    elsif (grep {$_ eq 'Patroncards'} @_) {
+        $self = {
+            layout_xml => '<opt>Default Layout</opt>',
+            @_,
+        }
+    }
     bless ($self, $type);
     return $self;
 }
@@ -84,9 +94,9 @@ sub retrieve {
     my $invocant = shift;
     my %opts = @_;
     my $type = ref($invocant) || $invocant;
-    my $query = "SELECT * FROM labels_layouts WHERE layout_id = ?";  
+    my $query = "SELECT * FROM creator_layouts WHERE layout_id = ? AND creator = ?";
     my $sth = C4::Context->dbh->prepare($query);
-    $sth->execute($opts{'layout_id'});
+    $sth->execute($opts{'layout_id'}, $opts{'creator'});
     if ($sth->err) {
         warn sprintf('Database returned the following error: %s', $sth->errstr);
         return -1;
@@ -100,90 +110,57 @@ sub delete {
     my $self = {};
     my %opts = ();
     my $call_type = '';
-    my $query_param = '';
+    my @params = ();
     if (ref($_[0])) {
         $self = shift;  # check to see if this is a method call
         $call_type = 'C4::Labels::Layout->delete';
-        $query_param = $self->{'layout_id'};
+        push @params, $self->{'layout_id'}, $self->{'creator'};
     }
     else {
+        my $class = shift;
         %opts = @_;
-        $call_type = 'C4::Labels::Layout::delete';
-        $query_param = $opts{'layout_id'};
+        $call_type = $class . '::delete';
+        push @params, $opts{'layout_id'}, $opts{'creator'};
     }
-    if ($query_param eq '') {   # If there is no layout id then we cannot delete it
-        warn sprintf('%s : Cannot delete layout as the layout id is invalid or non-existant.', $call_type);
+    if (scalar(@params) < 2) {   # If there is no layout id or creator type then we cannot delete it
+        warn sprintf('%s : Cannot delete layout as the profile id is invalid or non-existant.', $call_type) if !$params[0];
+        warn sprintf('%s : Cannot delete layout as the creator type is invalid or non-existant.', $call_type) if !$params[1];
         return -1;
     }
-    my $query = "DELETE FROM labels_layouts WHERE layout_id = ?";  
+    my $query = "DELETE FROM creator_layouts WHERE layout_id = ? AND creator = ?";
     my $sth = C4::Context->dbh->prepare($query);
-    $sth->execute($query_param);
+    $sth->execute(@params);
     if ($sth->err) {
-        warn sprintf('%s : Database returned the following error: %s', $call_type, $sth->errstr);
+        warn sprintf('Database returned the following error on attempted DELETE: %s', $sth->errstr);
         return -1;
     }
-    return 0;
-}
-
-sub errs
-{
-   my $self = shift;
-   return $$self{_errs};
-}
-
-sub err
-{
-   my($s,$msg) = @_;
-   unless(exists $$s{_errs}) { $$s{_errs} = [] };
-   push @{$$s{_errs}}, {msg=>$msg};
-   return;
-}
-
-sub _validateBreakRuleStr
-{
-   my $s = shift;
-   my $t = $$s{break_rule_string};
-   return 1 unless $t;
-   my(@p) = split(/\,/, $t);
-   foreach my $r(@p) {
-      next unless $r;
-      my($field,$rule) = split(/\:/,$r,2);
-      return $s->err('Each field rule is separated by a comma (<b>,</b>)
-         and each rule for that field must be shown as fieldNum:rule.')
-         unless $field && $rule;
-      return $s->err('Each part of break rule string must read 
-         every|n-th char-string, 
-         eg, <b>3:0s,2d</b> is &quot;for the third field, break line on 
-         every space AND after second dot&quot;')
-         if $rule !~ /^\d+[sdhulnc]$/;
-   }
-   return 1;
 }
 
 sub save {
     my $self = shift;
-    $$self{_errs} = [];
-    $self->_validateBreakRuleStr() || return;
     if ($self->{'layout_id'}) {        # if we have an id, the record exists and needs UPDATE
         my @params;
-        my $query = "UPDATE labels_layouts SET ";
+        my $query = "UPDATE creator_layouts SET ";
         foreach my $key (keys %{$self}) {
-            next if $key eq 'layout_id';
-            next if $key eq '_errs';
+            next if ($key eq 'layout_id') || ($key eq 'creator');
             push (@params, $self->{$key});
             $query .= "$key=?, ";
         }
         $query = substr($query, 0, (length($query)-2));
-        $query .= " WHERE layout_id=?;";
-        push (@params, $self->{'layout_id'});
+        $query .= " WHERE layout_id=? AND creator = ?;";
+        push (@params, $self->{'layout_id'}, $self->{'creator'});
         my $sth = C4::Context->dbh->prepare($query);
         #local $sth->{TraceLevel} = "3";        # enable DBI trace and set level; outputs to STDERR
-        $sth->execute(@params) || die C4::Context->dbh->errstr();
+        $sth->execute(@params);
+        if ($sth->err) {
+            warn sprintf('Database returned the following error: %s', $sth->errstr);
+            return -1;
+        }
         return $self->{'layout_id'};
     }
     else {                      # otherwise create a new record
         my @params;
-        my $query = "INSERT INTO labels_layouts (";
+        my $query = "INSERT INTO creator_layouts (";
         foreach my $key (keys %{$self}) {
             push (@params, $self->{$key});
             $query .= "$key, ";
@@ -196,10 +173,15 @@ sub save {
         $query = substr($query, 0, (length($query)-1));
         $query .= ");";
         my $sth = C4::Context->dbh->prepare($query);
-        $sth->execute(@params) || die C4::Context->dbh->errstr();
-        my $sth1 = C4::Context->dbh->prepare("SELECT MAX(layout_id) FROM labels_layouts;");
+        $sth->execute(@params);
+        if ($sth->err) {
+            warn sprintf('Database returned the following error: %s', $sth->errstr);
+            return -1;
+        }
+        my $sth1 = C4::Context->dbh->prepare("SELECT MAX(layout_id) FROM creator_layouts;");
         $sth1->execute();
         my $id = $sth1->fetchrow_array;
+        $self->{'layout_id'} = $id;
         return $id;
     }
 }
@@ -207,22 +189,28 @@ sub save {
 sub get_attr {
     my $self = shift;
     if (_check_params(@_) eq 1) {
-        return;
+        return -1;
     }
     my ($attr) = @_;
     if (exists($self->{$attr})) {
         return $self->{$attr};
     }
     else {
-        return;
+        return -1;
     }
+    return;
 }
 
 sub set_attr {
-    my $s = shift;
-    my %g = @_;
-    foreach(keys %g) { $$s{$_} = $g{$_} }
-    return;
+    my $self = shift;
+    if (_check_params(@_) eq 1) {
+        return -1;
+    }
+    my %attrs = @_;
+    foreach my $attrib (keys(%attrs)) {
+        $self->{$attrib} = $attrs{$attrib};
+    };
+    return 0;
 }
 
 sub get_text_wrap_cols {
@@ -231,12 +219,12 @@ sub get_text_wrap_cols {
     my $string = '';
     my $strwidth = 0;
     my $col_count = 0;
-    my $textlimit = $params{'label_width'} - ( 3 * $params{'left_text_margin'});
+    my $textlimit = $params{'label_width'} - (( 3 * $params{'left_text_margin'} ) || 13.5 );
 
     while ($strwidth < $textlimit) {
         $string .= '0';
         $col_count++;
-        $strwidth = C4::Labels::PDF->StrWidth( $string, $self->{'font'}, $self->{'font_size'} );
+        $strwidth = C4::Creators::PDF->StrWidth( $string, $self->{'font'}, $self->{'font_size'} );
     }
     return $col_count;
 }
@@ -343,6 +331,7 @@ HBO     = Helvetical Bold Oblique
 =back
 
         C<font_size>            Defines the size of the font in postscript points to be used on labels
+        C<callnum_split>        Setting this to '1' will enable call number splitting on labels
         C<text_justify>         Defines the text justification to be used on labels. NOTE: The following justification styles are currently supported by label creator code:
 
 =over 9
@@ -433,8 +422,8 @@ This file is part of Koha.
 Koha is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software
 Foundation; either version 2 of the License, or (at your option) any later version.
 
-You should have received a copy of the GNU General Public License along with Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
-Suite 330, Boston, MA  02111-1307 USA
+You should have received a copy of the GNU General Public License along with Koha; if not, write to the Free Software Foundation, Inc., 51 Franklin Street,
+Fifth Floor, Boston, MA 02110-1301 USA.
 
 =head1 DISCLAIMER OF WARRANTY
 

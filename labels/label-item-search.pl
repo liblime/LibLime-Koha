@@ -121,6 +121,21 @@ if ($show_results) {
     # This code needs to be refactored using these subs...
     #my @items = &GetItemsInfo( $biblio->{biblionumber}, 'intra' );
     #my $dat = &GetBiblioData( $biblio->{biblionumber} );
+   
+    my $fdate = my $tdate = 0;
+    my $ge = my $le = '';
+    my $cq = $query->param('ccl_query');
+    if ($cq) {
+       ($fdate) = $cq =~ /ge=(\d{4}\-\d\d\-\d\d)$/;
+       ($tdate) = $cq =~ /le=(\d{4}\-\d\d\-\d\d)$/;
+    }
+    else {
+       if ($datefrom) { $fdate = $datefrom->output('iso')}
+       if ($dateto)   { $tdate = $dateto->output('iso')  }
+    }
+    $fdate =~ s/\D//g;
+    $tdate =~ s/\D//g;
+
     for ( my $i = 0 ; $i < $hits ; $i++ ) {
         my @row_data= ();
         #DEBUG Notes: Decode the MARC record from each resulting MARC record...
@@ -135,10 +150,17 @@ if ($show_results) {
         #DEBUG Notes: Retrieve the item data for each number...
         if (my $iii = $itemnums->{$biblionumber}) {
             my $item_results = GetItemInfosOf(@$iii);
+
+            ITEM:
             foreach my $item ( keys %$item_results ) {
                 #DEBUG Notes: Build an array element 'item' of the correct bib (results) hash which contains item-specific data...
                 if ($item_results->{$item}->{'biblionumber'} eq $results_set[$i]->{'biblionumber'}) {
                     my $item_data;
+                    my $adate = $item_results->{$item}->{dateaccessioned};
+                    $adate =~ s/\D//g;
+                    if ($fdate) { next ITEM if $adate < $fdate }
+                    if ($tdate) { next ITEM if $adate > $tdate }
+
                     $item_data->{'_item_number'} = $item_results->{$item}->{'itemnumber'};
                     $item_data->{'_item_call_number'} = ($item_results->{$item}->{'itemcallnumber'} ? $item_results->{$item}->{'itemcallnumber'} : 'NA');
                     $item_data->{'_date_accessioned'} = $item_results->{$item}->{'dateaccessioned'};

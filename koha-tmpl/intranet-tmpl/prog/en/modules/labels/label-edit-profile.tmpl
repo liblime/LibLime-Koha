@@ -4,36 +4,47 @@
 	<script type="text/javascript">
         //<![CDATA[
 		$(document).ready(function(){
-		var selectedUnit = $("#units option:selected").attr("value");
+		var selectedUnit = $("#profile_units option:selected").attr("value");
 		var unitfields = $("#offset_horz,#offset_vert,#creep_horz,#creep_vert");
-		$(unitfields).after("<span class=\"unit\">"+getUnit(selectedUnit)+"</span>");
-		$("#units").change(function(){
-			$(".unit").html(getUnit($(this).val()));
+		$(unitfields).after("<span class=\"profile_unit\">"+getUnit(selectedUnit)+"</span>");
+
+		$("#profile_units").change(function(){
+			$(".profile_unit").html(getUnit($(this).val()));
 		});
-		function getUnit(unit){
-			switch(unit){
+		function getUnit(profile_unit){
+			switch(profile_unit){
 				case "POINT":
-					var unit = " pt";
+					var profile_unit = " pt";
 					break;
 				case "AGATE":
-					var unit = " ag";
+					var profile_unit = " ag";
 					break;
 				case "INCH":
-					var unit = " in";
+					var profile_unit = " in";
 					break;
 				case "MM":
-					var unit = " mm";
+					var profile_unit = " mm";
 					break;
 				case "CM":
-					var unit = " cm";
+					var profile_unit = " cm";
 					break;
 				default:
-					var unit = "";
+					var profile_unit = "";
 			}
-			return unit;
+			return profile_unit;
 		}
 		});
         //]]>
+
+   function cancelForm() {
+      if (document.input.defineProfile.value>0) {
+         var id = document.input.template_id.value;
+         document.location.href='label-edit-template.pl?op=edit&'
+         +'template_id='+id;
+         return;
+      }
+      document.location.href='label-manage.pl?label_element=profile';
+   }
 	</script>
 </head>
 <body>
@@ -52,37 +63,49 @@
 	        <div class="yui-b">
                         <div class="yui-g">
                             <h3>Edit Printer Profile</h3>
+                                <!-- TMPL_IF NAME="errs" -->
+                                <div class="dialog alert" style="align:left;text-align:left">
+                                <ul>
+                                <!-- TMPL_LOOP NAME="errs" -->
+                                <li><!-- TMPL_VAR NAME="msg" -->
+                                <!-- /TMPL_LOOP -->
+                                </div>
+                                <!-- /TMPL_IF -->
                                 <div class="yui-g first">
-                    <form name="input" action="/cgi-bin/koha/labels/label-edit-profile.pl" method="get">
+                    <form name="input" action="/cgi-bin/koha/labels/label-edit-profile.pl" method="post">
                                     <fieldset class="rows"><legend>Profile settings</legend>
                                         <ol>
+                                            <li><label for="profile_id">Profile ID:</label>
+                                            <!-- TMPL_IF name="profile_id" -->
+                                            <!-- TMPL_VAR NAME="profile_id" -->
+                                            <!-- TMPL_ELSE -->
+                                            New Profile Unassigned
+                                            <!-- /TMPL_IF -->
                                             <li>
-                                                <!-- TMPL_IF NAME="profile_id" -->
-                                                 <span class="label">Printer name:</span><!-- TMPL_VAR NAME="printer_name" -->
-                                                <input type="hidden" name="printer_name" value="<!-- TMPL_VAR NAME="printer_name" -->" />
-                                                <!-- TMPL_ELSE -->
-                                                <label for="printer_name">Printer name:</label><input type="text"  size="20" name="printer_name" id="printer_name" />
+                                                <label for="printer_name">Printer name:</label>
+                                                <input type="text"  size="20" 
+                                                name="printer_name" id="printer_name"
+                                                value="<!-- TMPL_VAR NAME="printer_name" -->" />
                                                 <!-- /TMPL_IF -->
                                             </li>
                                             <li>
-                                                <!-- TMPL_IF NAME="profile_id" -->
-												<span class="label">Paper bin:</span> <!-- TMPL_VAR NAME="paper_bin" -->
-                                                <input type="hidden" name="paper_bin" value="<!-- TMPL_VAR NAME="paper_bin" -->" />
-                                                <!-- TMPL_ELSE -->
-                                                <label for="paper_bin">Paper bin:</label><input type="text"  size="20" name="paper_bin" id="paper_bin" />
+                                                <label for="paper_bin">Paper bin:</label>
+                                                <input type="text"  size="20" 
+                                                name="paper_bin" id="paper_bin"
+                                                value="<!-- TMPL_VAR NAME="paper_bin" -->" />
                                                 <!-- /TMPL_IF -->
                                             </li>
                                             <li>
-                                                <!-- TMPL_IF NAME="label_template" -->
-                                                 <label for="template_name">Template name:</label> <!-- TMPL_VAR NAME="label_template" -->
+                                                <!-- TMPL_IF NAME="template_code" -->
+                                                 <label for="template_name">Template name:</label> <!-- TMPL_VAR NAME="template_code" -->
                                                 <!-- TMPL_ELSE -->
                                                  <span class="label">Template name:</span> Profile Unassigned
                                                 <!-- /TMPL_IF -->
                                             </li>
                                             <li>
-                                                <label for="units">Units: </label>
-                                                <select id="units" name="units">
-                                                    <!-- TMPL_LOOP NAME="units" -->
+                                                <label for="profile_units">Units: </label>
+                                                <select id="profile_units" name="profile_units">
+                                                    <!-- TMPL_LOOP NAME="profile_units" -->
                                                     <!-- TMPL_IF NAME="selected" -->
                                                     <option value="<!-- TMPL_VAR NAME="type" -->" selected="selected">
                                                     <!-- TMPL_ELSE -->
@@ -119,15 +142,18 @@
                                     </fieldset>
                                     <fieldset class="action">
                                         <input type="submit" value="Save" />
-                                        <a href="/cgi-bin/koha/labels/label-manage.pl?label_element=profile" class="cancel">Cancel</a>
+                                        <a href="javascript:;" onclick="cancelForm();">Cancel</a>
                                         <input type="hidden" name="op" value="save" />
                                         <input type="hidden" name="profile_id" value="<!-- TMPL_VAR NAME="profile_id" -->" />
+                                        <input type="hidden" name="template_id" value="<!-- TMPL_VAR name="template_id" -->" />
+                                        <input type="hidden" name="defineProfile" value="<!-- TMPL_VAR name="defineProfile" -->" />
                                     </fieldset>
-                    </form>
+                     </form>
                                 </div>
                             </div>
                         </div>
                 </div>
+
                 <div class="yui-b">
                     <!-- TMPL_INCLUDE NAME="labels-menu.inc" -->
                 </div>

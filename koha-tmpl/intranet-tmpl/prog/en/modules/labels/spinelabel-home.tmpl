@@ -13,10 +13,32 @@
 		<div id="yui-main">
 			<div class="yui-b">
 				<form action="/cgi-bin/koha/labels/spinelabel-print.pl" method="post">
-					<label>Barcode: </label>
-					<input type="text" name="barcode" id="barcode" />
-					<input type="submit" value="View Spine Label" />
-				</form>
+            <fieldset class="rows">
+            <ol>
+               <li><label>Barcode: </label>
+					<input type="text" name="barcode" id="barcode" 
+               value="<!-- TMPL_VAR NAME="barcode" -->" />               
+               <li><label>Layout: </label>
+               <select name="layout_id">
+               <!-- TMPL_LOOP NAME='layouts' -->
+               <option value="<!-- TMPL_VAR NAME='layout_id' -->" 
+               <!-- TMPL_VAR NAME='_sel' -->>
+               <!-- TMPL_VAR NAME='layout_name' -->
+               <!-- /TMPL_LOOP -->
+               </select>
+               <li><label>Profile: </label>
+               <select name="profile_id">
+               <!-- TMPL_LOOP NAME='profiles' -->
+               <option value="<!-- TMPL_VAR NAME='profile_id' -->" 
+               <!-- TMPL_VAR NAME='_sel' -->>
+               <!-- TMPL_VAR NAME='printer_name' -->/<!-- TMPL_VAR NAME='paper_bin' -->
+               <!-- /TMPL_LOOP -->
+ 
+               </select>
+            </ol>
+            </fieldset>
+		      <input type="submit" value="View Spine Label" />
+            </form>
 			</div>
 		</div>
 	</div>

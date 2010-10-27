@@ -283,7 +283,7 @@ sub get_label_summary {
     my %params = @_;
     my $label_number = 0;
     my @label_summaries = ();
-    my $query = "SELECT b.title, b.author, bi.itemtype, i.barcode, i.biblionumber FROM biblio AS b, biblioitems AS bi ,items AS i, labels_batches AS l WHERE itemnumber=? AND l.item_number=i.itemnumber AND i.biblioitemnumber=bi.biblioitemnumber AND bi.biblionumber=b.biblionumber AND l.batch_id=?;";
+    my $query = "SELECT b.title, b.author, bi.itemtype, i.itemcallnumber, i.barcode, i.biblionumber FROM biblio AS b, biblioitems AS bi ,items AS i, labels_batches AS l WHERE itemnumber=? AND l.item_number=i.itemnumber AND i.biblioitemnumber=bi.biblioitemnumber AND bi.biblionumber=b.biblionumber AND l.batch_id=?;";
     my $sth = C4::Context->dbh->prepare($query);
     foreach my $item (@{$params{'items'}}) {
         $label_number++;
@@ -301,6 +301,7 @@ sub get_label_summary {
         # should not know that it's part of a web app
         $record->{'title'} = '<a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=' . $record->{'biblionumber'} . '"> ' . $record->{'title'} . '</a>';
         $label_summary->{'_summary'} = $record->{'title'} . " | " . ($record->{'author'} ? $record->{'author'} : 'N/A');
+        $label_summary->{'_cnum'} = $record->{'itemcallnumber'};
         $label_summary->{'_item_type'} = $record->{'itemtype'};
         $label_summary->{'_barcode'} = $record->{'barcode'};
         $label_summary->{'_item_number'} = $item->{'item_number'};

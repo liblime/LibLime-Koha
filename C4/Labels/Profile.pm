@@ -59,9 +59,9 @@ sub new {
     }
     my $type = ref($invocant) || $invocant;
     my $self = {
-        printer_name    => 'Default Printer',
+        printer_name    => '',
         template_id     => '',
-        paper_bin       => 'Tray 1',
+        paper_bin       => '',
         offset_horz     => 0,
         offset_vert     => 0,
         creep_horz      => 0,
@@ -87,41 +87,83 @@ sub retrieve {
     my $self = $sth->fetchrow_hashref;
     $self = _conv_points($self) if ($opts{convert} && $opts{convert} == 1);
     bless ($self, $type);
+    if ($$self{template_id}) {
+       $$self{template_code} = get_template_code($$self{template_id});
+    }
     return $self;
 }
 
-sub delete {
+sub get_template_code
+{
+   my $template_id = shift;
+   my $sth = C4::Context->dbh->prepare("SELECT template_code FROM 
+       labels_templates WHERE template_id = ?");
+   $sth->execute($template_id) || die C4::Context->dbh->errstr();
+   my($val) = ($sth->fetchrow_array)[0];
+   return $val;
+}
+
+sub nuke {
     my $self = {};
     my %opts = ();
     my $call_type = '';
-    my $query_param = '';
+    my $profile_id = 0;
     if (ref($_[0])) {
         $self = shift;  # check to see if this is a method call
-        $call_type = 'C4::Labels::Profile->delete';
-        $query_param = $self->{'profile_id'};
+        $call_type = 'C4::Labels::Profile->nuke';
+        $profile_id = $self->{'profile_id'};
     }
     else {
         %opts = @_;
-        $call_type = 'C4::Labels::Profile::delete';
-        $query_param = $opts{'profile_id'};
+        $call_type = 'C4::Labels::Profile::nuke';
+        $profile_id = $opts{'profile_id'};
     }
-    if ($query_param eq '') {   # If there is no profile id then we cannot delete it
-        warn sprintf('%s : Cannot delete layout as the profile id is invalid or non-existant.', $call_type);
-        return -1;
+    unless ($profile_id) {
+       push @{$$self{_errs}}, {msg=>'No profile to delete'};
+       return;
     }
+    
     my $query = "DELETE FROM printers_profile WHERE profile_id = ?";
     my $sth = C4::Context->dbh->prepare($query);
 #    $sth->{'TraceLevel'} = 3;
-    $sth->execute($query_param);
+   unless ($sth->execute($profile_id)) {
+      push @{$$self{_errs}},{msg=>'Database error: '
+      . C4::Context->dbh->errstr()};
+      return;
+   }
+   $query = "UPDATE labels_templates SET profile_id = NULL
+      WHERE profile_id = ?";
+   $sth = C4::Context->dbh->prepare($query);
+   my $num = $sth->execute($profile_id);
+   if ($sth->err) {
+      push @{$$self{_errs}}, 'Database error: '
+      . C4::Context->dbh->errstr();
+      return;
+   }
+   return $num;
+}
+
+sub errs
+{
+   my $self = shift;
+   return $$self{_errs};
 }
 
 sub save {
     my $self = shift;
+    $$self{_errs} //= [];
+    push @{$$self{_errs}},{msg=>'Printer Name is required'}
+       unless $$self{printer_name};
+    push @{$$self{_errs}},{msg=>'Paper Bin is required'}
+       unless $$self{paper_bin};
+    return if @{$$self{_errs}};
+
     if ($self->{'profile_id'}) {        # if we have an profile_id, the record exists and needs UPDATE
         my @params;
         my $query = "UPDATE printers_profile SET ";
         foreach my $key (keys %{$self}) {
             next if $key eq 'profile_id';
+            next if $key eq '_errs';
             push (@params, $self->{$key});
             $query .= "$key=?, ";
         }
@@ -138,30 +180,54 @@ sub save {
         return $self->{'profile_id'};
     }
     else {                      # otherwise create a new record
-        my @params;
-        my $query = "INSERT INTO printers_profile (";
-        foreach my $key (keys %{$self}) {
-            push (@params, $self->{$key});
-            $query .= "$key, ";
-        }
-        $query = substr($query, 0, (length($query)-2));
-        $query .= ") VALUES (";
-        for (my $i=1; $i<=(scalar keys %$self); $i++) {
-            $query .= "?,";
-        }
-        $query = substr($query, 0, (length($query)-1));
-        $query .= ");";
-        my $sth = C4::Context->dbh->prepare($query);
-        $sth->execute(@params);
-        if ($sth->err) {
-            warn sprintf('Database returned the following error on attempted INSERT: %s', $sth->errstr);
-            return -1;
-        }
-        my $sth1 = C4::Context->dbh->prepare("SELECT MAX(profile_id) FROM printers_profile;");
-        $sth1->execute();
-        my $tmpl_id = $sth1->fetchrow_array;
-        return $tmpl_id;
-    }
+      # dupecheck
+      my $sql = qq|
+       SELECT 1 FROM printers_profile
+        WHERE LCASE(printer_name) = LCASE(?)
+          AND LCASE(paper_bin)    = LCASE(?)|;
+      my $sth = C4::Context->dbh->prepare($sql);
+      unless($sth->execute($$self{printer_name},$$self{paper_bin})) {
+         push @{$$self{_errs}}, {msg=>'Database error: '
+         . C4::Context->dbh->errstr()};
+      }
+      my($dupe) = $sth->fetchrow_array;
+      push @{$$self{_errs}},{msg=>'Duplicate printer/bin'} if $dupe;
+      return if @{$$self{_errs}};
+
+      $$self{template_id} ||= 0;
+      my @keys = my @params = ();
+      foreach(keys %$self) {
+         next if $_ eq '_errs';
+         next if $_ eq 'profile_id';
+         push @keys, $_;
+         push @params, $$self{$_};
+      }
+      push @keys, 'profile_id';
+      push @params, 0;
+      my $query = sprintf("INSERT INTO printers_profile(%s) VALUES (%s)",
+         join(',',@keys),
+         join(',',map{'?'}@keys)
+      );
+      my $sth = C4::Context->dbh->prepare($query);
+      unless ($sth->execute(@params)) {
+         push @{$$self{_errs}},{msg=>"Database error: SQL=$query--\n"
+         . C4::Context->dbh->errstr()};
+         return;
+      }
+      $sth = C4::Context->dbh->prepare("SELECT MAX(profile_id) FROM printers_profile;");
+      $sth->execute();
+      $$self{profile_id} = ($sth->fetchrow_array);
+   }
+
+   if ($$self{template_id}) {
+      my $sth = C4::Context->dbh->prepare("UPDATE labels_templates
+      SET template_id = ? WHERE profile_id = ?");
+      $sth->execute($$self{template_id},$$self{profile_id});
+      $sth = C4::Context->dbh->prepare("UPDATE labels_templates
+      SET profile_id = ? WHERE template_id = ?");
+      $sth->execute($$self{profile_id},$$self{template_id});
+   }
+   return $$self{profile_id};
 }
 
 sub get_attr {
@@ -257,14 +323,14 @@ CM      = SI Centimeters (28.3464567 points per)
 
         C<my $profile = C4::Labels::Profile->retrieve(profile_id => 1, convert => 1); # Retrieves profile record 1, converts the units to points and returns an object containing the record>
 
-=head2 delete()
+=head2 nuke()
 
-    Invoking the delete method attempts to delete the profile from the database. The method returns -1 upon failure. Errors are logged to the Apache log.
+    Invoking this method attempts to delete the profile from the database. The method returns -1 upon failure. Errors are logged to the Apache log.
     NOTE: This method may also be called as a function and passed a key/value pair simply deleteing that profile from the database. See the example below.
 
     examples:
-        C<my $exitstat = $profile->delete(); # to delete the record behind the $profile object>
-        C<my $exitstat = C4::Labels::Profile::delete(profile_id => 1); # to delete profile record 1>
+        C<my $exitstat = $profile->nuke(); # to delete the record behind the $profile object>
+        C<my $exitstat = C4::Labels::Profile::nuke(profile_id => 1); # to delete profile record 1>
 
 =head2 save()
 

@@ -36,7 +36,20 @@
                     <form name="input" action="/cgi-bin/koha/labels/label-edit-layout.pl" method="get">
                         <fieldset class="rows">
                             <legend><!-- TMPL_IF NAME="layout_id" -->Edit<!-- TMPL_ELSE -->Create<!-- /TMPL_IF --> Label Layout</legend>
+                            <!-- TMPL_IF NAME="errs" -->
+                            <div class="dialog alert">
+                            <fieldset>
+                            <ul style="text-align:left;align:left;padding:0">
+                            <!-- TMPL_LOOP NAME="errs" -->
+                            <li><!-- TMPL_VAR NAME="msg" -->
+                            <!-- /TMPL_LOOP -->
+                            </ul>
+                            </fieldset>
+                            </div>
+                            <!-- /TMPL_IF -->
                             <ol>
+                                <li><label for="layout_id">Layout ID</label>
+                                    <!-- TMPL_VAR NAME="layout_id" -->
                                 <li>
                                     <label for="layout_name">Layout Name</label>
                                     <input type="text" name="layout_name" id="layout_name" size="20" value="<!-- TMPL_VAR NAME="layout_name" -->" />
@@ -128,6 +141,25 @@
                                     <!-- TMPL_ELSE -->
                                     <input type="checkbox" name="callnum_split" id="callnum_split" value="1" />
                                     <!-- /TMPL_IF -->
+                                </li>
+                                <li>
+                                    <label for="break_rule_string">Line Break Rule</label>
+                                    <input type=text name="break_rule_string" value="<!-- TMPL_VAR NAME="break_rule_string" -->" size=20 maxlength=255><br>
+      <div class=hint>
+      eg., <b>0s,+2d,-010c</b> = every space AND after the second dot 
+      AND before every tenth character<br>
+      <b>0(zero)</b>=every,
+      <b>-(minus)</b>=before,
+      <b>+(plus)</b>=after<br>
+      <b>,(comma)</b>=AND<br>
+      <b>s</b>=space, 
+      <b>d</b>=dot,
+      <b>h</b>=dash,
+      <b>u</b>=underscore,
+      <b>l</b>=letter,
+      <b>n</b>=number,
+      <b>c</b>=character<br>
+      </div>
                                 </li>
                                 <li>
                                     <label for="text_justify">Text Justification</label>

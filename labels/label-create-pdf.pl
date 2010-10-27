@@ -56,15 +56,7 @@ sub _calc_next_label_pos {
     return ($row_count, $col_count, $llx, $lly);
 }
 
-sub _print_text {
-    my $label_text = shift;
-    foreach my $text_line (@$label_text) {
-        my $pdf_font = $pdf->Font($text_line->{'font'});
-        my $line = "BT /$pdf_font $text_line->{'font_size'} Tf $text_line->{'text_llx'} $text_line->{'text_lly'} Td ($text_line->{'line'}) Tj ET";
-        $pdf->Add($line);
-    }
-}
-
+my $fs = $layout->get_attr('format_string');
 $| = 1;
 
 # set the paper size
@@ -112,11 +104,13 @@ foreach my $item (@{$items}) {
                                         guidebox            => $layout->get_attr('guidebox'),
                                         font                => $layout->get_attr('font'),
                                         font_size           => $layout->get_attr('font_size'),
-                                        callnum_split       => $layout->get_attr('callnum_split'),
+                                        #callnum_split       => $layout->get_attr('callnum_split'),
+                                        break_rule_string   => $layout->get_attr('break_rule_string'),
                                         justify             => $layout->get_attr('text_justify'),
-                                        format_string       => $layout->get_attr('format_string'),
+                                        format_string       => $fs,
                                         text_wrap_cols      => $layout->get_text_wrap_cols(label_width => $template->get_attr('label_width'), left_text_margin => $template->get_attr('left_text_margin')),
                                           );
+        $pdf->Add($label_a->draw_guide_box) if $layout->get_attr('guidebox');
         my $label_a_text = $label_a->create_label();
         _print_text($label_a_text);
         ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($row_count, $col_count, $llx, $lly);
@@ -134,11 +128,13 @@ foreach my $item (@{$items}) {
                                         guidebox            => $layout->get_attr('guidebox'),
                                         font                => $layout->get_attr('font'),
                                         font_size           => $layout->get_attr('font_size'),
-                                        callnum_split       => $layout->get_attr('callnum_split'),
+                                        #callnum_split       => $layout->get_attr('callnum_split'),
+                                        break_rule_string   => $layout->get_attr('break_rule_string'),
                                         justify             => $layout->get_attr('text_justify'),
                                         format_string       => $layout->get_attr('format_string'),
                                         text_wrap_cols      => $layout->get_text_wrap_cols(label_width => $template->get_attr('label_width'), left_text_margin => $template->get_attr('left_text_margin')),
                                           );
+        $pdf->Add($label_b->draw_guide_box) if $layout->get_attr('guidebox');
         my $label_b_text = $label_b->create_label();
         ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($row_count, $col_count, $llx, $lly);
         next LABEL_ITEMS;
@@ -159,11 +155,13 @@ foreach my $item (@{$items}) {
                                         guidebox            => $layout->get_attr('guidebox'),
                                         font                => $layout->get_attr('font'),
                                         font_size           => $layout->get_attr('font_size'),
-                                        callnum_split       => $layout->get_attr('callnum_split'),
+                                        #callnum_split       => $layout->get_attr('callnum_split'),
+                                        break_rule_string   => $layout->get_attr('break_rule_string'),
                                         justify             => $layout->get_attr('text_justify'),
                                         format_string       => $layout->get_attr('format_string'),
                                         text_wrap_cols      => $layout->get_text_wrap_cols(label_width => $template->get_attr('label_width'), left_text_margin => $template->get_attr('left_text_margin')),
                                           );
+        $pdf->Add($label->draw_guide_box) if $layout->get_attr('guidebox');
         my $label_text = $label->create_label();
         _print_text($label_text) if $label_text;
         ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($row_count, $col_count, $llx, $lly);
@@ -173,6 +171,16 @@ foreach my $item (@{$items}) {
 $pdf->End();
 
 exit(1);
+
+sub _print_text {
+    my $label_text = shift;
+    foreach my $text_line (@$label_text) {
+
+        my $pdf_font = $pdf->Font($text_line->{'font'});
+        my $line = "BT /$pdf_font $text_line->{'font_size'} Tf $text_line->{'text_llx'} $text_line->{'text_lly'} Td ($text_line->{'line'}) Tj ET";
+        $pdf->Add($line);
+    }
+}
 
 =head1 NAME
 

@@ -30,6 +30,7 @@ use C4::Output qw(output_html_with_http_headers);
 use C4::Labels::Lib 1.000000 qw(get_barcode_types get_label_types get_font_types get_text_justification_types);
 use C4::Labels::Layout 1.000000;
 
+my $errs = [];
 my $cgi = new CGI;
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
@@ -122,27 +123,34 @@ elsif  ($op eq 'save') {
         $cgi->param('format_string', $format_string);
     }
     my @params = (
-                    barcode_type    => $cgi->param('barcode_type'),
-                    printing_type   => $cgi->param('printing_type'),
-                    layout_name     => $cgi->param('layout_name'),
+                    barcode_type    => $cgi->param('barcode_type') || 'CODE39',
+                    printing_type   => $cgi->param('printing_type') || 'BAR',
+                    layout_name     => $cgi->param('layout_name') || 'DEFAULT',
                     guidebox        => ($cgi->param('guidebox') ? 1 : 0),
-                    font            => $cgi->param('font'),
-                    font_size       => $cgi->param('font_size'),
-                    callnum_split   => ($cgi->param('callnum_split') ? 1 : 0),
-                    text_justify    => $cgi->param('text_justify'),
-                    format_string   => $cgi->param('format_string'),
+                    font            => $cgi->param('font') || 'TR',
+                    font_size       => $cgi->param('font_size') || 3,
+                    #
+                    #callnum_split   => ($cgi->param('callnum_split') ? 1 : 0),
+                    #
+                    break_rule_string => $cgi->param('break_rule_string') || '',
+                    text_justify    => $cgi->param('text_justify') || 'L',
+                    format_string   => $cgi->param('format_string') || 'title, author, isbn, issn, itemtype, barcode, callnumber',
     );
     if ($layout_id) {   # if a label_id was passed in, this is an update to an existing layout
         $layout = C4::Labels::Layout->retrieve(layout_id => $layout_id);
         $layout->set_attr(@params);
         $layout->save();
+        $errs = $layout->errs() || [];
     }
     else {      # if no label_id, this is a new layout so insert it
         $layout = C4::Labels::Layout->new(@params);
         $layout->save();
+        $errs = $layout->errs() || [];
     }
-    print $cgi->redirect("label-manage.pl?label_element=layout");
-    exit;
+    unless (@$errs) {
+       print $cgi->redirect("label-manage.pl?label_element=layout");
+       exit;
+    }
 }
 else {  # if we get here, this is a new layout
     $layout = C4::Labels::Layout->new();
@@ -155,6 +163,7 @@ my $text_justification_types = _set_selected(get_text_justification_types(), $la
 my $select_text_fields = _select_format_string($layout->get_attr('format_string'));
 
 $template->param(
+        errs            => $errs,
         barcode_types   => $barcode_types,
         label_types     => $label_types,
         font_types      => $font_types,
@@ -163,6 +172,7 @@ $template->param(
         layout_id       => $layout->get_attr('layout_id') > -1 ? $layout->get_attr('layout_id') : '',
         layout_name     => $layout->get_attr('layout_name'),
         guidebox        => $layout->get_attr('guidebox'),
+        break_rule_string => $layout->get_attr('break_rule_string'),
         font_size       => $layout->get_attr('font_size'),
         callnum_split   => $layout->get_attr('callnum_split'),
         format_string   => $layout->get_attr('format_string'),

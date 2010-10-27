@@ -4,10 +4,10 @@
 	<script type="text/javascript">
         //<![CDATA[
 		$(document).ready(function(){
-		var selectedUnit = $("#units option:selected").attr("value");
+		var selectedUnit = $("#tmpl_units option:selected").attr("value");
 		var unitfields = $("#page_height,#page_width,#label_width,#label_height,#top_margin,#left_margin,#top_text_margin,#left_text_margin,#col_gap,#row_gap");
 		$(unitfields).after("<span class=\"unit\">"+getUnit(selectedUnit)+"</span>");
-		$("#units").change(function(){
+		$("#tmpl_units").change(function(){
 			$(".unit").html(getUnit($(this).val()));
 		});
 		function getUnit(unit){
@@ -34,6 +34,11 @@
 		}
 		});
         //]]>
+
+   function defineProfile() {
+      document.input.defineProfile.value = 1;
+      document.input.submit();
+   }
 	</script>
 </head>
 <body>
@@ -50,7 +55,8 @@
         <div id="bd">
             <div id="yui-main">
                 <div class="yui-b">
-                    <form name="input" action="/cgi-bin/koha/labels/label-edit-template.pl" method="get">
+                    <form name="input" action="label-edit-template.pl" method="post">
+                    <input type=hidden name="defineProfile" value="0">
                     <div class="yui-g">
                         <h3>Edit Label Template</h3>
                         <div class="yui-u first">
@@ -68,9 +74,9 @@
                                         <textarea cols="30" rows="3" id="template_desc" name="template_desc"><!-- TMPL_VAR NAME="template_desc" --></textarea>
                                     </li>
  									<li>
-                                 <label for="units">Units:</label>
-                                 <select id="units" name="units">
-                                 <!-- TMPL_LOOP NAME="units" -->
+                                 <label for="tmpl_units">Units:</label>
+                                 <select id="tmpl_units" name="tmpl_units">
+                                 <!-- TMPL_LOOP NAME="tmpl_units" -->
 
 									<!-- TMPL_IF NAME="selected" -->
 									<option value="<!-- TMPL_VAR NAME="type" -->" selected="selected">
@@ -140,8 +146,9 @@
 
                                     <li>
                                         <label for="profile_id">Profile:</label>
+                                        <select name="profile_id" id="profile_id">
+                                        <option value="0">[New Printer Profile]
                                         <!-- TMPL_IF NAME="profile_list" -->
-                                        <select id="profile_id" name="profile_id">
                                         <!-- TMPL_LOOP NAME="profile_list" -->
 <!-- TMPL_IF NAME="selected" -->
 <option value="<!-- TMPL_VAR NAME="profile_id" -->" selected="selected">
@@ -152,8 +159,6 @@
                                         </option>
                                         <!-- /TMPL_LOOP -->
                                         </select>
-                                        <!-- TMPL_ELSE -->
-                                        <a href="/cgi-bin/koha/labels/label-edit-profile.pl?op=new">Click here to define a printer profile.</a>
                                         <!-- /TMPL_IF -->
                                     </li>
                                 </ol>

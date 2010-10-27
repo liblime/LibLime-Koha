@@ -224,8 +224,9 @@ function verify_images() {
                 <!-- TMPL_IF NAME="itemdata_ccode" --><th>Collection</th><!-- /TMPL_IF -->
                 <th>Call Number</th>
                 <th>Status</th>
-                <th>Last seen</th>
+                <th>Last Seen</th>
                 <th>Barcode</th>
+                <th>Spine Label</th>
                 <!-- TMPL_IF NAME="volinfo" --><th>Publication Details</th><!-- /TMPL_IF -->
                 <!-- TMPL_IF NAME="itemdata_uri" --><th>URL</th><!-- /TMPL_IF -->
                 <!-- TMPL_IF NAME="itemdata_copynumber" --><th>Copy No.</th><!-- /TMPL_IF -->
@@ -339,6 +340,8 @@ function verify_images() {
                     </td>
                     <td class="datelastseen"><!-- TMPL_VAR NAME="datelastseen" --></td>
                     <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?type=<!-- TMPL_VAR NAME="type" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;bi=<!-- TMPL_VAR NAME="biblioitemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber">"><!-- TMPL_VAR NAME="barcode" --></a></td>
+                    <td><a href="/cgi-bin/koha/labels/spinelabel-print.pl?barcode=<!-- TMPL_VAR name="barcode" -->">Print Label</a>
+                    </td>
 				<!-- TMPL_IF NAME="volinfo" -->	<td class="enumchron">
 					<!-- TMPL_IF NAME="itemdata_enumchron" -->
 						<!-- TMPL_IF NAME="enumchron" -->

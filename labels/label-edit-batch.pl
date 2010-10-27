@@ -27,6 +27,7 @@ use CGI;
 use C4::Auth qw(get_template_and_user);
 use C4::Output qw(output_html_with_http_headers);
 use C4::Branch qw(get_branch_code_from_name);
+use C4::Items qw(GetItemnumberFromBarcode);
 use C4::Labels::Lib 1.000000 qw(get_label_summary html_table);
 use C4::Labels::Batch 1.000000;
 
@@ -50,6 +51,7 @@ my $db_rows = {};
 my $batch = undef;
 my $display_columns = [ {_label_number  => {label => 'Label Number', link_field => 0}},
                         {_summary       => {label => 'Summary', link_field => 0}},
+                        {_cnum          => {label => 'Call Number', link_field=>0}},
                         {_item_type     => {label => 'Item Type', link_field => 0}},
                         {_barcode       => {label => 'Barcode', link_field => 0}},
                         {select         => {label => 'Select', value => '_label_id'}},
@@ -57,7 +59,8 @@ my $display_columns = [ {_label_number  => {label => 'Label Number', link_field 
 my $op = $cgi->param('op') || 'edit';
 my $batch_id = $cgi->param('element_id') || $cgi->param('batch_id') || undef;
 my @label_ids = $cgi->param('label_id') if $cgi->param('label_id');
-my @item_numbers = $cgi->param('item_number') if $cgi->param('item_number');
+my @item_numbers = $cgi->param('item_number') || ();
+my $barcode = $cgi->param('barcode') if $cgi->param('barcode');
 
 my $branch_code = get_branch_code_from_name($template->param('LoginBranchname'));
 
@@ -76,9 +79,18 @@ elsif ($op eq 'delete') {
     $errstr = "batch $batch_id was not deleted." if $err;
 }
 elsif ($op eq 'add') {
+    push @item_numbers, GetItemnumberFromBarcode($barcode) if $barcode;
     $batch = C4::Labels::Batch->retrieve(batch_id => $batch_id);
     $batch = C4::Labels::Batch->new(branch_code => $branch_code) if $batch == -2;
     if ($branch_code){
+        my @barcodes = split(/\s+/,$barcode);
+        foreach my $number(@barcodes) {
+            $number =~ s/\r*\n*$//;
+            next unless $number;
+            if (my $item_number = GetItemnumberFromBarcode($number)) {
+               push @item_numbers, $item_number;
+            }
+        }
         foreach my $item_number (@item_numbers) {
             $err = $batch->add_item($item_number);
         }
