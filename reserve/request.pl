@@ -475,7 +475,7 @@ foreach my $biblionumber (@biblionumbers) {
                 }
             }
             
-			my $issuingrule = GetIssuingRule( $borrowerinfo->{'categorycode'}, $item->{'itype'}, $borrowerinfo->{'branchcode'} );
+			my $issuingrule = GetIssuingRule( $borrowerinfo->{'categorycode'}, $item->{'itype'}, $item->{'homebranch'} );
             my $policy_holdallowed = 1;
             
             $item->{'holdallowed'} = $issuingrule->{'holdallowed'};
