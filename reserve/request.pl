@@ -247,9 +247,12 @@ foreach my $biblionumber (@biblionumbers) {
     my $number_reserves = GetReserveCount( $borrowerinfo->{'borrowernumber'} );    
     if ( C4::Context->preference('UseGranularMaxHolds') ) {
     	my $itemtype;
-    	$sth = $dbh->prepare("SELECT itemtype FROM biblioitems WHERE biblionumber = ?");
+    	$sth = $dbh->prepare("SELECT itype FROM items WHERE biblionumber = ?");
 	$sth->execute($biblionumber);
 	($itemtype) = $sth->fetchrow_array;
+
+        my @reservesByItemtype = C4::Reserves::GetReservesByBorrowernumberAndItemtypeOf($borrowerinfo->{'borrowernumber'},$biblionumber);
+        my $number_reserves = scalar( @reservesByItemtype );
                                                 
     	my $irule = GetIssuingRule($borrowerinfo->{'categorycode'}, $itemtype, C4::Context->userenv->{'branch'} );
     	my $max_holds = $irule->{'max_holds'};    	
@@ -257,7 +260,7 @@ foreach my $biblionumber (@biblionumbers) {
     	  $template->param( warnings => 1 );
     	  $template->param( maxreserves => 1);
     	  $template->param( override_required => 1 );
-	}
+    	}
     }
 
   if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
