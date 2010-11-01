@@ -663,7 +663,7 @@ sub ModItemLost {
           WHERE items.itemnumber = ?
     ", {}, $itemnumber );
     return unless ( $data->{'borrowernumber'} );
-    C4::Stats::UpdateStats( C4::Context->userenv->{'branch'}, 'itemlost', $data->{'replacementprice'} || 0, $lostvalue, $itemnumber, $data->{'itype'}, $data->{'borrowernumber'}, 0 ) if ( $lostvalue > 0 );
+    C4::Stats::UpdateStats( '', 'itemlost', $data->{'replacementprice'} || 0, $lostvalue, $itemnumber, $data->{'itype'}, $data->{'borrowernumber'}, 0 ) if ( $lostvalue > 0 );
 }
 
 =head2 DelItem
