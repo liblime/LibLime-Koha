@@ -2877,11 +2877,22 @@ sub _koha_marc_update_bib_ids {
 
     } else {
         # biblionumber & biblioitemnumber are in the same field (can't be <10 as fields <10 have only 1 value)
-        my $new_field = MARC::Field->new(
+        my $new_field;
+        if ($biblio_tag == 999) {
+          my @isbns = $record->subfield('999','e'); # Account for 999$e field
+          $new_field = MARC::Field->new(
+            $biblio_tag, '', '',
+            "$biblio_subfield" => $biblionumber,
+            "$biblioitem_subfield" => $biblioitemnumber,
+            map { ('e' => $_) } @isbns
+          );
+        } else {
+          $new_field = MARC::Field->new(
             $biblio_tag, '', '',
             "$biblio_subfield" => $biblionumber,
             "$biblioitem_subfield" => $biblioitemnumber
-        );
+          );
+        }
 
         # drop old field and create new one...
         my $old_field = $record->field($biblio_tag);

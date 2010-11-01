@@ -396,7 +396,7 @@ sub get_corrected_marc_record {
         if ($record_type eq 'biblio') {
             my $succeeded = fix_biblio_ids($marc, $record_number);
             return unless $succeeded;
-            add_isbn13s($marc);
+            add_isbn13s($marc,$record_number);
         } else {
             fix_authority_id($marc, $record_number);
         }
@@ -496,12 +496,14 @@ sub fix_biblio_ids {
 
 sub add_isbn13s {
     my $marc = shift;
+    my $record_number = shift;
 
     my ($isbntag, $isbnsubfield) = GetMarcFromKohaField('biblioitems.isbn', '');
     return unless $isbntag and $isbnsubfield;
     my %isbns =();
     foreach my $field ($marc->field($isbntag)) {
-        my $sfa = $field->subfield('a');
+      foreach my $sfaz qw(a z) {
+        my $sfa = $field->subfield($sfaz);
         next unless $sfa;
         my ($isbn_str) = $sfa =~ /^([0-9-]+[0-9xX])/;
         next unless defined $isbn_str;
@@ -510,18 +512,38 @@ sub add_isbn13s {
         my $isbn = Business::ISBN->new($isbn_str);
         next unless defined $isbn;
         next unless $isbn->is_valid();
-        next unless $isbn->is_valid();
         my $isbn13_str = $isbn->as_isbn13()->as_string([]);
         $isbns{$isbn13_str}++;
         my $isbn10 = $isbn->as_isbn10();
         next unless defined $isbn10;
         $isbns{$isbn10->as_string([])}++;
+      }
     }
     return unless %isbns;
-    if (my $f999 = $marc->field('999')) {
-        $f999->add_subfields(map { ('e' => $_) } keys %isbns);
+    if ($marc->field('999')) {
+        my @isbns_unique;
+        foreach my $field ($marc->field('999')) {
+          my @isbns_999e = $field->subfield('e');
+          next if ($#isbns_999e < 0);
+          my $matched_isbn = 0;
+          foreach my $key (keys %isbns) {
+            $matched_isbn = 0;
+            for my $isbncnt (0..($#isbns_999e)) {
+              $matched_isbn = 1 if ($isbns_999e[$isbncnt] eq $key);
+            }
+            push @isbns_unique, $key if (!$matched_isbn);
+          }
+        }
+
+        my $sfcnt = $marc->field('999')->add_subfields(map { ('e' => $_) } @isbns_unique);
+        my @isbn_list = $marc->subfield('999','e');
+        ModBiblioframework($record_number, '');
+        ModBiblio($marc, $record_number, '');
+        @isbn_list = $marc->subfield('999','e');
     } else {
         $marc->append_field(MARC::Field->new('999', ' ', ' ', map { ('e' => $_) } keys %isbns));
+        ModBiblioframework($record_number, '');
+        ModBiblio($marc, $record_number, '');
     }
 }
 
