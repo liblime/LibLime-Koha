@@ -3629,6 +3629,31 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done (Adding LostItems)\n";
 }
 
+$DBversion = '4.03.00.005';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+      INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES (
+        'FillRequestsAtPickupLibrary', '0', '', 'Fill hold requests at your local library if possible before sending an item to another branch to fill a hold request.', 'YesNo'
+      )
+    /);
+
+    $dbh->do(qq/
+      INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES (
+        'HoldsTransportationReductionThreshold', '0', '', 'The number of holds that must be in the queue for the holds transportation reduction to be enabled ( assuming FillRequestsAtPickupLibrary is enabled ).', 'Integer'
+      )
+    /);
+    
+    $dbh->do(qq/
+      INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES (
+        'FillRequestsAtPickupLibraryAge', '30', '', 'Measured in days. If there are any higher-priority active holds that have been waiting longer than the FillRequestsAtPickupLibraryAge, then the item will fill the highest priority active hold, even thought that will require transportation. Note that the highest-priority hold may not be the one that’ s been waiting longest.', 'Integer'
+      );
+    /);
+        
+    print "Upgrade to $DBversion done ( Add systempreferences FillRequestsAtPickupLibrary, HoldsTransportationReductionThreshold, and FillRequestsAtPickupLibraryAge )\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

@@ -40,7 +40,8 @@ use C4::Branch qw( GetBranchDetail );
 use C4::Dates qw( format_date_in_iso );
 use List::MoreUtils qw( firstidx );
 use Date::Calc qw(Today Add_Delta_Days);
-
+use Time::Local;
+        
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 =head1 NAME
@@ -575,6 +576,7 @@ Check queued list of this document and check if this document must be  transfere
 
 sub GetOtherReserves {
     my ($itemnumber) = @_;
+    warn "GetOtherReserves( $itemnumber )";
     my $messages;
     my $nextreservinfo;
     my ( $restype, $checkreserves, $count ) = CheckReserves($itemnumber);
@@ -861,6 +863,10 @@ sub CheckReserves {
     # the more important the item.)
     # $highest is the most important item we've seen so far.
     my $highest;
+    my $exact;
+    my $local;
+    my $oldest;
+    
     if ($count) {
         my $priority = 10000000;
         foreach my $res (@reserves) {
@@ -874,7 +880,8 @@ sub CheckReserves {
             # might be searching by barcode.
             if ( $res->{'itemnumber'} == $item && $res->{'priority'} == 0) {
                 # Found it
-                return ( "Waiting", $res, $count );
+                $exact = $res;
+                last;
             }
             else {
                 # See if this item is more important than what we've got
@@ -889,15 +896,100 @@ sub CheckReserves {
         }
     }
 
-    # If we get this far, then no exact match was found.
-    # We return the most important (i.e. next) reservation.
-    if ($highest) {
+    if ( 
+      ( $count > C4::Context->preference('HoldsTransportationReductionThreshold') )
+      || 
+      ( C4::Context->preference('HoldsTransportationReductionThreshold') eq '0' ) 
+    ) {
+      $local = GetReserve_NextLocalReserve( $item, $barcode );
+      $oldest = GetReserve_OldestReserve( $item, $barcode );
+      
+      undef $oldest unless ( 
+        $oldest->{'age_in_days'} > C4::Context->preference('FillRequestsAtPickupLibraryAge') 
+        && 
+        $oldest->{'priority'} < $local->{'priority'}
+      );
+    }
+    
+    if ( $oldest ) {
+      return( 'Reserved', $oldest, $count );
+    } elsif ( $local ) {
+      return( 'Reserved', $local, $count );
+    } elsif ( $exact ) {
+        # Found an exact match, return it
+        return ( "Waiting", $exact, $count );
+    } elsif ($highest) {
+        # If we get this far, then no exact match was found.
+        # We return the most important (i.e. next) reservation.
         $highest->{'itemnumber'} = $item;
         return ( "Reserved", $highest, $count );
     }
     else {
         return ( 0, 0, 0 );
     }
+}
+
+=item GetReserve_NextLocalReserve
+
+  my $reserve = GetReserve_NextLocalReserve( $itemnumber[, $barcode ] );
+  
+  Returns the highest priority reserve for the given itemnumber/barcode
+  whose pickup location is the logged in branch, if any.  
+=cut
+
+sub GetReserve_NextLocalReserve {
+  my ( $itemnumber, $barcode ) = @_;
+
+  my $branchcode = C4::Context->userenv->{"branch"};
+  
+  my $dbh = C4::Context->dbh;
+  my $sth;
+  
+  my $item = GetItem( $itemnumber, $barcode );
+  $itemnumber = $item->{'itemnumber'};
+  my $biblionumber = $item->{'biblionumber'};
+  my $biblioitemnumber = $item->{'biblioitemnumber'};
+
+  my $reserve;
+  $reserve->{'priority'} = 10000000;
+
+  my @reserves = _Findgroupreserve( $biblioitemnumber, $biblionumber, $itemnumber );
+
+  foreach my $r (@reserves) {
+      $reserve = $r if ( $r->{'branchcode'} eq $branchcode && $r->{'priority'} < $reserve->{'priority'} );
+  }
+
+  return $reserve if ( defined $reserve->{'branchcode'} );
+}
+
+=item GetReserve_OldestReserve
+
+  my $reserve = GetReserve_OldestReserve( $itemnumber[, $barcode ] );
+  
+  Returns the oldest reserve for the given itemnumber/barcode, if any.
+  
+=cut
+
+sub GetReserve_OldestReserve {
+  my ( $itemnumber, $barcode ) = @_;
+  my $branchcode = C4::Context->userenv->{"branch"};
+  
+  my $dbh = C4::Context->dbh;
+  my $sth;
+  
+  my $item = GetItem( $itemnumber, $barcode );
+  $itemnumber = $item->{'itemnumber'};
+  my $biblionumber = $item->{'biblionumber'};
+  my $biblioitemnumber = $item->{'biblioitemnumber'};
+
+  my $reserve;
+
+  my @reserves = _Findgroupreserve( $biblioitemnumber, $biblionumber, $itemnumber );
+  foreach my $r (@reserves) {
+      $reserve = $r if ( $r->{'timestamp'} > $reserve->{'timestamp'} );
+  }
+  
+  return $reserve if ( defined $reserve->{'branchcode'} );
 }
 
 =item CancelReserves
@@ -1820,7 +1912,8 @@ sub _Findgroupreserve {
                biblioitems.biblioitemnumber AS biblioitemnumber,
                reserves.itemnumber          AS itemnumber,
                borrowers.categorycode       AS borrowercategory,
-               borrowers.branchcode         AS borrowerbranch
+               borrowers.branchcode         AS borrowerbranch,
+               DATEDIFF(NOW(),reserves.timestamp) AS age_in_days
         FROM reserves
         JOIN biblioitems USING (biblionumber)
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
@@ -1858,7 +1951,8 @@ sub _Findgroupreserve {
                biblioitems.biblioitemnumber AS biblioitemnumber,
                reserves.itemnumber          AS itemnumber,
                borrowers.categorycode       AS borrowercategory,
-               borrowers.branchcode         AS borrowerbranch
+               borrowers.branchcode         AS borrowerbranch,
+               DATEDIFF(NOW(),reserves.timestamp) AS age_in_days
         FROM reserves
         JOIN biblioitems USING (biblionumber)
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
@@ -1895,7 +1989,8 @@ sub _Findgroupreserve {
                reserveconstraints.biblioitemnumber AS biblioitemnumber,
                reserves.itemnumber                 AS itemnumber,
                borrowers.categorycode       AS borrowercategory,
-               borrowers.branchcode         AS borrowerbranch
+               borrowers.branchcode         AS borrowerbranch,
+               DATEDIFF(NOW(),reserves.timestamp) AS age_in_days
         FROM reserves
           LEFT JOIN reserveconstraints ON reserves.biblionumber = reserveconstraints.biblionumber
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
