@@ -1,0 +1,288 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Periodicals &rsaquo; <!-- TMPL_IF name="periodical_id" --><!-- TMPL_VAR name="bibliotitle" escape="html" --> &rsaquo; Modify periodical<!-- TMPL_ELSE -->New periodical<!-- /TMPL_IF --></title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+
+<style>
+table, thead, tbody, tr, td, th {
+border-style: inherit;
+}
+</style>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="periodicals-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="periodicals-home.pl">Periodicals</a> &rsaquo; <!-- TMPL_IF name="periodical_id" --><a href="periodicals-detail.pl?periodical_id=<!-- TMPL_VAR NAME="periodical_id" -->"><i><!-- TMPL_VAR NAME="bibliotitle" escape="html" --></i></a> &rsaquo; Modify periodical<!-- TMPL_ELSE -->New periodical<!-- /TMPL_IF --></div>
+
+<div id="doc3" class="yui-t7">
+   
+   <div id="bd">
+   <TMPL_IF NAME="error"><span class="error"><h1><TMPL_VAR NAME="error"></h1></span></TMPL_IF>
+   <div class="yui-g">
+    <h1><TMPL_IF name="periodical_id"> Modify periodical for <i><TMPL_VAR name="bibliotitle" escape="html"></i><TMPL_ELSE>Add a new periodical</TMPL_IF></h1>
+    <form method="GET" name="f" action="/cgi-bin/koha/periodicals/periodicals-add.pl">
+<!-- TMPL_IF name="periodical_id" -->
+        <input type="hidden" name="periodical_id" value="<!-- TMPL_VAR name="periodical_id" -->" />
+<!-- /TMPL_IF -->
+        <input type="hidden" name="op" value="save" />
+        <input type="hidden" name="user" value="<!-- TMPL_VAR name="loggedinusername" -->" />
+
+	<div class="yui-u first">
+    <fieldset id="periodical_add_information" class="rows">
+	<legend>Periodical details</legend>
+	<ol>
+        <li><span class="label">Periodical #</span> <!--TMPL_VAR name="periodical_id"--></li>
+        <li><span class="label">Librarian: </span> <!-- TMPL_VAR name="loggedinusername" --></li>
+        <li>
+            <label for="biblionumber" class="required" title="Periodicals must be associated with a bibliographic record">Biblio:</label>
+            
+                <input type="text" name="biblionumber" id="biblionumber" value="<TMPL_VAR name=biblionumber>" size="8" /> 
+                (<input type="text" name="title" value="<!-- TMPL_VAR name="bibliotitle" -->" disabled="disabled" readonly="readonly" />) <span class="required" title="Periodicals must be associated with a bibliographic record">Required</span>
+               <div class="inputnote"> <a href="#" onclick="Plugin(f)">Search for Biblio</a> | <!--TMPL_IF Name="periodical_id"--><a href="#" onclick="addbiblioPopup(<!-- TMPL_VAR NAME="bibnum" -->); return false;">Edit biblio</a><!-- TMPL_ELSE -->
+                <a href="#" onclick="addbiblioPopup(); return false;">Create Biblio</a><!--/TMPL_IF--></div>
+            
+        </li>
+            <div style="float:left;clear:left;margin:1em;"><strong>Note:</strong>
+            
+                <ul>
+                    <li>The periodical <strong>must</strong> be associated with a bibliographic record.</li>
+                </ul></div>
+            
+            
+	</fieldset>
+	</div>
+
+<div class="yui-u">
+<div id="periodical_form_planning">
+     <fieldset class="rows">
+     <legend>Serials planning</legend>
+
+     <table style="border-style: hidden" cellpadding="3">
+       <TMPL_UNLESS NAME="periodical_id">
+       <tr>
+	 <td><label for="firstacquidate">Initial publication date:</label></td>
+         <td><input type="text" name="firstacquidate" value="<TMPL_VAR name="firstacquidate">" size="13" maxlength="10" id="firstacquidate" <TMPL_IF NAME="periodical_id">disabled="disabled"</TMPL_IF>; /></td>
+      </tr>
+        <script type="text/javascript">
+                    Calendar.setup({
+                        inputField   : "firstacquidate",
+                        ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
+                        button       : "firstacquidate",
+                        align        : "Tl"
+                    });
+        </script>
+
+      </TMPL_UNLESS>
+      <tr>
+        <td><label for="frequency">Frequency:</label></td>
+        <td><select name="frequency" size="1" id="frequency">
+                <TMPL_IF NAME="frequency_expressed"><option><TMPL_VAR NAME="frequency_expressed"></option></TMPL_IF>
+                <option value="">-- please choose --</option>
+                <TMPL_LOOP NAME="frequency_formats">
+                <option value="<TMPL_VAR NAME="format">"><TMPL_VAR NAME="human"></option>
+                </TMPL_LOOP>
+            </select></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><label for="chronology_format_select">Chronology format:</label></td>
+        <td><select size="1" id="chronology_format_select" onchange="javascript:UpdateChronologyFormat();">
+               <TMPL_IF NAME="chronology_expressed"><option><TMPL_VAR NAME="chronology_expressed"></option></TMPL_IF>
+               <option value="">-- none --</option>
+               <TMPL_LOOP NAME="chronology_formats">
+               <option value="<TMPL_VAR NAME="format">"><TMPL_VAR NAME="human"></option>
+               </TMPL_LOOP>
+               <option value="">Custom</option>
+           </select></td>
+      </tr>
+      <tr>
+        <td><label for="sequence_format_select">Sequence format:</label></td>
+        <td><select size="1" id="sequence_format_select" onchange="javascript:UpdateSequenceFormat();">
+               <TMPL_IF NAME="sequence_expressed"><option><TMPL_VAR NAME="sequence_expressed"></option></TMPL_IF>
+               <option value="">-- none --</option>
+               <TMPL_LOOP NAME="sequence_formats">
+               <option value="<TMPL_VAR NAME="format">"><TMPL_VAR NAME="human"></option>
+               </TMPL_LOOP>
+               <option value="">Custom</option>
+           </select></td>
+      </tr>
+      <TMPL_UNLESS NAME="periodical_id">
+      <tr>
+        <td><label for="first_issue">Initial issue:</label></td>
+        <td>
+            <span class="seqlab0"></span><span class="seqval0span"><input type="text" class="seqval0" name="seqval0" size="2" /></span>
+            <span class="seqlab1"></span><span class="seqval1span"><input type="text" class="seqval1" name="seqval1" size="2" /></span>
+            <span class="seqlab2"></span><span class="seqval2span"><input type="text" class="seqval2" name="seqval2" size="2" /></span>
+        </td>
+      </tr>
+      </TMPL_UNLESS>
+      <tr>
+        <td><label for="">Rollver points:</label></td>
+        <td>
+            <span class="seqlab0"></span><span class="rollval0span"><input type="text" disabled="disabled" class="rollval0" name="rollval0" value="9999" size="2" /></span>
+            <span class="seqlab1"></span><span class="rollval1span"><input type="text" class="rollval1" name="rollval1" size="2" /></span>
+            <span class="seqlab2"></span><span class="rollval2span"><input type="text" class="rollval2" name="rollval2" size="2" /></span>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2"><hr/></td>
+      </tr>
+      <tr>
+        <td><label for="advanced_mode">Show Advanced Options:</label></td>
+        <td>
+          <input type="checkbox" class="advanced_mode">
+        </td>
+      </tr>
+      <tr class="advanced_options">
+        <td><label for="sequence_format">Sequence format:</label></td>
+        <td><input type="text" name="sequence_format" id="sequence_format" value="<TMPL_VAR name="sequence_format">" /></td>
+      </tr>
+      <tr class="advanced_options">
+        <td><label for="chronology_format">Chronology format:</label></td>
+        <td><input type="text" name="chronology_format" id="chronology_format" value="<TMPL_VAR name="chronology_format">" /></td>
+      </tr>
+      <TMPL_UNLESS NAME="periodical_id">
+      <tr class="advanced_options">
+        <td><label for="first_sequence">First sequence:</label></td>
+        <td><input type="text" name="first_sequence" id="first_sequence" value="<TMPL_VAR name="first_sequence">" /></td>
+      </tr>
+      </TMPL_UNLESS>
+      <tr class="advanced_options">
+        <td><label for="iterator">Sequence rule:</label></td>
+        <td><input type="text" name="iterator" id="iterator" value="<TMPL_VAR name="iterator">" /></td>
+      </tr>
+      <tr>
+        <td colspan="2"><hr/></td>
+      </tr>
+      <tr>
+        <td style="vertical-align:text-top"><input type="button" value="Generate Examples" class="buttonShowExamples" /></td>
+        <td><p class="serex_p"></p></td>
+      </tr>
+     </table>
+	</fieldset>
+</div>
+    <fieldset class="action">
+        <input type="submit" class="action_save"  value="Save periodical" />
+    </fieldset>
+</div>
+
+</form>
+</div>
+
+</div>
+
+<script type="text/javascript">
+
+$('input.buttonShowExamples').click(RetrieveSerialExamples);
+
+function AppendSequence(i, seq) {
+       $('p.serex_p').append(seq + "</br>");
+}
+
+function RetrieveSerialExamples() {
+    $('p.serex_p').empty();
+    $.getJSON(
+        'format_sequence.pl',
+        {
+//          startdate: '2010-11-30', frequency: '1w', format: 'Vol. {Xn}, No. {Yn}', sequence: '1:3:0', iterator: '1,2,9999:1,1,10:0,0,0', count: 14
+          startdate: document.f.firstacquidate.value,
+          frequency: document.f.frequency.value,
+          sequence_format: document.f.sequence_format.value,
+          chronology_format: document.f.chronology_format.value,
+          sequence: document.f.first_sequence.value,
+          iterator: document.f.iterator.value,
+          count: 14
+        },
+        function(data) {
+            $.each(data.vintages, function(i, seq) {AppendSequence(i, seq)})
+        }
+     );
+}
+
+function addbiblioPopup(biblionumber) {
+	var destination = "/cgi-bin/koha/cataloguing/addbiblio.pl?mode=popup";
+	if(biblionumber){ destination += "&biblionumber="+biblionumber; }
+ window.open(destination,'AddBiblioPopup','width=1024,height=768,toolbar=no,scrollbars=yes');
+}
+
+function Plugin(f) {
+	 window.open('periodical-bib-search.pl','FindABibIndex','width=800,height=400,toolbar=no,scrollbars=yes');
+}
+
+$('.advanced_mode').change(function() {
+    ($('.advanced_mode').val() == 'on') ? $('.advanced_options').show() : $('.advanced_options').hide();
+});
+
+$('span.seqval0span').hide();
+$('span.seqval1span').hide();
+$('span.seqval2span').hide();
+
+$('span.rollval0span').hide();
+$('span.rollval1span').hide();
+$('span.rollval2span').hide();
+
+$('tr.advanced_options').hide();
+
+$('.seqval0').change(function() {UpdateFirstSequence(); UpdateIterator()});
+$('.seqval1').change(UpdateFirstSequence);
+$('.seqval2').change(UpdateFirstSequence);
+
+$('.rollval1').change(UpdateIterator);
+$('.rollval2').change(UpdateIterator);
+
+function UpdateFirstSequence() {
+    document.f.first_sequence.value = $('.seqval0').val() + ':' +
+        ($('.seqval1').val() || '0') + ':' +
+        ($('.seqval2').val() || '0');
+}
+
+function UpdateIterator() {
+    document.f.iterator.value = '1,1,' + $('.rollval0').val() + ':';
+    if($('.rollval1').val()) {
+        document.f.iterator.value += '1,1,' + $('.rollval1').val() + ':';
+    } else {
+        document.f.iterator.value += '0,0,0:';
+    }
+    if($('.rollval2').val()) {
+        document.f.iterator.value += '1,1,' + $('.rollval2').val();
+    } else {
+        document.f.iterator.value += '0,0,0';
+    }
+}
+
+function UpdateSequenceFormat() {
+    document.f.sequence_format.value = document.f.sequence_format_select.value;
+    var seqlabels = document.f.sequence_format.value.split(/\{.*?\}/);
+    $('span.seqlab0').empty().append(seqlabels[0]);
+    $('span.seqlab1').empty().append(seqlabels[1]);
+    $('span.seqlab2').empty().append(seqlabels[2]);
+
+    $('span.seqval0span').show();
+    $('span.rollval0span').show();
+
+    if (seqlabels[1] == '' || seqlabels[1] == undefined) {
+        $('span.seqval1span').hide();
+        $('span.rollval1span').hide();
+    } else {
+        $('span.seqval1span').show();
+        $('span.rollval1span').show();
+    }
+
+    if (seqlabels[2] == '' || seqlabels[2] == undefined) {
+        $('span.seqval2span').hide();
+        $('span.rollval2span').hide();
+    } else {
+        $('span.seqval2span').show();
+        $('span.rollval2span').show();
+    }
+}
+
+function UpdateChronologyFormat() {
+    document.f.chronology_format.value = document.f.chronology_format_select.value;
+}
+
+</script>
+
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

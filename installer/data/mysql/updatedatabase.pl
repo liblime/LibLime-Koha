@@ -3675,6 +3675,72 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.00.008';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|
+        INSERT IGNORE INTO systempreferences (variable,value,options,explanation,type)
+        VALUES ('UsePeriodicals', '0', '', 'Use newer "periodicals" module to manage serials.', 'YesNo')
+        |);
+    $dbh->do(q|DROP TABLE IF EXISTS periodicals|);
+    $dbh->do(q|
+        CREATE TABLE periodicals (
+          id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+          biblionumber INT NOT NULL,
+          iterator VARCHAR(48) NOT NULL,
+          frequency VARCHAR(16) NOT NULL,
+          sequence_format VARCHAR(64),
+          chronology_format VARCHAR(64),
+          FOREIGN KEY (`biblionumber`) REFERENCES biblio (`biblionumber`),
+          UNIQUE (`biblionumber`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+        |);
+    $dbh->do(q|DROP TABLE IF EXISTS periodical_serials|);
+    $dbh->do(q|
+        CREATE TABLE periodical_serials (
+          id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+          periodical_id INT NOT NULL,
+          sequence VARCHAR(16),
+          vintage VARCHAR(64) NOT NULL,
+          publication_date DATE NOT NULL,
+          FOREIGN KEY (`periodical_id`) REFERENCES periodicals (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+        |);
+    $dbh->do(q|DROP TABLE IF EXISTS subscriptions|);
+    $dbh->do(q|
+        CREATE TABLE subscriptions (
+          id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+          periodical_id INT NOT NULL,
+          branchcode VARCHAR(10),
+          aqbookseller_id INT,
+          expiration_date DATE,
+          opac_note TEXT DEFAULT NULL,
+          staff_note TEXT DEFAULT NULL,
+          adds_items BOOLEAN NOT NULL DEFAULT FALSE,
+          item_defaults TEXT DEFAULT NULL,
+          FOREIGN KEY (`periodical_id`) REFERENCES periodicals (`id`),
+          FOREIGN KEY (`aqbookseller_id`) REFERENCES aqbooksellers (`id`),
+          FOREIGN KEY (`branchcode`) REFERENCES branches (`branchcode`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+        |);
+    $dbh->do(q|DROP TABLE IF EXISTS subscription_serials|);
+    $dbh->do(q|
+        CREATE TABLE subscription_serials (
+          id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+          subscription_id INT NOT NULL,
+          periodical_serial_id INT NOT NULL,
+          status INT NOT NULL DEFAULT 1,
+          expected_date DATE,
+          received_date DATETIME DEFAULT NULL,
+          itemnumber INT,
+          FOREIGN KEY (`subscription_id`) REFERENCES subscriptions (`id`),
+          FOREIGN KEY (`periodical_serial_id`) REFERENCES periodical_serials (`id`),
+          FOREIGN KEY (`itemnumber`) REFERENCES items (`itemnumber`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        |);
+    print "Upgrade to $DBversion done ( Add tables and syspref for periodicals. )\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table
@@ -3688,7 +3754,7 @@ sub DropAllForeignKeys {
     $sth->execute;
     my $vsc_structure = $sth->fetchrow;
     # split on CONSTRAINT keyword
-    my @fks = split /CONSTRAINT /,$vsc_structure;
+    my @fks = split(/CONSTRAINT /,$vsc_structure);
     # parse each entry
     foreach (@fks) {
         # isolate what is before FOREIGN KEY, if there is something, it's a foreign key to drop

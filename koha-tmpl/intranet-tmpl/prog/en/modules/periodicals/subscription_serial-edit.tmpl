@@ -1,0 +1,72 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Periodicals &rsaquo; Edit Subscription Serial</title>
+<TMPL_INCLUDE NAME="doc-head-close.inc">
+<TMPL_INCLUDE NAME="calendar.inc">
+
+<script type="text/javascript">
+</script>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="periodicals-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="periodicals-home.pl">Periodicals</a> &rsaquo; Edit Subscription Serial</div>
+
+<div id="doc3" class="yui-t7">
+
+<h1>Editing serial receipt status for "<TMPL_VAR NAME="bibliotitle">"</h1>
+
+<form method="GET" action="subscription_serial-edit.pl">
+<input type="hidden" name="op" value="save">
+<table>
+    <tr>
+        <th>Issue</th>
+        <th>Publication Date</th>
+        <th>Expected On</th>
+        <th>Received On</th>
+        <th>Status</th>
+    </tr>
+    <TMPL_LOOP NAME="subscription_serials_loop">
+    <input type="hidden" name="subscription_serial_id" value="<TMPL_VAR NAME="id">">
+    <tr>
+        <td><TMPL_VAR NAME="vintage"></td>
+        <td><TMPL_VAR NAME="publication_date"></td>
+        <td><input type="text" name="expected_date" value="<TMPL_VAR name="expected_date">" size="13" maxlength="10" id="expected_date"/></td>
+            <script type="text/javascript">
+                Calendar.setup({
+                    inputField   : "expected_date",
+                    ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
+                    button       : "expected_date",
+                    align        : "Tl"
+                });
+            </script>
+        <td><input type="text" name="received_date" value="<TMPL_VAR name="received_date">" size="13" maxlength="10" id="received_date"/></td>
+            <script type="text/javascript">
+                Calendar.setup({
+                    inputField   : "received_date",
+                    ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
+                    button       : "received_date",
+                    align        : "Tl"
+                });
+            </script>
+        <td>
+            <select name="status">
+                <TMPL_LOOP NAME="statuses">
+                <option 
+                    <TMPL_IF EXPR="status eq human">selected</TMPL_IF>
+                    value="<TMPL_VAR NAME="id">"><TMPL_VAR NAME="human"></option>
+                </TMPL_LOOP>
+            </select>
+        </td>
+    </tr>
+    </TMPL_LOOP>
+    <tr>
+        <td colspan="6" align="right"><input type="submit"/></td>
+    </tr>
+</table>
+</form>
+
+</div>
+
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

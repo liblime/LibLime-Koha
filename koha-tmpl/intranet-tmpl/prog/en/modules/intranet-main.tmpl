@@ -64,9 +64,13 @@
         <li><a href="/cgi-bin/koha/tools/batchitemedit.pl">Batch Edit Items</a></li>
         <!-- /TMPL_IF -->
         <li><a href="/cgi-bin/koha/authorities/authorities-home.pl">Authorities</a></li>
-		<!-- TMPL_IF NAME="CAN_user_serials" -->
+	<!-- TMPL_IF NAME="CAN_user_serials" -->
+        <TMPL_IF NAME="UsePeriodicals">
+        <li><a href="/cgi-bin/koha/periodicals/periodicals-home.pl">Periodicals</a></li>
+        <TMPL_ELSE>
         <li><a href="/cgi-bin/koha/serials/serials-home.pl">Serials</a></li>
-		<!-- /TMPL_IF -->
+        </TMPL_IF>
+	<!-- /TMPL_IF -->
     </ul>
 	<!-- TMPL_IF NAME="CAN_user_acquisition" -->
     <h3><a href="/cgi-bin/koha/acqui/acqui-home.pl">Acquisitions</a></h3>

@@ -1,0 +1,81 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Periodicals &rsaquo; Edit Periodical Serial</title>
+<TMPL_INCLUDE NAME="doc-head-close.inc">
+<TMPL_INCLUDE NAME="calendar.inc">
+
+<style>
+table, thead, tbody, tr, td, th {
+border-style: inherit;
+}
+</style>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="periodicals-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="periodicals-home.pl">Periodicals</a> &rsaquo; Edit Periodical Serial</div>
+
+<div id="doc3" class="yui-t7">
+
+<form method="GET" action="periodical_serial-edit.pl">
+<input type="hidden" name="op" value="save">
+<input type="hidden" name="periodical_id" value="<TMPL_VAR NAME="periodical_id">">
+<TMPL_LOOP NAME="periodical_serials_loop"><input type="hidden" name="periodical_serial_id" value="<TMPL_VAR NAME="id">"></TMPL_LOOP>
+<TMPL_IF EXPR="op == combine">
+  <table style="border-style: hidden" cellpadding="3">
+    <tr>
+      <td>
+        Combine &quot;<TMPL_LOOP NAME="periodical_serials_loop"><TMPL_VAR NAME="vintage"></TMPL_LOOP>&quot; with the next
+        <select name="count">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+        issues.
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: right">
+        <label for"permanent">Make this change permanent.</label> <input type="checkbox" name="permanent" id="permanent" />
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: right"><input type="submit" value="Save" /></td>
+    </tr>
+  </table>
+<TMPL_ELSE>
+<table>
+    <tr>
+        <th>Issue</th>
+        <th>Publication Date</th>
+        <th>Sequence</th>
+    </tr>
+    <TMPL_LOOP NAME="periodical_serials_loop">
+    <input type="hidden" name="periodical_serial_id" value="<TMPL_VAR NAME="id">">
+    <tr>
+        <td><input type="text" name="vintage" value="<TMPL_VAR NAME="vintage">"/></td>
+        <td><input type="text" name="publication_date" value="<TMPL_VAR name="publication_date">" size="13" maxlength="10" id="publication_date"/>
+        </li>
+    <script type="text/javascript">
+                    Calendar.setup({
+                        inputField   : "publication_date",
+                        ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
+                        button       : "publication_date",
+                        align        : "Tl"
+                    });
+    </script>
+        <td><input type="text" name="sequence" value="<TMPL_VAR NAME="sequence">"/></td>
+    </tr>
+    </TMPL_LOOP>
+    <tr>
+        <td colspan="3" align="right"><input type="submit"/></td>
+    </tr>
+</table>
+</TMPL_IF>
+</form>
+
+</div>
+
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

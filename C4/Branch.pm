@@ -329,7 +329,7 @@ sub GetBranchCategories {
 	my (@where, @bind);
 	if($branchcode) {
 		$query .= ",branchrelations r, branches b ";
-		push @where, "c.categorycode=r.categorycode and r.branchcode=? ";  
+		push @where, "c.categorycode=r.categorycode AND r.branchcode=b.branchcode AND r.branchcode=?";  
 		push @bind , $branchcode;
 	}
 	if ($categorytype) {
@@ -360,7 +360,7 @@ the categories were already here, and minimally used.
 
 	#TODO  manage category types.  rename possibly to 'agency domains' ? as borrowergroups are called categories.
 sub GetCategoryTypes() {
-	return ( 'searchdomain','properties');
+	return ( 'searchdomain','properties', 'subscriptions');
 }
 
 =head2 GetBranch

@@ -2611,6 +2611,58 @@ CREATE TABLE IF NOT EXISTS lost_items (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS periodicals;
+CREATE TABLE periodicals (
+     id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+     biblionumber INT NOT NULL,
+     iterator VARCHAR(48) NOT NULL,
+     frequency VARCHAR(16) NOT NULL,
+     sequence_format VARCHAR(64),
+     chronology_format VARCHAR(64),
+     FOREIGN KEY (`biblionumber`) REFERENCES biblio (`biblionumber`),
+     UNIQUE (`biblionumber`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS periodical_serials;
+CREATE TABLE periodical_serials (
+     id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+     periodical_id INT NOT NULL,
+     sequence VARCHAR(16),
+     vintage VARCHAR(64) NOT NULL,
+     publication_date DATE NOT NULL,
+     FOREIGN KEY (`periodical_id`) REFERENCES periodicals (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS subscriptions;
+CREATE TABLE subscriptions (
+     id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+     periodical_id INT NOT NULL,
+     branchcode VARCHAR(10),
+     aqbookseller_id INT,
+     expiration_date DATE,
+     opac_note TEXT DEFAULT NULL,
+     staff_note TEXT DEFAULT NULL,
+     adds_items BOOLEAN NOT NULL DEFAULT FALSE,
+     item_defaults TEXT DEFAULT NULL,
+     FOREIGN KEY (`periodical_id`) REFERENCES periodicals (`id`),
+     FOREIGN KEY (`aqbookseller_id`) REFERENCES aqbooksellers (`id`),
+     FOREIGN KEY (`branchcode`) REFERENCES branches (`branchcode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS subscription_serials;
+CREATE TABLE subscription_serials (
+     id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+     subscription_id INT NOT NULL,
+     periodical_serial_id INT NOT NULL,
+     status INT NOT NULL DEFAULT 1,
+     expected_date DATE,
+     received_date DATETIME DEFAULT NULL,
+     itemnumber INT,
+     FOREIGN KEY (`subscription_id`) REFERENCES subscriptions (`id`),
+     FOREIGN KEY (`periodical_serial_id`) REFERENCES periodical_serials (`id`),
+     FOREIGN KEY (`itemnumber`) REFERENCES items (`itemnumber`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

@@ -59,6 +59,10 @@ $template->param(
     authtypesloop => \@authtypesloop
 );
 
+$template->param(
+    UsePeriodicals => C4::Context->boolean_preference('UsePeriodicals')
+);
+
 my $all_koha_news   = &GetNewsToDisplay("koha");
 my $koha_news_count = scalar @$all_koha_news;
 

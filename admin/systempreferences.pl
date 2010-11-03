@@ -126,6 +126,7 @@ $tabsysprefs{'item-level_itypes'}         = "Cataloging";
 $tabsysprefs{OpacSuppression}             = "Cataloging";
 $tabsysprefs{SpineLabelFormat}            = "Cataloging";
 $tabsysprefs{SpineLabelAutoPrint}         = "Cataloging";
+$tabsysprefs{UsePeriodicals}              = "Cataloging";
 
 # Circulation
 $tabsysprefs{maxoutstanding}                 = "Circulation";

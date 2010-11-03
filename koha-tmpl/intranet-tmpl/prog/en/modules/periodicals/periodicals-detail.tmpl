@@ -1,0 +1,87 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Periodicals &rsaquo; Details for Periodical #<!-- TMPL_VAR name="periodical_id" --></title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="periodicals-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="periodicals-home.pl">Periodicals</a> &rsaquo; Details for Periodical #<!-- TMPL_VAR name="periodical_id" --></div>
+
+<div id="doc3" class="yui-t2">
+   
+   <div id="bd">
+	<div id="yui-main">
+	<div class="yui-b">
+	<!-- TMPL_INCLUDE NAME="periodicals-toolbar.inc" -->
+
+    <h1>Periodical description for &quot;<!-- TMPL_VAR name="bibliotitle" -->&quot;</h1>
+    
+    <div id="periodical_info">
+        <h2>Periodical Information</h2>
+		<ul>
+		<li><span class="label">Periodical ID: </span><!--TMPL_VAR name="periodical_id"--> (<a href="periodicals-add.pl?periodical_id=<TMPL_VAR NAME="periodical_id">">Edit</a>)(<a href="subscription-add.pl?periodical_id=<TMPL_VAR NAME="periodical_id">">Subscribe</a>)</li>
+        <li><span class="label">Biblio:</span> <i>(<!-- TMPL_VAR name="biblionumber" -->)</i> <a href="/cgi-bin/koha/catalogue/MARCdetail.pl?biblionumber=<!-- TMPL_VAR name="biblionumber" -->"><!-- TMPL_VAR name="bibliotitle" --></a></li>
+     </ul>
+    </div>
+    <div id="sequence_numbering" >
+        <h3>Sequence Prediction</h3>
+        <p><label>Iteration formula:</label> <!-- TMPL_VAR name="iterator" --></p>
+        <p><label>Sequence format:</label> <!-- TMPL_VAR name="sequence_format" --></p>
+        <p><label>Chronology format:</label> <!-- TMPL_VAR name="chronology_format" --></p>
+        <p><label>Frequency:</label> <!-- TMPL_VAR name="frequency" --></p>
+    </div>
+
+    <div id="periodical_serials_list">
+    <h3>Record of Issues</h3>
+    <table>
+        <tr>
+            <th>Issue</th>
+            <th>Publication Date</th>
+            <th>Sequence</th>
+            <!-- <th>Expected Date</th> -->
+            <th>Action</th>
+        </tr>
+        <TMPL_LOOP NAME="periodical_serials_loop">
+        <tr>
+            <td><TMPL_VAR NAME="vintage"></td>
+            <td><TMPL_VAR NAME="publication_date"></td>
+            <td><TMPL_VAR NAME="sequence"></td>
+            <!-- <td><TMPL_VAR NAME="expected_date"></td> -->
+            <td>
+              <a href="periodical_serial-edit.pl?periodical_serial_id=<TMPL_VAR NAME="id">">Edit</a>
+              <TMPL_IF NAME="__last__">| <a href="periodical_serial-edit.pl?periodical_serial_id=<TMPL_VAR NAME="id">&op=combine">Combine</a></TMPL_IF>
+            </td>
+        </tr>
+        </TMPL_LOOP>
+        <tr>
+            <td colspan="4"><a href="periodicals-detail.pl?periodical_id=<TMPL_VAR NAME="periodical_id">&op=gen_next_seq">Generate Next Issue Record</a></td>
+        </tr>
+    </table>
+    </div>
+
+    <div id="subscriptions_list">
+    <table>
+    <h3>Active Subscriptions</h3>
+        <tr>
+            <th>ID</th>
+            <th>Branch</th>
+            <th>Expires</th>
+        </tr>
+        <TMPL_LOOP NAME="subscriptions_loop">
+        <tr>
+            <td><a href="subscription-detail.pl?subscription_id=<TMPL_VAR NAME="id">"><TMPL_VAR NAME="id"></a></td>
+            <td><TMPL_VAR NAME="branchcode"></td>
+            <td><TMPL_VAR NAME="expiration_date"></td>
+        </tr>
+        </TMPL_LOOP>
+    </table>
+    </div>
+</div>
+<br/>
+
+<div class="yui-b">
+<!-- TMPL_INCLUDE NAME="periodicals-menu.inc" -->
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

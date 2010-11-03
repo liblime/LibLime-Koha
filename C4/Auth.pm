@@ -38,7 +38,7 @@ BEGIN {
     $VERSION = 3.02;        # set version for version checking
     $debug = $ENV{DEBUG} || 0 ;
     @ISA   = qw(Exporter);
-    @EXPORT    = qw(&checkauth &get_template_and_user &IsIpInLibrary);
+    @EXPORT    = qw(&checkauth &get_template_and_user &IsIpInLibrary &GetUserGroupBranches);
     @EXPORT_OK = qw(&check_api_auth &get_session &check_cookie_auth &checkpw &check_override_perms &get_all_subpermissions &get_user_subpermissions);
     %EXPORT_TAGS = (EditPermissions => [qw(get_all_subpermissions get_user_subpermissions)]);
     $ldap = C4::Context->config('useldapserver') || 0;
@@ -1584,6 +1584,28 @@ sub IsIpInLibrary {
   }
   
   return;
+}
+
+sub _uniq {
+    return sort keys %{{ map { $_ => 1 } @_ }};
+}
+
+sub GetUserGroupBranches {
+    my $category = shift or die;
+    my $userid = shift || C4::Context::userenv->{id} or die;
+
+    my @branches;
+    my $flags = haspermission($userid);
+    if (defined $flags and $flags->{superlibrarian}) {
+        @branches = keys %{C4::Branch::GetBranches()};
+    } else {
+        my $borrower = GetMember($userid, 'userid') or return undef;
+        push @branches, $borrower->{branchcode};
+        my $categories = C4::Branch::GetBranchCategories($borrower->{branchcode}, $category);
+        push(@branches, map {@{C4::Branch::GetBranchesInCategory($_->{categorycode})}} @{$categories});
+        @branches = _uniq(@branches);
+    }
+    return @branches;
 }
 
 END { }    # module clean-up code here (global destructor)

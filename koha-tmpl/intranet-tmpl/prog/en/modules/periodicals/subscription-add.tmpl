@@ -1,0 +1,213 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Periodicals &rsaquo; <!-- TMPL_IF name="mod" --><!-- TMPL_VAR name="bibliotitle" escape="html" --> &rsaquo; Modify subscription<!-- TMPL_ELSE -->New subscription<!-- /TMPL_IF --></title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+
+<style type="text/css">
+fieldset.rows li.radio { width: 100%; } /* override staff-global.css */
+.yui-u li p label.widelabel {
+    width: 300px;  /* not enough for IE7 apparently */
+    /* height: 2.4em; background-color: pink; */
+}
+</style>
+<script type="text/javascript">
+//<![CDATA[
+
+function check_input(e){
+    var unicode=e.charCode? e.charCode : e.keyCode
+    if (unicode!=8 && unicode !=46 && unicode!=9 && unicode !=13){ // if key isn't backspace or delete
+        if (unicode<48||unicode>57) { // if not a number
+            alert(_("Needs to be entered in digit form -eg 10"));
+            return false // disable key press
+        }
+    }
+}
+
+function FindAcqui(f)
+{
+	 window.open('acqui-search.pl','FindASupplier','width=800,height=400,toolbar=no,scrollbars=yes');
+}
+
+//]]>
+</script>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="periodicals-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/periodicals/periodicals-home.pl">Periodicals</a> &rsaquo; <!-- TMPL_IF name="subscription_id" --><a href="/cgi-bin/koha/periodicals/subscription-detail.pl?subscription_id=<!-- TMPL_VAR NAME="subscription_id" -->"><i><!-- TMPL_VAR NAME="bibliotitle" escape="html" --></i></a> &rsaquo; Modify subscription<!-- TMPL_ELSE -->New subscription<!-- /TMPL_IF --></div>
+
+<div id="doc3" class="yui-t7">
+   
+   <div id="bd">
+   <div class="yui-g">
+<h1><!-- TMPL_IF name="mod" --> Modify subscription for <i><!-- TMPL_VAR name="bibliotitle" escape="html" --></i><!-- TMPL_ELSE -->Add a new subscription<!-- /TMPL_IF --></h1>
+    <form method="GET" name="f" action="/cgi-bin/koha/periodicals/subscription-add.pl">
+    <input type="hidden" name="periodical_id" value="<TMPL_VAR NAME="periodical_id">"/>
+	<div class="yui-u first">
+    <fieldset id="subscription_add_information" class="rows">
+	<legend>Subscription details</legend>
+	<ol>
+        <!-- TMPL_IF name="subscription_id" -->
+        <input type="hidden" name="subscription_id" value="<!-- TMPL_VAR name="subscription_id" -->" />
+        <li><span class="label">Subscription #</span> <!--TMPL_VAR name="subscription_id"--></li>
+        <!-- /TMPL_IF -->
+        <li><span class="label">Librarian: </span> <!-- TMPL_VAR name="loggedinusername" --></li>
+        <li>
+            <label for="aqbookseller_id">Vendor: </label>
+            <input type="text" name="aqbookseller_id" id="aqbookseller_id" value="<!-- TMPL_VAR name="aqbookseller_id" -->" size="8" /> (<input type="text" name="aqbookseller_name" value="<!-- TMPL_VAR name="aqbookseller_name" -->" disabled="disabled" readonly="readonly" />) <div class="inputnote"><a href="#" onclick="FindAcqui(f)">Search for a vendor</a></div>
+        </li>
+        <li>
+            <label for="biblionumber" class="required" title="Subscriptions must be associated with a bibliographic record">Biblio:</label>
+            
+                <input type="text" name="biblionumber" id="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" disabled="disabled" size="8" /> 
+                (<input type="text" name="title" value="<!-- TMPL_VAR name="bibliotitle" -->" disabled="disabled" readonly="readonly" />) <span class="required" title="Subscriptions must be associated with a bibliographic record">Required</span>
+        </li>
+        <li class="radio">
+            <!-- TMPL_IF name="adds_items" -->
+                <p><input type="radio" id="adds_items-yes" name="adds_items" value="1" onclick="document.getElementById('item_defaults').style.display = 'block'" checked="checked" /><label class="widelabel" for="adds_items-yes">create an item record when receiving this serial</label></p>
+                <p><input type="radio" id="adds_items-no" name="adds_items" value="0" onclick="document.getElementById('item_defaults').style.display = 'none'" /><label class="widelabel" for="adds_items-no">do not create an item record when receiving this serial </label></p>
+            <!-- TMPL_ELSE -->
+                <p><input type="radio" id="adds_items-yes" name="adds_items" value="1" onclick="document.getElementById('item_defaults').style.display = 'block'" /><label class="widelabel" for="adds_items-yes">create an item record when receiving this serial</label></p>
+                <p><input type="radio" id="adds_items-no" name="adds_items" value="0" onclick="document.getElementById('item_defaults').style.display = 'none'" checked="checked" /><label class="widelabel" for="adds_items-no">do not create an item record when receiving this serial</label></p>
+            <!-- /TMPL_IF -->
+        </li>
+<div id="item_defaults" <!-- TMPL_UNLESS name="adds_items" -->style="display:none"<!-- /TMPL_UNLESS --> >
+	<fieldset class="rows">
+		<legend>Item Defaults</legend>
+
+		<!-- TMPL_LOOP NAME="defaults_loop" -->
+			<li>
+				<span class="label"><!-- TMPL_VAR NAME="tagsubfield" --> - <!-- TMPL_VAR NAME="liblibrarian" --></span> 
+
+				<!-- TMPL_IF NAME="authorised_values" -->
+					<select name="defaults_<!--TMPL_VAR name="kohafield" -->" id="defaults_<!--TMPL_VAR name="kohafield" -->" >
+						<!-- TMPL_LOOP NAME="authorised_values" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="lib" --></option>
+						<!-- /TMPL_LOOP -->
+					</select>
+				<!-- TMPL_ELSE -->
+					<input name="defaults_<!--TMPL_VAR name="kohafield" -->" id="defaults_<!--TMPL_VAR name="kohafield" -->" value="<!-- TMPL_VAR NAME="value" -->" type=text />
+				<!-- /TMPL_IF -->
+			</li>
+		<!-- /TMPL_LOOP -->
+	</fieldset>
+</div>
+    <fieldset name="details">
+      <li>
+        <label for="branchcode">Library:</label>
+        <select name="branchcode" id="branchcode" style="width: 20em;">
+          <TMPL_IF NAME="branchcode">
+            <option value="<TMPL_VAR NAME="branchcode">"><TMPL_VAR NAME="branchname"></option>
+            <option value="">-----------</option>
+          </TMPL_IF>
+          <TMPL_LOOP name="branchloop">
+          <TMPL_IF NAME="selected"><option value="<TMPL_VAR NAME="branchcode">" selected="selected"><TMPL_VAR NAME="branchname"/></option>
+          <TMPL_ELSE><option value="<TMPL_VAR NAME="branchcode">"><TMPL_VAR NAME="branchname"></option></TMPL_IF>
+          </TMPL_LOOP>
+        </select> (select a library)
+      </li>
+      <li>
+        <label for="notes">Public note:</label>
+        <textarea name="notes" id="notes" cols="30" rows="2"><!-- TMPL_VAR name="notes" --></textarea>
+      </li>
+      <li>
+        <label for="internalnotes">Nonpublic note:</label>
+        <textarea name="internalnotes" id="internalnotes" cols="30" rows="2"><!-- TMPL_VAR name="internalnotes" --></textarea>
+      </li>
+        <li>
+            <!-- TMPL_IF NAME="letterloop" -->
+            <label for="letter">Patron notification: </label>
+            
+            <select name="letter" id="letter">
+              <option value="">None</option>
+              <!-- TMPL_LOOP name="letterloop" -->
+	      <!-- TMPL_IF name="selected" -->
+              <option value="<!-- TMPL_VAR name="value" -->" selected="selected"><!-- TMPL_VAR name="lettername" --></option>
+              <!-- TMPL_ELSE -->
+              <option value="<!-- TMPL_VAR name="value" -->"><!-- TMPL_VAR name="lettername" --></option>
+              <!-- /TMPL_IF -->
+              <!-- /TMPL_LOOP -->
+            </select> 
+	    <div class="hint">Select a notice and patrons on the routing list will be notified when new issues are received.</div>
+            <!-- TMPL_ELSE -->
+	    <div class="hint">To notify patrons of new serial issues, you must <a href="/cgi-bin/koha/tools/letter.pl">define a notice</a>.</div>
+	    <!-- /TMPL_IF -->
+        </li>
+		<li class="radio">
+			<label for="staffdisplaycount">Staff and Public Display</label>
+			<p>
+			 <label class="widelabel" for="staffdisplaycount">Number of issues to display to staff: </label>
+			 <input type="text" name="staffdisplaycount" id="staffdisplaycount" value="<!-- TMPL_VAR NAME="staffdisplaycount" -->" size="4"/>
+			</p>
+			<p>
+			<label class="widelabel" for="opacdisplaycount">Number of issues to display to the public: </label>
+			<input type="text" name="opacdisplaycount" id="opacdisplaycount" value="<!-- TMPL_VAR NAME="opacdisplaycount" -->" size="4"/>
+			</p>
+		</li>
+	</ol>
+
+            <div style="float:left;clear:left;margin:1em;"><strong>Note:</strong>
+            
+                <ul>
+                    <li>You have to select a vendor if you wish to generate claims.</li>
+                </ul>
+            </div>
+	</fieldset>
+	</div>
+	
+
+<div class="yui-u">
+<div id="subscription_form_planning">
+	<fieldset class="rows">
+	<legend>Serials planning</legend>
+    <ul>
+        <li>
+            <label class="required" for="expiration_date">Subscription end date</label>
+            <input type="text" name="expiration_date" size="13" maxlength="10" value="<TMPL_VAR NAME="expiration_date">"id="expiration_date"/><span class="required">Required</span>
+        </li>
+        <script type="text/javascript">
+                    Calendar.setup({
+                        inputField   : "expiration_date",
+                        ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
+                        button       : "expiration_date",
+                        align        : "Tl"
+                    });
+        </script>
+        <TMPL_UNLESS NAME="subscription_id">
+        <li>
+            <label for="expected_date">Expected arrival date</label>
+            <input type="text" name="expected_date" size="13" maxlength="10" id="expected_date"/>
+        </li>
+        <script type="text/javascript">
+                    Calendar.setup({
+                        inputField   : "expected_date",
+                        ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
+                        button       : "expected_date",
+                        align        : "Tl"
+                    });
+        </script>
+        <li>
+            <label for="firstserial" class="required">First issue of subscription:</label>
+            <select name="firstserial" class="required">
+            <TMPL_LOOP NAME="periodical_serials_loop">
+                <option value="<TMPL_VAR NAME="id">"><TMPL_VAR NAME="vintage"> (<TMPL_VAR NAME="publication_date">)</option>
+            </TMPL_LOOP>
+            </select><span class="required">Required</span>
+        </li>
+        </TMPL_UNLESS>
+    </ul>
+	</fieldset>
+    <fieldset name="action">
+        <input type="hidden" name="op" value="save" />
+        <input type="submit" value="<TMPL_IF NAME="subscription_id">Alter<TMPL_ELSE>Create</TMPL_IF> Subscription" />
+    </fieldset>
+    </fieldset>
+</div>
+</div>
+
+</form>
+</div>
+</div>
+
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

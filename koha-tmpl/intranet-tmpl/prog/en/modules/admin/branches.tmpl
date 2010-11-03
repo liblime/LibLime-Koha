@@ -257,7 +257,11 @@
     
    <!-- TMPL_IF   NAME="branchcategories" -->
    <!-- TMPL_LOOP NAME="branchcategories" -->
-    <h3>Group(s):  <!-- TMPL_IF NAME="properties" -->Properties<!-- TMPL_ELSE --><!-- TMPL_IF NAME="searchdomain" -->Search Domain<!-- /TMPL_IF --><!-- /TMPL_IF --></h3>
+    <h3>Group(s):
+        <TMPL_IF NAME="properties">Properties</TMPL_IF>
+        <TMPL_IF NAME="searchdomain">Search Domain</TMPL_IF>
+        <TMPL_IF NAME="subscriptions">Subscription</TMPL_IF>
+    </h3>
 	<table>
     <tr>
         <th>Name</th>
