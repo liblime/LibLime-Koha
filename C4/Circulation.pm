@@ -1095,121 +1095,66 @@ sub AddIssue {
   return ($datedue);	# not necessarily the same as when it came in!
 }
 
-=head2 GetLoanLength
-
-Get loan length for an itemtype, a borrower type and a branch
-
-my $loanlength = &GetLoanLength($borrowertype,$itemtype,branchcode)
-
-=cut
-
-sub GetLoanLength {
-    my ( $borrowertype, $itemtype, $branchcode ) = @_;
-    my $dbh = C4::Context->dbh;
-    my $sth =
-      $dbh->prepare(
-"select issuelength from issuingrules where categorycode=? and itemtype=? and branchcode=? and issuelength is not null"
-      );
-# warn "in get loan lenght $borrowertype $itemtype $branchcode ";
-# try to find issuelength & return the 1st available.
-# check with borrowertype, itemtype and branchcode, then without one of those parameters
-    $sth->execute( $borrowertype, $itemtype, $branchcode );
-    my $loanlength = $sth->fetchrow_hashref;
-    return $loanlength->{issuelength}
-      if defined($loanlength) && $loanlength->{issuelength} ne 'NULL';
-
-    $sth->execute( $borrowertype, "*", $branchcode );
-    $loanlength = $sth->fetchrow_hashref;
-    return $loanlength->{issuelength}
-      if defined($loanlength) && $loanlength->{issuelength} ne 'NULL';
-
-    $sth->execute( "*", $itemtype, $branchcode );
-    $loanlength = $sth->fetchrow_hashref;
-    return $loanlength->{issuelength}
-      if defined($loanlength) && $loanlength->{issuelength} ne 'NULL';
-
-    $sth->execute( "*", "*", $branchcode );
-    $loanlength = $sth->fetchrow_hashref;
-    return $loanlength->{issuelength}
-      if defined($loanlength) && $loanlength->{issuelength} ne 'NULL';
-
-    $sth->execute( $borrowertype, $itemtype, "*" );
-    $loanlength = $sth->fetchrow_hashref;
-    return $loanlength->{issuelength}
-      if defined($loanlength) && $loanlength->{issuelength} ne 'NULL';
-
-    $sth->execute( $borrowertype, "*", "*" );
-    $loanlength = $sth->fetchrow_hashref;
-    return $loanlength->{issuelength}
-      if defined($loanlength) && $loanlength->{issuelength} ne 'NULL';
-
-    $sth->execute( "*", $itemtype, "*" );
-    $loanlength = $sth->fetchrow_hashref;
-    return $loanlength->{issuelength}
-      if defined($loanlength) && $loanlength->{issuelength} ne 'NULL';
-
-    $sth->execute( "*", "*", "*" );
-    $loanlength = $sth->fetchrow_hashref;
-    return $loanlength->{issuelength}
-      if defined($loanlength) && $loanlength->{issuelength} ne 'NULL';
-
-    # if no rule is set => 21 days (hardcoded)
-    return 21;
-}
-
 =head2 GetIssuingRule
-
-FIXME - This is a copy-paste of GetLoanLength
-as a stop-gap.  Do not wish to change API for GetLoanLength 
-this close to release, however, Overdues::GetIssuingRules is broken.
 
 Get the issuing rule for an itemtype, a borrower type and a branch
 Returns a hashref from the issuingrules table.
 
-my $irule = &GetIssuingRule($borrowertype,$itemtype,branchcode)
+my $irule = &GetIssuingRule($categorycode, $itemtype, $branchcode)
 
 =cut
 
-sub GetIssuingRule {
-    my ( $borrowertype, $itemtype, $branchcode ) = @_;
-    my $dbh = C4::Context->dbh;
-    my $sth =  $dbh->prepare( "select * from issuingrules where categorycode=? and itemtype=? and branchcode=? and issuelength is not null"  );
-    my $irule;
+our $irule_cache = undef;
 
-	$sth->execute( $borrowertype, $itemtype, $branchcode );
-    $irule = $sth->fetchrow_hashref;
-    return $irule if defined($irule) ;
+sub _populate_irule_cache() {
+    my ($categorycode, $itemtype, $branchcode) = @_;
 
-    $sth->execute( $borrowertype, "*", $branchcode );
-    $irule = $sth->fetchrow_hashref;
-    return $irule if defined($irule) ;
+    $irule_cache = C4::Context->dbh->selectall_hashref(
+        'SELECT * FROM issuingrules WHERE issuelength IS NOT NULL',
+        ['categorycode', 'itemtype', 'branchcode']) or
+        die sprintf "Cannot get issuingrules: %s\n", $!;
 
-    $sth->execute( "*", $itemtype, $branchcode );
-    $irule = $sth->fetchrow_hashref;
-    return $irule if defined($irule) ;
+    return $irule_cache;
+}
 
-    $sth->execute( "*", "*", $branchcode );
-    $irule = $sth->fetchrow_hashref;
-    return $irule if defined($irule) ;
+sub _clear_irule_cache {
+    return $irule_cache = undef;
+}
 
-    $sth->execute( $borrowertype, $itemtype, "*" );
-    $irule = $sth->fetchrow_hashref;
-    return $irule if defined($irule) ;
+sub GetIssuingRule($$$) {
+    my ($categorycode, $itemtype, $branchcode) = @_;
+    die unless $categorycode and $itemtype and $branchcode;
 
-    $sth->execute( $borrowertype, "*", "*" );
-    $irule = $sth->fetchrow_hashref;
-    return $irule if defined($irule) ;
+    $irule_cache //= _populate_irule_cache();
+    my $irule = $irule_cache->{$categorycode}{$itemtype}{$branchcode} //
+        $irule_cache->{$categorycode}{'*'}{$branchcode} //
+        $irule_cache->{'*'}{$itemtype}{$branchcode} //
+        $irule_cache->{'*'}{'*'}{$branchcode} //
+        $irule_cache->{$categorycode}{$itemtype}{'*'} //
+        $irule_cache->{$categorycode}{'*'}{'*'} //
+        $irule_cache->{'*'}{$itemtype}{'*'} //
+        $irule_cache->{'*'}{'*'}{'*'} //
+        undef;
 
-    $sth->execute( "*", $itemtype, "*" );
-    $irule = $sth->fetchrow_hashref;
-    return $irule if defined($irule) ;
+    return $irule;
+}
 
-    $sth->execute( "*", "*", "*" );
-    $irule = $sth->fetchrow_hashref;
-    return $irule if defined($irule) ;
+=head2 GetLoanLength
 
-    # if no rule matches,
-    return undef;
+Get loan length for an itemtype, a borrower type and a branch
+
+my $loanlength = &GetLoanLength($categorycode, $itemtype, $branchcode)
+
+=cut
+
+sub GetLoanLength($$$) {
+    my ($categorycode, $itemtype, $branchcode) = @_;
+    my $loanlength = 21;
+
+    my $irule = GetIssuingRule($categorycode, $itemtype, $branchcode);
+    $loanlength = $irule->{issuelength} if defined $irule;
+
+    return $loanlength;
 }
 
 =head2 GetBranchBorrowerCircRule
