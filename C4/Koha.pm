@@ -989,12 +989,17 @@ sub GetAuthValCode {
 
 =cut
 
-sub GetAuthorisedValue {
+our $authval_cache = undef;
+
+sub _populate_authval_cache() {
+    $authval_cache = C4::Context->dbh->selectall_hashref('SELECT * FROM authorised_values', ['category', 'authorised_value']) or die;
+    return $authval_cache;
+}
+
+sub GetAuthorisedValue($$) {
     my ($category, $authorised_value) = @_;
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM authorised_values WHERE category=? AND authorised_value=?");
-    $sth->execute($category, $authorised_value);
-    return $sth->fetchrow_hashref;
+    $authval_cache //= _populate_authval_cache();
+    return $authval_cache->{$category}{$authorised_value};
 }
 
 =head2 GetAuthorisedValues

@@ -1204,7 +1204,6 @@ my $auth_value_desc =GetAuthorisedValueDesc(
 
 sub GetAuthorisedValueDesc {
     my ( $tag, $subfield, $value, $framework, $tagslib, $category, $opac ) = @_;
-    my $dbh = C4::Context->dbh;
 
     if (!$category) {
 
@@ -1225,12 +1224,7 @@ sub GetAuthorisedValueDesc {
     }
 
     if ( $category ne "" ) {
-        my $sth =
-            $dbh->prepare(
-                    "SELECT opaclib,lib FROM authorised_values WHERE category = ? AND authorised_value = ?"
-                    );
-        $sth->execute( $category, $value );
-        my $data = $sth->fetchrow_hashref;
+	my $data = GetAuthorisedValue($category, $value);
         return ($opac && $data->{'opaclib'}) ? $data->{'opaclib'} : $data->{'lib'};
     }
     else {
