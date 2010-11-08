@@ -171,11 +171,12 @@ sub buildKohaItemsNamespace {
         my $status;
 
         my ( $transfertwhen, $transfertfrom, $transfertto ) = C4::Circulation::GetTransfers($item->{itemnumber});
-        my ($restype,$reserves) = C4::Reserves::CheckReserves($item->{itemnumber});
         if ( $itemtypes->{ $item->{itype} }->{notforloan} == 1 || $item->{notforloan} || $item->{onloan} || $item->{wthdrawn} || $item->{itemlost} || $item->{damaged} || $item->{suppress} ||
              (defined $transfertwhen && $transfertwhen ne '') || $item->{itemnotforloan} || $item->{reserve_status} eq "Attached" || $item->{reserve_status} eq "Reserved" || $item->{reserve_status} eq "Waiting" ) {
             next if ($item->{suppress});
-            if (($restype eq "Attached") || ($restype eq "Reserved") || ($restype eq "Waiting")){
+            if (defined $item->{reserve_status} and (
+                ($item->{reserve_status} eq 'Attached') || ($item->{reserve_status} eq 'Reserved') || ($item->{reserve_status} eq 'Waiting'))
+               ) {
                 $status = 'On hold';
             }
             if ( $item->{notforloan} < 0) {
