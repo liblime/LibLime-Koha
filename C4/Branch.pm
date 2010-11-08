@@ -18,6 +18,8 @@ package C4::Branch;
 
 use strict;
 require Exporter;
+use Memoize;
+
 use C4::Context;
 use C4::Koha;
 
@@ -96,6 +98,9 @@ The functions in this module deal with branches.
 =head4 Note that you often will want to just use GetBranchesLoop, for exactly the example above.
 
 =cut
+
+memoize('GetBranches');
+memoize('GetBranchName');
 
 sub GetBranches {
     my ( $onlymine, $branchcode )=@_;
