@@ -1109,37 +1109,36 @@ sub CancelReserve {
     );
     }
     
-    # Send cancelation message, if neccessary
+    # Send cancellation notice, if desired
     my $mprefs = C4::Members::Messaging::GetMessagingPreferences( { 
       borrowernumber => $borrowernumber,
-      message_name   => 'Hold Canceled' 
+      message_name   => 'Hold Cancelled'
     } );
     if ( $mprefs->{'transports'} ) {
-        my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
-        my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
-        my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELED');
-        my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');                
+      my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
+      my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
+      my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
+      my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');                
 
-        my %keys = (%$borrower, %$biblio);
-        $keys{'branchname'} = C4::Branch::GetBranchName( $branchcode );
-        foreach my $key (keys %keys) {
-            my $replacefield = "<<$key>>";
-            $letter->{content} =~ s/$replacefield/$keys{$key}/g;
-            $letter->{title} =~ s/$replacefield/$keys{$key}/g;
+      my %keys = (%$borrower, %$biblio);
+      $keys{'branchname'} = C4::Branch::GetBranchName( $branchcode );
+      my $replacefield;
+      foreach my $key (keys %keys) {
+        foreach my $table qw(biblio borrowers branches items reserves) {
+          $replacefield = "<<$table.$key>>";
+          $letter->{content} =~ s/$replacefield/$keys{$key}/g;
         }
+      }
         
-        C4::Letters::EnqueueLetter(
-                            {   letter                 => $letter,
-                                borrowernumber         => $borrower->{'borrowernumber'},
-                                message_transport_type => $mprefs->{'transports'}->[0],
-                                from_address           => $admin_email_address,
-                                to_address           => $borrower->{'email'},
-                            }
-                        );
-        
-
+      C4::Letters::EnqueueLetter(
+        { letter                 => $letter,
+          borrowernumber         => $borrower->{'borrowernumber'},
+          message_transport_type => $mprefs->{'transports'}->[0],
+          from_address           => $admin_email_address,
+          to_address             => $borrower->{'email'},
+        }
+      );
     }
-
 }
 
 =item ModReserve
@@ -1241,6 +1240,40 @@ warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumb
           my $accountno,
           my $modusernumber = $moduser
         );
+
+        # Send expiration notice, if desired
+        my $borrowernumber = $holditem->{borrowernumber};
+        my $biblionumber = $holditem->{biblionumber};
+        my $branchcode = $holditem->{branchcode};
+        my $mprefs = C4::Members::Messaging::GetMessagingPreferences( {
+          borrowernumber => $borrowernumber,
+          message_name   => 'Hold Cancelled'
+        } );
+        if ( $mprefs->{'transports'} ) {
+          my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
+          my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
+          my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
+          my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');
+
+          my %keys = (%$borrower, %$biblio);
+          $keys{'branchname'} = C4::Branch::GetBranchName( $branchcode );
+          my $replacefield;
+          foreach my $key (keys %keys) {
+            foreach my $table qw(biblio borrowers branches items reserves) {
+              $replacefield = "<<$table.$key>>";
+              $letter->{content} =~ s/$replacefield/$keys{$key}/g;
+            }
+          }
+
+          C4::Letters::EnqueueLetter(
+            { letter                 => $letter,
+              borrowernumber         => $borrower->{'borrowernumber'},
+              message_transport_type => $mprefs->{'transports'}->[0],
+              from_address           => $admin_email_address,
+              to_address             => $borrower->{'email'},
+            }
+          );
+        }
 
     }
     elsif ($rank =~ /^\d+/ and $rank > 0) {

@@ -29,7 +29,7 @@
     <tr>
       <td><!-- TMPL_VAR NAME="message_name" --></td>
       <!-- TMPL_IF NAME="takes_days" -->
-      <td>
+        <td>
           <!-- TMPL_IF NAME="messaging_form_inactive" -->
             <select name="<!-- TMPL_VAR NAME="message_attribute_id" -->-DAYS" disabled="disabled">
           <!-- TMPL_ELSE -->
@@ -38,12 +38,12 @@
           <!-- TMPL_LOOP name="select_days" -->
           <!-- TMPL_IF NAME="selected" --><option value="<!-- TMPL_VAR NAME="day" -->" selected="selected"><!-- TMPL_VAR NAME="day" --></option><!-- TMPL_ELSE -->
           <option value="<!-- TMPL_VAR NAME="day" -->"><!-- TMPL_VAR NAME="day" --></option>
-      <!-- /TMPL_IF -->
+          <!-- /TMPL_IF -->
           <!-- /TMPL_LOOP -->
-        </select>
-      </td>
+            </select>
+        </td>
       <!-- TMPL_ELSE -->
-      <td>-</td>
+         <td>-</td>
       <!-- /TMPL_IF -->
       <!-- TMPL_IF NAME="transport-sms" -->
       <!-- TMPL_IF NAME="SMSSendDriver" --><td>

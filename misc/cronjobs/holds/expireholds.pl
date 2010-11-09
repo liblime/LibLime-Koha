@@ -47,6 +47,10 @@ BEGIN {
 
 use C4::Context;
 use C4::Dates;
+use C4::Members;
+use C4::Biblio;
+use C4::Letters;
+use C4::Members::Messaging;
 my $today     = C4::Dates->new();
 my $today_iso = $today->output('iso');
 
@@ -78,5 +82,39 @@ while (my $expref = $sth->fetchrow_hashref) {
                 WHERE reservenumber = ?";
   $sth2 = $dbh->prepare($delsql);
   $sth2->execute($expref->{reservenumber});
+
+  # Send expiration notice, if desired
+  my $borrowernumber = $expref->{borrowernumber};
+  my $biblionumber = $expref->{biblionumber};
+  my $branchcode = $expref->{branchcode};
+  my $mprefs = C4::Members::Messaging::GetMessagingPreferences( {
+    borrowernumber => $borrowernumber,
+    message_name   => 'Hold Expired'
+  } );
+  if ( $mprefs->{'transports'} ) {
+    my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
+    my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
+    my $letter = C4::Letters::getletter( 'reserves', 'HOLD_EXPIRED');
+    my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');
+
+    my %keys = (%$borrower, %$biblio);
+    $keys{'branchname'} = C4::Branch::GetBranchName( $branchcode );
+    my $replacefield;
+    foreach my $key (keys %keys) {
+      foreach my $table qw(biblio borrowers branches items reserves) {
+        $replacefield = "<<$table.$key>>";
+        $letter->{content} =~ s/$replacefield/$keys{$key}/g;
+      }
+    }
+
+    C4::Letters::EnqueueLetter(
+      { letter                 => $letter,
+        borrowernumber         => $borrower->{'borrowernumber'},
+        message_transport_type => $mprefs->{'transports'}->[0],
+        from_address           => $admin_email_address,
+        to_address             => $borrower->{'email'},
+      }
+    );
+  }
 }
 $dbh->disconnect();

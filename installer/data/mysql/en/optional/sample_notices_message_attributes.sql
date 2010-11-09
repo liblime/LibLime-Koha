@@ -5,5 +5,5 @@ values
 (2, 'Advance Notice', 1),
 (4, 'Hold Filled', 0),
 (5, 'Item Check-in', 0),
-(6, 'Item Checkout', 0);
-
+(6, 'Item Checkout', 0),
+(7, 'Hold Canceled', 0);
