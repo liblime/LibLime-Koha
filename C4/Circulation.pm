@@ -1107,8 +1107,6 @@ my $irule = &GetIssuingRule($categorycode, $itemtype, $branchcode)
 our $irule_cache = undef;
 
 sub _populate_irule_cache() {
-    my ($categorycode, $itemtype, $branchcode) = @_;
-
     $irule_cache = C4::Context->dbh->selectall_hashref(
         'SELECT * FROM issuingrules WHERE issuelength IS NOT NULL',
         ['categorycode', 'itemtype', 'branchcode']) or
@@ -1123,7 +1121,6 @@ sub _clear_irule_cache {
 
 sub GetIssuingRule($$$) {
     my ($categorycode, $itemtype, $branchcode) = @_;
-    die unless $categorycode and $itemtype and $branchcode;
 
     $irule_cache //= _populate_irule_cache();
     my $irule = $irule_cache->{$categorycode}{$itemtype}{$branchcode} //
