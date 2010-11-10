@@ -3589,6 +3589,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
    SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.00.003';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(qq/
+        INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('NewPatronReadingHistory','enable','Set a default value regarding the retention of the reading history for a new patron','enable|disable','Choice');
+    /);
+    print "Upgrade to $DBversion done ( Add system preference to enable/disable reading history in patron creation)\n";
+    SetVersion ($DBversion);
+}
 
 =item DropAllForeignKeys($table)
 

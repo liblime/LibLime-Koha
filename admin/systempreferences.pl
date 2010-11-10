@@ -222,6 +222,7 @@ $tabsysprefs{HidePatronName}               = "Patrons";
 $tabsysprefs{'PatronDisplayReturn'}        = 'Patrons';
 $tabsysprefs{DisplayInitials}              = "Patrons";
 $tabsysprefs{DisplayOthernames}            = "Patrons";
+$tabsysprefs{NewPatronReadingHistory}      = "Patrons";
 
 # I18N/L10N
 $tabsysprefs{dateformat}    = "I18N/L10N";

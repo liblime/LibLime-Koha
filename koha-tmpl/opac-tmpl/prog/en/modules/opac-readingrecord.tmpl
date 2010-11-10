@@ -31,6 +31,11 @@ function show_confirm() {
 	<div class="yui-b"><div class="yui-g">
 <div class="container">
 <!--CONTENT-->
+<div class="dialog message">
+  <ul>
+  <li> You currently have this option <strong><!-- TMPL_IF NAME="disable_reading_history" -->DISABLED<!-- TMPL_ELSE -->ENABLED<!-- /TMPL_IF --></strong>
+  </ul>
+</div>
 <h3><a href="/cgi-bin/koha/opac-user.pl"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" -->'s account</a> <img src="<!-- TMPL_VAR NAME="themelang" -->../../images/caret.gif" width="16" height="16" alt="&gt;" border="0" /> Checkout History</h3>
 
 <!-- TMPL_UNLESS NAME="count" -->
@@ -89,8 +94,8 @@ TMPL_ELSE -->Title<!-- /TMPL_UNLESS --></th>
         <p>
                 <form name="historyform" id="historyform" onsubmit="return show_confirm()" method="post" action="opac-update_reading_history.pl">
                         <label for="disable_reading_history">Enable Reading History?</label>
-                        <input type="radio" name="disable_reading_history" value="0" <!--TMPL_IF NAME="disable_reading_history"-->checked<!-- /TMPL_IF-->>Yes
-                        <input type="radio" name="disable_reading_history" value="1" <!--TMPL_IF NAME="disable_reading_history"--><!-- TMPL_ELSE -->checked<!-- /TMPL_IF-->> No
+                        <input type="radio" name="disable_reading_history" value="0" <!--TMPL_IF NAME="disable_reading_history"--><!-- TMPL_ELSE -->checked<!-- /TMPL_IF-->>Yes
+                        <input type="radio" name="disable_reading_history" value="1" <!--TMPL_IF NAME="disable_reading_history"-->checked<!-- /TMPL_IF-->> No
                         <input type="submit" value="Save" />
                         <p><i>
                          By subscribing to My Reading History (choice Yes above), I acknowledge that the library's online catalog will retain for my personal use a list of all materials that I borrow. I may unsubscribe from this service at any time (choice No above), which will permanently delete anything not currently checked out from my reading history. Library staff will not access or release my reading history unless required by law to do so. I understand that anyone with access to my library card number and PIN can check my reading history or any other information attached to my account.

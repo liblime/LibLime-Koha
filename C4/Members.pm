@@ -91,6 +91,8 @@ BEGIN {
 		&GetMessages
 		&GetMessagesCount
                 &GetMemberRevisions
+
+                &SetDisableReadingHistory
 	);
 
 	#Modify data
@@ -232,7 +234,7 @@ sub SearchMember {
             push( @bind, "$term%", "% $term%", "$term%", "% $term%", "$term%", "$term%" );
         }
         $query =~ s/ AND $/ /;
-        $query .= " AND category_type = '" . $dbh->quote($category_type) . "' " if $category_type;
+        $query .= " AND category_type = " . $dbh->quote($category_type) if $category_type;
         $query .= ") OR cardnumber LIKE ? ";
         push( @bind, $searchstring );
         if (C4::Context->preference('ExtendedPatronAttributes')) {
@@ -837,7 +839,8 @@ sub AddMember {
       . ",altcontactaddress3="  . $dbh->quote( $data{'altcontactaddress3'} ) 
       . ",altcontactzipcode="   . $dbh->quote( $data{'altcontactzipcode'} ) 
       . ",altcontactcountry="   . $dbh->quote( $data{'altcontactcountry'} ) 
-      . ",altcontactphone="     . $dbh->quote( $data{'altcontactphone'} ) ;
+      . ",altcontactphone="     . $dbh->quote( $data{'altcontactphone'} )
+      . ",disable_reading_history="     . $dbh->quote( $data{'disable_reading_history'} ) ;
     $debug and print STDERR "AddMember SQL: ($query)\n";
     my $sth = $dbh->prepare($query);
     #   print "Executing SQL: $query\n";
@@ -2525,6 +2528,30 @@ sub DeleteMessage {
     if ($message->{auth_value} =~ /^B_/) {
       AddMessage($message->{borrowernumber},$message->{message_type},'Unblocked',$message->{branchcode},$staffnumber,0);
     }
+
+}
+
+=head2 SetDisableReadingHistory
+
+=over 4
+
+SetDisableReadingHistory( $status, $borrowernumber );
+
+=back
+
+=cut
+
+sub SetDisableReadingHistory {
+
+    my ( $status, $borrowernumber ) = @_;
+    my $dbh = C4::Context->dbh;
+    my $query = "UPDATE borrowers
+                   SET disable_reading_history = ?
+                   WHERE borrowernumber = ?";
+    my $sth = $dbh->prepare($query);
+    $sth->execute( $status, $borrowernumber );
+
+    return;
 
 }
 

@@ -27,6 +27,7 @@ use CGI;
 use C4::Output;
 use C4::Reserves;
 use C4::Auth;
+use C4::Members;
 my $query = new CGI;
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     {   
@@ -40,11 +41,7 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 );
 
 my $disable_reading_history = $query->param('disable_reading_history');
-my $dbh = C4::Context->dbh;
-my $sql = "UPDATE borrowers SET disable_reading_history = ? WHERE borrowernumber = ?";
-my $sth = $dbh->prepare( $sql );
-$sth->execute( $disable_reading_history, $borrowernumber );
-$sth->finish();
+SetDisableReadingHistory($disable_reading_history, $borrowernumber);
 
 if ( $disable_reading_history ) {
   C4::Circulation::AnonymiseIssueHistory( '', $borrowernumber );

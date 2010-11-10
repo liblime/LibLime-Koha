@@ -98,6 +98,12 @@ my $borrower_data;
 my $NoUpdateLogin;
 my $userenv = C4::Context->userenv;
 
+# Select default value for $disable_reading_history based on syspref
+if ($op eq 'add') {
+  $disable_reading_history = (C4::Context->preference('NewPatronReadingHistory') eq "disable") ? 1 : 0;
+  $template->param( disable_reading_history => $disable_reading_history);
+}
+
 $template->param( AllowReadingHistoryAnonymizing => C4::Context->preference('AllowReadingHistoryAnonymizing') );
 $template->param("uppercasesurnames" => C4::Context->preference('uppercasesurnames'));
 

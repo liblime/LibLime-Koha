@@ -268,3 +268,4 @@ INSERT INTO `systempreferences` (variable,value,options,explanation,type) VALUES
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('soundon','0','Enable to turn on circulation sounds. Not available on all browsers.','','YesNo');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('EnableClubsAndServices','1','Turn on the Clubs and Services module','','YesNo');
 INSERT INTO `systempreferences` ( `variable` , `value` , `options` , `explanation` , `type` ) VALUES ( 'MaxShelfHoldsPerDay', '3', '', 'Maximum number of on-shelf holds each patron can place per day.', 'Integer');
+INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('NewPatronReadingHistory','enable','Set a default value regarding the retention of the reading history for a new patron','enable|disable','Choice');
