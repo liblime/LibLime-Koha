@@ -683,7 +683,7 @@ sub get_matches {
     foreach my $marcblob (keys %matches) {
         my $target_record;
         eval { $target_record = MARC::Record->new_from_xml($marcblob); };
-        if($@){ warn $@; return @results }
+        if($@){ warn $@; next; }
 
         my $result = TransformMarcToKoha(C4::Context->dbh, $target_record, '');
         # FIXME - again, bibliospecific
