@@ -681,7 +681,10 @@ sub get_matches {
 
     my @results = ();
     foreach my $marcblob (keys %matches) {
-        my $target_record = MARC::Record->new_from_xml($marcblob);
+        my $target_record;
+        eval { $target_record = MARC::Record->new_from_xml($marcblob); };
+        if($@){ warn $@; return @results }
+
         my $result = TransformMarcToKoha(C4::Context->dbh, $target_record, '');
         # FIXME - again, bibliospecific
         # also, can search engine be induced to give just the number in the first place?
@@ -733,6 +736,7 @@ sub dump {
 
 sub _passes_required_checks {
     my ($source_record, $target_blob, $matchchecks) = @_;
+    my $target_record;
     # FIXME -- need to avoid parsing record twice
     eval{ $target_record = MARC::Record->new_from_xml($target_blob); };
     if($@){ warn $@; }
