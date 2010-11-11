@@ -243,7 +243,7 @@ sub kocIssueItem {
   my $item = GetBiblioFromItemNumber( undef, $circ->{ 'barcode' } );
   my $issue = GetItemIssue( $item->{'itemnumber'} );
 
-  my $issuingrule = GetIssuingRule( $borrower->{ 'categorycode' }, $item->{ 'itemtype' }, $branchcode );
+  my $issuingrule = GetIssuingRule( $borrower->{categorycode}, $item->{itype}, $branchcode );
   my $issuelength = $issuingrule->{ 'issuelength' };
   my ( $year, $month, $day ) = split( /-/, $circ->{'date'} );
   ( $year, $month, $day ) = Add_Delta_Days( $year, $month, $day, $issuelength );
