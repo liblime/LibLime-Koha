@@ -340,7 +340,7 @@ sub returnlost{
     my @datearr = localtime(time);
     my $date = ( 1900 + $datearr[5] ) . "-" . ( $datearr[4] + 1 ) . "-" . $datearr[3];
     my $bor = "$borrower->{'firstname'} $borrower->{'surname'} $borrower->{'cardnumber'}";
-    ModItem({ paidfor =>  "Paid for by $bor $date" }, undef, $itemnum);
+    C4::Items::ModItem({ paidfor =>  "Paid for by $bor $date" }, undef, $itemnum);
 }
 
 
@@ -389,7 +389,7 @@ sub chargelostitem{
         warn " $issues->{'borrowernumber'}  /  $itemnumber ";
         C4::Circulation::MarkIssueReturned($issues->{borrowernumber},$itemnumber) if ( C4::Context->preference( 'MarkLostItemsReturned' ) );
 	#  Shouldn't MarkIssueReturned do this?
-        ModItem({ onloan => undef }, undef, $itemnumber);
+        C4::Items::ModItem({ onloan => undef }, undef, $itemnumber);
     }
     $sth->finish;
 }
