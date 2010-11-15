@@ -257,18 +257,23 @@ sub SearchMember {
 
     $sth->finish;
 
-    $query = "SELECT borrowers.*, categories.* FROM borrowers 
-    LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
-    LEFT JOIN statistics ON borrowers.borrowernumber = statistics.borrowernumber
-    WHERE statistics.type = 'card_replaced' AND statistics.other = ?";
-    $sth = $dbh->prepare( $query );
-    $sth->execute( $searchstring );
-    my $prevcards_data = $sth->fetchall_arrayref({});
-    foreach my $row ( @$prevcards_data ) {
-      $row->{'PreviousCardnumber'} = 1;
+    # This assumes a lost barcode search will never match a patron's name.
+    # Not necessarily an absolute guarantee, but it's worth the performance tradeoff.
+    if (not scalar @$data) {
+        $query = qq/
+            SELECT borrowers.*, categories.* FROM borrowers
+            LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
+            LEFT JOIN statistics ON borrowers.borrowernumber = statistics.borrowernumber
+            WHERE statistics.type = 'card_replaced' AND statistics.other = ?
+            /;
+        $sth = $dbh->prepare( $query );
+        $sth->execute( $searchstring ) or die;
+        my $prevcards_data = $sth->fetchall_arrayref({});
+        foreach my $row ( @$prevcards_data ) {
+            $row->{'PreviousCardnumber'} = 1;
+        }
+        $data = [ @$prevcards_data, @$data ];
     }
-        
-    $data = [ @$prevcards_data, @$data ];
 
     return ( scalar(@$data), $data );
 }
