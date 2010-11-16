@@ -177,6 +177,37 @@ function set_to_today(id, force) {
 
 //]]>
 </script>
+
+<script type="text/javascript">
+function checkForDuplicateDefaultsName() {
+	var session_defaults_name = $('#session_defaults_name').val();
+
+	var my_defaults = new Array();
+	<!-- TMPL_LOOP NAME="item_defaults_loop" -->
+		my_defaults.push('<!-- TMPL_VAR NAME="name" -->');
+	<!-- /TMPL_LOOP -->
+
+	var all_defaults = new Array();
+	<!-- TMPL_LOOP NAME="item_defaults_all_loop" -->
+		all_defaults.push('<!-- TMPL_VAR NAME="name" -->');
+	<!-- /TMPL_LOOP -->
+
+	if ( jQuery.inArray(session_defaults_name, my_defaults) >= 0 ) {
+		<!-- TMPL_IF NAME="CAN_user_editcatalogue_update_item_defaults" -->
+			return confirm("This name is already in use, do you wish to replace it with these defaults?");
+		<!-- TMPL_ELSE -->
+			alert("This name is already in use, please try a different one");
+			return false;
+		<!-- /TMPL_IF -->
+	} else if ( jQuery.inArray(session_defaults_name, all_defaults) >= 0 ) {
+		alert("Another library is using this name. Please choose a different one.");
+		return false;
+	} else {
+		return true;
+	}
+}
+</script>
+
 <link type="text/css" rel="stylesheet" href="<!-- TMPL_VAR NAME="themelang" -->/css/addbiblio.css" />
 </head>
 <body>
@@ -247,6 +278,11 @@ function set_to_today(id, force) {
     <!-- TMPL_IF name="opisadd" -->
     <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
         <h2 id="additema">Add Item</h2>
+	<!-- TMPL_IF NAME="item_defaults_using" -->
+		<p>
+			Item Defaults <strong><!-- TMPL_VAR NAME="item_defaults_name" --></strong> are in effect. 
+		</p>
+	<!-- /TMPL_IF -->
     <!-- TMPL_ELSE -->
         <h2 id="additema">&nbsp; </h2>
     <!-- /TMPL_IF -->
@@ -294,6 +330,53 @@ function set_to_today(id, force) {
 	<input type="text" id="number_of_copies" name="number_of_copies" value="" size="2" />
 	<input type="submit" id="add_multiple_copies_submit" name="add_multiple_copies_submit" value="Add" onclick="javascript:return Check(this.form) &amp;&amp; CheckMultipleAdd(this.form.number_of_copies.value);" />
     </span>
+
+    <br/><br/>
+
+    <fieldset class="action">
+	    <legend>Session Defaults</legend>
+
+	    <!-- TMPL_UNLESS NAME="item_defaults_name" -->
+		<input type="submit" name="set_session_defaults" value="Set Default Values for Session" />
+	    <!-- /TMPL_UNLESS -->
+
+	    <!-- TMPL_IF NAME="CAN_user_editcatalogue_save_item_defaults" -->
+		    <!-- TMPL_IF NAME="branchcode" -->
+			    <input type="submit" name="set_session_defaults" value="Set Default Values for Session and Save" onclick="$('#save_session_defaults_span').show(); $('#session_defaults_name').focus(); return false;" />
+			    <span id="save_session_defaults_span" style="display:none">
+				    <label for="session_defaults_name">Name: </label> <input type="text" name="session_defaults_name" id="session_defaults_name" />
+				    <input type="submit" name="set_session_defaults" value="Save" onclick="return checkForDuplicateDefaultsName();" />
+			    </span>
+		    <!-- /TMPL_IF -->
+	    <!-- /TMPL_IF -->
+
+	    <br/><br/>
+
+	    <!-- TMPL_IF NAME="item_defaults_loop" -->
+		    <input type="submit" name="load_session_defaults" value="Load Default Values for Session" />
+		    <select name="session_defaults_to_load">
+			<!-- TMPL_UNLESS NAME="item_defaults_name" -->
+				<option value=''>Select Defaults Set</option>
+			<!-- /TMPL_UNLESS -->
+			<!-- TMPL_LOOP NAME="item_defaults_loop" -->
+				<option value="<!-- TMPL_VAR NAME="name" -->" <!-- TMPL_IF NAME="selected" -->selected<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="name" --></option>
+			<!-- /TMPL_LOOP -->
+		    </select>
+	    <!-- /TMPL_IF -->
+
+	    <br/><br/>
+
+	    <!-- TMPL_IF NAME="item_defaults_using" -->
+		    <input type="submit" name="clear_session_defaults" value="Clear Default Values for Session" />
+	    <!-- /TMPL_IF -->
+
+	    <!-- TMPL_IF NAME="CAN_user_editcatalogue_delete_item_defaults" -->
+		    <!-- TMPL_IF NAME="item_defaults_name" -->
+			    <input type="submit" name="delete_session_defaults" value="Clear & Delete Default Values" onclick="return confirm('Are you sure you want to delete this set of defaults?')" />
+		    <!-- /TMPL_IF -->
+	    <!-- /TMPL_IF -->
+
+    </fieldset>
 
     <!-- TMPL_ELSE -->
       <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->

@@ -30,6 +30,7 @@ use C4::Branch qw( GetBranchesLoop );
 use C4::Koha qw( subfield_is_koha_internal_p ); # XXX subfield_is_koha_internal_p
 use MARC::Record;
 use MARC::File::XML;
+use C4::Session::Defaults::Items;
 
 =head1 NAME
 
@@ -177,6 +178,7 @@ sub get_form_values {
         $branches = $tmp;
     }
 
+    my $item_defaults = new C4::Session::Defaults::Items();
     foreach my $tag ( sort keys %{$tagslib} ) {
         # loop through each subfield
         foreach my $subfield ( sort keys %{$tagslib->{$tag}} ) {
@@ -202,6 +204,7 @@ sub get_form_values {
             $subfield_data{repeatable} = $subfieldlib->{repeatable} && $options->{'allow_repeatable'};
             my ( $indicator, $value ) = ( '', '' );
             ( $indicator, $value ) = _find_value( $tag,$subfield, $options->{'item'} ) if ( $options->{'item'} );
+            $value = $item_defaults->get( field => $tag, subfield => $subfield ) unless ( $options->{'item'} );
             $value =~ s/"/&quot;/g if (defined $value);
             unless ( $value ) {
                 $value = $subfieldlib->{defaultvalue} || '';

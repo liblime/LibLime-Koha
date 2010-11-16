@@ -32,6 +32,7 @@ use C4::Branch;
 use C4::Koha;
 use C4::ClassSource;
 use C4::Reserves;
+use C4::Session::Defaults::Items;
 
 use MARC::File::XML;
 
@@ -42,6 +43,12 @@ my $error        = $input->param('error');
 my $biblionumber = $input->param('biblionumber');
 my $itemnumber   = $input->param('itemnumber') || '';
 my $op           = $input->param('op') || '';
+
+$op = 'set_session_defaults' 	if ( $input->param('set_session_defaults') );
+$op = 'clear_session_defaults' 	if ( $input->param('clear_session_defaults') );
+$op = 'load_session_defaults' 	if ( $input->param('load_session_defaults') );
+$op = 'delete_session_defaults' if ( $input->param('delete_session_defaults') );
+
 my ($template, $loggedinuser, $cookie)
     = get_template_and_user({template_name => "cataloguing/additem.tmpl",
                  query => $input,
@@ -65,8 +72,40 @@ my @omissions=();
 my @today_fields=();
 my $nextop="additem";
 my @errors; # store errors found while checking data BEFORE saving item.
+
 #-------------------------------------------------------------------------------
-if ($op eq "additem") {
+if ($op eq 'set_session_defaults') {
+#-------------------------------------------------------------------------------
+    my @tags      = $input->param( 'tag_0' );
+    my @subfields = $input->param( 'subfield_0' );
+    my @values    = $input->param( 'field_value_0' );
+
+    my $item_defaults = new C4::Session::Defaults::Items();
+                
+    for( my $i = 0; $i < @values; $i++ ) {
+      $item_defaults->set( field => $tags[$i], subfield => $subfields[$i], value => $values[$i] );
+    }
+
+    my $session_defaults_name = $input->param( 'session_defaults_name' );   
+    $item_defaults->save( name => $session_defaults_name ) if ( $session_defaults_name );
+#-------------------------------------------------------------------------------
+} elsif ($op eq 'clear_session_defaults') {
+#-------------------------------------------------------------------------------
+    my $item_defaults = new C4::Session::Defaults::Items();
+    $item_defaults->clear();
+#-------------------------------------------------------------------------------
+} elsif ($op eq 'load_session_defaults') {
+#-------------------------------------------------------------------------------
+    my $item_defaults = new C4::Session::Defaults::Items();
+    my $session_defaults_to_load = $input->param( 'session_defaults_to_load' );
+    $item_defaults->load( name => $session_defaults_to_load );    
+#-------------------------------------------------------------------------------
+} elsif ($op eq 'delete_session_defaults') {
+#-------------------------------------------------------------------------------
+    my $item_defaults = new C4::Session::Defaults::Items();
+    $item_defaults->delete();
+#-------------------------------------------------------------------------------
+} elsif ($op eq "additem") {
 #-------------------------------------------------------------------------------
     my ( $record, $barcode_not_unique ) = C4::Form::AddItem::get_item_record( $input, $frameworkcode, 0 );
 
@@ -289,8 +328,8 @@ foreach my $field (@fields) {
         push(@big_array, \%this_row);
     }
 }
-use Data::Dumper;
-warn Dumper \%witness;
+#use Data::Dumper;
+#warn Dumper \%witness;
 my ($holdingbrtagf,$holdingbrtagsubf) = &GetMarcFromKohaField("items.holdingbranch",$frameworkcode);
 @big_array = sort {$a->{$holdingbrtagsubf} cmp $b->{$holdingbrtagsubf}} @big_array;
 
@@ -410,6 +449,16 @@ $template->param(
 foreach my $error (@errors) {
     $template->param($error => 1);
 }
+
+my $item_defaults = new C4::Session::Defaults::Items();
+$template->param(
+  item_defaults_using => $item_defaults->isUsingDefaults(),
+  item_defaults_name => $item_defaults->name(),
+  item_defaults_loop => $item_defaults->getSavedDefaultsList(),
+  item_defaults_all_loop => $item_defaults->getSavedDefaultsList( getAll => 1 ),
+);
+$template->param( branchcode => C4::Context->userenv->{"branch"} ) unless ( C4::Context->userenv->{"branch"} eq 'NO_LIBRARY_SET' );
+
 output_html_with_http_headers $input, $cookie, $template->output;
 
 sub find_value {
