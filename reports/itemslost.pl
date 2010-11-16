@@ -29,7 +29,7 @@ use CGI;
 use C4::Auth;
 use C4::Output;
 use C4::Biblio;
-use C4::Items;
+use C4::LostItems;
 use C4::Koha;                  # GetItemTypes
 use C4::Branch; # GetBranches
 use C4::Dates qw/format_date/;

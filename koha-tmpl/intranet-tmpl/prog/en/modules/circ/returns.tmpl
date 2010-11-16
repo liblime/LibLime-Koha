@@ -324,6 +324,19 @@ function Dopop(link) {
                     <!-- /TMPL_IF -->
                     <!-- TMPL_IF Name="waslost" -->
                         <p class="problem">Item was lost, now found.</p>
+                        <!-- TMPL_IF Name="lostreturned" -->
+                          <p>
+                          <h5> Remove from patron's lost items? </h5>
+                          <form action="returns.pl" method="post">
+                             <input type="hidden" name="lost_item_returned" value="1" />
+                             <input type="hidden" name="barcode" value="<!-- TMPL_VAR Name="itembarcode" -->" />
+                             <input type="submit" value="Yes" />
+                          </form>
+                          <form action="returns.pl" method="post">
+                             <input type="hidden" name="lost_item_returned" value="0" />
+                             <input type="submit" value="No" />
+                          </form>
+                        <!-- /TMPL_IF -->
                     <!-- /TMPL_IF -->
                     <!-- TMPL_IF Name="withdrawn" -->
                         <p class="problem">Item is withdrawn.</p>

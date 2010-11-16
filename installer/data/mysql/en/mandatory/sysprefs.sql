@@ -269,3 +269,5 @@ INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES ('EnableClubsAndServices','1','Turn on the Clubs and Services module','','YesNo');
 INSERT INTO `systempreferences` ( `variable` , `value` , `options` , `explanation` , `type` ) VALUES ( 'MaxShelfHoldsPerDay', '3', '', 'Maximum number of on-shelf holds each patron can place per day.', 'Integer');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('NewPatronReadingHistory','enable','Set a default value regarding the retention of the reading history for a new patron','enable|disable','Choice');
+INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('LinkLostItemsToPatron','0','If set, items marked lost will be listed in the patron Lost Items list','','YesNo');
+INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('RefundReturnedLostItem','0','If set, item charges will be refunded when a patron returns the item','','YesNo');

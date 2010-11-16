@@ -153,31 +153,6 @@ if ( $check == 0 ) {  # fetch and display accounts
         "/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
 }
 
-sub writeoff {
-    my ( $borrowernumber, $accountnum, $itemnum, $accounttype, $amount ) = @_;
-    my $user = $input->remote_user;
-    my $dbh  = C4::Context->dbh;
-    $itemnum ||= undef; # if no item is attached to fine, make sure to store it as a NULL
-
-    my $update =
-    'Update accountlines set amountoutstanding=0 ' .
-    q|where (accounttype='Res' OR accounttype='FU' OR accounttype ='IP' OR accounttype='CH' OR accounttype='N' | .
-    q|OR accounttype='F' OR accounttype='A' OR accounttype='M' OR accounttype='L' OR accounttype='RE' | .
-    q|OR accounttype='RL') and accountno=? and borrowernumber=?|;
-    $dbh->do($update, undef, $accountnum, $borrowernumber );
-
-    my $account =
-    $dbh->selectall_arrayref('select max(accountno) as max_accountno from accountlines');
-    my $max = 1 + $account->[0]->[0];
-    my $insert = q{insert into accountlines (borrowernumber,accountno,itemnumber,date,amount,description,accounttype)}
-    .  q{values (?,?,?,now(),?,'Writeoff','W')};
-    $dbh->do($insert, undef, $borrowernumber, $max, $itemnum, $amount );
-
-    UpdateStats( $branch, 'writeoff', $amount, q{}, q{}, q{}, $borrowernumber );
-
-    return;
-}
-
 sub add_accounts_to_template {
     my $borrowernumber = shift;
 

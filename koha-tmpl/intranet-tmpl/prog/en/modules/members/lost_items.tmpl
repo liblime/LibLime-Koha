@@ -1,0 +1,56 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Patrons &rsaquo; Lost Items</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR NAME='themelang' -->/js/members.js"></script>
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/members/members-home.pl">Patrons</a> &rsaquo; Lost Items</div>
+
+<div id="doc3" class="yui-t2">
+
+   <div id="bd">
+    <div id="yui-main">
+    <div class="yui-b">
+    <!-- TMPL_INCLUDE NAME="members-toolbar.inc" -->
+<div id="lost_items">
+        <!--TMPL_IF NAME="LOST_ITEMS" -->
+    <h3><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> has the following lost items</h3>
+    <table>
+    <thead><tr>
+        <th>Title</th>
+        <th>Callnumber</th>
+        <th>Home Library</th>
+        <th>Item Type</th>
+        <th>Barcode</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+            <!-- TMPL_LOOP NAME="LOST_ITEMS" -->
+                <tr>
+                <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME=biblionumber -->"><!-- TMPL_VAR NAME="title" --></a></td>
+                <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
+                <td><!-- TMPL_VAR NAME="homebranch" --></td>
+                <td><!-- TMPL_VAR NAME="itemtype" --></td>
+                <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME=biblionumber -->&itemnumber=<!-- TMPL_VAR NAME=itemnumber -->#item<!-- TMPL_VAR NAME=itemnumber -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
+                <td><a href="/cgi-bin/koha/members/lost_items.pl?borrowernumber=<!-- TMPL_VAR NAME=borrowernumber -->&op=delete&amp;lost_item_id=<!-- TMPL_VAR NAME="id" -->">Delete</a></td>
+                </tr>
+            <!-- /TMPL_LOOP -->
+    </tr>
+    </tbody>
+    </table>
+        <!-- TMPL_ELSE -->
+    <h3><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> does not have lost items</h3>
+    <!-- /TMPL_IF -->
+</div>
+    </div>
+    </div>
+
+    <div class="yui-b">
+
+    <!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
+    </div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

@@ -1315,6 +1315,27 @@ CREATE TABLE `letter` (
   PRIMARY KEY  (`module`,`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `lost_items`;
+CREATE TABLE lost_items (
+  id INT(11) NOT NULL auto_increment,
+  borrowernumber INT(11) NOT NULL,
+  itemnumber INT(11) NOT NULL,
+  biblionumber INT(11) NOT NULL,
+  barcode VARCHAR(20) DEFAULT NULL,
+  homebranch VARCHAR(10) DEFAULT NULL,
+  holdingbranch VARCHAR(10) DEFAULT NULL,
+  itemcallnumber VARCHAR(100) DEFAULT NULL,
+  itemnotes MEDIUMTEXT,
+  location VARCHAR(80) DEFAULT NULL,
+  itemtype VARCHAR(10) NOT NULL,
+  title mediumtext,
+  date_lost DATE NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY (`borrowernumber`),
+  KEY (`itemnumber`),
+  KEY (`date_lost`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Table structure for table `marc_subfield_structure`
 --
@@ -2571,6 +2592,23 @@ CREATE TABLE reserves_suspended (
   CONSTRAINT reserves_suspended_ibfk_1 FOREIGN KEY (borrowernumber) REFERENCES borrowers (borrowernumber) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT reserves_suspended_ibfk_2 FOREIGN KEY (biblionumber) REFERENCES biblio (biblionumber) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT reserves_suspended_ibfk_4 FOREIGN KEY (branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS lost_items (
+    id INT(11) NOT NULL auto_increment,
+    borrowernumber INT(11) NOT NULL,
+    itemnumber INT(11) NOT NULL,
+    biblionumber INT(11) NOT NULL,
+    barcode VARCHAR(20) DEFAULT NULL,
+    homebranch VARCHAR(10) DEFAULT NULL,
+    holdingbranch VARCHAR(10) DEFAULT NULL,
+    itemcallnumber VARCHAR(100) DEFAULT NULL,
+    itemnotes MEDIUMTEXT,
+    location VARCHAR(80) DEFAULT NULL,
+    itemtype VARCHAR(10) NOT NULL,
+    title mediumtext,
+    date_lost DATE NOT NULL,
+    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

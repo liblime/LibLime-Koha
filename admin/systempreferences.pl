@@ -181,6 +181,8 @@ $tabsysprefs{HoldButtonIgnore}               = "Circulation";
 $tabsysprefs{AllowDueDateInPast}             = "Circulation";
 $tabsysprefs{CircFinesBreakdown}             = "Circulation";
 $tabsysprefs{MarkLostItemsReturned}          = "Circulation";
+$tabsysprefs{LinkLostItemsToPatron}          = "Circulation";
+$tabsysprefs{RefundReturnedLostItem}         = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}            = "StaffClient";

@@ -35,6 +35,7 @@ BEGIN {
 }
 use C4::Context;
 use C4::Items;
+use C4::LostItems;
 use C4::Accounts;
 use Getopt::Long;
 
@@ -154,7 +155,8 @@ foreach my $startrange (sort keys %$lost) {
             printf ("Due %s: item %5s from borrower %5s to lost: %s\n", $row->{date_due}, $row->{itemnumber}, $row->{borrowernumber}, $lostvalue) if($verbose);
             if($confirm) {
                 ModItemLost($row->{'biblionumber'}, $row->{'itemnumber'}, $lostvalue);
-                chargelostitem($row->{'itemnumber'}) if( $charge && $charge eq $lostvalue);
+                C4::Accounts::chargelostitem($row->{'itemnumber'}) if( $charge && $charge eq $lostvalue);
+                C4::LostItems::CreateLostItem($row->{'itemnumber'}, $row->{'borrowernumber'});
             }
             $count++;
         }

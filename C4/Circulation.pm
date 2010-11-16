@@ -84,7 +84,8 @@ BEGIN {
 	# subs to deal with returns
 	push @EXPORT, qw(
 		&AddReturn
-        &MarkIssueReturned
+                &MarkIssueReturned
+                &FixAccountForLostAndReturned
 	);
 
 	# subs to deal with transfers
@@ -1538,8 +1539,8 @@ sub AddReturn {
     }
 
     # fix up the accounts.....
-    if ($item->{'itemlost'}) {
-        _FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $barcode);    # can tolerate undef $borrowernumber
+    if ($item->{'itemlost'} && C4::Context->preference('RefundReturnedLostItem')) {
+        FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $barcode);    # can tolerate undef $borrowernumber
         $messages->{'WasLost'} = 1;
     }
 
@@ -1743,20 +1744,18 @@ sub _FixOverduesOnReturn {
     return $usth->execute(@bind);
 }
 
-=head2 _FixAccountForLostAndReturned
+=head2 FixAccountForLostAndReturned
 
-	&_FixAccountForLostAndReturned($itemnumber, [$borrowernumber, $barcode]);
+	&FixAccountForLostAndReturned($itemnumber, [$borrowernumber, $barcode]);
 
 Calculates the charge for a book lost and returned.
-
-Internal function, not exported, called only by AddReturn.
 
 FIXME: This function reflects how inscrutable fines logic is.  Fix both.
 FIXME: Give a positive return value on success.  It might be the $borrowernumber who received credit, or the amount forgiven.
 
 =cut
 
-sub _FixAccountForLostAndReturned {
+sub FixAccountForLostAndReturned {
     my $itemnumber     = shift or return;
     my $borrowernumber = @_ ? shift : undef;
     my $item_id        = @_ ? shift : $itemnumber;  # Send the barcode if you want that logged in the description
@@ -2238,8 +2237,8 @@ sub AddRenewal {
     }
 
     # was item lost?  Clear that.
-    if ($item->{'itemlost'}) {
-         _FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $item->{'barcode'});
+    if ($item->{'itemlost'} && C4::Context->preference('RefundReturnedLostItem')) {
+         FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $item->{'barcode'});
         ModItem({itemlost => 0}, $item->{'biblionumber'}, $item->{'itemnumber'});
     }
 

@@ -3598,6 +3598,35 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.00.004';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do("
+    CREATE TABLE lost_items (
+        id INT(11) NOT NULL auto_increment,
+        borrowernumber INT(11) NOT NULL,
+        itemnumber INT(11) NOT NULL,
+        biblionumber INT(11) NOT NULL,
+        barcode VARCHAR(20) DEFAULT NULL,
+        homebranch VARCHAR(10) DEFAULT NULL,
+        holdingbranch VARCHAR(10) DEFAULT NULL,
+        itemcallnumber VARCHAR(100) DEFAULT NULL,
+        itemnotes MEDIUMTEXT,
+        location VARCHAR(80) DEFAULT NULL,
+        itemtype VARCHAR(10) NOT NULL,
+        title mediumtext,
+        date_lost DATE NOT NULL,
+        PRIMARY KEY (`id`),
+        KEY (`borrowernumber`),
+        KEY (`itemnumber`),
+        KEY (`date_lost`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    ");
+    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('LinkLostItemsToPatron','0','If set, items marked lost will be listed in the patron Lost Items list','','YesNo')");
+    $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('RefundReturnedLostItem','0','If set, item charges will be refunded when a patron returns the item','','YesNo')");
+    SetLibLimeVersion ($DBversion);
+    print "Upgrade to $DBversion done (Adding LostItems)\n";
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

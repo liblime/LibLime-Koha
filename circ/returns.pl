@@ -40,6 +40,7 @@ use C4::Print;
 use C4::Reserves;
 use C4::Biblio;
 use C4::Items;
+use C4::LostItems;
 use C4::Members;
 use C4::Branch; # GetBranches GetBranchName
 use C4::Koha;   # FIXME : is it still useful ?
@@ -78,6 +79,16 @@ my $overduecharges = (C4::Context->preference('finesMode') && C4::Context->prefe
 my $HoldButtonConfirm = (C4::Context->preference('HoldButtonConfirm'));
 my $HoldButtonIgnore = (C4::Context->preference('HoldButtonIgnore'));
 my $HoldButtonPrintConfirm = (C4::Context->preference('HoldButtonPrintConfirm'));
+
+# my $lost_item_returned = $query->param('lost_item_returned');
+# warn "LIR: $lost_item_returned\n";
+# if (C4::Context->preference('LinkLostItemsToPatron')) {
+#   if ($lost_item_returned) {
+#     my $itemnumber = GetItemnumberFromBarcode($barcode);
+#     my $lost_item = C4::LostItems::GetLostItem($itemnumber);
+#     C4::LostItems::DeleteLostItem($lost_item->{id});
+#   }
+# }
 
 my $userenv_branch = C4::Context->userenv->{'branch'} || '';
 #
@@ -186,6 +197,18 @@ if ($dotransfer){
 	my $tobranch     = $query->param('tobranch');
 	ModItemTransfer($transferitem, $userenv_branch, $tobranch); 
 }
+
+my $lost_item_returned = $query->param('lost_item_returned');
+warn "LIR: $lost_item_returned\n";
+if (C4::Context->preference('LinkLostItemsToPatron')) {
+  warn "BARCODE: $barcode\n";
+  if ($lost_item_returned) {
+    my $itemnumber = GetItemnumberFromBarcode($barcode);
+    my $lost_item = C4::LostItems::GetLostItem($itemnumber);
+    C4::LostItems::DeleteLostItem($lost_item->{id});
+  }
+}
+
 
 # actually return book and prepare item table.....
 if ($barcode) {
@@ -422,6 +445,9 @@ foreach my $code ( keys %$messages ) {
     }
     elsif ( $code eq 'WasLost' ) {
         $err{waslost} = 1;
+        if (C4::Context->preference('LinkLostItemsToPatron')) {
+          $template->param(lostreturned => 1);
+        }
     }
     elsif ( $code eq 'ResFound' ) {
         ;    # FIXME... anything to do here?
