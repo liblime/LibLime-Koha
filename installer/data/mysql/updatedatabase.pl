@@ -3574,10 +3574,10 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 $DBversion = '4.03.00.002';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(qq/
-      INSERT INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES (7, 'email', 0, 'reserves', 'HOLD_CANCELLED'), (7, 'sms', 0, 'reserves', 'HOLD_CANCELLED'), (8, 'email', 0, 'reserves', 'HOLD_EXPIRED'), (8, 'sms', 0, 'reserves', 'HOLD_EXPIRED');
+      INSERT INTO message_attributes (message_attribute_id, message_name, takes_days) VALUES (7, 'Hold Cancelled', 0), (8, 'Hold Expired', 0);
     /);
     $dbh->do(qq/
-      INSERT INTO message_attributes (message_attribute_id, message_name, takes_days) VALUES (7, 'Hold Cancelled', 0), (8, 'Hold Expired', 0);
+      INSERT INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES (7, 'email', 0, 'reserves', 'HOLD_CANCELLED'), (7, 'sms', 0, 'reserves', 'HOLD_CANCELLED'), (8, 'email', 0, 'reserves', 'HOLD_EXPIRED'), (8, 'sms', 0, 'reserves', 'HOLD_EXPIRED');
     /);
     $dbh->do(qq/
       UPDATE letter SET code='HOLD_CANCELLED',name='Hold Cancelled',title='Hold Cancelled' WHERE code='HOLD_CANCELED';
