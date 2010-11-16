@@ -20,6 +20,9 @@ package C4::Members::Import;
 
 use strict;
 
+use Carp;
+use Try::Tiny;
+
 use C4::Branch;
 use C4::Dates qw(format_date_in_iso);
 
@@ -229,7 +232,7 @@ sub ImportFromFH {
             }
             unless (ModMember(%borrower)) {
                 $retval{invalid}++;
-		$retval{lastinvalid} = $borrower{surname}.' / '.$borrower{borrowernumber} ;
+                $retval{lastinvalid} = $borrower{surname}.' / '.$borrower{borrowernumber} ;
                 next LINE;
             }
             if ($extended) {
@@ -240,14 +243,20 @@ sub ImportFromFH {
                 SetBorrowerAttributes($borrower{'borrowernumber'}, $patron_attributes);
             }
             $retval{overwritten}++;
-	    $retval{lastoverwritten} = $borrower{surname}.' / '.$borrowernumber ;
+            $retval{lastoverwritten} = $borrower{surname}.' / '.$borrowernumber ;
         } else {
             # FIXME: fixup_cardnumber says to lock table, but the web interface doesn't so this doesn't either.
             # At least this is closer to AddMember than in members/memberentry.pl
             if (!$borrower{'cardnumber'}) {
                 $borrower{'cardnumber'} = fixup_cardnumber(undef,$branches->{$borrower{'branchcode'}});
             }
-            if ($borrowernumber = AddMember(%borrower)) {
+            $borrowernumber = try {
+                    AddMember(%borrower);
+                } catch {
+                    carp "AddMember failed: $@\n";
+                    undef;
+                };
+            if ($borrowernumber) {
                 if ($extended) {
                     SetBorrowerAttributes($borrowernumber, $patron_attributes);
                 }
@@ -256,10 +265,10 @@ sub ImportFromFH {
                                                                                   categorycode => $borrower{categorycode} });
                 }
                 $retval{imported}++;
-		$retval{lastimported} = $borrower{surname}.' / '.$borrowernumber ;
+                $retval{lastimported} = $borrower{surname}.' / '.$borrowernumber ;
             } else {
                 $retval{invalid}++;
-		$retval{lastinvalid} = $borrower{surname}.' / '.$borrowernumber ;
+                $retval{lastinvalid} = $borrower{surname}.' / '.$borrowernumber ;
             }
         }
     }
