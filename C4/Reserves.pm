@@ -1018,17 +1018,11 @@ sub CancelReserve {
         ";
         $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
-    UpdateReserveCancelledStats(
-      $branchcode,
-      my $type = 'reserve_canceled',
-      my $amount,
-      my $other = $biblionumber,
-      my $itemnum = $holditem->{'itemnumber'},
-      my $itemtype,
-      my $borrowernumber = $holditem->{'borrowernumber'},
-      my $accountno,
-      my $modusernumber = $moduser
-    );
+        UpdateReserveCancelledStats(
+          $branchcode,'reserve_canceled',undef,$biblionumber,
+          $holditem->{'itemnumber'},undef,$holditem->{'borrowernumber'},
+          undef,$moduser
+        );
     }
     else {
         # removing a reserve record....
@@ -1096,17 +1090,11 @@ sub CancelReserve {
 
         # now fix the priority on the others....
         _FixPriority( '', '', $priority, $reservenumber );
-    UpdateReserveCancelledStats(
-      $branchcode,
-      my $type = 'reserve_canceled',
-      my $amount,
-      my $other = $biblionumber,
-      my $itemnum = $holditem->{'itemnumber'}||'',
-      my $itemtype,
-      my $borrowernumber = $holditem->{'borrowernumber'},
-      my $accountno,
-      my $modusernumber = $moduser
-    );
+        UpdateReserveCancelledStats(
+          $branchcode,'reserve_canceled',undef,$biblionumber,
+          $holditem->{'itemnumber'},undef,$holditem->{'borrowernumber'},
+          undef,$moduser
+        );
     }
     
     # Send cancellation notice, if desired
@@ -1230,15 +1218,8 @@ warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumb
         $sth->execute( $reservenumber );
         
         UpdateReserveCancelledStats(
-          my $branchcode = $branch,
-          my $type = 'reserve_canceled',
-          my $amount,
-          my $other = $biblio,
-          my $itemnum = $itemnumber,
-          my $itemtype,
-          my $borrowernumber = $borrower,
-          my $accountno,
-          my $modusernumber = $moduser
+          $branch,'reserve_canceled',undef,$biblio,
+          $itemnumber,undef,$borrower,undef,$moduser
         );
 
         # Send expiration notice, if desired
