@@ -2831,70 +2831,72 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
-$DBversion = '4.00.00.003';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh -> do("TRUNCATE permissions;");
-    $dbh -> do("
-    INSERT INTO permissions (module_bit, code, description) VALUES
-        ( 1, 'circulate_remaining_permissions', 'Remaining circulation permissions'),
-        ( 1, 'override_renewals', 'Override blocked renewals'),
-        ( 1, 'exempt_fines', 'User can activate exempt fines in Check In'),
-        ( 1, 'bookdrop', 'User can activate bookdrop mode in Check In'),
-        ( 1, 'override_checkout_max', 'User can override the checkout maximum'),
-        ( 1, 'override_non_circ', 'User can override the not for loan check'),
-        ( 1, 'override_max_fines', 'User can override block for patron over max fine limit'),
-        ( 1, 'change_lost_status', 'User can set the item lost status'),
-        ( 1, 'change_due_date', 'User can specify a due date other than in the circulation rules'),
-        ( 1, 'view_borrower_name_in_checkin', 'User can see the borrower name in Check In'),
-        ( 1, 'view_checkout', 'view items checked out to a borrower in checkin/checkout'),
-        ( 1, 'change_circ_date_and_time', 'User can change circulation date and time'),
-        ( 1, 'fast_add', 'User can use fast add functionality in checkout' ),
-        ( 1, 'renew_expired', 'User can renew an expired borrower in checkout'),
-        ( 4, 'view_borrowers', 'View a borrower record'),
-        ( 4, 'add_borrowers', 'Add a borrower record'),
-        ( 4, 'delete_borrowers', 'User can delete borrower record'),
-        ( 4, 'edit_borrowers', 'User can edit borrower record'),
-        ( 4, 'edit_borrower_circnote', 'User can edit the contents of the borrower circulation note'),
-        ( 4, 'edit_borrower_opacnote', 'User can edit the contents of the borrower opac note'),
-        ( 6, 'delete_holds', 'User can delete hold requests from circulation'),
-        ( 6, 'edit_holds', 'User can edit hold requests'),
-        ( 6, 'view_holds', 'User can view hold requests'),
-        ( 6, 'add_holds', 'User may place a hold for a borrower'),
-        ( 6, 'reorder_holds', 'User can reorder hold requests'),
-        ( 6, 'delete_waiting_holds', 'User can delete holds from the waiting for pickup list'),
-        ( 9, 'view', 'User may view bibliographic and item information'),
-        ( 9, 'add_bibliographic', 'Create a bibliographic record'),
-        ( 9, 'edit_bibliographic', 'Edit a bibliographic record'),
-        ( 9, 'delete_bibliographic', 'Delete a bibliographic record'),
-        ( 9, 'batch_edit_items','Batch item editor'),
-        ( 9, 'add_items', 'Create or copy a new item'),
-        ( 9, 'delete_items', 'Delete an item'),
-        ( 9, 'edit_items', 'Edit an item record'),
-        (10, 'view_charges', 'View borrower charges'),
-        (10, 'add_charges', 'Add a charge to a patron record'),
-        (10, 'edit_charges', 'User can change a fee record'),
-        (10, 'accept_payment', 'User can accept payment from a borrower'),
-        (10, 'writeoff_charges', 'User can writeoff a charge'),
-        (13, 'edit_news', 'Write news for the OPAC and staff interfaces'),
-        (13, 'label_creator', 'Create printable labels and barcodes from catalog and patron data'),
-        (13, 'edit_calendar', 'Define days when the library is closed'),
-        (13, 'moderate_comments', 'Moderate patron comments'),
-        (13, 'edit_notices', 'Define notices'),
-        (13, 'edit_notice_status_triggers', 'Set notice/status triggers for overdue items'),
-        (13, 'view_system_logs', 'Browse the system logs'),
-        (13, 'inventory', 'Perform inventory (stocktaking) of your catalogue'),
-        (13, 'stage_marc_import', 'Stage MARC records into the reservoir'),
-        (13, 'manage_staged_marc', 'Managed staged MARC records, including completing and reversing imports'),
-        (13, 'export_catalog', 'Export bibliographic and holdings data'),
-        (13, 'import_patrons', 'Import patron data'),
-        (13, 'delete_anonymize_patrons', 'Delete old borrowers and anonymize circulation history (deletes borrower reading history)'),
-        (13, 'batch_upload_patron_images', 'Upload patron images in batch or one at a time'),
-        (13, 'batch_edit_items', 'User can access the batch edit items function'),
-        (13, 'schedule_tasks', 'Schedule tasks to run');");
-
-	print "Upgrade to $DBversion done ( Rewrite 'permissions' table )\n";
-    SetVersion ($DBversion);
-}
+# This prompts all updates to have to redefine their user permissions structure. Not a friendly
+# solution and not necessary since there is no divergence. Commented out by CTF.
+#$DBversion = '4.00.00.003';
+#if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+#    $dbh -> do("TRUNCATE permissions;");
+#    $dbh -> do("
+#    INSERT INTO permissions (module_bit, code, description) VALUES
+#        ( 1, 'circulate_remaining_permissions', 'Remaining circulation permissions'),
+#        ( 1, 'override_renewals', 'Override blocked renewals'),
+#        ( 1, 'exempt_fines', 'User can activate exempt fines in Check In'),
+#        ( 1, 'bookdrop', 'User can activate bookdrop mode in Check In'),
+#        ( 1, 'override_checkout_max', 'User can override the checkout maximum'),
+#        ( 1, 'override_non_circ', 'User can override the not for loan check'),
+#        ( 1, 'override_max_fines', 'User can override block for patron over max fine limit'),
+#        ( 1, 'change_lost_status', 'User can set the item lost status'),
+#        ( 1, 'change_due_date', 'User can specify a due date other than in the circulation rules'),
+#        ( 1, 'view_borrower_name_in_checkin', 'User can see the borrower name in Check In'),
+#        ( 1, 'view_checkout', 'view items checked out to a borrower in checkin/checkout'),
+#        ( 1, 'change_circ_date_and_time', 'User can change circulation date and time'),
+#        ( 1, 'fast_add', 'User can use fast add functionality in checkout' ),
+#        ( 1, 'renew_expired', 'User can renew an expired borrower in checkout'),
+#        ( 4, 'view_borrowers', 'View a borrower record'),
+#        ( 4, 'add_borrowers', 'Add a borrower record'),
+#        ( 4, 'delete_borrowers', 'User can delete borrower record'),
+#        ( 4, 'edit_borrowers', 'User can edit borrower record'),
+#        ( 4, 'edit_borrower_circnote', 'User can edit the contents of the borrower circulation note'),
+#        ( 4, 'edit_borrower_opacnote', 'User can edit the contents of the borrower opac note'),
+#        ( 6, 'delete_holds', 'User can delete hold requests from circulation'),
+#        ( 6, 'edit_holds', 'User can edit hold requests'),
+#        ( 6, 'view_holds', 'User can view hold requests'),
+#        ( 6, 'add_holds', 'User may place a hold for a borrower'),
+#        ( 6, 'reorder_holds', 'User can reorder hold requests'),
+#        ( 6, 'delete_waiting_holds', 'User can delete holds from the waiting for pickup list'),
+#        ( 9, 'view', 'User may view bibliographic and item information'),
+#        ( 9, 'add_bibliographic', 'Create a bibliographic record'),
+#        ( 9, 'edit_bibliographic', 'Edit a bibliographic record'),
+#        ( 9, 'delete_bibliographic', 'Delete a bibliographic record'),
+#        ( 9, 'batch_edit_items','Batch item editor'),
+#        ( 9, 'add_items', 'Create or copy a new item'),
+#        ( 9, 'delete_items', 'Delete an item'),
+#        ( 9, 'edit_items', 'Edit an item record'),
+#        (10, 'view_charges', 'View borrower charges'),
+#        (10, 'add_charges', 'Add a charge to a patron record'),
+#        (10, 'edit_charges', 'User can change a fee record'),
+#        (10, 'accept_payment', 'User can accept payment from a borrower'),
+#        (10, 'writeoff_charges', 'User can writeoff a charge'),
+#        (13, 'edit_news', 'Write news for the OPAC and staff interfaces'),
+#        (13, 'label_creator', 'Create printable labels and barcodes from catalog and patron data'),
+#        (13, 'edit_calendar', 'Define days when the library is closed'),
+#        (13, 'moderate_comments', 'Moderate patron comments'),
+#        (13, 'edit_notices', 'Define notices'),
+#        (13, 'edit_notice_status_triggers', 'Set notice/status triggers for overdue items'),
+#        (13, 'view_system_logs', 'Browse the system logs'),
+#        (13, 'inventory', 'Perform inventory (stocktaking) of your catalogue'),
+#        (13, 'stage_marc_import', 'Stage MARC records into the reservoir'),
+#        (13, 'manage_staged_marc', 'Managed staged MARC records, including completing and reversing imports'),
+#        (13, 'export_catalog', 'Export bibliographic and holdings data'),
+#        (13, 'import_patrons', 'Import patron data'),
+#        (13, 'delete_anonymize_patrons', 'Delete old borrowers and anonymize circulation history (deletes borrower reading history)'),
+#        (13, 'batch_upload_patron_images', 'Upload patron images in batch or one at a time'),
+#        (13, 'batch_edit_items', 'User can access the batch edit items function'),
+#        (13, 'schedule_tasks', 'Schedule tasks to run');");
+#
+#	print "Upgrade to $DBversion done ( Rewrite 'permissions' table )\n";
+#    SetVersion ($DBversion);
+#}
 
 $DBversion = '4.00.00.004';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
