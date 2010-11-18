@@ -3625,7 +3625,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     ");
     $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('LinkLostItemsToPatron','0','If set, items marked lost will be listed in the patron Lost Items list','','YesNo')");
     $dbh->do("INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('RefundReturnedLostItem','0','If set, item charges will be refunded when a patron returns the item','','YesNo')");
-    SetLibLimeVersion ($DBversion);
+    SetVersion ($DBversion);
     print "Upgrade to $DBversion done (Adding LostItems)\n";
 }
 
