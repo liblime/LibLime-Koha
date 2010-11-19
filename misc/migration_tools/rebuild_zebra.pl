@@ -535,15 +535,14 @@ sub add_isbn13s {
           }
         }
 
-        my $sfcnt = $marc->field('999')->add_subfields(map { ('e' => $_) } @isbns_unique);
-        my @isbn_list = $marc->subfield('999','e');
-        ModBiblioframework($record_number, '');
-        ModBiblio($marc, $record_number, '');
-        @isbn_list = $marc->subfield('999','e');
+        if (@isbns_unique) {
+          $marc->field('999')->add_subfields(map { ('e' => $_) } @isbns_unique);
+        }
+        else {
+          $marc->field('999')->add_subfields(map { ('e' => $_) } keys %isbns);
+        }
     } else {
         $marc->append_field(MARC::Field->new('999', ' ', ' ', map { ('e' => $_) } keys %isbns));
-        ModBiblioframework($record_number, '');
-        ModBiblio($marc, $record_number, '');
     }
 }
 

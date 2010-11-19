@@ -779,7 +779,7 @@ sub CanBookBeIssued {
     # ITEM CHECKING
     #
     if (   $item->{'notforloan'}
-        && $item->{'notforloan'} > 0 )
+        && $item->{'notforloan'} != 0 )
     {
         if(!C4::Context->preference("AllowNotForLoanOverride")){
             $issuingimpossible{NOT_FOR_LOAN} = 1;

@@ -1188,7 +1188,7 @@ sub searchResults {
         $times = $hits;	 # FIXME: if $hits is undefined, why do we want to equal it?
     }
 
-	my $marcflavour = C4::Context->preference("marcflavour");
+    my $marcflavour = C4::Context->preference("marcflavour");
     # loop through all of the records we've retrieved
     for ( my $i = $offset ; $i <= $times - 1 ; $i++ ) {
         my $marcrecord;
@@ -1200,6 +1200,8 @@ sub searchResults {
         my $oldbiblio = TransformMarcToKoha( $dbh, $marcrecord, '' );
         $oldbiblio->{subtitle} = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 'subtitle', $marcrecord, '');
         $oldbiblio->{result_number} = $i + 1;
+# Grab item information
+#       my $marcitems = C4::Items::GetMarcWithItems($oldbiblio->{biblionumber},$marcresults[$i]);
 
         # add imageurl to itemtype if there is one
         $oldbiblio->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $oldbiblio->{itemtype} }->{imageurl} );
@@ -1209,15 +1211,15 @@ sub searchResults {
                 C4::Biblio::get_biblio_authorised_values($oldbiblio->{'biblionumber'}, $marcrecord)
                 );
         }
-		$oldbiblio->{normalized_upc}  = GetNormalizedUPC(       $marcrecord,$marcflavour);
-		$oldbiblio->{normalized_ean}  = GetNormalizedEAN(       $marcrecord,$marcflavour);
-		$oldbiblio->{normalized_oclc} = GetNormalizedOCLCNumber($marcrecord,$marcflavour);
-		$oldbiblio->{normalized_isbn} = GetNormalizedISBN(undef,$marcrecord,$marcflavour);
-		$oldbiblio->{content_identifier_exists} = 1 if ($oldbiblio->{normalized_isbn} or $oldbiblio->{normalized_oclc} or $oldbiblio->{normalized_ean} or $oldbiblio->{normalized_upc});
+        $oldbiblio->{normalized_upc}  = GetNormalizedUPC(       $marcrecord,$marcflavour);
+        $oldbiblio->{normalized_ean}  = GetNormalizedEAN(       $marcrecord,$marcflavour);
+        $oldbiblio->{normalized_oclc} = GetNormalizedOCLCNumber($marcrecord,$marcflavour);
+        $oldbiblio->{normalized_isbn} = GetNormalizedISBN(undef,$marcrecord,$marcflavour);
+        $oldbiblio->{content_identifier_exists} = 1 if ($oldbiblio->{normalized_isbn} or $oldbiblio->{normalized_oclc} or $oldbiblio->{normalized_ean} or $oldbiblio->{normalized_upc});
 
-		# edition information, if any
+        # edition information, if any
         $oldbiblio->{edition} = $oldbiblio->{editionstatement};
-		$oldbiblio->{description} = $itemtypes{ $oldbiblio->{itemtype} }->{description};
+        $oldbiblio->{description} = $itemtypes{ $oldbiblio->{itemtype} }->{description};
  # Build summary if there is one (the summary is defined in the itemtypes table)
  # FIXME: is this used anywhere, I think it can be commented out? -- JF
         if ( $itemtypes{ $oldbiblio->{itemtype} }->{summary} ) {
@@ -1258,6 +1260,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 
         # Pull out the items fields
         my @fields = $marcrecord->field($itemtag);
+#       my @fields = $marcitems->field($itemtag);
 
         # Setting item statuses for display
         my @available_items_loop;
@@ -1299,8 +1302,8 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
             foreach my $code ( keys %subfieldstosearch ) {
                 $item->{$code} = $field->subfield( $subfieldstosearch{$code} );
             }
-			my $hbranch     = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'homebranch'    : 'holdingbranch';
-			my $otherbranch = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'holdingbranch' : 'homebranch';
+            my $hbranch     = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'homebranch'    : 'holdingbranch';
+            my $otherbranch = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'holdingbranch' : 'homebranch';
             # set item's branch name, use HomeOrHoldingBranch syspref first, fall back to the other one
             if ($item->{$hbranch}) {
                 $item->{'branchname'} = $branches{$item->{$hbranch}};
@@ -1328,17 +1331,17 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
               $OPACstatusdisplay = 0;
             }
 
-			my $prefix = $item->{$hbranch} . '--' . $item->{location} . $item->{itype} . $item->{itemcallnumber};
+            my $prefix = $item->{$hbranch} . '--' . $item->{location} . $item->{itype} . $item->{itemcallnumber};
 # For each grouping of items (onloan, available, unavailable), we build a key to store relevant info about that item
             if ( $item->{onloan} ) {
                 $onloan_count++;
-				my $key = $prefix . $item->{onloan} . $item->{barcode};
-				$onloan_items->{$key}->{due_date} = format_date($item->{onloan});
-				$onloan_items->{$key}->{count}++ if $item->{$hbranch};
-				$onloan_items->{$key}->{branchname} = $item->{branchname};
-				$onloan_items->{$key}->{location} = $shelflocations->{ $item->{location} };
-				$onloan_items->{$key}->{itemcallnumber} = $item->{itemcallnumber};
-				$onloan_items->{$key}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
+                my $key = $prefix . $item->{onloan} . $item->{barcode};
+                $onloan_items->{$key}->{due_date} = format_date($item->{onloan});
+                $onloan_items->{$key}->{count}++ if $item->{$hbranch};
+                $onloan_items->{$key}->{branchname} = $item->{branchname};
+                $onloan_items->{$key}->{location} = $shelflocations->{ $item->{location} };
+                $onloan_items->{$key}->{itemcallnumber} = $item->{itemcallnumber};
+                $onloan_items->{$key}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
                 # if something's checked out and lost, mark it as 'long overdue'
                 if ( $item->{itemlost} ) {
                     $onloan_items->{$prefix}->{longoverdue}++;
@@ -1391,7 +1394,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     || $item->{itemlost}
                     || $item->{damaged}
                     || $item->{suppress}
-                    || $item->{notforloan} 
+                    || ($item->{notforloan} > 0)
                     || ($holdsallowed == 0)
                     || ($transfertwhen ne '')
                     || ($restype{$item->{itemnumber}} eq "Attached")
