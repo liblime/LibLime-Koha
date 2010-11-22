@@ -307,7 +307,7 @@ function set_to_today(id, force) {
 	<p>CHECKING BARCODE</p>
 </div>
 
-<!-- TMPL_IF NAME="CAN_user_editcatalogue_relink_items" --><!-- TMPL_IF NAME="newitem" -->
+<!-- TMPL_IF NAME="newitem" -->
 	<script>
 		$('#<!-- TMPL_VAR NAME="barcode_id" -->').blur(function() {
 			checkBarcode();
@@ -336,11 +336,19 @@ function set_to_today(id, force) {
 
 		function processCheckBarcode( data ) {
 			if ( data.itemnumber ) {
-
 				var itemData = '';
-				itemData += "Title: " + data.title + "\n";
-				itemData += "Holding Branch: " + data.holdingbranch + "\n";
-				itemData += "Home Branch: " + data.homebranch + "\n";
+				itemData += "Title: " + data.title + ' ' + data.subtitle + "\n";
+
+				if ( data.medium ) {
+					itemData += "Medium: " + data.medium + "\n";
+				}
+
+				if ( data.field245n || data.field245p ) {
+					itemData += "Part/Section: " + data.field245n + data.field245p + "\n";
+				}
+
+				itemData += "Holding Location: " + data.holdingbranch + "\n";
+				itemData += "Home Location: " + data.homebranch + "\n";
 
 				if ( data.date_due ) {
 					itemData += "\n";
@@ -357,7 +365,9 @@ function set_to_today(id, force) {
 					itemData += "This item has item-level holds.\n";
 				}
 
-				var answer = confirm (
+				var answer = false;
+				<!-- TMPL_IF NAME="CAN_user_editcatalogue_relink_items" -->
+					answer = confirm(
 "This barcode is currently being used by the following item: \n\
 \n" +
 itemData
@@ -367,7 +377,16 @@ Do you want to move this item from its current bibliographic record to this one?
 'OK' will load the data from the existing item, 'Cancel' will retain any data you may have entered except for this barcode.\n\
 \n\
 After the item's data has been loaded, you may review and edit the data, then choose 'Save' to commit the changes.\
-				");
+					");
+				<!-- TMPL_ELSE -->
+					alert(
+"This barcode is currently being used by the following item: \n\
+\n" +
+itemData
++ "\n\
+Please use a different barcode.\
+                                	");
+				<!-- /TMPL_IF -->
 
 				if (answer) {
 					window.location="additem.pl?op=edititem&biblionumber=<!--TMPL_VAR NAME="biblionumber"-->&itemnumber=" + data.itemnumber;
@@ -378,6 +397,6 @@ After the item's data has been loaded, you may review and edit the data, then ch
 			}
 		}
 	</script>
-<!-- /TMPL_IF --><!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
 
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
