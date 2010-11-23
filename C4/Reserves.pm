@@ -905,9 +905,10 @@ sub CheckReserves {
       $oldest = GetReserve_OldestReserve( $item, $barcode );
       
       undef $oldest unless ( 
-        $oldest->{'age_in_days'} > C4::Context->preference('FillRequestsAtPickupLibraryAge') 
-        && 
-        $oldest->{'priority'} < $local->{'priority'}
+        not defined $oldest ||
+            ($oldest->{'age_in_days'} > C4::Context->preference('FillRequestsAtPickupLibraryAge') &&
+             $oldest->{'priority'} < $local->{'priority'}
+            )
       );
     }
     
@@ -973,9 +974,6 @@ sub GetReserve_NextLocalReserve {
 sub GetReserve_OldestReserve {
   my ( $itemnumber, $barcode ) = @_;
   my $branchcode = C4::Context->userenv->{"branch"};
-  
-  my $dbh = C4::Context->dbh;
-  my $sth;
   
   my $item = GetItem( $itemnumber, $barcode );
   $itemnumber = $item->{'itemnumber'};
