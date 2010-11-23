@@ -25,7 +25,6 @@ use MARC::File::USMARC;
 use MARC::File::XML;
 use ZOOM;
 use POSIX qw(strftime);
-use Memoize;
 
 use C4::Koha;
 use C4::Dates qw/format_date/;
@@ -36,8 +35,6 @@ require C4::Heading;
 require C4::Serials;
 
 use vars qw($VERSION @ISA @EXPORT);
-
-memoize('MARC::Record::new_from_xml');
 
 BEGIN {
 	$VERSION = 1.00;
