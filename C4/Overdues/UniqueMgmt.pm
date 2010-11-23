@@ -56,6 +56,7 @@ sub AddBorrowerSubmit {
         "acct=" . ( $data->{'borrowernumber'} ),
         "phone=" . ( $data->{'phone'} || '' ),
         "bphone=" . ( $data->{'phonepro'} || '' ),
+        "branch=" . ( $data->{'branchcode'} || '' ),
         "totamt=" . sprintf( '%0.2f', $data->{'total'} ),
         "duedate=" . _format_date( $data->{'earliest_due'} ),
         "parent=" . ( $data->{'contactname'} ? ( $data->{'contactname'} . ', ' . $data->{'contactfirstname'} ) : '' ),
