@@ -2606,15 +2606,24 @@ sub AutoSummarizeHoldings{
     $pattern =~ s/\{.\}/(\\d\+)/g;
 
 # Loop through the issues in pubdate order, and put them in the summary.
-
+    my @mons = qw(toss Jan Feb Mar Apr May Jun
+                       Jul Aug Sep Oct Nov Dec);
     while (my $thisissue = shift(@$issue_data)){
+        # convert dates to Jan 01, 2010
+        my $pubdate = $thisissue->{'publisheddate'};
+        if ($pubdate =~ /(\d{4})-(\d\d)-(\d\d)/) {
+            $pubdate = "$mons[$2] $3, $1";
+        }
+        elsif ($pubdate =~ /(\d\d)-(\d\d)-(\d{4})/) {
+            $pubdate = "$mons[$1] $2, $3";
+        }
 
         if ($thisissue->{'serialseq'} =~ m/$pattern/){
             if ($thisissue->{'status'} == 2){
                 if ($curstatus == 0){
                     $summary .= ', ' if $summary;
                     $summary .= $thisissue->{'serialseq'};
-                    $summary .= ' ('.$thisissue->{'publisheddate'}.')' if $sub_data->{'use_chron'};
+                    $summary .= ' ('.$pubdate.')' if $sub_data->{'use_chron'};
                     $curstatus = 1;
                 }
             }
@@ -2623,20 +2632,20 @@ sub AutoSummarizeHoldings{
                 $summary .= ' -';
                 last;
             }
-            if ($curstatus){
+            if ($curstatus) {
                 $summary .= ' - ' . $lastissue;
                 $summary .= ' ('.$lastchron.')' if $sub_data->{'use_chron'};
                 $curstatus=0;
-           }
+            }
         }
         $lastissue = $thisissue->{'serialseq'};
-        $lastchron = $thisissue->{'publisheddate'} if $sub_data->{'use_chron'};
+        $lastchron = $pubdate if $sub_data->{'use_chron'};
         $laststatus = $thisissue->{'status'};
         }
         else {
             if ($thisissue->{'status'} == 2){
                 my $supplementstr = $thisissue->{'serialseq'};
-                $supplementstr .= ' ('.$thisissue->{'publisheddate'}.')' if $sub_data->{'use_chron'};
+                $supplementstr .= ' ('.$pubdate.')' if $sub_data->{'use_chron'};
                 push @supplements, $supplementstr;
             }
         }
@@ -2664,29 +2673,38 @@ sub AutoSummarizeHoldings{
     my $record = C4::Biblio::GetMarcBiblio($sub_data->{'bibnum'});
     my $framework = C4::Biblio::GetFrameworkCode($sub_data->{'bibnum'});
 
-    foreach my $thisfield ($record->field('86.')){  #find and mark for removal all of the summary holdings for this subs.
+    foreach my $thisfield ($record->field('86.')){  #find and mark for removal all of the summary holdings for this subscription.
         if (($thisfield->tag() eq "866" or $thisfield->tag() eq "867") and $thisfield->subfield('9') eq $subscriptionid){
             push @delfields, $thisfield;
         }
     }
     $record->delete_fields(@delfields);
 
+    # use full branch name 'My Town Library has: ...'
+    # the first subfield is $8
+    use C4::Branch;
     my $field = MARC::Field->new(
         866, ' ', '0',
+        '8' => undef, # field link and sequence number
         'a' => $summary,
-        '7' => "$sub_data->{'branchcode'}",
+        '7' => C4::Branch::GetBranchName($sub_data->{'branchcode'}) || '',
         '9' => $subscriptionid
     );
     push @fields, $field;
     foreach my $str (@supplements){
         my $field = MARC::Field->new(
             867, ' ', '0',
+            '8' => undef, # field link and sequence number
             'a' => $str,
-            '7' => "$sub_data->{'branchcode'}",
+            '7' => C4::Branch::GetBranchName($sub_data->{'branchcode'}) || '',
             '9' => $subscriptionid
         );
         push @fields, $field;
     }
+
+    # TODO:
+    # sort 866 fields: group by library, current library on top, sort by
+    # serials publication date
     $record->insert_fields_ordered(@fields);
 
     C4::Biblio::ModBiblioMarc($record,$sub_data->{'bibnum'},$framework);

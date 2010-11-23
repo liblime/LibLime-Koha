@@ -669,7 +669,7 @@
                       </xsl:call-template>
                    </xsl:with-param>
                 </xsl:call-template>
-                <xsl:text>: </xsl:text>
+                <xsl:text> has: </xsl:text>
                 <xsl:call-template name="chopPunctuation">
                     <xsl:with-param name="chopString">
                       <xsl:call-template name="subfieldSelect">

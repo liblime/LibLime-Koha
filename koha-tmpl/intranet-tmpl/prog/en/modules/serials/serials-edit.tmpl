@@ -96,6 +96,7 @@ function CloneSubfield(index){
         id_input = inputs[i].getAttribute('id')+new_key;
         inputs[i].setAttribute('id',id_input);
         inputs[i].setAttribute('name',inputs[i].getAttribute('name'));
+        inputs[i].setAttribute('value',inputs[i].getAttribute('value'));
     }
     
     // select 
@@ -103,6 +104,7 @@ function CloneSubfield(index){
         id_input = selects[i].getAttribute('id')+new_key;
         selects[i].setAttribute('id',selects[i].getAttribute('id')+new_key);
         selects[i].setAttribute('name',selects[i].getAttribute('name'));
+        selects[i].setAttribute('selectedIndex',selects[i].getAttribute('selectedIndex'));
     }
     
     // textarea
@@ -366,9 +368,9 @@ function CloneSubfield(index){
           <td colspan="5">
       <a id="label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->" style="color: grey; font-size: 80%; cursor: pointer;"  onclick="unHideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')">
              Click to add item</a>
-        <fieldset  class="rows" style="display:none;" id="items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->">
+        <fieldset class="rows" style="display:none;" id="items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->">
         <legend><a style="cursor: pointer;"  onclick="HideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')">
-                Item</a>
+                Item: Supplement</a>
         </legend>
           <div class="cataloguing_additem_itemlist">
         <div id="item<!-- TMPL_VAR NAME="serialid" --><!-- TMPL_VAR NAME="countitems" -->" class="items">

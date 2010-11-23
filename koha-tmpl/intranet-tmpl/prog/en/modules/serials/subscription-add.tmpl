@@ -30,7 +30,9 @@ function formatDate(myDate) {
     <!-- TMPL_ELSIF NAME="dateformat_metric" -->
         return(d[2] + '/' + d[1] + '/' + d[0]) ;
     <!-- TMPL_ELSE -->
-        return(''+d[0] + '-' + d[1] + '-' + d[2]) ;
+        var mons = new Array('','Jan','Feb','Mar','Apr','May','Jun',
+        'Jul','Aug','Sep','Oct','Nov','Dec');
+        return(mons[d[1]]+' '+d[2]+', '+d[0]') ;
     <!-- /TMPL_IF -->    
 }
 
@@ -166,7 +168,7 @@ var patternchoice = document.getElementById("numberpattern").value;
         document.f.lastvalue1.value=1;
         document.f.lastvalue2.value=1;
         document.f.lastvalue3.value=1;
-        document.f.numberingmethod.value=_("Vol {X}, No {Y}, Issue {Z}");
+        document.f.numberingmethod.value=_("vol. {X}, no. {Y}, iss. {Z}");
         moreoptions(text[1],text[0],text[2]);
         display_table(0); // toggle info box on (1) or off (0)
         break;

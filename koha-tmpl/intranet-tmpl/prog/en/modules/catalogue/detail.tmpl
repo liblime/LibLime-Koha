@@ -40,7 +40,6 @@ function verify_images() {
 </head>
 
 <body>
-
 <!-- TMPL_UNLESS NAME="last_borrower_show_button" -->
 	<!-- TMPL_INCLUDE NAME="header.inc" -->
 	<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
@@ -116,12 +115,12 @@ function verify_images() {
 <!-- TMPL_IF NAME="serials_summaries" -->
     <li><strong>Serials Summary Holdings</strong><ul>
     <!-- TMPL_LOOP name="serials_summaries" -->
-        <li><!-- TMPL_VAR NAME="librarycode" -->:&nbsp;&nbsp;<!-- TMPL_VAR NAME="summary" --></li>
+        <li><!-- TMPL_VAR NAME="librarycode" --> has:&nbsp;&nbsp;<!-- TMPL_VAR NAME="summary" --></li>
     <!-- /TMPL_LOOP -->
     <!-- TMPL_IF NAME="serials_supplements" -->
         <li><strong>Supplemental issues:</strong><ul>
         <!-- TMPL_LOOP name= "serials_supplements" -->
-            <li><!-- TMPL_VAR NAME="librarycode" -->:&nbsp;&nbsp;<!-- TMPL_VAR NAME="summary" --></li>
+            <li><!-- TMPL_VAR NAME="librarycode" --> has:&nbsp;&nbsp;<!-- TMPL_VAR NAME="summary" --></li>
         <!-- /TMPL_LOOP --></ul></li>
     <!-- /TMPL_IF -->
 <!-- /TMPL_IF -->

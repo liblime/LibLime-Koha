@@ -203,7 +203,10 @@ sub buildKohaItemsNamespace {
         } else {
             $status = "available";
         }
-        my $homebranch = $branches->{$item->{homebranch}}->{'branchname'};
+
+        # suppress Perl warning about uninitialized value when no branch is set
+        my $homebranch = '';
+        $homebranch = $branches->{$item->{homebranch} || ''}->{'branchname'} || '';
         $xml.= "<item><homebranch>$homebranch</homebranch>".
 		"<status>$status</status>".
 		(defined $item->{'itemcallnumber'} ? "<itemcallnumber>".$item->{'itemcallnumber'}."</itemcallnumber>" 
