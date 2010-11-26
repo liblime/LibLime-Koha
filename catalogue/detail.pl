@@ -141,6 +141,7 @@ my $authvalcode_items_damaged  = GetAuthValCode('items.damaged', $fw);
 my $itemcount=0;
 my $additemnumber;
 my $authvalcode_items_suppress = GetAuthValCode('items.suppress', $fw);
+
 foreach my $item (@items) {
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
     $itemcount++;
@@ -227,6 +228,7 @@ foreach my $item (@items) {
         }
       }
     }
+
 
     push @itemloop, $item;
 }

@@ -577,7 +577,16 @@ for (my $i=0;$i<@servers;$i++) {
             } elsif  ($defaultview eq 'labeled_marc' && $views->{can_view_labeledMARC}) {
                 print $cgi->redirect("/cgi-bin/koha/catalogue/labeledMARCdetail.pl?biblionumber=$biblionumber");
             } else {
-                print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber&last_borrower_show_button=$last_borrower_show_button");
+               if ($cgi->param('q') !~ /\D/) { # guess that it's a barcode
+                  my @inums = split(/\s*\|\s*/,$newresults[0]->{itemnumber});
+                  my $itemnumber = $inums[0];
+                  print $cgi->redirect('/cgi-bin/koha/catalogue/moredetail.pl'
+                  ."?itemnumber=$itemnumber&biblionumber=$biblionumber"
+                  ."&bi=$biblionumber#item$itemnumber");
+                  exit;
+               }
+                print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?q="
+                . $cgi->param('q')."&biblionumber=$biblionumber&last_borrower_show_button=$last_borrower_show_button");
             } 
             exit;
         }
