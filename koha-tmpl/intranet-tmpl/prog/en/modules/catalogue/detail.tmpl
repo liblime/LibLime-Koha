@@ -36,6 +36,17 @@ function verify_images() {
         verify_images();
      });<!-- /TMPL_IF -->
 //]]>
+function barcodeMatch(barcode,itemnumber) {
+   var q = '<!-- TMPL_VAR NAME="q" -->';
+   if (q == barcode) {
+      document.location.href='/cgi-bin/koha/catalogue/moredetail.pl'
+      +'?itemnumber='+itemnumber+'&biblionumber='
+      +<!-- TMPL_VAR NAME="biblionumber" -->+'&bi='
+      +<!-- TMPL_VAR NAME="biblionumber" -->
+      +'#item'+itemnumber;
+      return true;
+   }
+}
 </script>
 </head>
 
@@ -338,7 +349,9 @@ function verify_images() {
                         
                     </td>
                     <td class="datelastseen"><!-- TMPL_VAR NAME="datelastseen" --></td>
-                    <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?type=<!-- TMPL_VAR NAME="type" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;bi=<!-- TMPL_VAR NAME="biblioitemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber">"><!-- TMPL_VAR NAME="barcode" --></a></td>
+                    <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?type=<!-- TMPL_VAR NAME="type" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;bi=<!-- TMPL_VAR NAME="biblioitemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber">"><!-- TMPL_VAR NAME="barcode" --></a><a href="javascript:;" onclick="checkinNote(<!-- TMPL_VAR NAME="itemnumber" -->)"><img src="/intranet-tmpl/prog/img/toolbar-edit.gif" title="check in note" alt="check in note" align=abscenter border=0></a>
+ <script>barcodeMatch('<!-- TMPL_VAR NAME="barcode" -->',<!-- TMPL_VAR NAME="itemnumber" -->)</script>
+ </td>
                     <td><a href="/cgi-bin/koha/labels/spinelabel-print.pl?barcode=<!-- TMPL_VAR name="barcode" -->">Print Label</a>
                     </td>
 				<!-- TMPL_IF NAME="volinfo" -->	<td class="enumchron">
