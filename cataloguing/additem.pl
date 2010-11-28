@@ -273,7 +273,7 @@ if ($op eq "additem") {
 }
 
 ## Check to see if we are working on a new item for the record
-$template->param( newitem => 1 ) if ( $op eq '' );
+$template->param( newitem => 1 ) if ( $op eq '' || $op eq "addadditionalitem" );
 
 #
 #-------------------------------------------------------------------------------
