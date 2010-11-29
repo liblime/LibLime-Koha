@@ -63,7 +63,7 @@ __PACKAGE__->meta->setup(
 
     relationships => [
         periodical_serials => {
-            map_class => 'C4::Model::SubscriptionSerialItem',
+            map_class => 'C4::Model::SubscriptionSerial',
             map_from  => 'item',
             map_to    => 'periodical_serial',
             type      => 'many to many',

@@ -15,8 +15,8 @@ __PACKAGE__->meta->setup(
         expiration_date => { type => 'date' },
         opac_note       => { type => 'text', length => 65535 },
         staff_note      => { type => 'text', length => 65535 },
-        item_defaults   => { type => 'text', length => 65535, not_null => 1 },
         adds_items      => { type => 'integer', default => '0', not_null => 1 },
+        item_defaults   => { type => 'text', length => 65535 },
     ],
 
     primary_key_columns => [ 'id' ],

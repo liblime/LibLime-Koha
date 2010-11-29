@@ -12,7 +12,7 @@ my $loader = Rose::DB::Object::Loader->new(
       db           => C4::RoseDB->new(),
       class_prefix => 'C4::Model',
       #exclude_tables => ['class_sources', 'opac_news'],
-      include_tables => [ 'periodicals', 'periodical_serials', 'subscriptions', 'subscription_serials', 'subscription_serial_items', 'biblio', 'biblioitems', 'items' ],
+      include_tables => [ 'periodicals', 'periodical_serials', 'subscriptions', 'subscription_serials', 'biblio', 'biblioitems', 'items' ],
     );
 
 #my @classes = $loader->make_classes;

@@ -13,7 +13,6 @@ __PACKAGE__->meta->setup(
         sequence         => { type => 'varchar', length => 16 },
         vintage          => { type => 'varchar', length => 64, not_null => 1 },
         publication_date => { type => 'date', not_null => 1 },
-        expected_date    => { type => 'date' },
     ],
 
     primary_key_columns => [ 'id' ],
@@ -27,7 +26,7 @@ __PACKAGE__->meta->setup(
 
     relationships => [
         items => {
-            map_class => 'C4::Model::SubscriptionSerialItem',
+            map_class => 'C4::Model::SubscriptionSerial',
             map_from  => 'periodical_serial',
             map_to    => 'item',
             type      => 'many to many',
