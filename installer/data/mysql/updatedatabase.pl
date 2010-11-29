@@ -3741,6 +3741,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.00.009';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do("INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('ItemLocation','currentdesc','Library location for item','homedesc|homecode|currentdesc|currentcode|none','Choice')");
+
+    print "Upgrade to $DBversion done ( Add new system preference ItemLocation )\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

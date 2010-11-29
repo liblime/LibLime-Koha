@@ -229,8 +229,9 @@ function barcodeMatch(barcode,itemnumber) {
         <table>
             <tr>
                 <!-- TMPL_IF NAME="item-level_itypes" --><th>Item type</th><!-- /TMPL_IF -->
-                <th>Home Location</th>
-                <th>Current Location</th>
+                <th>Location</th>
+                <th>Home Library</th>
+                <th>Current Library</th>
                 <!-- TMPL_IF NAME="itemdata_ccode" --><th>Collection</th><!-- /TMPL_IF -->
                 <th>Call Number</th>
                 <th>Status</th>
@@ -255,7 +256,8 @@ function barcodeMatch(barcode,itemnumber) {
                           <!-- /TMPL_IF -->
                         <!-- /TMPL_IF --></td>
                     <!-- /TMPL_IF -->
-                    <td class="homelocation"><!-- TMPL_VAR NAME="homebranch" --><p><!-- TMPL_VAR NAME="location" --></p></td>
+                    <td class="homelocation"><!-- TMPL_VAR NAME="location" --></td>
+                    <td class="homebranch"><!-- TMPL_VAR NAME="homebranch" --></td>
                     <td class="holdinglocation"><!-- TMPL_VAR NAME="branchname" --></td>
                     <!-- TMPL_IF NAME="itemdata_ccode" --><td><!-- TMPL_VAR name="ccode" --></td><!-- /TMPL_IF -->
                     <td class="itemcallnumber"><!-- TMPL_IF NAME="itemcallnumber" --> <!-- TMPL_VAR NAME="itemcallnumber" --><!-- /TMPL_IF --></td>

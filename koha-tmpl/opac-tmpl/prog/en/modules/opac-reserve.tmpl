@@ -433,10 +433,8 @@
                               <th>Item Type</th>
                             <!-- /TMPL_IF -->
                             <th>Barcode</th>
-                            <!-- TMPL_UNLESS NAME="singleBranchMode" -->
-                              <th>Home Library</th>
-                              <th>Last Location</th>
-                            <!-- /TMPL_UNLESS -->
+                            <th>Home Library</th>
+<!--                              <th>Last Location</th> -->
                             <th>Call Number</th>
                             <!-- TMPL_IF NAME="itemdata_enumchron" -->
                               <th>Vol Info</th>
@@ -464,10 +462,9 @@
                                 </td>
                               <!-- /TMPL_IF -->
                               <td><!-- TMPL_VAR NAME="barcode" --></td>
-                              <!-- TMPL_UNLESS NAME="singleBranchMode" -->
-                                <td><!-- TMPL_VAR NAME="homeBranchName" --></td>
-                                <td><!-- TMPL_VAR NAME="holdingBranchName" --></td>
-                              <!-- /TMPL_UNLESS -->
+                              <td><!-- TMPL_VAR NAME="homeBranchName" --></td>
+<!--                                <td><!-- TMPL_VAR NAME="holdingBranchName" --></td>
+-->
                               <td><!-- TMPL_VAR NAME="callNumber" --></td>
                               <!-- TMPL_IF NAME="itemdata_enumchron" --><!-- test -->
                                 <td><!-- TMPL_VAR NAME="enumchron" --></td>

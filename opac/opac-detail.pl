@@ -95,6 +95,7 @@ if (!$dat) {
     print $query->redirect("/cgi-bin/koha/errors/404.pl");
     exit;
 }
+
 my $itemtypes = GetItemTypes();
 my $itemstatuses = GetOtherItemStatus();
 # imageurl:
@@ -160,6 +161,13 @@ for my $itm (@items) {
     if ( defined $itm->{'location'} ) {
         $itm->{'location_description'} = $shelflocations->{ $itm->{'location'} };
     }
+    $itm->{'location'} = ''; #prefloc = 'none'
+    my $prefloc = C4::Context->preference("ItemLocation");
+    if    ($prefloc eq 'homedesc')     { $itemfields{'location'} = _locname($branches,$itm->{'homebranch'}) }
+    elsif ($prefloc eq 'homecode')     { $itemfields{'location'} = $itm->{'homebranch'}                     }
+    elsif ($prefloc eq 'currentdesc')  { $itemfields{'location'} = $itm->{'branchname'}                     }
+    elsif ($prefloc eq 'currentcode')  { $itemfields{'location'} = _loccode($branches,$itm->{'branchname'}) }
+
     if (exists $itm->{itype} && defined($itm->{itype}) && exists $itemtypes->{ $itm->{itype} }) {
         $itm->{'imageurl'}    = getitemtypeimagelocation( 'opac', $itemtypes->{ $itm->{itype} }->{'imageurl'} );
         $itm->{'description'} = $itemtypes->{ $itm->{itype} }->{'description'};
@@ -228,7 +236,8 @@ my $subtitle         = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 's
                      itemdata_enumchron      => $itemfields{enumchron},
                      itemdata_uri            => $itemfields{uri},
                      itemdata_copynumber     => $itemfields{copynumber},
-                     itemdata_itemnotes          => $itemfields{itemnotes},
+                     itemdata_itemnotes      => $itemfields{itemnotes},
+                     itemdata_location       => $itemfields{location},
                      authorised_value_images => $biblio_authorised_value_images,
                      subtitle                => $subtitle,
     );
@@ -591,3 +600,29 @@ if (my $search_for_title = C4::Context->preference('OPACSearchForTitleIn')){
 
 
 output_html_with_http_headers $query, $cookie, $template->output;
+
+sub _locname
+{
+   my($branches,$bcode) = @_;
+   my $bname = '';
+   foreach(keys %$branches) {
+      if ($bcode eq $_) {
+         $bname = $$branches{$_}{branchname};
+         last;
+      }
+   }
+   return $bname;
+}
+
+sub _loccode
+{
+   my($branches,$bname) = @_;
+   my $bcode = '';
+   foreach(keys %$branches) {
+      if ($$branches{$_}{branchname} eq $bname) {
+         $bcode = $_;
+         last;
+      }
+   }
+   return $bcode;
+}
