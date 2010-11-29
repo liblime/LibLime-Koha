@@ -22,7 +22,8 @@ border-style: inherit;
 <input type="hidden" name="op" value="save">
 <input type="hidden" name="periodical_id" value="<TMPL_VAR NAME="periodical_id">">
 <TMPL_LOOP NAME="periodical_serials_loop"><input type="hidden" name="periodical_serial_id" value="<TMPL_VAR NAME="id">"></TMPL_LOOP>
-<TMPL_IF EXPR="op == combine">
+<!-- <TMPL_VAR NAME="op"> -->
+<TMPL_IF EXPR="op eq 'combine'">
   <table style="border-style: hidden" cellpadding="3">
     <tr>
       <td>

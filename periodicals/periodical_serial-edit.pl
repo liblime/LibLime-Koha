@@ -53,6 +53,10 @@ if ($op eq 'save') {
     }
 }
 
+if ($query->param('op') eq 'combine') {
+    $template->param(op => 'combine');
+}
+
 SeedTemplateWithPeriodicalSerialData($template, $periodical_serial_id) if $periodical_serial_id;
 SeedTemplateWithGeneralData($template);
 
