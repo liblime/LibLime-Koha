@@ -49,7 +49,7 @@
         });
         original.parentNode.insertBefore(clone, original.nextSibling);
     }
-
+  
 //]]>
 </script>
 </head>
@@ -698,14 +698,6 @@
 
   <fieldset class="rows" id="memberentry_library_management">
     <legend>Library Management</legend><ol>
-   <li> <!-- TMPL_IF NAME="mandatorycardnumber" -->
-      <label for="cardnumber" class="required">
-    <!--TMPL_ELSE -->
-      <label for="cardnumber">
-    <!-- /TMPL_IF--> 
-    Card number: </label>
-    <input type="text" id="cardnumber" name="cardnumber" size="20" value="<!-- TMPL_VAR NAME="cardnumber" -->" />
-	  <!-- TMPL_IF NAME="mandatorycardnumber" --><span class="required">Required</span><!-- /TMPL_IF --></li>
     <li>
       <!-- TMPL_IF NAME="mandatorybranchcode" -->
         <label for="branchcode" class="required">
@@ -770,6 +762,18 @@
 	  <!-- TMPL_IF NAME="mandatorysort2" --><span class="required">Required</span><!-- /TMPL_IF -->
     <!-- /TMPL_IF --> 
     </li>
+
+   <li> <!-- TMPL_IF NAME="mandatorycardnumber" -->
+      <label for="cardnumber" class="required">
+    <!--TMPL_ELSE -->
+      <label for="cardnumber">
+    <!-- /TMPL_IF--> 
+    Card number: </label>
+    <input type="text" id="cardnumber" name="cardnumber" size="20" value="<!-- TMPL_VAR NAME="cardnumber" -->" />
+	  <!-- TMPL_IF NAME="mandatorycardnumber" --><span class="required">Required</span><!-- /TMPL_IF -->
+     <span id="ajax_spinner" style="display:none;">CHECKING BARCODE</span>
+     </li>
+
 	</ol>
   </fieldset>
 	<fieldset class="rows" id="memberentry_subscription">
@@ -1070,7 +1074,44 @@
       <!-- /TMPL_IF -->
     </fieldset>
 </form>
-  
+<script>
+   $('#cardnumber').blur(function() {
+      checkBarcode();
+   });
+
+   function checkBarcode() {
+      var barcode    = document.getElementById('cardnumber').value;
+      var branchcode = document.getElementById('branchcode').value;
+      var dupecheck  = 1;
+      var id  = '<!-- TMPL_VAR NAME="borrowernumber" -->';
+      if (id != '') { dupecheck = 0; }
+      if (barcode != '') {
+         $("#ajax_spinner").ajaxStart(function(){ // actually, just a text msg
+            $(this).show();
+         });
+         $("#ajax_spinner").ajaxStop(function(){
+            $(this).hide();
+         });
+         $.getJSON('/cgi-bin/koha/cataloguing/check_barcode.pl',{'barcode':barcode,'barcodetype':'patron','branchcode':branchcode,'dupecheck':dupecheck},processCheckBarcode);
+      }
+   }
+   function processCheckBarcode(data) {
+      if (data.error) {
+         alert('Invalid barcode: '
+         +data.error + '\n'
+         +'Cannot save record.\n'
+         +'Click OK to go back to the record and re-enter barcode.');
+// infinite loop:
+//         $('#cardnumber').focus();
+         return false;
+      }
+      else {
+         // do nothing
+         return true;
+      }
+   }
+
+</script>
 </div>
 </div>
 

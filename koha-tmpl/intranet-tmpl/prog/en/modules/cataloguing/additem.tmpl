@@ -308,7 +308,6 @@ function set_to_today(id, force) {
 	<p>CHECKING BARCODE</p>
 </div>
 
-<!-- TMPL_IF NAME="newitem" -->
 	<script>
 		$('#<!-- TMPL_VAR NAME="barcode_id" -->').blur(function() {
 			checkBarcode();
@@ -331,12 +330,23 @@ function set_to_today(id, force) {
 
 		function checkBarcode() {
 			if ( $('#<!-- TMPL_VAR NAME="barcode_id" -->').val() ) {
-				$.getJSON( 'check_barcode.pl', { 'barcode' : $('#<!-- TMPL_VAR NAME="barcode_id" -->').val() }, processCheckBarcode );
+            var branchcode = document.f.field_value_0[10].options[document.f.field_value_0[10].selectedIndex].value;
+            var dupecheck = 1;
+            var id = '<!-- TMPL_VAR NAME="itemnumber" -->';
+            if (id != '') { dupecheck = 0; }
+				$.getJSON( 'check_barcode.pl', { 'barcode' : $('#<!-- TMPL_VAR NAME="barcode_id" -->').val(),'barcodetype':'item','branchcode':branchcode,'dupecheck':dupecheck }, processCheckBarcode );
 			}
 		}
 
 		function processCheckBarcode( data ) {
-			if ( data.itemnumber ) {
+         if (data.error) {
+            alert('Invalid barcode: '
+            +data.error + '\n'
+            +'Cannot save record.\n'
+            +'Click OK to go back to the record and re-enter barcode.');
+            return false;
+         }
+			else if ( data.itemnumber ) {
 				var itemData = '';
 				itemData += "Title: " + data.title + ' ' + data.subtitle + "\n";
 
@@ -398,6 +408,5 @@ Please use a different barcode.\
 			}
 		}
 	</script>
-<!-- /TMPL_IF -->
 
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

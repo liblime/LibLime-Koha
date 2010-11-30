@@ -33,11 +33,14 @@ use C4::Biblio;
 use C4::Items;
 use C4::Circulation;
 use C4::Reserves;
+use C4::Barcodes;
 
 my $cgi = new CGI;
 
-my $barcode = $cgi->param('barcode');
-
+my $barcode    = $cgi->param('barcode');
+my $branchcode = $cgi->param('branchcode');
+my $btype      = $cgi->param('barcodetype');
+my $dupecheck  = $cgi->param('dupecheck');
 my $params;
 
 my $item = GetItem( '', $barcode );
@@ -70,9 +73,17 @@ if ( $item->{'itemnumber'} ) {
   }
 }
 
+my($ok,$errStr) = C4::Barcodes::codabar::validate(
+   $barcode,
+   $btype,
+   $branchcode,
+   $dupecheck,
+);
+$params->{error} = $errStr;
+
 my $json = to_json( $params );
 
-warn Data::Dumper::Dumper( $json );
+#warn Data::Dumper::Dumper( $json );
 
 print $cgi->header('application/json');
 print $json;
