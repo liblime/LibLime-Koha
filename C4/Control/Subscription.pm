@@ -42,7 +42,7 @@ sub _create_first_subscriptionserial($$) {
     my $subscription_serial = C4::Model::SubscriptionSerial->new;
     $subscription_serial->subscription_id($subscription_id);
     $subscription_serial->periodical_serial_id($query->param('firstserial'));
-    $subscription_serial->expected_date($query->param('expected_date'));
+    $subscription_serial->expected_date($query->param('expected_date') || undef);
     $subscription_serial->status(1);
     $subscription_serial->itemnumber($query->param('itemnumber'));
     $subscription_serial->save;
@@ -68,8 +68,9 @@ sub ConvertQueryToItemDefaults($) {
     my $item_defaults = {};
     for my $s (@subfields) {
         my $key = $s->{kohafield};
+	next if (not $key);
         my ( $tablename, $fieldname ) = split(/\./, $key );
-        $item_defaults->{$fieldname} = $query->param("defaults_$key") if ($query->param("defaults_$key") ne '');
+        $item_defaults->{$fieldname} = $query->param("defaults_$key") if ($query->param("defaults_$key"));
     }
     return $item_defaults;
 }
