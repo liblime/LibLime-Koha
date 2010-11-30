@@ -3801,6 +3801,21 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.02.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(qq/
+      INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('TalkingTechEnabled', '0', 'Turn on Talking Tech phone messaging','','YesNo');
+    /);
+    $dbh->do(qq/
+      INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('TalkingTechFileName','\/tmp\/TtMESSAGE.csv','Set the file system path for the Talking Tech MESSAGE file','','free');
+    /);
+    $dbh->do("ALTER TABLE letter ADD ttcode VARCHAR(20) DEFAULT NULL");
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done (Added TalkingTechEnabled and TalkingTechFileName system preferences. Added ttcode column to the letter table)\n";
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

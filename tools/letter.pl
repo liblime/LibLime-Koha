@@ -69,6 +69,7 @@ my $script_name = '/cgi-bin/koha/tools/letter.pl';
 my $code        = $input->param('code');
 my $module      = $input->param('module');
 my $content     = $input->param('content');
+my $ttcode      = $input->param('ttcode');
 my $op          = $input->param('op');
 my $dbh = C4::Context->dbh;
 if (!defined $module ) {
@@ -121,6 +122,10 @@ if ($op) {
     $template->param(no_op_set => 1);
 }
 
+if (C4::Context->preference('TalkingTechEnabled')) {
+  $template->param(TalkingTechEnabled => 1);
+}
+
 output_html_with_http_headers $input, $cookie, $template->output;
 
 sub add_form {
@@ -129,10 +134,11 @@ sub add_form {
     my $letter;
     # if code has been passed we can identify letter and its an update action
     if ($code) {
-        $letter = $dbh->selectrow_hashref(q{SELECT module, code, name, title, content FROM letter WHERE module=? AND code=?},
+        $letter = $dbh->selectrow_hashref(q{SELECT module, code, name, title, content, ttcode FROM letter WHERE module=? AND code=?},
             undef, $module, $code);
         $template->param( modify => 1 );
         $template->param( code   => $letter->{code} );
+        $template->param( ttcode => $letter->{ttcode} );
     }
     else { # initialize the new fields
         $letter = {
@@ -141,6 +147,7 @@ sub add_form {
             name    => q{},
             title   => q{},
             content => q{},
+            ttcode  => q{},
         };
         $template->param( adding => 1 );
     }
@@ -208,19 +215,38 @@ sub add_validate {
     my $name    = $input->param('name');
     my $title   = $input->param('title');
     my $content = $input->param('content');
-    if (letter_exists($module, $code)) {
-        $dbh->do(
-            q{UPDATE letter SET module = ?, code = ?, name = ?, title = ?, content = ? WHERE module = ? AND code = ?},
-            undef,
-            $module, $code, $name, $title, $content,
-            $module, $code
-        );
-    } else {
-        $dbh->do(
-            q{INSERT INTO letter (module,code,name,title,content) VALUES (?,?,?,?,?)},
-            undef,
-            $module, $code, $name, $title, $content
-        );
+    if (C4::Context->preference('TalkingTechEnabled')) {
+      my $ttcode  = $input->param('ttcode');
+      if (letter_exists($module, $code)) {
+          $dbh->do(
+              q{UPDATE letter SET module = ?, code = ?, name = ?, title = ?, content = ?, ttcode = ? WHERE module = ? AND code = ?},
+              undef,
+              $module, $code, $name, $title, $content, $ttcode,
+              $module, $code
+          );
+      } else {
+          $dbh->do(
+              q{INSERT INTO letter (module,code,name,title,content,ttcode) VALUES (?,?,?,?,?,?)},
+              undef,
+              $module, $code, $name, $title, $content, $ttcode
+          );
+      }
+    }
+    else {
+      if (letter_exists($module, $code)) {
+          $dbh->do(
+              q{UPDATE letter SET module = ?, code = ?, name = ?, title = ?, content = ? WHERE module = ? AND code = ?},
+              undef,
+              $module, $code, $name, $title, $content,
+              $module, $code
+          );
+      } else {
+          $dbh->do(
+              q{INSERT INTO letter (module,code,name,title,content) VALUES (?,?,?,?,?)},
+              undef,
+              $module, $code, $name, $title, $content
+          );
+      }
     }
     # set up default display
     default_display();

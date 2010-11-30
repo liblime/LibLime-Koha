@@ -848,7 +848,7 @@ sub CheckReserves {
     # note: we get the itemnumber because we might have started w/ just the barcode.  Now we know for sure we have it.
     my ( $biblio, $bibitem, $notforloan_per_itemtype, $notforloan_per_item, $itemnumber, $itemtype, $itembranch ) = $sth->fetchrow_array;
 
-    return ( 0, 0 ) unless $itemnumber; # bail if we got nothing.
+    return ( 0, 0, 0 ) unless $itemnumber; # bail if we got nothing.
 
     # if item is not for loan it cannot be reserved either.....
     #    execption to notforloan is where items.notforloan < 0 :  This indicates the item is holdable. 
@@ -1474,7 +1474,6 @@ warn "ModReserveStatus($itemnumber, $newstatus, $reservenumber)";
 # Need to account for hold expiration date, since it hasn't been calculated
 # at this point.
     my $holdperiod = C4::Context->preference('ReservesMaxPickUpDelay');
-    warn "HOLD PERIOD: $holdperiod\n";
     if (defined($holdperiod) && ($holdperiod > 0)) {
       my ($holdexpyear,$holdexpmonth,$holdexpday) = Today();
       my $holdstartdate = C4::Dates->new(sprintf "%02d/%02d/%04d",$holdexpmonth,$holdexpday,$holdexpyear, 'us');
@@ -1490,7 +1489,6 @@ warn "ModReserveStatus($itemnumber, $newstatus, $reservenumber)";
       my $calendar = C4::Calendar->new( branchcode => $branch);
       my $holdexpdate  = $calendar->addDate($holdstartdate, $holdperiod);
       my $sqlexpdate = $holdexpdate->output('iso');
-      warn "EXPDATE: $sqlexpdate\n";
       $query = "
           UPDATE reserves
           SET    found = ?,
@@ -1500,7 +1498,6 @@ warn "ModReserveStatus($itemnumber, $newstatus, $reservenumber)";
             AND found IS NULL
             AND priority = 0
       ";
-      warn "SQL: $query\n";
       $sth_set = $dbh->prepare($query);
       $sth_set->execute( $newstatus, $itemnumber );
     }
@@ -2047,6 +2044,16 @@ sub _koha_notify_reserve {
     ");
     $sth->execute( $reservenumber );
     my $reserve = $sth->fetchrow_hashref;
+    if (C4::Context->preference('TalkingTechEnabled')) {
+      my $biblio = &GetBiblioData($biblionumber);
+      my $item = &GetItem($itemnumber);
+      my @items;
+      $item->{'title'} = $biblio->{'title'};
+      $item->{'date_due'} = $reserve->{'expirationdate'};
+      push @items,$item;
+      C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@items,'RESERVE','0');
+    }
+
     my $branch_details = GetBranchDetail( $reserve->{'branchcode'} );
 
     my $admin_email_address = $branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');

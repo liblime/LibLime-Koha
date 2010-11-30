@@ -433,18 +433,20 @@ END_SQL
                 $sth2->execute( ($listall) ? ( $borrowernumber , 1 , $MAX ) : ( $borrowernumber, $mindays, $maxdays ) );
                 my $itemcount = 0;
                 my $titles = "";
+                my @Ttitems;
                 my @items = ();
                 
-                my $i = 0;
+                my $j = 0;
                 my $exceededPrintNoticesMaxLines = 0;
                 $titles .= join("\t", @item_content_fields) . "\n";
                 $itemcount++;
                 while ( my $item_info = $sth2->fetchrow_hashref() ) {
-                    if ( ( !$email || $nomail ) && $PrintNoticesMaxLines && $i >= $PrintNoticesMaxLines ) {
+                    push @Ttitems, $item_info;
+                    if ( ( !$email || $nomail ) && $PrintNoticesMaxLines && $j >= $PrintNoticesMaxLines ) {
                       $exceededPrintNoticesMaxLines = 1;
                       last;
                     }
-                    $i++;
+                    $j++;
                     my @item_info = map { $_ =~ /^date|date$/ ? format_date( $item_info->{$_} ) : $item_info->{$_} || '' } @item_content_fields;
                     $titles .= join("\t", @item_info) . "\n";
                     $itemcount++;
@@ -532,6 +534,9 @@ END_SQL
                             }
                           );
                     }
+                }
+                if (C4::Context->preference('TalkingTechEnabled') {
+                  C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},$i);
                 }
             }
             $sth->finish;
@@ -651,15 +656,29 @@ END_SQL
                 $sth2->execute( ($listall) ? ( $borrowernumber , 1 , $MAX ) : ( $borrowernumber, $mindays, $maxdays ) );
                 my $itemcount = 0;
                 my $titles = "";
+                my @Ttitems;
                 $titles .= join("\t", @item_content_fields) . "\n";
                 $itemcount++;
+
+                my $j = 0;
+                my $exceededPrintNoticesMaxLines = 0;
                 while ( my $item_info = $sth2->fetchrow_hashref() ) {
                     next if ($item_info->{itype} ne $overdue_rules->{itemtype});
+                    push @Ttitems, $item_info;
+                    if ( ( !$email || $nomail ) && $PrintNoticesMaxLines && $j >= $PrintNoticesMaxLines ) {
+                      $exceededPrintNoticesMaxLines = 1;
+                      last;
+                    }
+                    $j++;
                     my @item_info = map { $_ =~ /^date|date$/ ? format_date( $item_info->{$_} ) : $item_info->{$_} || '' } @item_content_fields;
                     $titles .= join("\t", @item_info) . "\n";
                     $itemcount++;
                 }
                 $sth2->finish;
+
+                if ( $exceededPrintNoticesMaxLines ) {
+                  $titles .= "\nList too long for form; please check your account online for a complete list of your overdue items.\n";
+                }
 
                 $letter = parse_letter(
                     {   letter         => $letter,
@@ -726,6 +745,9 @@ END_SQL
                             }
                           );
                     }
+                }
+                if (C4::Context->preference('TalkingTechEnabled') {
+                  C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},$i);
                 }
             }
             $sth->finish;

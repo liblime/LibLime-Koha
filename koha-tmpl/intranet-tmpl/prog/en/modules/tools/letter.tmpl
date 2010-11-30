@@ -227,6 +227,37 @@ $(document).ready(function() {
 			<li>
 				<span class="label">Code:</span><input type="hidden" id="code" name="code" value="<!-- TMPL_VAR NAME="code" -->" /><!-- TMPL_VAR NAME="code" -->
 			</li>
+                        <!-- TMPL_IF NAME="TalkingTechEnabled" -->
+                           <li>
+                                <label for="ttcode">Talking Tech Code: </label>
+				<select name="ttcode" id="ttcode">
+                                    <!--TMPL_IF EXPR="ttcode eq 'NULL'"-->
+                                    <option value="NULL" selected="selected"></option>
+                                    <!--TMPL_ELSE-->
+                                    <option value="NULL" ></option>
+                                    <!--/TMPL_IF-->
+                                    <!--TMPL_IF EXPR="ttcode eq 'OVERDUE'"-->
+                                    <option value="OVERDUE" selected="selected">OVERDUE</option>
+                                    <!--TMPL_ELSE-->
+                                    <option value="OVERDUE" >OVERDUE</option>
+                                    <!--/TMPL_IF-->
+                                    <!--TMPL_IF EXPR="ttcode eq 'FINE'"-->
+                                    <option value="FINE" selected="selected">FINE</option>
+                                    <!--TMPL_ELSE-->
+                                    <option value="FINE" >FINE</option>
+                                    <!--/TMPL_IF-->
+                                    <!--TMPL_IF EXPR="ttcode eq 'RESERVE'"-->
+                                    <option value="RESERVE" selected="selected">RESERVE</option>
+                                    <!--TMPL_ELSE-->
+                                    <option value="RESERVE" >RESERVE</option>
+                                    <!--/TMPL_IF-->
+                                    <!--TMPL_IF EXPR="ttcode eq 'PREOVERDUE'"-->
+                                    <option value="PREOVERDUE" selected="selected">PREOVERDUE</option>
+                                    <!--TMPL_ELSE-->
+                                    <option value="PREOVERDUE" >PREOVERDUE</option>
+                                    <!--/TMPL_IF-->
+                          </li>
+		        <!-- /TMPL_IF -->
 		<!-- /TMPL_IF -->
 		
 		<!-- TMPL_IF NAME="adding" -->

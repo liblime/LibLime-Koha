@@ -1566,6 +1566,10 @@ sub AddReturn {
     # if we don't have a reserve with the status W, we launch the Checkreserves routine
     my ($resfound, $resrec) = C4::Reserves::CheckReserves( $item->{'itemnumber'} );
     if ($resfound) {
+        # For some reason, the itemnumber in $resrec was being returned as 
+        # NULL.  Accidental change in the return workflow? At any rate, 
+        # forcing itemnumber into $resrec.
+        $resrec->{'itemnumber'} = $item->{'itemnumber'};
           $resrec->{'ResFound'} = $resfound;
         $messages->{'ResFound'} = $resrec;
     }
@@ -2026,10 +2030,10 @@ sub GetUpcomingDueIssues {
     my $dbh = C4::Context->dbh;
 
     my $statement = <<END_SQL;
-SELECT issues.*, items.itype as itemtype, items.homebranch, TO_DAYS( date_due )-TO_DAYS( NOW() ) as days_until_due
+SELECT issues.*, items.itype as itemtype, items.homebranch, TO_DAYS( date_due )-TO_DAYS( NOW() ) as days_until_due, items.barcode, items.holdingbranch
 FROM issues 
 LEFT JOIN items USING (itemnumber)
-WhERE returndate is NULL
+WHERE returndate is NULL
 AND ( TO_DAYS( NOW() )-TO_DAYS( date_due ) ) < ?
 END_SQL
 

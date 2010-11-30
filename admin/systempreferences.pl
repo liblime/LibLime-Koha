@@ -266,6 +266,8 @@ $tabsysprefs{AmazonSimilarItems}     = "EnhancedContent";
 $tabsysprefs{OPACAmazonSimilarItems} = "EnhancedContent";
 $tabsysprefs{AmazonReviews}          = "EnhancedContent";
 $tabsysprefs{OPACAmazonReviews}      = "EnhancedContent";
+$tabsysprefs{TalkingTechEnabled}     = "EnhancedContent";
+$tabsysprefs{TalkingTechFileName}    = "EnhancedContent";
 
 # Babelthèque
 $tabsysprefs{Babeltheque}            = "EnhancedContent";

@@ -201,6 +201,11 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
                                       itemnumber     => $upcoming->{'itemnumber'},
                                       substitute     => { 'items.content' => $titles }
                                     } );
+            $upcoming->{'title'} = $biblio->{'title'};
+            push @Ttitems,$upcoming;
+            if (($letter) && (C4::Context->preference('TalkingTechEnabled'))) {
+              C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'0');
+            }
         }
     }
 

@@ -760,6 +760,55 @@ ENDSQL
     return $sth->fetchall_arrayref({});
 }
 
+=head2 CreateTALKINGtechMESSAGE
+
+=over 4
+
+CreateTALKINGtechMESSAGE($borrowernumber,$items,$code);
+
+Given the $borrowernumber an arrayref of hashrefs $items, append a new
+line of data in the TALKINGtech MESSAGE notice file. The $code is i-tiva's
+notice type.
+
+=back
+
+=cut
+
+sub CreateTALKINGtechMESSAGE {
+  my ($borrowernumber,$items,$code,$notelevel) = @_;
+  my $borrower = C4::Members::GetMemberDetails($borrowernumber);
+
+  $notelevel = 0 if ($code eq "FINE");
+  my $due_date;
+# Append additional info into file that will be sent to i-tiva server
+  my $filename = C4::Context->preference('TalkingTechFileName');
+  open(MSG,">>$filename") or warn "Can't open $filename";
+  foreach my $item (@$items) {
+    # Reformat due date field for i-tiva, if applicable
+    if (defined($item->{onloan})) {
+      my ($yyyy,$mm,$dd) = split(/-/,$item->{onloan});
+      $due_date = sprintf "%02d/%02d/%4d",$dd,$mm,$yyyy;
+    }
+    elsif (defined($item->{date_due})) {
+      my ($yyyy,$mm,$dd) = split(/-/,$item->{date_due});
+      $due_date = sprintf "%02d/%02d/%4d",$dd,$mm,$yyyy;
+    }
+    else {
+      $due_date = '';
+    }
+    my $branch = C4::Branch::GetBranchDetail($item->{holdingbranch});
+    $branch->{branchname} =~ s/Public Library/PL/;
+    printf MSG "\"V\",\"EN\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"\",\"%s\",\"%12.12s\",\"%s\",\"%s\",\"%s\",\"\"\r\n",
+    $code,$notelevel,$borrower->{cardnumber},$borrower->{title},
+    $borrower->{firstname},$borrower->{surname},$borrower->{phone},
+    $borrower->{email},$item->{holdingbranch},$branch->{branchname},
+    $item->{barcode},$due_date,$item->{title};
+  }
+  close(MSG);
+
+  return;
+}
+
 =head2 _add_attachements
 
 named parameters:
