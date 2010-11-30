@@ -533,7 +533,7 @@ foreach my $biblionumber (@biblionumbers) {
     my @reserveloop;
     my $populate_option_loop = $template->param('CAN_user_reserveforothers_reorder_holds');
     ( $count, $reserves ) = GetReservesFromBiblionumber($biblionumber);
-    foreach my $res ( sort { $a->{found} cmp $b->{found} } @$reserves ) {
+    foreach my $res ( sort { ($a->{found} // '') cmp ($b->{found} // '') } @$reserves ) {
         my %reserve;
 
         $reserve{'reservenumber'}   = $res->{'reservenumber'};
