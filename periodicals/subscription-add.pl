@@ -48,7 +48,7 @@ SeedTemplateWithGeneralData($template);
 my $subscription_id = $query->param('subscription_id');
 my $periodical_id = $query->param('periodical_id');
 if (($subscription_id and C4::Control::Subscription::UserCanViewSubscription($subscription_id)) or
-    ($periodical_id and not defined $subscription_id)
+    ($periodical_id and defined $subscription_id)
     ) {
     $subscription_id = C4::Control::Subscription::UpdateOrCreate($query) if ($op eq 'save');
     SeedTemplateWithSubscriptionData($template, $subscription_id) if ($subscription_id);
