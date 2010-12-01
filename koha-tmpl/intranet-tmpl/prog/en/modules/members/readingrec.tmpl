@@ -52,12 +52,17 @@ $.tablesorter.addParser({
 <table id="readingrecordt">
 <thead>
 <tr>
-	<th>Title</th>
-	<th>Author</th>
-	<th>Call No.</th>
-	<th>Barcode</th>
-	<th>Number of Renewals</th>
 	<th>Date Due</th>
+	<th>Title</th>
+	<th>Item Type</th>
+	<th>Checkout Library</th>
+	<th>Checked Out On</th>
+	<!-- <th>Author</th> -->
+	<th>Call No.</th>
+	<th>Charge</th>
+	<th>Price</th>
+	<!-- <th>Barcode</th> -->
+	<!-- <th>Number of Renewals</th> -->
 	<th>Return Date</th>
 </tr>
 </thead>
@@ -68,6 +73,7 @@ $.tablesorter.addParser({
 <!-- TMPL_ELSE -->
     <!-- TMPL_IF NAME="returndate" --><tr><!-- TMPL_ELSE --><tr class="onissue"><!-- /TMPL_IF -->
 <!-- /TMPL_UNLESS -->
+	<td><!-- TMPL_IF NAME="date_due" --><!-- TMPL_VAR NAME="date_due" --><!-- TMPL_ELSE -->&nbsp;<!-- /TMPL_IF --></td>
 
             <td>
             <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">
@@ -75,18 +81,21 @@ $.tablesorter.addParser({
             </a>
         </td>
 
-            <td>
-        <!-- TMPL_VAR name="author" --></td>
+	<td><!-- TMPL_VAR name="itemtype" --></td>
+	<td><!-- TMPL_VAR name="branchcode" --></td>
+	<td><!-- TMPL_VAR name="issuedate" --></td>
 
-            <td>
-        <!-- TMPL_VAR NAME="classification" --></td>
+        <!-- <td><!-- TMPL_VAR name="author" --></td> -->
 
-            <td>
-        <!-- TMPL_VAR NAME="barcode" --></td>
+        <td><!-- TMPL_VAR NAME="classification" --></td>
 
-            <td>
-        <!-- TMPL_VAR NAME="renewals" --></td>
-			<td><!-- TMPL_IF NAME="date_due" --><!-- TMPL_VAR NAME="date_due" --><!-- TMPL_ELSE -->&nbsp;<!-- /TMPL_IF --></td>
+	<td><!-- TMPL_VAR NAME="charge" --></td>
+	<td><!-- TMPL_VAR NAME="replacementprice" --></td>
+
+        <!-- <td><!-- TMPL_VAR NAME="barcode" --></td> -->
+
+        <!-- <td><!-- TMPL_VAR NAME="renewals" --></td> -->
+
             <td>
         <!-- TMPL_IF NAME="returndate" -->
             <!-- TMPL_VAR name="returndate" -->

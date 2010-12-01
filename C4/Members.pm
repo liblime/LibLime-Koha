@@ -1236,6 +1236,7 @@ sub GetAllIssues {
     my @result;
     my $i = 0;
     while ( my $data = $sth->fetchrow_hashref ) {
+        ( $data->{'charge'} ) = C4::Circulation::GetIssuingCharges( $data->{'itemnumber'}, $borrowernumber );
         $result[$i] = $data;
         $i++;
         $count++;
