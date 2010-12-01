@@ -495,6 +495,8 @@ CREATE TABLE `borrowers` (
   `altcontactphone` varchar(50) default NULL,
   `smsalertnumber` varchar(50) default NULL,
   `exclude_from_collection` bool not null default false,
+  `last_reported_date` DATE DEFAULT NULL,
+  `last_reported_amount` DECIMAL(30,6) DEFAULT NULL,
   UNIQUE KEY `cardnumber` (`cardnumber`),
   PRIMARY KEY `borrowernumber` (`borrowernumber`),
   KEY `categorycode` (`categorycode`),
@@ -917,6 +919,9 @@ CREATE TABLE `deletedborrowers` (
   `altcontactcountry` text default NULL,
   `altcontactphone` varchar(50) default NULL,
   `smsalertnumber` varchar(50) default NULL,
+  `exclude_from_collection` bool not null default false,
+  `last_reported_date` DATE DEFAULT NULL,
+  `last_reported_amount` DECIMAL(30,6) DEFAULT NULL,
   KEY `borrowernumber` (`borrowernumber`),
   KEY `cardnumber` (`cardnumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -3424,6 +3424,9 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(qq/
         ALTER TABLE `borrowers` ADD COLUMN `exclude_from_collection` BOOL NOT NULL DEFAULT FALSE;
     /);
+    $dbh->do(qq/
+        ALTER TABLE `deletedborrowers` ADD COLUMN `exclude_from_collection` BOOL NOT NULL DEFAULT FALSE;
+    /);
     print "Upgrade to $DBversion done ( Add missing exclude_from_collection borrowers column )\n";
     SetVersion ($DBversion);
 }
@@ -3773,6 +3776,20 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         |);
 
     print "Upgrade to $DBversion done ( Add tables for borrower_lists and borrower_lists_tracking)\n";
+    SetVersion ($DBversion);
+}
+
+$DBversion = '4.03.02.000';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(q|ALTER TABLE `deletedborrowers` ADD COLUMN `exclude_from_collection` BOOL NOT NULL DEFAULT FALSE|);
+
+    $dbh->do(q|ALTER TABLE `borrowers` ADD COLUMN `last_reported_date` date default NULL|);
+    $dbh->do(q|ALTER TABLE `borrowers` ADD COLUMN `last_reported_amount` decimal(30,6) default NULL|);
+    $dbh->do(q|ALTER TABLE `deletedborrowers` ADD COLUMN `last_reported_date` date default NULL|);
+    $dbh->do(q|ALTER TABLE `deletedborrowers` ADD COLUMN `last_reported_amount` decimal(30,6) default NULL|);
+
+    print "Upgrade to $DBversion done ( Correct the deletedborrowers table and sync schema for collections )\n";
     SetVersion ($DBversion);
 }
 
