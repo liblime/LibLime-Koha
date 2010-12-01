@@ -17,13 +17,24 @@
             <ol>
                <li><label>Barcode: </label>
 					<input type="text" name="barcode" id="barcode" 
-               value="<!-- TMPL_VAR NAME="barcode" -->" />               
+               value="<!-- TMPL_VAR NAME="barcode" -->" />
+               <li><label>Prefix: </label>
+               <select name="prefix">
+               <!-- TMPL_LOOP NAME="prefixes" -->
+               <option value="<!-- TMPL_VAR NAME="prefix" -->" 
+               <!-- TMPL_VAR NAME="_sel" -->>
+               <!-- TMPL_VAR NAME="name" -->
+               </option>
+               <!-- /TMPL_LOOP -->
+               </select>
+               </li>
                <li><label>Layout: </label>
                <select name="layout_id">
                <!-- TMPL_LOOP NAME='layouts' -->
                <option value="<!-- TMPL_VAR NAME='layout_id' -->" 
                <!-- TMPL_VAR NAME='_sel' -->>
                <!-- TMPL_VAR NAME='layout_name' -->
+               </option>
                <!-- /TMPL_LOOP -->
                </select>
                <li><label>Profile: </label>
@@ -32,8 +43,8 @@
                <option value="<!-- TMPL_VAR NAME='profile_id' -->" 
                <!-- TMPL_VAR NAME='_sel' -->>
                <!-- TMPL_VAR NAME='printer_name' -->/<!-- TMPL_VAR NAME='paper_bin' -->
+               </option>
                <!-- /TMPL_LOOP -->
- 
                </select>
             </ol>
             </fieldset>

@@ -127,6 +127,33 @@
                                     </fieldset>
                                 </li>
                                 <li>
+                                <fieldset>
+                                <legend>Spilt Call Numbers</legend>
+                                <table border=0 cellspacing=0 cellpadding=4>
+                                <tr><th>Type</th><th>From</th><th>To</th></tr>
+                                <tr><td><input type=radio name="callnum_split" 
+                                value="none" <!-- TMPL_VAR NAME="ch_none" -->>None</td>
+                                    <td>LB2395.C65 1991 c.1</td>
+                                    <td>LB2395.C65 1991 c.1</td></tr>
+                                <tr><td><input type=radio name="callnum_split" 
+                                value="lccn" <!-- TMPL_VAR NAME="ch_lccn" -->><b>LCCN</b></td>
+                                    <td>LB2395.C65 1991 c.1</td>
+                                    <td>LB<br>2395<br>.C65<br>1991<br>c.1</td></tr>
+                                <tr><td><input type=radio name="callnum_split" 
+                                value="ddcn" <!-- TMPL_VAR NAME="ch_ddcn" -->><b>DDCN</b></td>
+                                    <td>573.8 H255.3h 1991 c.1</td>
+                                    <td>573.8<br>H255.3h<br>1991<br>c.1</td></tr>
+                                 <tr><td><input type=radio name="callnum_split" 
+                                 value="custom" <!-- TMPL_VAR NAME="ch_custom" -->><b>Custom</b><br>
+                                 <font size=-2>Supply a regular expression to the right.<br>
+                                 Below, test your<br></font>
+                                 <i>Call Number:</i><br>
+                                 <input type=text name="testcn" value="" size=20 maxlength=80><input type=button value="Test" onclick="testRe();"></td>
+                                    <td colspan=2>
+                                    <textarea name="break_rule_string" rows=3 cols=30 wrap=virtual><!-- TMPL_VAR NAME="break_rule_string" --></textarea></td></tr>
+                                </table>
+                                </li>
+                                <li>
                                     <label for="guidebox">Draw Guide Boxes</label>
                                     <!-- TMPL_IF NAME="guidebox"-->
                                     <input type="checkbox" name="guidebox" id="guidebox" value="1"  checked="checked" />
@@ -134,34 +161,6 @@
                                     <input type="checkbox" name="guidebox" id="guidebox" value="1" />
                                     <!-- /TMPL_IF -->
                                 </li>
-                                <li>
-                                    <label for="callnum_split">Split Call Numbers</label>
-                                    <!-- TMPL_IF NAME="callnum_split"-->
-                                    <input type="checkbox" name="callnum_split" id="callnum_split" value="1"  checked="checked" />
-                                    <!-- TMPL_ELSE -->
-                                    <input type="checkbox" name="callnum_split" id="callnum_split" value="1" />
-                                    <!-- /TMPL_IF -->
-                                </li>
-                                <li>
-                                    <label for="break_rule_string">Line Break Rule</label>
-                                    <input type=text name="break_rule_string" value="<!-- TMPL_VAR NAME="break_rule_string" -->" size=20 maxlength=255><br>
-      <div class=hint>
-      eg., <b>0s,+2d,-010c</b> = every space AND after the second dot 
-      AND before every tenth character<br>
-      <b>0(zero)</b>=every,
-      <b>-(minus)</b>=before,
-      <b>+(plus)</b>=after<br>
-      <b>,(comma)</b>=AND<br>
-      <b>s</b>=space, 
-      <b>d</b>=dot,
-      <b>h</b>=dash,
-      <b>u</b>=underscore,
-      <b>l</b>=letter,
-      <b>n</b>=number,
-      <b>c</b>=character<br>
-      </div>
-                                </li>
-                                <li>
                                     <label for="text_justify">Text Justification</label>
                                     <select name="text_justify" id="text_justify">
                                         <!-- TMPL_LOOP Name="text_justification_types" -->
@@ -198,6 +197,35 @@
                             <input type="hidden" name="layout_id" value="<!-- TMPL_VAR NAME="layout_id" -->" />
                         </fieldset>
                     </form>
+                    <script>
+                     function testRe() {
+                        if (document.input.callnum_split.value != 'custom') {
+                           for(var i=0;i<document.input.callnum_split.length;i++) {
+                              document.input.callnum_split[i].checked = false;
+                           }
+                           document.input.callnum_split[3].checked = true;
+                        }
+                        var t = document.input.testcn.value;
+                        var r = document.input.break_rule_string.value;
+                        t = t.replace(/^\s+/,''); t=t.replace(/\s+$/,'');
+                        r = r.replace(/^\s+/,''); r=r.replace(/\s+$/,'');
+                        if (t=='') {
+                           alert('Enter a callnumber to test');
+                           return false;
+                        }
+                        if (r=='') {
+                           alert('Enter a regular expression to test, eg.,\n\n'
+                           +'\t^(\\d+)(\\.\\d+)\\s*\n'
+                           +'\t(\\w+)\\s*(.*)$'
+                           );
+                           return false;
+                        }
+                        r = encodeURIComponent(r);
+                        t = encodeURIComponent(t);
+                        var myurl = 'label-testsplit.pl?t='+t+'&r='+r;
+                        window.open(myurl,'testwin','height=300,width=300,scrollbars=yes');
+                     }
+                    </script>
                 </div>
             </div>
             <div class="yui-b">

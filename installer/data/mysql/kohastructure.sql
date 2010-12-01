@@ -342,6 +342,7 @@ CREATE TABLE `authorised_values` (
   `lib` varchar(80) default NULL,
   `opaclib` varchar(80) default NULL,
   `imageurl` varchar(200) default NULL,
+  `prefix` varchar(80) DEFAULT NULL,
   PRIMARY KEY  (`id`),
   KEY `name` (`category`),
   KEY `lib` (`lib`)

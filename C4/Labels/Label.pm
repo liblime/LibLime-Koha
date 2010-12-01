@@ -405,26 +405,36 @@ sub draw_label_text {
         $n++;
         my @label_lines =_split_rule($$self{'break_rule_string'},$field_data,$n);
 
-        #my @callnumber_list = ('itemcallnumber', '050a', '050b', '082a', '952o'); 
+        my @callnumber_list = ('itemcallnumber', '050a', '050b', '082a', '952o'); 
         # Fields which hold call number data  FIXME: ( 060? 090? 092? 099? )
-        ##########
-        #if ((grep {$field->{'code'} =~ m/$_/} @callnumber_list) and 
-        #   ($self->{'printing_type'} eq 'BIB') and ($self->{'callnum_split'})) { 
-        #      # If the field contains the call number, we do some sp
-        #    if ($cn_source eq 'lcc') {
-        #        @label_lines = _split_lccn($field_data);
-        #        @label_lines = _split_ccn($field_data) if !@label_lines;    # If it was not a true lccn, try it as a custom call number
-        #        push (@label_lines, $field_data) if !@label_lines;         # If it was not that, send it on unsplit
-        #    } elsif ($cn_source eq 'ddc') {
-        #        @label_lines = _split_ddcn($field_data);
-        #        @label_lines = _split_ccn($field_data) if !@label_lines;
-        #        push (@label_lines, $field_data) if !@label_lines;
-        #    } else {
+        if ((grep {$field->{'code'} =~ m/$_/} @callnumber_list) and 
+           ($self->{'printing_type'} eq 'BIB') and ($self->{'callnum_split'})) { 
+              # If the field contains the call number, we do some sp
+            if (($cn_source eq 'lcc')
+            ||  ($self->{'callnum_split'} eq 'lccn')) {
+                @label_lines = _split_lccn($field_data);
+                @label_lines = _split_ccn($field_data) if !@label_lines;    # If it was not a true lccn, try it as a custom call number
+                push (@label_lines, $field_data) if !@label_lines;         # If it was not that, send it on unsplit
+            } 
+            elsif (($cn_source eq 'ddc')
+            ||     ($self->{'callnum_split'} eq 'ddcn')) {
+                @label_lines = _split_ddcn($field_data);
+                @label_lines = _split_ccn($field_data) if !@label_lines;
+                push (@label_lines, $field_data) if !@label_lines;
+            } 
+            elsif ($self->{'callnum_split'} eq 'custom') {
+               @label_lines = _split_custom(
+                  $field_data,
+                  $self->{'break_rule_string'}
+               );
+               @label_lines = _split_ccn($field_data) if !@label_lines;
+            }
+            else {
         #        warn sprintf('Call number splitting failed for: %s. Please add this call number to bug #2500 at bugs.koha.org', $field_data);
-        #        push @label_lines, $field_data;
-        #    }
-        #}
-        #else {
+                push @label_lines, $field_data;
+            }
+        }
+        else {
             if ($field_data) {
                 $field_data =~ s/\/$//g;       # Here we will strip out all trailing '/' in fields other than the call number...
                 $field_data =~ s/\(/\\\(/g;    # Escape '(' and ')' for the pdf object stream...
@@ -434,24 +444,21 @@ sub draw_label_text {
                $field_data = $$field{desc} || $$field{code};
             }
 
-            ################
             eval{$Text::Wrap::columns = $self->{'text_wrap_cols'};};
             my @line = split(/\n/ ,wrap('', '', $field_data));
             # If this is a title field, limit to two lines; 
             # all others limit to one... FIXME: this is rather arbitrary
-            #
-            #if ($field->{'code'} eq 'title' && scalar(@line) >= 2) {
-            #    while (scalar(@line) > 2) {
-            #        pop @line;
-            #    }
-            #} else {
-            #    while (scalar(@line) > 1) {
-            #        pop @line;
-            #    }
-            #}
+            if ($field->{'code'} eq 'title' && scalar(@line) >= 2) {
+                while (scalar(@line) > 2) {
+                    pop @line;
+                }
+            } else {
+                while (scalar(@line) > 1) {
+                    pop @line;
+                }
+            }
             push(@label_lines, @line) unless @label_lines;
-            ####################
-        #}
+        }
 
         LABEL_LINES:    # generate lines of label text for current field
         foreach my $line (@label_lines) {
@@ -573,8 +580,29 @@ sub csv_data {
     return \@csv_data;
 }
 
-1;
-__END__
+sub _split_author
+{
+   my $str = shift;
+   my @parts = split(/\,\s*/, $str);
+   return @parts;
+}
+
+sub _split_title
+{
+   my $str = shift;
+   my @parts = split(/\W*/, $str);
+   return @parts;
+}
+
+sub _split_custom
+{
+   my($str,$re) = @_;
+   $_ = $str;
+   my @parts = ();
+   eval{@parts = m/$re/x};
+   return @parts;
+}
+
 sub _split_lccn {
     my ($lccn) = @_;
     $_ = $lccn;
@@ -585,7 +613,6 @@ sub _split_lccn {
         \s*
         (\.*\D+\d*)       # .P6         # .E8
         \s*
-      push @pr, "\$p=$p";
         (.*)              # T44 1983    # H39 1996   # everything else (except any bracketing spaces)
         \s*
         /x;
@@ -643,6 +670,9 @@ sub _split_ccn {
     return @parts;
 }
 
+
+1;
+__END__
 
 
 

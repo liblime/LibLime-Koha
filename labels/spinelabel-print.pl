@@ -20,8 +20,11 @@ use strict;
 use CGI;
 use C4::Auth;
 use C4::Output;
+use C4::Context;
+use C4::Labels::Label;
+use C4::Labels::Layout;
 
-my $scheme = C4::Context->preference('SpineLabelFormat');
+#my $scheme = C4::Context->preference('SpineLabelFormat');
 my $query  = new CGI;
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {   template_name   => "labels/spinelabel-print.tmpl",
@@ -37,9 +40,7 @@ my $barcode = $query->param('barcode');
 
 my $dbh = C4::Context->dbh;
 my $sth;
-
 my $item;
-
 my $sql = "SELECT * FROM biblio, biblioitems, items 
           WHERE biblio.biblionumber = items.biblionumber 
           AND biblioitems.biblioitemnumber = items.biblioitemnumber 
@@ -53,8 +54,131 @@ unless (defined $item) {
   $template->param( 'BarcodeNotFound' => 1 );
 }
 
-my $body;
+# get the layout and prefix so we'll know how to print this
+my $layout_id = $query->param('layout_id')  || $query->cookie('layout_id');
+my $profile_id= $query->param('profile_id') || $query->cookie('profile_id');
+my $prefix    = $query->param('prefix')     || $query->cookie('prefix');
+my $layout    = new C4::Labels::Layout;
+my $lay       = $layout->retrieve(layout_id=>$layout_id);
 
+# set the cookie
+my $cookie1 = $query->cookie(
+   -name => 'layout_id',   -value=>$layout_id);
+my $cookie2 = $query->cookie(
+   -name => 'profile_id',  -value=>$profile_id);
+my $cookie3 = $query->cookie(
+   -name => 'prefix',      -value=>$prefix);
+# this won't disturb cookies already set
+$cookie = [$cookie1,$cookie2,$cookie3];
+
+my @tmp;
+foreach my $f(split(/\,/, $$lay{format_string})) {
+   $f =~ s/^\s+//g; $f =~ s/\s+$//g; # trim wrapping spaces
+   if ($f eq 'itemcallnumbr') {
+      @tmp = _split(
+         $$item{itemcallnumber},
+         $$lay{callnum_split},
+         $$lay{break_rule_string}
+      );
+   }
+   elsif ($f eq 'author') {
+      push @tmp, _split(
+         $$item{author},
+         'author'
+      );
+   }
+   elsif ($f eq 'title') {
+      push @tmp, _split(
+         $$item{title},
+         'title'
+      );
+   }
+   elsif (grep /^$f$/, keys %$item) {
+      push @tmp, $$item{$f};
+   }
+   elsif ($f) {
+      push @tmp, $f;
+   }
+}
+
+if ($prefix ne '') {
+   # get authorised value
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare(q|
+      SELECT id,authorised_value,prefix
+      FROM   authorised_values
+      WHERE  category=?
+   |) || die $dbh->errstr;
+   $sth->execute($prefix);
+   PREFIX:
+   while(my $row = $sth->fetchrow_hashref()) {
+      if ($prefix eq 'LOC') {
+         if ($$item{permanent_location} eq $$row{authorised_value}) {
+            unshift @tmp, $$row{prefix} || undef;
+            last PREFIX;
+         }
+      }
+      elsif ($prefix eq 'CCODE') {
+         if ($$item{ccode} eq $$row{authorised_value}) {
+            unshift @tmp, $$row{prefix} || undef;
+            last PREFIX;
+         }
+      }
+   }
+}
+
+my @body;
+foreach(@tmp) {
+   next unless $_;
+   push @body, $_;
+}
+
+# fonts support
+my %fonts = (
+   TR => ['times'       ,''      ,''      ], #fotn,weight,style
+   TB => ['times'       ,'bold'  ,''      ],
+   TI => ['times'       ,''      ,'italic'],
+   TBI=> ['times'       ,'bold'  ,'italic'],
+   C  => ['courier'     ,''      ,''      ],
+   CB => ['courier'     ,'bold'  ,''      ],
+   CO => ['courier'     ,''      ,'italic'],# oblique
+   CBO=> ['courier'     ,'bold'  ,'italic'],
+   H  => ['helvetica'   ,''      ,''      ],
+   HB => ['helvetica'   ,'bold'  ,''      ],
+   HBO=> ['helvetica'   ,'bold'  ,'italic'],
+);
+
+# text justification
+ my %aline = (
+   L  => 'left',
+   C  => 'center',
+   R  => 'right'
+);
+# put it all together
+my $beg = sprintf(qq|<table border=0 cellspacing=0 cellpadding=0><tr><td>
+   <div style="font-family:%s;font-weight:%s;font-style:%s,font-size:%spt;
+   border:%spx %s red;text-align:%s">|,
+   $fonts{$$lay{font}}[0],
+   $fonts{$$lay{font}}[1],
+   $fonts{$$lay{font}}[2],
+   $$lay{font_size},
+   $$lay{guidebox} ? 1:0,
+   $$lay{guidebox} ? 'solid' : 'none',
+   $aline{$$lay{text_justify}},
+);
+my $end = '</div></td></tr></table>';
+
+$template->param( autoprint => C4::Context->preference("SpineLabelAutoPrint") );
+$template->param( 
+   content     => $beg . join("<br>\n",@body) . $end,
+   layout_id   => $query->param('layout_id'),
+   profile_id  => $query->param('profile_id'),
+   prefix      => $query->param('prefix'),
+);
+
+output_html_with_http_headers $query, $cookie, $template->output;
+exit;
+__END__
 my $data;
 while ( my ( $key, $value ) = each(%$item) ) {
     $data->{$key} .= "<span class='field' id='$key'>";
@@ -85,11 +209,4 @@ while ( my ( $key, $value ) = each(%$data) ) {
 
 $body = $scheme;
 
-$template->param( autoprint => C4::Context->preference("SpineLabelAutoPrint") );
-$template->param( 
-   content     => $body,
-   layout_id   => $query->param('layout_id'),
-   profile_id  => $query->param('profile_id')
-);
 
-output_html_with_http_headers $query, $cookie, $template->output;

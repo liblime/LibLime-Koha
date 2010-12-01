@@ -34,7 +34,7 @@ sub _check_params {
         'guidebox',
         'font',
         'font_size',
-        #'callnum_split',
+        'callnum_split',
         'break_rule_string',
         'text_justify',
         'format_string',
@@ -70,8 +70,8 @@ sub new {
         guidebox        =>      0,
         font            =>      'TR',
         font_size       =>      3,
-        #callnum_split   =>      0,
-        break_rule_string =>      '1:*0s',
+        callnum_split   =>      0,
+        break_rule_string =>    '',
         text_justify    =>      'L',
         format_string   =>      'title, author, isbn, issn, itemtype, barcode, itemcallnumber',
         @_,
@@ -139,31 +139,9 @@ sub err
    return;
 }
 
-sub _validateBreakRuleStr
-{
-   my $s = shift;
-   my $t = $$s{break_rule_string};
-   return 1 unless $t;
-   my(@p) = split(/\,/, $t);
-   foreach my $r(@p) {
-      next unless $r;
-      my($field,$rule) = split(/\:/,$r,2);
-      return $s->err('Each field rule is separated by a comma (<b>,</b>)
-         and each rule for that field must be shown as fieldNum:rule.')
-         unless $field && $rule;
-      return $s->err('Each part of break rule string must read 
-         every|n-th char-string, 
-         eg, <b>3:0s,2d</b> is &quot;for the third field, break line on 
-         every space AND after second dot&quot;')
-         if $rule !~ /^\d+[sdhulnc]$/;
-   }
-   return 1;
-}
-
 sub save {
     my $self = shift;
     $$self{_errs} = [];
-    $self->_validateBreakRuleStr() || return;
     if ($self->{'layout_id'}) {        # if we have an id, the record exists and needs UPDATE
         my @params;
         my $query = "UPDATE labels_layouts SET ";

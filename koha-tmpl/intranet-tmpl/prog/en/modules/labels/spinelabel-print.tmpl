@@ -22,7 +22,9 @@
 				<!-- TMPL_VAR NAME="content" -->
 			</span>
 			<span id="print_button" class="noprint">
-				<form><input type="button" value="Print This Label" onClick="window.print()" /></form>
+				<form><input type="button" value="Print This Label" onClick="window.print()" />
+            <input type=button value="&nbsp; Back &nbsp;" onclick="
+            document.location.href='spinelabel-home.pl?layout_id=<!-- TMPL_VAR NAME="layout_id" -->&profile_id=<!-- TMPL_VAR NAME="profile_id" -->&prefix=<!-- TMPL_VAR NAME="prefix" -->';"></form>
 			</span>
 		</body>
 	<!-- /TMPL_IF -->

@@ -3834,6 +3834,24 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.02.005';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(q|
+      ALTER TABLE `authorised_values`
+      ADD         `prefix` varchar(80) NULL
+      AFTER       `authorised_value`
+    |);
+    $dbh->do(q|
+      ALTER TABLE `labels_layouts`
+      CHANGE `callnum_split` `callnum_split` varchar(8) NULL
+    |);
+
+    print "Upgrade to $DBversion done ( Added prefix for quick spine labels )\n";
+    SetVersion ($DBversion);
+}
+
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

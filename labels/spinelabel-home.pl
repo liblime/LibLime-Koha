@@ -35,11 +35,31 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
+# get session cookies or also CGI input
+my %in;
+foreach(qw(layout_id profile_id prefix)) {
+   $in{$_} = $query->param($_) || $query->cookie($_);
+}
+
+$template->param(
+   barcode     => $query->param('barcode')    || '',
+   layout_id   => $query->param('layout_id')  || 0,
+   profile_id  => $query->param('profile_id') || 0,
+   layouts     => _sel('layout_id',get_all_layouts()),
+   profiles    => _sel('profile_id',get_all_profiles()),
+   prefixes    => _sel('prefix',[
+      { prefix=>''      ,name=>'None'              },
+      { prefix=>'LOC'   ,name=>'Shelving Location' },
+      { prefix=>'CCODE' ,name=>'Collection Code'   },
+   ]),
+);
+output_html_with_http_headers $query, $cookie, $template->output;
+
 sub _sel
 {
    my($f,$a) = @_;
    foreach(@$a) {
-      if ($$_{$f} == $query->param($f)) {
+      if ($$_{$f} eq $in{$f}) {
          $$_{_sel} = 'selected';
       }
       else {
@@ -49,13 +69,3 @@ sub _sel
    return $a;
 }
 
-my $layouts = _sel(get_all_layouts());
-my $profiles = _sel(get_all_profiles());
-$template->param(
-   barcode     => $query->param('barcode')    || '',
-   layout_id   => $query->param('layout_id')  || 0,
-   profile_id  => $query->param('profile_id') || 0,
-   layouts     => _sel('layout_id',get_all_layouts()),
-   profiles    => _sel('profile_id',get_all_profiles())
-);
-output_html_with_http_headers $query, $cookie, $template->output;

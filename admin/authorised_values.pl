@@ -33,7 +33,8 @@ sub AuthorizedValuesForCategory ($) {
     $searchstring=~ s/\'/\\\'/g;
     my @data=split(' ',$searchstring);
     my $sth=$dbh->prepare('
-          SELECT  id, category, authorised_value, opaclib, lib, imageurl
+          SELECT  id, category, authorised_value, opaclib, lib, 
+          prefix, imageurl
             FROM  authorised_values
            WHERE  (category = ?)
         ORDER BY  category, authorised_value
@@ -73,7 +74,8 @@ $template->param(  script_name => $script_name,
 if ($op eq 'add_form') {
 	my $data;
 	if ($id) {
-		my $sth=$dbh->prepare("select id, category, authorised_value, opaclib, lib, imageurl from authorised_values where id=?");
+		my $sth=$dbh->prepare("select id, category, authorised_value, opaclib, lib, 
+      prefix, imageurl from authorised_values where id=?");
 		$sth->execute($id);
 		$data=$sth->fetchrow_hashref;
 	} else {
@@ -94,6 +96,7 @@ if ($op eq 'add_form') {
                          authorised_value => $data->{'authorised_value'},
                          opaclib          => $data->{'opaclib'},
                          lib              => $data->{'lib'},
+                         prefix           => $data->{'prefix'},
                          id               => $data->{'id'},
                          imagesets        => C4::Koha::getImageSets( checked => $data->{'imageurl'} ),
                          offset           => $offset,
@@ -125,13 +128,16 @@ if ($op eq 'add_form') {
                                           authorised_value = ?,
                                           opaclib          = ?,
                                           lib              = ?,
+                                          prefix           = ?,
                                           imageurl         = ?
                                       WHERE id=?' );
             my $lib = $input->param('lib');
             undef $lib if ($lib eq ""); # to insert NULL instead of a blank string
             my $opaclib = $input->param('opaclib');
+            my $prefix  = $input->param('prefix');
             undef $opaclib if ($opaclib eq ""); # to insert NULL instead of a blank string
-            $sth->execute($new_category, $new_authorised_value, $opaclib, $lib, $imageurl, $id);          
+            undef $prefix if ($prefix eq '');
+            $sth->execute($new_category, $new_authorised_value, $opaclib, $lib, $prefix, $imageurl, $id);          
             print "Content-Type: text/html\n\n<META HTTP-EQUIV=Refresh CONTENT=\"0; URL=authorised_values.pl?searchfield=".$new_category."&offset=$offset\"></html>";
             exit;
         }
@@ -143,13 +149,16 @@ if ($op eq 'add_form') {
         ($duplicate_entry) = $sth->fetchrow_array();
         unless ( $duplicate_entry ) {
             my $sth=$dbh->prepare( 'INSERT INTO authorised_values
-                                    ( id, category, authorised_value, opaclib, lib, imageurl )
-                                    values (?, ?, ?, ?, ?, ?)' );
+                                    ( id, category, authorised_value, opaclib, 
+                                    lib, prefix, imageurl )
+                                    values (?, ?, ?, ?, ?, ?, ?)' );
     	    my $lib = $input->param('lib');
     	    undef $lib if ($lib eq ""); # to insert NULL instead of a blank string
             my $opaclib = $input->param('opaclib');
+            my $prefix  = $input->param('prefix');
             undef $opaclib if ($opaclib eq ""); # to insert NULL instead of a blank string
-            $sth->execute($id, $new_category, $new_authorised_value, $opaclib, $lib, $imageurl );
+            undef $prefix if ($prefix eq '');
+            $sth->execute($id, $new_category, $new_authorised_value, $opaclib, $lib, $prefix, $imageurl );
     	    print "Content-Type: text/html\n\n<META HTTP-EQUIV=Refresh CONTENT=\"0; URL=authorised_values.pl?searchfield=".$input->param('category')."&offset=$offset\"></html>";
     	    exit;
         }
@@ -230,7 +239,8 @@ sub default_form {
 		$row_data{authorised_value} = $results->[$i]{'authorised_value'};
 		$row_data{opaclib}          = $results->[$i]{'opaclib'};
 		$row_data{lib}              = $results->[$i]{'lib'};
-		$row_data{imageurl}         = getitemtypeimagelocation( 'intranet', $results->[$i]{'imageurl'} );
+		$row_data{prefix}           = $results->[$i]{'prefix'};
+      $row_data{imageurl}         = getitemtypeimagelocation( 'intranet', $results->[$i]{'imageurl'} );
 		$row_data{edit}             = "$script_name?op=add_form&amp;id=".$results->[$i]{'id'}."&amp;offset=$offset";
 		$row_data{delete}           = "$script_name?op=delete_confirm&amp;searchfield=$searchfield&amp;id=".$results->[$i]{'id'}."&amp;offset=$offset";
 		push(@loop_data, \%row_data);

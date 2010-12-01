@@ -129,9 +129,7 @@ elsif  ($op eq 'save') {
                     guidebox        => ($cgi->param('guidebox') ? 1 : 0),
                     font            => $cgi->param('font') || 'TR',
                     font_size       => $cgi->param('font_size') || 3,
-                    #
-                    #callnum_split   => ($cgi->param('callnum_split') ? 1 : 0),
-                    #
+                    callnum_split   => $cgi->param('callnum_split'),
                     break_rule_string => $cgi->param('break_rule_string') || '',
                     text_justify    => $cgi->param('text_justify') || 'L',
                     format_string   => $cgi->param('format_string') || 'title, author, isbn, issn, itemtype, barcode, callnumber',
@@ -162,6 +160,22 @@ my $font_types = _set_selected(get_font_types(), $layout, 'font');
 my $text_justification_types = _set_selected(get_text_justification_types(), $layout, 'text_justify');
 my $select_text_fields = _select_format_string($layout->get_attr('format_string'));
 
+my $checked = 0;
+my %ch = ();
+foreach(qw(none lccn ddcn custom)) {
+   if ($layout->get_attr('callnum_split') eq $_) {
+      $ch{$_} = 'checked';
+      $checked = 1;
+   }
+}
+if ($layout->get_attr('break_rule_string')) {
+   $ch{none} = undef;
+   $ch{custom} = 'checked';
+}
+elsif (!$checked) {
+   $ch{none} = 'checked';
+}
+
 $template->param(
         errs            => $errs,
         barcode_types   => $barcode_types,
@@ -177,5 +191,9 @@ $template->param(
         callnum_split   => $layout->get_attr('callnum_split'),
         format_string   => $layout->get_attr('format_string'),
         layout_string   => 1,   # FIXME: This should not be hard-coded; It should perhaps be yet another syspref... CN
+        ch_none         => $ch{none},
+        ch_lccn         => $ch{lccn},
+        ch_ddcn         => $ch{ddcn},
+        ch_custom       => $ch{custom},
 );
 output_html_with_http_headers $cgi, $cookie, $template->output;

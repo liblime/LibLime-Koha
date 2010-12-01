@@ -360,7 +360,7 @@ function barcodeMatch(barcode,itemnumber) {
                     <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?type=<!-- TMPL_VAR NAME="type" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;bi=<!-- TMPL_VAR NAME="biblioitemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber">"><!-- TMPL_VAR NAME="barcode" --></a><a href="javascript:;" onclick="checkinNote(<!-- TMPL_VAR NAME="itemnumber" -->)"><img src="/intranet-tmpl/prog/img/toolbar-edit.gif" title="check in note" alt="check in note" align=abscenter border=0></a>
  <script>barcodeMatch('<!-- TMPL_VAR NAME="barcode" -->',<!-- TMPL_VAR NAME="itemnumber" -->)</script>
  </td>
-                    <td><a href="/cgi-bin/koha/labels/spinelabel-print.pl?barcode=<!-- TMPL_VAR name="barcode" -->">Print Label</a>
+                    <td><a href="/cgi-bin/koha/labels/spinelabel-home.pl?barcode=<!-- TMPL_VAR name="barcode" -->">Print Label</a>
                     </td>
 				<!-- TMPL_IF NAME="volinfo" -->	<td class="enumchron">
 					<!-- TMPL_IF NAME="itemdata_enumchron" -->
