@@ -2663,6 +2663,23 @@ CREATE TABLE subscription_serials (
      FOREIGN KEY (`itemnumber`) REFERENCES items (`itemnumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `borrower_lists`;
+CREATE TABLE `borrower_lists` (
+  `list_id` int(11) NOT NULL auto_increment,
+  `list_name` varchar(100) NOT NULL,
+  `list_owner` int(11) NOT NULL,
+  PRIMARY KEY  (`list_id`),
+  UNIQUE KEY `list_name` (`list_name`,`list_owner`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `borrower_lists_tracking`;
+CREATE TABLE `borrower_lists_tracking` (
+  `list_id` int(11) NOT NULL,
+  `borrowernumber` int(11) NOT NULL,
+  PRIMARY KEY  (`list_id`,`borrowernumber`),
+  KEY `list_id` (`list_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

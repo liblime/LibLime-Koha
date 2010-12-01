@@ -3750,6 +3750,32 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.00.010';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
+    $dbh->do(q|
+        CREATE TABLE IF NOT EXISTS `borrower_lists` (
+            `list_id` int(11) NOT NULL auto_increment,
+            `list_name` varchar(100) NOT NULL,
+            `list_owner` int(11) NOT NULL,
+            PRIMARY KEY  (`list_id`),
+            UNIQUE KEY `list_name` (`list_name`,`list_owner`)
+        ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8
+        |);
+
+    $dbh->do(q|
+        CREATE TABLE `borrower_lists_tracking` (
+            `list_id` int(11) NOT NULL,
+            `borrowernumber` int(11) NOT NULL,
+            PRIMARY KEY  (`list_id`,`borrowernumber`),
+            KEY `list_id` (`list_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+        |);
+
+    print "Upgrade to $DBversion done ( Add tables for borrower_lists and borrower_lists_tracking)\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table
