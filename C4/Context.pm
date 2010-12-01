@@ -619,6 +619,7 @@ sub _new_Zconn {
         $o->option(cqlfile=> $context->{"server"}->{$server}->{"cql2rpn"});
         $o->option(cclfile=> $context->{"serverinfo"}->{$server}->{"ccl2rpn"});
         $o->option(preferredRecordSyntax => $syntax);
+        $o->option(maximumRecordSize => 4096000);
         $o->option(elementSetName => "F"); # F for 'full' as opposed to B for 'brief'
         $o->option(databaseName => ($servername?$servername:"biblios"));
 
