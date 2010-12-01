@@ -1151,6 +1151,11 @@ div.message h5 {
 div.message ul+h4 {
 	margin-top : .7em;
 }
+
+div.emphasize {
+	font-weight : bolder;
+	font-size : large;
+}
  
  div.results {
  	padding : .7em 0;
