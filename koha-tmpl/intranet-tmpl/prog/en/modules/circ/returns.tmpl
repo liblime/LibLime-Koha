@@ -505,6 +505,14 @@ function ContinueReturns() {
             <!-- TMPL_ELSE -->Not checked out<!-- /TMPL_IF --></td>
             <td><!-- TMPL_IF name="bornote" --><span class="circ-hlt"><!-- TMPL_VAR name="bornote" --><br /></span><!-- /TMPL_IF -->
             <!-- TMPL_IF name="itemnote" --><span class="circ-hlt"><!-- TMPL_VAR name="itemnote" --></span><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="havecheckinnotes" -->
+            <script>
+            var url = 'returns.pl?biblionumber='
+            +'<!-- TMPL_VAR NAME="itembiblionumber" -->&itemnumber='
+            +'<!-- TMPL_VAR NAME="itemnumber" -->&checkinnote=1';
+            window.open(url,'Check In Note','width=300,height=300,scrollbars=1');
+            </script>
+            <!-- /TMPL_IF -->
             </td>
            </tr>
         <!-- /TMPL_LOOP -->

@@ -42,15 +42,42 @@ use C4::Courses qw/GetCourseReservesForBiblio/;
 # use Smart::Comments;
 
 my $query = CGI->new();
+my $tmpl  = 'detail';
+if ($query->param('checkinnote')) { $tmpl = 'checkinnote'; }
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     {
-        template_name   => "catalogue/detail.tmpl",
+        template_name   => "catalogue/$tmpl.tmpl",
         query           => $query,
         type            => "intranet",
         authnotrequired => 0,
         flagsrequired   => { catalogue => 1 },
     }
 );
+if ($query->param('checkinnote')) {
+   my $done;
+   my $notes = $query->param('checkinnotes');
+   if ($notes) {
+      C4::Items::ModItem(
+         {checkinnotes=>$query->param('checkinnotes')},
+         $query->param('biblionumber'),
+         $query->param('itemnumber'),
+      );
+      $done = 1;
+   }
+   else {
+      my $item = C4::Items::GetItem($query->param('itemnumber'));
+      $template->param(
+         checkinnotes => $$item{checkinnotes}
+      );
+   }
+   $template->param(
+      done        => $done,
+      biblionumber=> $query->param('biblionumber'),
+      itemnumber  => $query->param('itemnumber')
+   );
+   output_html_with_http_headers $query, $cookie, $template->output;
+   exit;
+}
 
 my $biblionumber = $query->param('biblionumber');
 my $fw = GetFrameworkCode($biblionumber);

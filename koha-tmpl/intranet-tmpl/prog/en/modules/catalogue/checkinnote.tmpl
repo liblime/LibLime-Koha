@@ -1,0 +1,36 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Check In</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+</head>
+<body>
+<div id="doc3" class="yui-t2">
+<div id="bd">
+<div id="yui-main">
+<form method=post action="detail.pl" id="myf" name="myf">
+<input type=hidden name="checkinnote" value="1">
+<input type=hidden name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->">
+<input type=hidden name="itemnumber" value="<!-- TMPL_VAR NAME="itemnumber" -->">
+<h3>Check In Note</h3>
+<div class=hint><b><span id="charcnt">0</span></b> characters
+(255 characters max)</div>
+<textarea name="checkinnotes" rows=6 cols=30 wrap=virtual onkeyup="countChars(this.value)"><!-- TMPL_VAR NAME="checkinnotes" --></textarea><br>
+<input type=submit value="Save">
+<input type=button value="Clear" onclick="document.myf.checkinnotes.value='';">
+<input type=button value="Cancel" onclick="window.close();">
+</form>
+<script>
+function countChars(s) {
+   if (s.length>255) {
+      s= s.substr(0,255);
+      document.myf.checkinnotes.value = s;
+   }
+   var el = document.getElementById('charcnt');
+   el.innerHTML = s.length;
+}
+var done = '<!-- TMPL_VAR NAME="done" -->';
+if (done=='1') { window.close(); }
+</script>
+</div>
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

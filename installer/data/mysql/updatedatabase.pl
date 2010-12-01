@@ -3820,6 +3820,17 @@ $DBversion = '4.03.02.003';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(q|CREATE INDEX object_index ON action_logs(`object`)|);
     print "Upgrade to $DBversion done ( Create object index for action_logs )\n";
+}
+
+$DBversion = '4.03.02.004';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|
+      ALTER TABLE `items`
+      ADD         `checkinnotes` varchar(255) NULL
+      AFTER       `itemnotes`
+    |);
+
+    print "Upgrade to $DBversion done ( Added items.checkinnotes )\n";
     SetVersion ($DBversion);
 }
 

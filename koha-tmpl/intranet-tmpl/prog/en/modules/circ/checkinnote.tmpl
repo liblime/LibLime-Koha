@@ -1,0 +1,37 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation &rsaquo; Check In <!-- TMPL_VAR NAME="title" escape="html" --></title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+</head>
+<body>
+<div id="doc" class="yui-t2">
+<div id="bd">
+<div id="yui-main">
+<form method=post action="returns.pl" name="myf" id="myf">
+<input type=hidden name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->">
+<input type=hidden name="itemnumber" value="<!-- TMPL_VAR NAME="itemnumber" -->">
+<input type=hidden name="keepnote" value="">
+<input type=hidden name="checkinnote" value="1">
+<input type=hidden name="op" value="save">
+<h3>Check In Note</h3>
+<!-- TMPL_VAR NAME="checkinnotes" -->
+<br><br>
+<input type=button value="Keep Note" onclick="doForm(1)">
+<input type=button value="Discard Note" onclick="doForm(0)">
+</form>
+<script>
+var done = '<!-- TMPL_VAR NAME="done" -->';
+if (done=='1') {
+   window.close();
+}
+function doForm(keepnote) {
+   if (keepnote==1) {
+      document.myf.keepnote.value = 1;
+   }
+   document.myf.submit();
+   return true;
+}
+</script>
+</div>
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

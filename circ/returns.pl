@@ -58,15 +58,47 @@ if (!C4::Context->userenv){
 } 
 
 #getting the template
+my $tmpl = 'returns';
+if ($query->param('checkinnote')) { $tmpl = 'checkinnote'; }
 my ( $template, $librarian, $cookie ) = get_template_and_user(
     {
-        template_name   => "circ/returns.tmpl",
+        template_name   => "circ/$tmpl.tmpl",
         query           => $query,
         type            => "intranet",
         authnotrequired => 0,
         flagsrequired   => { circulate => '*' },
     }
 );
+
+if ($query->param('checkinnote')) {
+   my $done;
+   if ($query->param('op') eq 'save') {
+      if ($query->param('keepnote')) {
+         # do nothing
+      }
+      else {   # discard checkinnotes
+         C4::Items::ModItem(
+            {checkinnotes=>undef,},
+            $query->param('biblionumber'),
+            $query->param('itemnumber'),
+         );
+      }
+      $done = 1;
+   }
+   else {   # get checkinnotes
+      my $item  = C4::Items::GetItem($query->param('itemnumber'));
+      my $notes = $$item{checkinnotes};
+      $notes    =~ s/\n/<br>/gs;
+      $template->param('checkinnotes'=>$notes);
+   }
+   $template->param(
+      done        => $done,
+      biblionumber=> $query->param('biblionumber'),
+      itemnumber  => $query->param('itemnumber'),
+   );
+   output_html_with_http_headers $query, $cookie, $template->output;
+   exit;
+}
 
 #####################
 #Global vars
@@ -586,6 +618,7 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
         $ri{itemauthor}       = $biblio->{'author'};
         $ri{itemtype}         = $biblio->{'itemtype'};
         $ri{itemnote}         = $biblio->{'itemnotes'};
+        $ri{havecheckinnotes} = $biblio->{'checkinnotes'} || undef;
         $ri{ccode}            = $biblio->{'ccode'};
         $ri{itemnumber}       = $biblio->{'itemnumber'};
         $ri{barcode}          = $barcode;
