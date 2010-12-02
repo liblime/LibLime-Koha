@@ -2102,7 +2102,8 @@ CREATE TABLE `virtualshelves` (
   `category` varchar(1) default NULL,
   `sortfield` varchar(16) default NULL,
   `lastmodified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  PRIMARY KEY  (`shelfnumber`)
+  PRIMARY KEY  (`shelfnumber`),
+  KEY `owner_index` (`owner`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

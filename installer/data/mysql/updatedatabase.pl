@@ -48,6 +48,7 @@ GetOptions(
     's' =>\$silent
     );
 my $dbh = C4::Context->dbh;
+$dbh->{RaiseError} = 0;
 $|=1; # flushes output
 
 =item
@@ -3790,6 +3791,13 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(q|ALTER TABLE `deletedborrowers` ADD COLUMN `last_reported_amount` decimal(30,6) default NULL|);
 
     print "Upgrade to $DBversion done ( Correct the deletedborrowers table and sync schema for collections )\n";
+    SetVersion ($DBversion);
+}
+
+$DBversion = '4.03.02.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|CREATE INDEX owner_index ON virtualshelves(`owner`)|);
+    print "Upgrade to $DBversion done ( Create owner index for virtualshelves )\n";
     SetVersion ($DBversion);
 }
 
