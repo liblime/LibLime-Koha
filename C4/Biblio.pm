@@ -2308,6 +2308,10 @@ sub PrepareItemrecordDisplay {
                         $value = $defaultvalues->{branchcode};
                     }
                 }
+                if ( $tagslib->{$tag}->{$subfield}->{kohafield} eq 'items.enumchron' )
+                {
+                    $value = '__ENUMCHRON__';## GET ENUMERATION
+                }
                 if ( $tagslib->{$tag}->{$subfield}->{authorised_value} ) {
                     my @authorised_values;
                     my %authorised_lib;
@@ -2400,8 +2404,19 @@ sub PrepareItemrecordDisplay {
                 }
                 else {
                     $value = '' if (!defined $value);
+                    
+                    ## We need to fill the enumeration at client runtime, give it a class of enumchron so
+                    ## we can use jquery to loop through the enumchron fields.
+                    my $enumchron;
+                    if ( $value eq '__ENUMCHRON__' ) {
+                        $value = '';
+                        $enumchron = 1;
+                    }
+                    
+                    my $class = 'class="enumchron"' if $enumchron;
+                    
                     $subfield_data{marc_value} =
-"<input type=\"text\" name=\"field_value\" id=\"$subfield_data{kohafield}\"value=\"$value\" size=\"50\" maxlength=\"255\" />";
+"<input type=\"text\" name=\"field_value\" id=\"$subfield_data{kohafield}\"value=\"$value\" size=\"50\" maxlength=\"255\" $class />";
                 }
                 push( @loop_data, \%subfield_data );
             }

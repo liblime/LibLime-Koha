@@ -145,6 +145,14 @@ function CloneSubfield(index){
 }
 //]]>
 </script>
+
+<script>
+$(document).ready(function() {
+	$('.enumchron').each(function(index) {
+		$(this).val( $('#serialseq').val() );
+	});
+});
+</script>
 <style type="text/css">#serials_edit fieldset.rows label, #serials_edit fieldset.rows span.label {
 	font-size : 100%;
 	width : 25%;
@@ -198,7 +206,7 @@ function CloneSubfield(index){
             <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
             <input type="hidden" name="itemcount" value="<!-- TMPL_VAR name="issuesatonce" -->" />
             <input type="hidden" name="user" value="<!-- TMPL_VAR name="librarian" -->" />
-            Issue <input type="text" name="serialseq" value="<!-- TMPL_VAR name="serialseq" -->" size="20" maxlength="100" />
+            Issue <input type="text" name="serialseq" id="serialseq" value="<!-- TMPL_VAR name="serialseq" -->" size="20" maxlength="100" />
         </td>
         <td>
             <input type="text" name="publisheddate" value="<!-- TMPL_VAR name="publisheddate" -->" size="10" maxlength="15" />
@@ -312,7 +320,7 @@ function CloneSubfield(index){
             <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
             <input type="hidden" name="itemcount" value="<!-- TMPL_VAR name="issuesatonce" -->" />
             <input type="hidden" name="user" value="<!-- TMPL_VAR name="librarian" -->" />
-            Supplemental Issue <input type="text" name="serialseq" value="" size="20" maxlength="100" onchange="if (this.value!=''){unHideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')} else {HideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')}" />
+            Supplemental Issue <input type="text" name="serialseq" id="serialseq_sup" value="" size="20" maxlength="100" onchange="if (this.value!=''){unHideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')} else {HideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')}" />
         </td>
         <td>
             <input type="text" name="publisheddate" value="<!-- TMPL_VAR name="publisheddate" -->" size="10" maxlength="15" />
