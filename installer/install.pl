@@ -14,6 +14,9 @@ use C4::Installer;
 use CGI;
 use IPC::Cmd;
 
+my $dbh = C4::Context->dbh;
+$dbh->{RaiseError} = 0;
+
 my $query = new CGI;
 my $step  = $query->param('step');
 
@@ -46,7 +49,7 @@ $info{'hostname'} = C4::Context->config("hostname");
 $info{'port'}     = C4::Context->config("port");
 $info{'user'}     = C4::Context->config("user");
 $info{'password'} = C4::Context->config("pass");
-my $dbh = DBI->connect(
+$dbh = DBI->connect(
     "DBI:$info{dbms}:dbname=$info{dbname};host=$info{hostname}"
       . ( $info{port} ? ";port=$info{port}" : "" ),
     $info{'user'}, $info{'password'}

@@ -541,6 +541,7 @@ CREATE TABLE `borrower_attributes` (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `branch_item_rules`;
 CREATE TABLE `branch_item_rules` (
   `branchcode` varchar(10) NOT NULL,
   `itemtype` varchar(10) NOT NULL,
@@ -710,6 +711,7 @@ CREATE TABLE `default_branch_circ_rules` (
 -- Table structure for table `default_branch_item_rules`
 --
 
+DROP TABLE IF EXISTS `default_branch_item_rules`;
 CREATE TABLE `default_branch_item_rules` (
   `itemtype` varchar(10) NOT NULL,
   `holdallowed` tinyint(1) default NULL,
@@ -1557,7 +1559,7 @@ CREATE TABLE `old_reserves` (
   `waitingdate` date default NULL,
   `expirationdate` date default NULL,
   `lowestPriority` tinyint(1) NOT NULL,
-  `displayexpired` tinyint(1) NOT NULL default 1
+  `displayexpired` tinyint(1) NOT NULL default 1,
   KEY `old_reserves_borrowernumber` (`borrowernumber`),
   KEY `old_reserves_biblionumber` (`biblionumber`),
   KEY `old_reserves_itemnumber` (`itemnumber`),
