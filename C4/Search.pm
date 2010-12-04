@@ -460,11 +460,17 @@ sub getRecords {
                                 ($facets->[$k]) or next;
                                 my @fields = map {$facet_record->field($_)} @{$facets->[$k]->{'tags'}} ;
                                 for my $field (@fields) {
-                                    my @subfields = $field->subfields();
-                                    for my $subfield (@subfields) {
-                                        my ( $code, $data ) = @$subfield;
-                                        ($code eq $facets->[$k]->{'subfield'}) or next;
-                                        $facets_counter->{ $facets->[$k]->{'link_value'} }->{$data}++;
+                                    if ($field->tag gt '099') {
+                                        my @subfields = $field->subfields();
+                                        for my $subfield (@subfields) {
+                                            my ( $code, $data ) = @$subfield;
+                                            ($code eq $facets->[$k]->{'subfield'}) or next;
+                                            $facets_counter->{ $facets->[$k]->{'link_value'} }->{$data}++;
+                                        }
+                                    } else {
+                                        my ($first, $last) = split(/:/, $facets->[$k]{span});
+                                        my $data = substr($field->data, $first, $last-$first+1);
+                                        $facets_counter->{$facets->[$k]{link_value}}{$data}++
                                     }
                                 }
                                 $facets_info->{ $facets->[$k]->{'link_value'} }->{'label_value'} =
@@ -516,6 +522,18 @@ sub getRecords {
                             if ( $link_value =~ /branch/ ) {
                                 $facet_label_value =
                                   $branches->{$one_facet}->{'branchname'};
+                            } elsif ($link_value eq 'l-format') {
+                                my $authval = GetAuthorisedValue('HINGS_PF', $facet_link_value);
+                                $facet_label_value =
+                                    ($authval) ? $authval->{lib} :
+                                    ($facet_link_value) ? $facet_link_value :
+                                    'Unspecified';
+                            } elsif ($link_value eq 'ctype') {
+                                my $authval = GetAuthorisedValue('CTYPE', $facet_link_value);
+                                $facet_label_value =
+                                    ($authval) ? $authval->{lib} :
+                                    ($facet_link_value) ? $facet_link_value :
+                                    'Unspecified';
                             }
 
                             # but we're down with the whole label being in the link's title.
@@ -539,6 +557,7 @@ sub getRecords {
                         type_link_value => $link_value,
                         type_id         => $link_value . "_id",
                         "type_label_" . $facets_info->{$link_value}->{'label_value'} => 1, 
+                        label      => $facets_info->{$link_value}->{'label_value'},
                         facets     => \@this_facets_array,
                         expandable => $expandable,
                         expand     => $link_value,

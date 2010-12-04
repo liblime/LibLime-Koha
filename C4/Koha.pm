@@ -758,6 +758,18 @@ sub getFacets {
             #        subfield => 'a',
             #        },
             {
+                link_value  => 'l-format',
+                label_value => 'Formats',
+                tags        => ['007'],
+                span        => '0:1',
+            },
+            {
+                link_value  => 'ctype',
+                label_value => 'Content',
+                tags        => ['008'],
+                span        => '24:27',
+            },
+            {
                 link_value  => 'su-geo',
                 label_value => 'Places',
                 tags        => ['651'],
