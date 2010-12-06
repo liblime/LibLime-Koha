@@ -711,7 +711,7 @@ possibly C<&set_dbh>.
 sub dbh
 {
     my $self = shift;
-    if ( ! defined($context->{'dbh'}) || ( $context->{'safe_mode'} && ! $context->{'dbh'}->ping() )) {
+    if ( ! defined($context->{'dbh'}) || ( $context->{'database_paranoia_mode'} && ! $context->{'dbh'}->ping() )) {
         $context->{'dbh'} = &_new_dbh();
     }
     return $context->{'dbh'};
@@ -797,7 +797,7 @@ possibly C<&set_dbh>.
 sub replica_dbh
 {
     my $self = shift;
-    if( ! defined($context->{"replica_dbh"}) || ( $context->{'safe_mode'} && ! $context->{"replica_dbh"}->ping())){
+    if( ! defined($context->{"replica_dbh"}) || ( $context->{'database_paranoia_mode'} && ! $context->{"replica_dbh"}->ping())){
         $context->{"replica_dbh"} = &_new_replica_dbh();
     }
     return $context->{"replica_dbh"};
@@ -882,11 +882,11 @@ sub restore_dbh
     # return something, then this function should, too.
 }
  
-=item safe_mode
+=item database_paranoia_mode
 
   C4::Context->database_paranoia_mode(1);
 
-get or set 'safe_mode' for current $context.
+get or set 'database_paranoia_mode' for current $context.
 This setting causes any calls to C4::Context->dbh
 to first ping the database server to ensure that
 the dbh is still valid.  Useful for long-running
