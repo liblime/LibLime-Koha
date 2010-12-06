@@ -1789,7 +1789,8 @@ sub FixAccountForLostAndReturned {
     #check if any credit is left if so writeoff other accounts
     my $nextaccntno = getnextacctno($data->{'borrowernumber'});
     $amountleft *= -1 if ($amountleft < 0);
-    if ($amountleft > 0) {
+# Add syspref RefundLostReturnedAmount
+    if (($amountleft > 0) && (!C4::Context->preference('RefundLostReturnedAmount'))) {
         my $msth = $dbh->prepare("SELECT * FROM accountlines WHERE (borrowernumber = ?)
                             AND (amountoutstanding >0) ORDER BY date");     # might want to order by amountoustanding ASC (pay smallest first)
         $msth->execute($data->{'borrowernumber'});
@@ -1820,10 +1821,11 @@ sub FixAccountForLostAndReturned {
     }
     $amountleft *= -1 if ($amountleft > 0);
     my $desc = "Item Returned " . $item_id;
+    my $type = (C4::Context->preference('RefundLostReturnedAmount')) ? 'RCR' : 'CR';
     $usth = $dbh->prepare("INSERT INTO accountlines
-        (borrowernumber,accountno,date,amount,description,accounttype,amountoutstanding)
-        VALUES (?,?,now(),?,?,'CR',?)");
-    $usth->execute($data->{'borrowernumber'},$nextaccntno,0-$amount,$desc,$amountleft);
+        (borrowernumber,accountno,itemnumber,date,amount,description,accounttype,amountoutstanding)
+        VALUES (?,?,?,now(),?,?,?,?)");
+    $usth->execute($data->{'borrowernumber'},$nextaccntno,$itemnumber,0-$amount,$desc,$type,$amountleft);
     if ($borrowernumber) {
         # FIXME: same as query above.  use 1 sth for both
         $usth = $dbh->prepare("INSERT INTO accountoffsets

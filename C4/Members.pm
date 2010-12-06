@@ -1306,9 +1306,9 @@ sub GetMemberAccountRecords {
     $sth->execute( @bind );
     my $total = 0;
     while ( my $data = $sth->fetchrow_hashref ) {
-		my $biblio = GetBiblioFromItemNumber($data->{itemnumber}) if $data->{itemnumber};
-		$data->{biblionumber} = $biblio->{biblionumber};
-	        $data->{title} = $biblio->{title};
+        my $biblio = GetBiblioFromItemNumber($data->{itemnumber}) if $data->{itemnumber};
+        $data->{biblionumber} = $biblio->{biblionumber};
+        $data->{title} = $biblio->{title};
         $acctlines[$numlines] = $data;
         $numlines++;
         if (defined($data->{'amountoutstanding'})) {

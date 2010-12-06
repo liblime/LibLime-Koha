@@ -3886,6 +3886,19 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
+$DBversion = '4.03.03.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES ('RefundLostReturnedAmount','0','Refund a returned lost item rather than applying it to an outstanding balance','','YesNo')");
+
+    $dbh->do(qq/
+      INSERT INTO `permissions` (`module_bit`, `code`, `description`) VALUES 
+      ('10', 'refund_charges', 'User can refund a charge');
+    /);
+
+    print "Upgrade to $DBversion done ( Add new system preference RefundLostReturnedAmount and a new granular permission to updatecharges module )\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

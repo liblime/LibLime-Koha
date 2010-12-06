@@ -1,0 +1,112 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Borrowers &rsaquo; Create Manual Credit</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript">
+//<![CDATA[
+$(document).ready(function(){
+	$("fieldset.rows input").keydown(function(e){ return checkEnter(e); });
+});
+//]]>
+</script>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="patron-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; Manual Credit</div>
+
+<div id="doc3" class="yui-t2">
+   
+   <div id="bd">
+	<div id="yui-main">
+	<div class="yui-b">
+<!-- TMPL_INCLUDE NAME="members-toolbar.inc" -->
+
+<!-- The refund page -->
+<div class="toptabs">
+<ul class="ui-tabs-nav">
+	<li><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Account</a></li>
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
+	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay fines</a></li>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="refundtab" -->
+	<li class="ui-tabs-selected"><a href="/cgi-bin/koha/members/refund.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Refund fines</a></li>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_add_charges" -->
+	<li><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Invoice</a></li>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
+	<li><a href="/cgi-bin/koha/members/mancredit.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Credit</a></li>
+    <!-- /TMPL_IF -->
+</ul>
+<div class="tabs-container">
+
+<!-- TMPL_IF NAME="CAN_user_updatecharges_refund_charges" -->
+  <form action="/cgi-bin/koha/members/refund.pl" method="post">
+  <input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+
+  <table>
+    <tr>
+      <th>Charge and Refund</th>
+      <th>Description</th>
+      <th>Amount</th>
+    </tr>
+
+    <!-- TMPL_LOOP NAME="accounts" -->
+       <td> <!-- TMPL_VAR NAME="type" --> </td>
+       <td> Lost Item: <i> <!-- TMPL_VAR NAME="title" --> </i> </td>
+       <td> <!-- TMPL_VAR NAME="amount" --> </td>
+       <input type="hidden" name="itemnumber" id="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
+       <input type="hidden" name="accountno" id="accountno" value="<!-- TMPL_VAR Name="accountno" -->" />
+    <!-- /TMPL_LOOP -->
+  </table>
+  <fieldset class="action"><input type="submit" name="refund" value="Refund" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
+  </form>
+<!-- TMPL_ELSIF NAME="authorized" -->
+  <form action="/cgi-bin/koha/members/refund.pl" method="post">
+  <input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+
+  <table>
+    <tr>
+      <th>Charge and Refund</th>
+      <th>Description</th>
+      <th>Amount</th>
+    </tr>
+
+    <!-- TMPL_LOOP NAME="accounts" -->
+       <td> <!-- TMPL_VAR NAME="type" --> </td>
+       <td> Lost Item: <i> <!-- TMPL_VAR NAME="title" --> </i> </td>
+       <td> <!-- TMPL_VAR NAME="amount" --> </td>
+       <input type="hidden" name="itemnumber" id="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
+       <input type="hidden" name="accountno" id="accountno" value="<!-- TMPL_VAR Name="accountno" -->" />
+    <!-- /TMPL_LOOP -->
+  </table>
+  <fieldset class="action"><input type="submit" name="refund" value="Refund" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
+  </form>
+<!-- TMPL_ELSE -->
+  <form action="/cgi-bin/koha/members/refund.pl" method="post">
+  <input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+  <h5>You do not have permission to refund a charge</h5>
+  <p>
+  <label><strong>Superlibrarian Authorization Required</strong></label>
+  </p><p>
+  <label for="auth_username">Username:</label>
+  <input type="text" id="auth_username" name="auth_username" />
+  <label for="auth_password">Password:</label>
+  <input type="password" id="auth_password" name="auth_password" />
+  <input type="hidden" name="superlibrarian" id="superlibrarian" value="1" />
+  <input type="submit" value="Authorize" />
+  </p>
+  </form>
+<!-- /TMPL_IF -->
+
+</div></div>
+
+</div>
+</div>
+
+<div class="yui-b">
+<!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

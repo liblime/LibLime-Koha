@@ -23,6 +23,9 @@
     <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
 	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay fines</a></li>
     <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="refundtab" -->
+	<li><a href="/cgi-bin/koha/members/refund.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Refund fines</a></li>
+    <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_updatecharges_add_charges" -->
 	<li><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create manual invoice</a></li>
     <!-- /TMPL_IF -->

@@ -37,6 +37,7 @@ BEGIN {
 		&getnextacctno &reconcileaccount &getcharges &getcredits
 		&ReversePayment
 		&getrefunds &chargelostitem makepartialpayment
+                &refundlostitemreturned
 	); # removed &fixaccounts
 }
 
@@ -298,6 +299,26 @@ sub getnextacctno ($) {
     );
     $sth->execute($borrowernumber);
     return ($sth->fetchrow || 1);
+}
+
+=head2 refundlostitemreturned ($borrowernumber, $accountnumber)
+
+  &refundlostitemreturned($borrowernumber, $accountnumber)
+
+=cut
+
+sub refundlostitemreturned($$) {
+
+  my ($borrowernumber, $accountnumber) = @_;
+  my $dbh = C4::Context->dbh;
+  my $sth = $dbh->prepare(
+    "UPDATE accountlines
+       SET amountoutstanding = 0, accounttype = 'CR'
+       WHERE borrowernumber = ?
+         AND accountno = ?"
+  );
+  $sth->execute($borrowernumber, $accountnumber);
+
 }
 
 =head2 fixaccounts (removed)

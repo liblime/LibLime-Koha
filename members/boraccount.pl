@@ -91,8 +91,8 @@ for (my $i=0;$i<$numaccts;$i++){
                 'amountoutstandingcredit' => $accts->[$i]{'amountoutstandingcredit'},
                 'toggle' => $accts->[$i]{'toggle'},
                 'description'       => $accts->[$i]{'description'},
-				'itemnumber'       => $accts->[$i]{'itemnumber'},
-				'biblionumber'       => $accts->[$i]{'biblionumber'},
+                'itemnumber'        => $accts->[$i]{'itemnumber'},
+                'biblionumber'      => $accts->[$i]{'biblionumber'},
                 'amount'            => sprintf("%.2f",$accts->[$i]{'amount'}),
                 'amountoutstanding' => sprintf("%.2f",$accts->[$i]{'amountoutstanding'}),
                 'accountno' => $accts->[$i]{'accountno'},
@@ -104,6 +104,7 @@ for (my $i=0;$i<$numaccts;$i++){
         $row{'printtitle'}=1;
         $row{'title'} = $accts->[$i]{'title'};
     }
+    $template->param( refundtab => 1 ) if (($accts->[$i]{'accounttype'} eq 'RCR') && ($accts->[$i]{'amountoutstanding'} < 0.0));
     
     push(@accountrows, \%row);
 }
