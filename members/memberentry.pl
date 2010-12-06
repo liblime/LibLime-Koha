@@ -62,6 +62,10 @@ my ($template, $loggedinuser, $cookie)
            flagsrequired => {borrowers => '*'},
            debug => ($debug) ? 1 : 0,
        });
+if (C4::Context->userenv->{branch} eq 'NO_LIBRARY_SET') {
+   print $input->redirect('/cgi-bin/koha/circ/selectbranchprinter.pl');
+   exit;
+}
 my $guarantorid    = $input->param('guarantorid');
 my $borrowernumber = $input->param('borrowernumber');
 
@@ -132,7 +136,29 @@ unless ($category_type or !($categorycode)){
 }
 $category_type="A" unless $category_type; # FIXME we should display a error message instead of a 500 error !
 
-# if a add or modify is requested => check validity of data.
+# deal with restricted ownership of items for staff members
+my $isStaff = $category_type eq 'S' ?1:0;
+my @wl = $input->param('worklibrary') or ();
+if (!@wl && $isStaff && $borrowernumber) {
+   @wl = @{$$borrower_data{worklibraries} || []};  
+}
+my $onlymine = (C4::Context->preference('IndependentBranches') &&
+                C4::Context->userenv &&
+                C4::Context->userenv->{flags} %2 != 1 &&
+                C4::Context->userenv->{branch} ?1:0);
+my $branches = GetBranches($onlymine);
+my $worklibs = ''; # this variable is a Perl bug: $worklibraries
+foreach my $branch(keys %$branches) {
+   my $sel = '';
+   $sel = 'selected' if (C4::Context->userenv->{branch} eq $branch) && !$borrowernumber;
+   $sel = 'selected' if (grep /^$branch$/, @wl);
+   # JS error in LOOP... do it this way
+   $worklibs .= qq|<option $sel value="$branch">$$branches{$branch}{branchname}|;
+}
+$worklibs = qq|<option value="" onclick="selAllWorkLibs()">All Libraries$worklibs|;
+$template->param('worklibs'=>$worklibs);
+
+# if add or modify is requested => check validity of data.
 %data = %$borrower_data if ($borrower_data);
 
 # initialize %newdata
@@ -140,7 +166,10 @@ my %newdata;	# comes from $input->param()
 if ($op eq 'insert' || $op eq 'modify' || $op eq 'save') {
     my @names= ($borrower_data && $op ne 'save') ? keys %$borrower_data : $input->param();
     foreach my $key (@names) {
-        if (defined $input->param($key)) {
+        if ($key eq 'worklibrary') {
+            @{$newdata{$key}} = $input->param($key);
+        }
+        elsif (defined $input->param($key)) {
             $newdata{$key} = $input->param($key);
             $newdata{$key} =~ s/\"/&quot;/g unless $key eq 'borrowernotes' or $key eq 'opacnote';
         }
@@ -534,13 +563,6 @@ foreach my $key (@flags) {
 my @branches;
 my @select_branch;
 my %select_branches;
-
-my $onlymine=(C4::Context->preference('IndependantBranches') && 
-              C4::Context->userenv && 
-              C4::Context->userenv->{flags} % 2 !=1  && 
-              C4::Context->userenv->{branch}?1:0);
-              
-my $branches=GetBranches($onlymine);
 my $default;
 
 for my $branch (sort { $branches->{$a}->{branchname} cmp $branches->{$b}->{branchname} } keys %$branches) {
@@ -558,15 +580,26 @@ $data{'cardnumber'}=fixup_cardnumber($data{'cardnumber'}, $branches->{C4::Contex
   #in modify mod :default value from $CGIbranch comes from borrowers table
   #in add mod: default value come from branches table (ip correspendence)
 $default=$data{'branchcode'}  if ($op eq 'modify' || ($op eq 'add' && $category_type eq 'C'));
-my $CGIbranch = CGI::scrolling_list(-id    => 'branchcode',
-            -name   => 'branchcode',
-            -values => \@select_branch,
-            -labels => \%select_branches,
-            -size   => 1,
-            -override => 1,  
-            -multiple =>0,
-            -default => $default,
-        );
+
+# I need some javascript here, so CGI:: won't do
+#my $CGIbranch = CGI::scrolling_list(-id    => 'branchcode',
+#            -name   => 'branchcode',
+#            -values => \@select_branch,
+#            -labels => \%select_branches,
+#            -size   => 1,
+#            -override => 1,  
+#            -multiple =>0,
+#            -default => $default,
+#        );
+my $CGIbranch = [];
+foreach(keys %$branches) {
+   push @$CGIbranch, {
+      branchcode => $_,
+      branchname => $$branches{$_}{branchname},
+      _sel       => $default eq $_ ? 'selected':'',
+   };
+}
+
 my $CGIorganisations;
 my $member_of_institution;
 if (C4::Context->preference("memberofinstitution")){

@@ -556,7 +556,8 @@ searches by cardnumber then by firstname if not found in cardnumber;
 otherwise, it searches by borrowernumber.
 
 C<&GetBorrower> returns a reference-to-hash whose keys are the fields of
-the C<borrowers> table in the Koha database.
+the C<borrowers> table in the Koha database.  If the borrower is a staff
+member, an additional 'worklibraries' arrayref is included in the fields.
 
 =cut
 
@@ -578,6 +579,17 @@ LEFT JOIN categories on borrowers.categorycode=categories.categorycode
     }
     $sth->execute($information);
     my $data = $sth->fetchrow_hashref;
+    if ($$data{category_type} eq 'S') { # staff
+        $sth = $dbh->prepare("SELECT branchcode as worklibrary
+        FROM borrower_worklibrary
+        WHERE borrowernumber = ?");
+        $sth->execute($$data{borrowernumber});
+        while(my $row = $sth->fetchrow_hashref()) {
+           push @{$$data{worklibraries}}, $$row{worklibrary};
+        }
+    }
+
+
     ($data) and return ($data);
 
     if (defined($type) and ($type eq 'cardnumber' || $type eq 'firstname')) {    # otherwise, try with firstname
@@ -668,6 +680,8 @@ sub ModMember {
     my ($oldval,$newval);
     my $staffnumber = $data{'staffnumber'};
     delete $data{'staffnumber'};
+    my $worklibraries = $data{worklibrary};
+    delete $data{worklibrary};
     my $sth;
     my $query = "
       INSERT INTO borrower_edits
@@ -748,7 +762,33 @@ sub ModMember {
     logaction("MEMBERS", "MODIFY", $data{'borrowernumber'}, "$query (executed w/ arg: $data{'borrowernumber'})") 
         if C4::Context->preference("BorrowersLog");
 
+   # a staff member's work libraries
+   $sth = $dbh->prepare("DELETE FROM borrower_worklibrary
+   WHERE borrowernumber = ?");
+   $sth->execute($data{borrowernumber});
+   foreach(@$worklibraries) {
+       $sth = $dbh->prepare("INSERT INTO borrower_worklibrary
+       (borrowernumber,branchcode) VALUES (?,?)");
+   }
+
     return $execute_success;
+}
+
+sub GetWorkLibraries
+{
+   my $borrowernumber = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("
+      SELECT branchcode
+      FROM   borrower_worklibrary
+      WHERE  borrowernumber = ?"
+   ) || die $dbh->errstr();
+   $sth->execute($borrowernumber) || die $dbh->errstr();
+   my @all = ();
+   while(my $row = $sth->fetchrow_hashref()) {
+      push @all, $$row{branchcode};
+   }
+   return wantarray ? @all : \@all;
 }
 
 
@@ -780,72 +820,36 @@ sub AddMember {
     if (!$data{'dateofbirth'}){
         undef ($data{'dateofbirth'});
     }
-    my $query =
-        "insert into borrowers set cardnumber=" . $dbh->quote( $data{'cardnumber'} )
-      . ",surname="     . $dbh->quote( $data{'surname'} )
-      . ",firstname="   . $dbh->quote( $data{'firstname'} )
-      . ",title="       . $dbh->quote( $data{'title'} )
-      . ",othernames="  . $dbh->quote( $data{'othernames'} )
-      . ",initials="    . $dbh->quote( $data{'initials'} )
-      . ",streetnumber=". $dbh->quote( $data{'streetnumber'} )
-      . ",streettype="  . $dbh->quote( $data{'streettype'} )
-      . ",address="     . $dbh->quote( $data{'address'} )
-      . ",address2="    . $dbh->quote( $data{'address2'} )
-      . ",zipcode="     . $dbh->quote( $data{'zipcode'} )
-      . ",country="     . $dbh->quote( $data{'country'} )
-      . ",city="        . $dbh->quote( $data{'city'} )
-      . ",phone="       . $dbh->quote( $data{'phone'} )
-      . ",email="       . $dbh->quote( $data{'email'} )
-      . ",mobile="      . $dbh->quote( $data{'mobile'} )
-      . ",phonepro="    . $dbh->quote( $data{'phonepro'} )
-      . ",opacnote="    . $dbh->quote( $data{'opacnote'} )
-      . ",guarantorid=" . $dbh->quote( $data{'guarantorid'} )
-      . ",dateofbirth=" . $dbh->quote( $data{'dateofbirth'} )
-      . ",branchcode="  . $dbh->quote( $data{'branchcode'} )
-      . ",categorycode=" . $dbh->quote( $data{'categorycode'} )
-      . ",dateenrolled=" . $dbh->quote( $data{'dateenrolled'} )
-      . ",contactname=" . $dbh->quote( $data{'contactname'} )
-      . ",borrowernotes=" . $dbh->quote( $data{'borrowernotes'} )
-      . ",dateexpiry="  . $dbh->quote( $data{'dateexpiry'} )
-      . ",contactnote=" . $dbh->quote( $data{'contactnote'} )
-      . ",B_address="   . $dbh->quote( $data{'B_address'} )
-      . ",B_address2="   . $dbh->quote( $data{'B_address2'} )
-      . ",B_zipcode="   . $dbh->quote( $data{'B_zipcode'} )
-      . ",B_country="   . $dbh->quote( $data{'B_country'} )
-      . ",B_city="      . $dbh->quote( $data{'B_city'} )
-      . ",B_phone="     . $dbh->quote( $data{'B_phone'} )
-      . ",B_email="     . $dbh->quote( $data{'B_email'} )
-      . ",password="    . $dbh->quote( $data{'password'} )
-      . ",userid="      . $dbh->quote( $data{'userid'} )
-      . ",sort1="       . $dbh->quote( $data{'sort1'} )
-      . ",sort2="       . $dbh->quote( $data{'sort2'} )
-      . ",contacttitle=" . $dbh->quote( $data{'contacttitle'} )
-      . ",emailpro="    . $dbh->quote( $data{'emailpro'} )
-      . ",contactfirstname=" . $dbh->quote( $data{'contactfirstname'} )
-      . ",sex="         . $dbh->quote( $data{'sex'} )
-      . ",fax="         . $dbh->quote( $data{'fax'} )
-      . ",relationship=" . $dbh->quote( $data{'relationship'} )
-      . ",B_streetnumber=" . $dbh->quote( $data{'B_streetnumber'} )
-      . ",B_streettype=" . $dbh->quote( $data{'B_streettype'} )
-      . ",gonenoaddress=" . $dbh->quote( $data{'gonenoaddress'} )
-      . ",exclude_from_collection=" . $dbh->quote( $data{'exclude_from_collection'} or 0)
-      . ",lost="        . $dbh->quote( $data{'lost'} )
-      . ",debarred="    . $dbh->quote( $data{'debarred'} )
-      . ",ethnicity="   . $dbh->quote( $data{'ethnicity'} )
-      . ",ethnotes="    . $dbh->quote( $data{'ethnotes'} ) 
-      . ",altcontactsurname="   . $dbh->quote( $data{'altcontactsurname'} ) 
-      . ",altcontactfirstname="     . $dbh->quote( $data{'altcontactfirstname'} ) 
-      . ",altcontactaddress1="  . $dbh->quote( $data{'altcontactaddress1'} ) 
-      . ",altcontactaddress2="  . $dbh->quote( $data{'altcontactaddress2'} ) 
-      . ",altcontactaddress3="  . $dbh->quote( $data{'altcontactaddress3'} ) 
-      . ",altcontactzipcode="   . $dbh->quote( $data{'altcontactzipcode'} ) 
-      . ",altcontactcountry="   . $dbh->quote( $data{'altcontactcountry'} ) 
-      . ",altcontactphone="     . $dbh->quote( $data{'altcontactphone'} )
-      . ",disable_reading_history="     . $dbh->quote( $data{'disable_reading_history'} ) ;
-    $debug and print STDERR "AddMember SQL: ($query)\n";
+   
+   $data{exclude_from_collection} ||= 0;
+   my @f = qw(cardnumber surname firstname title othernames initials
+      streetnumber streettype address address2 zipcode country city
+      phone email mobile phonepro opacenote guarantorid dateofbirth
+      branchcode categorycode dateenrolled contactname
+      borrowernotes dateexpiry contactnote
+      B_address B_address2 B_zipcode B_country B_city B_email
+      B_streetnumber B_streettype
+      password userid sort1 sort2
+      contacttitle emailpro contactfirstname
+      sex fax relationship gonenoaddress
+      exclude_from_collection lsot debarred
+      ethnicity ethnotes
+      altcontactsurname altcontactfirstname
+      altcontactaddress1 altcontactaddress2 altcontactaddress3
+      altcontactzipcode altcontactcountry altcontactphone
+      disable_reading_history
+   );
+   my @params = ();
+   my $query = sprintf("insert into borrowers(%s) values(%s)",
+      join(',', @f),
+      join(',',map{'?'}@f),
+   );
+   foreach(@f) { push @params, $data{$_} };
+
+
     my $sth = $dbh->prepare($query);
     #   print "Executing SQL: $query\n";
-    $sth->execute() or die sprintf "Failed to insert member data: %s\n", $dbh->errstr;
+    $sth->execute(@params) or die sprintf "Failed to insert member data: %s\n", $dbh->errstr;
     $sth->finish;
     $data{'borrowernumber'} = $dbh->{'mysql_insertid'};     # unneeded w/ autoincrement ?  
     # mysql_insertid is probably bad.  not necessarily accurate and mysql-specific at best.
@@ -859,6 +863,18 @@ sub AddMember {
     if ($enrolmentfee && $enrolmentfee > 0) {
         # insert fee in patron debts
         manualinvoice($data{'borrowernumber'}, '', '', 'A', $enrolmentfee);
+    }
+
+    # work libraries
+    if (@{$data{worklibrary}}) {
+        $sth = $dbh->prepare("DELETE FROM borrower_worklibrary
+        WHERE borrowernumber = ?") || die $dbh->errstr();
+        $sth->execute($data{borrowernumber});
+        foreach(@{$data{worklibrary}}) {
+            $sth = $dbh->prepare("INSERT INTO borrower_worklibrary
+            (borrowernumber,branchcode) VALUES(?,?)") || die $dbh->errstr();
+            $sth->execute($data{borrowernumber},$_) || die $dbh->errstr();
+        }
     }
     return $data{'borrowernumber'};
 }
@@ -1680,6 +1696,16 @@ data hashref for a comprehensive information display.
 If no category code provided, the function returns all the categories.
 
 =cut
+
+sub GetBorrowerFromUser
+{
+   my $userid = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT borrowernumber FROM borrowers
+   WHERE userid = ?") || die $dbh->errstr();
+   $sth->execute($userid) || die $dbh->errstr();
+   return ($sth->fetchrow_array)[0];
+}
 
 sub GetBorrowercategory {
     my ($catcode) = @_;

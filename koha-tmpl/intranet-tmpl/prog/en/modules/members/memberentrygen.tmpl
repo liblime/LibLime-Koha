@@ -699,19 +699,9 @@
   <fieldset class="rows" id="memberentry_library_management">
     <legend>Library Management</legend><ol>
     <li>
-      <!-- TMPL_IF NAME="mandatorybranchcode" -->
-        <label for="branchcode" class="required">
-      <!--TMPL_ELSE-->
-        <label for="branchcode">
-      <!-- /TMPL_IF-->
-      Library: </label>
-      <!-- TMPL_VAR NAME="CGIbranch" -->
-	  <!-- TMPL_IF NAME="mandatorybranchcode" --><span class="required">Required</span><!-- /TMPL_IF -->
-    </li>
-    <li>
     <!-- TMPL_IF NAME="typeloop" -->
         <label for="categorycode">Category: </label>
-        <select id="categorycode" name="categorycode">
+        <select id="categorycode" name="categorycode" onchange="showStaffLibrary()">>
         <!-- TMPL_LOOP NAME="typeloop" -->
 		<!-- TMPL_IF EXPR="typename eq 'C'" --><optgroup label="Child"><!-- /TMPL_IF -->
 		<!-- TMPL_IF EXPR="typename eq 'A'" --><optgroup label="Adult"><!-- /TMPL_IF -->
@@ -734,6 +724,27 @@
               <a href="/cgi-bin/koha/admin/categorie.pl">Please create one</a>
     <!-- /TMPL_IF -->
     </li>
+
+    <li>
+      <!-- TMPL_IF NAME="mandatorybranchcode" -->
+        <label for="branchcode" class="required">
+      <!--TMPL_ELSE-->
+        <label for="branchcode">
+      <!-- /TMPL_IF-->
+      Library: </label>
+      <select name="branchcode" id="branchcode" onchange="showStaffLibrary()">
+      <!-- TMPL_LOOP NAME="CGIbranch" -->
+      <option value="<!-- TMPL_VAR NAME="branchcode" -->" 
+      <!-- TMPL_VAR NAME="_sel" -->><!-- TMPL_VAR NAME="branchname" --></option>
+      <!-- /TMPL_LOOP -->
+      </select>
+	  <!-- TMPL_IF NAME="mandatorybranchcode" --><span class="required">Required</span><!-- /TMPL_IF -->
+    </li>
+
+    <li><label>Work Libraries:</label>
+    <div id="divwl"></div>
+    </li>
+
     <li>
       <!-- TMPL_IF NAME="mandatorysort1" -->
         <label for="sort1" class="required">
@@ -1075,6 +1086,41 @@
     </fieldset>
 </form>
 <script>
+   function selAllWorkLibs() {
+      var wl = document.getElementById('worklibrary');
+      for(var i=0; i<wl.options.length;i++) {
+         wl.options[i].selected = true;
+      }
+      wl.options[0].selected = false;
+   }
+   function showStaffLibrary() {
+      var cat = document.getElementById('categorycode').options[
+         document.getElementById('categorycode').selectedIndex].value;
+      var isStaff = (cat=='LS')?1:0;
+      var html = '';
+      if (isStaff==1) {
+         html = '<select id="worklibrary" name="worklibrary" multiple size=6>'
+         + '<!-- TMPL_VAR NAME="worklibs" -->'
+         + '</select>';
+      }
+      else {
+         html = document.getElementById('branchcode').options[
+            document.getElementById('branchcode').selectedIndex].value;
+      }
+      var el = document.getElementById('divwl');
+      el.innerHTML = html;
+      if (isStaff==1) {
+         var bc = document.getElementById('branchcode');
+         var wl = document.getElementById('worklibrary');
+         for(var i=0;i<wl.options.length;i++) {
+            if (wl.options[i].value==bc.options[bc.selectedIndex].value) {
+               wl.options[i].selected = true;
+            }
+         }
+      }
+   }
+   showStaffLibrary();
+
    $('#cardnumber').blur(function() {
       checkBarcode();
    });

@@ -42,7 +42,7 @@
     <!-- TMPL_LOOP NAME="ITEM_DATA" -->
     <div class="yui-g">
         <h3 id="item<!-- TMPL_VAR NAME="itemnumber" -->">Barcode <!-- TMPL_VAR NAME="barcode" -->  <!-- TMPL_IF name="notforloantext" --><!-- TMPL_VAR name="notforloantext" --> <!-- /TMPL_IF --></h3>
-        <div class="listgroup"><h4>Item Information <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" --><!-- TMPL_UNLESS name="nomod" --><a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber"-->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">[Edit Items]</a><!-- /TMPL_IF --><!-- /TMPL_UNLESS --></h4>
+        <div class="listgroup"><h4>Item Information <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" --><!-- TMPL_UNLESS name="nomod" --><!-- TMPL_UNLESS name="notmine" --><a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber"-->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">[Edit Items]</a><!-- /TMPL_UNLESS --><!-- /TMPL_IF --><!-- /TMPL_UNLESS --></h4>
             <ol class="bibliodetails">
             <li><span class="label">Home Library:</span> <!-- TMPL_VAR NAME="homebranchname" -->&nbsp;</li>
 	    <!-- TMPL_IF NAME="item-level_itypes" -->
@@ -136,10 +136,13 @@
             <!-- TMPL_IF NAME="wthdrawn" -->
                     <input type="hidden" name="wthdrawn" value="0" /><!-- TMPL_ELSE --><input type="hidden" name="wthdrawn" value="1" />
             <!-- /TMPL_IF -->
+
+            <!-- TMPL_UNLESS NAME="notmine" -->
             <!-- TMPL_IF NAME="wthdrawn" -->
                     <input type="submit" name="submit" class="submit" value="Restore" /><!-- TMPL_ELSE --><input type="submit" name="submit" class="submit" value="Withdraw" />
             <!-- /TMPL_IF -->
                     </form>
+            <!-- /TMPL_UNLESS -->
                 <!-- /TMPL_IF -->
             </li>
             <li><span class="label">Other Item Status:</span>
@@ -176,7 +179,7 @@
                     <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
                     <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" />
                     <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-                    <select name="suppress" >
+                    <select name="suppress" <!-- TMPL_IF NAME="notmine" -->readonly disabled<!-- /TMPL_IF --> />
             <!-- TMPL_LOOP NAME="itemsuppressloop" -->
                 <!-- TMPL_IF NAME="selected" -->
                     <option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option>
@@ -188,7 +191,9 @@
                     <input type="hidden" name="wthdrawn" value="<!-- TMPL_VAR NAME="wthdrawn" -->" />
                     <input type="hidden" name="itemlost" value="<!-- TMPL_VAR NAME="itemlost" -->" />
                     <input type="hidden" name="damaged" value="<!-- TMPL_VAR NAME="damaged" -->" />
+                    <!-- TMPL_UNLESS NAME="notmine" -->
                     <input type="submit" name="submit" class="submit" value="Set Status" /></form>
+                    <!-- /TMPL_UNLESS -->
                 <!-- TMPL_ELSE -->
                     <!-- TMPL_LOOP NAME="itemsuppressloop" -->
                         <!-- TMPL_IF NAME="selected" -->
@@ -219,7 +224,10 @@
                 <!-- TMPL_IF NAME="CAN_user_circulate" -->
               <form class="inline" action="updateitem.pl" method="post"><input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
                     <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" /><input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-                    <textarea name="itemnotes" rows="2" cols="30"><!-- TMPL_VAR NAME="itemnotes" --></textarea><input type="submit" name="submit" class="submit" value="Update" /> 
+                    <textarea name="itemnotes" rows="2" cols="30" <-- TMPL_IF NAME="notmine" -->readonly disabled<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="itemnotes" --></textarea>
+                    <!-- TMPL_UNLESS NAME="notmine" -->
+                    <input type="submit" name="submit" class="submit" value="Update" /> 
+                    <!-- /TMPL_UNLESS -->
               </form>
             </li>
             </ol>

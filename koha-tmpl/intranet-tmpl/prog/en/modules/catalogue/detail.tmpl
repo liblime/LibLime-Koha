@@ -44,13 +44,15 @@ function verify_images() {
 //]]>
 function barcodeMatch(barcode,itemnumber) {
    var q = '<!-- TMPL_VAR NAME="q" -->';
-   if (q == barcode) {
-      document.location.href='/cgi-bin/koha/catalogue/moredetail.pl'
-      +'?itemnumber='+itemnumber+'&biblionumber='
-      +<!-- TMPL_VAR NAME="biblionumber" -->+'&bi='
-      +<!-- TMPL_VAR NAME="biblionumber" -->
-      +'#item'+itemnumber;
-      return true;
+   if (q.match(/^\d{14}$/)) { // make sure this is a barcode
+      if (q == barcode) {
+         document.location.href='/cgi-bin/koha/catalogue/moredetail.pl'
+         +'?itemnumber='+itemnumber+'&biblionumber='
+         +<!-- TMPL_VAR NAME="biblionumber" -->+'&bi='
+         +<!-- TMPL_VAR NAME="biblionumber" -->
+         +'#item'+itemnumber;
+         return true;
+      }
    }
 }
 </script>

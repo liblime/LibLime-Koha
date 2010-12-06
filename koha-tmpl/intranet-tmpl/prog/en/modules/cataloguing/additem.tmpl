@@ -264,7 +264,10 @@ function set_to_today(id, force) {
          <li>&nbsp;</li>
     <!-- /TMPL_IF  -->
     <!-- TMPL_ELSE -->
+      <!-- TMPL_IF NAME="notmyitem" -->Cannot edit item outside of work library(ies)
+      <!-- TMPL_ELSE -->
          <!-- TMPL_INCLUDE NAME="item-fields.inc" -->
+      <!-- /TMPL_IF -->
     <!-- /TMPL_IF  -->
     </ol>
     </fieldset>
@@ -292,7 +295,9 @@ function set_to_today(id, force) {
     <input type="hidden" name="tag_0" value="<!-- TMPL_VAR NAME="itemtagfield" -->" />
     <input type="hidden" name="subfield_0" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
     <input type="hidden" name="field_value_0" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
+    <!-- TMPL_UNLESS NAME="notmyitem" -->
     <input type="submit" value="Save Changes" onclick="return Check(this.form)" /> 
+    <!-- /TMPL_UNLESS -->
     <!-- /TMPL_IF --></fieldset>
 
     </form>

@@ -82,6 +82,18 @@ my $order = GetOrder($ordernum);
 my $ccodes= GetKohaAuthorisedValues('items.ccode',$fw);
 my $itemtypes = GetItemTypes;
 
+# dealing w/ item ownership
+my $restrict = C4::Context->systempreference('EditAllLibraries') ?undef:1;
+my(@worklibs,%br);
+if ($restrict) {
+   use C4::Members;
+   @worklibs = C4::Members::GetWorkLibraries(_borrower());
+   $template->param('restrict'=>$restrict);
+   my $branches = C4::Branch::GetBranches();
+   my $tmp;
+   foreach(@worklibs) { $br{$_} = 1 } # this is better than grep
+}
+
 $data->{'itemtypename'} = $itemtypes->{$data->{'itemtype'}}->{'description'};
 $results[0]=$data;
 ($itemnumber) and @items = (grep {$_->{'itemnumber'} == $itemnumber} @items);
@@ -114,6 +126,7 @@ foreach my $item (@items){
                 $item->{'nomod'}=1;
         }
     }
+
     $item->{'homebranchname'} = GetBranchName($item->{'homebranch'});
     $item->{'holdingbranchname'} = GetBranchName($item->{'holdingbranch'});
     if ($item->{'datedue'}) {
@@ -121,6 +134,11 @@ foreach my $item (@items){
         $item->{'issue'}= 1;
     } else {
         $item->{'issue'}= 0;
+    }
+
+    # item ownership
+    if ($restrict && !$br{$$item{homebranch}}) {
+         $$item{notmine} = 1;
     }
 }
 $template->param(count => $data->{'count'},
@@ -141,3 +159,11 @@ $template->param(z3950_search_params => C4::Search::z3950_search_args(GetBiblioD
 
 output_html_with_http_headers $query, $cookie, $template->output;
 
+sub _borrower
+{
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT borrownumer FROM borrowers
+   WHERE userid = ?");
+   $sth->execute(C4::Context->userenv->{id});
+   return ($sth->fetchrow_array)[0];
+}

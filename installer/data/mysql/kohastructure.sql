@@ -2693,6 +2693,14 @@ CREATE TABLE `borrower_lists_tracking` (
   KEY `list_id` (`list_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `borrower_worklibrary` (
+  `borrowernumber` int(11)     NOT NULL DEFAULT 0,
+  `branchcode`     varchar(10) NOT NULL DEFAULT '',
+  PRIMARY KEY (borrowernumber,branchcode),
+  FOREIGN KEY (borrowernumber) REFERENCES borrowers(borrowernumber) ON DELETE CASCADE,
+  FOREIGN KEY (branchcode)     REFERENCES branches(branchcode) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

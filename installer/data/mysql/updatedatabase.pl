@@ -3851,6 +3851,35 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.02.006';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q/
+      INSERT INTO `systempreferences` (
+         variable,
+         value,
+         explanation,
+         options,
+         type) VALUES (
+      'EditAllLibraries',
+      '1',
+      'If set, all libraries have privileges to edit all items; if OFF, libraries may only edit items owned by their own library',
+      '',
+      'YesNo')
+    /);
+
+    $dbh->do(q|
+      -- this is a lookup table
+      CREATE TABLE `borrower_worklibrary` (
+         borrowernumber int(11)     NOT NULL DEFAULT 0,
+         branchcode     varchar(10) NOT NULL DEFAULT '',
+         PRIMARY KEY (borrowernumber,branchcode),
+         FOREIGN KEY (borrowernumber) REFERENCES borrowers(borrowernumber) ON DELETE CASCADE,
+         FOREIGN KEY (branchcode)     REFERENCES branches(branchcode) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    |);
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done (Added table for items ownership)\n";
+}
 
 =item DropAllForeignKeys($table)
 

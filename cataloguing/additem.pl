@@ -35,41 +35,6 @@ use C4::Reserves;
 
 use MARC::File::XML;
 
-sub find_value {
-    my ($tagfield,$insubfield,$record) = @_;
-    my $result;
-    my $indicator;
-    foreach my $field ($record->field($tagfield)) {
-        my @subfields = $field->subfields();
-        foreach my $subfield (@subfields) {
-            if (@$subfield[0] eq $insubfield) {
-                $result .= @$subfield[1];
-                $indicator = $field->indicator(1).$field->indicator(2);
-            }
-        }
-    }
-    return($indicator,$result);
-}
-
-sub get_item_from_barcode {
-    my ($barcode)=@_;
-    my $dbh=C4::Context->dbh;
-    my $result;
-    my $rq=$dbh->prepare("SELECT itemnumber from items where items.barcode=?");
-    $rq->execute($barcode);
-    ($result)=$rq->fetchrow;
-    return($result);
-}
-
-sub set_item_default_location {
-    my $itemnumber = shift;
-    if ( C4::Context->preference('NewItemsDefaultLocation') ) {
-        my $item = GetItem( $itemnumber );
-        $item->{'permanent_location'} = $item->{'location'};
-        $item->{'location'} = C4::Context->preference('NewItemsDefaultLocation');
-        ModItem( $item, undef, $itemnumber);
-    }
-}
 
 my $input = new CGI;
 my $dbh = C4::Context->dbh;
@@ -86,6 +51,7 @@ my ($template, $loggedinuser, $cookie)
                  debug => 1,
                  });
 
+my $restrict = C4::Context->systempreference('EditAllLibraries') ?undef:1;
 my $frameworkcode = &GetFrameworkCode($biblionumber);
 
 my $today_iso = C4::Dates->today('iso');
@@ -114,6 +80,8 @@ if ($op eq "additem") {
 
     # If we have to add or add & duplicate, we add the item
     if ($add_submit || $add_duplicate_submit) {
+
+   # note: if barcode validation is performed, this is already done/passed -hQ
 	# check for item barcode # being unique
 	my $exist_itemnumber = get_item_from_barcode($addedolditem->{'barcode'});
 	push @errors,"barcode_not_unique" if($exist_itemnumber);
@@ -325,10 +293,34 @@ warn Dumper \%witness;
 my ($holdingbrtagf,$holdingbrtagsubf) = &GetMarcFromKohaField("items.holdingbranch",$frameworkcode);
 @big_array = sort {$a->{$holdingbrtagsubf} cmp $b->{$holdingbrtagsubf}} @big_array;
 
+# determing working library(ies) edit/delete for EditAllLibraries=0
+my @worklibs;
+if ($restrict) {
+   my $usrCurrLib = C4::Context->userenv->{'branch'};
+   $usrCurrLib = '' if $usrCurrLib eq 'NO_LIBRARY_SET';
+   unless ($usrCurrLib) {
+      # need to set the current library
+      # warp speed out of here and come back later
+      print $input->redirect('/cgi-bin/koha/circ/selectbranchprinter.pl');
+      exit;
+   }
+   my $borrowernumber = C4::Members::GetBorrowerFromUser(
+      C4::Context->userenv->{id}
+   );
+   @worklibs = @{C4::Members::GetWorkLibraries($borrowernumber) || []};
+}
+$template->param(restrict=>$restrict);
+
 # now, construct template !
 # First, the existing items for display
 my @item_value_loop;
 my @header_value_loop;
+my $branches = GetBranches;
+my %br = (); # reverse branch hash
+foreach(keys %$branches) {
+   $br{$$branches{$_}{branchname}} = $_;
+}
+
 for my $row ( @big_array ) {
     my %row_data;
     my @item_fields = map +{ field => $_ || '' }, @$row{ sort keys(%witness) };
@@ -336,9 +328,23 @@ for my $row ( @big_array ) {
     $row_data{itemnumber} = $row->{itemnumber};
     $row_data{holds} = ( GetReservesFromItemnumber( $row->{itemnumber} ) );
     #reporting this_row values
+    if ($restrict) { # cmp permanent location w/ worklibraries
+        if (grep /^$br{$$row{a}}$/, @worklibs) {
+            $$row{nomod} = 0;
+        }
+        else {
+            $$row{nomod} = 1;
+        }
+    }
     $row_data{'nomod'} = $row->{'nomod'};
     push(@item_value_loop,\%row_data);
 }
+# re-sort, editable items on top
+@item_value_loop = sort {
+   $$a{nomod} <=> $$b{nomod}
+|| $$a{a}     cmp $$b{a}
+} @item_value_loop;
+
 foreach my $subfield_code (sort keys(%witness)) {
     my %header_value;
     $header_value{header_value} = $witness{$subfield_code};
@@ -351,8 +357,24 @@ my $item = C4::Form::AddItem::get_form_values( $tagslib, 0, {
                                                 wipe => \@omissions ,
                                                 make_today => \@today_fields,   
                                                 frameworkcode => $frameworkcode,
-
+                                                worklibs => \@worklibs,
                                               });
+
+if (@worklibs) { # item ownership
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT holdingbranch FROM items
+   WHERE itemnumber = ?");
+   $sth->execute($itemnumber);
+   my($holdingbranch) = ($sth->fetchrow_array)[0];
+   %br = ();
+   foreach(@worklibs) { $br{$_} = 1 };
+   if ($br{$holdingbranch}) {
+      # do nothing
+   }
+   else {
+      $template->param('notmyitem'=>1);
+   }
+}
 
 ## Move barcode field to the top of the list.
 my $barcode_index = 0;                                              
@@ -388,3 +410,40 @@ foreach my $error (@errors) {
     $template->param($error => 1);
 }
 output_html_with_http_headers $input, $cookie, $template->output;
+
+sub find_value {
+    my ($tagfield,$insubfield,$record) = @_;
+    my $result;
+    my $indicator;
+    foreach my $field ($record->field($tagfield)) {
+        my @subfields = $field->subfields();
+        foreach my $subfield (@subfields) {
+            if (@$subfield[0] eq $insubfield) {
+                $result .= @$subfield[1];
+                $indicator = $field->indicator(1).$field->indicator(2);
+            }
+        }
+    }
+    return($indicator,$result);
+}
+
+sub get_item_from_barcode {
+    my ($barcode)=@_;
+    my $dbh=C4::Context->dbh;
+    my $result;
+    my $rq=$dbh->prepare("SELECT itemnumber from items where items.barcode=?");
+    $rq->execute($barcode);
+    ($result)=$rq->fetchrow;
+    return($result);
+}
+
+sub set_item_default_location {
+    my $itemnumber = shift;
+    if ( C4::Context->preference('NewItemsDefaultLocation') ) {
+        my $item = GetItem( $itemnumber );
+        $item->{'permanent_location'} = $item->{'location'};
+        $item->{'location'} = C4::Context->preference('NewItemsDefaultLocation');
+        ModItem( $item, undef, $itemnumber);
+    }
+}
+
