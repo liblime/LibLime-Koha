@@ -1,7 +1,10 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Circulation &rsaquo; Holds Queue</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
-<style type="text/css"> p { margin-top: 0; }</style>
+<style type="text/css">
+p { margin-top: 0; }
+.action { font-size: 80%; }
+</style>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -34,13 +37,13 @@
 <table id="holdst">
 	<thead>
 	<tr>
-        <th>Title</th>
-        <th>Collection</th>
-        <th>Call Number</th>
-        <th>Barcode</th>
-		<th>Patron</th>
-        <th>Send To</th>
-        <th>Date</th>
+        <th>Title<span class="action"><a href="#" onClick="hideColumn(1)">[x]</a></span></th>
+        <th>Collection<span class="action"><a href="#" onClick="hideColumn(2)">[x]</a></span></th>
+        <th>Call Number<span class="action"><a href="#" onClick="hideColumn(3)">[x]</a></span></th>
+        <th>Barcode<span class="action"><a href="#" onClick="hideColumn(4)">[x]</a></span></th>
+        <th>Patron<span class="action"><a href="#" onClick="hideColumn(5)">[x]</a></span></th>
+        <th>Send To<span class="action"><a href="#" onClick="hideColumn(6)">[x]</a></span></th>
+        <th>Date<span class="action"><a href="#" onClick="hideColumn(7)">[x]</a></span></th>
     </tr>
 	</thead>
      <tbody><!-- TMPL_LOOP NAME="itemsloop"-->
@@ -57,9 +60,9 @@
             <td><!-- TMPL_VAR NAME="location" --> <!-- TMPL_VAR NAME="itemcallnumber"--> <!-- TMPL_VAR NAME="enumchron" --></td>
             <td>
                 <!-- TMPL_IF NAME="item_level_request" -->
-                    <em>Only Item: </em><!-- TMPL_VAR NAME="barcode" -->
+                    <!-- TMPL_VAR NAME="barcode" -->
                 <!-- TMPL_ELSE -->
-                     <!-- TMPL_VAR NAME="barcode" --> <em>or Any available copy</em>
+                    <em>Any copy</em>
                 <!-- /TMPL_IF -->
             </td>
 			<td><p><a href="/cgi-bin/koha/circ/circulation.pl?findborrower=<!-- TMPL_VAR NAME="cardnumber" -->#reserves"><!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR NAME="firstname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)</a></p> <p><!-- TMPL_VAR NAME="phone" --></p></td>
@@ -104,4 +107,18 @@
 </div>
 </div>
 </div>
+
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script type="application/javascript">
+
+$(document).ready(function() { 
+    $("table").tablesorter(); 
+}); 
+
+function hideColumn(n) {
+  $('th:nth-child('+n+')').hide();
+  $('td:nth-child('+n+')').hide();
+}
+
+</script>
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
