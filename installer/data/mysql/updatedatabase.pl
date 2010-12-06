@@ -3883,6 +3883,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = '4.03.03.000';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
