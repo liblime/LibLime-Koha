@@ -3816,6 +3816,13 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done (Added TalkingTechEnabled and TalkingTechFileName system preferences. Added ttcode column to the letter table)\n";
 }
 
+$DBversion = '4.03.02.003';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|CREATE INDEX object_index ON action_logs(`object`)|);
+    print "Upgrade to $DBversion done ( Create object index for action_logs )\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

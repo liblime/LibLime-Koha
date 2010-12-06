@@ -69,7 +69,8 @@ CREATE TABLE `action_logs` (
   `object` int(11) default NULL,
   `info` text,
   PRIMARY KEY (`action_id`),
-  KEY  (`timestamp`,`user`)
+  KEY  (`timestamp`,`user`),
+  KEY (`object`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
