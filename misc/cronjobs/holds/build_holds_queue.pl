@@ -282,7 +282,8 @@ sub MapItemsToHoldRequests {
         # look for local match first
 
         my $pickup_branch = $request->{branchcode};
-        my $local_holdallowed = exists $items_by_branch{$pickup_branch} ? _get_issuing_rule( $request, $items_by_branch{$pickup_branch}->[0] )->{holdallowed} : 0;
+        my $irule = _get_issuing_rule( $request, $items_by_branch{$pickup_branch}->[0] );
+        my $local_holdallowed = (exists $items_by_branch{$pickup_branch} and $irule) ? $irule->{holdallowed} : 0;
 
         if ($local_holdallowed and
             not (($local_holdallowed == 1 and
@@ -310,7 +311,8 @@ sub MapItemsToHoldRequests {
                 @pull_branches = sort keys %items_by_branch;
             }
             foreach my $branch (@pull_branches) {
-                $local_holdallowed = exists $items_by_branch{$branch} ? _get_issuing_rule( $request, $items_by_branch{$branch}->[0] )->{holdallowed} : 0;
+                my $irule = _get_issuing_rule( $request, $items_by_branch{$branch}->[0] );
+                $local_holdallowed = (exists $items_by_branch{$branch} and $irule) ? $irule->{holdallowed} : 0;
                 next unless $local_holdallowed and
                             not (($local_holdallowed == 1 and
                                  $request->{borrowerbranch} ne $items_by_branch{$branch}->[0]->{homebranch}));
@@ -416,6 +418,7 @@ sub AddToHoldTargetMap {
 
     foreach my $itemnumber (keys %$item_map) {
         my $mapped_item = $item_map->{$itemnumber};
+        next if not $itemnumber;
         $sth_insert->execute($mapped_item->{borrowernumber}, $mapped_item->{biblionumber}, $itemnumber,
                              $mapped_item->{holdingbranch}, $mapped_item->{item_level});
     }
