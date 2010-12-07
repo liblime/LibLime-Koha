@@ -162,7 +162,7 @@ output_html_with_http_headers $query, $cookie, $template->output;
 sub _borrower
 {
    my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("SELECT borrownumer FROM borrowers
+   my $sth = $dbh->prepare("SELECT borrowernumber FROM borrowers
    WHERE userid = ?");
    $sth->execute(C4::Context->userenv->{id});
    return ($sth->fetchrow_array)[0];
