@@ -960,6 +960,7 @@ CREATE TABLE `deleteditems` (
   `reserves` smallint(6) default NULL,
   `restricted` tinyint(1) default NULL,
   `itemnotes` mediumtext,
+  `checkinnotes` varchar(255) DEFAULT NULL,
   `holdingbranch` varchar(10) default NULL,
   `paidfor` mediumtext,
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,

@@ -3829,6 +3829,11 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
       ADD         `checkinnotes` varchar(255) NULL
       AFTER       `itemnotes`
     |);
+    $dbh->do(q|
+      ALTER TABLE `deleteditems`
+      ADD         `checkinnotes` varchar(255) NULL
+      AFTER       `itemnotes`
+    |);
 
     print "Upgrade to $DBversion done ( Added items.checkinnotes )\n";
     SetVersion ($DBversion);
