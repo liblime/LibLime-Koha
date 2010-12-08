@@ -132,7 +132,37 @@ BEGIN {
         &CanHoldMultipleItems
         &BorrowerHasReserve
     );
-}    
+}
+
+
+sub GetHoldsQueueItems 
+{
+	my ($branchlimit,$itemtypelimit) = @_;
+	my $dbh = C4::Context->dbh;
+
+   my @bind_params = ();
+	my $query = q/SELECT tmp_holdsqueue.*, biblio.author, items.ccode, items.location, items.enumchron, items.cn_sort, biblioitems.publishercode,biblio.copyrightdate,biblioitems.publicationyear,biblioitems.pages,biblioitems.size,biblioitems.publicationyear,biblioitems.isbn
+                  FROM tmp_holdsqueue
+                       JOIN biblio      USING (biblionumber)
+				  LEFT JOIN biblioitems USING (biblionumber)
+                  LEFT JOIN items       USING (  itemnumber)
+                /;
+    if ($branchlimit) {
+	    $query .=" WHERE tmp_holdsqueue.holdingbranch = ?";
+        push @bind_params, $branchlimit;
+    }
+    $query .= " ORDER BY ccode, location, cn_sort, author, title, pickbranch, reservedate";
+	my $sth = $dbh->prepare($query);
+	$sth->execute(@bind_params);
+	my $items = [];
+   use C4::Dates 'format_date';
+    while ( my $row = $sth->fetchrow_hashref ){
+		$row->{reservedate} = format_date($row->{reservedate});
+        push @$items, $row;
+    }
+    return $items;
+}
+
 
 =item AddReserve
 
@@ -1447,6 +1477,35 @@ sub ModReserveFill {
     unless ( $priority == 0 ) {
         _FixPriority( $biblionumber, $borrowernumber, $priority, $reservenumber );
     }
+
+    # delete from holds queue
+    foreach my $table(qw(tmp_holdsqueue hold_fill_targets)) {
+       $sth = $dbh->prepare("DELETE FROM $table
+          WHERE borrowernumber = ?
+          AND   biblionumber   = ?");
+       $sth->execute($borrowernumber,$biblionumber);
+    }
+    return;
+}
+
+sub ModReserveTrace
+{
+    my $res = shift;
+    my $dbh = C4::Context->dbh;
+
+    # update the database
+    my $sql = "UPDATE reserves
+              SET    found            = 'T',
+                     priority         = 0,
+                     expirationdate   = NULL
+              WHERE  biblionumber     = ?
+              AND    reservedate      = ?
+              AND    borrowernumber   = ?";
+    my $sth = $dbh->prepare($sql) || die $dbh->errstr();
+    $sth->execute( $$res{biblionumber}, $$res{resdate}, $$res{borrowernumber} );
+    $sth->finish;
+
+    return;
 }
 
 =item ModReserveStatus
@@ -2260,3 +2319,5 @@ Koha Developement team <info@koha.org>
 =cut
 
 1;
+__END__
+

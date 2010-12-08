@@ -1,0 +1,115 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation &rsaquo; Holds Queue</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<style type="text/css">
+p { margin-top: 0; }
+.action { font-size: 70%; }
+</style>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a>
+&rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a>
+&rsaquo; <a href="/cgi-bin/koha/circ/view_holdsqueue.pl">Holds Queue</a>
+</div>
+
+<div id="doc" class="yui-t7">
+<div id="bd">
+<div id="yui-main">
+   <div class="yui-g">
+
+<!-- TMPL_IF NAME="run_fill" -->
+<div class="dialog message">
+<b><!-- TMPL_VAR NAME="numfilled" --></b> 
+<!-- TMPL_VAR NAME="plurality" --> filled.
+</div>
+<!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="run_trace" -->
+<div class="dialog message">
+<b><!-- TMPL_VAR NAME="numtraced" --></b> record<!-- TMPL_VAR NAME="traced_plural" --> set to trace.<br>
+No action was taken on <!-- TMPL_VAR NAME="numnotraced" --> record<!-- TMPL_VAR NAME="notraced_plural" -->.
+</div>
+<!-- /TMPL_IF -->
+
+<!-- TMPL_IF NAME="run_fill" -->
+<form name="myf" id="myf" method="post" action="view_holdsqueue.pl">
+<input type="hidden" name="run_trace" value="1">
+<!-- TMPL_IF NAME="items" -->
+<h1>Items Needing Status Review</h1>
+<table border=0 cellspacing=0 cellpadding=4>
+<tr>
+   <th>Set To Trace<br>
+   <span class="action">
+   <input type=checkbox name="traceAll" value="1" 
+   onclick="checkAll()">Check All</span></th>
+   <th>Title</th>
+   <th>Collection</th>
+   <th>Call Number</th>
+   <th>Barcode</th>
+   <th>Passed to</th>
+</tr>
+<!-- TMPL_LOOP NAME="items" -->
+<input type=hidden name="nextlib_<!-- TMPL_VAR NAME="biblionumber" -->_<!-- TMPL_VAR NAME="borrowernumber" -->_<!-- TMPL_VAR NAME="itemnumber" -->" value="<!-- TMPL_VAR NAME="nextlib" -->">
+<input type=hidden name="level_<!-- TMPL_VAR NAME="biblionumber" -->_<!-- TMPL_VAR NAME="borrowernumber" -->_<!-- TMPL_VAR NAME="itemnumber" -->" value="<!-- TMPL_VAR NAME="item_level_request" -->">
+<tr>
+   <td><input type=checkbox name="trace" value="<!-- TMPL_VAR NAME="biblionumber" -->_<!-- TMPL_VAR NAME="borrowernumber" -->_<!-- TMPL_VAR NAME="itemnumber" -->">Trace</td>
+   <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a></td>
+   <td><!-- TMPL_VAR NAME="ccode" --></td>
+   <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
+   <td><!-- TMPL_VAR NAME="barcode" --></td>
+   <td><span class=action><!-- TMPL_VAR NAME="passedto" --></span></td></tr>
+<!-- /TMPL_LOOP -->
+</table><br>
+<input type=hidden name="cnt_notrace" value="0">
+<input type=button value="Submit" onclick="countNoTrace()">
+<input type=button value="Cancel" onclick="document.location.href=
+   'view_holdsqueue.pl';">
+<!-- TMPL_ELSE -->
+No items to pass to other libraries.
+<br><br>
+<input type=button value="Back to Holds Queue" onclick="document.location.href=
+   'view_holdsqueue.pl?branchlimit=<!-- TMPL_VAR NAME="branch" -->&run_report=1'
+">
+<input type=button value="Cancel" onclick="document.location.href=
+   'view_holdsqueue.pl'">
+<!-- /TMPL_IF -->
+
+</form>
+<script type="text/javascript">
+function countNoTrace() {
+   var cnt = 0;
+   if (document.myf.trace.length) {
+      for(var i=0;i<document.myf.trace.length;i++) {
+         if (document.myf.trace[i].checked) {}
+         else { cnt++ }
+      }
+   }
+   else {
+      if (document.myf.trace.checked) {}
+      else { cnt++ }
+   }
+   document.myf.cnt_notrace.value = cnt;
+   document.myf.submit();
+}
+function checkAll() {
+   if (document.myf.traceAll.checked) {
+      if (document.myf.trace.length) {
+         for(var i=0;i<document.myf.trace.length;i++) {
+            document.myf.trace[i].checked = true;
+         }
+      }
+      else {
+         document.myf.trace.checked = true;
+      }
+   }
+}
+</script>
+<!-- TMPL_ELSE -->
+<a href="view_holdsqueue.pl">Back to Holds Queue</a>
+<!-- /TMPL_IF --><!-- // end run fill -->
+</div>
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

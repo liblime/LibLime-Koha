@@ -29,8 +29,8 @@ use List::Util qw(shuffle);
 my $bibs_with_pending_requests = GetBibsWithPendingHoldRequests();
 
 my $dbh   = C4::Context->dbh;
-$dbh->do("DELETE FROM tmp_holdsqueue");  # clear the old table for new info
-$dbh->do("DELETE FROM hold_fill_targets");
+#$dbh->do("DELETE FROM tmp_holdsqueue");  # clear the old table for new info
+#$dbh->do("DELETE FROM hold_fill_targets");
 
 my $total_bibs            = 0;
 my $total_requests        = 0;
@@ -290,6 +290,7 @@ sub MapItemsToHoldRequests {
                  $request->{borrowerbranch} ne $items_by_branch{$pickup_branch}->[0]->{homebranch}))
            ) {
             my $item = pop @{ $items_by_branch{$pickup_branch} };
+            next unless $item;
             delete $items_by_branch{$pickup_branch} if scalar(@{ $items_by_branch{$pickup_branch} }) == 0;
             $item_map{$item->{itemnumber}} = { 
                                                 borrowernumber => $request->{borrowernumber},
@@ -364,14 +365,16 @@ sub CreatePicklistFromItemMap {
     my $item_map = shift;
 
      my $dbh = C4::Context->dbh;
+   # dupecheck
 
-    my $sth_load=$dbh->prepare("
+    my $insert_sql = "
         INSERT INTO tmp_holdsqueue (biblionumber,itemnumber,barcode,surname,firstname,phone,borrowernumber,
                                     cardnumber,reservedate,title, itemcallnumber,
                                     holdingbranch,pickbranch,notes, item_level_request)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    ");
+    ";
 
+    ITEM:
     foreach my $itemnumber  (sort keys %$item_map) {
         my $mapped_item = $item_map->{$itemnumber};
         my $biblionumber = $mapped_item->{biblionumber}; 
@@ -394,10 +397,18 @@ sub CreatePicklistFromItemMap {
    
         my $bib = GetBiblioData($biblionumber);
         my $title = $bib->{title}; 
-
-        $sth_load->execute($biblionumber, $itemnumber, $barcode, $surname, $firstname, $phone, $borrowernumber,
-                           $cardnumber, $reservedate, $title, $itemcallnumber,
-                           $holdingbranch, $pickbranch, $reservenotes, $item_level);
+        my $sth = $dbh->prepare("SELECT 1 FROM tmp_holdsqueue
+         WHERE biblionumber   = ?
+           AND itemnumber     = ?
+           AND borrowernumber = ?") || die $dbh->errstr();
+        $sth->execute($biblionumber,$itemnumber,$borrowernumber);
+        my $dupe = ($sth->fetchrow_array)[0];
+        next ITEM if $dupe;
+        my $sth_load = $dbh->prepare($insert_sql);
+        $sth_load->execute($biblionumber, $itemnumber, $barcode, 
+         $surname, $firstname, $phone, $borrowernumber,
+         $cardnumber, $reservedate, $title, $itemcallnumber,
+         $holdingbranch, $pickbranch, $reservenotes, $item_level);
     }
 }
 
@@ -407,20 +418,42 @@ sub CreatePicklistFromItemMap {
 
 sub AddToHoldTargetMap {
     my $item_map = shift;
-
     my $dbh = C4::Context->dbh;
 
     my $insert_sql = q(
-        INSERT INTO hold_fill_targets (borrowernumber, biblionumber, itemnumber, source_branchcode, item_level_request)
-                               VALUES (?, ?, ?, ?, ?)
+        INSERT INTO hold_fill_targets (
+         borrowernumber, biblionumber, itemnumber, 
+         source_branchcode, item_level_request)
+        VALUES (?, ?, ?, ?, ?)
     );
-    my $sth_insert = $dbh->prepare($insert_sql);
 
+    ITEM:
     foreach my $itemnumber (keys %$item_map) {
         my $mapped_item = $item_map->{$itemnumber};
         next if not $itemnumber;
-        $sth_insert->execute($mapped_item->{borrowernumber}, $mapped_item->{biblionumber}, $itemnumber,
-                             $mapped_item->{holdingbranch}, $mapped_item->{item_level});
+        
+        # dupecheck
+        my $sth = $dbh->prepare("SELECT 1 FROM hold_fill_targets
+         WHERE borrowernumber    = ?
+           AND biblionumber      = ?
+           AND itemnumber        = ?
+           AND source_branchcode = ?") || die $dbh->errstr();
+        $sth->execute(
+         $$mapped_item{borrowernumber},
+         $$mapped_item{biblionumber},
+         $itemnumber,
+         $$mapped_item{holdingbranch}
+        ) || die $dbh->errstr();
+        my($dupe) = ($sth->fetchrow_array)[0];
+        next ITEM if $dupe;
+        
+        my $sth_insert = $dbh->prepare($insert_sql);
+        $sth_insert->execute(
+         $mapped_item->{borrowernumber}, 
+         $mapped_item->{biblionumber}, 
+         $itemnumber,
+         $mapped_item->{holdingbranch}, 
+         $mapped_item->{item_level});
     }
 }
 
@@ -452,9 +485,9 @@ Looks up the issuing rule (for holdallowed) for a given request and item.
 
 sub _get_issuing_rule {
     my ($request, $item) = @_;
-
     my ($branch, $categorycode, $itemtype) = ($item->{'holdingbranch'}, $request->{'borrowercategory'}, $item->{'itype'});
-
+    $itemtype ||= '';
+    $branch   ||= '';
     $issuingrules{$branch}{$categorycode}{$itemtype} ||= GetIssuingRule( $categorycode, $itemtype, $branch );
 
     return $issuingrules{$branch}{$categorycode}{$itemtype};

@@ -225,7 +225,7 @@
                 <!-- TMPL_IF NAME="CAN_user_circulate" -->
               <form class="inline" action="updateitem.pl" method="post"><input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
                     <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" /><input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-                    <textarea name="itemnotes" rows="2" cols="30" <-- TMPL_IF NAME="notmine" -->readonly disabled<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="itemnotes" --></textarea>
+                    <textarea name="itemnotes" rows="2" cols="30" <!-- TMPL_IF NAME="notmine" -->readonly disabled<!-- /TMPL_IF --> /><!-- TMPL_VAR NAME="itemnotes" --></textarea>
                     <!-- TMPL_UNLESS NAME="notmine" -->
                     <input type="submit" name="submit" class="submit" value="Update" /> 
                     <!-- /TMPL_UNLESS -->
