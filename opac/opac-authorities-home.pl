@@ -66,7 +66,7 @@ if ( $op eq "do_search" ) {
     $resultsperpage = $query->param('resultsperpage');
     $resultsperpage = 20 if ( !defined $resultsperpage );
     my @tags;
-    my ( $results, $total, @fields ) =
+    my ( $results, $total ) =
       SearchAuthorities( \@marclist, \@and_or, \@excluding, \@operator,
         \@value, $startfrom * $resultsperpage,
         $resultsperpage, $authtypecode, $orderby );
@@ -126,7 +126,6 @@ if ( $op eq "do_search" ) {
         $to = ( ( $startfrom + 1 ) * $resultsperpage );
     }
     $template->param( result => $results ) if $results;
-    $template->param( FIELDS => \@fields );
     $template->param( orderby => $orderby );
     $template->param(
         startfrom      => $startfrom,

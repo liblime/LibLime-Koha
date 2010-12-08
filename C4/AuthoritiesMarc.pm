@@ -280,55 +280,59 @@ sub SearchAuthorities {
             warn  "oAuth error: $errmsg ($error) $addinfo $diagset\n";
             goto NOLUCK;
         }
-        
-        my $nbresults;
-        $nbresults=$oAResult->size();
-        my $nremains=$nbresults;    
-        my @result = ();
+
+        sub extractRecord {
+            my ($reslist, $n) = @_;
+            my $rec = $reslist->record($n++) || last;
+            my $marcdata = $rec->raw();
+            my $authrecord = MARC::File::USMARC::decode($marcdata);
+            my $authid = $authrecord->field('001')->data(); 
+            my $count = CountUsage($authid);
+            return ($authrecord, $authid, $count);
+        }
+
+        my $nbresults = $oAResult->size;
+        my @filtered_records;
+        for (my $i=0; $i < $oAResult->size && (scalar @filtered_records - $offset) < $length; $i++) {
+            my ($authrecord, $authid, $count) = extractRecord($oAResult, $i);
+            ($count) ? push (@filtered_records, {authrecord=>$authrecord, authid=>$authid, count=>$count}) :
+                $nbresults--;
+        }
+
         my @finalresult = ();
-        
         if ($nbresults>0){
-        
-        ##Find authid and linkid fields
-        ##we may be searching multiple authoritytypes.
-        ## FIXME this assumes that all authid and linkid fields are the same for all authority types
-        # my ($authidfield,$authidsubfield)=GetAuthMARCFromKohaField($dbh,"auth_header.authid",$authtypecode[0]);
-        # my ($linkidfield,$linkidsubfield)=GetAuthMARCFromKohaField($dbh,"auth_header.linkid",$authtypecode[0]);
-            while (($counter < $nbresults) && ($counter < ($offset + $length))) {
-            
-            ##Here we have to extract MARC record and $authid from ZEBRA AUTHORITIES
-            my $rec=$oAResult->record($counter);
-            my $marcdata=$rec->raw();
-            my $authrecord;
-            my $separator=C4::Context->preference('authoritysep');
-            $authrecord = MARC::File::USMARC::decode($marcdata);
-            my $authid=$authrecord->field('001')->data(); 
-            my $summary=BuildSummary($authrecord,$authid,$authtypecode);
-            my $query_auth_tag = "SELECT auth_tag_to_report FROM auth_types WHERE authtypecode=?";
-            my $sth = $dbh->prepare($query_auth_tag);
-            $sth->execute($authtypecode);
-            my $auth_tag_to_report = $sth->fetchrow;
-            my $reported_tag;
-            my $mainentry = $authrecord->field($auth_tag_to_report);
-            if ($mainentry) {
-                foreach ($mainentry->subfields()) {
-                    $reported_tag .='$'.$_->[0].$_->[1];
+
+            sub getReportedTag {
+                my ($authrecord, $authtypecode) = @_;
+                my $query_auth_tag = "SELECT auth_tag_to_report FROM auth_types WHERE authtypecode=?";
+                my $sth = $dbh->prepare($query_auth_tag);
+                $sth->execute($authtypecode);
+                my $auth_tag_to_report = $sth->fetchrow;
+                my $reported_tag;
+                my $mainentry = $authrecord->field($auth_tag_to_report);
+                if ($mainentry) {
+                    foreach ($mainentry->subfields()) {
+                        $reported_tag .='$'.$_->[0].$_->[1];
+                    }
                 }
+                return $reported_tag;
             }
-            my %newline;
-            $newline{summary} = $summary;
-            $newline{authid} = $authid;
-            $newline{even} = $counter % 2;
-            $newline{reported_tag} = $reported_tag;
-            $counter++;
-            push @finalresult, \%newline;
-            }## while counter
-        ###
-        for (my $z=0; $z<@finalresult; $z++){
-                my  $count=CountUsage($finalresult[$z]{authid});
-                $finalresult[$z]{used}=$count;
-        }# all $z's
-        
+
+            while (($counter < $nbresults) && ($counter < ($offset + $length))) {
+                my $res = $filtered_records[$counter];
+                my $summary = BuildSummary($res->{authrecord}, $res->{authid}, $authtypecode);
+                my $reported_tag = getReportedTag($res->{authrecord}, $authtypecode);
+                my %newline = (
+                    summary => $summary,
+                    authid => $res->{authid},
+                    even => $counter % 2,
+                    reported_tag => $reported_tag,
+                    used => $res->{count},
+                );
+                $counter++;
+                push @finalresult, \%newline;
+            }
+
         }## if nbresult
         NOLUCK:
         # $oAResult->destroy();
