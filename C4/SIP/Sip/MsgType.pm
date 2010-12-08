@@ -19,6 +19,7 @@ use Data::Dumper;
 use CGI;
 use C4::Context;
 use C4::Auth qw(&check_api_auth);
+use C4::Biblio;
 
 use UNIVERSAL qw(can);	# make sure this is *after* C4 modules.
 
@@ -907,7 +908,9 @@ sub summary_info {
 
     syslog("LOG_DEBUG", "summary_info: list = (%s)", join(", ", @{$itemlist}));
     foreach my $i (@{$itemlist}) {
-        $resp .= add_field($fid, $i);
+        my $bibitem = GetBiblioFromItemNumber($i->{itemnumber});
+        my $bctitle = $bibitem->{barcode} . " " . $bibitem->{title};
+        $resp .= add_field($fid, $bctitle);
     }
 
     return $resp;
