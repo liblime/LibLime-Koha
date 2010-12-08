@@ -1096,7 +1096,14 @@
    function showStaffLibrary() {
       var cat = document.getElementById('categorycode').options[
          document.getElementById('categorycode').selectedIndex].value;
-      var isStaff = (cat=='LS')?1:0;
+      var staffCats = new Array();
+      staffCats = [<!-- TMPL_VAR NAME="jsStaff" -->];
+      var isStaff = 0;
+      for(var i=0;i<staffCats.length;i++) { // poor man's grep
+         if (staffCats[i]==cat) {
+            isStaff = 1;
+         }
+      }
       var html = '';
       if (isStaff==1) {
          html = '<select id="worklibrary" name="worklibrary" multiple size=6>'

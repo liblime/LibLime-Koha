@@ -360,6 +360,18 @@ the value "1".
 
 =cut
 
+# not an exported function
+# used to get patron categories that are of type 'S' staff
+sub GetStaffCategories
+{
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT categorycode FROM categories
+      WHERE category_type = 'S'");
+   $sth->execute();
+   my @all = $sth->fetchrow_array();
+   return wantarray? @all : \@all;
+}
+
 sub GetMemberDetails {
     my ( $borrowernumber, $cardnumber, $circ_session ) = @_;
     $circ_session ||= {};

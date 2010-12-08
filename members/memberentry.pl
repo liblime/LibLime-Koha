@@ -156,7 +156,15 @@ foreach my $branch(keys %$branches) {
    $worklibs .= qq|<option $sel value="$branch">$$branches{$branch}{branchname}|;
 }
 $worklibs = qq|<option value="" onclick="selAllWorkLibs()">All Libraries$worklibs|;
-$template->param('worklibs'=>$worklibs);
+
+# build a javascript array for category_type='S' (staff)
+my @staffCategories = C4::Members::GetStaffCategories();
+my $jsStaff = join("','",@staffCategories);
+$jsStaff = "'$jsStaff'";
+$template->param(
+   worklibs => $worklibs,
+   jsStaff  => $jsStaff,
+);
 
 # if add or modify is requested => check validity of data.
 %data = %$borrower_data if ($borrower_data);
