@@ -83,7 +83,7 @@ my $ccodes= GetKohaAuthorisedValues('items.ccode',$fw);
 my $itemtypes = GetItemTypes;
 
 # dealing w/ item ownership
-my $restrict = C4::Context->systempreference('EditAllLibraries') ?undef:1;
+my $restrict = C4::Context->preference('EditAllLibraries') ?undef:1;
 my(@worklibs,%br);
 if ($restrict) {
    use C4::Members;

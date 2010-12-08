@@ -253,7 +253,9 @@ function set_to_today(id, force) {
 
     <!-- TMPL_ELSE -->
         <a name="edititem"></a>
+        <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
         <h2>Edit Item #<!-- TMPL_VAR NAME="itemnumber" --></h2>
+        <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
 	<fieldset class="rows">
 	<ol>
@@ -264,9 +266,11 @@ function set_to_today(id, force) {
          <li>&nbsp;</li>
     <!-- /TMPL_IF  -->
     <!-- TMPL_ELSE -->
-      <!-- TMPL_IF NAME="notmyitem" -->Cannot edit item outside of work library(ies)
+      <!-- TMPL_IF NAME="notmyitem" -->No permission to edit item
       <!-- TMPL_ELSE -->
+         <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
          <!-- TMPL_INCLUDE NAME="item-fields.inc" -->
+         <!-- /TMPL_IF -->
       <!-- /TMPL_IF -->
     <!-- /TMPL_IF  -->
     </ol>
@@ -292,12 +296,14 @@ function set_to_today(id, force) {
     </span>
 
     <!-- TMPL_ELSE -->
+      <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
     <input type="hidden" name="tag_0" value="<!-- TMPL_VAR NAME="itemtagfield" -->" />
     <input type="hidden" name="subfield_0" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
     <input type="hidden" name="field_value_0" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
-    <!-- TMPL_UNLESS NAME="notmyitem" -->
+         <!-- TMPL_UNLESS NAME="notmyitem" -->
     <input type="submit" value="Save Changes" onclick="return Check(this.form)" /> 
-    <!-- /TMPL_UNLESS -->
+         <!-- /TMPL_UNLESS -->
+      <!-- /TMPL_IF -->
     <!-- /TMPL_IF --></fieldset>
 
     </form>

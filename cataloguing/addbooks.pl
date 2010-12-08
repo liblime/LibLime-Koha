@@ -83,15 +83,15 @@ if ($query) {
     my $total = scalar @$marcresults;
     my @newresults = searchResults( $query, $total, $results_per_page, 0, 0, 0, @$marcresults );
 
-    # try to find exact match and warp speed to Edit Items
+   # try to find exact match and warp speed to Edit Items
    foreach my $result(@newresults) {
       my(@barcodes) = split(/\s*\|\s*/,$$result{barcode});
-      foreach my $barcode(@barcodes) {
-         if ($barcode eq $input->param('q')) { # exact match
+      foreach my $i(0..$#barcodes) {
+         if ($barcodes[$i] eq $input->param('q')) { # exact search match on barcode
             my @inums = split(/\s*\|\s*/, $$result{itemnumber});
             print $input->redirect('additem.pl?biblionumber='
             . $$result{biblionumber}.'&op=edititem&itemnumber='
-            . $inums[0].'#edititem'
+            . $inums[$i].'#edititem'
             );
             exit;
          }

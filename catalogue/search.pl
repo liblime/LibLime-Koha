@@ -577,11 +577,19 @@ for (my $i=0;$i<@servers;$i++) {
             } elsif  ($defaultview eq 'labeled_marc' && $views->{can_view_labeledMARC}) {
                 print $cgi->redirect("/cgi-bin/koha/catalogue/labeledMARCdetail.pl?biblionumber=$biblionumber");
             } else {
-               if ($cgi->param('q') !~ /\D/) { # guess that it's a barcode
+               # warp to item view for a barcode
+               if (  ($cgi->param('q') !~ /\D/)  
+                 &&  (length($cgi->param('q'))==14) ) { # guess that it's a barcode
                   my @inums = split(/\s*\|\s*/,$newresults[0]->{itemnumber});
-                  my $itemnumber = $inums[0];
+                  my @bc    = split(/\s*\|\s*/,$newresults[0]->{barcode});
+                  my $itemnumber;
+                  for my $i(0..$#bc) {
+                     if ($cgi->param('q')==$bc[$i]) {
+                        $itemnumber = $inums[$i];
+                     }
+                  }
                   print $cgi->redirect('/cgi-bin/koha/catalogue/moredetail.pl'
-                  ."?itemnumber=$itemnumber&biblionumber=$biblionumber"
+                  ."?biblionumber=$biblionumber"
                   ."&bi=$biblionumber#item$itemnumber");
                   exit;
                }

@@ -179,6 +179,7 @@ if ($op eq "additem") {
 } elsif ($op eq "edititem") {
 #-------------------------------------------------------------------------------
 # retrieve item if exist => then, it's a modif
+
     $itemrecord = C4::Items::GetMarcItem($biblionumber,$itemnumber);
     $nextop = "saveitem";
 #-------------------------------------------------------------------------------
