@@ -1551,7 +1551,7 @@ CREATE TABLE `old_reserves` (
   `waitingdate` date default NULL,
   `expirationdate` date default NULL,
   `lowestPriority` tinyint(1) NOT NULL,
-  `displayexpired` tinyint(1) NOT NULL default 1
+  `displayexpired` tinyint(1) NOT NULL default 1,
   KEY `old_reserves_borrowernumber` (`borrowernumber`),
   KEY `old_reserves_biblionumber` (`biblionumber`),
   KEY `old_reserves_itemnumber` (`itemnumber`),
