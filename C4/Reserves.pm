@@ -1373,7 +1373,6 @@ whose keys are fields from the reserves table in the Koha database.
 
 sub ModReserveFill {
     my ($res) = @_;
-warn "ModReserveFill($res)";
     my $dbh = C4::Context->dbh;
     # fill in a reserve record....
     my $biblionumber = $res->{'biblionumber'};

@@ -1346,8 +1346,6 @@ sub check_override_perms {
     my ( $userid, $override_user, $override_pass, $flags ) = @_;
     my $dbh = C4::Context->dbh;
 
-    warn "check_override_perms( $userid, $override_user, $override_pass, " . values( %$flags ) . " )\n";
-
     return 1 if ( haspermission( $userid, $flags ) );
 
     return 1 if ( $override_user && checkpw( $dbh, $override_user, $override_pass, 0, 1 ) && haspermission( $override_user, $flags ) );
