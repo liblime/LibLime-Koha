@@ -368,7 +368,10 @@ sub GetStaffCategories
    my $sth = $dbh->prepare("SELECT categorycode FROM categories
       WHERE category_type = 'S'");
    $sth->execute();
-   my @all = $sth->fetchrow_array();
+   my @all = ();
+   while (my $row = $sth->fetchrow_hashref()) {
+      push @all, $row->{categorycode};
+   }
    return wantarray? @all : \@all;
 }
 
