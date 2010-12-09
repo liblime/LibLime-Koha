@@ -2757,8 +2757,8 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 # now populate unique keys in reserves & old_reserves.
     my $sth_old_reserves = $dbh->prepare("SELECT borrowernumber,priority,biblionumber ,reservedate,timestamp FROM old_reserves");
     my $sth_reserves = $dbh->prepare("SELECT borrowernumber,priority, biblionumber ,reservedate,timestamp FROM reserves");
-    my $sth_old_reserves_update = $dbh->prepare("UPDATE `old_reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? AND reservenumber IS NULL limit 1");
-    my $sth_reserves_update = $dbh->prepare("UPDATE `reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? AND reservenumber IS NULL limit 1");
+    my $sth_old_reserves_update = $dbh->prepare("UPDATE `old_reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? AND (reservenumber IS NULL OR reservenumber=0) limit 1");
+    my $sth_reserves_update = $dbh->prepare("UPDATE `reserves` SET reservenumber=? where borrowernumber=? and priority = ? AND biblionumber =? AND reservedate=? AND timestamp=? AND (reservenumber IS NULL OR reservenumber=0) limit 1");
     my $id = 0;
     $sth_old_reserves->execute();
     my ($bornum, $priority , $biblionumber, $reservedate, $timestamp);
