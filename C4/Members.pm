@@ -597,8 +597,8 @@ LEFT JOIN categories on borrowers.categorycode=categories.categorycode
     if ($$data{category_type} eq 'S') { # staff
         $sth = $dbh->prepare("SELECT branchcode as worklibrary
         FROM borrower_worklibrary
-        WHERE borrowernumber = ?");
-        $sth->execute($$data{borrowernumber});
+        WHERE borrowernumber = ?") || die $dbh->errstr();
+        $sth->execute($$data{borrowernumber}) || die $dbh->errstr();
         while(my $row = $sth->fetchrow_hashref()) {
            push @{$$data{worklibraries}}, $$row{worklibrary};
         }
@@ -784,6 +784,7 @@ sub ModMember {
    foreach(@$worklibraries) {
        $sth = $dbh->prepare("INSERT INTO borrower_worklibrary
        (borrowernumber,branchcode) VALUES (?,?)");
+       $sth->execute($data{borrowernumber},$_);
    }
 
     return $execute_success;
@@ -839,7 +840,7 @@ sub AddMember {
    $data{exclude_from_collection} ||= 0;
    my @f = qw(cardnumber surname firstname title othernames initials
       streetnumber streettype address address2 zipcode country city
-      phone email mobile phonepro opacenote guarantorid dateofbirth
+      phone email mobile phonepro opacnote guarantorid dateofbirth
       branchcode categorycode dateenrolled contactname
       borrowernotes dateexpiry contactnote
       B_address B_address2 B_zipcode B_country B_city B_email
@@ -847,7 +848,7 @@ sub AddMember {
       password userid sort1 sort2
       contacttitle emailpro contactfirstname
       sex fax relationship gonenoaddress
-      exclude_from_collection lsot debarred
+      exclude_from_collection lost debarred
       ethnicity ethnotes
       altcontactsurname altcontactfirstname
       altcontactaddress1 altcontactaddress2 altcontactaddress3
