@@ -2611,6 +2611,37 @@ CREATE TABLE IF NOT EXISTS lost_items (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `import_profiles`;
+CREATE TABLE `import_profiles` (
+        profile_id int(11) AUTO_INCREMENT,
+        description varchar(50) NOT NULL,
+        matcher_id int(11) DEFAULT NULL,
+        template_id int(11) DEFAULT NULL,
+        overlay_action enum('replace','create_new','use_template','ignore') NOT NULL DEFAULT 'create_new',
+        nomatch_action enum('create_new','ignore') NOT NULL DEFAULT 'create_new',
+        parse_items tinyint(1) DEFAULT 1,
+        item_action enum('always_add','add_only_for_matches','add_only_for_new','ignore') NOT NULL DEFAULT 'always_add',
+        PRIMARY KEY (profile_id),
+        KEY (description)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `import_profile_added_items`;
+CREATE TABLE import_profile_added_items (
+        profile_id int(11) DEFAULT NULL,
+        marcxml text COLLATE utf8_general_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `import_profile_subfield_actions`;
+CREATE TABLE import_profile_subfield_actions (
+        profile_id int(11) NOT NULL DEFAULT '0',
+        tag char(3) COLLATE utf8_general_ci NOT NULL DEFAULT '',
+        subfield char(1) COLLATE utf8_general_ci NOT NULL DEFAULT '',
+        action enum('add_always','add','delete') COLLATE utf8_general_ci DEFAULT NULL,
+        contents varchar(255) COLLATE utf8_general_ci DEFAULT NULL,
+        PRIMARY KEY (profile_id,tag,subfield),
+        CONSTRAINT import_profile_subfield_actions_ibfk_1 FOREIGN KEY (profile_id) REFERENCES import_profiles (profile_id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
