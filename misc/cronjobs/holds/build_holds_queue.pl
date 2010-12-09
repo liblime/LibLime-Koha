@@ -169,6 +169,16 @@ sub GetItemsAvailableToFillHoldRequestsForBib {
     my @branches_to_use = @_;
 
     my $dbh = C4::Context->dbh;
+
+    my $subquery = q|SELECT itemnumber
+                     FROM reserves
+                     WHERE biblionumber = ?
+                     AND itemnumber IS NOT NULL
+                     AND (found IS NOT NULL OR priority = 0)
+                    |;
+    my $item_set = $dbh->selectcol_arrayref($subquery, undef, $biblionumber);
+    my $item_set_placeholders = join ',', split(//, '?' x scalar @{$item_set});
+
     my $items_query = "SELECT itemnumber, homebranch, holdingbranch, itemtypes.itemtype AS itype
                        FROM items ";
 
@@ -178,22 +188,20 @@ sub GetItemsAvailableToFillHoldRequestsForBib {
         $items_query .=   "JOIN biblioitems USING (biblioitemnumber)
                            LEFT JOIN itemtypes USING (itemtype) ";
     }
-    $items_query .=   "WHERE items.notforloan = 0
-                       AND holdingbranch IS NOT NULL
-                       AND itemlost = 0
-                       AND wthdrawn = 0
-                       AND items.onloan IS NULL
-                       AND (itemtypes.notforloan IS NULL OR itemtypes.notforloan = 0)
-                       AND itemnumber NOT IN (
-                           SELECT itemnumber
-                           FROM reserves
-                           WHERE biblionumber = ?
-                           AND itemnumber IS NOT NULL
-                           AND (found IS NOT NULL OR priority = 0)
-                        )
-                       AND biblionumber = ?";
+    $items_query .= q|WHERE items.notforloan = 0
+                      AND biblionumber = ?
+                      AND holdingbranch IS NOT NULL
+                      AND itemlost = 0
+                      AND wthdrawn = 0
+                      AND items.onloan IS NULL
+                      AND (itemtypes.notforloan IS NULL OR itemtypes.notforloan = 0)
+                     |;
+    my @params = ($biblionumber);
     $items_query .= " AND damaged = 0" if (!C4::Context->preference('AllowHoldsOnDamagedItems'));
-    my @params = ($biblionumber, $biblionumber);
+    if (@{$item_set}) {
+        $items_query .= " AND itemnumber NOT IN ($item_set_placeholders)";
+        push @params, @{$item_set};
+    }
     if ($#branches_to_use > -1) {
         $items_query .= " AND holdingbranch IN (" . join (",", map { "?" } @branches_to_use) . ")";
         push @params, @branches_to_use;
@@ -292,6 +300,7 @@ sub MapItemsToHoldRequests {
             my $item = pop @{ $items_by_branch{$pickup_branch} };
             next unless $item;
             delete $items_by_branch{$pickup_branch} if scalar(@{ $items_by_branch{$pickup_branch} }) == 0;
+            $item->{itemnumber} //= '';
             $item_map{$item->{itemnumber}} = { 
                                                 borrowernumber => $request->{borrowernumber},
                                                 biblionumber => $request->{biblionumber},
@@ -485,10 +494,8 @@ Looks up the issuing rule (for holdallowed) for a given request and item.
 
 sub _get_issuing_rule {
     my ($request, $item) = @_;
-    my ($branch, $categorycode, $itemtype) = ($item->{'holdingbranch'}, $request->{'borrowercategory'}, $item->{'itype'});
-    $itemtype ||= '';
-    $branch   ||= '';
-    $issuingrules{$branch}{$categorycode}{$itemtype} ||= GetIssuingRule( $categorycode, $itemtype, $branch );
+    my ($branch, $categorycode, $itemtype) =
+        ($item->{'holdingbranch'}, $request->{'borrowercategory'}, $item->{'itype'});
 
-    return $issuingrules{$branch}{$categorycode}{$itemtype};
+    return GetIssuingRule( $categorycode, $itemtype, $branch );
 }
