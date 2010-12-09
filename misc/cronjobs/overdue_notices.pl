@@ -535,7 +535,7 @@ END_SQL
                           );
                     }
                 }
-                if (C4::Context->preference('TalkingTechEnabled') {
+                if (C4::Context->preference('TalkingTechEnabled')) {
                   C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},$i);
                 }
             }
@@ -746,7 +746,7 @@ END_SQL
                           );
                     }
                 }
-                if (C4::Context->preference('TalkingTechEnabled') {
+                if (C4::Context->preference('TalkingTechEnabled')) {
                   C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},$i);
                 }
             }
