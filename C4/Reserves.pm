@@ -990,6 +990,8 @@ sub GetReserve_NextLocalReserve {
       $reserve = $r if ( $r->{'branchcode'} eq $branchcode && $r->{'priority'} < $reserve->{'priority'} );
   }
 
+  # Itemnumber was never getting set
+  $reserve->{'itemnumber'} = $itemnumber;
   return $reserve if ( defined $reserve->{'branchcode'} );
 }
 
@@ -1014,9 +1016,11 @@ sub GetReserve_OldestReserve {
 
   my @reserves = _Findgroupreserve( $biblioitemnumber, $biblionumber, $itemnumber );
   foreach my $r (@reserves) {
-      $reserve = $r if ( $r->{'timestamp'} > $reserve->{'timestamp'} );
+      $reserve = $r if ( $r->{'timestamp'} > $reserve->{'timestamp'} ); # Isn't $reserve->{'timestamp'} undefined?
   }
   
+  # Itemnumber was never getting set
+  $reserve->{'itemnumber'} = $itemnumber;
   return $reserve if ( defined $reserve->{'branchcode'} );
 }
 
