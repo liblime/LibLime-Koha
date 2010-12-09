@@ -80,16 +80,6 @@ my $HoldButtonConfirm = (C4::Context->preference('HoldButtonConfirm'));
 my $HoldButtonIgnore = (C4::Context->preference('HoldButtonIgnore'));
 my $HoldButtonPrintConfirm = (C4::Context->preference('HoldButtonPrintConfirm'));
 
-# my $lost_item_returned = $query->param('lost_item_returned');
-# warn "LIR: $lost_item_returned\n";
-# if (C4::Context->preference('LinkLostItemsToPatron')) {
-#   if ($lost_item_returned) {
-#     my $itemnumber = GetItemnumberFromBarcode($barcode);
-#     my $lost_item = C4::LostItems::GetLostItem($itemnumber);
-#     C4::LostItems::DeleteLostItem($lost_item->{id});
-#   }
-# }
-
 my $userenv_branch = C4::Context->userenv->{'branch'} || '';
 #
 # Some code to handle the error if there is no branch or printer setting.....
@@ -199,9 +189,7 @@ if ($dotransfer){
 }
 
 my $lost_item_returned = $query->param('lost_item_returned');
-warn "LIR: $lost_item_returned\n";
 if (C4::Context->preference('LinkLostItemsToPatron')) {
-  warn "BARCODE: $barcode\n";
   if ($lost_item_returned) {
     my $itemnumber = GetItemnumberFromBarcode($barcode);
     my $lost_item = C4::LostItems::GetLostItem($itemnumber);
