@@ -583,7 +583,7 @@ sub csv_data {
 sub _split_author
 {
    my $str = shift;
-   my @parts = split(/\,\s*/, $str);
+   my @parts = split(/\,?\s*/, $str);
    return @parts;
 }
 

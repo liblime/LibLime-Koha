@@ -37,19 +37,19 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 
 my $barcode = $query->param('barcode');
-
 my $dbh = C4::Context->dbh;
 my $sth;
 my $item;
-my $sql = "SELECT * FROM biblio, biblioitems, items 
-          WHERE biblio.biblionumber = items.biblionumber 
-          AND biblioitems.biblioitemnumber = items.biblioitemnumber 
-          AND items.barcode = ?";
+my $sql = q|
+SELECT * FROM biblio, biblioitems, items 
+ WHERE biblio.biblionumber = items.biblionumber 
+   AND biblioitems.biblioitemnumber = items.biblioitemnumber 
+   AND items.barcode = ?|;
 $sth = $dbh->prepare($sql);
 $sth->execute($barcode);
 $item = $sth->fetchrow_hashref;
 
-unless (defined $item) {
+unless ($item) {
   $template->param( 'Barcode' => $barcode );
   $template->param( 'BarcodeNotFound' => 1 );
 }
@@ -71,8 +71,9 @@ my $cookie3 = $query->cookie(
 # this won't disturb cookies already set
 $cookie = [$cookie1,$cookie2,$cookie3];
 
-my @tmp;
+my @all;
 foreach my $f(split(/\,/, $$lay{format_string})) {
+   my @tmp;
    $f =~ s/^\s+//g; $f =~ s/\s+$//g; # trim wrapping spaces
    if ($f eq 'itemcallnumbr') {
       @tmp = _split(
@@ -81,24 +82,25 @@ foreach my $f(split(/\,/, $$lay{format_string})) {
          $$lay{break_rule_string}
       );
    }
-   elsif ($f eq 'author') {
-      push @tmp, _split(
-         $$item{author},
-         'author'
-      );
-   }
-   elsif ($f eq 'title') {
-      push @tmp, _split(
-         $$item{title},
-         'title'
-      );
-   }
+#   elsif ($f eq 'author') {
+#      @tmp = _split(
+#         $$item{author},
+#         'author'
+#      );
+#   }
+#   elsif ($f eq 'title') {
+#      @tmp = _split(
+#         $$item{title},
+#         'title'
+#      );
+#   }
    elsif (grep /^$f$/, keys %$item) {
-      push @tmp, $$item{$f};
+      @tmp = ($$item{$f});
    }
    elsif ($f) {
-      push @tmp, $f;
+      @tmp = ($f);
    }
+   push @all, join(' ',@tmp);
 }
 
 if ($prefix ne '') {
@@ -114,13 +116,13 @@ if ($prefix ne '') {
    while(my $row = $sth->fetchrow_hashref()) {
       if ($prefix eq 'LOC') {
          if ($$item{permanent_location} eq $$row{authorised_value}) {
-            unshift @tmp, $$row{prefix} || undef;
+            unshift @all, $$row{prefix} || undef;
             last PREFIX;
          }
       }
       elsif ($prefix eq 'CCODE') {
          if ($$item{ccode} eq $$row{authorised_value}) {
-            unshift @tmp, $$row{prefix} || undef;
+            unshift @all, $$row{prefix} || undef;
             last PREFIX;
          }
       }
@@ -128,7 +130,7 @@ if ($prefix ne '') {
 }
 
 my @body;
-foreach(@tmp) {
+foreach(@all) {
    next unless $_;
    push @body, $_;
 }
@@ -178,6 +180,20 @@ $template->param(
 
 output_html_with_http_headers $query, $cookie, $template->output;
 exit;
+
+sub _split
+{
+   my($s,$how,$re) = @_;
+   my @p;
+   if ($how eq 'custom')   { @p = C4::Labels::Label::_split_custom($s,$re) }
+   elsif ($how eq 'lccn')  { @p = C4::Labels::Label::_split_lccn($s)       }
+   elsif ($how eq 'ddcn')  { @p = C4::Labels::Label::_split_ddcn($s)       }
+   elsif ($how eq 'author'){ @p = C4::Labels::Label::_split_author($s)     }
+   elsif ($how eq 'title') { @p = C4::Labels::Label::_split_title($s)      }
+   return join('', @p);
+}
+
+
 __END__
 my $data;
 while ( my ( $key, $value ) = each(%$item) ) {
