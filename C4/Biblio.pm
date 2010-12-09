@@ -2317,6 +2317,8 @@ sub PrepareItemrecordDisplay {
                     if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq
                         "branches" )
                     {
+                        $value = C4::Context->userenv->{'branch'} unless ( $value );
+                    
                         if ( ( C4::Context->preference("IndependantBranches") )
                             && ( C4::Context->userenv->{flags} % 2 != 1 ) )
                         {
