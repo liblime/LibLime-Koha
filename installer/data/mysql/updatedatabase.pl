@@ -3552,24 +3552,17 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
-$DBversion = '4.01.10.001';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-
-    $dbh->do(qq/
-        ALTER TABLE old_reserves MODIFY COLUMN reservenumber INT AUTO_INCREMENT NOT NULL
-    /);
-    print "Upgrade to $DBversion done ( Make sure old_reserves.reservenumber is AUTO_INCREMENTed )\n";
-    SetVersion ($DBversion);
-}
-
 $DBversion = '4.03.00.000';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
     $dbh->do(qq/
+        ALTER TABLE reserves ADD COLUMN displayexpired TINYINT(1) NOT NULL DEFAULT 1;
+    /);
+    $dbh->do(qq/
         ALTER TABLE old_reserves ADD COLUMN displayexpired TINYINT(1) NOT NULL DEFAULT 1;
     /);
 
-	print "Upgrade to $DBversion done ( Add displayexpired column to the old_reserves table )\n";
+	print "Upgrade to $DBversion done ( Add displayexpired column to the reserves and old_reserves tables )\n";
     SetVersion ($DBversion);
 }
 
@@ -3767,7 +3760,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
             `list_owner` int(11) NOT NULL,
             PRIMARY KEY  (`list_id`),
             UNIQUE KEY `list_name` (`list_name`,`list_owner`)
-        ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
         |);
 
     $dbh->do(q|

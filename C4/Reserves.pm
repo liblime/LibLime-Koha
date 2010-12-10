@@ -22,6 +22,8 @@ package C4::Reserves;
 
 use strict;
 # use warnings;  # FIXME: someday
+use Carp;
+
 use C4::Context;
 use C4::Biblio;
 use C4::Items;
@@ -1065,6 +1067,23 @@ sub CancelReserves {
     }
 }
 
+sub _moveToOldReserves {
+    my $reservenumber = shift;
+    my $dbh = C4::Context->dbh;
+    my $sth;
+    my $query;
+
+    $query = "INSERT INTO old_reserves SELECT * FROM reserves WHERE reservenumber = ?";
+    $sth = $dbh->prepare($query);
+    $sth->execute($reservenumber) or
+        croak sprintf "Cannot transfer reserve '%d': %s\n", $reservenumber//-1, $dbh->errstr;
+
+    $query = "DELETE FROM reserves WHERE reservenumber = ?";
+    $sth = $dbh->prepare($query);
+    $sth->execute($reservenumber) or
+        croak sprintf "Cannot delete reserve '%d': %s\n", $reservenumber//-1, $dbh->errstr;
+}
+
 =item CancelReserve
 
   &CancelReserve( $reservenumber );
@@ -1106,47 +1125,6 @@ sub CancelReserve {
         ";
         my $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
-
-        # get reserve information to place into old_reserves
-        $query = "
-            SELECT * FROM reserves
-            WHERE reservenumber     = ?
-        ";
-        $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-        my $holditem = $sth->fetchrow_hashref;
-        my $insert_fields = '';
-        my $value_fields = '';
-        foreach my $column ('borrowernumber','reservedate','biblionumber','constrainttype','branchcode','notificationdate','reminderdate','cancellationdate','reservenotes','priority','found','itemnumber','waitingdate','expirationdate') {
-          if (defined($holditem->{$column})) {
-            if (length($insert_fields)) {
-              $insert_fields .= ",$column";
-              $value_fields .= ",\'$holditem->{$column}\'";
-            }
-            else {
-              $insert_fields .= "$column";
-              $value_fields .= "\'$holditem->{$column}\'";
-            }
-          }
-        }
-        my $biblio = $holditem->{'biblionumber'};
-        $query = qq/
-            INSERT INTO old_reserves ($insert_fields)
-            VALUES ($value_fields)
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute();
-        $query = "
-            DELETE FROM reserves
-            WHERE  reservenumber   = ?
-        ";
-        $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-        UpdateReserveCancelledStats(
-          $branchcode,'reserve_canceled',undef,$biblionumber,
-          $holditem->{'itemnumber'},undef,$holditem->{'borrowernumber'},
-          undef,$moduser
-        );
     }
     else {
         # removing a reserve record....
@@ -1169,57 +1147,18 @@ sub CancelReserve {
                    expirationdate   = NULL
             WHERE  reservenumber   = ?
         /;
-
-        # update the database, removing the record...
         $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
 
-        # get reserve information to place into old_reserves
-        $query = qq/
-            SELECT * FROM reserves
-            WHERE reservenumber   = ?
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-        my $holditem = $sth->fetchrow_hashref;
-
-        my $insert_fields = '';
-        my $value_fields = '';
-        foreach my $column ('borrowernumber','reservedate','biblionumber','constrainttype','branchcode','notificationdate','reminderdate','cancellationdate','reservenotes','priority','found','itemnumber','waitingdate','expirationdate') {
-          if (defined($holditem->{$column})) {
-            if (length($insert_fields)) {
-              $insert_fields .= ",$column";
-              $value_fields .= ",\'$holditem->{$column}\'";
-            }
-            else {
-              $insert_fields .= "$column";
-              $value_fields .= "\'$holditem->{$column}\'";
-            }
-          }
-        }
-        my $biblio = $holditem->{'biblionumber'};
-        $query = qq/
-            INSERT INTO old_reserves ($insert_fields)
-            VALUES ($value_fields)
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute();
-
-        $query = qq/
-            DELETE FROM reserves
-            WHERE  reservenumber   = ?
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-
-        # now fix the priority on the others....
         _FixPriority( '', '', $priority, $reservenumber );
-        UpdateReserveCancelledStats(
-          $branchcode,'reserve_canceled',undef,$biblionumber,
-          $holditem->{'itemnumber'},undef,$holditem->{'borrowernumber'},
-          undef,$moduser
-        );
     }
+
+    _moveToOldReserves($reservenumber);
+    UpdateReserveCancelledStats(
+      $branchcode,'reserve_canceled',undef,$biblionumber,
+      $reserve->{'itemnumber'},undef,$reserve->{'borrowernumber'},
+      undef,$moduser
+    );
     
     # Send cancellation notice, if desired
     my $mprefs = C4::Members::Messaging::GetMessagingPreferences( { 
@@ -1291,7 +1230,6 @@ itemnumber and supplying itemnumber.
 sub ModReserve {
     #subroutine to update a reserve
     my ( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumber ) = @_;
-warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumber )";
     # Pull borrowernumber of the user performing the action for logging
     my $moduser = C4::Context->userenv->{'number'};
      return if $rank eq "W";
@@ -1307,39 +1245,8 @@ warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumb
         my $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
         $sth->finish;
-        $query = qq/
-            SELECT * FROM reserves
-            WHERE  reservenumber   = ?
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-        my $holditem = $sth->fetchrow_hashref;
-        my $insert_fields = '';
-        my $value_fields = '';
-        foreach my $column ('borrowernumber','reservedate','biblionumber','constrainttype','branchcode','notificationdate','reminderdate','cancellationdate','reservenotes','priority','found','itemnumber','waitingdate','expirationdate') {
-          if (defined($holditem->{$column})) {
-            if (length($insert_fields)) {
-              $insert_fields .= ",$column";
-              $value_fields .= ",\'$holditem->{$column}\'";
-            }
-            else {
-              $insert_fields .= "$column";
-              $value_fields .= "\'$holditem->{$column}\'";
-            }
-          }
-        }
-        $query = qq/
-            INSERT INTO old_reserves ($insert_fields)
-            VALUES ($value_fields)
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute();
-        $query = qq/
-            DELETE FROM reserves 
-            WHERE  reservenumber   = ?
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
+
+        _moveToOldReserves($reservenumber);
         
         UpdateReserveCancelledStats(
           $branch,'reserve_canceled',undef,$biblio,
@@ -1347,9 +1254,9 @@ warn "ModReserve( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumb
         );
 
         # Send expiration notice, if desired
-        my $borrowernumber = $holditem->{borrowernumber};
-        my $biblionumber = $holditem->{biblionumber};
-        my $branchcode = $holditem->{branchcode};
+        my $borrowernumber = $borrower;
+        my $biblionumber = $biblio;
+        my $branchcode = $branch;
         my $mprefs = C4::Members::Messaging::GetMessagingPreferences( {
           borrowernumber => $borrowernumber,
           message_name   => 'Hold Cancelled'
@@ -1439,42 +1346,7 @@ sub ModReserveFill {
     $sth->execute( $biblionumber, $resdate, $borrowernumber );
     $sth->finish;
 
-    # move to old_reserves
-    $query = "SELECT * FROM reserves
-              WHERE biblionumber   = ?
-                AND reservedate    = ?
-                AND borrowernumber = ?
-             ";
-    $sth = $dbh->prepare($query);
-    $sth->execute( $biblionumber, $resdate, $borrowernumber );
-    my $holditem = $sth->fetchrow_hashref;
-    my $insert_fields = '';
-    my $value_fields = '';
-    foreach my $column ('borrowernumber','reservedate','biblionumber','constrainttype','branchcode','notificationdate','reminderdate','cancellationdate','reservenotes','priority','found','itemnumber','waitingdate','expirationdate') {
-      if (defined($holditem->{$column})) {
-        if (length($insert_fields)) {
-          $insert_fields .= ",$column";
-          $value_fields .= ",\'$holditem->{$column}\'";
-        }
-        else {
-          $insert_fields .= "$column";
-          $value_fields .= "\'$holditem->{$column}\'";
-        }
-      }
-    }
-    $query = qq/
-       INSERT INTO old_reserves ($insert_fields)
-       VALUES ($value_fields)
-    /;
-    $sth = $dbh->prepare($query);
-    $sth->execute();
-    $query = "DELETE FROM reserves
-                 WHERE  biblionumber     = ?
-                    AND reservedate      = ?
-                    AND borrowernumber   = ?
-                ";
-    $sth = $dbh->prepare($query);
-    $sth->execute( $biblionumber, $resdate, $borrowernumber );
+    _moveToOldReserves($reservenumber);
     
     # now fix the priority on the others (if the priority wasn't
     # already sorted!)....
