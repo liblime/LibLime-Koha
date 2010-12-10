@@ -142,7 +142,7 @@ my @wl = $input->param('worklibrary') or ();
 if (!@wl && $isStaff && $borrowernumber) {
    @wl = @{$$borrower_data{worklibraries} || []};  
 }
-my $onlymine = (C4::Context->preference('IndependentBranches') &&
+my $onlymine = (C4::Context->preference('IndependantBranches') &&
                 C4::Context->userenv &&
                 C4::Context->userenv->{flags} %2 != 1 &&
                 C4::Context->userenv->{branch} ?1:0);

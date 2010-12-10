@@ -1364,7 +1364,7 @@ This book has been withdrawn/cancelled. The value should be ignored.
 
 =item C<Wrongbranch>
 
-This book has was returned to the wrong branch.  The value is a hashref
+This book was returned to the wrong branch.  The value is a hashref
 so that C<$messages->{Wrongbranch}->{Wrongbranch}> and C<$messages->{Wrongbranch}->{Rightbranch}>
 contain the branchcode of the incorrect and correct return library, respectively.
 
@@ -1441,7 +1441,7 @@ sub AddReturn {
     }
 
     # if indy branches and returning to different branch, refuse the return
-    if ($hbr ne $branch && C4::Context->preference("IndependantBranches")){
+    if (($hbr ne $branch) && C4::Context->preference("IndependantBranches")){
         $messages->{'Wrongbranch'} = {
             Wrongbranch => $branch,
             Rightbranch => $hbr,
