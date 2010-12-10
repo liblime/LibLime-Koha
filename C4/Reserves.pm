@@ -1426,17 +1426,25 @@ sub ModReserveTrace
 {
     my $res = shift;
     my $dbh = C4::Context->dbh;
-
     # update the database
     my $sql = "UPDATE reserves
               SET    found            = 'T',
                      priority         = 0,
                      expirationdate   = NULL
               WHERE  biblionumber     = ?
-              AND    reservedate      = ?
               AND    borrowernumber   = ?";
     my $sth = $dbh->prepare($sql) || die $dbh->errstr();
-    $sth->execute( $$res{biblionumber}, $$res{resdate}, $$res{borrowernumber} );
+    $sth->execute(
+      $$res{biblionumber},
+      $$res{borrowernumber}) || die $dbh->errstr();
+    foreach(qw(hold_fill_targets tmp_holdsqueue)) {
+       $sth = $dbh->prepare("DELETE FROM $_
+       WHERE borrowernumber = ?
+         AND biblionumber   = ?") || die $dbh->errstr();
+       $sth->execute(
+         $$res{borrowernumber},
+         $$res{biblionumber}) || die $dbh->errstr();
+    }
     $sth->finish;
 
     return;
