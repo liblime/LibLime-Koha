@@ -18,7 +18,7 @@
 
 =head1 view_holdsqueue
 
-This script displays items in the tmp_holdsqueue table
+This script displays items in the tmp_holdsqueue and hold_fill_targets tables
 
 =cut
 
@@ -61,32 +61,11 @@ if ($run_trace) {
    # get all branches, just the branchcode
    my @branches  = _getBranchQueue();
    my $numtraced = 0;
-   TRACE:
    foreach my $trace(@traces) {
       my($biblionumber,$borrowernumber,$itemnumber) = split('_',$trace,3);
       my $reserverec = C4::Reserves::GetReserveInfo($borrowernumber,$biblionumber);
       C4::Reserves::ModReserveTrace($reserverec);
-
-      # update the database w/ the next library and level
-      my $level   = $query->param("level_$trace");
-      my($nextlib)= $query->param("nextlib_$trace") =~ /<b><i>(\w+)</;
-      $level++;
-      if ($level < @branches) {
-         my $sth = $dbh->prepare("UPDATE hold_fill_targets
-            SET item_level_request= ?,
-                source_branchcode = ?
-          WHERE borrowernumber    = ?
-            AND biblionumber      = ?
-            AND itemnumber        = ?") || die $dbh->errstr();
-         $sth->execute($level,$nextlib,$borrowernumber,$biblionumber,$itemnumber);
-         $sth = $dbh->prepare("UPDATE tmp_holdsqueue
-            SET   item_level_request = ?
-            WHERE borrowernumber     = ?
-            AND   biblionumber       = ?
-            AND   itemnumber         = ?") || die $dbh->errstr();
-         $sth->execute($level,$borrowernumber,$biblionumber,$itemnumber);
-      }
-      $numtraced++;
+     $numtraced++;
    }
    # set output
    my $numnotraced = $query->param('cnt_notrace');
@@ -118,15 +97,36 @@ elsif ($run_fill) {
       }
       elsif ($query->param("action_$c") eq 'pass') {
          # figure out the pass to libraries queue so far
-         my @q;
+         # item_level_request=0  is the holding branch
          my @q = ($$item{pickbranch});
-         for my $i(0..$$item{item_level_request}) {
-            unshift @q, $branches[$i] unless
-            $$item{pickbranch} eq $branches[$i];
+         my $level = $$item{item_level_request};
+         $level += 1;
+         #  3 branches:
+         #  loop
+         #     0  0,1,2
+         #     1  3,4,5
+         #     2  6,7,8...
+         my $offset = $level%@branches;
+         for(my $j=0; $j<$level; $j+=@branches) {
+            for my $i($offset..$#branches) {
+               unshift @q, $branches[$i];
+            }
+            if ($offset>0) {
+               for my $i(0..$offset-1) {
+                  unshift @q, $branches[$i];
+               }
+            }
          }
+         $$item{nextlib} = $q[0];
+         C4::Reserves::ModReservePass(
+            $$item{nextlib},
+            $level,
+            $$item{borrowernumber},
+            $$item{biblionumber},
+            $$item{itemnumber},
+         );
          $q[0] = "<b><i>$q[0]</i></b>";
          $$item{passedto} = join('<br>',@q);
-         $$item{nextlib}  = $q[0];
          push @items, $item;
       }
       $c++;
@@ -179,7 +179,6 @@ sub _getBranchQueue
    my $nextpref   = C4::Context->preference('NextLibraryHoldsQueueWeight');
    my $staypref   = C4::Context->preference('StaticHoldsQueueWeight');
    my $dorand     = C4::Context->preference('RandomizeHoldsQueueWeight');
-   my $numtraced  = 0;
    if ($nextpref) {
       @branches = split(/\,\s*/,$nextpref);
    }

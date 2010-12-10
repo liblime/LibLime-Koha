@@ -28,6 +28,7 @@ use List::Util qw(shuffle);
 
 my $bibs_with_pending_requests = GetBibsWithPendingHoldRequests();
 
+# don't clear data... we need to keep a true queue
 my $dbh   = C4::Context->dbh;
 #$dbh->do("DELETE FROM tmp_holdsqueue");  # clear the old table for new info
 #$dbh->do("DELETE FROM hold_fill_targets");
@@ -161,6 +162,7 @@ to fill a hold request if and only if:
     * it is not currently in transit
     * it is not lost
     * it is not sitting on the hold shelf
+    * it is not set to trace
 
 =cut
 

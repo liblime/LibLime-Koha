@@ -143,14 +143,40 @@ sub GetHoldsQueueItems
 	my $dbh = C4::Context->dbh;
 
    my @bind_params = ();
-	my $query = q/SELECT tmp_holdsqueue.*, biblio.author, items.ccode, items.location, items.enumchron, items.cn_sort, biblioitems.publishercode,biblio.copyrightdate,biblioitems.publicationyear,biblioitems.pages,biblioitems.size,biblioitems.publicationyear,biblioitems.isbn
-                  FROM tmp_holdsqueue
-                       JOIN biblio      USING (biblionumber)
-				  LEFT JOIN biblioitems USING (biblionumber)
-                  LEFT JOIN items       USING (  itemnumber)
-                /;
+	my $query = q/SELECT 
+         tmp_holdsqueue.*, 
+         hold_fill_targets.source_branchcode,
+         biblio.author, 
+         items.ccode, 
+         items.location, 
+         items.enumchron, 
+         items.cn_sort, 
+         biblioitems.publishercode,
+         biblio.copyrightdate,
+         biblioitems.publicationyear,
+         biblioitems.pages,
+         biblioitems.size,
+         biblioitems.publicationyear,
+         biblioitems.isbn
+   FROM tmp_holdsqueue, 
+        hold_fill_targets, 
+        biblio,
+        biblioitems,
+        items
+  WHERE tmp_holdsqueue.borrowernumber = hold_fill_targets.borrowernumber
+    AND tmp_holdsqueue.biblionumber   = hold_fill_targets.biblionumber
+    AND biblio.biblionumber           = hold_fill_targets.biblionumber
+    AND biblioitems.biblionumber      = hold_fill_targets.biblionumber
+    AND biblioitems.biblionumber      = biblio.biblionumber
+    AND tmp_holdsqueue.itemnumber     = hold_fill_targets.itemnumber
+    AND tmp_holdsqueue.itemnumber     = items.itemnumber
+   /;
+#                       JOIN biblio      USING (biblionumber)
+#				  LEFT JOIN biblioitems USING (biblionumber)
+#                  LEFT JOIN items       USING (  itemnumber)
+#                /;
     if ($branchlimit) {
-	    $query .=" WHERE tmp_holdsqueue.holdingbranch = ?";
+	    $query .="AND hold_fill_targets.source_branchcode = ?";
         push @bind_params, $branchlimit;
     }
     $query .= " ORDER BY ccode, location, cn_sort, author, title, pickbranch, reservedate";
@@ -1311,6 +1337,38 @@ C<$reserve> specifies the reserve to fill. It is a reference-to-hash
 whose keys are fields from the reserves table in the Koha database.
 
 =cut
+
+sub ModReservePass
+{
+   my($nextlib,$nextlevel,$borrowernumber,$biblionumber,$itemnumber) = @_;
+   die "requires \$nextlib and \$nextlevel" unless ($nextlib && $nextlevel);
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("UPDATE hold_fill_targets
+   SET source_branchcode  = ?,
+       item_level_request = ?
+   WHERE borrowernumber   = ?
+     AND biblionumber     = ?
+     AND itemnumber       = ?") || die $dbh->errstr();
+   my $fx = $sth->execute(
+      $nextlib,
+      $nextlevel,
+      $borrowernumber,
+      $biblionumber,
+      $itemnumber
+   ) || die $dbh->errstr();
+   $sth = $dbh->prepare("UPDATE tmp_holdsqueue
+      SET   item_level_request = ?
+      WHERE biblionumber       = ?
+      AND   itemnumber         = ?
+      AND   borrowernumber     = ?") || die $dbh->errstr();
+   $fx += $sth->execute(
+      $nextlevel,
+      $biblionumber,
+      $itemnumber,
+      $borrowernumber,
+   ) || die $dbh->errstr();
+   return $fx;
+}
 
 sub ModReserveFill {
     my ($res) = @_;
