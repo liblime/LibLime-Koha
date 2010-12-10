@@ -1441,7 +1441,7 @@ sub AddReturn {
     }
 
     # if indy branches and returning to different branch, refuse the return
-    if ($hbr ne $branch && C4::Context->preference("IndependantBranches")){
+    if (($hbr ne $branch) && C4::Context->preference("IndependantBranches")){
         $messages->{'Wrongbranch'} = {
             Wrongbranch => $branch,
             Rightbranch => $hbr,
