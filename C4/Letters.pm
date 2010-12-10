@@ -626,7 +626,7 @@ ENDSQL
         $params->{'letter'}->{'content'},         # content
         $params->{'letter'}->{'metadata'} || '',  # metadata
         $params->{'letter'}->{'code'}     || '',  # letter_code
-        $params->{'message_transport_type'},      # message_transport_type
+        $params->{'message_transport_type'} || 'print',      # message_transport_type
         'pending',                                # status
         $params->{'to_address'},                  # to_address
         $params->{'from_address'},                # from_address
