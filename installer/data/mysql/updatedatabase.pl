@@ -3548,35 +3548,28 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
-$DBversion = '4.01.10.001';
+$DBversion = '4.02.00.000';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
     $dbh->do(qq/
-        ALTER TABLE old_reserves MODIFY COLUMN reservenumber INT AUTO_INCREMENT NOT NULL
+        ALTER TABLE reserves ADD COLUMN displayexpired TINYINT(1) NOT NULL DEFAULT 1;
     /);
-    print "Upgrade to $DBversion done ( Make sure old_reserves.reservenumber is AUTO_INCREMENTed )\n";
-    SetVersion ($DBversion);
-}
-
-$DBversion = '4.03.00.000';
-if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-
     $dbh->do(qq/
         ALTER TABLE old_reserves ADD COLUMN displayexpired TINYINT(1) NOT NULL DEFAULT 1;
     /);
 
-	print "Upgrade to $DBversion done ( Add displayexpired column to the old_reserves table )\n";
+	print "Upgrade to $DBversion done ( Add displayexpired column to the reserves and old_reserves tables )\n";
     SetVersion ($DBversion);
 }
 
-$DBversion = '4.03.00.001';
+$DBversion = '4.02.00.001';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
    $dbh->do(qq|ALTER TABLE labels_layouts ADD break_rule_string varchar(255) NOT NULL DEFAULT ''|);
    print "Upate to $DBversion done ( added labels_layouts.break_rule_string )\n";
    SetVersion ($DBversion);
 }
 
-$DBversion = '4.03.00.002';
+$DBversion = '4.02.00.002';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(qq/
       INSERT INTO message_attributes (message_attribute_id, message_name, takes_days) VALUES (7, 'Hold Cancelled', 0), (8, 'Hold Expired', 0);
@@ -3594,7 +3587,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
    SetVersion ($DBversion);
 }
 
-$DBversion = '4.03.00.003';
+$DBversion = '4.02.00.003';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(qq/
         INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('NewPatronReadingHistory','enable','Set a default value regarding the retention of the reading history for a new patron','enable|disable','Choice');
@@ -3603,7 +3596,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
-$DBversion = '4.03.00.004';
+$DBversion = '4.02.00.004';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do("
     CREATE TABLE lost_items (
@@ -3632,7 +3625,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done (Adding LostItems)\n";
 }
 
-$DBversion = '4.03.00.005';
+$DBversion = '4.02.00.005';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
     $dbh->do(qq/
@@ -3656,7 +3649,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add systempreferences FillRequestsAtPickupLibrary, HoldsTransportationReductionThreshold, and FillRequestsAtPickupLibraryAge )\n";
 }
 
-$DBversion = '4.03.00.006';
+$DBversion = '4.02.00.006';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(qq/
       INSERT INTO `permissions` (`module_bit`, `code`, `description`) VALUES 
