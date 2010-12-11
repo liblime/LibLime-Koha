@@ -320,7 +320,9 @@ if ( defined $htmlfilename ) {
     $html_fh = *STDOUT;
   } else {
     my $today = C4::Dates->new();
-    open $html_fh, ">",File::Spec->catdir ($htmlfilename,"notices-".$today->output('iso').".html");
+    my $filename = File::Spec->catdir($htmlfilename,"notices-".$today->output('iso').".html");
+    open $html_fh, ">", $filename or
+        die sprintf "Unable to open file '%s': %s\n", $filename, $!;
   }
   
   print $html_fh "<html>\n";
