@@ -1,0 +1,202 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog &rsaquo; Library Home for
+<!-- TMPL_LOOP name="BORROWER_INFO" -->
+    <!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR name="surname" -->
+<!-- /TMPL_LOOP -->
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script type="text/javascript" src="/intranet-tmpl/prog/en/js/dates.js"></script>
+<script type="text/JavaScript" language="JavaScript">
+//<![CDATA[
+$.tablesorter.addParser({
+    id: 'articles',
+    is: function(s) {return false;  },
+    format: function(s) { return s.toLowerCase().replace(/^(the|an|a) /,''); },
+    type: 'text'
+});
+            $(function() {
+            $('#opac-user-views > ul').tabs();
+                        $("#holdst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
+                dateFormat: 'uk',<!-- /TMPL_IF -->
+                                widgets : ['zebra'],
+                                sortList: [[0,0]],
+                        headers: { 0: { sorter: 'articles' },4: { sorter: false }
+                                }
+                        });
+                        $("#checkoutst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
+                dateFormat: 'uk',<!-- /TMPL_IF -->
+                                widgets : ['zebra'],
+                                <!-- TMPL_IF NAME="JacketImages" -->
+                                        sortList: [[3,0]],
+                                                <!-- TMPL_IF NAME="item-level_itypes" -->
+                                                        headers: { 0: { sorter: false }, 1: { sorter: 'articles' },4: { sorter: false },5: { sorter: false }}
+                                                <!-- TMPL_ELSE -->
+                                                        headers: { 0: { sorter: false }, 1: { sorter: 'articles' },5: { sorter: false },6: { sorter: false }}
+                                                <!-- /TMPL_IF -->
+                                <!-- TMPL_ELSE -->
+                                                <!-- TMPL_IF NAME="item-level_itypes" -->
+                                                        sortList: [[2,0]],
+                                                        headers: { 0: { sorter: 'articles' },3: { sorter: false },4: { sorter: false }}
+                                                <!-- TMPL_ELSE -->
+                                                        sortList: [[3,0]],
+                                                        headers: { 0: { sorter: 'articles' },4: { sorter: false },5: { sorter: false }}
+                                        <!-- /TMPL_IF -->
+                                <!-- /TMPL_IF -->
+                        });
+                        $("#overduest").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
+                dateFormat: 'uk',<!-- /TMPL_IF -->
+                                widgets : ['zebra'],
+                                <!-- TMPL_IF NAME="JacketImages" -->
+                                        sortList: [[1,0]],
+                                                <!-- TMPL_IF NAME="item-level_itypes" -->
+                                                        headers: { 0: { sorter: false }, 1: { sorter: 'articles' },4: { sorter: false },5: { sorter: false }}
+                                                <!-- TMPL_ELSE -->
+                                                        headers: { 0: { sorter: false }, 1: { sorter: 'articles' },5: { sorter: false },6: { sorter: false }}
+                                                <!-- /TMPL_IF -->
+                                <!-- TMPL_ELSE -->
+                                                <!-- TMPL_IF NAME="item-level_itypes" -->
+                                                        sortList: [[0,0]],
+                                                        headers: { 0: { sorter: 'articles' },3: { sorter: false }}
+                                                <!-- TMPL_ELSE -->
+                                                        sortList: [[0,0]],
+                                                        headers: { 0: { sorter: 'articles' },1: { sorter: false },3: { sorter: false }}
+                                        <!-- /TMPL_IF -->
+                                <!-- /TMPL_IF -->
+                        });
+<!-- TMPL_IF NAME="GoogleJackets" -->KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF -->
+            });
+//]]>
+
+</script>
+</head>
+<body id="opac-user">
+<div id="doc3" class="yui-t1">
+   <div id="bd">
+<!-- TMPL_INCLUDE NAME="masthead.inc" -->
+
+    <div id="yui-main">
+    <div class="yui-b"><div class="yui-g">
+	<div id="holdhistory" class="container">
+
+<h3><a href="/cgi-bin/koha/opac-user.pl"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" -->'s account</a> <img src="<!-- TMPL_VAR NAME="themelang" -->../../images/caret.gif" width="16" height="16" alt="&gt;" border="0" /> Hold History</h3>
+
+<div id="opac-user-views" class="toptabs">
+        <ul>
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-filled-holds">Filled Holds</a></li>
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-expired-holds">Expired Holds</a></li>
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-cancelled-holds">Cancelled Holds</a></li>
+        </ul>
+        
+        <div id="opac-user-filled-holds">
+        <!-- TMPL_IF NAME="FILLEDRESERVES" -->
+        <table id="filledholdst">
+        <caption>Filled Holds <span class="count">(<!-- TMPL_VAR NAME="filledreserves_count" --> total)</span></caption>
+            <!-- FILLEDRESERVES TABLE ROWS -->
+            <thead><tr>
+                <th>Title</th>
+                <th>Placed On</th>
+                <th>Filled On</th>
+            </tr></thead>
+			<tbody>
+            <!-- TMPL_LOOP NAME="FILLEDRESERVES" -->
+            <tr>
+                <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
+                    <!-- TMPL_VAR NAME="author" -->
+                </td>
+                <td align=center><!-- TMPL_VAR NAME="reservedate" --></td>
+                <td align=center><!-- TMPL_VAR NAME="filldate" --></td>
+            </tr>
+            <!-- /TMPL_LOOP -->
+            </tbody>
+        </table>
+        <!-- TMPL_ELSE -->
+          <p>You have no filled holds!</p>
+        <!-- /TMPL_IF -->
+        </div>
+
+        <div id="opac-user-expired-holds">
+        <!-- TMPL_IF NAME="EXPIREDRESERVES" -->
+        <form name="modifyExpiredReservesForm" action="/cgi-bin/koha/opac-moddisplay.pl" method="post" >
+        <table id="expiredholdst">
+        <caption>Expired Holds <span class="count">(<!-- TMPL_VAR NAME="expiredreserves_count" --> total)</span></caption>
+            <!-- EXPIREDRESERVES TABLE ROWS -->
+            <thead><tr>
+                <th>Title</th>
+                <th>Placed On</th>
+                <th>Expired On</th>
+                <th>Delete From Display?</th>
+                <th>Another Hold?</th>
+            </tr></thead>
+			<tbody>
+            <!-- TMPL_LOOP NAME="EXPIREDRESERVES" -->
+            <tr>
+                <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
+                    <!-- TMPL_VAR NAME="author" -->
+                </td>
+                <td align=center><!-- TMPL_VAR NAME="reservedate" --></td>
+                <td align=center><!-- TMPL_VAR NAME="holdexpdate" --></td>
+                <td align=center><select name="delete-display">
+                   <option value="n">No</option>
+                   <option value="del">Yes</option>
+                </select>
+                <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR name="reservenumber" -->" />
+                <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR name="biblionumber" -->" />
+                <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" />
+                </td>
+                <td align=center><a href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Place Hold</a>
+                </td>
+            </tr>
+            <!-- /TMPL_LOOP -->
+            </tbody>
+        </table>
+        <fieldset class="action"><input type="submit" class="cancel" name="submit" value="Update Expired Holds" /></fieldset>
+        </form>
+        <!-- TMPL_ELSE -->
+          <p>You have no expired holds!</p>
+        <!-- /TMPL_IF -->
+        </div>
+
+        <div id="opac-user-cancelled-holds">
+        <!-- TMPL_IF NAME="CANCELLEDRESERVES" -->
+        <table id="cancelledholdst">
+        <caption>Cancelled Holds <span class="count">(<!-- TMPL_VAR NAME="cancelledreserves_count" --> total)</span></caption>
+            <!-- CANCELLEDRESERVES TABLE ROWS -->
+            <thead><tr>
+                <th>Title</th>
+                <th>Placed On</th>
+                <th>Cancelled On</th>
+            </tr></thead>
+			<tbody>
+            <!-- TMPL_LOOP NAME="CANCELLEDRESERVES" -->
+            <tr>
+                <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
+                    <!-- TMPL_VAR NAME="author" -->
+                </td>
+                <td align=center><!-- TMPL_VAR NAME="reservedate" --></td>
+                <!-- TMPL_IF NAME="linkcancellationdate" -->
+                  <td align=center><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" title="Cancelled by <!-- TMPL_VAR NAME="modresfirstname" --> <!-- TMPL_VAR NAME="modressurname" -->"><!-- TMPL_VAR NAME="cancellationdate" --></a></td>
+                <!-- TMPL_ELSE -->
+                  <td align=center><!-- TMPL_VAR NAME="cancellationdate" --></td>
+                <!-- /TMPL_IF -->
+            </tr>
+            <!-- /TMPL_LOOP -->
+            </tbody>
+        </table>
+        <!-- TMPL_ELSE -->
+          <p>You have no cancelled holds!</p>
+        <!-- /TMPL_IF -->
+        </div>
+
+    </div><!-- /opac-user views -->
+    </div><!-- /holdhistory-->
+</div>
+</div>
+</div>
+<div class="yui-b">
+<div class="container">
+<!--TMPL_INCLUDE NAME="navigation.inc" -->
+<!-- TMPL_INCLUDE name="usermenu.inc" -->
+</div>
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="opac-bottom.inc" -->

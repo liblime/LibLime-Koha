@@ -444,7 +444,7 @@ sub GetReservesFromBorrowernumber {
 
     $borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,$type);
 
-    where $type = 'cancellation|expiration';
+    where $type = 'cancellation|expiration|fill';
 
     TODO :: Description
 
@@ -460,7 +460,16 @@ sub GetOldReservesFromBorrowernumber {
             FROM   old_reserves
             WHERE  borrowernumber=?
                 AND expirationdate IS NOT NULL
-            ORDER BY reservedate
+            ORDER BY expirationdate DESC
+        ");
+        $sth->execute($borrowernumber);
+    } elsif ($type eq 'cancellation') {
+        $sth = $dbh->prepare("
+            SELECT *
+            FROM   old_reserves
+            WHERE  borrowernumber=?
+                AND cancellationdate IS NOT NULL
+            ORDER BY cancellationdate DESC
         ");
         $sth->execute($borrowernumber);
     } else {
@@ -468,8 +477,8 @@ sub GetOldReservesFromBorrowernumber {
             SELECT *
             FROM   old_reserves
             WHERE  borrowernumber=?
-                AND cancellationdate IS NOT NULL
-            ORDER BY reservedate
+                AND priority = 'F'
+            ORDER BY timestamp DESC
         ");
         $sth->execute($borrowernumber);
     }

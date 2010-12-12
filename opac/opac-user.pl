@@ -209,53 +209,6 @@ $template->param( reserves_count => $#reserves+1 );
 $template->param( showpriority=>1 ) if $OPACDisplayRequestPriority;
 $template->param( opacmsgtab => C4::Context->preference('opacmsgtab') );
 
-# now the expired reserved items....
-my @expiredreserves  = GetOldReservesFromBorrowernumber( $borrowernumber,'expiration' );
-my @expiredreservesloop;
-foreach my $res (@expiredreserves) {
-    next if (!$res->{'displayexpired'});
-    my %expiredreserve;
-    $expiredreserve{reservenumber} = $res->{'reservenumber'};
-    $expiredreserve{biblionumber} = $res->{'biblionumber'};
-    $expiredreserve{borrowernumber} = $res->{'borrowernumber'};
-    $expiredreserve{reservedate} = format_date( $res->{'reservedate'} );
-    $expiredreserve{holdexpdate} = format_date( $res->{'expirationdate'} );
-    my $biblioData = GetBiblioData($res->{'biblionumber'});
-    $expiredreserve{reserves_title} = $biblioData->{'title'};
-    push( @expiredreservesloop, \%expiredreserve );
-}
-$template->param( EXPIREDRESERVES => \@expiredreservesloop );
-$template->param( expiredreserves_count => scalar @expiredreservesloop );
-
-# now the cancelled reserved items....
-my $dbh = C4::Context->dbh;
-my @cancelledreserves  = GetOldReservesFromBorrowernumber( $borrowernumber,'cancellation' );
-my @cancelledreservesloop;
-foreach my $res (@cancelledreserves) {
-    my %cancelledreserve;
-    my (@bind,$query);
-    $query = "SELECT usercode FROM statistics WHERE type='reserve_canceled' AND other = ? AND borrowernumber = ? AND datetime LIKE ? ";
-    push(@bind,"$res->{'biblionumber'}","$borrowernumber","$res->{'cancellationdate'}%");
-    my $sth = $dbh->prepare($query);
-    $sth->execute(@bind);
-    my $modresnumber = $sth->fetchrow;
-    if (defined($modresnumber)) {
-      $cancelledreserve{linkcancellationdate} = 1;
-      $cancelledreserve{modresnumber} = $modresnumber;
-      my $modresborrower = GetMember($modresnumber);
-      $cancelledreserve{modresfirstname} = $modresborrower->{'firstname'};
-      $cancelledreserve{modressurname} = $modresborrower->{'surname'};
-    }
-    $cancelledreserve{biblionumber} = $res->{'biblionumber'};
-    $cancelledreserve{reservedate} = format_date( $res->{'reservedate'} );
-    $cancelledreserve{cancellationdate} = format_date( $res->{'cancellationdate'} );
-    my $biblioData = GetBiblioData($res->{'biblionumber'});
-    $cancelledreserve{reserves_title} = $biblioData->{'title'};
-    push( @cancelledreservesloop, \%cancelledreserve );
-}
-$template->param( CANCELLEDRESERVES => \@cancelledreservesloop );
-$template->param( cancelledreserves_count => scalar @cancelledreservesloop );
-
 my @suspended_reserves  = GetSuspendedReservesFromBorrowernumber( $borrowernumber );
 foreach my $res (@suspended_reserves) {
     $res->{'reservedate'} = format_date( $res->{'reservedate'} );
