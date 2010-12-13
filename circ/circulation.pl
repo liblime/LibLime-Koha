@@ -405,6 +405,8 @@ if ($barcode) {
 
 		    # pass needsconfirmation to template if issuing is possible and user hasn't yet confirmed.
        	    foreach my $needsconfirmation ( keys %$question ) {
+                 # PTFS PT 7310367 don't display confirmation for holds
+                 next if $needsconfirmation eq 'RESERVED';
        	        $template->param(
        	            $needsconfirmation => $$question{$needsconfirmation},
        	            getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
