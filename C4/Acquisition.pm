@@ -711,6 +711,7 @@ sub SearchOrder {
                 map { "(biblio.title like ? or biblio.title like ?)" } @data )
           )
           . ") OR biblioitems.isbn=? OR (aqorders.ordernumber=? AND aqorders.biblionumber=?)) ";
+          $query =~ s/\(\) OR//s;
 
     }
     else {
