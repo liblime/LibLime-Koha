@@ -14,8 +14,8 @@ UNLOCK TABLES;
 LOCK TABLES `labels_layouts` WRITE;
 /*!40000 ALTER TABLE `labels_layouts` DISABLE KEYS */;
 INSERT INTO `labels_layouts` VALUES
-(1,'CODE39','BIBBAR',   'biblio and barcode',   0,      'TR',7,0,'L','title, author, itemcallnumber'),
-(2,'CODE39','BIB',      'spine',                0,      'TR',3,1,'L','itemcallnumber'),
-(3,'CODE39','BARBIB',   'barcode and biblio',   0,      'TR',3,1,'L','title, author, itemcallnumber');
+(1,'CODE39','BIBBAR',   'biblio and barcode',   0,      'TR',7,0,'L','title, author, itemcallnumber',''),
+(2,'CODE39','BIB',      'spine',                0,      'TR',3,1,'L','itemcallnumber',''),
+(3,'CODE39','BARBIB',   'barcode and biblio',   0,      'TR',3,1,'L','title, author, itemcallnumber','');
 /*!40000 ALTER TABLE `labels_layouts` ENABLE KEYS */;
 UNLOCK TABLES;
