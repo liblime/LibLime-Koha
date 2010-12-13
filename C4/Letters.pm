@@ -177,7 +177,8 @@ sub getalert (;$$$) {
     my $dbh   = C4::Context->dbh;
     my $query = "SELECT * FROM alert WHERE";
     my @bind;
-    if ($borrowernumber and $borrowernumber =~ /^\d+$/) {
+    # use 'defined' for darn borrowernumber=0
+    if (defined $borrowernumber and $borrowernumber =~ /^\d+$/) {
         $query .= " borrowernumber=? AND ";
         push @bind, $borrowernumber;
     }

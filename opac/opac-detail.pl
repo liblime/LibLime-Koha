@@ -138,8 +138,10 @@ my $norequests = 1;
 my $branches = GetBranches();
 my %itemfields;
 my $item_count = 0;
-for my $itm (@items) {
-    $item_count++;
+my $prefloc = C4::Context->preference("ItemLocation");
+
+foreach my $itm (@items) {
+    next unless $itm;
     $norequests = 0
        if ( (not $itm->{'wthdrawn'} )
          && (not $itm->{'itemlost'} )
@@ -162,11 +164,11 @@ for my $itm (@items) {
         $itm->{'location_description'} = $shelflocations->{ $itm->{'location'} };
     }
     $itm->{'location'} = ''; #prefloc = 'none'
-    my $prefloc = C4::Context->preference("ItemLocation");
     if    ($prefloc eq 'homedesc')     { $itemfields{'location'} = _locname($branches,$itm->{'homebranch'}) }
     elsif ($prefloc eq 'homecode')     { $itemfields{'location'} = $itm->{'homebranch'}                     }
     elsif ($prefloc eq 'currentdesc')  { $itemfields{'location'} = $itm->{'branchname'}                     }
     elsif ($prefloc eq 'currentcode')  { $itemfields{'location'} = _loccode($branches,$itm->{'branchname'}) }
+    $$itm{library} = $itemfields{location};
 
     if (exists $itm->{itype} && defined($itm->{itype}) && exists $itemtypes->{ $itm->{itype} }) {
         $itm->{'imageurl'}    = getitemtypeimagelocation( 'opac', $itemtypes->{ $itm->{itype} }->{'imageurl'} );
@@ -208,6 +210,8 @@ for my $itm (@items) {
          }
        }
      }
+     $items[$item_count] = $itm;
+     $item_count++;
 }
 
 ## get notes and subjects from MARC record
