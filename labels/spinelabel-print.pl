@@ -47,7 +47,10 @@ SELECT * FROM biblio, biblioitems, items
    AND items.barcode = ?|;
 $sth = $dbh->prepare($sql);
 $sth->execute($barcode);
-$item = $sth->fetchrow_hashref;
+# use a while loop b/c there are duplicate and null barcodes
+while(my $row = $sth->fetchrow_hashref()) {
+   $item = $row if $$row{barcode};
+}
 
 unless ($item) {
   $template->param( 'Barcode' => $barcode );
