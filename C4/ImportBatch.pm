@@ -1388,7 +1388,8 @@ sub GetImportProfileLoop {
             LEFT JOIN import_profile_subfield_actions AS ip_actions ON ( import_profiles.profile_id = ip_actions.profile_id )
           GROUP BY import_profiles.profile_id, ip_actions.tag, ip_actions.subfield
     ", { Slice => {} } );
-    return [] unless ( @$results );
+    $results ||= [];
+    return @$results;
 
     my @profiles;
     my $current_profile;
