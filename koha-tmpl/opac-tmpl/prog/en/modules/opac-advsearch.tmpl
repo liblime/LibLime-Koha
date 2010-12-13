@@ -165,19 +165,26 @@
             <div id="subtypes" class="container"><fieldset>
             <legend>Subtype limits</legend><select name="limit" class="subtype">
                 <option value="" selected="selected" class="menuheader">Any Audience</option>
-                    <option value="aud:a">Easy</option>
-                    <option value="aud:c">Juvenile</option>
-                    <option value="aud:d">Young Adult</option>
-                    <option value="aud:e">Adult</option>
+                    <option value="aud:a">Preschool</option>
+                    <option value="aud:b">Primary</option>
+                    <option value="aud:c">Pre-teen</option>
+                    <option value="(aud:a or aud:b or aud:c or aud:j)">Children's</option>
+                    <option value="aud:d">Teen</option>
+                    <option value="(aud:d or aud:e or aud:f or aud:g)">Adult</option>
                 </select>
             
             <select name="limit" class="subtype">
                 <option value="" selected="selected" class="menuheader">Any Content</option>
-                    <option value="fic:1">Fiction</option>
-                    <option value="fic:0">Non Fiction</option>
-                    <option value="bio:b">Biography</option>
+                    <option value="(fic:1 or fic:c or fic:f or fic:j)">Fiction</option>
+                    <option value="(fic:0 or fic:d or fic:e or fic:h or fic:i or fic:m or fic:s)">Non Fiction</option>
+                    <option value="fic:p">Poetry</option>
+                    <option value="fic:j">Short stories</option>
+                    <option value="(bio:b or bio:c or bio:d)">Biography</option>
+                    <option value="bio:a">Auto-biography</option>
                     <option value="mus:j">Musical recording</option>
                     <option value="mus:i">Non-musical recording</option>
+                    <option value="ctype:6">Graphic novel</option>
+                    <option value="(ctype:g and l-format:c)">Video game</option>
                 </select>
     
             
@@ -187,10 +194,14 @@
                     <option value="l-format:tb">Large print</option>
                     <option value="l-format:fk">Braille</option>
                     <option value="">-----------</option>
+                    <option value="l-format:vf">Videocassette</option>
+                    <option value="l-format:vs">Blu-ray DVD</option>
+                    <option value="l-format:vd">DVD</option>
+                    <option value="">-----------</option>
                     <option value="l-format:sd">CD audio</option>
+                    <option value="l-format:sz">Digital audio player</option>
                     <option value="l-format:ss">Cassette recording</option>
-                    <option value="l-format:vf">VHS tape / Videocassette</option>
-                    <option value="l-format:vd">DVD video / Videodisc</option>
+                    <option value="">-----------</option>
                     <option value="l-format:co">CD Software</option>
                     <option value="l-format:cr">Website</option>
                 </select>
