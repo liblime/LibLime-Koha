@@ -99,6 +99,7 @@ $results[0]=$data;
 ($itemnumber) and @items = (grep {$_->{'itemnumber'} == $itemnumber} @items);
 my $itemcount=0;
 my $additemnumber;
+my @tmpitems;
 foreach my $item (@items){
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
     $itemcount++;
@@ -140,7 +141,10 @@ foreach my $item (@items){
     if ($restrict && !$br{$$item{homebranch}}) {
          $$item{notmine} = 1;
     }
+    push @tmpitems, $item;
 }
+
+@items = @tmpitems;
 $template->param(count => $data->{'count'},
 	subscriptionsnumber => $subscriptionsnumber,
     subscriptiontitle   => $data->{title},

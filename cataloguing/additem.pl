@@ -58,7 +58,7 @@ my ($template, $loggedinuser, $cookie)
                  debug => 1,
                  });
 
-my $restrict = C4::Context->systempreference('EditAllLibraries') ?undef:1;
+my $restrict = C4::Context->preference('EditAllLibraries') ?undef:1;
 my $frameworkcode = &GetFrameworkCode($biblionumber);
 
 my $today_iso = C4::Dates->today('iso');
