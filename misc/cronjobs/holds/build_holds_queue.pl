@@ -441,19 +441,13 @@ sub AddToHoldTargetMap {
     ITEM:
     foreach my $itemnumber (keys %$item_map) {
         my $mapped_item = $item_map->{$itemnumber};
-        next if not $itemnumber;
+        next ITEM if not $itemnumber;
         
         # dupecheck
         my $sth = $dbh->prepare("SELECT 1 FROM hold_fill_targets
-         WHERE borrowernumber    = ?
-           AND biblionumber      = ?
-           AND itemnumber        = ?
-           AND source_branchcode = ?") || die $dbh->errstr();
+         WHERE itemnumber = ?") || die $dbh->errstr();
         $sth->execute(
-         $$mapped_item{borrowernumber},
-         $$mapped_item{biblionumber},
          $itemnumber,
-         $$mapped_item{holdingbranch}
         ) || die $dbh->errstr();
         my($dupe) = ($sth->fetchrow_array)[0];
         next ITEM if $dupe;

@@ -66,6 +66,7 @@ C4::Reserves - Koha functions for dealing with reservation.
             T(ransit)  : the reserve is linked to an item but is in transit to the pickup branch
             W(aiting)  : the reserve is linked to an item, is at the pickup branch, and is waiting on the hold shelf
             F(inished) : the reserve has been completed, and is done
+            R(trace)   : the reserve is set to 'trace'--which I don't know what this means yet -hQ
   - itemnumber : empty : the reserve is still unaffected to an item
                  filled: the reserve is attached to an item
   The complete workflow is :
@@ -1437,7 +1438,7 @@ sub ModReserveTrace
     my $dbh = C4::Context->dbh;
     # update the database
     my $sql = "UPDATE reserves
-              SET    found            = 'T',
+              SET    found            = 'R',
                      priority         = 0,
                      expirationdate   = NULL
               WHERE  biblionumber     = ?
