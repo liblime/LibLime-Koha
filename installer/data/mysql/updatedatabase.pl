@@ -3915,6 +3915,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.04.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+        ALTER TABLE tmp_holdsqueue ADD UNIQUE (`biblionumber`,`itemnumber`,`borrowernumber`)
+    });
+
+    print "Upgrade to $DBversion done ( Unique column index for tmp_holdsqueue )\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

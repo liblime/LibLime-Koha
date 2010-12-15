@@ -379,7 +379,7 @@ sub CreatePicklistFromItemMap {
    # dupecheck
 
     my $insert_sql = "
-        INSERT INTO tmp_holdsqueue (biblionumber,itemnumber,barcode,surname,firstname,phone,borrowernumber,
+        INSERT IGNORE INTO tmp_holdsqueue (biblionumber,itemnumber,barcode,surname,firstname,phone,borrowernumber,
                                     cardnumber,reservedate,title, itemcallnumber,
                                     holdingbranch,pickbranch,notes, item_level_request)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -408,13 +408,6 @@ sub CreatePicklistFromItemMap {
    
         my $bib = GetBiblioData($biblionumber);
         my $title = $bib->{title}; 
-        my $sth = $dbh->prepare("SELECT 1 FROM tmp_holdsqueue
-         WHERE biblionumber   = ?
-           AND itemnumber     = ?
-           AND borrowernumber = ?") || die $dbh->errstr();
-        $sth->execute($biblionumber,$itemnumber,$borrowernumber);
-        my $dupe = ($sth->fetchrow_array)[0];
-        next ITEM if $dupe;
         my $sth_load = $dbh->prepare($insert_sql);
         $sth_load->execute($biblionumber, $itemnumber, $barcode, 
          $surname, $firstname, $phone, $borrowernumber,

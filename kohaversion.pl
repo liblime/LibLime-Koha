@@ -10,7 +10,7 @@
 use strict;
 
 sub kohaversion {
-    our $VERSION = '4.03.04.001';
+    our $VERSION = '4.03.04.002';
     # version needs to be set this way
     # so that it can be picked up by Makefile.PL
     # during install
