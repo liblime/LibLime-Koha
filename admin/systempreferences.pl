@@ -186,6 +186,7 @@ $tabsysprefs{MarkLostItemsReturned}          = "Circulation";
 $tabsysprefs{LinkLostItemsToPatron}          = "Circulation";
 $tabsysprefs{RefundReturnedLostItem}         = "Circulation";
 $tabsysprefs{RefundLostReturnedAmount}       = "Circulation";
+$tabsysprefs{ApplyMaxFineWhenLostItemChargeRefunded} = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}            = "StaffClient";

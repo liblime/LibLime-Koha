@@ -3907,6 +3907,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
+$DBversion = '4.03.04.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES('ApplyMaxFineWhenLostItemChargeRefunded','1','Use with RefundReturnedLostItem. If set, the maxfine on an item will be applied automatically when the lost item charges are refunded after a patron returns the item','','YesNo')");
+
+    print "Upgrade to $DBversion done ( Add new system preference ApplyMaxFineWhenLostItemChargeRefunded )\n";
+    SetVersion ($DBversion);
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

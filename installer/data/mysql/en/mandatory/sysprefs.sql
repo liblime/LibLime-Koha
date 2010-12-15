@@ -322,3 +322,4 @@ INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) V
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('Replica_pass','', 'Password for reporting database replica','','Textarea');
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('ItemLocation','currentdesc','Library location for item','homedesc|homecode|currentdesc|currentcode|none','Choice');
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('RefundLostReturnedAmount','0','Refund a returned lost item rather than applying it to an outstanding balance','','YesNo');
+INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('ApplyMaxFineWhenLostItemChargeRefunded','1','Use with RefundReturnedLostItem. If set, the maxfine on an item will be applied automatically when the lost item charges are refunded after a patron returns the item','','YesNo');

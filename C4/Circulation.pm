@@ -31,6 +31,7 @@ use C4::Dates;
 use C4::Calendar;
 use C4::Accounts;
 use C4::ItemCirculationAlertPreference;
+use C4::LostItems;
 use C4::Message;
 use C4::Debug;
 use C4::Overdues;
@@ -1539,9 +1540,30 @@ sub AddReturn {
     }
 
     # fix up the accounts.....
-    if ($item->{'itemlost'} && C4::Context->preference('RefundReturnedLostItem')) {
-        FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $barcode);    # can tolerate undef $borrowernumber
+    if ($item->{'itemlost'}) {
+        if (C4::Context->preference('RefundReturnedLostItem')) {
+            FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $barcode);    # can tolerate undef $borrowernumber
+        }
+        ModItem({itemlost => 0}, $item->{'biblionumber'}, $item->{'itemnumber'});
+        my $lost_item = GetLostItem($item->{'itemnumber'});
+        my $issues = GetItemIssues($itemnumber, 1);
+        my $lostreturned_issue;
+        foreach my $issue_ref (@$issues) {
+          if ($issue_ref->{'itemnumber'} eq $item->{'itemnumber'}) {
+            $lostreturned_issue = $issue_ref;
+            last;
+          }
+        }
+        DeleteLostItem($lost_item->{id});
         $messages->{'WasLost'} = 1;
+        if (C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem') && ! $exemptfine) {
+            my $gmborrower = C4::Members::GetMember($lostreturned_issue->{borrowernumber},'borrowernumber');
+            my ($circ_policy) = C4::Circulation::GetIssuingRule($gmborrower->{categorycode},$lost_item->{itemtype},$lostreturned_issue->{branchcode});
+            if ($circ_policy->{max_fine}) {
+                manualinvoice($lostreturned_issue->{borrowernumber},$itemnumber, 'Max overdue fine', 'F', $circ_policy->{max_fine});
+            }
+        }
+
     }
 
     # fix up the overdues in accounts...
@@ -1955,9 +1977,9 @@ sub GetItemIssues {
                  SELECT * FROM old_issues 
                  LEFT JOIN borrowers USING (borrowernumber)
                  JOIN items USING (itemnumber)
-                 WHERE old_issues.itemnumber = ? ";
+                 WHERE old_issues.itemnumber = ?
+                 ORDER BY returndate DESC";
     }
-    $sql .= "ORDER BY date_due DESC";
     my $sth = C4::Context->dbh->prepare($sql);
     if ($history) {
         $sth->execute($itemnumber, $itemnumber);

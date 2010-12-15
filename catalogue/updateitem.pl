@@ -29,6 +29,7 @@ use C4::Circulation;
 use C4::Accounts;
 use C4::Reserves;
 use C4::LostItems;
+use C4::Members;
 
 my $cgi= new CGI;
 
@@ -83,6 +84,14 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
 ModItem($item_changes, $biblionumber, $itemnumber);
 my $issue = GetItemIssue($itemnumber);
 my $lost_item = C4::LostItems::GetLostItem($itemnumber);
+my $issues = GetItemIssues($itemnumber, 1);
+my $lostreturned_issue;
+foreach my $issue_ref (@$issues) {
+  if ($issue_ref->{'itemnumber'} eq itemnumber) {
+    $lostreturned_issue = $issue_ref;
+    last;
+  }
+}
 
 # If the item is being made lost, charge the patron the lost item charge and
 # create a lost item record
@@ -92,12 +101,19 @@ if($issue && $itemlost){
     C4::LostItems::CreateLostItem($item_data_hashref->{itemnumber},$issue->{borrowernumber});
 }
 # If the item is being marked found, refund the patron the lost item charge,
-# and delete the lost item record
+# apply the maxfine charge, and delete the lost item record
 elsif ($lost_item && $itemlost==0) {
     DeleteLostItem($lost_item->{id}); # item's no longer lost, so delete the lost item record
     if (C4::Context->preference('RefundReturnedLostItem')) {
-        warn "RefundReturned ITMNO: $itemnumber\n";
         C4::Circulation::FixAccountForLostAndReturned($itemnumber); # credit the charge for losing this item
+    }
+    # Charge the maxfine
+    if (C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem')) {
+        my $borrower = GetMember($lostreturned_issue->{borrowernumber},'borrowernumber');
+        my ($circ_policy) = C4::Circulation::GetIssuingRule($borrower->{categorycode},$lost_item->{itemtype},$lostreturned_issue->{branchcode});
+        if ($circ_policy->{max_fine}) {
+            manualinvoice($lostreturned_issue->{borrowernumber},$itemnumber, 'Max overdue fine', 'F', $circ_policy->{max_fine});
+        }
     }
 }
 
