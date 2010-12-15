@@ -3925,6 +3925,12 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.05.000';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Micro version update )\n";
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table
