@@ -62,7 +62,7 @@ $sth->execute($today_iso);
 while (my $expref = $sth->fetchrow_hashref) {
   my $insert_fields = '';
   my $value_fields = '';
-  foreach my $column ('borrowernumber','reservedate','biblionumber','constrainttype','branchcode','notificationdate','reminderdate','cancellationdate','reservenotes','priority','found','itemnumber','waitingdate','expirationdate') {
+  foreach my $column ('reservenumber','borrowernumber','reservedate','biblionumber','constrainttype','branchcode','notificationdate','reminderdate','cancellationdate','reservenotes','priority','found','timestamp','itemnumber','waitingdate','expirationdate','displayexpired') {
     if (defined($expref->{$column})) {
       if (length($insert_fields)) {
         $insert_fields .= ",$column";
