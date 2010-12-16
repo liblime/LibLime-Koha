@@ -110,26 +110,19 @@ sub SearchPeriodicals {
 
     $value = '%'.$value.'%';
     $value =~ s/\s/%/g;
-    my $rows;
-    if ($key eq 'issn') {
-        $rows = C4::Model::Biblioitem::Manager->get_biblioitems(
-            query => [ $key => { like => $value } ],
-            select => [ 'biblionumber' ],
-        );
-    } elsif ($key eq 'title') {
-        $rows = C4::Model::Biblio::Manager->get_biblio(
-            query => [ $key => { like => $value } ],
-            select => [ 'biblionumber' ],
-        );
+
+    my $periodicals;
+    if ($key eq 'title') {
+        $periodicals = C4::Model::Periodical::Manager->get_periodicals(
+            with_objects => [ 'biblio' ],
+            query => [ 't2.title' => { like => $value } ],
+            );
+    } else {
+        my $query = q{
+            SELECT t1.* FROM periodicals t1 NATURAL JOIN biblioitems t2 WHERE t2.issn LIKE ?
+        };
+        $periodicals = C4::Model::Periodical::Manager->get_objects_from_sql(sql => $query, args => [ $value ]);
     }
-    my @biblionumbers = map {$_->biblionumber} @{$rows};
-    return undef if not @biblionumbers;
-
-    my $periodicals = C4::Model::Periodical::Manager->get_periodicals(
-        with_object => [ 'biblio' ],
-        query => [ biblionumber => { in_set => \@biblionumbers } ],
-    );
-
     return $periodicals;
 }
 
