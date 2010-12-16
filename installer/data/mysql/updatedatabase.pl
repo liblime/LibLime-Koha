@@ -3931,6 +3931,22 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
+$DBversion = '4.03.05.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+        CREATE TABLE `session_defaults` (
+        `branchcode` varchar(10) NOT NULL,
+        `name` varchar(32) NOT NULL,
+        `key` varchar(32) NOT NULL,
+        `value` text,
+        PRIMARY KEY  (`branchcode`,`name`),
+        CONSTRAINT `session_defaults_ibfk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    });
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add session_defaults table )\n";
+}
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table

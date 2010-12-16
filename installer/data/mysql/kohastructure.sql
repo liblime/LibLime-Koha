@@ -2738,6 +2738,16 @@ CREATE TABLE import_profile_subfield_actions (
         CONSTRAINT import_profile_subfield_actions_ibfk_1 FOREIGN KEY (profile_id) REFERENCES import_profiles (profile_id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `session_defaults`;
+CREATE TABLE `session_defaults` (
+  `branchcode` varchar(10) NOT NULL,
+  `name` varchar(32) NOT NULL,
+  `key` varchar(32) NOT NULL,
+  `value` text,
+  PRIMARY KEY  (`branchcode`,`name`),
+  CONSTRAINT `session_defaults_ibfk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
