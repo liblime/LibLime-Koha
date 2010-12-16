@@ -270,7 +270,7 @@ sub GetHoldsQueueItems
    LEFT JOIN items       USING (  itemnumber)
    |;
     if ($branchlimit) {
-	    $query .="AND hold_fill_targets.source_branchcode = ?";
+	    $query .="AND tmp_holdsqueue.pickbranch = ?";
         push @bind_params, $branchlimit;
     }
     $query .= " ORDER BY ccode, location, cn_sort, author, title, pickbranch, reservedate";
@@ -1560,7 +1560,7 @@ sub ModReserveFill {
     }
 
     # delete from holds queue
-    foreach my $table(qw(tmp_holdsqueue hold_fill_targets)) {
+    foreach my $table(qw(tmp_holdsqueue)) {
        $sth = $dbh->prepare("DELETE FROM $table
           WHERE borrowernumber = ?
           AND   biblionumber   = ?");
@@ -2057,15 +2057,15 @@ sub _Findgroupreserve {
         FROM reserves
         JOIN biblioitems USING (biblionumber)
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
-        JOIN hold_fill_targets ON 
-             (reserves.biblionumber=hold_fill_targets.biblionumber AND
-              reserves.borrowernumber=hold_fill_targets.borrowernumber AND
-              reserves.itemnumber=hold_fill_targets.itemnumber)
+        JOIN tmp_holdsqueue ON 
+             (reserves.biblionumber=tmp_holdsqueue.biblionumber AND
+              reserves.borrowernumber=tmp_holdsqueue.borrowernumber AND
+              reserves.itemnumber=tmp_holdsqueue.itemnumber)
         WHERE found IS NULL
         AND priority > 0
         AND item_level_request = 1
         AND reserves.itemnumber = ?
-        AND reservedate <= CURRENT_DATE()
+        AND reserves.reservedate <= CURRENT_DATE()
     /;
     my $sth = $dbh->prepare($item_level_target_query);
     $sth->execute($itemnumber);
@@ -2096,15 +2096,15 @@ sub _Findgroupreserve {
         FROM reserves
         JOIN biblioitems USING (biblionumber)
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
-        JOIN hold_fill_targets ON 
-             (reserves.biblionumber=hold_fill_targets.biblionumber AND
-              reserves.borrowernumber=hold_fill_targets.borrowernumber AND
-              reserves.itemnumber=hold_fill_targets.itemnumber)
+        JOIN tmp_holdsqueue ON 
+             (reserves.biblionumber=tmp_holdsqueue.biblionumber AND
+              reserves.borrowernumber=tmp_holdsqueue.borrowernumber AND
+              reserves.itemnumber=tmp_holdsqueue.itemnumber)
         WHERE found IS NULL
         AND priority > 0
         AND item_level_request = 0
-        AND hold_fill_targets.itemnumber = ?
-        AND reservedate <= CURRENT_DATE()
+        AND tmp_holdsqueue.itemnumber = ?
+        AND reserves.reservedate <= CURRENT_DATE()
     /;
     $sth = $dbh->prepare($title_level_target_query);
     $sth->execute($itemnumber);
