@@ -365,7 +365,10 @@ function barcodeMatch(barcode,itemnumber) {
  <script>barcodeMatch('<!-- TMPL_VAR NAME="barcode" -->',<!-- TMPL_VAR NAME="itemnumber" -->)</script>
                      <!-- /TMPL_IF -->
  </td>
-                    <td><a href="/cgi-bin/koha/labels/spinelabel-home.pl?barcode=<!-- TMPL_VAR name="barcode" -->">Print Label</a>
+                    <td>
+                    <!-- TMPL_IF NAME="barcode" -->
+                    <a href="/cgi-bin/koha/labels/spinelabel-home.pl?barcode=<!-- TMPL_VAR name="barcode" -->">Print Label</a>
+                    <!-- /TMPL_IF -->
                     </td>
 				<!-- TMPL_IF NAME="volinfo" -->	<td class="enumchron">
 					<!-- TMPL_IF NAME="itemdata_enumchron" -->

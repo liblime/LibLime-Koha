@@ -201,15 +201,16 @@ sub _remainder
    my $total = 0;
    for my $i(1..13) {
       my $digit = substr($bc13,$i-1,1);
-      if ($i%2) { # even position
-         $total += $digit;
-      }
-      else { # odd position
+      if ($i%2) { # odd position
          my $product = $digit*2;
          if ($product >= 10) {
             $product -= 9;
          }
          $total += $product;
+
+      }
+      else { # even
+         $total += $digit;
       }
    }
    my $remainder = $total%10;
