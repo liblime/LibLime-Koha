@@ -27,10 +27,9 @@ use warnings;
 use CGI;
 use C4::Auth;
 use C4::Output;
-use C4::Biblio;
-use C4::Items;
+#use C4::Items;
 #use C4::Koha;   # GetItemTypes
-use C4::Branch; # GetBranches
+use C4::Branch;
 use C4::Reserves;
 
 my $query          = new CGI;
@@ -59,7 +58,6 @@ if ($run_trace) {
    my @traces = $query->param('trace');
    
    # get all branches, just the branchcode
-   my @branches  = _getBranchQueue();
    my $numtraced = 0;
    foreach my $trace(@traces) {
       my($biblionumber,$borrowernumber,$itemnumber) = split('_',$trace,3);
@@ -83,9 +81,6 @@ elsif ($run_fill) {
    my $c = 0;
    my $numfilled = 0;
 
-   # get the libraries queue
-   my @branches = _getBranchQueue();
-
    foreach my $item(@$qitems) {
       if ($query->param("action_$c") eq 'fill') {
          my $reserverec = C4::Reserves::GetReserveInfo(
@@ -96,35 +91,13 @@ elsif ($run_fill) {
          $numfilled++;
       }
       elsif ($query->param("action_$c") eq 'pass') {
-         # figure out the pass to libraries queue so far
-         # item_level_request=0  is the holding branch
-         my @q = ($$item{pickbranch});
-         my $level = $$item{item_level_request};
-         $level += 1;
-         #  3 branches:
-         #  loop
-         #     0  0,1,2
-         #     1  3,4,5
-         #     2  6,7,8...
-         my $offset = $level%@branches;
-         for(my $j=0; $j<$level; $j+=@branches) {
-            for my $i($offset..$#branches) {
-               unshift @q, $branches[$i];
-            }
-            if ($offset>0) {
-               for my $i(0..$offset-1) {
-                  unshift @q, $branches[$i];
-               }
-            }
-         }
-         $$item{nextlib} = $q[0];
-         C4::Reserves::ModReservePass(
-            $$item{nextlib},
-            $level,
+         my $queue = C4::Reserves::ModReservePass(
             $$item{borrowernumber},
             $$item{biblionumber},
             $$item{itemnumber},
          );
+         my @q = split(/\,/, $queue);
+         @q = reverse @q;
          $q[0] = "<b><i>$q[0]</i></b>";
          $$item{passedto} = join('<br>',@q);
          push @items, $item;
@@ -173,26 +146,4 @@ $template->param(
 # writing the template
 output_html_with_http_headers $query, $cookie, $template->output;
 
-sub _getBranchQueue
-{
-   my @branches;
-   my $nextpref   = C4::Context->preference('NextLibraryHoldsQueueWeight');
-   my $staypref   = C4::Context->preference('StaticHoldsQueueWeight');
-   my $dorand     = C4::Context->preference('RandomizeHoldsQueueWeight');
-   if ($nextpref) {
-      @branches = split(/\,\s*/,$nextpref);
-   }
-   else {
-      if ($staypref) {
-         @branches = split(/\,\s*/,$staypref);
-      }
-      else {
-         @branches = keys %{C4::Branch::GetBranches() || {}};
-      }
-      if ($dorand) {
-         use List::Util 'shuffle';
-         @branches = shuffle(@branches);
-      }
-   }
-   @branches;
-}
+

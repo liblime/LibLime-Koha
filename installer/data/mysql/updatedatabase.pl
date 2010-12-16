@@ -3947,6 +3947,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add session_defaults table )\n";
 }
 
+$DBversion = '4.03.05.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|DROP TABLE IF EXISTS hold_fill_targets|);
+    $dbh->do(q|ALTER TABLE tmp_holdsqueue ADD queue_sofar text NOT NULL DEFAULT ''|);
+    $dbh->do(q|ALTER TABLE tmp_holdsqueue CHANGE item_level_request 
+      item_level_request tinyint(1) NOT NULL DEFAULT 0|);
+    print "Upgrade to $DBversion done ( Tweak holds queue tables, drop hold_fill_targets )\n";
+    SetVersion ($DBversion);
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

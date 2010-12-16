@@ -12,113 +12,58 @@ use warnings;
 BEGIN {
     # find Koha's Perl modules
     # test carefully before changing this
-    use FindBin;
-    eval { require "$FindBin::Bin/../kohalib.pl" };
+    use FindBin qw($RealBin);
+    eval { require "$RealBin/../kohalib.pl" };
 }
 
 use C4::Context;
-use C4::Search;
-use C4::Items;
-use C4::Branch;
-use C4::Circulation;
-use C4::Members;
-use C4::Biblio;
+use C4::Reserves;
+use Data::Dumper;
 
-use List::Util qw(shuffle);
+my @f = qw(biblionumber itemnumber barcode surname firstname phone borrowernumber
+cardnumber reservedate title itemcallnumber holdingbranch pickbranch notes 
+item_level_request queue_sofar);
 
-my $bibs_with_pending_requests = GetBibsWithPendingHoldRequests();
+HOLD:
+foreach my $res(@{C4::Reserves::GetReservesForQueue() // []}) {
+   ## dupecheck
+   my $dupe = C4::Reserves::DupecheckQueue($res);
+   next HOLD if $dupe;
 
-# don't clear data... we need to keep a true queue
-my $dbh   = C4::Context->dbh;
-#$dbh->do("DELETE FROM tmp_holdsqueue");  # clear the old table for new info
-#$dbh->do("DELETE FROM hold_fill_targets");
-
-my $total_bibs            = 0;
-my $total_requests        = 0;
-my $total_available_items = 0;
-my $num_items_mapped      = 0;
-our %issuingrules;
-
-my @branches_to_use = _get_branches_to_pull_from();
-
-foreach my $biblionumber (@$bibs_with_pending_requests) {
-    $total_bibs++;
-    my $hold_requests   = GetPendingHoldRequestsForBib($biblionumber);
-    my $available_items = GetItemsAvailableToFillHoldRequestsForBib($biblionumber, @branches_to_use);
-    $total_requests        += scalar(@$hold_requests);
-    $total_available_items += scalar(@$available_items);
-    my $item_map = MapItemsToHoldRequests($hold_requests, $available_items, @branches_to_use);
-
-    (defined($item_map)) or next;
-
-    my $item_map_size = scalar(keys %$item_map);
-    $num_items_mapped += $item_map_size;
-    CreatePicklistFromItemMap($item_map);
-    AddToHoldTargetMap($item_map);
-    if (($item_map_size < scalar(@$hold_requests  )) and
-        ($item_map_size < scalar(@$available_items))) {
-        # DOUBLE CHECK, but this is probably OK - unfilled item-level requests
-        # FIXME
-        #warn "unfilled requests for $biblionumber";
-        #warn Dumper($hold_requests), Dumper($available_items), Dumper($item_map);
-    }
+   ## handle cases:
+   ## (1) item-level hold w/ an itemnumber
+   ## (2) bib-level hold w/out an itemnumber:
+   ##    (a) there is an item available, attempt to prefill it
+   ##    (b) there is no item available (user will probably pass)
+   if ($$res{itemnumber}) {
+      $$res{item_level_request} = 1;
+      ## we have an item, get its barcode,title,itemcallnumber,holdingbranch
+      my $item = C4::Reserves::GetItemForQueue(
+         $$res{biblionumber},
+         $$res{itemnumber}
+      ) || die ("Bad logic: can't find item, itemnumber=$$res{itemnumber}");
+      foreach(keys %$item) { $$res{$_} = $$item{$_} }
+   }
+   else {
+      $$res{item_level_request} = 0;
+      ## (a) try to find an item
+      my $item = C4::Reserves::GetItemForBibPrefill($$res{biblionumber});
+      if ($item) {
+         foreach(keys %$item) { $$res{$_} = $$item{$_} }
+      }
+      ## (b) do nothing else
+   }
+   
+   ## save the hold request to the tmp_holdsqueue table
+   my %new = ();
+   foreach(@f) { $new{$_} = $$res{$_} }
+   $new{queue_sofar} = $$res{pickbranch};
+   C4::Reserves::SaveHoldInQueue(%new);
 }
 
-exit 0;
+exit;
+__END__
 
-=head2 GetBibsWithPendingHoldRequests
-
-=over 4
-
-my $biblionumber_aref = GetBibsWithPendingHoldRequests();
-
-=back
-
-Return an arrayref of the biblionumbers of all bibs
-that have one or more unfilled hold requests.
-
-=cut
-
-sub GetBibsWithPendingHoldRequests {
-    my $dbh = C4::Context->dbh;
-
-    my $bib_query = "SELECT DISTINCT biblionumber
-                     FROM reserves
-                     WHERE found IS NULL
-                     AND priority > 0
-                     AND reservedate <= CURRENT_DATE()";
-    my $sth = $dbh->prepare($bib_query);
-
-    $sth->execute();
-    my $biblionumbers = $sth->fetchall_arrayref();
-
-    return [ map { $_->[0] } @$biblionumbers ];
-}
-
-=head2 GetPendingHoldRequestsForBib
-
-=over 4
-
-my $requests = GetPendingHoldRequestsForBib($biblionumber);
-
-=back
-
-Returns an arrayref of hashrefs to pending, unfilled hold requests
-on the bib identified by $biblionumber.  The following keys
-are present in each hashref:
-
-    biblionumber
-    borrowernumber
-    itemnumber
-    priority
-    branchcode
-    reservedate
-    reservenotes
-    borrowerbranch
-
-The arrayref is sorted in order of increasing priority.
-
-=cut
 
 sub GetPendingHoldRequestsForBib {
     my $biblionumber = shift;

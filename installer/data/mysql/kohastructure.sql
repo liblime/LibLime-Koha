@@ -1006,7 +1006,8 @@ CREATE TABLE hold_fill_targets (
   `biblionumber` int(11) NOT NULL,
   `itemnumber` int(11) NOT NULL,
   `source_branchcode`  varchar(10) default NULL,
-  `item_level_request` tinyint(4) NOT NULL default 0,
+  `item_level_request` tinyint(1) NOT NULL default 0,
+  `queue_sofar` TEXT NOT NULL DEFAULT '',
   PRIMARY KEY `itemnumber` (`itemnumber`),
   KEY `bib_branch` (`biblionumber`, `source_branchcode`),
   CONSTRAINT `hold_fill_targets_ibfk_1` FOREIGN KEY (`borrowernumber`) 
@@ -2262,30 +2263,6 @@ CREATE TABLE `user_permissions` (
     ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `user_permissions_ibfk_2` FOREIGN KEY (`module_bit`, `code`) REFERENCES `permissions` (`module_bit`, `code`)
     ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `tmp_holdsqueue`
---
-
-DROP TABLE IF EXISTS `tmp_holdsqueue`;
-CREATE TABLE `tmp_holdsqueue` (
-  `biblionumber` int(11) default NULL,
-  `itemnumber` int(11) default NULL,
-  `barcode` varchar(20) default NULL,
-  `surname` mediumtext NOT NULL,
-  `firstname` text,
-  `phone` text,
-  `borrowernumber` int(11) NOT NULL,
-  `cardnumber` varchar(16) default NULL,
-  `reservedate` date default NULL,
-  `title` mediumtext,
-  `itemcallnumber` varchar(255) default NULL,
-  `holdingbranch` varchar(10) default NULL,
-  `pickbranch` varchar(10) default NULL,
-  `notes` text,
-  `item_level_request` tinyint(4) NOT NULL default 0,
-  UNIQUE KEY `biblionumber` (`biblionumber`,`itemnumber`,`borrowernumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

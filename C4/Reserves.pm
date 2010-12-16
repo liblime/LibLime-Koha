@@ -137,6 +137,112 @@ BEGIN {
     );
 }
 
+sub SaveHoldInQueue
+{
+   my %new = @_;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare(sprintf("
+         INSERT INTO tmp_holdsqueue(%s) VALUES(%s)",
+         join(',',keys %new),
+         join(',',map{'?'}keys %new)
+      )
+   ) || die $dbh->errstr();
+   $sth->execute(values %new) || die $dbh->errstr();
+   return 1;
+}
+
+sub DupecheckQueue
+{
+   my $res = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("
+      SELECT 1
+        FROM tmp_holdsqueue
+       WHERE biblionumber   = ?
+         AND itemnumber     = ?
+         AND borrowernumber = ?");
+   $sth->execute(
+      $$res{biblionumber},
+      $$res{itemnumber},
+      $$res{borrowernumber}
+   );
+   return ($sth->fetchrow)[0];
+}
+
+sub GetItemForBibPrefill
+{
+   my $biblionumber = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT itemnumber
+      FROM reserves
+     WHERE biblionumber = ?
+       AND priority > 0
+       AND found IS NULL
+       AND reservedate <= CURRENT_DATE()") || die $dbh->errstr();
+   $sth->execute();
+   my @items = ();
+   while(my $row = $sth->fetchrow_hashref()) { 
+      push @items, $$row{itemnumber};
+   }
+   my $sql = sprintf("
+      SELECT biblio.title,
+             items.itemcallnumber,
+             items.barcode,
+             items.holdingbranch
+        FROM items,biblio
+       WHERE items.biblionumber = ? %s
+         AND items.biblionumber = biblio.biblionumber",
+      @items? sprintf("AND items.itemnumber NOT IN (%s)", 
+         join(',',map{'$_'}@items)) : ''
+   );
+   $sth = $dbh->prepare($sql) || die $dbh->errstr();
+   $sth->execute($biblionumber) || die $dbh->errstr();
+   return $sth->fetchrow_hashref();
+}
+
+sub GetItemForQueue
+{
+   my($biblionumber,$itemnumber) = @_;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("
+      SELECT biblio.title,
+             items.itemcallnumber,
+             items.barcode,
+             items.holdingbranch
+        FROM items,biblio
+       WHERE items.biblionumber = items.biblionumber
+         AND items.biblionumber = ?
+         AND items.itemnumber   = ?") || die $dbh->errstr();
+   $sth->execute($biblionumber,$itemnumber) || die $dbh->errstr();
+   my $row = $sth->fetchrow_hashref();
+   return $row;
+}
+
+sub GetReservesForQueue
+{
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("
+      SELECT reserves.biblionumber,
+             reserves.itemnumber,
+             borrowers.surname,
+             borrowers.firstname,
+             borrowers.phone,
+             reserves.borrowernumber,
+             borrowers.cardnumber,
+             reserves.reservedate,
+             reserves.branchcode as pickbranch,
+             reserves.reservenotes as notes
+        FROM reserves,borrowers
+       WHERE reserves.found IS NULL
+         AND reserves.priority > 0
+         AND reserves.reservedate <= CURRENT_DATE()
+         AND reserves.borrowernumber = borrowers.borrowernumber
+   ") || die $dbh->errstr();
+   $sth->execute() || die $dbh->errstr();
+   my @all = ();
+   while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
+   return \@all;
+}
 
 sub GetHoldsQueueItems 
 {
@@ -144,9 +250,8 @@ sub GetHoldsQueueItems
 	my $dbh = C4::Context->dbh;
 
    my @bind_params = ();
-	my $query = q/SELECT 
+	my $query = q|SELECT 
          tmp_holdsqueue.*, 
-         hold_fill_targets.source_branchcode,
          biblio.author, 
          items.ccode, 
          items.location, 
@@ -159,23 +264,11 @@ sub GetHoldsQueueItems
          biblioitems.size,
          biblioitems.publicationyear,
          biblioitems.isbn
-   FROM tmp_holdsqueue, 
-        hold_fill_targets, 
-        biblio,
-        biblioitems,
-        items
-  WHERE tmp_holdsqueue.borrowernumber = hold_fill_targets.borrowernumber
-    AND tmp_holdsqueue.biblionumber   = hold_fill_targets.biblionumber
-    AND biblio.biblionumber           = hold_fill_targets.biblionumber
-    AND biblioitems.biblionumber      = hold_fill_targets.biblionumber
-    AND biblioitems.biblionumber      = biblio.biblionumber
-    AND tmp_holdsqueue.itemnumber     = hold_fill_targets.itemnumber
-    AND tmp_holdsqueue.itemnumber     = items.itemnumber
-   /;
-#                       JOIN biblio      USING (biblionumber)
-#				  LEFT JOIN biblioitems USING (biblionumber)
-#                  LEFT JOIN items       USING (  itemnumber)
-#                /;
+   FROM tmp_holdsqueue
+        JOIN biblio      USING (biblionumber)
+   LEFT JOIN biblioitems USING (biblionumber)
+   LEFT JOIN items       USING (  itemnumber)
+   |;
     if ($branchlimit) {
 	    $query .="AND hold_fill_targets.source_branchcode = ?";
         push @bind_params, $branchlimit;
@@ -1347,36 +1440,81 @@ whose keys are fields from the reserves table in the Koha database.
 
 =cut
 
+sub _getNextBranchInQueue
+{
+   my($currLib,$queue_sofar) = @_;
+   my $nextLib  = '';
+   my @branches;
+   my $nextpref = C4::Context->preference('NextLibraryHoldsQueueWeight');
+   my $staypref = C4::Context->preference('StaticHoldsQueueWeight');
+   my $dorand   = C4::Context->preference('RandomizeHoldsQueueWeight');
+   if ($nextpref) {
+      @branches = split(/\,\s*/,$nextpref);
+   }
+   elsif ($staypref) {
+      @branches = split(/\,\s*/, $staypref);
+   }
+   else {
+      @branches = keys %{C4::Branch::GetBranches()};
+   }
+
+   if (@branches && !$dorand) {
+      BRANCH:
+      for my $i(0..$#branches) {
+         if ($branches[$i] eq $currLib) {
+            if ($i+1 >scalar@branches) {
+               $nextLib = $branches[0];
+            }
+            else {
+               $nextLib = $branches[$i+1];
+            }
+            last BRANCH;
+         }
+      }
+      $nextLib ||= $branches[0];
+   }
+   elsif ($dorand) {
+      use List::Util qw(shuffle);
+      @branches = shuffle @branches; 
+      my @q = split(/\,/, $queue_sofar);
+      if (scalar @q >= scalar @branches) {
+         @q = splice(@q,-1*(@q%@branches));         
+      }
+      my %seen = ();
+      foreach(@q) { $seen{$_}++ }
+      foreach(@branches) {
+         next if $seen{$_};
+         $nextLib = $_;
+         last;
+      }
+      $nextLib ||= $branches[0];
+      $nextLib = $branches[-1] if $nextLib eq $currLib;
+      $nextLib = $branches[-2] if $nextLib eq $currLib;
+   }
+   return $nextLib;
+}
+
 sub ModReservePass
 {
-   my($nextlib,$nextlevel,$borrowernumber,$biblionumber,$itemnumber) = @_;
-   die "requires \$nextlib and \$nextlevel" unless ($nextlib && $nextlevel);
+   my($borrowernumber,$biblionumber,$itemnumber) = @_;
    my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("UPDATE hold_fill_targets
-   SET source_branchcode  = ?,
-       item_level_request = ?
-   WHERE borrowernumber   = ?
-     AND biblionumber     = ?
-     AND itemnumber       = ?") || die $dbh->errstr();
-   my $fx = $sth->execute(
-      $nextlib,
-      $nextlevel,
-      $borrowernumber,
-      $biblionumber,
-      $itemnumber
-   ) || die $dbh->errstr();
+   my $sth = $dbh->prepare("
+      SELECT queue_sofar
+        FROM tmp_holdsqueue
+       WHERE biblionumber   = ?
+         AND borrowernumber = ?");
+   $sth->execute($biblionumber,$borrowernumber);
+   ## figure out the next library to pass to
+
+   my $q = ($sth->fetchrow_array)[0];
+   my($currLib) = $q =~/\,?(\w+)$/;
+   $q  .= ',' . _getNextBranchInQueue($currLib,$q);
    $sth = $dbh->prepare("UPDATE tmp_holdsqueue
-      SET   item_level_request = ?
-      WHERE biblionumber       = ?
-      AND   itemnumber         = ?
-      AND   borrowernumber     = ?") || die $dbh->errstr();
-   $fx += $sth->execute(
-      $nextlevel,
-      $biblionumber,
-      $itemnumber,
-      $borrowernumber,
-   ) || die $dbh->errstr();
-   return $fx;
+      SET queue_sofar    = ?
+    WHERE biblionumber   = ?
+      AND borrowernumber = ?");
+   $sth->execute($q,$biblionumber,$borrowernumber);
+   return $q;
 }
 
 sub ModReserveFill {
@@ -1441,18 +1579,18 @@ sub ModReserveTrace
                      priority         = 0,
                      expirationdate   = NULL
               WHERE  biblionumber     = ?
-              AND    borrowernumber   = ?";
+              AND    borrowernumber   = ?
+              AND    reservedate      = ?";
     my $sth = $dbh->prepare($sql) || die $dbh->errstr();
     $sth->execute(
       $$res{biblionumber},
-      $$res{borrowernumber}) || die $dbh->errstr();
-    foreach(qw(hold_fill_targets tmp_holdsqueue)) {
+      $$res{borrowernumber},
+      $$res{reservedate}) || die $dbh->errstr();
+    foreach(qw(tmp_holdsqueue)) {
        $sth = $dbh->prepare("DELETE FROM $_
        WHERE borrowernumber = ?
          AND biblionumber   = ?") || die $dbh->errstr();
-       $sth->execute(
-         $$res{borrowernumber},
-         $$res{biblionumber}) || die $dbh->errstr();
+       $sth->execute($$res{borrowernumber},$$res{biblionumber});
     }
     $sth->finish;
 
