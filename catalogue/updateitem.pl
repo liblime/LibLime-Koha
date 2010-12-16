@@ -87,7 +87,7 @@ my $lost_item = C4::LostItems::GetLostItem($itemnumber);
 my $issues = GetItemIssues($itemnumber, 1);
 my $lostreturned_issue;
 foreach my $issue_ref (@$issues) {
-  if ($issue_ref->{'itemnumber'} eq itemnumber) {
+  if ($issue_ref->{'itemnumber'} eq $itemnumber) {
     $lostreturned_issue = $issue_ref;
     last;
   }
