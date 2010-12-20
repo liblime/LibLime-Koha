@@ -497,13 +497,16 @@ CREATE TABLE `borrowers` (
   `altcontactphone` varchar(50) default NULL,
   `smsalertnumber` varchar(50) default NULL,
   `exclude_from_collection` bool not null default false,
-  `last_reported_date` DATE DEFAULT NULL,
-  `last_reported_amount` DECIMAL(30,6) DEFAULT NULL,
+  `disable_reading_history` tinyint(1) default NULL,
+  `amount_notify_date` date,
+  `last_reported_date` date default NULL,
+  `last_reported_amount` decimal(30,6) default NULL,
   UNIQUE KEY `cardnumber` (`cardnumber`),
   PRIMARY KEY `borrowernumber` (`borrowernumber`),
   KEY `categorycode` (`categorycode`),
   KEY `branchcode` (`branchcode`),
   KEY `userid` (`userid`),
+  KEY `idx_name` (`surname`(4),`firstname`(4),`othernames`(4)),
   CONSTRAINT `borrowers_ibfk_1` FOREIGN KEY (`categorycode`) REFERENCES `categories` (`categorycode`),
   CONSTRAINT `borrowers_ibfk_2` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -927,9 +930,11 @@ CREATE TABLE `deletedborrowers` (
   `altcontactcountry` text default NULL,
   `altcontactphone` varchar(50) default NULL,
   `smsalertnumber` varchar(50) default NULL,
-  `exclude_from_collection` bool not null default false,
-  `last_reported_date` DATE DEFAULT NULL,
-  `last_reported_amount` DECIMAL(30,6) DEFAULT NULL,
+  `disable_reading_history` tinyint(1) default NULL,
+  `amount_notify_date` date,
+  `exclude_from_collection` BOOL NOT NULL DEFAULT FALSE,
+  `last_reported_date` date default NULL,
+  `last_reported_amount` decimal(30,6) default NULL,
   KEY `borrowernumber` (`borrowernumber`),
   KEY `cardnumber` (`cardnumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1173,6 +1178,9 @@ CREATE TABLE `issuingrules` (
   `maxissueqty` int(4) default NULL,
   `issuelength` int(4) default NULL,
   `branchcode` varchar(10) NOT NULL default '',
+  `max_fine` decimal(28,6) default NULL,
+  `holdallowed` tinyint(1) DEFAULT 2,
+  `max_holds` int(4) default NULL,
   PRIMARY KEY  (`branchcode`,`categorycode`,`itemtype`),
   KEY `categorycode` (`categorycode`),
   KEY `itemtype` (`itemtype`)
@@ -1880,7 +1888,8 @@ CREATE TABLE `statistics` (
   `itemtype` varchar(10) default NULL,
   `borrowernumber` int(11) default NULL,
   `associatedborrower` int(11) default NULL,
-  KEY `timeidx` (`datetime`)
+  KEY `timeidx` (`datetime`),
+  KEY `s_lostcard` (`borrowernumber`,`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -2410,6 +2419,9 @@ CREATE TABLE `messages` (
   `message_type` varchar(1) NOT NULL,
   `message` text NOT NULL,
   `message_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `checkout_display` tinyint(1) NOT NULL default 1,
+  `auth_value` varchar(80) default NULL,
+  `staffnumber` int(11) NOT NULL,
   PRIMARY KEY (`message_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -2727,6 +2739,34 @@ CREATE TABLE `session_defaults` (
   PRIMARY KEY  (`branchcode`,`name`),
   CONSTRAINT `session_defaults_ibfk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+DROP TABLE IF EXISTS overdueitemrules;
+CREATE TABLE overdueitemrules (
+branchcode varchar(10) NOT NULL default '',
+itemtype varchar(10) NOT NULL default '',
+delay1 int(4) default 0,
+letter1 varchar(20) default NULL,
+debarred1 varchar(1) default 0,
+delay2 int(4) default 0,
+debarred2 varchar(1) default 0,
+letter2 varchar(20) default NULL,
+delay3 int(4) default 0,
+letter3 varchar(20) default NULL,
+debarred3 int(1) default 0,
+PRIMARY KEY (branchcode,itemtype),
+CONSTRAINT overdueitemrules_ibfk_1 FOREIGN KEY (branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT overdueitemrules_ibfk_2 FOREIGN KEY (itemtype) REFERENCES itemtypes(itemtype) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS itemdeletelist;
+CREATE TABLE itemdeletelist (
+list_id int(11) not null,
+itemnumber int(11) not null,
+biblionumber int(11) not null,
+PRIMARY KEY (list_id,itemnumber)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
