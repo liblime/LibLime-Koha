@@ -424,6 +424,7 @@ my %default_values_for_mod_from_marc = (
     itemnotes            => undef, 
     itype                => undef, 
     location             => undef, 
+    permanent_location   => undef,
     materials            => undef, 
     notforloan           => 0,
     otherstatus          => undef,
@@ -535,6 +536,7 @@ sub ModItem {
                 itemnotes
                 holdingbranch
                 location
+                permanent_location
                 onloan
                 cn_sort
                 ccode
