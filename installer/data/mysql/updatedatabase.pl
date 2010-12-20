@@ -3957,6 +3957,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.03.05.003';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|ALTER TABLE reserves_suspended ADD COLUMN
+    displayexpired tinyint(1) NOT NULL DEFAULT 1|);
+    
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Added reserves_suspended.displayexpired )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
