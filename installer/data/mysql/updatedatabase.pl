@@ -3966,6 +3966,19 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Added reserves_suspended.displayexpired )\n";
 }
 
+$DBversion = '4.03.05.004';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|ALTER TABLE categories ADD COLUMN
+      maxholds smallint(6) default NULL AFTER reservefee|);
+    $dbh->do(q|ALTER TABLE categories ADD COLUMN
+       holds_block_threshold decimal(28,6) default NULL AFTER maxholds|);
+    $dbh->do(q|ALTER TABLE categories ADD COLUMN
+       circ_block_threshold decimal(28,6) default NULL AFTER holds_block_threshold|);
+    
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Added columns to categories for max holds by patron category )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

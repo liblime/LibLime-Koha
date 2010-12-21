@@ -121,6 +121,12 @@
 			<!-- /TMPL_IF -->
 					</select></li>
 	<li><label for="reservefee">Hold fee: </label><input type="text" name="reservefee" id="reservefee" size="6" value="<!-- TMPL_VAR NAME="reservefee" -->" /></li>
+   <li><label for="maxholds">Max holds: </label><input type=text name="maxholds" id="maxholds" size=6 value="<!-- TMPL_VAR NAME="maxholds" -->" />
+   <div class=hint>Maximum number of outstanding hold requests a user may have before generating an exception</div></li>
+   <li><label for="holds_block_threshold">Holds block threshold: </label><input type=text name="holds_block_threshold" id="holds_block_threshold" size=6 value="<!-- TMPL_VAR NAME="holds_block_threshold" -->" />
+   <div class=hint>Outstanding balance above which a patron may not place further hold requests</div></li>
+   <li><label for="circ_block_threshold">Circ block threhshold: </label><input type=text name="circ_block_threshold" id="circ_block_threshold" size=6 value="<!-- TMPL_VAR NAME="circ_block_threshold" -->" />
+   <div class=hint>Outstanding balance above which a patron may not check out</div></li>
 	<li><label for="category_type">Category type: </label> &nbsp; <select name="category_type" id="category_type">
 						<!-- TMPL_IF NAME="type_n" --><option value="" selected="selected">Select a Category type</option><!-- TMPL_ELSE --><option value="">Select a Category type</option><!-- /TMPL_IF -->
 					<!-- TMPL_IF NAME="type_A" --><option value="A" selected="selected">Adult</option><!-- TMPL_ELSE --><option value="A">Adult</option><!-- /TMPL_IF -->
@@ -227,6 +233,9 @@ Confirm Deletion of Category <!-- TMPL_VAR NAME="categorycode" escape="html" -->
 			<th scope="col">Enrollment fee</th>
 			<th scope="col">Overdue</th>
  			<th scope="col">Hold fee</th>
+         <th scope="col">Max holds</th>
+         <th scope="col">Holds<br>block<br>threshold</th>
+         <th scope="col">Circ<br>block<br>threshold</th>
             <!-- TMPL_IF NAME="EnhancedMessagingPreferences" -->
             <th scope="col">Messaging</th>
             <!-- /TMPL_IF -->
@@ -256,6 +265,9 @@ Confirm Deletion of Category <!-- TMPL_VAR NAME="categorycode" escape="html" -->
                         <td><!-- TMPL_VAR NAME="enrolmentfee" --></td>
                         <td><!-- TMPL_IF NAME="overduenoticerequired" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
                         <td><!-- TMPL_VAR NAME="reservefee" --></td>
+                        <td><!-- TMPL_VAR NAME="maxholds" --></td>
+                        <td><!-- TMPL_VAR NAME="holds_block_threshold" --></td>
+                        <td><!-- TMPL_VAR NAME="circ_block_threshold" --></td>
                         <!-- TMPL_IF NAME="EnhancedMessagingPreferences" -->
                         <td>
                             <!-- TMPL_IF NAME="messaging_prefs" -->

@@ -662,6 +662,9 @@ CREATE TABLE `categories` (
   `overduenoticerequired` tinyint(1) default NULL,
   `issuelimit` smallint(6) default NULL,
   `reservefee` decimal(28,6) default NULL,
+  `maxholds` smallint(6) default NULL,
+  `holds_block_threshold` decimal(28,6) default NULL,
+  `circ_block_threshold`  decimal(28,6) default NULL,
   `category_type` varchar(1) NOT NULL default 'A',
   PRIMARY KEY  (`categorycode`),
   UNIQUE KEY `categorycode` (`categorycode`)
