@@ -3,8 +3,10 @@
       <!-- TMPL_VAR NAME="opacnotforloandesc" -->
     <!-- TMPL_ELSIF NAME="notforloandesc" -->
       <!-- TMPL_VAR NAME="notforloandesc" -->
-    <!-- TMPL_ELSE -->
+    <!-- TMPL_ELSIF NAME="notforloanvalue" -->
       <!-- TMPL_VAR NAME="notforloanvalue" -->
+    <!-- TMPL_ELSE -->
+      Item type not for loan
     <!-- /TMPL_IF -->
 <!-- TMPL_ELSE -->
     <!-- TMPL_IF name="datedue" -->
@@ -19,8 +21,10 @@
               <!-- TMPL_VAR NAME="opacnotforloandesc" -->
             <!-- TMPL_ELSIF NAME="notforloandesc" -->
               <!-- TMPL_VAR NAME="notforloandesc" -->
-            <!-- TMPL_ELSE -->
+            <!-- TMPL_ELSIF NAME="notforloanvalue" -->
               <!-- TMPL_VAR NAME="notforloanvalue" -->
+            <!-- TMPL_ELSE -->
+              Item type not for loan
             <!-- /TMPL_IF -->
         <!-- TMPL_ELSE -->
             <!-- TMPL_IF name="itemlost"-->
