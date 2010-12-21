@@ -288,7 +288,8 @@ sub get_template_and_user {
             CourseReserves               => C4::Context->preference("CourseReserves"),
             BranchesLoop                 => GetBranchesLoop(),
             using_https                  => $in->{'query'}->https() ? 1 : 0,
-            ClubsAndServices             => C4::Context->preference("EnableClubsAndServices")
+            ClubsAndServices             => C4::Context->preference("EnableClubsAndServices"),
+            UsePeriodicals               => C4::Context->preference('UsePeriodicals'),
     );
 
     if ( $in->{'type'} eq "intranet" ) {

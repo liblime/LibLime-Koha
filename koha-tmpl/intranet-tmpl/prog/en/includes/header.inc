@@ -17,9 +17,12 @@
                             <li><a href="/cgi-bin/koha/acqui/acqui-home.pl">Acquisitions</a></li>
                             <!-- /TMPL_IF -->
                             <li><a href="/cgi-bin/koha/authorities/authorities-home.pl">Authorities</a></li>
-                            <!-- TMPL_IF NAME="CAN_user_serials" -->
+                            <!-- TMPL_IF EXPR="CAN_user_serials && !UsePeriodicals" -->
                             <li><a href="/cgi-bin/koha/serials/serials-home.pl">Serials</a></li>
                             <!-- /TMPL_IF -->
+                            <TMPL_IF NAME="UsePeriodicals">
+                            <li><a href="/cgi-bin/koha/periodicals/periodicals-home.pl">Periodicals</a></li>
+                            </TMPL_IF>
                             <!-- /TMPL_IF -->
                             <!-- TMPL_IF NAME="CAN_user_reports" -->
                             <li><a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a></li>
