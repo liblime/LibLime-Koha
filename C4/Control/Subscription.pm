@@ -89,6 +89,8 @@ sub UpdateOrCreate($) {
         $subscription->branchcode($query->param('branchcode'));
         $subscription->aqbookseller_id($query->param('aqbookseller_id') || undef);
         $subscription->expiration_date($query->param('expiration_date'));
+        $subscription->opac_note($query->param('opac_note'));
+        $subscription->staff_note($query->param('staff_note'));
         $subscription->adds_items($query->param('adds_items') || 0);
 
 	my $item_defaults = ConvertQueryToItemDefaults($query);

@@ -108,12 +108,12 @@ function FindAcqui(f)
         </select> (select a library)
       </li>
       <li>
-        <label for="notes">Public note:</label>
-        <textarea name="notes" id="notes" cols="30" rows="2"><!-- TMPL_VAR name="notes" --></textarea>
+        <label for="opac_note">Public note:</label>
+        <textarea name="opac_note" id="opac_note" cols="30" rows="2"><TMPL_VAR name="opac_note"></textarea>
       </li>
       <li>
-        <label for="internalnotes">Nonpublic note:</label>
-        <textarea name="internalnotes" id="internalnotes" cols="30" rows="2"><!-- TMPL_VAR name="internalnotes" --></textarea>
+        <label for="staff_note">Staff-only note:</label>
+        <textarea name="staff_note" id="staff_note" cols="30" rows="2"><TMPL_VAR name="staff_note"></textarea>
       </li>
         <li>
             <!-- TMPL_IF NAME="letterloop" -->
