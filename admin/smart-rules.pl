@@ -273,6 +273,8 @@ $sth->execute;
 my @row_loop;
 my @itemtypes;
 while (my $row=$sth->fetchrow_hashref){
+    # Literal apostrophe breaks the javascript
+    $row->{'description'} =~ s/\'|\"/&#39;/g;
     push @itemtypes,$row;
 }
 
