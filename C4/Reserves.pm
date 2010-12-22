@@ -644,7 +644,6 @@ Check queued list of this document and check if this document must be  transfere
 
 sub GetOtherReserves {
     my ($itemnumber) = @_;
-    warn "GetOtherReserves( $itemnumber )";
     my $messages;
     my $nextreservinfo;
     my ( $restype, $checkreserves, $count ) = CheckReserves($itemnumber);
@@ -1477,7 +1476,6 @@ $reservenumber is the reserves.reservenumber
 sub ModReserveStatus {
     #first : check if we have a reservation for this item .
     my ($itemnumber, $newstatus, $reservenumber) = @_;
-warn "ModReserveStatus($itemnumber, $newstatus, $reservenumber)";
     my $dbh          = C4::Context->dbh;
     my ($query,$sth,$sth_set);
 
@@ -1650,7 +1648,6 @@ Reduce the values of queuded list
 
 sub ModReserveMinusPriority {
     my ( $itemnumber, $borrowernumber, $biblionumber, $reservenumber ) = @_;
-warn "ModReserveMinusPriority( $itemnumber, $borrowernumber, $biblionumber )";
     #first step update the value of the first person on reserv
     my $dbh   = C4::Context->dbh;
     my $query = "
