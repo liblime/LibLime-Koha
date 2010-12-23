@@ -126,6 +126,7 @@ sub XSLTParse4Display {
     my $xmlrecord = $record->as_xml();
     my $sysxml = "<sysprefs>\n";
     foreach my $syspref ( qw/OPACURLOpenInNewWindow DisplayOPACiconsXSLT URLLinkText viewISBD DisplayStafficonsXSLT/ ) {
+        $syspref ||= '';
         $sysxml .= "<syspref name=\"$syspref\">" .
                    C4::Context->preference( $syspref ) .
                    "</syspref>\n";
