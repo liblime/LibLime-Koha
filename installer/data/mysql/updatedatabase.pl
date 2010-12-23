@@ -3947,6 +3947,8 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add session_defaults table )\n";
 }
 
+printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
+
 =item DropAllForeignKeys($table)
 
   Drop all foreign keys of the table $table
