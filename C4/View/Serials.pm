@@ -235,6 +235,7 @@ sub SeedTemplateWithPeriodicalSearch($$$) {
     foreach my $p (@periodicals) {
         my (undef, @biblios) = GetBiblio($p->{biblionumber});
         $p->{bibliotitle} = $biblios[0]->{title};
+        $p->{subscription_count} = C4::Model::Subscription::Manager->get_subscriptions_count(query => [periodical_id => $p->{id}]);
     }
     $template->param('searchresults_loop' => \@periodicals);
     $template;
