@@ -129,7 +129,13 @@ sub SeedTemplateWithPeriodicalData($$) {
         }
         my @periodical_serials = map {scalar column_value_pairs($_)} @{C4::Model::PeriodicalSerial::Manager->get_periodical_serials(
             query => [ periodical_id => $periodical_id ], sort_by => 'publication_date')};
-        _set_datetime_format(\@periodical_serials, $_) for qw(publication_date expected_date);
+        _set_datetime_format(\@periodical_serials, $_) for qw(publication_date);
+        foreach (@periodical_serials) {
+            $_->{expected} = C4::Model::SubscriptionSerial::Manager->get_subscription_serials_count(
+                query => [periodical_serial_id => $_->{id}, status => 1]);
+            $_->{arrived} = C4::Model::SubscriptionSerial::Manager->get_subscription_serials_count(
+                query => [periodical_serial_id => $_->{id}, status => 2]);
+        }
 
         $template->param(periodical_serials_loop => \@periodical_serials);
         $template->param(subscriptions_loop => _get_periodical_subscriptions_details($periodical));

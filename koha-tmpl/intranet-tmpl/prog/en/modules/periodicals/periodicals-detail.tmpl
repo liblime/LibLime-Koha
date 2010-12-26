@@ -36,18 +36,20 @@
     <h3>Record of Issues</h3>
     <table>
         <tr>
+            <!-- <th>Sequence</th> -->
             <th>Issue</th>
             <th>Publication Date</th>
-            <th>Sequence</th>
-            <!-- <th>Expected Date</th> -->
+            <th>Expected</th>
+            <th>Arrived</th>
             <th>Action</th>
         </tr>
         <TMPL_LOOP NAME="periodical_serials_loop">
         <tr>
+            <!-- <td><TMPL_VAR NAME="sequence"></td> -->
             <td><TMPL_VAR NAME="vintage"></td>
             <td><TMPL_VAR NAME="publication_date"></td>
-            <td><TMPL_VAR NAME="sequence"></td>
-            <!-- <td><TMPL_VAR NAME="expected_date"></td> -->
+            <td><TMPL_VAR NAME="expected"></td>
+            <td><TMPL_VAR NAME="arrived"></td>
             <td>
               <a href="periodical_serial-edit.pl?periodical_serial_id=<TMPL_VAR NAME="id">">Edit</a>
               <TMPL_IF NAME="__last__">| <a href="periodical_serial-edit.pl?periodical_serial_id=<TMPL_VAR NAME="id">&op=combine">Combine</a></TMPL_IF>
