@@ -39,9 +39,11 @@ use C4::Model::Biblio;
 use C4::Model::Biblio::Manager;
 use C4::Model::Biblioitem;
 use C4::Model::Biblioitem::Manager;
+use C4::Control::Subscription;
+use C4::Control::PeriodicalSerial;
 use C4::Biblio;
 
-sub _create_first_periodicalserial($$) {
+sub _createFirstPeriodicalSerial($$) {
     my ($query, $periodical_id) = @_;
     my $periodical_serial = C4::Model::PeriodicalSerial->new;
     $periodical_serial->periodical_id($periodical_id);
@@ -54,7 +56,7 @@ sub _create_first_periodicalserial($$) {
     return $periodical_serial->id;
 }
 
-sub _set_biblio_as_periodical($) {
+sub _setBiblioAsPeriodical($) {
     my $biblionumber = shift or croak;
 
     my (undef, ($biblio)) = C4::Biblio::GetBiblio($biblionumber);
@@ -90,8 +92,8 @@ sub UpdateOrCreate($) {
         $periodical->frequency($query->param('frequency'));
         $periodical->save;
 
-        _create_first_periodicalserial($query, $periodical->id) if (not defined $query->param('periodical_id'));
-        _set_biblio_as_periodical($periodical->biblionumber);
+        _createFirstPeriodicalSerial($query, $periodical->id) if (not defined $query->param('periodical_id'));
+        _setBiblioAsPeriodical($periodical->biblionumber);
 
         print $query->redirect("periodicals-detail.pl?periodical_id=".$periodical->id);
         $periodical->id;
@@ -103,6 +105,31 @@ sub UpdateOrCreate($) {
     };
 
     return $periodical_id;
+}
+
+sub Delete($) {
+    my $query = shift or croak;
+    my $periodical_id = (!ref $query) ? $query : $query->param('periodical_id');
+    croak 'Unable to determine periodical_id' if not defined $periodical_id;
+
+    my $retval = try {
+        my $p = C4::Model::Periodical->new(id => $periodical_id)->load;
+        foreach ($p->subscriptions) {
+            C4::Control::Subscription::Delete($_->id);
+        }
+        foreach ($p->periodical_serials) {
+            C4::Control::PeriodicalSerial::Delete($_->id);
+        }
+        $p->delete;
+    }
+    catch {
+        my $message = "Error deleting subscription: $_\n";
+        carp $message;
+        $query->param(error => $message);
+        undef;
+    };
+
+    return $retval;
 }
 
 sub SearchPeriodicals {

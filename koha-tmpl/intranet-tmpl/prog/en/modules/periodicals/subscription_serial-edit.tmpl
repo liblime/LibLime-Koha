@@ -11,9 +11,18 @@
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="periodicals-search.inc" -->
 
+
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="periodicals-home.pl">Periodicals</a> &rsaquo; Edit Subscription Serial</div>
 
-<div id="doc3" class="yui-t7">
+<div id="doc3" class="yui-t2">
+
+<div class="yui-b">
+<TMPL_INCLUDE NAME="periodicals-menu.inc">
+</div>
+
+<div id="yui-main">
+<div class="yui-b">
+<TMPL_INCLUDE NAME="periodicals-toolbar.inc">
 
 <h1>Editing serial receipt status for "<TMPL_VAR NAME="bibliotitle">"</h1>
 
@@ -67,6 +76,8 @@
 </table>
 </form>
 
+</div>
+</div>
 </div>
 
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

@@ -16,14 +16,11 @@
 
 	function yuiToolbar() {
 	
-    <!-- TMPL_IF NAME="subscriptionid" -->
-	    var editmenu = [
-	        { text: _("Edit Subscription"),  <!-- TMPL_IF NAME="cannotedit" -->disabled: true, <!-- /TMPL_IF --> url: "/cgi-bin/koha/serials/subscription-add.pl?op=mod&amp;subscriptionid=<!-- TMPL_VAR name="subscriptionid" -->" },
-	        { text: _("Edit as New (Duplicate)"), <!-- TMPL_IF NAME="cannotedit" -->disabled: true, <!-- /TMPL_IF --> url: "/cgi-bin/koha/serials/subscription-add.pl?op=dup&amp;subscriptionid=<!-- TMPL_VAR name="subscriptionid" -->" },
-			{ text: _("Delete Subscription"), <!-- TMPL_IF NAME="cannotedit" -->disabled: true, <!-- /TMPL_IF --> onclick: {fn: confirm_deletion }}
-	    ];
-	 <!-- /TMPL_IF -->
-	new YAHOO.widget.Button("newsubscription");
+	new YAHOO.widget.Button("new_periodical");
+    new YAHOO.widget.Button("delete_periodical");
+    new YAHOO.widget.Button("delete_periodical_serial");
+    new YAHOO.widget.Button("delete_subscription");
+    new YAHOO.widget.Button("delete_subscription_serial");
 	new YAHOO.widget.Button({
 	        type: "menu",
 	        label: _("Edit"),
@@ -32,16 +29,29 @@
 	        container: "editmenuc",
 			
 	    });
-		<!-- /TMPL_IF -->
-	    new YAHOO.widget.Button("renew");
-	    new YAHOO.widget.Button("receive");
-		<!-- /TMPL_IF -->
+    new YAHOO.widget.Button("renew");
+    new YAHOO.widget.Button("receive");
 	}
 
 	//]]>
 	</script>
 <ul class="toolbar">
-	<li><a id="newsubscription" href="periodicals-add.pl">New Periodical</a></li>
+	<li><a id="new_periodical" href="periodicals-add.pl">New Periodical</a></li>
+
+<!--
+    <TMPL_IF NAME="periodical_id">
+	<li><a id="delete_periodical" href="delete.pl?type=periodical&id=<TMPL_VAR NAME="periodical_id">">Delete Periodical</a></li>
+    </TMPL_IF>
+
+    <TMPL_IF NAME="subscription_serial_id">
+	<li><a id="delete_subscription_serial" href="delete.pl?type=subscription_serial&id=<TMPL_VAR NAME="subscription_serial_id">">Delete Subscription Serial</a></li>
+    </TMPL_IF>
+
+    <TMPL_IF NAME="subscription_id">
+	<li><a id="delete_subscription" href="delete.pl?type=subscription&id=<TMPL_VAR NAME="subscription_id">">Delete Subscription</a></li>
+    </TMPL_IF>
+-->
+
     <!-- TMPL_IF NAME="subscriptionid" -->
         <!-- TMPL_UNLESS name="cannotedit" -->
             <li id="editmenuc"><a id="edit" href="/cgi-bin/koha/serials/subscription-add.pl?op=mod&amp;subscriptionid=<!-- TMPL_VAR name="subscriptionid" -->">Edit</a></li>

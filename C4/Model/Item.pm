@@ -32,6 +32,7 @@ __PACKAGE__->meta->setup(
         reserves             => { type => 'integer' },
         restricted           => { type => 'integer' },
         itemnotes            => { type => 'scalar', length => 16777215 },
+        checkinnotes         => { type => 'varchar', length => 255 },
         holdingbranch        => { type => 'varchar', length => 10 },
         paidfor              => { type => 'scalar', length => 16777215 },
         timestamp            => { type => 'timestamp', not_null => 1 },

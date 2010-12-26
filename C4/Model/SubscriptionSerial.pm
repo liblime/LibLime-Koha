@@ -12,9 +12,9 @@ __PACKAGE__->meta->setup(
         subscription_id      => { type => 'integer', not_null => 1 },
         periodical_serial_id => { type => 'integer', not_null => 1 },
         status               => { type => 'integer', default => 1, not_null => 1 },
-        expected_date        => { type => 'date' },
         received_date        => { type => 'datetime' },
         itemnumber           => { type => 'integer' },
+        expected_date        => { type => 'date' },
     ],
 
     primary_key_columns => [ 'id' ],

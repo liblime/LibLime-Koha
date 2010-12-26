@@ -94,4 +94,27 @@ sub Update($) {
     return $subscription_serial_id;
 }
 
+sub Delete($) {
+    my $query = shift or croak;
+    my $subscription_serial_id = (!ref $query) ? $query : $query->param('subscription_serial_id');
+    croak 'Unable to determine subscription_serial_id' if not defined $subscription_serial_id;
+
+    my $retval = try {
+        # FIXME: first delete any associated items, but C4::Items::DelItem is
+        # currently too broken
+        my $ss = C4::Model::SubscriptionSerial->new(id => $subscription_serial_id)->load;
+        my $parent = $ss->subscription_id;
+        $ss->delete;
+        return $parent;
+    }
+    catch {
+        my $message = "Error deleting subscription serial: $_\n";
+        carp $message;
+        $query->param(error => $message);
+        undef;
+    };
+
+    return $retval;
+}
+
 1;

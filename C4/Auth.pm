@@ -1591,7 +1591,8 @@ sub _uniq {
 
 sub GetUserGroupBranches {
     my $category = shift or die;
-    my $userid = shift || C4::Context::userenv->{id} or die;
+    my $userid = shift;
+    $userid //= (C4::Context::userenv) ? C4::Context::userenv->{id} : undef;
 
     my @branches;
     my $flags = haspermission($userid);

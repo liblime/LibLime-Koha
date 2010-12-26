@@ -34,6 +34,7 @@ use DateTime::Format::Strptime;
 
 use C4::Model::Subscription;
 use C4::Model::SubscriptionSerial;
+use C4::Control::SubscriptionSerial;
 use C4::Auth;
 
 sub _create_first_subscriptionserial($$) {
@@ -109,6 +110,30 @@ sub UpdateOrCreate($) {
     };
 
     return $subscription_id;
+}
+
+sub Delete($) {
+    my $query = shift or croak;
+    my $subscription_id = (!ref $query) ? $query : $query->param('subscription_id');
+    croak 'Unable to determine subscription_id' if not defined $subscription_id;
+
+    my $retval = try {
+        my $s = C4::Model::Subscription->new(id => $subscription_id)->load;
+        my $parent = $s->periodical_id;
+        foreach ($s->subscription_serials) {
+            C4::Control::SubscriptionSerial::Delete($_->id);
+        }
+        $s->delete;
+        return $parent;
+    }
+    catch {
+        my $message = "Error deleting subscription: $_\n";
+        carp $message;
+        $query->param(error => $message);
+        undef;
+    };
+
+    return $retval;
 }
 
 sub SetSubscriptionDefaults($$) {

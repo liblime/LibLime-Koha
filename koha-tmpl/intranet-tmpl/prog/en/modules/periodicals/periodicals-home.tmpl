@@ -24,11 +24,16 @@
     <tr>
         <th>Title</th>
         <th>Subscriptions</th>
+        <th>Action</th>
     </tr>
     <TMPL_LOOP NAME="searchresults_loop">
         <tr>
           <td><a href="periodicals-detail.pl?periodical_id=<TMPL_VAR NAME="id">"><TMPL_VAR NAME="bibliotitle"></a></td>
           <td><TMPL_VAR NAME="subscription_count"></td>
+          <td>
+            <a href="periodicals-add.pl?periodical_id=<TMPL_VAR NAME="id">">Edit</a> |
+            <a href="delete.pl?type=periodical&id=<TMPL_VAR NAME="id">">Delete</a>
+          </td>
         </tr>   
     </TMPL_LOOP>
 </table>

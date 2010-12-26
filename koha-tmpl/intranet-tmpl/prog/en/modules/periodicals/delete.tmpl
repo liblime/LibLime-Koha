@@ -1,0 +1,44 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Periodicals</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+</head>
+<body> 
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="periodicals-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; Periodicals </div>
+
+<div id="doc3" class="yui-t2">
+
+<div class="yui-b">
+<!-- TMPL_INCLUDE NAME="periodicals-menu.inc" -->
+</div>
+
+<div id="yui-main">
+<div class="yui-b">
+  <TMPL_INCLUDE NAME="periodicals-toolbar.inc">
+
+  Really delete <TMPL_VAR NAME="type_human"> <TMPL_VAR NAME="id">?<br/>
+  <TMPL_IF EXPR="type eq 'periodical'">
+    Note: this will also delete <TMPL_VAR NAME="subscription_count"> subscriptions.
+  </TMPL_IF>
+  <TMPL_IF EXPR="type eq 'periodical_serial'">
+    Note: this will also delete <TMPL_VAR NAME="subscription_serial_count"> subscription-serials.
+  </TMPL_IF>
+  <TMPL_IF EXPR="type eq 'subscription'">
+    Note: this will also delete <TMPL_VAR NAME="subscription_serial_count"> subscriptions-serials.
+  </TMPL_IF>
+  <br/>
+  <form method="GET" action="delete.pl">
+    <input type="submit" value="Okay" />
+    <input type="button" value="Cancel" onClick="history.go(-1);" />
+    <input type="hidden" name="confirmed" />
+    <input type="hidden" name="type" value="<TMPL_VAR NAME="type">" />
+    <input type="hidden" name="id" value="<TMPL_VAR NAME="id">" />
+    <input type="hidden" name="redir" value="<TMPL_VAR NAME="redir">" />
+  </form>
+
+</div>
+
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
