@@ -357,7 +357,9 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
     <!-- TMPL_ELSE -->
 	<table id="holdingst">
 	    <thead><tr>
+      <!-- TMPL_UNLESS NAME="HideItypeInOPAC" -->
 		<!-- TMPL_IF NAME="item-level_itypes" --><th>Item type</th><!-- /TMPL_IF -->
+      <!-- /TMPL_UNLESS -->
       <th>Library</th>
 		<th>Location</th>
 	    <!-- TMPL_IF NAME="itemdata_ccode" --><th>Collection</th><!-- /TMPL_IF -->
@@ -373,7 +375,11 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 		<th>Date Due</th>
 	    </tr></thead>
 	    <tbody><!-- TMPL_LOOP NAME="ITEM_RESULTS" -->
-	    <tr><!-- TMPL_IF NAME="item-level_itypes" --><td><!-- TMPL_IF NAME="imageurl" --><img src="<!-- TMPL_VAR NAME="imageurl" -->" title="<!-- TMPL_VAR NAME="description" -->" alt="<!-- TMPL_VAR NAME="description" -->" /><!-- /TMPL_IF --> <!-- TMPL_VAR NAME="description" --></td><!-- /TMPL_IF -->
+	    <tr>
+       <!-- TMPL_UNLESS NAME="HideItypeInOPAC" -->
+       <!-- TMPL_IF NAME="item-level_itypes" --><td><!-- TMPL_IF NAME="imageurl" --><img src="<!-- TMPL_VAR NAME="imageurl" -->" title="<!-- TMPL_VAR NAME="description" -->" alt="<!-- TMPL_VAR NAME="description" -->" /><!-- /TMPL_IF --> <!-- TMPL_VAR NAME="description" --></td><!-- /TMPL_IF -->
+       <!-- /TMPL_UNLESS -->
+
       <td><!-- TMPL_VAR NAME="library" --></td>
 		<td><!-- TMPL_VAR NAME="location_description" --></td>
 		<!-- TMPL_IF NAME="itemdata_ccode" --><td><!-- TMPL_VAR NAME="ccode" --></td><!-- /TMPL_IF -->

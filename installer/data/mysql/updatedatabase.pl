@@ -3979,6 +3979,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Added columns to categories for max holds by patron category )\n";
 }
 
+$DBversion = '4.03.05.005';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('HideItypeInOPAC','0','If ON, do not use/display item type in the OPAC','','YesNo');
+    |);
+    
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Added syspref HideItypeInOPAC )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

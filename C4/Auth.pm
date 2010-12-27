@@ -290,6 +290,7 @@ sub get_template_and_user {
             using_https                  => $in->{'query'}->https() ? 1 : 0,
             ClubsAndServices             => C4::Context->preference("EnableClubsAndServices"),
             UsePeriodicals               => C4::Context->preference('UsePeriodicals'),
+            HideItypeInOPAC              => C4::Context->boolean_preference('HideItypeInOPAC'),
     );
 
     if ( $in->{'type'} eq "intranet" ) {

@@ -249,8 +249,10 @@
                 <tr>
                   <th colspan="2">Hold</th>
                   <th>Title</th>
+                  <!-- TMPL_UNLESS NAME="HideItypeInOPAC" -->
                   <!-- TMPL_UNLESS NAME="item-level_itypes" -->
                     <th>Item Type</th>
+                  <!-- /TMPL_UNLESS -->
                   <!-- /TMPL_UNLESS -->
                   <th>Priority</th>
 		  <!-- TMPL_IF NAME="reserve_in_future" -->
@@ -305,11 +307,13 @@
                       <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --><!-- TMPL_IF NAME="subtitle" --> <!-- TMPL_VAR NAME="subtitle" ESCAPE="html" --><!-- /TMPL_IF --></a>
                       <!-- TMPL_IF NAME="author" -->,  by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF -->
                     </td>
+                    <!-- TMPL_UNLESS NAME="HideItypeInOPAC" -->
                     <!-- TMPL_UNLESS NAME="item-level_itypes" -->
                       <td>
                         <!-- TMPL_IF NAME="imageurl" --><img src="<!-- TMPL_VAR NAME="imageurl" -->" alt="" /><!-- /TMPL_IF -->
 						<!-- TMPL_VAR NAME="description" -->
                       </td>
+                    <!-- /TMPL_UNLESS -->
                     <!-- /TMPL_UNLESS -->
                     <td><!-- TMPL_VAR name="rank" --> out of <!-- TMPL_VAR NAME="reservecount" --></td>
 		    <!-- TMPL_IF NAME="reserve_in_future" -->
@@ -429,9 +433,11 @@
                           <caption>Select a specific copy:</caption>
                           <tr>
                             <th>Copy</th>
+                            <!-- TMPL_UNLESS NAME="HideItypeInOPAC" -->
                             <!-- TMPL_IF NAME="item-level_itypes" -->
                               <th>Item Type</th>
                             <!-- /TMPL_IF -->
+                            <!-- /TMPL_UNLESS -->
                             <th>Barcode</th>
                             <th>Home Library</th>
 <!--                              <th>Last Location</th> -->
@@ -455,12 +461,14 @@
                                   <img src="/intranet-tmpl/<!-- TMPL_VAR NAME="theme" -->/img/famfamfam/silk/cross.png" alt="Cannot be put on hold" title="Cannot be put on hold" />
                                 <!-- /TMPL_IF -->
                               </td>
+                              <!-- TMPL_UNLESS NAME="HideItypeInOPAC" -->
                               <!-- TMPL_IF NAME="item-level_itypes" -->
                                 <td>
                                   <!-- TMPL_IF NAME="imageurl" --><img src="<!-- TMPL_VAR NAME="imageurl" -->" alt="" /><!-- /TMPL_IF -->
 								<!-- TMPL_VAR NAME="description" -->
                                 </td>
                               <!-- /TMPL_IF -->
+                              <!-- /TMPL_UNLESS -->
                               <td><!-- TMPL_VAR NAME="barcode" --></td>
                               <td><!-- TMPL_VAR NAME="homeBranchName" --></td>
 <!--                                <td><!-- TMPL_VAR NAME="holdingBranchName" --></td>
