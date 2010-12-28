@@ -90,7 +90,8 @@ function popup(subscriptionid) {
                 <td><TMPL_VAR name="expected_date"></td>
                 <td><TMPL_VAR name="received_date"></td>
                 <td><TMPL_VAR name="status"></td>
-                <td><a href="subscription_serial-edit.pl?subscription_serial_id=<TMPL_VAR NAME="id">">Edit</a></td>
+                <td><a href="subscription_serial-edit.pl?subscription_serial_id=<TMPL_VAR NAME="id">">Edit</a> |
+                  <a href="delete.pl?type=subscription_serial&id=<TMPL_VAR NAME="id">">Delete</a></td>
             </tr>
         </TMPL_LOOP>
         </table>

@@ -10,6 +10,7 @@ use DateTime;
 use C4::Model::Periodical;
 use C4::Model::PeriodicalSerial;
 use C4::Model::PeriodicalSerial::Manager;
+use C4::Control::SubscriptionSerial;
 
 use C4::Control::PeriodicalSerialFormats
     qw(PredictNextSequenceFromSeed
@@ -89,6 +90,30 @@ sub Update($) {
     };
 
     return $periodical_serial;
+}
+
+sub Delete($) {
+    my $query = shift or croak;
+    my $periodical_serial_id = (!ref $query) ? $query : $query->param('periodical_serial_id');
+    croak 'Unable to determine periodical_serial_id' if not defined $periodical_serial_id;
+
+    my $retval = try {
+        my $ps = C4::Model::PeriodicalSerial->new(id => $periodical_serial_id)->load;
+        my $parent = $ps->periodical_id;
+        foreach ($ps->subscription_serials) {
+            C4::Control::SubscriptionSerials::Delete($_->id);
+        }
+        $ps->delete;
+        return $parent;
+    }
+    catch {
+        my $message = "Error deleting periodical serial: $_\n";
+        carp $message;
+        $query->param(error => $message);
+        undef;
+    };
+
+    return $retval;
 }
 
 sub CombineSequences($$;$) {

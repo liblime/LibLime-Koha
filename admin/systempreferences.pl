@@ -351,6 +351,7 @@ $tabsysprefs{AutoSelfCheckAllowed}       = "OPAC";
 $tabsysprefs{AutoSelfCheckID}            = "OPAC";
 $tabsysprefs{AutoSelfCheckPass}          = "OPAC";
 $tabsysprefs{OPACSearchSuggestionsCount} = "OPAC";
+$tabsysprefs{HideItypeInOPAC}            = 'OPAC';
 
 # OPAC
 $tabsysprefs{SearchMyLibraryFirst}   = "OPAC";

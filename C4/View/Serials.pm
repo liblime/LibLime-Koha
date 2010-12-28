@@ -129,10 +129,20 @@ sub SeedTemplateWithPeriodicalData($$) {
         }
         my @periodical_serials = map {scalar column_value_pairs($_)} @{C4::Model::PeriodicalSerial::Manager->get_periodical_serials(
             query => [ periodical_id => $periodical_id ], sort_by => 'publication_date')};
-        _set_datetime_format(\@periodical_serials, $_) for qw(publication_date expected_date);
+        _set_datetime_format(\@periodical_serials, $_) for qw(publication_date);
+        foreach (@periodical_serials) {
+            $_->{expected} = C4::Model::SubscriptionSerial::Manager->get_subscription_serials_count(
+                query => [periodical_serial_id => $_->{id}, status => 1]);
+            $_->{arrived} = C4::Model::SubscriptionSerial::Manager->get_subscription_serials_count(
+                query => [periodical_serial_id => $_->{id}, status => 2]);
+        }
 
         $template->param(periodical_serials_loop => \@periodical_serials);
         $template->param(subscriptions_loop => _get_periodical_subscriptions_details($periodical));
+        $template->param(subscription_count =>
+                         C4::Model::Subscription::Manager->get_subscriptions_count(
+                             query => [periodical_id => $periodical_id]
+                         ));
         $template;
     } catch {
         my $message = sprintf "Error seeding data for periodical #%d: $_", $periodical_id // -1;
@@ -149,6 +159,10 @@ sub SeedTemplateWithPeriodicalSerialData($$) {
         _set_datetime_format(undef, $ps_flat->{publication_date});
         $template->param(periodical_serials_loop => [$ps_flat]);
         $template->param(periodical_id => $ps_flat->{periodical_id});
+        $template->param(subscription_serial_count =>
+                         C4::Model::SubscriptionSerial::Manager->get_subscription_serials_count(
+                             query => [periodical_serial_id => $periodical_serial_id]
+                         ));
         $template;
     } catch {
         my $message = sprintf "Error seeding data for periodical_serial #%d: $_", $periodical_serial_id // -1;
@@ -218,6 +232,10 @@ sub SeedTemplateWithSubscriptionData($$) {
             push @ss_flats, $ss_flat;
         }
         $template->param(subscription_serials_loop => \@ss_flats);
+        $template->param(subscription_serial_count =>
+                         C4::Model::SubscriptionSerial::Manager->get_subscription_serials_count(
+                             query => [subscription_id => $subscription_id]
+                         ));
         $template;
     } catch {
         my $message = sprintf "Error seeding data for subscription #%d: $_", $subscription_id // -1;
@@ -235,6 +253,7 @@ sub SeedTemplateWithPeriodicalSearch($$$) {
     foreach my $p (@periodicals) {
         my (undef, @biblios) = GetBiblio($p->{biblionumber});
         $p->{bibliotitle} = $biblios[0]->{title};
+        $p->{subscription_count} = C4::Model::Subscription::Manager->get_subscriptions_count(query => [periodical_id => $p->{id}]);
     }
     $template->param('searchresults_loop' => \@periodicals);
     $template;

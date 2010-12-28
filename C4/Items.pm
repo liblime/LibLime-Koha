@@ -573,14 +573,12 @@ sub MoveItemToAnotherBiblio {
   my $old_bib = GetBiblioData( $item->{'biblionumber'} );
   my $new_bib = GetBiblioData( $to_biblionumber );
   
-  warn "BibItemNumb: " . $new_bib->{'biblioitemnumber'};
-
   my $dbh = C4::Context->dbh;
   
   $dbh->do('SET FOREIGN_KEY_CHECKS=0');
   my $sql = "UPDATE items SET biblionumber = ?, biblioitemnumber = ? WHERE itemnumber = ?";
   my $sth = $dbh->prepare( $sql );
-  $sth->execute( $new_bib->{'biblionumber'}, $new_bib->{'biblionumbernumber'}, $itemnumber );
+  $sth->execute( $new_bib->{'biblionumber'}, $new_bib->{'biblioitemnumber'}, $itemnumber );
   $dbh->do('SET FOREIGN_KEY_CHECKS=1');
   
   $sql = "UPDATE reserves SET biblionumber = ? WHERE itemnumber = ?";

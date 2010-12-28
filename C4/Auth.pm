@@ -290,6 +290,7 @@ sub get_template_and_user {
             using_https                  => $in->{'query'}->https() ? 1 : 0,
             ClubsAndServices             => C4::Context->preference("EnableClubsAndServices"),
             UsePeriodicals               => C4::Context->preference('UsePeriodicals'),
+            HideItypeInOPAC              => C4::Context->boolean_preference('HideItypeInOPAC'),
     );
 
     if ( $in->{'type'} eq "intranet" ) {
@@ -1590,7 +1591,8 @@ sub _uniq {
 
 sub GetUserGroupBranches {
     my $category = shift or die;
-    my $userid = shift || C4::Context::userenv->{id} or die;
+    my $userid = shift;
+    $userid //= (C4::Context::userenv) ? C4::Context::userenv->{id} : undef;
 
     my @branches;
     my $flags = haspermission($userid);
