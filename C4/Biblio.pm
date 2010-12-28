@@ -1856,6 +1856,7 @@ sub TransformHtmlToMarc {
     foreach my $param_name (keys %$cgi_params) {
         if ($param_name =~ /^tag_/) {
             my $param_value = $cgi_params->{$param_name};
+            $param_value =~ s/^\s+|\s+$//g;
             if (utf8::decode($param_value)) {
                 $cgi_params->{$param_name} = $param_value;
             } 

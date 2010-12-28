@@ -295,6 +295,7 @@ END_SQL
     $sth->execute( $notify_value );
     while ( my $patron_hits = $sth->fetchrow_hashref() ) {
       my $patron = GetMemberDetails($patron_hits->{borrowernumber});
+      next if (($mybranch) && ($patron->{'branchcode'} ne $mybranch));
     
       my $letter = C4::Letters::getletter( 'circulation', $letter_code );
       unless ($letter) {
