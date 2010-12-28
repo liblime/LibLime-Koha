@@ -477,17 +477,20 @@ foreach my $biblionumber (@biblionumbers) {
             
 			my $issuingrule = GetIssuingRule( $borrowerinfo->{'categorycode'}, $item->{'itype'}, $item->{'homebranch'} );
             my $policy_holdallowed = 1;
-            
             $item->{'holdallowed'} = $issuingrule->{'holdallowed'};
 
-            if ( ! exists $issuingrule->{'holdallowed'} ||
-                 $issuingrule->{'holdallowed'} == 0 ||
-                 ( $issuingrule->{'holdallowed'} == 1 && defined($borrowerinfo) && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) ) {
+            if (!$issuingrule->{'holdallowed'} ||
+                ( 
+                  ($borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) 
+                  && ($issuingrule->{'branchcode'} eq '*')
+                  && $issuingrule->{holdallowed}
+                   ) 
+                ) {
                 $policy_holdallowed = 0;
             }
             
             if (IsAvailableForItemLevelRequest($itemnumber) and not $item->{cantreserve}) {
-                if ( not $policy_holdallowed ) {
+                if (!$policy_holdallowed ) {
 					if ( C4::Context->preference( 'AllowHoldPolicyOverride' ) ) {
 						$item->{override} = 1;
 						$num_override++;
