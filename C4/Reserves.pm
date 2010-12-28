@@ -1016,7 +1016,6 @@ sub CheckReserves {
 
     # Find this item in the reserves
     my @reserves = _Findgroupreserve( $bibitem, $biblio, $itemnumber );
-    my $count    = scalar @reserves;
 
     # $priority and $highest are used to find the most important item
     # in the list returned by &_Findgroupreserve. (The lower $priority,
@@ -1026,14 +1025,19 @@ sub CheckReserves {
     my $exact;
     my $local;
     my $oldest;
-    
-    if ($count) {
+   
+    my $count = @reserves;
+    my $nohold = 0;
+    if (@reserves) {
         my $priority = 10000000;
         foreach my $res (@reserves) {
-            my $issuingrule = C4::Circulation::GetIssuingRule ($res->{'borrowercategory'},$itemtype,$itembranch);
-            next unless $issuingrule;
-            if ($issuingrule -> {'holdallowed'} == 0 || 
-                ($issuingrule->{'holdallowed'} == 1 && $itembranch ne $res->{'borrowerbranch'})){
+            my $issuingrule = C4::Circulation::GetIssuingRule ($$res{borrowercategory},$itemtype,$itembranch);
+            unless ($issuingrule) {
+               next;
+            }
+            if (!$issuingrule ->{'holdallowed'} || 
+                ($issuingrule->{'holdallowed'} && ($itembranch ne $res->{'borrowerbranch'})) ){
+              $nohold++;
               next;
             }
             # FIXME - $item might be undefined or empty: the caller
@@ -1071,7 +1075,8 @@ sub CheckReserves {
             )
       );
     }
-    
+
+    if ($nohold==$count) { return (0,0,0) }
     if ( $oldest ) {
       return( 'Reserved', $oldest, $count );
     } elsif ( $local ) {
