@@ -210,7 +210,7 @@ sub GetItemForQueue
              items.barcode,
              items.holdingbranch
         FROM items,biblio
-       WHERE items.biblionumber = items.biblionumber
+       WHERE biblio.biblionumber = items.biblionumber
          AND items.biblionumber = ?
          AND items.itemnumber   = ?") || die $dbh->errstr();
    $sth->execute($biblionumber,$itemnumber) || die $dbh->errstr();
