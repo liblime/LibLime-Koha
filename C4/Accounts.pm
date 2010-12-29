@@ -371,13 +371,17 @@ sub chargelostitem{
 # FIXME: itemlost should be set to 3 after payment is made, should be a warning to the interface that
 # a charge has been added
 # FIXME : if no replacement price, borrower just doesn't get charged?
-   
+
     my $dbh = C4::Context->dbh();
     my ($itemnumber) = @_;
-    my $sth=$dbh->prepare("SELECT issues.*,items.*,biblio.title 
+
+    # Pull default replacement price from itemtypes table in the event
+    # items.replacementprice is not set
+    my $sth=$dbh->prepare("SELECT issues.*,items.*,biblio.title,itemtypes.replacement_price 
                            FROM issues 
                            JOIN items USING (itemnumber) 
                            JOIN biblio USING (biblionumber)
+                           LEFT JOIN itemtypes ON (items.itype=itemtypes.itemtype)
                            WHERE issues.itemnumber=?");
     $sth->execute($itemnumber);
     my $issues=$sth->fetchrow_hashref();
@@ -400,9 +404,9 @@ sub chargelostitem{
             my $sth2=$dbh->prepare("INSERT INTO accountlines
             (borrowernumber,accountno,date,amount,description,accounttype,amountoutstanding,itemnumber)
             VALUES (?,?,now(),?,?,'L',?,?)");
-            $sth2->execute($issues->{'borrowernumber'},$accountno,$issues->{'replacementprice'} || 0,
+            $sth2->execute($issues->{'borrowernumber'},$accountno,$issues->{'replacementprice'} || $issues->{'replacement_price'} || 0,
             "Lost Item $issues->{'title'} $issues->{'barcode'}",
-            $issues->{'replacementprice'} || 0,$itemnumber);
+            $issues->{'replacementprice'} || $issues->{'replacement_price'} || 0,$itemnumber);
             $sth2->finish;
         # FIXME: Log this ?
         }

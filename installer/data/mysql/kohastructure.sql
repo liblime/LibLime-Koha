@@ -1252,6 +1252,7 @@ CREATE TABLE `itemtypes` (
   `description` mediumtext,
   `renewalsallowed` smallint(6) default NULL,
   `rentalcharge` double(16,4) default NULL,
+  `replacement_price` decimal(8,2) default '0.00',
   `notforloan` smallint(6) default NULL,
   `imageurl` varchar(200) default NULL,
   `summary` text,

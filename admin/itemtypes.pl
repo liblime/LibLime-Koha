@@ -114,6 +114,7 @@ if ( $op eq 'add_form' ) {
         description     => $data->{'description'},
         renewalsallowed => $data->{'renewalsallowed'},
         rentalcharge    => sprintf( "%.2f", $data->{'rentalcharge'} ),
+        replacement_price => sprintf( "%.2f", $data->{'replacement_price'} ),
         notforloan      => $data->{'notforloan'},
         imageurl        => $data->{'imageurl'},
         template        => C4::Context->preference('template'),
@@ -141,6 +142,7 @@ elsif ( $op eq 'add_validate' ) {
             SET    description = ?
                  , renewalsallowed = ?
                  , rentalcharge = ?
+                 , replacement_price = ?
                  , notforloan = ?
                  , imageurl = ?
                  , summary = ?
@@ -152,6 +154,7 @@ elsif ( $op eq 'add_validate' ) {
             $input->param('description'),
             $input->param('renewalsallowed'),
             $input->param('rentalcharge'),
+            $input->param('replacement_price'),
             ( $input->param('notforloan') ? 1 : 0 ),
             (
                 $input->param('image') eq 'removeImage' ? '' : (
@@ -168,9 +171,9 @@ elsif ( $op eq 'add_validate' ) {
     else {    # add a new itemtype & not modif an old
         my $query = "
             INSERT INTO itemtypes
-                (itemtype,description,renewalsallowed,rentalcharge, notforloan, imageurl,summary,reservefee)
+                (itemtype,description,renewalsallowed,rentalcharge,replacement_price,notforloan,imageurl,summary,reservefee)
             VALUES
-                (?,?,?,?,?,?,?,?);
+                (?,?,?,?,?,?,?,?,?);
             ";
         my $sth = $dbh->prepare($query);
 		my $image = $input->param('image');
@@ -179,6 +182,7 @@ elsif ( $op eq 'add_validate' ) {
             $input->param('description'),
             $input->param('renewalsallowed'),
             $input->param('rentalcharge'),
+            $input->param('replacement_price'),
             $input->param('notforloan') ? 1 : 0,
             $image eq 'removeImage' ?           ''                 :
             $image eq 'remoteImage' ? $input->param('remoteImage') :
@@ -208,7 +212,7 @@ elsif ( $op eq 'delete_confirm' ) {
 
     my $sth =
       $dbh->prepare(
-"select itemtype,description,renewalsallowed,rentalcharge,reservefee from itemtypes where itemtype=?"
+"select itemtype,description,renewalsallowed,rentalcharge,replacement_price,reservefee from itemtypes where itemtype=?"
       );
     $sth->execute($itemtype);
     my $data = $sth->fetchrow_hashref;
@@ -217,6 +221,7 @@ elsif ( $op eq 'delete_confirm' ) {
         description     => $data->{description},
         renewalsallowed => $data->{renewalsallowed},
         rentalcharge    => sprintf( "%.2f", $data->{rentalcharge} ),
+        replacement_price => sprintf( "%.2f", $data->{replacement_price} ),
         imageurl        => $data->{imageurl},
         total           => $total,
         reservefee      => sprintf( "%.2f", $data->{reservefee} )
@@ -249,6 +254,7 @@ else {    # DEFAULT
     foreach my $itemtype ( @{$results}[ $first .. $last ] ) {
         $itemtype->{imageurl} = getitemtypeimagelocation( 'intranet', $itemtype->{imageurl} );
         $itemtype->{rentalcharge} = sprintf( '%.2f', $itemtype->{rentalcharge} );
+        $itemtype->{replacement_price} = sprintf( '%.2f', $itemtype->{replacement_price} );
         $itemtype->{reservefee} = sprintf( '%.2f', $itemtype->{reservefee} );
         push( @loop, $itemtype );
     }

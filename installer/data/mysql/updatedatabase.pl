@@ -3994,6 +3994,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
+$DBversion = '4.03.06.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|ALTER TABLE itemtypes ADD COLUMN
+    replacement_price DECIMAL(8,2) DEFAULT '0.00' AFTER rentalcharge|);
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Added itemtypes.replacement_price)\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

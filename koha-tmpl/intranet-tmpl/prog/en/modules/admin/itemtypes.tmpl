@@ -233,6 +233,11 @@ Item Types Administration
 		  <input type="text" id="rentalcharge" name="rentalcharge" size="10" value="<!-- TMPL_VAR name="rentalcharge" -->" />
          </li>
       <li>
+          <label for="replacement_price">Default replacement price: </label>
+          <input type="text" id="replacement_price" name="replacement_price" size="6" value="<!-- TMPL_VAR name="replacement_price" -->" />
+          <span class="hint">Default price to charge a patron when an item is marked lost.  This value can be overridden by a value defined for a specific item.</span>
+        </li>
+      <li>
           <label for="reservefee">Hold fee: </label>
 		  <input type="text" id="reservefee" name="reservefee" size="10" value="<!-- TMPL_VAR name="reservefee" -->" />
          </li>
@@ -269,6 +274,7 @@ Item Types Administration
 	<tr><th scope="row">Loan length</th><td><!-- TMPL_VAR name="loanlength" --></td></tr>
 	<tr><th scope="row">Renewals</th><td><!-- TMPL_IF name="renewalsallowed" -->Allowed<!-- TMPL_ELSE -->Not allowed<!-- /TMPL_IF --></td></tr>
 <tr><th scope="row">Rental charge</th><td><!-- TMPL_VAR name="rentalcharge" --></td></tr></table>
+        <tr><th scope="row">Default replacement price</th><td><!-- TMPL_VAR name="replacement_price" --></td></tr>
 <tr><th scope="row">Hold fee</th><td><!-- TMPL_VAR name="reservefee" --></td></tr></table>
 		<form action="<!-- TMPL_VAR name="script_name" -->" method="post">
 		<input type="hidden" name="op" value="delete_confirmed" /><input type="hidden" name="itemtype" value="<!-- TMPL_VAR name="itemtype" -->" /><!-- TMPL_IF name="total" -->
@@ -292,6 +298,7 @@ Item Types Administration
     <th>Not for loan</th>
     <th>Renewable</th>
     <th>Charge</th>
+    <th>Replacement price</th>
     <th>Hold fee</th>
     <th>Actions</th>
   </tr>
@@ -321,6 +328,7 @@ Item Types Administration
       <!-- TMPL_VAR NAME="rentalcharge" -->
     <!-- /TMPL_UNLESS -->
     </td>
+    <td><!-- TMPL_VAR name="replacement_price" --></td>
     <td>
     <!-- TMPL_UNLESS name="notforloan" -->
       <!-- TMPL_VAR NAME="reservefee" -->
