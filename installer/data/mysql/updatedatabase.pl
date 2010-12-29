@@ -3427,6 +3427,9 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(qq/
         ALTER TABLE `borrowers` ADD COLUMN `exclude_from_collection` BOOL NOT NULL DEFAULT FALSE;
     /);
+    $dbh->do(qq/
+        ALTER TABLE `deletedborrowers` ADD COLUMN `exclude_from_collection` BOOL NOT NULL DEFAULT FALSE;
+    /);
     print "Upgrade to $DBversion done ( Add missing exclude_from_collection borrowers column )\n";
     SetVersion ($DBversion);
 }
