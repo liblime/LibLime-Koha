@@ -285,17 +285,18 @@ foreach my $branchcode (@branches) {
     my $sth = $dbh->prepare( <<'END_SQL' );
 SELECT borrowernumber, SUM(amountoutstanding) AS amountdue
   FROM accountlines
+  NATURAL JOIN borrowers
   WHERE accounttype <> 'FU'
+    AND amount_notify_date IS NULL
+    AND branchcode = ? 
     AND (description NOT LIKE '%Debt Collect%')
     AND (description NOT LIKE '%collections agency%')
   GROUP BY borrowernumber
   HAVING SUM(amountoutstanding) >= ?
 END_SQL
 
-    $sth->execute( $notify_value );
+    $sth->execute( $branchcode, $notify_value );
     while ( my $patron_hits = $sth->fetchrow_hashref() ) {
-      my $patron = GetMemberDetails($patron_hits->{borrowernumber});
-    
       my $letter = C4::Letters::getletter( 'circulation', $letter_code );
       unless ($letter) {
         $verbose and warn "Message '$letter_code' content not found";
@@ -303,13 +304,13 @@ END_SQL
       }
 
       my $amount_due = sprintf "%.2f",$patron_hits->{amountdue};
-      $verbose and warn "Patron: $patron->{borrowernumber} Amount: $amount_due\n";
+      $verbose and warn "Patron: $patron_hits->{borrowernumber} Amount: $amount_due\n";
 
       my $sth2 = $dbh->prepare("SELECT date,description,amountoutstanding
                                 FROM accountlines
                                 WHERE borrowernumber = ?
                                   AND amountoutstanding > 0.0");
-      $sth2->execute($patron->{borrowernumber});
+      $sth2->execute($patron_hits->{borrowernumber});
       my $outstanding_items = "";
       while (my @rows = $sth2->fetchrow_array()) {
         $rows[2] = sprintf "%.2f",$rows[2];
@@ -317,7 +318,7 @@ END_SQL
       }
       $letter = parse_letter(
          {   letter         => $letter,
-             borrowernumber => $patron->{borrowernumber},
+             borrowernumber => $patron_hits->{borrowernumber},
              branchcode     => $branchcode,
              substitute     => {
                bib             => $branch_details->{'branchname'},
@@ -334,32 +335,17 @@ END_SQL
       $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # Now that we've warned about them, remove them.
       $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # 2nd pass for the double nesting.
     
-# Check the borrowers.amount_notify_date field.  If it IS NULL, then
-# queue a notification for the patron and update the amount_notify_date field
-# with the current date.  This avoids queueing and sending notifications
-# after the initial notification.  Other code will set the amount_notify_date
-# field back to NULL when the account drops below OwedNotificationValue.
-
-      $sth2 = $dbh->prepare( <<'END_SQL' );
-SELECT *
-  FROM borrowers
- WHERE borrowernumber = ?
-END_SQL
-      $sth2->execute( $patron->{borrowernumber} );
-      while (my $notify_check = $sth2->fetchrow_hashref()) {
-
-        if (!$notify_check->{amount_notify_date}) {
-          my $sth3 = $dbh->prepare( <<'END_SQL' );
+      my $sth3 = $dbh->prepare( <<'END_SQL' );
 UPDATE borrowers
    SET amount_notify_date = CURDATE()
  WHERE borrowernumber = ?
 END_SQL
-          $sth3->execute( $patron->{borrowernumber} );
+      $sth3->execute( $patron_hits->{borrowernumber} );
 
-          if ($nomail) {
+      my $patron = GetMember($patron_hits->{borrowernumber});
     
-            push @output_chunks,
-              prepare_letter_for_printing(
+      if ($nomail or not $patron->{email}) {
+          push @output_chunks, prepare_letter_for_printing(
                 {   letter         => $letter,
                     borrowernumber => $patron->{borrowernumber},
                     firstname      => $patron->{firstname},
@@ -371,39 +357,17 @@ END_SQL
                     email          => $patron->{email},
                     outputformat   => defined $csvfilename ? 'csv' : defined $htmlfilename ? 'html' : '',
                 }
-              );
-          } else {
-            if ($patron->{email}) {
-              C4::Letters::EnqueueLetter(
-                {   letter                 => $letter,
-                    borrowernumber         => $patron->{borrowernumber},
-                    message_transport_type => 'email',
-                    from_address           => $admin_email_address,
-                    to_address             => $patron->{email}
-                }
-              );
-            } else {
-              # If we don't have an email address for this patron, send it to the admin to deal with.
-              push @output_chunks,
-                prepare_letter_for_printing(
-                  {   letter         => $letter,
-                      borrowernumber => $patron->{borrowernumber},
-                      firstname      => $patron->{firstname},
-                      lastname       => $patron->{surname},
-                      address1       => $patron->{address},
-                      address2       => $patron->{address2},
-                      city           => $patron->{city},
-                      postcode       => $patron->{zipcode},
-                      email          => $patron->{email},
-                      outputformat   => defined $csvfilename ? 'csv' : defined $htmlfilename ? 'html' : '',
-                  }
-                );
-            }
-          }
-        } else {
-          $verbose and warn "$patron->{firstname} $patron->{surname} has already been notified on $notify_check->{amount_notify_date}\n";
-        }
-      } # fetchrow while
+            );
+      } else {
+          C4::Letters::EnqueueLetter(
+              {  letter                 => $letter,
+                  borrowernumber         => $patron->{borrowernumber},
+                  message_transport_type => 'email',
+                  from_address           => $admin_email_address,
+                  to_address             => $patron->{email}
+              }
+          );
+      }
     }
 
     if (@output_chunks) {
