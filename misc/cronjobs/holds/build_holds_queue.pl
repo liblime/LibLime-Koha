@@ -24,6 +24,14 @@ my @f = qw(biblionumber itemnumber barcode surname firstname phone borrowernumbe
 cardnumber reservedate title itemcallnumber holdingbranch pickbranch notes 
 item_level_request queue_sofar);
 
+# FIXME: this is a temporary fix to clear up SCLS's data regarding holds being
+# too inclusive, eg. lower priority holds are also enqueued to be filled, which
+# is not right.  Later, we have to make the tmp_holdsqueue more unique by
+# including the reservenumber.  This breaks the holds queue functionality as to
+# pass/fill and reverts functionality. -hQ 30Dec2010
+my $dbh = C4::Context->dbh;
+$dbh->do('TRUNCATE tmp_holdsqueue');
+
 HOLD:
 foreach my $res(@{C4::Reserves::GetReservesForQueue() // []}) {
    ## dupecheck
