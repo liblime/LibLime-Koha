@@ -234,7 +234,7 @@ sub GetReservesForQueue
              reserves.reservenotes as notes
         FROM reserves,borrowers
        WHERE reserves.found IS NULL
-         AND reserves.priority > 0
+         AND reserves.priority = 1
          AND reserves.reservedate <= CURRENT_DATE()
          AND reserves.borrowernumber = borrowers.borrowernumber
    ") || die $dbh->errstr();

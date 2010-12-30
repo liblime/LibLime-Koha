@@ -18,7 +18,6 @@ BEGIN {
 
 use C4::Context;
 use C4::Reserves;
-use Data::Dumper;
 
 my @f = qw(biblionumber itemnumber barcode surname firstname phone borrowernumber
 cardnumber reservedate title itemcallnumber holdingbranch pickbranch notes 
