@@ -1025,7 +1025,7 @@ sub CheckReserves {
     my $exact;
     my $local;
     my $oldest;
-   
+
     my $count = @reserves;
     my $nohold = 0;
     if (@reserves) {
@@ -1035,8 +1035,7 @@ sub CheckReserves {
             unless ($issuingrule) {
                next;
             }
-            if (!$issuingrule ->{'holdallowed'} || 
-                ($issuingrule->{'holdallowed'} && ($itembranch ne $res->{'borrowerbranch'})) ){
+            if (!$issuingrule->{'holdallowed'}) {
               $nohold++;
               next;
             }
