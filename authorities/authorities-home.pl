@@ -66,7 +66,7 @@ if ( $op eq "do_search" ) {
     my ( $results, $total ) =
       SearchAuthorities( \@marclist, \@and_or, \@excluding, \@operator, \@value,
         ( $startfrom - 1 ) * $resultsperpage,
-        $resultsperpage, $authtypecode, $orderby );
+        $resultsperpage, $authtypecode, $orderby, {show_unlinked => 1} );
 #     use Data::Dumper; warn Data::Dumper::Dumper(@$results);
     ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         {

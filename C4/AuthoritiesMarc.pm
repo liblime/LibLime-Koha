@@ -100,8 +100,9 @@ returns ref to array result and count of results returned
 =cut
 
 sub SearchAuthorities {
-    my ($tags, $and_or, $excluding, $operator, $value, $offset,$length,$authtypecode,$sortby) = @_;
-#     warn "CALL : $tags, $and_or, $excluding, $operator, $value, $offset,$length,$authtypecode,$sortby";
+    my ($tags, $and_or, $excluding, $operator, $value, $offset,$length,$authtypecode,$sortby, $opts) = @_;
+    $opts //= {};
+    $debug and warn "CALL : $tags, $and_or, $excluding, $operator, $value, $offset,$length,$authtypecode,$sortby";
     my $dbh=C4::Context->dbh;
     if (C4::Context->preference('NoZebra')) {
     
@@ -295,7 +296,8 @@ sub SearchAuthorities {
         my @filtered_records;
         for (my $i=0; $i < $oAResult->size && (scalar @filtered_records - $offset) < $length; $i++) {
             my ($authrecord, $authid, $count) = extractRecord($oAResult, $i);
-            ($count) ? push (@filtered_records, {authrecord=>$authrecord, authid=>$authid, count=>$count}) :
+            ($count || $opts->{show_unlinked}) ?
+                push (@filtered_records, {authrecord=>$authrecord, authid=>$authid, count=>$count}) :
                 $nbresults--;
         }
 
