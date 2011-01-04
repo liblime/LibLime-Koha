@@ -204,6 +204,7 @@ sub GetItemForQueue
    my $dbh = C4::Context->dbh;
    my $sth = $dbh->prepare("
       SELECT biblio.title,
+             items.itemnumber,
              items.itemcallnumber,
              items.barcode,
              items.holdingbranch
@@ -242,6 +243,20 @@ sub _itemfillbib
    );
    return if !$$ir{holdallowed};
    return $item;
+}
+
+# this deletes cancelled holds from the Holds Queue
+sub UnorphanCancelledHolds
+{
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT tmp_holdsqueue.reservenumber FROM reserves
+      RIGHT JOIN tmp_holdsqueue ON reserves.reservenumber = tmp_holdsqueue.reservenumber
+      WHERE reserves.reservenumber IS NULL");
+   $sth->execute();
+   while(my $row = $sth->fetchrow_hashref()) {
+      my $sth2 = $dbh->prepare("DELETE FROM tmp_holdsqueue WHERE reservenumber = ?");
+      $sth2->execute($$row{reservenumber});
+   }
 }
 
 sub GetReservesForQueue

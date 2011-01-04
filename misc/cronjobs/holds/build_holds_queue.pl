@@ -23,6 +23,8 @@ my @f = qw(reservenumber biblionumber itemnumber barcode surname firstname phone
 borrowernumber cardnumber reservedate title itemcallnumber holdingbranch pickbranch 
 notes item_level_request queue_sofar);
 
+C4::Reserves::UnorphanCancelledHolds();
+
 HOLD:
 foreach my $res(@{C4::Reserves::GetReservesForQueue() // []}) {
    ## dupecheck on reservenumber
