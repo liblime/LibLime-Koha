@@ -4005,6 +4005,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = '4.03.06.002';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|TRUNCATE tmp_holdsqueue|);
     $dbh->do(q|ALTER TABLE tmp_holdsqueue ADD reservenumber int(11) 
       NOT NULL UNIQUE FIRST|);
     SetVersion ($DBversion);
