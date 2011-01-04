@@ -25,6 +25,7 @@ use C4::Search;
 use C4::AuthoritiesMarc::MARC21;
 use C4::AuthoritiesMarc::UNIMARC;
 use C4::Charset;
+use C4::Debug;
 
 use vars qw($VERSION @ISA @EXPORT);
 
