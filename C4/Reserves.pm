@@ -1561,7 +1561,6 @@ sub ModReserveFill {
     my $priority = $$res{priority};
     
     # update the database...F=filled
-    my $dbh = C4::Context->dbh;
     my $query = "UPDATE reserves
                   SET    found            = 'F',
                          priority         = 0,
@@ -1595,9 +1594,10 @@ sub ModReserveTrace
 {
    my $res = shift;
    my $dbh = C4::Context->dbh;
+   my $sth;
    
    # update item's status
-   my $sth = $dbh->prepare("
+   $sth = $dbh->prepare("
       UPDATE items
          SET otherstatus = 'trace'
        WHERE itemnumber = ?");
@@ -1609,7 +1609,7 @@ sub ModReserveTrace
                      priority         = 0,
                      expirationdate   = NULL
               WHERE  reservenumber    = ?";
-   my $sth = $dbh->prepare($sql) || die $dbh->errstr();
+   $sth = $dbh->prepare($sql) || die $dbh->errstr();
    $sth->execute($$res{reservenumber});
 
    # remove from queue
