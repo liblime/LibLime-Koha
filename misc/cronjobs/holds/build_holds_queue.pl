@@ -19,47 +19,43 @@ BEGIN {
 use C4::Context;
 use C4::Reserves;
 
-my @f = qw(biblionumber itemnumber barcode surname firstname phone borrowernumber
-cardnumber reservedate title itemcallnumber holdingbranch pickbranch notes 
-item_level_request queue_sofar);
-
-# FIXME: this is a temporary fix to clear up SCLS's data regarding holds being
-# too inclusive, eg. lower priority holds are also enqueued to be filled, which
-# is not right.  Later, we have to make the tmp_holdsqueue more unique by
-# including the reservenumber.  This breaks the holds queue functionality as to
-# pass/fill and reverts functionality. -hQ 30Dec2010
-my $dbh = C4::Context->dbh;
-$dbh->do('TRUNCATE tmp_holdsqueue');
+my @f = qw(reservenumber biblionumber itemnumber barcode surname firstname phone 
+borrowernumber cardnumber reservedate title itemcallnumber holdingbranch pickbranch 
+notes item_level_request queue_sofar);
 
 HOLD:
 foreach my $res(@{C4::Reserves::GetReservesForQueue() // []}) {
-   ## dupecheck
-   my $dupe = C4::Reserves::DupecheckQueue($res);
+   ## dupecheck on reservenumber
+   ## DupecheckQueue() already filters out holds on shelf (found=non-empty),
+   ## priority, and reservedate.
+   my $dupe = C4::Reserves::DupecheckQueue($$res{reservenumber});
    next HOLD if $dupe;
 
    ## handle cases:
-   ## (1) item-level hold w/ an itemnumber
+   ## (1) trivial: item-level hold w/ an itemnumber
    ## (2) bib-level hold w/out an itemnumber:
    ##    (a) there is an item available, attempt to prefill it
    ##    (b) there is no item available (user will probably pass)
+   my $item;
    if ($$res{itemnumber}) {
       $$res{item_level_request} = 1;
-      ## we have an item, get its barcode,title,itemcallnumber,holdingbranch
-      my $item = C4::Reserves::GetItemForQueue(
+      ## we have an item, get its barcode,title,itemcallnumber,holdingbranch.
+      ## borrowernumber is passed to check issuing rules.
+      $item = C4::Reserves::GetItemForQueue(
          $$res{biblionumber},
-         $$res{itemnumber}
-      ) || die ("Bad logic: can't find item, itemnumber=$$res{itemnumber}");
-      foreach(keys %$item) { $$res{$_} = $$item{$_} }
+         $$res{itemnumber},
+         $$res{categorycode}
+      );
    }
    else {
       $$res{item_level_request} = 0;
       ## (a) try to find an item
-      my $item = C4::Reserves::GetItemForBibPrefill($$res{biblionumber});
-      if ($item) {
-         foreach(keys %$item) { $$res{$_} = $$item{$_} }
-      }
+      $item = C4::Reserves::GetItemForBibPrefill($res);
       ## (b) do nothing else
    }
+   next HOLD unless $item;
+   die "Bad logic: expected itemnumber" unless $$item{itemnumber};
+   foreach(keys %$item) { $$res{$_} = $$item{$_} }
    
    ## save the hold request to the tmp_holdsqueue table
    my %new = ();

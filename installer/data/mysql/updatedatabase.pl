@@ -4003,6 +4003,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Added itemtypes.replacement_price)\n";
 }
 
+$DBversion = '4.03.06.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|UPDATE tmp_holdsqueue ADD reservenumber int(11) 
+      NOT NULL UNIQUE FIRST|);
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add tmp_holdsqueue.reservenumber column )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

@@ -59,11 +59,10 @@ if ($run_trace) {
    
    # get all branches, just the branchcode
    my $numtraced = 0;
-   foreach my $trace(@traces) {
-      my($biblionumber,$borrowernumber,$itemnumber) = split('_',$trace,3);
-      my $reserverec = C4::Reserves::GetReserveInfo($borrowernumber,$biblionumber);
+   foreach my $reservenumber(@traces) {
+      my $reserverec = C4::Reserves::GetReserve($reservenumber);
       C4::Reserves::ModReserveTrace($reserverec);
-     $numtraced++;
+      $numtraced++;
    }
    # set output
    my $numnotraced = $query->param('cnt_notrace');
@@ -72,7 +71,7 @@ if ($run_trace) {
       numnotraced    =>$numnotraced,
       traced_plural  =>$numtraced==1?'':'s',
       notraced_plural=>$numnotraced==1?'':'s',
-      run_trace   =>1,
+      run_trace      =>1,
    );
 }
 elsif ($run_fill) {
@@ -82,20 +81,13 @@ elsif ($run_fill) {
    my $numfilled = 0;
 
    foreach my $item(@$qitems) {
+      my $res = C4::Reserves::GetReserve($$item{reservenumber});
       if ($query->param("action_$c") eq 'fill') {
-         my $reserverec = C4::Reserves::GetReserveInfo(
-            $$item{borrowernumber},
-            $$item{biblionumber}
-         );
-         C4::Reserves::ModReserveFill($reserverec);
+         C4::Reserves::ModReserveFill($res);
          $numfilled++;
       }
       elsif ($query->param("action_$c") eq 'pass') {
-         my $queue = C4::Reserves::ModReservePass(
-            $$item{borrowernumber},
-            $$item{biblionumber},
-            $$item{itemnumber},
-         );
+         my $queue = C4::Reserves::ModReservePass($res);
          my @q = split(/\,/, $queue);
          @q = reverse @q;
          $q[0] = "<b><i>$q[0]</i></b>";
@@ -128,16 +120,6 @@ elsif ($run_report) {
     );
 }
 
-# getting all itemtypes
-#my $itemtypes = &GetItemTypes();
-#my @itemtypesloop;
-#foreach my $thisitemtype ( sort keys %$itemtypes ) {
-#    push @itemtypesloop, {
-#        value       => $thisitemtype,
-#        description => $itemtypes->{$thisitemtype}->{'description'},
-#    };
-#}
-
 $template->param(
      branchloop => GetBranchesLoop(C4::Context->userenv->{'branch'}),
 #   itemtypeloop => \@itemtypesloop,
@@ -145,5 +127,5 @@ $template->param(
 
 # writing the template
 output_html_with_http_headers $query, $cookie, $template->output;
-
-
+exit;
+__END__
