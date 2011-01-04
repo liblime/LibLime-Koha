@@ -401,6 +401,7 @@ foreach my $biblionumber (@biblionumbers) {
             
             # checking reserve
             my ($reservenumber,$reservedate,$reservedfor,$expectedAt) = GetReservesFromItemnumber($itemnumber);
+            $$item{reservenumber} = $reservenumber;
             my $ItemBorrowerReserveInfo = GetMemberDetails( $reservedfor, 0);
             
             if ( defined $reservedate ) {
@@ -528,7 +529,6 @@ foreach my $biblionumber (@biblionumbers) {
             $biblioloopiter{warn} = 1;
             $biblioloopiter{none_avail} = 1;
         }
-        
         push @bibitemloop, $biblioitem;
     }
 
