@@ -50,6 +50,7 @@ use C4::Dates;
 use C4::Members;
 use C4::Biblio;
 use C4::Letters;
+use C4::Reserves;
 use C4::Members::Messaging;
 my $today     = C4::Dates->new();
 my $today_iso = $today->output('iso');
@@ -60,28 +61,7 @@ my $query = "SELECT * FROM reserves
 my $sth = $dbh->prepare($query);
 $sth->execute($today_iso);
 while (my $expref = $sth->fetchrow_hashref) {
-  my $insert_fields = '';
-  my $value_fields = '';
-  foreach my $column ('borrowernumber','reservedate','biblionumber','constrainttype','branchcode','notificationdate','reminderdate','cancellationdate','reservenotes','priority','found','itemnumber','waitingdate','expirationdate') {
-    if (defined($expref->{$column})) {
-      if (length($insert_fields)) {
-        $insert_fields .= ",$column";
-        $value_fields .= ",\'$expref->{$column}\'";
-      }
-      else {
-        $insert_fields .= "$column";
-        $value_fields .= "\'$expref->{$column}\'";
-      }
-    }
-  }
-  my $inssql = "INSERT INTO old_reserves ($insert_fields)
-                VALUES ($value_fields)";
-  my $sth2 = $dbh->prepare($inssql);
-  $sth2->execute();
-  my $delsql = "DELETE FROM reserves
-                WHERE reservenumber = ?";
-  $sth2 = $dbh->prepare($delsql);
-  $sth2->execute($expref->{reservenumber});
+  C4::Reserves::_moveToOldReserves($expref->{reservenumber});
 
   # Send expiration notice, if desired
   my $borrowernumber = $expref->{borrowernumber};
