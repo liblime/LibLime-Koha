@@ -1614,12 +1614,20 @@ sub ModReserveTrace
    my $dbh = C4::Context->dbh;
    my $sth;
    
-   # update item's status
+   # first, get the authorised value for 'trace' in LOST
+   $sth = $dbh->prepare("
+      SELECT authorised_value
+        FROM authorised_values
+       WHERE category = 'LOST'
+         AND LCASE(lib) = 'trace' ");
+   $sth->execute();
+   my $traceAval = ($sth->fetchrow_array)[0];
+   # update the item's status
    $sth = $dbh->prepare("
       UPDATE items
-         SET otherstatus = 'trace'
+         SET itemlost = ?
        WHERE itemnumber = ?");
-   $sth->execute($$res{itemnumber});
+   $sth->execute($traceAval,$$res{itemnumber});
 
    # update the database
    my $sql = "UPDATE reserves
@@ -1629,16 +1637,18 @@ sub ModReserveTrace
               WHERE  reservenumber    = ?";
    $sth = $dbh->prepare($sql) || die $dbh->errstr();
    $sth->execute($$res{reservenumber});
+   _FixPriority(
+      $$res{biblionumber},
+      $$res{borrowernumber},
+      $$res{priority},
+      $$res{reservenumber}
+   );
 
    # remove from queue
-   foreach(qw(tmp_holdsqueue)) {
-       $sth = $dbh->prepare("DELETE FROM $_
+   $sth = $dbh->prepare("DELETE FROM tmp_holdsqueue
        WHERE reservenumber = ?");
-       $sth->execute($$res{reseservenumber});
-    }
-     
+   $sth->execute($$res{reservenumber});
 
-    $sth->finish;
     return 1;
 }
 
