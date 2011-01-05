@@ -2739,7 +2739,7 @@ CREATE TABLE `session_defaults` (
   `value` text,
   PRIMARY KEY  (`branchcode`,`name`),
   CONSTRAINT `session_defaults_ibfk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS overdueitemrules;
 CREATE TABLE overdueitemrules (
