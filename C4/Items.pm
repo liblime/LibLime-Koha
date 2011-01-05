@@ -1133,6 +1133,8 @@ GetItemInfosOf(@itemnumbers);
 sub GetItemInfosOf {
     my @itemnumbers = @_;
 
+    return undef if not @itemnumbers;
+
     my $query = '
         SELECT items.*, serial.publisheddate, serial.serialseq
         FROM items

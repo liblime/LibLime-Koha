@@ -836,6 +836,8 @@ GetBiblioItemInfosOf(@biblioitemnumbers);
 sub GetBiblioItemInfosOf {
     my @biblioitemnumbers = @_;
 
+    return undef if not @biblioitemnumbers;
+
     my $query = '
         SELECT biblioitemnumber,
             publicationyear,
