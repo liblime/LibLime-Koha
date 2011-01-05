@@ -182,6 +182,7 @@ sub GetItemForBibPrefill
    my $sql = sprintf("
       SELECT biblio.title,
              items.itemnumber,
+             items.biblionumber,
              items.itemcallnumber,
              items.barcode,
              items.holdingbranch
@@ -205,6 +206,7 @@ sub GetItemForQueue
    my $sth = $dbh->prepare("
       SELECT biblio.title,
              items.itemnumber,
+             items.biblionumber,
              items.itemcallnumber,
              items.barcode,
              items.holdingbranch
@@ -230,8 +232,7 @@ sub _itemfillbib
    $sth = $dbh->prepare("
       SELECT biblioitems.itemtype
         FROM biblioitems,items
-       WHERE items.biblionumber = biblioitems.biblionumber
-         AND items.biblionumber = ?
+       WHERE biblioitems.biblionumber = ?
          AND items.biblioitemnumber = biblioitems.biblioitemnumber
          AND items.itemnumber = ?");
    $sth->execute($$item{biblionumber},$$item{itemnumber});
@@ -239,8 +240,10 @@ sub _itemfillbib
    my $ir = C4::Circulation::GetIssuingRule(
       $$item{borrowercategory},
       $$item{itemtype},
-      $$item{homebranch},
+      $$item{holdingbranch},
    );
+   die "Bad logic: expeced issuingrule.holdallowed"
+      unless exists $$ir{holdallowed};
    return if !$$ir{holdallowed};
    return $item;
 }
