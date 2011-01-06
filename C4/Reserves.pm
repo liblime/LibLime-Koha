@@ -195,6 +195,7 @@ sub GetItemForBibPrefill
    $sth = $dbh->prepare($sql) || die $dbh->errstr();
    $sth->execute($$res{biblionumber},@items) || die $dbh->errstr();
    my $item = $sth->fetchrow_hashref();
+   return unless $item;
    $$item{borrowercategory} = $$res{categorycode};
    return _itemfillbib($item);
 }
@@ -216,6 +217,7 @@ sub GetItemForQueue
          AND items.itemnumber   = ?") || die $dbh->errstr();
    $sth->execute($biblionumber,$itemnumber) || die $dbh->errstr();
    my $item = $sth->fetchrow_hashref();
+   return unless $item;
    $$item{borrowercategory} = $borrowercategory;
    return _itemfillbib($item);
 }
@@ -242,9 +244,11 @@ sub _itemfillbib
       $$item{itemtype},
       $$item{holdingbranch},
    );
-   die "Bad logic: expeced issuingrule.holdallowed"
-      unless exists $$ir{holdallowed};
-   return if !$$ir{holdallowed};
+   
+   ## unfortunately, itemtype is not always set, so $ir could be undef
+   if (exists $$ir{holdallowed}) {
+      return if !$$ir{holdallowed};
+   }
    return $item;
 }
 
