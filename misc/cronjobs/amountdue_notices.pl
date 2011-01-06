@@ -49,6 +49,7 @@ amountdue_notices.pl [ -n ] [ -library <branchcode> ] [ -csv [ <filename> ] ]
    -man                           full documentation
    -n                             No email will be sent
    -library      <branchname>     only deal with excessive amountdues from this library
+   -code         <lettercode>     name of notice code to use
    -csv          <filename>       populate CSV file
    -html         <filename>       Output html to file
 
@@ -79,6 +80,11 @@ filename given.
 
 select excessive amountdues for one specific library. Use the value in the
 branches.branchcode table.
+
+=item B<-code>
+
+Use the specified notice code.  If not used, then the code will default to
+BILLING.
 
 =item B<-csv>
 
@@ -181,6 +187,7 @@ my $man     = 0;
 my $verbose = 0;
 my $nomail  = 0;
 my $mybranch;
+my $letter_code;
 my $csvfilename;
 my $htmlfilename;
 
@@ -190,6 +197,7 @@ GetOptions(
     'v'              => \$verbose,
     'n'              => \$nomail,
     'library=s'      => \$mybranch,
+    'code=s'         => \$letter_code,
     'csv:s'          => \$csvfilename,    # this optional argument gets '' if not supplied.
     'html:s'          => \$htmlfilename,    # this optional argument gets '' if not supplied.
 ) or pod2usage(2);
@@ -203,7 +211,7 @@ if ( defined $csvfilename && $csvfilename =~ /^-/ ) {
 if (!C4::Context->preference('EnableOwedNotification')) {
   die 'EnableOwedNotification is not turned on';
 }
-my $letter_code = 'BILLING';
+$letter_code = 'BILLING' if (! defined ($letter_code));
 
 my $branch_hashref = C4::Branch::GetBranches();
 my $branchcount = keys %$branch_hashref;
