@@ -426,6 +426,23 @@ CREATE TABLE `biblioitems` (
   CONSTRAINT `biblioitems_ibfk_1` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `borrower_lists`;
+CREATE TABLE `borrower_lists` (
+  `list_id` int(11) NOT NULL auto_increment,
+  `list_name` varchar(100) NOT NULL,
+  `list_owner` int(11) NOT NULL,
+  PRIMARY KEY  (`list_id`),
+  UNIQUE KEY `list_name` (`list_name`,`list_owner`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `borrower_lists_tracking`;
+CREATE TABLE `borrower_lists_tracking` (
+  `list_id` int(11) NOT NULL,
+  `borrowernumber` int(11) NOT NULL,
+  PRIMARY KEY  (`list_id`,`borrowernumber`),
+  KEY `list_id` (`list_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Table structure for table `borrowers`
 --
@@ -544,6 +561,7 @@ CREATE TABLE `borrower_attributes` (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `branch_item_rules`;
 CREATE TABLE `branch_item_rules` (
   `branchcode` varchar(10) NOT NULL,
   `itemtype` varchar(10) NOT NULL,
@@ -714,6 +732,7 @@ CREATE TABLE `default_branch_circ_rules` (
 -- Table structure for table `default_branch_item_rules`
 --
 
+DROP TABLE IF EXISTS `default_branch_item_rules`;
 CREATE TABLE `default_branch_item_rules` (
   `itemtype` varchar(10) NOT NULL,
   `holdallowed` tinyint(1) default NULL,
@@ -2423,6 +2442,7 @@ CREATE TABLE `item_circulation_alert_preferences` (
 -- Table structure for table `messages`
 --
 
+DROP TABLE IF EXISTS `messages`;
 CREATE TABLE `messages` (
   `message_id` int(11) NOT NULL auto_increment,
   `borrowernumber` int(11) NOT NULL,
@@ -2492,6 +2512,7 @@ CREATE TABLE `course_reserves` (
     PRIMARY KEY (`course_reserve_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `subscription_defaults`;
 CREATE TABLE IF NOT EXISTS `subscription_defaults` (
   `subscriptionid` int(11) NOT NULL default 0,
   `dateaccessioned` date default NULL,
@@ -2534,6 +2555,7 @@ CREATE TABLE IF NOT EXISTS `subscription_defaults` (
   PRIMARY KEY  (`subscriptionid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `clubsAndServices`;
 CREATE TABLE IF NOT EXISTS clubsAndServices (
   `casId` int(11) NOT NULL auto_increment,
   `casaId` int(11) NOT NULL default '0',
@@ -2549,6 +2571,7 @@ CREATE TABLE IF NOT EXISTS clubsAndServices (
   PRIMARY KEY  (`casId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `clubsAndServicesArchetypes`;
 CREATE TABLE IF NOT EXISTS clubsAndServicesArchetypes (
   casaId int(11) NOT NULL auto_increment,
   type enum('club','service') NOT NULL default 'club',
@@ -2573,6 +2596,7 @@ CREATE TABLE IF NOT EXISTS clubsAndServicesArchetypes (
   PRIMARY KEY  (casaId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `clubsAndServicesEnrollments`;
 CREATE TABLE IF NOT EXISTS clubsAndServicesEnrollments (
   caseId int(11) NOT NULL auto_increment,
   casaId int(11) NOT NULL default '0' COMMENT 'foreign key to clubsAndServicesArchtypes',
@@ -2588,6 +2612,7 @@ CREATE TABLE IF NOT EXISTS clubsAndServicesEnrollments (
   PRIMARY KEY  (caseId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `reserves_suspended`;
 CREATE TABLE reserves_suspended (
   reservenumber int(11) NOT NULL,
   borrowernumber int(11) NOT NULL default 0,
@@ -2615,6 +2640,7 @@ CREATE TABLE reserves_suspended (
   CONSTRAINT reserves_suspended_ibfk_4 FOREIGN KEY (branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `lost_items`;
 CREATE TABLE IF NOT EXISTS lost_items (
     id INT(11) NOT NULL auto_increment,
     borrowernumber INT(11) NOT NULL,
@@ -2661,6 +2687,43 @@ CREATE TABLE import_profile_subfield_actions (
         contents varchar(255) COLLATE utf8_general_ci DEFAULT NULL,
         PRIMARY KEY (profile_id,tag,subfield),
         CONSTRAINT import_profile_subfield_actions_ibfk_1 FOREIGN KEY (profile_id) REFERENCES import_profiles (profile_id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS overdueitemrules;
+CREATE TABLE overdueitemrules (
+  branchcode varchar(10) NOT NULL default '',
+  itemtype varchar(10) NOT NULL default '',
+  delay1 int(4) default 0,
+  letter1 varchar(20) default NULL,
+  debarred1 varchar(1) default 0,
+  delay2 int(4) default 0,
+  debarred2 varchar(1) default 0,
+  letter2 varchar(20) default NULL,
+  delay3 int(4) default 0,
+  letter3 varchar(20) default NULL,
+  debarred3 int(1) default 0,
+  PRIMARY KEY (branchcode,itemtype),
+  CONSTRAINT overdueitemrules_ibfk_1 FOREIGN KEY (branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT overdueitemrules_ibfk_2 FOREIGN KEY (itemtype) REFERENCES itemtypes(itemtype) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS itemdeletelist;
+CREATE TABLE itemdeletelist (
+  list_id int(11) not null,
+  itemnumber int(11) not null,
+  biblionumber int(11) not null,
+  PRIMARY KEY (list_id,itemnumber)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `itemstatus`;
+CREATE TABLE `itemstatus` (
+        statuscode_id int(11) NOT NULL auto_increment,
+        statuscode varchar(10) NOT NULL default '',
+        description varchar(25) default NULL,
+        holdsallowed tinyint(1) NOT NULL default 0,
+        holdsfilled tinyint(1) NOT NULL default 0,
+        PRIMARY KEY  (statuscode_id),
+        UNIQUE KEY statuscode (statuscode)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
