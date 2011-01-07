@@ -568,7 +568,11 @@ sub parseletter {
         }
         $values->{issuedate} = format_date($values->{issuedate});
         $values->{date_due}  = format_date($values->{date_due});
-        $values->{content} = join "\t", $values->{issuedate}, $values->{title}, $values->{barcode}, $values->{author};
+        $values->{content} = join "\t",
+            ($values->{issuedate} // ''),
+            ($values->{title} // ''),
+            ($values->{barcode} // ''),
+            ($values->{author} // '');
         for my $field ( qw( issuedate date_due barcode holdingbranch location itemcallnumber content)) {
             my $replacefield = "<<$table.$field>>";
             my $replacedby   = $values->{$field} || '';

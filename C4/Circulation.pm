@@ -19,7 +19,7 @@ package C4::Circulation;
 
 
 use strict;
-#use warnings;  # soon!
+use warnings;
 use C4::Context;
 use C4::Stats;
 use C4::Reserves;
@@ -770,7 +770,7 @@ sub CanBookBeIssued {
     #
 	my $toomany = TooMany( $borrower, $item->{biblionumber}, $item );
     # if TooMany return / 0, then the user has no permission to check out this book
-    if ($toomany =~ /\/ 0/) {
+    if ($toomany && $toomany =~ /\/ 0/) {
         $needsconfirmation{PATRON_CANT} = 1;
     } else {
         $needsconfirmation{TOO_MANY} = $toomany if $toomany;
@@ -944,7 +944,7 @@ sub AddIssue {
 		#
 		# check if we just renew the issue.
 		#
-		if ($actualissue->{borrowernumber} eq $borrower->{'borrowernumber'}) {
+		if (($actualissue->{borrowernumber} // '') eq $borrower->{'borrowernumber'}) {
 			$datedue = AddRenewal(
 				$borrower->{'borrowernumber'},
 				$item->{'itemnumber'},
@@ -998,7 +998,9 @@ sub AddIssue {
 					ModReserve(1,
 						$res->{'biblionumber'},
 						$res->{'borrowernumber'},
-						$res->{'branchcode'}
+						$res->{'branchcode'},
+						$res->{'itemnumber'},
+						$res->{'reservenumber'}
 					);
 				}
 			}
@@ -1123,6 +1125,9 @@ sub _clear_irule_cache {
 
 sub GetIssuingRule($$$) {
     my ($categorycode, $itemtype, $branchcode) = @_;
+    $categorycode //= '*';
+    $itemtype //= '*';
+    $branchcode //= '*';
 
     $irule_cache //= _populate_irule_cache();
     my $irule = $irule_cache->{$categorycode}{$itemtype}{$branchcode} //
@@ -2133,7 +2138,7 @@ sub CanBookBeRenewed {
         if ( my $data2 = $sth2->fetchrow_hashref ) {
             $renews = $data2->{'renewalsallowed'};
         }
-        if ( ( $renews && $renews > $data1->{'renewals'} ) || $override_limit ) {
+        if ( ( $renews && defined $data1->{renewals} && $renews > $data1->{'renewals'} ) || $override_limit ) {
             $renewokay = 1;
         }
         else {
@@ -2232,7 +2237,7 @@ sub AddRenewal {
 
     # Update the issues record to have the new due date, and a new count
     # of how many times it has been renewed.
-    my $renews = $issuedata->{'renewals'} + 1;
+    my $renews = ($issuedata->{'renewals'} // 0) + 1;
     $sth = $dbh->prepare("UPDATE issues SET date_due = ?, renewals = ?, lastreneweddate = ?
                             WHERE borrowernumber=? 
                             AND itemnumber=?"
@@ -2241,7 +2246,7 @@ sub AddRenewal {
     $sth->finish;
 
     # Update the renewal count on the item, and tell zebra to reindex
-    $renews = $biblio->{'renewals'} + 1;
+    $renews = ($biblio->{'renewals'} // 0) + 1;
     ModItem({ renewals => $renews, onloan => $datedue->output('iso') }, $biblio->{'biblionumber'}, $itemnumber);
 
     # Charge a new rental fee, if applicable?
@@ -2463,7 +2468,7 @@ sub GetRenewalDetails {
     my $renewals_opac = 0;
 
     while ( my $data = $sth->fetchrow_hashref ) {
-      if ( $data->{'other'} eq 'opac' ) {
+      if ( $data->{other} && $data->{'other'} eq 'opac' ) {
 	$renewals_opac+= $data->{'counter'};
       } else {
         $renewals_intranet+= $data->{'counter'};
