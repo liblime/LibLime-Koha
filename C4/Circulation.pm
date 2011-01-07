@@ -2138,7 +2138,7 @@ sub CanBookBeRenewed {
         if ( my $data2 = $sth2->fetchrow_hashref ) {
             $renews = $data2->{'renewalsallowed'};
         }
-        if ( ( $renews && defined $data1->{renewals} && $renews > $data1->{'renewals'} ) || $override_limit ) {
+        if ( ( ($renews // 0) > ($data1->{'renewals'} // 0) ) || $override_limit ) {
             $renewokay = 1;
         }
         else {
@@ -2185,7 +2185,7 @@ sub AddRenewal {
 	my     $itemnumber = shift or return undef;
 
     my $item   = GetItem($itemnumber) or return undef;
-    my $biblio = GetBiblioFromItemNumber($itemnumber) or return undef;
+    my $biblio = GetBiblioFromItemNumber($itemnumber) or die;
     my $branch  = (@_) ? shift : $item->{homebranch};	# opac-renew doesn't send branch
     my $datedue = shift;
     my $lastreneweddate = shift;
@@ -2231,8 +2231,7 @@ sub AddRenewal {
     }
 
     if($datedue && ! $datedue->output('iso')){
-        warn "Invalid date passed to AddRenewal.";
-        return undef;
+        die "Invalid date passed to AddRenewal.";
     }
 
     # Update the issues record to have the new due date, and a new count

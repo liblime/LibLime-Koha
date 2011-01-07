@@ -80,7 +80,7 @@ my $cardnumber = $input->param("cardnumber");
 my $borrowernumber = $input->param("borrowernumber");
 my $exemptfine = $input->param("exemptfine") || 0;
 my $override_limit = $input->param("override_limit") || 0;
-my $failedrenews;
+my $failedrenews = '';
 foreach my $itemno (@data) {
     # check status before renewing issue
 	my ($renewokay,$error) = CanBookBeRenewed($borrowernumber,$itemno,$override_limit);
@@ -91,7 +91,7 @@ foreach my $itemno (@data) {
 		$failedrenews.="&failedrenew=$itemno";        
 	}
 }
-my $failedreturn;
+my $failedreturn = '';
 foreach my $barcode (@barcodes) {
     # check status before renewing issue
    my ( $returned, $messages, $issueinformation, $borrower ) = 
