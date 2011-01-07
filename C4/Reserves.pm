@@ -21,7 +21,7 @@ package C4::Reserves;
 
 
 use strict;
-# use warnings;  # FIXME: someday
+use warnings;  # FIXME: someday
 use Carp;
 
 use C4::Context;
@@ -40,6 +40,7 @@ use C4::Members qw();
 use C4::Letters;
 use C4::Branch qw( GetBranchDetail );
 use C4::Dates qw( format_date_in_iso );
+use C4::Debug;
 use List::MoreUtils qw( firstidx );
 use Date::Calc qw(Today Add_Delta_Days);
 use Time::Local;
@@ -159,7 +160,7 @@ sub AddReserve {
     my $waitingdate;
 
     # If the reserv had the waiting status, we had the value of the resdate
-    if ( $found eq 'W' ) {
+    if ( $found && $found eq 'W' ) {
         $waitingdate = $resdate;
     }
 
@@ -547,7 +548,7 @@ sub GetReserveCount {
     }
 
     if ( $shelf_holds_only ) {
-    warn "GetReserveCount: Shelf Holds Only";
+      $debug and warn "GetReserveCount: Shelf Holds Only";
       $query = "
         SELECT COUNT( DISTINCT ( items.biblionumber ) ) AS counter
         FROM items
@@ -578,7 +579,7 @@ Check queued list of this document and check if this document must be  transfere
 
 sub GetOtherReserves {
     my ($itemnumber) = @_;
-    warn "GetOtherReserves( $itemnumber )";
+    $debug and warn "GetOtherReserves( $itemnumber )";
     my $messages;
     my $nextreservinfo;
     my ( $restype, $checkreserves, $count ) = CheckReserves($itemnumber);
@@ -992,7 +993,7 @@ sub GetReserve_OldestReserve {
 
   my @reserves = _Findgroupreserve( $biblioitemnumber, $biblionumber, $itemnumber );
   foreach my $r (@reserves) {
-      $reserve = $r if ( $r->{'timestamp'} > $reserve->{'timestamp'} ); # Isn't $reserve->{'timestamp'} undefined?
+      $reserve = $r if ( ($r->{'timestamp'} // '') gt ($reserve->{'timestamp'} // '') );
   }
   
   # Itemnumber was never getting set
@@ -1288,7 +1289,7 @@ whose keys are fields from the reserves table in the Koha database.
 
 sub ModReserveFill {
     my ($res) = @_;
-warn "ModReserveFill($res)";
+    $debug and warn "ModReserveFill($res)";
     my $dbh = C4::Context->dbh;
     # fill in a reserve record....
     my $biblionumber = $res->{'biblionumber'};
@@ -1347,7 +1348,7 @@ $reservenumber is the reserves.reservenumber
 sub ModReserveStatus {
     #first : check if we have a reservation for this item .
     my ($itemnumber, $newstatus, $reservenumber) = @_;
-warn "ModReserveStatus($itemnumber, $newstatus, $reservenumber)";
+    $debug and warn "ModReserveStatus($itemnumber, $newstatus, $reservenumber)";
     my $dbh          = C4::Context->dbh;
     my ($query,$sth,$sth_set);
 
@@ -1520,7 +1521,7 @@ Reduce the values of queuded list
 
 sub ModReserveMinusPriority {
     my ( $itemnumber, $borrowernumber, $biblionumber, $reservenumber ) = @_;
-warn "ModReserveMinusPriority( $itemnumber, $borrowernumber, $biblionumber )";
+    $debug and warn "ModReserveMinusPriority( $itemnumber, $borrowernumber, $biblionumber )";
     #first step update the value of the first person on reserv
     my $dbh   = C4::Context->dbh;
     my $query = "

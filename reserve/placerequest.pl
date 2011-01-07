@@ -69,7 +69,7 @@ my $found;
 
 # if we have an item selectionned, and the pickup branch is the same as the holdingbranch
 # of the document, we force the value $rank and $found .
-if ($checkitem ne ''){
+if ($checkitem && $checkitem ne ''){
     $rank[0] = '0' unless C4::Context->preference('ReservesNeedReturns');
     my $item = $checkitem;
     $item = GetItem($item);
@@ -103,7 +103,7 @@ if ($type eq 'str8' && $borrowernumber ne ''){
             if ($input->param('request') eq 'any'){
                 # place a request on 1st available
                 AddReserve($branch,$borrowernumber->{'borrowernumber'},$biblionumber,'a',\@realbi,$rank[0],$startdate,$notes,$title,$checkitem,$found);
-            } elsif ($reqbib[0] ne ''){
+            } elsif ($reqbib[0] && $reqbib[0] ne ''){
                 # FIXME : elsif probably never reached, (see top of the script)
                 # place a request on a given item
                 AddReserve($branch,$borrowernumber->{'borrowernumber'},$biblionumber,'o',\@reqbib,$rank[0],$startdate,$notes,$title,$checkitem, $found);

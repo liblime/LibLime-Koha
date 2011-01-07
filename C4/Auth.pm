@@ -26,6 +26,7 @@ use C4::Context;
 use C4::Output;    # to get the template
 use C4::Members;
 use C4::Koha;
+use C4::Debug;
 use C4::Branch; # GetBranches
 use C4::VirtualShelves;
 use POSIX qw/strftime/;
@@ -1347,7 +1348,7 @@ sub check_override_perms {
     my ( $userid, $override_user, $override_pass, $flags ) = @_;
     my $dbh = C4::Context->dbh;
 
-    warn "check_override_perms( $userid, $override_user, $override_pass, " . values( %$flags ) . " )\n";
+    $debug and warn "check_override_perms( $userid, $override_user, $override_pass, " . values( %$flags ) . " )\n";
 
     return 1 if ( haspermission( $userid, $flags ) );
 

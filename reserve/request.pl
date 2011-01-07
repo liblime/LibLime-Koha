@@ -482,7 +482,7 @@ foreach my $biblionumber (@biblionumbers) {
 
             if (!$issuingrule->{'holdallowed'} ||
                 ( 
-                  ($borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) 
+                  ($borrowerinfo->{branchcode} && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) 
                   && ($issuingrule->{'branchcode'} eq '*')
                   && $issuingrule->{holdallowed}
                    ) 
