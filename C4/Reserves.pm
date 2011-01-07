@@ -865,8 +865,6 @@ sub GetReserveFee {
     my $idata = $isth->fetchrow_hashref;
     $fee += $idata->{'reservefee'};
 
-    my $cntitems = @- > $bibitems;
-
     if ( $fee > 0 ) {
 
         # check for items on issue
@@ -883,24 +881,14 @@ sub GetReserveFee {
             }
             else {
                 my $found = 0;
-                my $x     = 0;
-                while ( $x < $cntitems ) {
-                    if ( @$bibitems->{'biblioitemnumber'} ==
-                        $data->{'biblioitemnumber'} )
-                    {
+                foreach my $bibitemnum (@$bibitems) {
+                    if ($bibitemnum == $data->{biblioitemnumber}) {
                         $found = 1;
-                    }
-                    $x++;
-                }
-                if ( $const eq 'o' ) {
-                    if ( $found == 1 ) {
-                        push @biblioitems, $data1;
+                        last;
                     }
                 }
-                else {
-                    if ( $found == 0 ) {
-                        push @biblioitems, $data1;
-                    }
+                if ( ($const eq 'o' && $found) || !$found ) {
+                    push @biblioitems, $data1;
                 }
             }
         }

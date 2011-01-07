@@ -385,8 +385,8 @@ foreach my $biblioNum (@biblionumbers) {
         $debug and warn $itemInfo->{'notforloan'};
 
         # Get reserve fee.
-        my $fee = GetReserveFee(undef, $borrowernumber, $itemInfo->{'biblionumber'}, 'a',
-                                ( $itemInfo->{'biblioitemnumber'} ) );
+        my $fee = GetReserveFee($borrowernumber, $itemInfo->{'biblionumber'}, 'a',
+                                [$itemInfo->{'biblioitemnumber'}] );
         $itemInfo->{'reservefee'} = sprintf "%.02f", ($fee ? $fee : 0.0);
         
         if ($itemLevelTypes && $itemInfo->{itype}) {
