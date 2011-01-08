@@ -602,7 +602,7 @@ foreach my $biblionumber (@biblionumbers) {
         $reserve{'ccode'}           = $res->{'ccode'};
         $reserve{'barcode'}         = $res->{'barcode'};
         $reserve{'priority'}    = $res->{'priority'};
-        $reserve{'branchloop'} = GetBranchesLoop($res->{'branchcode'});
+        $reserve{'branchloop'} = GetBranchesLoop($res->{'branchcode'}, 0);
         $reserve{'optionloop'} = \@optionloop;
         $reserve{'reservenumber'} = $res->{'reservenumber'};
         
