@@ -24,6 +24,7 @@ sub GenerateNextInSeries($) {
     my $p = shift or croak;
 
     $p = C4::Model::Periodical->new(id => $p)->load if not ref $p;
+    my $new_ps = C4::Model::PeriodicalSerial->new(periodical_id => $p->id);
 
     my $pslist = C4::Model::PeriodicalSerial::Manager->get_periodical_serials(
         query => [
@@ -35,14 +36,20 @@ sub GenerateNextInSeries($) {
         limit => 1
         );
 
-    my $new_seq_string = PredictNextSequenceFromSeed($p->iterator, $pslist->[0]->sequence);
-    my $new_date = PredictNextChronologyFromSeed($p->frequency, $pslist->[0]->publication_date);
-
-    my $new_ps = C4::Model::PeriodicalSerial->new(periodical_id => $p->id, sequence => $new_seq_string, publication_date => $new_date->clone);
-    $new_ps->vintage(FormatVintage(
-			 FormatSequence($p->sequence_format, $new_seq_string, $new_date->year),
-			 FormatChronology($p->chronology_format, $new_date)
-		     ));
+    if (not @{$pslist}) {
+        $new_ps->publication_date(DateTime->now);
+        $new_ps->vintage('Unknown');
+    }
+    else {
+        my $new_seq_string = PredictNextSequenceFromSeed($p->iterator, $pslist->[0]->sequence);
+        my $new_date = PredictNextChronologyFromSeed($p->frequency, $pslist->[0]->publication_date);
+        $new_ps->sequence($new_seq_string);
+        $new_ps->publication_date($new_date->clone);
+        $new_ps->vintage(FormatVintage(
+                             FormatSequence($p->sequence_format, $new_seq_string, $new_date->year),
+                             FormatChronology($p->chronology_format, $new_date)
+                         ));
+    }
     $new_ps->save;
 
     return $new_ps;
