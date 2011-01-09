@@ -100,7 +100,7 @@ border-style: inherit;
       <tr>
         <td><label for="sequence_format_select">Sequence format:</label></td>
         <td><select size="1" id="sequence_format_select" onchange="javascript:UpdateSequenceFormat();">
-               <TMPL_IF NAME="sequence_expressed"><option><TMPL_VAR NAME="sequence_expressed"></option></TMPL_IF>
+               <TMPL_IF NAME="sequence_expressed"><option value="<TMPL_VAR NAME="sequence_format">"><TMPL_VAR NAME="sequence_expressed"></option></TMPL_IF>
                <option value="">-- none --</option>
                <TMPL_LOOP NAME="sequence_formats">
                <option value="<TMPL_VAR NAME="format">"><TMPL_VAR NAME="human"></option>
@@ -228,8 +228,12 @@ $('.seqval0').change(function() {UpdateFirstSequence(); UpdateIterator()});
 $('.seqval1').change(UpdateFirstSequence);
 $('.seqval2').change(UpdateFirstSequence);
 
+$('.rollval0').change(UpdateIterator);
 $('.rollval1').change(UpdateIterator);
 $('.rollval2').change(UpdateIterator);
+
+UpdateSequenceFormat();
+UpdateIterator();
 
 function UpdateFirstSequence() {
     document.f.first_sequence.value = $('.seqval0').val() + ':' +
@@ -254,27 +258,19 @@ function UpdateIterator() {
 function UpdateSequenceFormat() {
     document.f.sequence_format.value = document.f.sequence_format_select.value;
     var seqlabels = document.f.sequence_format.value.split(/\{.*?\}/);
-    $('span.seqlab0').empty().append(seqlabels[0]);
-    $('span.seqlab1').empty().append(seqlabels[1]);
-    $('span.seqlab2').empty().append(seqlabels[2]);
+    var seqitrs = document.f.iterator.value.split(/:/);
 
-    $('span.seqval0span').show();
-    $('span.rollval0span').show();
-
-    if (seqlabels[1] == '' || seqlabels[1] == undefined) {
-        $('span.seqval1span').hide();
-        $('span.rollval1span').hide();
-    } else {
-        $('span.seqval1span').show();
-        $('span.rollval1span').show();
-    }
-
-    if (seqlabels[2] == '' || seqlabels[2] == undefined) {
-        $('span.seqval2span').hide();
-        $('span.rollval2span').hide();
-    } else {
-        $('span.seqval2span').show();
-        $('span.rollval2span').show();
+    for (var i = 0; i < 3; i++) {
+        $('span.seqlab'+i).empty().append(seqlabels[i]);
+        if (seqlabels[i] == '' || seqlabels[i] == undefined) {
+            $('span.seqval'+i+'span').hide();
+            $('span.rollval'+i+'span').hide();
+        } else {
+            var seqelem = seqitrs[i].split(/,/);
+            $('.rollval'+i).val(seqelem[2]);
+            $('span.seqval'+i+'span').show();
+            $('span.rollval'+i+'span').show();
+        }
     }
 }
 
