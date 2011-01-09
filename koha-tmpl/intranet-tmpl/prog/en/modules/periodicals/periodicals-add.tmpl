@@ -148,6 +148,8 @@ border-style: inherit;
         <td><label for="first_sequence">First sequence:</label></td>
         <td><input type="text" name="first_sequence" id="first_sequence" value="<TMPL_VAR name="first_sequence">" /></td>
       </tr>
+      <TMPL_ELSE>
+        <input type="hidden" name="first_sequence" id="first_sequence" />
       </TMPL_UNLESS>
       <tr class="advanced_options">
         <td><label for="iterator">Sequence rule:</label></td>
@@ -156,9 +158,31 @@ border-style: inherit;
       <tr>
         <td colspan="2"><hr/></td>
       </tr>
+      <TMPL_IF NAME="periodical_id">
+      <tr>
+	 <td><label for="firstacquidate">Example start date:</label></td>
+         <td><input type="text" name="examplestartdate" value="<TMPL_VAR name="examplestartdate">" size="13" maxlength="10" id="examplestartdate"/></td>
+      </tr>
+      <script type="text/javascript">
+                    Calendar.setup({
+                        inputField   : "examplestartdate",
+                        ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
+                        button       : "examplestartdate",
+                        align        : "Tl"
+                    });
+      </script>
+      <tr>
+        <td><label for="first_issue">Initial issue:</label></td>
+        <td>
+            <span class="seqlab0"></span><span class="seqval0span"><input type="text" class="seqval0" name="seqval0" size="2" /></span>
+            <span class="seqlab1"></span><span class="seqval1span"><input type="text" class="seqval1" name="seqval1" size="2" /></span>
+            <span class="seqlab2"></span><span class="seqval2span"><input type="text" class="seqval2" name="seqval2" size="2" /></span>
+        </td>
+      </tr>
+      </TMPL_IF>
       <tr>
         <td style="vertical-align:text-top"><input type="button" value="Generate Examples" class="buttonShowExamples" /></td>
-        <td><p class="serex_p"></p></td>
+        <td colspan="2"><p class="serex_p"></p></td>
       </tr>
      </table>
 	</fieldset>
@@ -183,10 +207,11 @@ function AppendSequence(i, seq) {
 
 function RetrieveSerialExamples() {
     $('p.serex_p').empty();
+    var startdate = (document.f.firstacquidate) ? document.f.firstacquidate.value : document.f.examplestartdate.value;
     $.getJSON(
         'format_sequence.pl',
         {
-          startdate: document.f.firstacquidate.value,
+          startdate: startdate,
           frequency: document.f.frequency.value,
           sequence_format: document.f.sequence_format.value,
           chronology_format: document.f.chronology_format.value,
