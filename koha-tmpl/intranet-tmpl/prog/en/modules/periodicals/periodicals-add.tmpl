@@ -1,7 +1,7 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Periodicals &rsaquo; <!-- TMPL_IF name="periodical_id" --><!-- TMPL_VAR name="bibliotitle" escape="html" --> &rsaquo; Modify periodical<!-- TMPL_ELSE -->New periodical<!-- /TMPL_IF --></title>
+<link rel="stylesheet" type="text/css" media="print" href="<!-- TMPL_VAR name="themelang" -->/lib/jquery-ui/jquery-ui.css" />
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
-<!-- TMPL_INCLUDE NAME="calendar.inc" -->
 
 <style>
 table, thead, tbody, tr, td, th {
@@ -63,17 +63,8 @@ border-style: inherit;
        <TMPL_UNLESS NAME="periodical_id">
        <tr>
 	 <td><label for="firstacquidate">Initial publication date:</label></td>
-         <td><input type="text" name="firstacquidate" value="<TMPL_VAR name="firstacquidate">" size="13" maxlength="10" id="firstacquidate" <TMPL_IF NAME="periodical_id">disabled="disabled"</TMPL_IF>; /></td>
+         <td><input type="text" name="firstacquidate" value="<TMPL_VAR name="firstacquidate">" size="13" maxlength="10" id="firstacquidate" /></td>
       </tr>
-        <script type="text/javascript">
-                    Calendar.setup({
-                        inputField   : "firstacquidate",
-                        ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
-                        button       : "firstacquidate",
-                        align        : "Tl"
-                    });
-        </script>
-
       </TMPL_UNLESS>
       <tr>
         <td><label for="frequency">Frequency:</label></td>
@@ -163,14 +154,6 @@ border-style: inherit;
 	 <td><label for="firstacquidate">Example start date:</label></td>
          <td><input type="text" name="examplestartdate" value="<TMPL_VAR name="examplestartdate">" size="13" maxlength="10" id="examplestartdate"/></td>
       </tr>
-      <script type="text/javascript">
-                    Calendar.setup({
-                        inputField   : "examplestartdate",
-                        ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
-                        button       : "examplestartdate",
-                        align        : "Tl"
-                    });
-      </script>
       <tr>
         <td><label for="first_issue">Initial issue:</label></td>
         <td>
@@ -198,6 +181,16 @@ border-style: inherit;
 </div>
 
 <script type="text/javascript">
+
+<TMPL_IF NAME="periodical_id">
+$(function() {
+    $( "#examplestartdate" ).datepicker();
+});
+<TMPL_ELSE>
+$(function() {
+    $( "#firstacquidate" ).datepicker();
+});
+</TMPL_IF>
 
 $('input.buttonShowExamples').click(RetrieveSerialExamples);
 
@@ -305,4 +298,5 @@ function UpdateChronologyFormat() {
 
 </script>
 
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery-ui/jquery-ui.js"></script>
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

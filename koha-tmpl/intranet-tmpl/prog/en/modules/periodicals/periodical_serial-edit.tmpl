@@ -1,15 +1,9 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Periodicals &rsaquo; Edit Periodical Serial</title>
+<link rel="stylesheet" type="text/css" media="print" href="<!-- TMPL_VAR name="themelang" -->/lib/jquery-ui/jquery-ui.css" />
 <TMPL_INCLUDE NAME="doc-head-close.inc">
-<TMPL_INCLUDE NAME="calendar.inc">
-
-<style>
-table, thead, tbody, tr, td, th {
-border-style: inherit;
-}
-</style>
-
 </head>
+
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="periodicals-search.inc" -->
@@ -58,15 +52,6 @@ border-style: inherit;
     <tr>
         <td><input type="text" name="vintage" value="<TMPL_VAR NAME="vintage">"/></td>
         <td><input type="text" name="publication_date" value="<TMPL_VAR name="publication_date">" size="13" maxlength="10" id="publication_date"/>
-        </li>
-    <script type="text/javascript">
-                    Calendar.setup({
-                        inputField   : "publication_date",
-                        ifFormat     : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
-                        button       : "publication_date",
-                        align        : "Tl"
-                    });
-    </script>
         <td><input type="text" name="sequence" value="<TMPL_VAR NAME="sequence">"/></td>
     </tr>
     </TMPL_LOOP>
@@ -79,4 +64,10 @@ border-style: inherit;
 
 </div>
 
+<script type-"text/javascript">
+$(function() {
+    $( "#publication_date" ).datepicker();
+});
+</script>
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery-ui/jquery-ui.js"></script>
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
