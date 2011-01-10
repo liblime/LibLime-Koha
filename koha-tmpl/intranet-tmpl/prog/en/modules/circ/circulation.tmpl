@@ -14,6 +14,14 @@
 <link rel="stylesheet" type="text/css" href="<!-- TMPL_VAR NAME="themelang" -->/css/login.css" />
 <script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
+
+var backtoqueue = '<!-- TMPL_VAR NAME="backtoqueue" -->';
+if (backtoqueue=='1') {
+   window.parent.location.href='/cgi-bin/koha/circ/view_holdsqueue.pl'
+   +'?run_report=1&branchlimit=<!-- TMPL_VAR NAME="queue_branchlimit" -->';
+   window.parent.GB_hide();
+}
+
 $.tablesorter.addParser({
     id: 'articles',
     is: function(s) {return false;  },
@@ -301,6 +309,9 @@ function refocus(calendar) {
 </ul>
 
 <form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="confirm">
+<input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
+<input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
+<input type=hidden name="qbarcode" value="<!-- TMPL_VAR NAME="qbarcode" -->">
 
 <!-- TMPL_IF NAME="RESERVE_WAITING" -->
 <!-- TMPL_IF NAME="DisableHoldsIssueOverrideUnlessAuthorised" -->

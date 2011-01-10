@@ -971,7 +971,7 @@ sub AddIssue {
 				my $resbor = $res->{'borrowernumber'};
 				if ( $resbor eq $borrower->{'borrowernumber'} ) {
 					# The item is reserved by the current patron
-					ModReserveFill($res);
+					C4::Reserves::ModReserveFillCheckout($res);
 				}
 				elsif ( $restype eq "Waiting" ) {
 					# warn "Waiting";

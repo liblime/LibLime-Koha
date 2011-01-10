@@ -6,6 +6,12 @@
 </style>
 <script type="text/javascript">
 //<![CDATA[
+
+var closeGB = '<!-- TMPL_VAR NAME="closeGB" -->';
+if (closeGB=='1') { // confirmed filled from Holds Queue
+   parent.parent.document.location.href = '/cgi-bin/koha/circ/view_holdsqueue.pl?branchlimit=<!-- TMPL_VAR NAME="queue_branchlimit" -->&run_report=1&filled=1';
+   parent.parent.GB_hide();
+}
 function Dopop(link) {
     var newin=window.open(link,'popup','width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top');
 }
@@ -75,7 +81,7 @@ function ContinueReturns() {
 
 <div class="yui-g">
 <!-- TMPL_IF NAME="wrongbranch" -->
-<div class="dialog alert"><h3>Cannot Check In</h3><p>This item must be checked in at its home library. <strong>NOT CHECKED IN</strong></p>
+<div class="dialog alert"><h3>Cannot Check In</h3><p>This item must be checked in at its home library (<!-- TMPL_VAR NAME="rightbranch" -->). <strong>NOT CHECKED IN</strong></p>
 </div>
 <!-- /TMPL_IF -->
 <!-- case of a mistake in transfer loop -->
@@ -94,6 +100,8 @@ function ContinueReturns() {
             <input type="hidden" name="WT-itemNumber" value="<!-- TMPL_VAR Name="WrongTransferItem" -->" />
             <input type="hidden" name="WT-waitingAt" value="<!-- TMPL_VAR Name="TransferWaitingAt" -->" />
             <input type="hidden" name="WT-From" value="<!-- TMPL_VAR Name="wtransfertFrom" -->" />
+            <input type="hidden" name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
+            <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
 		<!-- TMPL_IF name="HoldButtonConfirm" -->
         <input type="submit" class="approve" value="Confirm" />
         	<!-- /TMPL_IF -->
@@ -150,6 +158,8 @@ function ContinueReturns() {
                 <input type="hidden" name="diffBranch" value="<!-- TMPL_VAR Name="destbranch" -->" />
                 <input type="hidden" name="exemptfine" value="<!-- TMPL_VAR Name="exemptfine" -->" />
                 <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
+                <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
+                <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
         	<!-- /TMPL_IF -->
                 </form>
 	</div>
@@ -192,6 +202,8 @@ function ContinueReturns() {
             <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
             <input type="hidden" name="barcode" value="0" />
         	<!-- /TMPL_IF -->
+        <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
+        <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
         </form>
 		</div>
     <!-- /TMPL_IF -->
@@ -322,6 +334,8 @@ function ContinueReturns() {
             <input type="hidden" name="diffBranch" value="<!-- TMPL_VAR Name="destbranch" -->" />
             <input type="hidden" name="exemptfine" value="<!-- TMPL_VAR Name="exemptfine" -->" />
             <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
+            <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
+            <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
         </form>
 	</div>
     <!-- /TMPL_IF -->

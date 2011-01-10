@@ -82,7 +82,7 @@ C4::Reserves - Koha functions for dealing with reservation.
   
   ==== 2nd use case ====
   patron requests a document, a given item,
-    If pickup is holding branch                                   P =0, F=W,   I=filled
+    If pickup is holding branch                                   P =0, F=W,    I=filled
     If transfer needed, write in branchtransfer                   P =0, F=T,    I=filled
         The pickup library receive the book, it checks it in      P =0, F=W,    I=filled
   The patron borrow the book                                      P =0, F=F,    I=filled
@@ -169,7 +169,7 @@ sub GetItemForBibPrefill
    my $res = shift;
    my $dbh = C4::Context->dbh;
    
-   ## other items of the same bib are ineligible for this hold
+   ## other item-level holds of the same bib are ineligible for this hold
    my $sth = $dbh->prepare("SELECT itemnumber
       FROM reserves
      WHERE biblionumber = ?
@@ -194,16 +194,19 @@ sub GetItemForBibPrefill
          join(',',map{'?'}@items)) : ''
    );
    $sth = $dbh->prepare($sql) || die $dbh->errstr();
-   $sth->execute($$res{biblionumber},@items) || die $dbh->errstr();
+   $sth->execute($$res{biblionumber},@items);
+
    my $item = $sth->fetchrow_hashref();
-   return unless $item;
+   $$item{found}            = $$res{found};
+   $$item{borrowerbranch}   = $$res{borrowerbranch};
    $$item{borrowercategory} = $$res{categorycode};
+   $$item{reservenumber}    = $$res{reservenumber};
    return _itemfillbib($item);
 }
 
 sub GetItemForQueue
 {
-   my($biblionumber,$itemnumber,$borrowercategory) = @_;
+   my $res = shift;
    my $dbh = C4::Context->dbh;
    my $sth = $dbh->prepare("
       SELECT biblio.title,
@@ -216,10 +219,13 @@ sub GetItemForQueue
        WHERE biblio.biblionumber = items.biblionumber
          AND items.biblionumber = ?
          AND items.itemnumber   = ?") || die $dbh->errstr();
-   $sth->execute($biblionumber,$itemnumber) || die $dbh->errstr();
+   $sth->execute($$res{biblionumber},$$res{itemnumber});
    my $item = $sth->fetchrow_hashref();
    return unless $item;
-   $$item{borrowercategory} = $borrowercategory;
+   $$item{found}            = $$res{found};
+   $$item{borrowercategory} = $$res{borrowercategory};
+   $$item{borrowerbranch}   = $$res{borrowerbranch};
+   $$item{reservenumber}    = $$res{reservenumber};
    return _itemfillbib($item);
 }
 
@@ -249,7 +255,18 @@ sub _itemfillbib
    ## unfortunately, itemtype is not always set, so $ir could be undef
    if (exists $$ir{holdallowed}) {
       return if !$$ir{holdallowed};
+      return if ( ($$ir{holdallowed} == 1) 
+               && ($$item{holdingbranch} ne $$item{borrowerbranch}) );
    }
+
+   ## is this item already waiting or in transit for somebody else?
+   $sth = $dbh->prepare("SELECT 1 FROM reserves
+     WHERE itemnumber = ?
+       AND reservenumber != ?
+       AND found IN ('W','T')");
+   $sth->execute($$item{itemnumber},$$item{reservenumber});
+   return if ($sth->fetchrow_array)[0];
+
    return $item;
 }
 
@@ -274,6 +291,7 @@ sub GetReservesForQueue
       SELECT reserves.reservenumber,
              reserves.biblionumber,
              reserves.itemnumber,
+             borrowers.branchcode as borrowerbranch,
              borrowers.surname,
              borrowers.firstname,
              borrowers.phone,
@@ -282,7 +300,9 @@ sub GetReservesForQueue
              borrowers.categorycode,
              reserves.reservedate,
              reserves.branchcode as pickbranch,
-             reserves.reservenotes as notes
+             reserves.reservenotes as notes,
+             reserves.priority,
+             reserves.found
         FROM reserves,borrowers
        WHERE reserves.found IS NULL
          AND reserves.priority = 1
@@ -328,12 +348,19 @@ sub GetHoldsQueueItems
 	my $sth = $dbh->prepare($query);
 	$sth->execute(@bind_params);
 	my $items = [];
+   my $userenv = C4::Context->userenv;
    use C4::Dates 'format_date';
-    while ( my $row = $sth->fetchrow_hashref ){
-		  $row->{reservedate} = format_date($row->{reservedate});
-        push @$items, $row;
-    }
-    return $items;
+   while (my $row = $sth->fetchrow_hashref){
+      $$row{reservedate} = format_date($$row{reservedate});
+      $$row{fillable}    = $$userenv{branch} eq $$row{holdingbranch} ?1:0;
+      my $sth2 = $dbh->prepare('SELECT found FROM reserves WHERE reservenumber = ?');
+      $sth2->execute($$row{reservenumber});
+      $$row{found} = ($sth2->fetchrow_array)[0];
+      $$row{found_waiting}   = 1 if $$row{found} eq 'W';
+      $$row{found_intransit} = 1 if $$row{found} eq 'T';
+      push @$items, $row;
+   }
+   return $items;
 }
 
 
@@ -1524,28 +1551,98 @@ sub _getNextBranchInQueue
       $nextLib = $branches[-1] if $nextLib eq $currLib;
       $nextLib = $branches[-2] if $nextLib eq $currLib;
    }
-   return $nextLib;
+   return $nextLib, scalar @branches;
 }
 
 sub ModReservePass
 {
    my $res = shift;
    my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("
-      SELECT queue_sofar
+   my $sth;
+
+   ## normalize columns like GetReservesForQueue()
+   $$res{notes}      = $$res{reservenotes}; delete($$res{reservenotes});
+   $$res{pickbranch} = $$res{branchcode};   delete($$res{branchcode});
+   $sth = $dbh->prepare("
+      SELECT branchcode as borrowerbranch,
+             surname,
+             firstname,
+             phone,
+             borrowernumber,
+             cardnumber,
+             categorycode as borrowercategory
+        FROM borrowers
+       WHERE borrowernumber = ?");
+   $sth->execute($$res{borrowernumber});
+   my $row = $sth->fetchrow_hashref();
+   foreach(keys %$row ) { $$res{$_} = $$row{$_} }
+
+   ## get info from tmp_holdsqueue
+   $sth = $dbh->prepare("
+      SELECT queue_sofar,
+             item_level_request,
+             holdingbranch,
+             itemnumber
         FROM tmp_holdsqueue
        WHERE reservenumber = ?");
    $sth->execute($$res{reservenumber});
+   ($$res{queue_sofar},
+    $$res{item_level_request},
+    $$res{holdingbranch},
+    $$res{itemnumber}) = $sth->fetchrow_array;
 
-   ## figure out the next library to pass to
-   my $q = ($sth->fetchrow_array)[0];
-   my($currLib) = $q =~/\,?(\w+)$/;
-   $q  .= ',' . _getNextBranchInQueue($currLib,$q);
-   $sth = $dbh->prepare("UPDATE tmp_holdsqueue
-      SET queue_sofar    = ?
-    WHERE reservenumber  = ?");
-   $sth->execute($q,$$res{reservenumber});
-   return $q;
+   ## sanity check: don't let UI layer do this for us.
+   ## if this is an item_level_request, we cannot pass it
+   if ($$res{item_level_request}) {
+      return undef,'Item-level request';
+   }
+
+   ## for a bib-level request, pass it to the next library with an 
+   ## available item.
+   $sth = $dbh->prepare('SELECT * FROM items
+      WHERE biblionumber   = ?
+        AND holdingbranch != ?
+        AND itemnumber    != ?');
+   $sth->execute(
+      $$res{biblionumber},
+      $$res{holdingbranch},
+      $$res{itemnumber}
+   );
+   
+   my $item;
+   ITEM:
+   while($item = $sth->fetchrow_hashref()) {
+      $$item{found}            = $$res{found};
+      $$item{borrowerbranch}   = $$res{borrowerbranch};
+      $$item{borrowercategory} = $$res{categorycode};
+      $$item{reservenumber}    = $$res{reservenumber};
+      $item = _itemfillbib($item);
+      if ($$item{itemnumber}) {
+         last ITEM;
+      }
+      else {
+         undef($item);
+         next ITEM;
+      }
+   }
+   return undef, 'Not available at other libraries' unless $$item{itemnumber};
+
+   ## update tmp_holdsqueue's holdingbranch for itemnumber
+   $$res{queue_sofar} .= ",$$item{holdingbranch}";
+   $sth = $dbh->prepare('UPDATE tmp_holdsqueue
+      SET itemnumber    = ?,
+          barcode       = ?,
+          holdingbranch = ?,
+          queue_sofar   = ?
+    WHERE reservenumber = ?');
+   $sth->execute(
+      $$item{itemnumber},
+      $$item{barcode},
+      $$item{holdingbranch},
+      $$res{queue_sofar},
+      $$res{reservenumber}
+   );
+   return $$item{itemnumber};
 }
 
 =item ModReserveFill
@@ -1554,53 +1651,44 @@ sub ModReservePass
 
 Fill a reserve. If I understand this correctly, this means that the
 reserved book has been found and given to the patron who reserved it.
+That is, the barcode has been scanned it at checkin.
 
 C<$reserve> specifies the reserve to fill. It is a reference-to-hash
 whose keys are fields from the reserves table in the Koha database.
 
+Returns true on success.
+
 =cut
+sub ModReserveFillCheckout
+{
+   my $res = shift; # the reserves hash should be complete
+   my $dbh = C4::Context->dbh;
+   my $query = "UPDATE reserves
+                   SET priority         = 0,
+                       expirationdate   = NULL
+                 WHERE reservenumber    = ?";
+   my $sth = $dbh->prepare($query);
+   $sth->execute($$res{reservenumber});
 
-sub ModReserveFill {
-    my $res = shift; # the reserves hash should be complete
-    $debug and warn "ModReserveFill($res)";
-    my $dbh = C4::Context->dbh;
-    # fill in a reserve record....
-    my $biblionumber = $res->{'biblionumber'};
-    my $borrowernumber = $res->{'borrowernumber'};
-    my $reservenumber = $res->{'reservenumber'};
-    my $resdate = $res->{'reservedate'};
+}
 
-    # get the priority on this record....
-    my $priority = $$res{priority};
-    
-    # update the database...F=filled
-    my $query = "UPDATE reserves
-                  SET    found            = 'F',
-                         priority         = 0,
-                         expirationdate   = NULL
-                 WHERE  biblionumber     = ?
-                    AND reservedate      = ?
-                    AND borrowernumber   = ?
-                ";
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $biblionumber, $resdate, $borrowernumber );
-    $sth->finish;
+sub ModReserveFillCheckin
+{
+   my $res = shift; # the reserves hash should be complete
+   my $dbh = C4::Context->dbh;
+   my $query = "UPDATE reserves
+                   SET expirationdate   = NULL,
+                       priority         = 0
+                 WHERE reservenumber    = ?";
+   my $sth = $dbh->prepare($query);
+   $sth->execute($$res{reservenumber});
 
-    _moveToOldReserves($reservenumber);
-    
-    # now fix the priority on the others (if the priority wasn't
-    # already sorted!)....
-    unless ( $priority == 0 ) {
-        _FixPriority( $biblionumber, $borrowernumber, $priority, $reservenumber );
-    }
-
-    # delete from holds queue
-    foreach my $table(qw(tmp_holdsqueue)) {
-       $sth = $dbh->prepare("DELETE FROM $table
-          WHERE reservenumber = ?");
-       $sth->execute($$res{reservenumber});
-    }
-    return 1; # return true on success
+   ## delete from Holds Queue
+   $sth = $dbh->prepare('DELETE FROM tmp_holdsqueue
+      WHERE reservenumber = ?');
+   $sth->execute($$res{reservenumber});
+  
+   return 1; # return true on success
 }
 
 sub ModReserveTrace
@@ -1609,24 +1697,23 @@ sub ModReserveTrace
    my $dbh = C4::Context->dbh;
    my $sth;
    
-   # first, get the authorised value for 'trace' in LOST
-   $sth = $dbh->prepare("
-      SELECT authorised_value
-        FROM authorised_values
-       WHERE category = 'LOST'
-         AND LCASE(lib) = 'trace' ");
+   # update item's LOST status
+   ## get the authorised_value of 'trace'
+   $sth = $dbh->prepare("SELECT authorised_value
+      FROM authorised_values
+     WHERE category = 'LOST'
+       AND LCASE(lib) = 'trace'");
    $sth->execute();
-   my $traceAval = ($sth->fetchrow_array)[0];
-   # update the item's status
+   my $traceAuthVal = ($sth->fetchrow_array)[0];
    $sth = $dbh->prepare("
       UPDATE items
          SET itemlost = ?
-       WHERE itemnumber = ?");
-   $sth->execute($traceAval,$$res{itemnumber});
+       WHERE itemnumber  = ?");
+   $sth->execute($traceAuthVal,$$res{itemnumber});
 
    # update the database
    my $sql = "UPDATE reserves
-              SET    found            = 'R',
+              SET    found            = NULL,
                      priority         = 0,
                      expirationdate   = NULL
               WHERE  reservenumber    = ?";
@@ -1946,6 +2033,7 @@ sub IsAvailableForItemLevelRequest {
     return 0 if $$item{itemlost};
     return 0 if $$item{wthdrawn};
     return 0 if $$item{suppress};
+    return 0 if $$item{onloan};
     if ($$item{otherstatus}) {
        $sth = $dbh->prepare('SELECT holdsallowed,holdsfilled
           FROM itemstatus

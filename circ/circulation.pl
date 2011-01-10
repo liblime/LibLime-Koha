@@ -310,6 +310,14 @@ if ($findborrower) {
 # get the borrower information.....
 my $borrower;
 if ($borrowernumber) {
+    if ($query->param('fromqueue')) {
+        $template->param(
+            queue_branchlimit => $query->param("queue_branchlimit"),
+            fromqueue         => 1,
+            qbarcode          => $query->param("qbarcode")
+        );
+    }
+
     if ( C4::Context->preference('CheckoutTimeout') ) {
       $template->param( CheckoutTimeout => C4::Context->preference('CheckoutTimeout') );
     }
@@ -428,6 +436,10 @@ if ($barcode) {
     # FIXME If the issue is confirmed, we launch another time GetMemberIssuesAndFines, now display the issue count after issue 
     my ( $od, $issue, $fines ) = GetMemberIssuesAndFines( $borrowernumber );
     $template->param( issuecount   => $issue );
+
+    if ($query->param('fromqueue')) {
+       $template->param(backtoqueue=>1);
+    }
 }
 
 # reload the borrower info for the sake of reseting the flags.....
@@ -789,7 +801,6 @@ if($lib_messages_loop){ $template->param(flagged => 1 ); }
 
 my $bor_messages_loop = GetMessages( $borrowernumber, 'B', $branch );
 if($bor_messages_loop){ $template->param(flagged => 1 ); }
-
 
 $template->param(
     issued_itemtypes_count_loop => \@issued_itemtypes_count_loop,

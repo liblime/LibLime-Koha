@@ -41,15 +41,11 @@ foreach my $res(@{C4::Reserves::GetReservesForQueue() // []}) {
    my $item;
    if ($$res{itemnumber}) {
       $$res{item_level_request} = 1;
-      ## we have an item, get its barcode,title,itemcallnumber,holdingbranch.
-      ## borrowernumber is passed to check issuing rules.
-      $item = C4::Reserves::GetItemForQueue(
-         $$res{biblionumber},
-         $$res{itemnumber},
-         $$res{categorycode}
-      );
+      ## (1) we have an item, get its barcode,title,itemcallnumber,
+      ## holdingbranch.  borrower is passed to check issuing rules.
+      $item = C4::Reserves::GetItemForQueue($res);
    }
-   else {
+   else {   ## (2)
       $$res{item_level_request} = 0;
       ## (a) try to find an item
       $item = C4::Reserves::GetItemForBibPrefill($res);
@@ -62,7 +58,7 @@ foreach my $res(@{C4::Reserves::GetReservesForQueue() // []}) {
    ## save the hold request to the tmp_holdsqueue table
    my %new = ();
    foreach(@f) { $new{$_} = $$res{$_} }
-   $new{queue_sofar} = $$res{pickbranch};
+   $new{queue_sofar} = $$res{holdingbranch};
    C4::Reserves::SaveHoldInQueue(%new);
 }
 

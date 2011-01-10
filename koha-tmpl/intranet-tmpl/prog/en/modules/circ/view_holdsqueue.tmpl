@@ -5,6 +5,15 @@
 p { margin-top: 0; }
 .action { font-size: 80%; }
 </style>
+<!-- TMPL_INCLUDE NAME="greybox.inc" -->
+<script>
+function Xport(barcode) {
+   return GB_showCenter('Check In Item','/cgi-bin/koha/circ/returns.pl'
+   +'?queue_branchlimit=<!-- TMPL_VAR NAME="branchlimit" -->'
+   +'&fromqueue=1&barcode='+barcode,
+   700,800);
+}
+</script>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -34,18 +43,22 @@ p { margin-top: 0; }
         <div class="dialog message">No items found.</div>
     <!-- /TMPL_IF -->
 
-    <!-- TMPL_IF NAME="itemsloop" -->
+
+<!-- TMPL_IF NAME="itemsloop" -->
 <table id="holdst">
 	<thead>
 	<tr>
         <th>Title<span class="action"><a href="#" onClick="hideColumn(1)">[x]</a></span></th>
         <th>Collection<span class="action"><a href="#" onClick="hideColumn(2)">[x]</a></span></th>
-        <th>Call Number<span class="action"><a href="#" onClick="hideColumn(3)">[x]</a></span></th>
-        <th>Barcode<span class="action"><a href="#" onClick="hideColumn(4)">[x]</a></span></th>
-        <th>Patron<span class="action"><a href="#" onClick="hideColumn(5)">[x]</a></span></th>
-        <th>Send To<span class="action"><a href="#" onClick="hideColumn(6)">[x]</a></span></th>
-        <th>Date<span class="action"><a href="#" onClick="hideColumn(7)">[x]</a></span></th>
-        <th>Action<br>
+        <th>Location<span class="action"><a href="#" onClick="hideColumn(3)">[x]</a></span></th>
+        <th>Call Number<span class="action"><a href="#" onClick="hideColumn(4)">[x]</a></span></th>
+        <th>Barcode<span class="action"><a href="#" onClick="hideColumn(5)">[x]</a></span></th>
+        <th>Patron<span class="action"><a href="#" onClick="hideColumn(6)">[x]</a></span></th>
+        <th>Send To<span class="action"><a href="#" onClick="hideColumn(7)">[x]</a></span></th>
+        <th>Date<span class="action"><a href="#" onClick="hideColumn(8)">[x]</a></span></th>
+        <th>Passed To<span class="action"><a href="#" onClick="hideColumn(9)">[x]</a></span></th>
+        <th>Fill</th>
+        <th nowrap>Action<br>
         <span class="action"><a href="#" onClick="passAll()">Pass All</a></span></th>
     </tr>
 	</thead>
@@ -60,22 +73,44 @@ p { margin-top: 0; }
                                         <!-- TMPL_IF name="size" --><!-- TMPL_VAR name="size" --><!-- /TMPL_IF --> <!-- TMPL_IF NAME="isbn" -->ISBN: <!-- TMPL_VAR NAME="isbn" --><!-- /TMPL_IF --></p>
 			</td>
             <td><!-- TMPL_VAR NAME="ccode" --></td>
-            <td><!-- TMPL_VAR NAME="location" --> <!-- TMPL_VAR NAME="itemcallnumber"--> <!-- TMPL_VAR NAME="enumchron" --></td>
+            <td><!-- TMPL_VAR NAME="location" --></td>
+            <td><!-- TMPL_VAR NAME="itemcallnumber"-->
+               <!-- TMPL_VAR NAME="enumchron" --></td>
             <td>
                 <!-- TMPL_IF NAME="item_level_request" -->
-                    <!-- TMPL_VAR NAME="barcode" -->
                 <!-- TMPL_ELSE -->
                     <em>Selected copy:<br></em>
-                    <!-- TMPL_VAR NAME="barcode" -->
                 <!-- /TMPL_IF -->
+                <a href="/cgi-bin/koha/catalogue/moredetail.pl?itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->&biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&bi=<!-- TMPL_VAR NAME="biblionumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a>
             </td>
-			<td><p><a href="/cgi-bin/koha/circ/circulation.pl?findborrower=<!-- TMPL_VAR NAME="cardnumber" -->#reserves"><!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR NAME="firstname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)</a></p> <p><!-- TMPL_VAR NAME="phone" --></p></td>
+			   <td><p><a href="/cgi-bin/koha/circ/circulation.pl?findborrower=<!-- TMPL_VAR NAME="cardnumber" -->#reserves"><!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR NAME="firstname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)</a></p> <p><!-- TMPL_VAR NAME="phone" --></p></td>
             <td><!-- TMPL_VAR NAME="pickbranch" --></td>
             <td><!-- TMPL_VAR NAME="reservedate" --></td>
-            <td><select name="action_<!-- TMPL_VAR NAME="action_cnt" -->" id="action_<!-- TMPL_VAR NAME="action_cnt" -->">
+            <td>
+            <!-- TMPL_IF NAME="item_level_request" -->
+            <span class=action>Cannot pass: Item-level request</span>
+            <!-- TMPL_ELSE -->
+            <font size="-2"><!-- TMPL_VAR NAME="branches_sentto" --></font></td>
+            <!-- /TMPL_IF -->
+            <td>
+            <!-- TMPL_IF NAME="fillable" -->
+               <a href="#" onclick="Xport('<!-- TMPL_VAR NAME="barcode" -->');">Check In</a>
+            <!-- TMPL_ELSE -->
+            <i>Check in at</i><br><!-- TMPL_VAR NAME="holdingbranch" -->
+            <!-- /TMPL_IF -->
+            </td>
+            <td>
+            <!-- TMPL_IF NAME="item_level_request" -->
+            <span class=action>(Cannot pass: Item-level request)</span>
+            <!-- /TMPL_IF -->
+            <select name="action_<!-- TMPL_VAR NAME="action_cnt" -->" id="action_<!-- TMPL_VAR NAME="action_cnt" -->">
                <option value=""></option>
-               <option value="fill">Fill</option>
+               <!-- TMPL_IF NAME="item_level_request" -->
+               <option value=""></option>
+               <!-- TMPL_ELSE -->
                <option value="pass">Pass</option>
+               <!-- /TMPL_IF -->
+               <option value="trace">Trace</option>
                </select></td>
         </tr>
     <!-- /TMPL_LOOP --></tbody>
@@ -115,7 +150,8 @@ p { margin-top: 0; }
 <input type=button value="Cancel" onclick="document.location.href='view_holdsqueue.pl';">
 <input type=hidden name="branchlimit" value="<!-- TMPL_VAR NAME="branch" -->">
 <input type=hidden name="branch"      value="<!-- TMPL_VAR NAME="branch" -->">
-<input type=hidden name="run_fill" value="1">
+<input type=hidden name="run_pass" value="1">
+<input type=hidden name="cnt_filled" value="<!-- TMPL_VAR NAME="cnt_filled" -->">
 <!-- TMPL_ELSE -->
 <input type="hidden" name="run_report" value="1" />
 <input type=submit value="Submit">
@@ -134,7 +170,7 @@ function passAll() {
    var c = <!-- TMPL_VAR NAME="action_cnts" -->;
    for(var i=0;i<c;i++) {
       var sel = document.getElementById('action_'+i);
-      sel.selectedIndex = 2;
+      sel.selectedIndex = 1;
    }
 }
 <!-- /TMPL_IF -->

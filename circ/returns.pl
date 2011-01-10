@@ -197,6 +197,14 @@ if ( $query->param('resbarcode') ) {
             diffbranch     => 1,
         );
     }
+    if ($query->param('fromqueue')) {
+       my $res = C4::Reserves::GetReserve($reservenumber);
+       C4::Reserves::ModReserveFillCheckin($res);
+       $template->param(
+         closeGB     => 1,
+         queue_branchlimit => $query->param('queue_branchlimit'),
+       );
+    }
 }
 
 my $borrower;
@@ -336,6 +344,7 @@ if ( $messages->{'NeedsTransfer'} ){
 if ( $messages->{'Wrongbranch'} ){
 	$template->param(
 		wrongbranch => 1,
+      rightbranch => $messages->{Wrongbranch}->{Rightbranch},
 	);
 }
 
@@ -629,11 +638,17 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
     push( @riloop, \%ri );
 }
 
+## umm... Perl bug w/ CGI and template param,
+## pull variable out here or it'll insist queue_branchlimit='genbrname' literal
+my $fromqueue         = $query->param('fromqueue');
+my $queue_branchlimit = $query->param('queue_branchlimit');
 $template->param(
-    riloop         => \@riloop,
-    HoldButtonConfirm => $HoldButtonConfirm,
-    HoldButtonIgnore => $HoldButtonIgnore,
-    HoldButtonPrintConfirm => $HoldButtonPrintConfirm,
+    riloop                  => \@riloop,
+    HoldButtonConfirm       => $HoldButtonConfirm,
+    HoldButtonIgnore        => $HoldButtonIgnore,
+    HoldButtonPrintConfirm  => $HoldButtonPrintConfirm,
+    fromqueue               => $fromqueue,
+    queue_branchlimit       => $queue_branchlimit,
     genbrname               => $branches->{C4::Context->userenv->{'branch'}}->{'branchname'},
     genprname               => $printers->{$printer}->{'printername'},
     branchname              => $branches->{C4::Context->userenv->{'branch'}}->{'branchname'},
@@ -641,10 +656,10 @@ $template->param(
     errmsgloop              => \@errmsgloop,
     exemptfine              => $exemptfine,
     dropboxmode             => $dropboxmode,
-    dropboxdate				=> $dropboxdate->output(),
-	overduecharges          => $overduecharges,
+    dropboxdate				 => $dropboxdate->output(),
+ 	 overduecharges          => $overduecharges,
     soundon                 => C4::Context->preference("SoundOn"),
-    DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
+    DHTMLcalendar_dateformat=> C4::Dates->DHTMLcalendar(),
     AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange'),
 );
 
