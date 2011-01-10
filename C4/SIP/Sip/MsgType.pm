@@ -909,8 +909,7 @@ sub summary_info {
     syslog("LOG_DEBUG", "summary_info: list = (%s)", join(", ", @{$itemlist}));
     foreach my $i (@{$itemlist}) {
         my $bibitem = GetBiblioFromItemNumber($i->{itemnumber});
-        my $bctitle = $bibitem->{barcode} . " " . $bibitem->{title};
-        $resp .= add_field($fid, $bctitle);
+        $resp .= add_field($fid, $bibitem->{barcode});
     }
 
     return $resp;
