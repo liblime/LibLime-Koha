@@ -324,3 +324,5 @@ INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) V
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('RefundLostReturnedAmount','0','Refund a returned lost item rather than applying it to an outstanding balance','','YesNo');
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('ApplyMaxFineWhenLostItemChargeRefunded','1','Use with RefundReturnedLostItem. If set, the maxfine on an item will be applied automatically when the lost item charges are refunded after a patron returns the item','','YesNo');
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('HideItypeInOPAC','0','If ON, do not use/display item type in the OPAC','','YesNo');
+INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('EnableHoldExpiredNotice','0','If ON, allow hold expiration notices to be sent.','','YesNo');
+INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('EnableHoldCancelledNotice','0','If ON, allow hold cancellation notices to be sent.','','YesNo');
