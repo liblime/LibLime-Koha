@@ -23,7 +23,6 @@
         <!-- TMPL_IF NAME="SMSSendDriver" --><th>SMS</th><!-- /TMPL_IF -->
         <th>Email</th><th>Digests only?</th>
         <!-- <th>RSS</th> -->
-        <!-- TMPL_UNLESS NAME="messaging_form_inactive" --><th>Do not notify</th><!-- /TMPL_UNLESS -->
     </tr>
     <!-- TMPL_LOOP name="messaging_preferences" -->
     <tr>
@@ -117,9 +116,6 @@
       <td>-</td>
       <!-- /TMPL_IF --> -->
 
-      <!-- TMPL_UNLESS NAME="messaging_form_inactive" -->
-      <td><input type="checkbox" class="none" id="none<!-- TMPL_VAR NAME="message_attribute_id" -->" /></td>
-      <!-- /TMPL_UNLESS -->
     </tr>
     <!-- /TMPL_LOOP -->
   </table>
