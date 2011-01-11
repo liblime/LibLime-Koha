@@ -4033,6 +4033,23 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
+$DBversion = '4.03.08.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do("INSERT INTO permissions (module_bit, code, description) VALUES ( 13, 'manage_csv_profiles', 'Manage CSV export profiles')");
+    $dbh->do(q/
+        CREATE TABLE `export_format` (
+          `export_format_id` int(11) NOT NULL auto_increment,
+          `profile` varchar(255) NOT NULL,
+          `description` mediumtext NOT NULL,
+          `marcfields` mediumtext NOT NULL,
+          PRIMARY KEY  (`export_format_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    /);
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( CSV Export profiles )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

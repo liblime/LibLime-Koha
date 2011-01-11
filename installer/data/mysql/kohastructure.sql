@@ -2788,6 +2788,14 @@ CREATE TABLE `tmp_holdsqueue` (
    `queue_sofar` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `export_format`;
+CREATE TABLE `export_format` (
+  `export_format_id` int(11) NOT NULL auto_increment,
+  `profile` varchar(255) NOT NULL,
+  `description` mediumtext NOT NULL,
+  `marcfields` mediumtext NOT NULL,
+  PRIMARY KEY  (`export_format_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
