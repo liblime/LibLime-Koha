@@ -80,6 +80,57 @@ function ContinueReturns() {
 	<div id="yui-main">
 
 <div class="yui-g">
+<!-- error messages go before any form -->
+<!-- TMPL_IF NAME="errmsgloop" -->
+    <div class="dialog message">
+        <!-- TMPL_LOOP NAME="errmsgloop" -->
+                    <!-- TMPL_IF Name="badbarcode" -->
+                        <p class="problem">No Item with barcode: <!-- TMPL_VAR Name="msg" --></p>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF Name="ispermanent" -->
+                        <p class="problem">Please return to  <!-- TMPL_VAR Name="msg" --></p>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF Name="notissued" -->
+                        <p class="problem">Not checked out.</p>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="waslost" -->
+			<script type="text/javascript">$(document).ready(function() {HaltReturns();});</script>
+                        <p class="problem"><font style="color:red"><h3>Item was lost, now found.</h3></font></p>
+                        <!-- TMPL_IF Name="lostreturned" -->
+                          <p>
+                          <h5> Remove from patron's lost items? </h5>
+                          <form action="returns.pl" method="post">
+                             <input type=hidden name="reloadFromItemLost" value="<!-- TMPL_VAR NAME="reloadFromItemLost" -->">
+                             <input type="hidden" name="lost_item_returned" value="1" />
+                             <input type="hidden" name="barcode" value="<!-- TMPL_VAR Name="itembarcode" -->" />
+                             <input type="submit" value="Yes" />
+                          </form>
+                          <form action="returns.pl" method="post">
+                             <input type="hidden" name="lost_item_returned" value="0" />
+                             <input type="submit" value="No" />
+                          </form>
+                        <!-- TMPL_ELSE -->
+			<p><button id="continue_button" onclick="ContinueReturns();">Continue</button></p>
+                        <!-- /TMPL_IF -->
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF Name="withdrawn" -->
+                        <p class="problem">Item is withdrawn.</p>
+                    <!-- /TMPL_IF -->
+            <!-- /TMPL_LOOP -->
+            <!-- TMPL_IF NAME="soundon" -->
+                <audio src="/intranet-tmpl/prog/sound/critical.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_ELSE -->
+            <!-- TMPL_IF NAME="soundon" -->
+                <audio src="/intranet-tmpl/prog/sound/beep.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
+            <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
+    </div>
+<!-- /TMPL_IF -->
+
+
+
+
 <!-- TMPL_IF NAME="wrongbranch" -->
 <div class="dialog alert"><h3>Cannot Check In</h3><p>This item must be checked in at its home library (<!-- TMPL_VAR NAME="rightbranch" -->). <strong>NOT CHECKED IN</strong></p>
 </div>
@@ -213,6 +264,7 @@ function ContinueReturns() {
 	<div class="dialog message">
 	  <h3>Please return <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" DEFAULT="item" --></a> to <!-- TMPL_VAR NAME="homebranch" DEFAULT="homebranch" --></h3></div><!-- /TMPL_IF -->
     
+    <!-- TMPL_UNLESS NAME="lostreturned" -->
     <!-- TMPL_IF Name="needstransfer" -->
 	<!-- needstransfer -->
 	<div class="dialog message"><h3> This item needs to be transfered to <!-- TMPL_VAR Name="homebranch" --></h3>
@@ -232,6 +284,7 @@ function ContinueReturns() {
 	<input type="hidden" name="barcode" value="0" />    
 	</form>   </div>
 	<!-- /TMPL_IF -->
+   <!-- /TMPL_UNLESS -->
     	
     <!-- TMPL_IF Name="diffbranch" -->
 	<!-- diffbranch -->
@@ -339,52 +392,7 @@ function ContinueReturns() {
         </form>
 	</div>
     <!-- /TMPL_IF -->
-<!-- TMPL_ELSE -->
-
-<!-- TMPL_IF NAME="errmsgloop" -->
-    <div class="dialog message">
-        <!-- TMPL_LOOP Name="errmsgloop" -->
-                    <!-- TMPL_IF Name="badbarcode" -->
-                        <p class="problem">No Item with barcode: <!-- TMPL_VAR Name="msg" --></p>
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="ispermanent" -->
-                        <p class="problem">Please return to  <!-- TMPL_VAR Name="msg" --></p>
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="notissued" -->
-                        <p class="problem">Not checked out.</p>
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="waslost" -->
-			<script type="text/javascript">$(document).ready(function() {HaltReturns();});</script>
-                        <p class="problem"><font style="color:red"><h3>Item was lost, now found.</h3></font></p>
-                        <!-- TMPL_IF Name="lostreturned" -->
-                          <p>
-                          <h5> Remove from patron's lost items? </h5>
-                          <form action="returns.pl" method="post">
-                             <input type="hidden" name="lost_item_returned" value="1" />
-                             <input type="hidden" name="barcode" value="<!-- TMPL_VAR Name="itembarcode" -->" />
-                             <input type="submit" value="Yes" />
-                          </form>
-                          <form action="returns.pl" method="post">
-                             <input type="hidden" name="lost_item_returned" value="0" />
-                             <input type="submit" value="No" />
-                          </form>
-                        <!-- /TMPL_IF -->
-			<p><button id="continue_button" onclick="ContinueReturns();">Continue</button></p>
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="withdrawn" -->
-                        <p class="problem">Item is withdrawn.</p>
-                    <!-- /TMPL_IF -->
-            <!-- /TMPL_LOOP -->
-            <!-- TMPL_IF NAME="soundon" -->
-                <audio src="/intranet-tmpl/prog/sound/critical.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
-            <!-- /TMPL_IF -->
-            <!-- TMPL_ELSE -->
-            <!-- TMPL_IF NAME="soundon" -->
-                <audio src="/intranet-tmpl/prog/sound/beep.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
-            <!-- /TMPL_IF -->
-        <!-- /TMPL_IF -->
-    </div>
-<!-- /TMPL_IF -->
+<!-- -- TMPL_ELSE -- -->
 
     <div id="exemptfines" class="dialog message" style="display:none;">
         <p>Fines for returned items are forgiven.</p>

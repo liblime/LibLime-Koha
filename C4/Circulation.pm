@@ -1437,6 +1437,8 @@ sub AddReturn {
     my $hbr = $item->{C4::Context->preference("HomeOrHoldingBranch")} || '';
         # item must be from items table -- issues table has branchcode and issuingbranch, not homebranch nor holdingbranch
 
+    my $itemlost = $$item{itemlost};
+
     my $borrowernumber = $borrower->{'borrowernumber'} || undef;    # we don't know if we had a borrower or not
 
     # check if the book is in a permanent collection....
@@ -1452,13 +1454,13 @@ sub AddReturn {
             Wrongbranch => $branch,
             Rightbranch => $hbr,
         };
-        $doreturn = 0;
+        $doreturn = 0 unless $itemlost;
         # bailing out here - in this case, current desired behavior
         # is to act as if no return ever happened at all.
         # FIXME - even in an indy branches situation, there should
         # still be an option for the library to accept the item
         # and transfer it to its owning library.
-        return ( $doreturn, $messages, $issue, $borrower );
+        return ( $doreturn, $messages, $issue, $borrower ) unless $itemlost;
     }
 
     if ( $item->{'wthdrawn'} ) { # book has been cancelled
@@ -1473,6 +1475,7 @@ sub AddReturn {
     # item was actually checked out.
     ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
     ModItem({ onloan => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
+
 
     # case of a return of document (deal with issues and holdingbranch)
     if ($doreturn) {
@@ -1545,7 +1548,7 @@ sub AddReturn {
     }
 
     # fix up the accounts.....
-    if ($item->{'itemlost'}) {
+    if ($item->{'itemlost'} || $itemlost) {
         if (C4::Context->preference('RefundReturnedLostItem')) {
             FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $barcode);    # can tolerate undef $borrowernumber
         }
