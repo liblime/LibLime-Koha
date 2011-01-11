@@ -197,6 +197,7 @@ sub GetItemForBibPrefill
    $sth->execute($$res{biblionumber},@items);
 
    my $item = $sth->fetchrow_hashref();
+   return unless $item;
    $$item{found}            = $$res{found};
    $$item{borrowerbranch}   = $$res{borrowerbranch};
    $$item{borrowercategory} = $$res{categorycode};
