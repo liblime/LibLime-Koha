@@ -1,8 +1,3 @@
-cataloguing/biblios.pl
-koha-tmpl/intranet-tmpl/prog/en/lib/biblios/
-koha-tmpl/intranet-tmpl/prog/en/modules/cataloguing/biblios.tmpl
-acqui/getit.pl
-koha-tmpl/intranet-tmpl/prog/en/modules/acqui/getit.tmpl
 plugins/
 svc/proxy_auth_cookie
 svc/z3950

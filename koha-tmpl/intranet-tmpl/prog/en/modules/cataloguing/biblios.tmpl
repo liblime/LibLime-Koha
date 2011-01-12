@@ -1,0 +1,57 @@
+
+
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<title>Koha &rsaquo; ‡biblios</title>
+<script type="text/javascript">
+//<![CDATA[
+
+     $(document).ready(function() {
+        $('#abouttabs > ul').tabs();
+     });
+//]]>
+</script>
+</head>
+<body>
+
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+
+<iframe src="<TMPL_VAR NAME="biblios_link">" id="frame" name="bibliosframe" height="100%" width="100%" frameborder="0" marginheight="0" marginwidth="0"></iframe>
+<script type="text/javascript">
+function resizeIframe() {
+    var height = document.documentElement.clientHeight;
+    height -= document.getElementById('frame').offsetTop;
+    // not sure how to get this dynamically
+    height -= 35; /* whatever you set your body bottom margin/padding to be */
+    
+    document.getElementById('frame').style.height = height +"px";
+    
+};
+document.getElementById('frame').onload = resizeIframe;
+window.onresize = resizeIframe;
+</script>
+
+
+<script type="text/javascript">
+    bibliosframe.userid = '<!-- TMPL_VAR name="loggedinusername" -->';
+    bibliosframe.embeddedSESSID = '<!-- TMPL_VAR name="embeddedSESSID" -->';
+    bibliosframe.openOnLoadRecId = '<!-- TMPL_VAR NAME="biblionumber" -->';
+    bibliosframe.recordxml = '<!-- TMPL_VAR ESCAPE=JS NAME="recordxml" -->';
+    bibliosframe.libPath = '';
+    bibliosframe.uiPath = '';
+    bibliosframe.hostPort = '';
+    bibliosframe.buildtime = 'Tue Sep 28 17:27:26 2010';
+    bibliosframe.version = '0.9';
+    bibliosframe.cgiDir = '/cgi-bin/koha/plugins/biblios/';
+    bibliosframe.recordxml = '<!-- TMPL_VAR ESCAPE=JS NAME="recordxml" -->';
+    bibliosframe.embeddedUrl = '';
+    bibliosframe.userid = '<!-- TMPL_VAR NAME="loggedinusername" -->';
+    bibliosframe.openOnLoadRecId = '<!-- TMPL_VAR NAME="biblionumber" -->';
+    bibliosframe.confPath = bibliosframe.libPath + "conf/biblios.xml";
+    bibliosframe.biblioslogo = bibliosframe.libPath + 'ui/images/biblios-logo.gif';
+    bibliosframe.mainsplash = '';
+    bibliosframe.editingsplash = '';
+    bibliosframe.folderssplash = '';
+    bibliosframe.searchingsplash = '';
+</script>
+<!-- TMPL_INCLUDE name="intranet-bottom.inc" -->
