@@ -30,7 +30,6 @@ use C4::Context;
 use C4::Members;
 use C4::Branch; # GetBranches
 use C4::Debug;
-# use Data::Dumper;
 
 my $MAXIMUM_NUMBER_OF_RESERVES = C4::Context->preference("maxreserves");
 
@@ -268,31 +267,44 @@ if ( $borr->{debarred} && ($borr->{debarred} eq 1) ) {
 my @reserves = GetReservesFromBorrowernumber( $borrowernumber );
 $template->param( RESERVES => \@reserves );
 if ( C4::Context->preference('UseGranularMaxHolds') ) {
-  foreach my $biblionumber (@biblionumbers) {
-      ## Since we can't limit by branchcode in the opac, we use the * rule for branch
-      ## Get the reserves for the borrower, limited by itemtype
-      ## If the borrower is over the limit for their borrower.categorycode and the given itemtype
-      ## Disable ability to make a reserve
-      my $itemtype;
-      my $dbh = C4::Context->dbh;
-      my $sth = $dbh->prepare("SELECT itype FROM items WHERE biblionumber = ? ORDER BY 1 DESC");
-      $sth->execute($biblionumber);
-      ($itemtype) = $sth->fetchrow_array;
-      
-      my @reservesByItemtype = C4::Reserves::GetReservesByBorrowernumberAndItemtypeOf($borrowernumber, $biblionumber);
-      my $res_count = scalar( @reservesByItemtype );
+    $noreserves = 1;
+    foreach my $biblionumber (@biblionumbers) {
+        ## Since we can't limit by branchcode in the opac, we use the * rule for branch
+        ## Get the reserves for the borrower, limited by itemtype
+        ## If the borrower is over the limit for their borrower.categorycode and the given itemtype
+        ## Disable ability to make a reserve
+        my $dbh = C4::Context->dbh;
+        my $sth = $dbh->prepare("SELECT itemnumber FROM items WHERE biblionumber = ? ORDER BY 1 DESC");
+        $sth->execute($biblionumber);
+        while (my ($itemnumber) = $sth->fetchrow_array) {
+            my $item = GetItem($itemnumber);
+            my $itemtype;
+            if(C4::Context->preference('item-level_itypes')) {
+                $itemtype = $item->{itype};
+            }
+            else {
+                my $biblioitem = GetBiblioItemByBiblioNumber($biblionumber);
+                $itemtype = $biblioitem->{itemtype};
+            }
 
-      my $irule = GetIssuingRule($borr->{'categorycode'}, $itemtype, $borr->{'branchcode'} );
-      
-      if ( !$irule->{'max_holds'} ) {
+            my @reservesByItemtype = C4::Reserves::GetReservesByBorrowernumberAndItemtypeOf($borrowernumber, $biblionumber);
+            my $res_count = scalar( @reservesByItemtype );
+
+            my $branch = C4::Circulation::_GetCircControlBranch($item, $borr);
+            my $irule = GetIssuingRule($borr->{'categorycode'}, $itemtype, $branch);
+            if ( $irule->{max_holds} && $res_count >= $irule->{max_holds} ) {
+                $template->param( message => 1, too_many_reserves => $res_count );
+                $noreserves = 1;
+                last;
+            }
+            if ( $irule->{'max_holds'} ) {
+                $noreserves = 0;
+            } 
+        }
+    }
+    if ($noreserves && ! $template->param('too_many_reserves')) {
         $template->param( message => 1, none_available => 1 );
-        $noreserves = 1;
-      } elsif ( $res_count >= $irule->{'max_holds'} ) {
-        $template->param( message => 1, too_many_reserves => $res_count );
-        $noreserves = 1;
-        $template->param( too_many_reserves => scalar(@reserves));
-      }
-  }
+    }
 } elsif ( scalar(@reserves) >= $MAXIMUM_NUMBER_OF_RESERVES ) {
     $template->param( message => 1 );
     $noreserves = 1;
@@ -400,7 +412,7 @@ foreach my $biblioNum (@biblionumbers) {
     }
 
     $biblioLoopIter{itemtype} = $biblioData->{itemtype};
-    $biblioLoopIter{itemTypeDescription} = $itemTypes->{$biblioData->{itemtype}}{description};
+    $biblioLoopIter{itemTypeDescription} = $itemTypes->{$biblioData->{itemtype}//''}{description};
 
     $biblioLoopIter{itemLoop} = [];
     my $numCopiesAvailable = 0;
@@ -502,10 +514,11 @@ foreach my $biblioNum (@biblionumbers) {
         # If there is no loan, return and transfer, we show a checkbox.
         $itemLoopIter->{notforloan} = $itemLoopIter->{notforloan} || 0;
 
-        my $issuingrule = GetIssuingRule( $borr->{'categorycode'}, $itemInfo->{'itype'}, $borr->{'branchcode'} );
-        my $policy_holdallowed = 1;
+        my $branch = C4::Circulation::_GetCircControlBranch($itemInfo, $borr);
+        my $issuingrule = GetIssuingRule( $borr->{'categorycode'}, $itemInfo->{'itype'}, $branch );
 
-        if ( $issuingrule->{'holdallowed'} == 0 ||
+        my $policy_holdallowed = 1;
+        if ( ($issuingrule->{'holdallowed'} // 0) == 0 ||
                 ( $issuingrule->{'holdallowed'} == 1 && $borr->{'branchcode'} ne $itemInfo->{'homebranch'} ) ) {
             $policy_holdallowed = 0;
         }
