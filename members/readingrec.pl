@@ -157,7 +157,15 @@ $query = "SELECT *
 	     ";
 $sth = $dbh->prepare( $query );
 $sth->execute( $borrowernumber );
-my $patron_edit_stats = $sth->fetchall_arrayref({});
+#my $patron_edit_stats = $sth->fetchall_arrayref({});
+my $patron_edit_stats = [];
+while (my $row = $sth->fetchrow_hashref()) {
+   if ($$row{field} eq 'password') {
+      $$row{before_value} = '****';
+      $$row{after_value}  = '****';
+   }
+   push @$patron_edit_stats, $row;
+}
 $template->param( patron_edit_stats_loop => $patron_edit_stats );
 
 ## Get patron blocks
