@@ -649,7 +649,8 @@ ModItemLost( $biblionumber, $itemnumber, $lostvalue );
 =back
 
 Changes itemlost for a given item. If $lostvalue > 0, then a log entry is made
-for that item.
+for that item.  Note that nothing is done for Claims Returned, which is handled 
+elsewhere.
 
 =cut
 

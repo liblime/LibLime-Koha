@@ -48,6 +48,78 @@ C4::LostItems
 
 =cut
 
+# not exported.
+# this gets the authorised value for the simplest 'Lost' item status
+# for category LOST.  Note: customer must set this correctly via 
+# the Authorised Values administration widget in the UI.
+sub AuthValForSimplyLost
+{
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT authorised_value
+      FROM authorised_values
+     WHERE LCASE(lib) = 'lost'
+       AND category   = 'LOST'");
+   $sth->execute();
+   return ($sth->fetchrow_array)[0];
+}
+
+# not exported.
+# returns
+#  undef    does not apply
+#  0        no (is lost)
+#  1        yes, claims returned
+sub isClaimsReturned
+{
+   my($itemnumber,$borrowernumber) = @_;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("
+      SELECT claims_returned FROM lost_items
+       WHERE itemnumber     = ?
+         AND borrowernumber = ?
+   ");
+   $sth->execute($itemnumber,$borrowernumber);
+   return ($sth->fetchrow_array)[0];
+}
+
+sub ForgiveFineForClaimsReturned
+{
+   my $li = shift; # lost_items hash for a single lost item-borrower pair
+   my $user_borrowernumber = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth;
+
+   use C4::Accounts;
+   my $totalAmt = 0;
+   my $acctLns  = C4::Accounts::getAllAccountsByBorrowerItem(
+      $$li{borrowernumber},
+      $$li{itemnumber}
+   );
+   ## look for lost/replacement fee, which *should* be accessed only once.
+   ## ignore late fees.
+   ACCOUNT:
+   foreach(@$acctLns) {
+      if ($$_{accounttype} eq 'L') {
+         C4::Accounts::refundlostitemreturned(
+            $$li{borrowernumber},
+            $$_{accountno}
+         );
+         ## change the description to something meaningful
+         $sth = $dbh->prepare('UPDATE accountlines 
+            SET description = ?,
+                accounttype = ?
+          WHERE accountno   = ?');
+         $sth->execute(
+            "Claims Returned $$li{title} $$li{barcode}",
+            'FOR',
+            $$_{accountno}
+         );
+         last ACCOUNT;
+      }
+   }
+
+   return 1;
+}
+
 sub CreateLostItem {
     my ($itemnumber,$borrowernumber) = @_;
     my $dbh = C4::Context->dbh;
@@ -58,10 +130,60 @@ sub CreateLostItem {
     $sth->execute($itemnumber);
     my $item = $sth->fetchrow_hashref;
 
-    # Copy it into lost_items
+    ## dupecheck: an item-borrower pair can only be lost once per borrower
+    $sth = $dbh->prepare('SELECT id FROM lost_items
+      WHERE itemnumber     = ?
+        AND borrowernumber = ?');
+    $sth->execute($$item{itemnumber},$borrowernumber);
+    my $id = ($sth->fetchrow_array)[0];
+    if ($id) {
+        ## item already lost.  don't do an INSERT, just UPDATE
+        $sth = $dbh->prepare("UPDATE lost_items
+           SET biblionumber   = ?,
+               homebranch     = ?,
+               holdingbranch  = ?,
+               itemcallnumber = ?,
+               itemnotes      = ?,
+               location       = ?,
+               itemtype       = ?,
+               title          = ?,
+               date_lost      = ?
+         WHERE id             = ?");
+       $sth->execute(
+            $$item{biblionumber},
+            $$item{homebranch},
+            $$item{holdingbranch},
+            $$item{itemcallnumber},
+            $$item{itemnotes},
+            $$item{location},
+            $$item{itype},
+            $$item{title},
+            $date_lost,
+            $id
+       );
+       return $id;
+    }
+
+    # item has never been lost before for this borrower as far as we care.
+    # Copy it into lost_items.
     $sth = $dbh->prepare("INSERT into lost_items (borrowernumber,itemnumber,biblionumber,barcode,homebranch,holdingbranch,itemcallnumber,itemnotes,location,itemtype,title,date_lost) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
     $sth->execute($borrowernumber,$item->{itemnumber},$item->{biblionumber},$item->{barcode},$item->{homebranch},$item->{holdingbranch},
     $item->{itemcallnumber},$item->{itemnotes},$item->{location},$item->{itype},$item->{title},$date_lost);
+    $id = $dbh->{mysql_insertid};
+    return $id;
+}
+
+sub ModLostItem
+{
+   my %g = @_;
+   die "arg 'id' required" unless $g{id};
+   my $id  = $g{id}; delete($g{id});
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare(sprintf("UPDATE lost_items SET %s WHERE id=?",
+         join(',', map{"$_=?"}keys %g)
+      )
+   );
+   return $sth->execute(values %g,$id);
 }
 
 sub DeleteLostItem {
@@ -90,6 +212,32 @@ sub GetLostItem {
     $sth->execute($itemnumber);
     my $lost_item = $sth->fetchrow_hashref;
     return $lost_item;
+}
+
+sub GetLostItemById
+{
+   my $id  = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('SELECT * FROM lost_items WHERE id=?');
+   $sth->execute($id);
+   return $sth->fetchrow_hashref();
+}
+
+## this function is not exported.  Please use SUPER::PACK::func() syntax.
+##
+## $lost_item_id is lost_items.id column
+## $claims_returned is bool, set to zero to undo, set to 1 to make claim
+sub MakeClaimsReturned
+{
+   my($lost_item_id,$claims_returned) = @_;
+   $claims_returned ||= 0;
+   $claims_returned   = 1 if $claims_returned;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('UPDATE lost_items 
+        SET claims_returned = ?
+      WHERE id              = ?');
+   my $fx = $sth->execute($claims_returned,$lost_item_id);
+   return $fx;
 }
 
 1;

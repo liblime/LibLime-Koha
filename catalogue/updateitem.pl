@@ -96,9 +96,31 @@ foreach my $issue_ref (@$issues) {
 # If the item is being made lost, charge the patron the lost item charge and
 # create a lost item record
 if($issue && $itemlost){
+   ## FIXME: move this business logic to a single subroutine in a *.pm -hQ
     ModItemLost( $biblionumber, $itemnumber, $itemlost );
     C4::Accounts::chargelostitem($itemnumber) if ($itemlost==1); # check item in and charge the lost item fee if itemlost == 1
-    C4::LostItems::CreateLostItem($item_data_hashref->{itemnumber},$issue->{borrowernumber});
+    ## dupecheck is performed in the function
+    my $id = C4::LostItems::CreateLostItem(
+      $item_data_hashref->{itemnumber},
+      $issue->{borrowernumber}
+    );
+
+    ## Claims Returned
+    if ($itemlost==C4::Context->preference('ClaimsReturnedValue')) {
+       C4::LostItems::ModLostItem(
+         id              => $id,
+         claims_returned => 1,
+       );
+       ## remove fine for this item for this borrower
+       my $li = C4::LostItems::GetLostItemById($id);
+       C4::LostItems::ForgiveFineForClaimsReturned($li,$loggedinuser);
+    }
+    else {
+       C4::LostItems::ModLostItem(
+         id              => $id,
+         claims_returned => 0,
+       );
+    }
 }
 # If the item is being marked found, refund the patron the lost item charge,
 # apply the maxfine charge, and delete the lost item record

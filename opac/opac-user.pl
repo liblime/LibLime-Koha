@@ -28,6 +28,7 @@ use C4::Members;
 use C4::Output;
 use C4::Biblio;
 use C4::Items;
+use C4::LostItems;
 use C4::Dates qw/format_date/;
 use C4::Letters;
 use C4::Branch; # GetBranches
@@ -97,7 +98,20 @@ $template->param(   BORROWER_INFO  => \@bordat,
                 );
 
 #get issued items ....
-my ($issues) = GetPendingIssues($borrowernumber);
+my ($tmp) = GetPendingIssues($borrowernumber);
+my $issues = [];
+foreach(@$tmp) {
+   my $claims_returned = C4::LostItems::isClaimsReturned(
+      $$_{itemnumber},
+      $borrowernumber
+   );
+   if (defined $claims_returned) {
+      if ($claims_returned) {
+         next;
+      }
+   }
+   push @$issues, $_;
+}
 my @issue_list = sort { $b->{'date_due'} cmp $a->{'date_due'} } @$issues;
 
 my $count          = 0;

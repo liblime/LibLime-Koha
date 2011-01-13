@@ -25,6 +25,7 @@
         <th>Home Library</th>
         <th>Item Type</th>
         <th>Barcode</th>
+        <th>Claims Returned</th>
         <th></th>
     </tr>
     </thead>
@@ -36,7 +37,18 @@
                 <td><!-- TMPL_VAR NAME="homebranch" --></td>
                 <td><!-- TMPL_VAR NAME="itemtype" --></td>
                 <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME=biblionumber -->&itemnumber=<!-- TMPL_VAR NAME=itemnumber -->#item<!-- TMPL_VAR NAME=itemnumber -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
-                <td><a href="/cgi-bin/koha/members/lost_items.pl?borrowernumber=<!-- TMPL_VAR NAME=borrowernumber -->&op=delete&amp;lost_item_id=<!-- TMPL_VAR NAME="id" -->">Delete</a></td>
+                <td><!-- TMPL_IF NAME="claims_returned" --><i>Claims Returned</i>
+                        (<a href="lost_items.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&op=undo_claims_returned&lost_item_id=<!-- TMPL_VAR NAME="id" -->">Undo</a>)
+                    <!-- TMPL_ELSE -->
+                        <form method=post action="lost_items.pl">
+                        <input type=hidden name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->">
+                        <input type=hidden name="op" value="claims_returned">
+                        <input type=hidden name="lost_item_id" value="<!-- TMPL_VAR NAME="id" -->">
+                        <input type=submit value="Make Claims Returned" style="font-size:80%">
+                        </form>
+                    <!-- /TMPL_IF -->
+                </td>
+                <td><a href="lost_items.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&op=delete&lost_item_id=<!-- TMPL_VAR NAME="id" -->">Delete</a></td>
                 </tr>
             <!-- /TMPL_LOOP -->
     </tr>

@@ -642,6 +642,13 @@ sub GetMemberIssuesAndFines {
     my $issue_count = $sth->fetchrow_arrayref->[0];
     $sth->finish;
 
+    # subtract Claims Returned items
+    $sth = $dbh->prepare("SELECT COUNT(*) FROM lost_items 
+      WHERE borrowernumber  = ?
+        AND claims_returned = 1");
+    $sth->execute($borrowernumber);
+    $issue_count -= ($sth->fetchrow_array)[0];
+
     $sth = $dbh->prepare(
         "SELECT COUNT(*) FROM issues 
          WHERE borrowernumber = ? 
@@ -1130,6 +1137,7 @@ sub UpdateGuarantees {
   my $issues = &GetPendingIssues($borrowernumber);
 
 Looks up what the patron with the given borrowernumber has borrowed.
+*** NOTE *** skips Claims Returned items
 
 C<&GetPendingIssues> returns a
 reference-to-array where each element is a reference-to-hash; the
@@ -1176,11 +1184,23 @@ sub GetPendingIssues {
     $sth->execute($borrowernumber);
     my $data = $sth->fetchall_arrayref({});
     my $today = C4::Dates->new->output('iso');
+    my @new = ();
+    use C4::LostItems;
     foreach (@$data) {
         $_->{date_due} or next;
         ($_->{date_due} lt $today) and $_->{overdue} = 1;
+        my $claims_returned = C4::LostItems::isClaimsReturned(
+         $$_{itemnumber},
+         $borrowernumber
+        );
+        if (defined $claims_returned) {
+            if ($claims_returned) {
+               next;
+            }
+        }
+        push @new, $_;
     }
-    return $data;
+    return \@new;
 }
 
 =head2 GetAllIssues

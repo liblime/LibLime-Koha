@@ -54,14 +54,49 @@ my ($template, $loggedinuser, $cookie)
            debug => ($debug) ? 1 : 0,
        });
 
-if ($op and $op eq 'delete') {
+if ($op eq 'delete') {
     DeleteLostItem($lost_item_id);
     print $query->redirect("/cgi-bin/koha/members/lost_items.pl?borrowernumber=$borrowernumber");
     exit;
 }
+elsif ($op eq 'claims_returned') {
+   ## first, change the status of this item to claims_returned=1 in lost_items table
+   C4::LostItems::MakeClaimsReturned($lost_item_id,1);
+   ## midway, get the biblionumber and itemnumber for this lost item
+   my $li = C4::LostItems::GetLostItemById($lost_item_id);
+   ## then modify items.itemlost to the correct authorised value for Claims Returned
+   C4::Items::ModItemLost(
+      $$li{biblionumber},
+      $$li{itemnumber},
+      C4::Context->preference('ClaimsReturnedValue')
+   );
+   ## finally, remove the fine for this item for this borrower
+   C4::LostItems::ForgiveFineForClaimsReturned($li,$loggedinuser);
+
+   print $query->redirect("lost_items.pl?borrowernumber=$borrowernumber");
+   exit;
+}
+elsif ($op eq 'undo_claims_returned') {
+   C4::LostItems::MakeClaimsReturned($lost_item_id,0);
+   my $li = C4::LostItems::GetLostItemById($lost_item_id);
+   ## get the authorised value for item lost status of simply 'Lost'
+   my $lostAuthVal = C4::LostItems::AuthValForSimplyLost();
+   die ("No simple LOST authorised value of 'Lost' set by librarian") unless $lostAuthVal;
+   ## update the item's LOST status to 'Lost'
+   C4::Items::ModItemLost(
+      $$li{biblionumber},
+      $$li{itemnumber},
+      $lostAuthVal
+   );
+   ## *possibly* recharge a lost fee.  it will be recharged if it was previously forgiven.
+   C4::Accounts::rechargeClaimsReturnedUndo($li);
+   print $query->redirect("lost_items.pl?borrowernumber=$borrowernumber");
+   exit;
+}
 else {
     my $lost_items = GetLostItems($borrowernumber);
     for my $lost_item (@$lost_items) {
+        $$lost_item{claims_returned} ||=  undef;
     }
 
     $template->param(LOST_ITEMS=> $lost_items);

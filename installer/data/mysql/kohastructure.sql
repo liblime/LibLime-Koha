@@ -1359,6 +1359,7 @@ CREATE TABLE lost_items (
   itemtype VARCHAR(10) NOT NULL,
   title mediumtext,
   date_lost DATE NOT NULL,
+  claims_returned tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY (`borrowernumber`),
   KEY (`itemnumber`),

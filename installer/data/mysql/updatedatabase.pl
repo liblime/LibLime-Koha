@@ -4093,6 +4093,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add syspref for choosing the bulk item editor )\n";
 }
 
+$DBversion = '4.03.08.004';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|ALTER TABLE lost_items ADD claims_returned tinyint(1) NOT NULL DEFAULT 0|);
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add lost_items.claims_returned )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

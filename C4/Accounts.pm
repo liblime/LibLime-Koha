@@ -55,6 +55,21 @@ The functions in this module deal with the monetary aspect of Koha,
 including looking up and modifying the amount of money owed by a
 patron.
 
+## FIXME: Please complete this list; see manualinvoice() -hQ
+Account types (accounttype):
+
+   A     ??
+   CR    credit
+   F     static fine/fee
+   FOR   fine forgiven
+   FU    fine update (periodically accessed)
+   L     ?lost ??
+   Pay   payment
+   REF   refund
+   Rent  rental fee
+   Rep   ?replacement ??
+   Res   ??
+
 =head1 FUNCTIONS
 
 =head2 recordpayment
@@ -278,6 +293,22 @@ sub makepartialpayment {
     return;
 }
 
+# returns all relevant account lines for a given borrower and itemnumber
+sub getAllAccountsByBorrowerItem
+{
+   my($borrowernumber,$itemnumber) = @_;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT * FROM accountlines
+      WHERE borrowernumber = ?
+        AND itemnumber     = ?");
+   $sth->execute($borrowernumber,$itemnumber);
+   my @all;
+   while(my $row = $sth->fetchrow_hashref()) {
+      push @all, $row;
+   }
+   return \@all;
+}
+
 =head2 getnextacctno
 
   $nextacct = &getnextacctno($borrowernumber);
@@ -365,6 +396,67 @@ sub returnlost{
 }
 
 
+sub rechargeClaimsReturnedUndo
+{
+   my $li = shift; # lost_items hash for the lost item
+   my $dbh = C4::Context->dbh;
+   my $sth;
+
+   # first make sure the borrower hasn't already been charged for 
+   # this item
+   $sth = $dbh->prepare("SELECT * FROM accountlines
+      WHERE borrowernumber = ?
+        AND itemnumber     = ?
+        AND accounttype    = 'L'
+   ORDER BY accountno DESC /* get only the latest */");
+   $sth->execute($$li{borrowernumber},$$li{itemnumber});
+   my $acct = $sth->fetchrow_hashref();
+
+   ## account was previously zero'd out
+   if ($$acct{amountoutstanding} == 0) {
+      ## get the replacement cost
+      $sth = $dbh->prepare('
+         SELECT replacementprice,
+                biblioitemnumber 
+           FROM items 
+          WHERE itemnumber = ?');
+      $sth->execute($$li{itemnumber});
+      my($replacementprice,$biblioitemnumber) = $sth->fetchrow_array;
+      if (($replacementprice == 0) || !$replacementprice) {
+         ## get the replacement price by itemtype
+         $sth = $dbh->prepare('
+         SELECT itemtypes.replacementprice 
+           FROM itemtypes,biblioitems
+          WHERE itemtypes.itemtype = biblioitems.itemtype
+            AND biblioitems.biblioitemnumber = ?');
+         $sth->execute($biblioitemnumber);
+         $replacementprice = ($sth->fetchrow_array)[0];
+      }
+
+      ## recharge the lost fee as a NEW line in the borrower's account
+      $sth = $dbh->prepare('INSERT INTO accountlines (
+         itemnumber,
+         amountoutstanding,
+         date,
+         description,
+         accounttype,
+         amount,
+         borrowernumber)
+         VALUES(?,?,NOW(),?,?,?,?)');
+      $sth->execute(
+         $$li{itemnumber},
+         $replacementprice,
+         "Lost Item $$li{title} $$li{barcode}",
+         'L',
+         $replacementprice,
+         $$li{borrowernumber}
+      );
+   }
+
+   # else do nothing: borrower's already been charged for this item
+   return 1;
+}
+
 sub chargelostitem{
 # http://wiki.koha.org/doku.php?id=en:development:kohastatuses
 # lost ==1 Lost, lost==2 longoverdue, lost==3 lost and paid for
@@ -444,7 +536,7 @@ should be the empty string.
 # 		'M' = Sundry
 # 		'L' = Lost Item
 #
-
+# I am guessing $user refers to the username (userid) of the logged in librarian -hQ
 sub manualinvoice {
     my ( $borrowernumber, $itemnum, $desc, $type, $amount, $user ) = @_;
     
