@@ -20,6 +20,7 @@ use CGI;
 use C4::Context;
 use C4::Auth qw(&check_api_auth);
 use C4::Biblio;
+use C4::Items qw(GetItem);
 
 use UNIVERSAL qw(can);	# make sure this is *after* C4 modules.
 
@@ -1129,7 +1130,8 @@ sub handle_item_information {
 	    $resp .= add_field(FID_HOLD_QUEUE_LEN, $i);
 	}
 	if (($i = $item->due_date) != 0) {
-	    $resp .= add_field(FID_DUE_DATE, Sip::timestamp($i));
+            $i .= "    000000";
+	    $resp .= add_field(FID_DUE_DATE, $i);
 	}
 	if (($i = $item->recall_date) != 0) {
 	    $resp .= add_field(FID_RECALL_DATE, Sip::timestamp($i));
@@ -1320,6 +1322,7 @@ sub handle_renew {
     my ($patron_id, $patron_pwd, $item_id, $title_id, $item_props, $fee_ack);
     my $fields = $self->{fields};
     my $status;
+    my $renew_due_date;
     my ($patron, $item);
     my $resp = RENEW_RESP;
 
@@ -1348,6 +1351,8 @@ sub handle_renew {
     $patron = $status->patron;
     $item   = $status->item;
 
+    my $renewitem = GetItem($item->{itemnumber});
+    $renewitem->{onloan} =~ s/-//g;
     if ($status->ok) {
 	$resp .= '1';
 	$resp .= $status->renewal_ok ? 'Y' : 'N';
@@ -1361,7 +1366,8 @@ sub handle_renew {
 	$resp .= add_field(FID_PATRON_ID, $patron->id);
 	$resp .= add_field(FID_ITEM_ID,  $item->id);
 	$resp .= add_field(FID_TITLE_ID, $item->title_id);
-	$resp .= add_field(FID_DUE_DATE, Sip::timestamp($item->due_date));
+        $renew_due_date = $renewitem->{onloan} . "    000000";
+	$resp .= add_field(FID_DUE_DATE, $renew_due_date);
 	if ($ils->supports('security inhibit')) {
 	    $resp .= add_field(FID_SECURITY_INHIBIT,
 			       $status->security_inhibit);

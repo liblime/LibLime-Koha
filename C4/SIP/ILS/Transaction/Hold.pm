@@ -12,6 +12,7 @@ use ILS::Transaction;
 use C4::Reserves;	# AddReserve GetReservesFromItemnumber
 use C4::Members;	# GetMember
 use C4::Biblio;		# GetBiblioFromItemNumber GetBiblioItemByBiblioNumber
+use C4::Items;		# GetItemnumberFromBarcode
 
 use vars qw($VERSION @ISA);
 
@@ -88,8 +89,9 @@ sub drop_hold {
 		$self->ok(0);
 		return $self;
 	}
-        my $res = GetReservesFromItemnumber($self->{item}->id);
-	CancelReserve($res->{reservenumber});
+        my $itemnumber = GetItemnumberFromBarcode($self->{item}->id);
+        my ($reservenumber,@res) = GetReservesFromItemnumber($itemnumber);
+	CancelReserve($reservenumber);
 		# unfortunately no meaningful return value here either
 	$self->ok(1);
 	return $self;

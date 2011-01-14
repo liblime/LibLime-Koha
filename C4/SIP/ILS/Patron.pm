@@ -110,7 +110,7 @@ sub new {
 
     # FIXME: populate fine_items recall_items
 #   $ilspatron{hold_items}    = (GetReservesFromBorrowernumber($kp->{borrowernumber},'F'));
-	$ilspatron{unavail_holds} = [(GetReservesFromBorrowernumber($kp->{borrowernumber}))];
+	$ilspatron{unavail_holds} = [(GetReservesFromBorrowernumber($kp->{borrowernumber},'U'))];
 	$ilspatron{items} = GetPendingIssues($kp->{borrowernumber});
 	$self = \%ilspatron;
 	$debug and warn Dumper($self);

@@ -591,7 +591,7 @@ sub GetReservesFromBorrowernumber {
     my ( $borrowernumber, $status ) = @_;
     my $dbh   = C4::Context->dbh;
     my $sth;
-    if ($status) {
+    if ($status eq 'W') {
         $sth = $dbh->prepare("
             SELECT *
             FROM   reserves
@@ -600,6 +600,15 @@ sub GetReservesFromBorrowernumber {
             ORDER BY reservedate
         ");
         $sth->execute($borrowernumber,$status);
+    } elsif ($status eq 'U') {
+        $sth = $dbh->prepare("
+            SELECT *
+            FROM   reserves
+            WHERE  borrowernumber=?
+                AND (found IS NULL OR found = 'T')
+            ORDER BY reservedate
+        ");
+        $sth->execute($borrowernumber);
     } else {
         $sth = $dbh->prepare("
             SELECT *

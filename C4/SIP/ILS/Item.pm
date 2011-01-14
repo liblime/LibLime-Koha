@@ -97,6 +97,10 @@ sub new {
 
 	# check if its on issue and if so get the borrower
 	my $issue = GetItemIssue($item->{'itemnumber'});
+        if (defined($issue)) {
+          $item->{due_date} = $issue->{date_due};
+          $item->{due_date} =~ s/-//g;
+        }
 	my $borrower = GetMember($issue->{'borrowernumber'},'borrowernumber');
 	$item->{patron} = $borrower->{'cardnumber'};
     my ($whatever, $arrayref) = GetReservesFromBiblionumber($item->{biblionumber});
@@ -106,8 +110,8 @@ sub new {
 	$self = $item;
 	bless $self, $type;
 
-    syslog("LOG_DEBUG", "new ILS::Item('%s'): found with title '%s'",
-	   $item_id, $self->{title});
+    syslog("LOG_DEBUG", "new ILS::Item('%s'): found with title '%s' due on '%s'",
+	   $item_id, $self->{title}, $self->{due_date});
 
     return $self;
 }
@@ -323,8 +327,8 @@ sub available {
 	my $count  = (defined $self->{pending_queue}) ? scalar @{$self->{pending_queue}} : 0;
 	my $count2 = (defined $self->{hold_shelf}   ) ? scalar @{$self->{hold_shelf}   } : 0;
 	$debug and print STDERR "availability check: pending_queue size $count, hold_shelf size $count2\n";
-    if (defined($self->{patron_id})) {
-	 	($self->{patron_id} eq $for_patron) or return 0;
+    if (defined($self->{patron})) {
+	 	($self->{patron} eq $for_patron) or return 0;
 		return ($count ? 0 : 1);
 	} else {	# not checked out
         ($count2) and return $self->barcode_is_borrowernumber($for_patron, $self->{hold_shelf}[0]->{borrowernumber});

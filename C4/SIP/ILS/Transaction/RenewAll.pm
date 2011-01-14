@@ -38,6 +38,9 @@ sub do_renew_all {
 	my $patron = $self->{patron};							# SIP's  patron
 	my $borrower = GetMember($patron->id, 'cardnumber');	# Koha's patron
 	my $all_ok = 1;
+        # For some reason renew/unrenewed lists were not resetting. Reset them.
+        @{$self->renewed  } = ();
+        @{$self->unrenewed} = ();
 	foreach my $itemx (@{$patron->{items}}) {
 		my $item_id = $itemx->{barcode};
 		my $item = new ILS::Item $item_id;
@@ -50,7 +53,7 @@ sub do_renew_all {
 		}
 		$self->{item} = $item;
 		$self->do_renew_for($borrower);
-		if ($self->ok) {
+		if ($self->renewal_ok) {
 			$item->{due_date} = $self->{due};
 			push @{$self->renewed  }, $item_id;
 		} else {
