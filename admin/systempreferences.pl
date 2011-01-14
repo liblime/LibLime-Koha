@@ -203,6 +203,7 @@ $tabsysprefs{viewMARC}                    = "StaffClient";
 $tabsysprefs{viewLabeledMARC}             = "StaffClient";
 $tabsysprefs{viewISBD}                    = "StaffClient";
 $tabsysprefs{StaffSearchSuggestionsCount} = "StaffClient";
+$tabsysprefs{BatchItemEditor}             = "StaffClient";
 
 # Patrons
 $tabsysprefs{autoMemberNum}                = "Patrons";

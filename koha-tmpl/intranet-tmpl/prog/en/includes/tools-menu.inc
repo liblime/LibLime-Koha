@@ -34,7 +34,11 @@
 	<li><a href="/cgi-bin/koha/tools/inventory.pl">Inventory/stocktaking</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_tools_batch_edit_items" -->
+    <TMPL_IF EXPR="BatchItemEditor eq 'Community'">
+	<li><a href="/cgi-bin/koha/tools/batchMod.pl">Batch Item Edit</a></li>
+    <TMPL_ELSE>
 	<li><a href="/cgi-bin/koha/tools/batchitemedit.pl">Batch Item Edit</a></li>
+    </TMPL_IF>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_tools_stage_marc_import" -->
 	<li><a href="/cgi-bin/koha/tools/stage-marc-import.pl">MARC Import (staging)</a></li>

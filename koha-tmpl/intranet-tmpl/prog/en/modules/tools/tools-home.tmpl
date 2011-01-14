@@ -75,7 +75,11 @@
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF NAME="CAN_user_tools_batch_edit_items" -->
+    <TMPL_IF EXPR="BatchItemEditor eq 'Community'">
+    <dt><a href="/cgi-bin/koha/tools/batchMod.pl">Batch Edit Items</a></dt>
+    <TMPL_ELSE>
     <dt><a href="/cgi-bin/koha/tools/batchitemedit.pl">Batch Edit Items</a></dt>
+    </TMPL_IF>
     <dd>Batch edit item records</dd>
     <dt><a href="/cgi-bin/koha/tools/viewitemdeletelist.pl">View Item Delete List</a></dt>
     <dd>View lists of items selected for batch delete</dd>

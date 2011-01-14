@@ -4085,6 +4085,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done (Adds new item field 'CATSTAT' for maintaining cataloging status, adds on_order_count and in_process_count for GetIt integration, adds new system preferences for GetIt and Biblios menu display).\n";
 }
 
+$DBversion = '4.03.08.003';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('BatchItemEditor','PTFS','Choose the preferred bulk item editor.','PTFS|Community','Choice')});
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add syspref for choosing the bulk item editor )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

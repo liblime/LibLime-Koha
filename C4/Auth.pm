@@ -295,6 +295,7 @@ sub get_template_and_user {
             GetItAcquisitions            => C4::Context->preference("GetItAcquisitions"),
             BibliosCataloging            => C4::Context->preference("BibliosCataloging"),
             biblios_link                 => $ENV{BIBLIOS_LINK} // '',
+            BatchItemEditor              => C4::Context->preference('BatchItemEditor'),
     );
 
     if ( $in->{'type'} eq "intranet" ) {
