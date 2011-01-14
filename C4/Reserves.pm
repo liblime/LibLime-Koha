@@ -1137,19 +1137,18 @@ sub CheckReserves {
     }
 
     if ( 
-      ( $count > C4::Context->preference('HoldsTransportationReductionThreshold') )
-      || 
-      ( C4::Context->preference('HoldsTransportationReductionThreshold') eq '0' ) 
+        ( $count > C4::Context->preference('HoldsTransportationReductionThreshold') )
+        || ( C4::Context->preference('HoldsTransportationReductionThreshold') eq '0' ) 
     ) {
-      $local = GetReserve_NextLocalReserve( $item, $barcode );
-      $oldest = GetReserve_OldestReserve( $item, $barcode );
-      
-      undef $oldest unless ( 
-        not defined $oldest ||
-            ($oldest->{'age_in_days'} > C4::Context->preference('FillRequestsAtPickupLibraryAge') &&
-             $oldest->{'priority'} < $local->{'priority'}
+        $local = GetReserve_NextLocalReserve( $item, $barcode );
+        $oldest = GetReserve_OldestReserve( $item, $barcode );
+
+        undef $oldest unless ( 
+            defined $oldest && (
+                $oldest->{age_in_days} > C4::Context->preference('FillRequestsAtPickupLibraryAge')
+                && $oldest->{priority} < (($local) ? $local->{priority} : 100000)
             )
-      );
+        );
     }
 
     if ($nohold==$count) { return (0,0,0) }
@@ -1201,9 +1200,13 @@ sub GetReserve_NextLocalReserve {
       $reserve = $r if ( $r->{'branchcode'} eq $branchcode && $r->{'priority'} < $reserve->{'priority'} );
   }
 
-  # Itemnumber was never getting set
-  $reserve->{'itemnumber'} = $itemnumber;
-  return $reserve if ( defined $reserve->{'branchcode'} );
+  $reserve->{itemnumber} = $itemnumber;
+  if (defined $reserve->{branchcode}) {
+    return $reserve;
+  }
+  else {
+    return;
+  }
 }
 
 =item GetReserve_OldestReserve
@@ -1227,12 +1230,16 @@ sub GetReserve_OldestReserve {
 
   my @reserves = _Findgroupreserve( $biblioitemnumber, $biblionumber, $itemnumber );
   foreach my $r (@reserves) {
-      $reserve = $r if ( ($r->{'timestamp'} // '') gt ($reserve->{'timestamp'} // '') );
+      $reserve = $r if ($r->{reservedate} gt $reserve->{reservedate});
   }
   
-  # Itemnumber was never getting set
-  $reserve->{'itemnumber'} = $itemnumber;
-  return $reserve if ( defined $reserve->{'branchcode'} );
+  $reserve->{itemnumber} = $itemnumber;
+  if (defined $reserve->{branchcode}) {
+    return $reserve;
+  }
+  else {
+    return;
+  }
 }
 
 =item CancelReserves
@@ -2239,7 +2246,7 @@ sub _Findgroupreserve {
                reserves.itemnumber          AS itemnumber,
                borrowers.categorycode       AS borrowercategory,
                borrowers.branchcode         AS borrowerbranch,
-               DATEDIFF(NOW(),reserves.timestamp) AS age_in_days
+               DATEDIFF(NOW(),reserves.reservedate) AS age_in_days
         FROM reserves
         JOIN biblioitems USING (biblionumber)
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
@@ -2278,7 +2285,7 @@ sub _Findgroupreserve {
                reserves.itemnumber          AS itemnumber,
                borrowers.categorycode       AS borrowercategory,
                borrowers.branchcode         AS borrowerbranch,
-               DATEDIFF(NOW(),reserves.timestamp) AS age_in_days
+               DATEDIFF(NOW(),reserves.reservedate) AS age_in_days
         FROM reserves
         JOIN biblioitems USING (biblionumber)
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
@@ -2316,7 +2323,7 @@ sub _Findgroupreserve {
                reserves.itemnumber                 AS itemnumber,
                borrowers.categorycode       AS borrowercategory,
                borrowers.branchcode         AS borrowerbranch,
-               DATEDIFF(NOW(),reserves.timestamp) AS age_in_days
+               DATEDIFF(NOW(),reserves.reservedate) AS age_in_days
         FROM reserves
           LEFT JOIN reserveconstraints ON reserves.biblionumber = reserveconstraints.biblionumber
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
