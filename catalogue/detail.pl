@@ -173,6 +173,9 @@ foreach my $item (@items) {
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
     $itemcount++;
 
+    ## placeholder to sort by work libraries
+    $$item{_isWorkLib} = $$item{homebranch}?1:0;
+
     # can place holds defaults to yes
     $norequests = 0 unless ( ( $item->{'notforloan'} > 0 ) || ( $item->{'itemnotforloan'} > 0 ) );
 
@@ -259,6 +262,8 @@ foreach my $item (@items) {
 
     push @itemloop, $item;
 }
+@itemloop = sort { $$b{_isWorkLib} <=> $$a{_isWorkLib} 
+                || $$a{homebranch} cmp $$b{homebranch} } @itemloop;
 
 if (C4::Context->preference('CourseReserves')) {
     my ($course_reserves,$course_reserves_exist) = GetCourseReservesForBiblio($biblionumber);

@@ -123,9 +123,10 @@
                     &nbsp;
                 <!-- /TMPL_IF -->
             </li>
+
+            <form action="updateitem.pl" method="post">
             <li><span class="label">Withdrawn?:</span><!-- TMPL_IF NAME="wthdrawn" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF -->
                 <!-- TMPL_IF NAME="CAN_user_circulate" -->
-                    <form action="updateitem.pl" method="post">
                     <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
                     <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" />
                     <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
@@ -142,9 +143,9 @@
             <!-- TMPL_IF NAME="wthdrawn" -->
                     <input type="submit" name="submit" class="submit" value="Restore" /><!-- TMPL_ELSE --><input type="submit" name="submit" class="submit" value="Withdraw" />
             <!-- /TMPL_IF -->
-                    </form>
             <!-- /TMPL_UNLESS -->
                 <!-- /TMPL_IF -->
+            </form>
             </li>
             <li><span class="label">Other Item Status:</span>
                 <!-- TMPL_IF NAME="CAN_user_circulate" -->

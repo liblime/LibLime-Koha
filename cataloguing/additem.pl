@@ -58,7 +58,12 @@ my ($template, $loggedinuser, $cookie)
                  debug => 1,
                  });
 
+## $restrict is for the concept of Work Libraries, wherein logged in
+## librarian can only add/edit/delete/move items in their own work library(ies).
+## sorry, I don't know how to get to the template params by method -hQ
 my $restrict = C4::Context->preference('EditAllLibraries') ?undef:1;
+$restrict = undef if $$template{param_map}{CAN_user_superlibrarian};
+
 my $frameworkcode = &GetFrameworkCode($biblionumber);
 
 my $today_iso = C4::Dates->today('iso');
@@ -379,7 +384,7 @@ for my $row ( @big_array ) {
     $row_data{'nomod'} = $row->{'nomod'};
     push(@item_value_loop,\%row_data);
 }
-# re-sort, editable items on top
+# re-sort, editable items on top, then by permanent location
 @item_value_loop = sort {
    $$a{nomod} <=> $$b{nomod}
 || $$a{a}     cmp $$b{a}

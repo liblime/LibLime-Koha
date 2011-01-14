@@ -165,15 +165,26 @@ if ( $category_type eq 'A' ) {
     #
     my ( $count, $guarantees ) = GetGuarantees( $data->{'borrowernumber'} );
     my @guaranteedata;
-    for ( my $i = 0 ; $i < $count ; $i++ ) {
-        push(@guaranteedata,
-            {
-                borrowernumber => $guarantees->[$i]->{'borrowernumber'},
-                cardnumber     => $guarantees->[$i]->{'cardnumber'},
-                name           => $guarantees->[$i]->{'firstname'} . " "
-                                . $guarantees->[$i]->{'surname'}
-            }
-        );
+    
+    ## FIXED: use anonymous iterator -hQ
+    ##############
+    #for ( my $i = 0 ; $i < $count ; $i++ ) {
+    #    push(@guaranteedata,
+    #        {
+    #            borrowernumber => $guarantees->[$i]->{'borrowernumber'},
+    #            cardnumber     => $guarantees->[$i]->{'cardnumber'},
+    #            name           => $guarantees->[$i]->{'firstname'} . " "
+    #                            . $guarantees->[$i]->{'surname'}
+    #        }
+    #    );
+    #}
+    ############
+    foreach(@$guarantees) {
+       push @guaranteedata, {
+          borrowernumber => $$_{borrowernumber},
+          cardnumber     => $$_{cardnumber},
+          name           => join(' ',$$_{firstname},$$_{surname}),
+       };
     }
     $template->param( guaranteeloop => \@guaranteedata );
     ( $template->param( adultborrower => 1 ) ) if ( $category_type eq 'A' );
@@ -473,6 +484,7 @@ $template->param( picture => 1 ) if $picture;
 
 my $branch=C4::Context->userenv->{'branch'};
 
+$$data{_worklibraries} = join("<br>\n",@{$$data{worklibraries}});
 $template->param($data);
 
 $template->param( lost_summary => GetLostStats( $borrowernumber, 1 ) );

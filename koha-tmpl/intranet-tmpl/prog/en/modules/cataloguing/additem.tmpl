@@ -425,10 +425,12 @@ function checkForDuplicateDefaultsName() {
 		function checkBarcode() {
 			if ( $('#<!-- TMPL_VAR NAME="barcode_id" -->').val() ) {
             var branchcode = document.f.field_value_0[10].options[document.f.field_value_0[10].selectedIndex].value;
-            var dupecheck = 1;
+            var dupecheck = 0;
+            var itemnumber = '<!-- TMPL_VAR NAME="itemnumber" -->';
             var id = '<!-- TMPL_VAR NAME="itemnumber" -->';
-            if (id != '') { dupecheck = 0; }
-				$.getJSON( 'check_barcode.pl', { 'barcode' : $('#<!-- TMPL_VAR NAME="barcode_id" -->').val(),'barcodetype':'item','branchcode':branchcode,'dupecheck':dupecheck }, processCheckBarcode );
+            // dupecheck if adding
+            if (id == '') { dupecheck = 1; }
+				$.getJSON( 'check_barcode.pl', { 'barcode' : $('#<!-- TMPL_VAR NAME="barcode_id" -->').val(),'barcodetype':'item','branchcode':branchcode,'dupecheck':dupecheck,'itemnumber':itemnumber }, processCheckBarcode );
 			}
 		}
 

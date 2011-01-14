@@ -41,11 +41,13 @@ my $barcode    = $cgi->param('barcode');
 my $branchcode = $cgi->param('branchcode');
 my $btype      = $cgi->param('barcodetype');
 my $dupecheck  = $cgi->param('dupecheck');
+#my $dupecheck  = 0;
+my $itemnumber = $cgi->param('itemnumber');
 my $params;
 
-my $item = GetItem( '', $barcode );
+my $item = GetItem('', $barcode );
   
-if ( $item->{'itemnumber'} ) {
+if ( $item->{'itemnumber'} != $itemnumber ) {
   my $biblio = GetBiblioData( $item->{'biblionumber'} );
   my $issue = GetItemIssue( $item->{'itemnumber'} );
   my ( $item_level_reserves ) = GetReservesFromItemnumber( $item->{'itemnumber'} );
