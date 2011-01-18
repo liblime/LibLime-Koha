@@ -4115,6 +4115,12 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add permissions related to item session_defaults )\n";
 }
 
+$DBversion = '4.03.09.000';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Micro version update )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
