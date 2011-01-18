@@ -3114,7 +3114,7 @@ sub _koha_modify_biblioitem_nonmarc {
         cn_sort         = ?,
         totalissues     = ?,
         on_order_count  = ?,
-        in_process_count = ?,
+        in_process_count = ?
         where biblioitemnumber = ?
         ";
     my $sth = $dbh->prepare($query);
