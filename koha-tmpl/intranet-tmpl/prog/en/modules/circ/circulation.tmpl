@@ -74,28 +74,27 @@ $.tablesorter.addParser({
 			}
 		});
 
-var allcheckboxes = $(".checkboxed");
 	$("#renew_all").click(function(){
-		$(allcheckboxes).checkCheckboxes(":input[name*=items]"); 
-		$(allcheckboxes).unCheckCheckboxes(":input[name*=barcodes]");
+		$(".checkboxed").checkCheckboxes(":input[name*=items]");
+		$(".checkboxed").unCheckCheckboxes(":input[name*=barcodes]");
 	});
 	$("#return_all").click(function(){
-		$(allcheckboxes).checkCheckboxes(":input[name*=barcodes]");
-		$(allcheckboxes).unCheckCheckboxes(":input[name*=items]");
+		$(".checkboxed").checkCheckboxes(":input[name*=barcodes]");
+		$(".checkboxed").unCheckCheckboxes(":input[name*=items]");
 	});
 	$("#CheckAllitems").click(function(){
-		$(allcheckboxes).checkCheckboxes(":input[name*=items]");
-		$(allcheckboxes).unCheckCheckboxes(":input[name*=barcodes]"); return false;
+		$(".checkboxed").checkCheckboxes(":input[name*=items]");
+		$(".checkboxed").unCheckCheckboxes(":input[name*=barcodes]"); return false;
 	});
     $("#CheckNoitems").click(function(){
-		$(allcheckboxes).unCheckCheckboxes(":input[name*=items]"); return false;
+		$(".checkboxed").unCheckCheckboxes(":input[name*=items]"); return false;
 	});
 	$("#CheckAllreturns").click(function(){
-		$(allcheckboxes).checkCheckboxes(":input[name*=barcodes]");
-		$(allcheckboxes).unCheckCheckboxes(":input[name*=items]"); return false;
+		$(".checkboxed").checkCheckboxes(":input[name*=barcodes]");
+		$(".checkboxed").unCheckCheckboxes(":input[name*=items]"); return false;
 	});
     $("#CheckNoreturns" ).click(function(){
-		$(allcheckboxes).unCheckCheckboxes(":input[name*=barcodes]"); return false;
+		$(".checkboxed").unCheckCheckboxes(":input[name*=barcodes]"); return false;
 	});
 
     <!-- TMPL_IF NAME="CAN_user_circulate_override_renewals" -->
@@ -753,7 +752,7 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 <!-- SUMMARY : TODAY & PREVIOUS ISSUES -->
 <div id="checkouts">
 <!--TMPL_IF NAME="issuecount"-->
-    <form action="/cgi-bin/koha/reserve/renewscript.pl" method="post" id="renew_form">
+    <form action="/cgi-bin/koha/reserve/renewscript.pl" method="post" id="renew_form" class="checkboxed">
     <input type="hidden" value="circ" name="destination" />
     <input type="hidden" name="cardnumber" value="<!-- TMPL_VAR NAME="cardnumber" -->" />
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
