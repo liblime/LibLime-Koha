@@ -4101,6 +4101,20 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add lost_items.claims_returned )\n";
 }
 
+$DBversion = '4.03.08.005';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+        INSERT INTO permissions ( module_bit, code, description )
+        VALUES
+            ( 9, 'save_item_defaults', 'User may save a set of item defaults' ),
+            ( 9, 'update_item_defaults', 'User may update a set of saved item defaults'),
+            ( 9, 'delete_item_defaults', 'User may delete a set of saved item defaults')
+    });
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add permissions related to item session_defaults )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
