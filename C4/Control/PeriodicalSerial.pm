@@ -80,15 +80,13 @@ sub Update($) {
     my $query = shift or croak;
     my $periodical_serial_id = $query->param('periodical_serial_id') // croak;
 
-    my $periodical_serial = try {
-        my  $periodical_serial = C4::Model::PeriodicalSerial->new(id => $periodical_serial_id)->load;;
+    $periodical_serial_id = try {
+        my $periodical_serial = C4::Model::PeriodicalSerial->new(id => $periodical_serial_id)->load;;
         $periodical_serial->sequence($query->param('sequence'));
         $periodical_serial->vintage($query->param('vintage'));
         $periodical_serial->publication_date($query->param('publication_date'));
         $periodical_serial->save;
-
-        print $query->redirect("periodicals-detail.pl?periodical_id=".$periodical_serial->periodical_id);
-        $periodical_serial;
+        $periodical_serial_id;
     } catch {
         my $message = "Error creating or updating periodical: $_\n";
         carp $message;
@@ -96,7 +94,7 @@ sub Update($) {
         undef;
     };
 
-    return $periodical_serial;
+    return $periodical_serial_id;
 }
 
 sub Delete($) {

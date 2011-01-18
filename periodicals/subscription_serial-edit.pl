@@ -28,6 +28,7 @@ use C4::View::Serials qw(
     SeedTemplateWithSubscriptionSerialData
     SeedTemplateWithGeneralData
     );
+use C4::Control::Periodical;
 use C4::Control::SubscriptionSerial;
 
 my $query = new CGI;
@@ -44,7 +45,13 @@ my ($template, $loggedinuser, $cookie) =
 
 my $subscription_serial = C4::Model::SubscriptionSerial->new(id => $subscription_serial_id)->load;
 if ($subscription_serial and C4::Control::Subscription::UserCanViewSubscription($subscription_serial->subscription_id)) {
-    $subscription_serial_id = C4::Control::SubscriptionSerial::Update($query) if ($op eq 'save');
+    if ($op eq 'save') {
+        $subscription_serial_id = C4::Control::SubscriptionSerial::Update($query);
+        my $periodical_id
+            = C4::Model::SubscriptionSerial->new(id => $subscription_serial_id)->load->subscription->periodical_id;
+        C4::Control::Periodical::UpdateBiblioSummary($periodical_id);
+        print $query->redirect("subscription-detail.pl?subscription_id=".$subscription_serial->subscription_id);
+    }
     SeedTemplateWithSubscriptionSerialData($template, $subscription_serial_id) if $subscription_serial_id;
     SeedTemplateWithGeneralData($template);
 }

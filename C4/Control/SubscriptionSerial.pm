@@ -82,7 +82,6 @@ sub Update($) {
             $subscription_serial->save;
         }
 
-        print $query->redirect("subscription-detail.pl?subscription_id=".$subscription_serial->subscription_id);
         $subscription_serial->id;
     } catch {
         my $message = "Error creating or updating subscription serial: $_\n";

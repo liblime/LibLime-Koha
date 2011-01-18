@@ -34,6 +34,7 @@ use DateTime::Format::Strptime;
 
 use C4::Model::Subscription;
 use C4::Model::SubscriptionSerial;
+use C4::Model::SubscriptionSerial::Manager;
 use C4::Control::SubscriptionSerial;
 use C4::Auth;
 
@@ -155,6 +156,70 @@ sub GetSubscriptionDefaults($) {
         carp sprintf "Malformed item defaults: %s\nThrowing away\n", $_;
         undef;
     };
+}
+
+sub GetSummary {
+    my $subscription_id = shift || die;
+
+    # From the list of all associated subscription_serials, pick the earliest and
+    # latest. Generate a structure like:
+    #
+    #  [
+    #    { first: {
+    #        sequence: '1:2:3',
+    #        publication_date: '2010-01-01' # a DateTime object, really
+    #      },
+    #      last: {
+    #        sequence: '1:3:3',
+    #        publication_date: '2011-01-01'
+    #      },
+    #    ...
+    #  ]
+    # This leaves room for a list of summaries if there are substantial breaks
+    # in the holdings (though we don't do this as yet).
+
+    my $subscription_serials;
+    $subscription_serials
+        = C4::Model::SubscriptionSerial::Manager->get_subscription_serials(
+            with_objects => ['periodical_serial'],
+            query => [
+                subscription_id => $subscription_id,
+                't2.sequence' => { like => '%:%' },
+            ],
+            sort_by => 't2.publication_date ASC',
+            limit => 1,
+        );
+    if (scalar @{$subscription_serials} == 0) {
+        return [];
+    }
+    my $first_serial = shift(@$subscription_serials);
+
+    $subscription_serials
+        = C4::Model::SubscriptionSerial::Manager->get_subscription_serials(
+            with_objects => ['periodical_serial'],
+            query => [
+                subscription_id => $subscription_id,
+                't2.sequence' => { like => '%:%' },
+            ],
+            sort_by => 't2.publication_date DESC',
+            limit => 1,
+        );
+    my $last_serial = shift(@$subscription_serials);
+
+    my $summary_list = [
+        {
+            first => {
+                sequence => $first_serial->periodical_serial->sequence,
+                publication_date => $first_serial->periodical_serial->publication_date,
+            },
+            last => {
+                sequence => $last_serial->periodical_serial->sequence,
+                publication_date => $last_serial->periodical_serial->publication_date,
+            }
+        }
+    ];
+    
+    return $summary_list;
 }
 
 1;

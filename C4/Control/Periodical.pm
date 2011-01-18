@@ -30,18 +30,19 @@ use Try::Tiny;
 use CGI;
 use Rose::DB::Object::Helpers qw(column_value_pairs);
 use DateTime::Format::Strptime;
+use MARC::Field;
+use MARC::Record;
 
 use C4::Model::Periodical;
 use C4::Model::Periodical::Manager;
+use C4::Model::Subscription::Manager;
 use C4::Model::PeriodicalSerial;
-use C4::Model::PeriodicalSerial::Manager;
 use C4::Model::Biblio;
-use C4::Model::Biblio::Manager;
 use C4::Model::Biblioitem;
-use C4::Model::Biblioitem::Manager;
 use C4::Control::Subscription;
 use C4::Control::PeriodicalSerial;
 use C4::Biblio;
+use C4::Branch qw(GetBranchName);
 
 sub _createFirstPeriodicalSerial($$) {
     my ($query, $periodical_id) = @_;
@@ -146,11 +147,73 @@ sub SearchPeriodicals {
             );
     } else {
         my $query = q{
-            SELECT t1.* FROM periodicals t1 NATURAL JOIN biblioitems t2 WHERE t2.issn LIKE ?
+            SELECT t1.*
+            FROM periodicals t1
+                NATURAL JOIN biblioitems t2
+            WHERE t2.issn LIKE ?
         };
         $periodicals = C4::Model::Periodical::Manager->get_objects_from_sql(sql => $query, args => [ $value ]);
     }
     return $periodicals;
+}
+
+sub GetSummary {
+    my $periodical_id = shift // croak;
+
+    my $subscriptions
+        = C4::Model::Subscription::Manager->get_subscriptions(
+            query => [
+                periodical_id => $periodical_id
+            ],
+        );
+    my $summaries = [];
+    for my $s (@$subscriptions) {
+        my $summary = {
+            branchname => GetBranchName($s->branchcode),
+            summary => C4::Control::Subscription::GetSummary($s->id),
+        };
+        push @$summaries, $summary;
+    }
+
+    return $summaries;
+}
+
+sub GetSummaryAsMarc {
+    my $periodical_id = shift // croak;
+
+    my $summaries = GetSummary($periodical_id);
+    return [] if not @$summaries;
+
+    my @summary_strings
+        = map {sprintf '%s:s=[%d:%d:%d-%d:%d:%d]',
+               $_->{branchname},
+               $_->{summary}[0]{first}{publication_date}->year,
+               $_->{summary}[0]{first}{publication_date}->month,
+               $_->{summary}[0]{first}{publication_date}->day,
+               $_->{summary}[0]{last}{publication_date}->year,
+               $_->{summary}[0]{last}{publication_date}->month,
+               $_->{summary}[0]{last}{publication_date}->day,
+              } @$summaries;
+    my $subf_a = join(', ', @summary_strings);
+
+    my $f866 = MARC::Field->new(866, '3', '1', 8=>'1', a=>$subf_a);
+
+    return [ $f866 ];
+}
+
+sub UpdateBiblioSummary {
+    my $periodical_id = shift // croak;
+
+    my $p = C4::Model::Periodical->new(id => $periodical_id)->load;
+    my $record = GetMarcBiblio($p->biblionumber);
+
+    my $fields = GetSummaryAsMarc($periodical_id);
+    for (@$fields) {
+        #FIXME CTF: This isn't going to work for multi-field tags
+        $record->delete_fields($record->field($_->tag));
+        $record->insert_fields_ordered($_);
+    }
+    C4::Biblio::ModBiblio($record, $p->biblionumber);
 }
 
 1;

@@ -50,8 +50,10 @@ my $periodical_id = $query->param('periodical_id');
 if (($subscription_id and C4::Control::Subscription::UserCanViewSubscription($subscription_id)) or
     ($periodical_id and defined $subscription_id) or
     ($periodical_id and ($op eq 'save'))
-    ) {
-    $subscription_id = C4::Control::Subscription::UpdateOrCreate($query) if ($op eq 'save');
+   ) {
+    if ($op eq 'save') {
+        $subscription_id = C4::Control::Subscription::UpdateOrCreate($query);
+    }
     SeedTemplateWithSubscriptionData($template, $subscription_id) if ($subscription_id);
 } else {
     SeedTemplateWithSubscriptionDefaults($template);

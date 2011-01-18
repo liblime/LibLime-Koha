@@ -28,6 +28,7 @@ use C4::View::Serials qw(
     SeedTemplateWithPeriodicalSerialData
     SeedTemplateWithGeneralData
     );
+use C4::Control::Periodical;
 use C4::Control::PeriodicalSerial;
 
 my $query = new CGI;
@@ -44,16 +45,20 @@ my ($template, $loggedinuser, $cookie) =
 
 if ($op eq 'save') {
     if ($query->param('count')) {
-        $periodical_serial_id = C4::Control::PeriodicalSerial::CombineSequences(
-            $periodical_serial_id, $query->param('count')+1,
-            {permanent => ($query->param('permanent') eq 'on')});
-        print $query->redirect("periodicals-detail.pl?periodical_id=".$query->param('periodical_id'));
+        $periodical_serial_id
+            = C4::Control::PeriodicalSerial::CombineSequences(
+                $periodical_serial_id,
+                $query->param('count')+1,
+                {permanent => ($query->param('permanent') eq 'on')}
+            );
     } else {
         $periodical_serial_id = C4::Control::PeriodicalSerial::Update($query);
     }
+    C4::Control::Periodical::UpdateBiblioSummary(C4::Model::PeriodicalSerial->new(id => $periodical_serial_id)->load->periodical_id);
+    print $query->redirect("periodicals-detail.pl?periodical_id=".$query->param('periodical_id'));
 }
 
-if ($query->param('op') eq 'combine') {
+if (($query->param('op') // '') eq 'combine') {
     $template->param(op => 'combine');
 }
 
