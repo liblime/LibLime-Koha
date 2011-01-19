@@ -484,6 +484,7 @@ $template->param( picture => 1 ) if $picture;
 
 my $branch=C4::Context->userenv->{'branch'};
 
+$data->{worklibraries} //= [];
 $$data{_worklibraries} = join("<br>\n",@{$$data{worklibraries}});
 $template->param($data);
 
