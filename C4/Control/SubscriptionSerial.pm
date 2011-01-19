@@ -62,7 +62,8 @@ sub Update($) {
     my $subscription_serial_id = $query->param('subscription_serial_id') // croak;
 
     $subscription_serial_id = try {
-        my $subscription_serial = C4::Model::SubscriptionSerial->new(id => $subscription_serial_id)->load;;
+        my $subscription_serial
+            = C4::Model::SubscriptionSerial->new(id => $subscription_serial_id)->load;;
 	$subscription_serial->expected_date($query->param('expected_date') || undef);
         $subscription_serial->received_date($query->param('received_date') || undef);
 	$subscription_serial->status($query->param('status'));
@@ -71,9 +72,12 @@ sub Update($) {
 	if ($subscription_serial->status > 1) {
 	    _GenerateNextSubscriptionSerial($subscription_serial);
 	}
-        if ($subscription_serial->status == 2 and $subscription_serial->subscription->adds_items) {
+        if ($subscription_serial->status == 2
+            && $subscription_serial->subscription->adds_items
+            && !$subscription_serial->itemnumber) {
             my $item = from_json($subscription_serial->subscription->item_defaults);
             $item->{dateaccessioned} = $subscription_serial->received_date->ymd;
+            $item->{enumchron} = $subscription_serial->periodical_serial->vintage;
             my (undef, undef, $itemnumber) = C4::Items::AddItem($item,
                 $subscription_serial->subscription->periodical->biblionumber
                 );
