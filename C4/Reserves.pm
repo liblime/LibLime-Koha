@@ -2382,14 +2382,21 @@ sub _koha_notify_reserve {
     ");
     $sth->execute( $reservenumber );
     my $reserve = $sth->fetchrow_hashref;
-    if (C4::Context->preference('TalkingTechEnabled')) {
+    if (C4::Context->preference('TalkingTechEnabled') && (!$borrower->{'email'})) {
       my $biblio = &GetBiblioData($biblionumber);
       my $item = &GetItem($itemnumber);
       my @items;
       $item->{'title'} = $biblio->{'title'};
       $item->{'date_due'} = $reserve->{'expirationdate'};
       push @items,$item;
-      C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@items,'RESERVE','0');
+      my $response = C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@items,'RESERVE','0');
+      if ($response) {
+        return;
+      }
+      else {
+        $letter_code = 'HOLD_PRINT';
+        $print_mode = 1;
+      }
     }
 
     my $branch_details = GetBranchDetail( $reserve->{'branchcode'} );

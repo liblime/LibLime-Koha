@@ -783,6 +783,12 @@ sub CreateTALKINGtechMESSAGE {
   my ($borrowernumber,$items,$code,$notelevel) = @_;
   my $borrower = C4::Members::GetMemberDetails($borrowernumber);
 
+  # If the home phone number is preceded by an asterisk or doesn't exist,
+  # don't add to MESSAGE file
+  return 0 if (($borrower->{'phone'} =~ /^\s*\*/) ||
+               (!defined($borrower->{'phone'})) ||
+               ($borrower->{'phone'} eq ''));
+
   $notelevel = 0 if ($code eq "FINE");
   my $due_date;
 # Append additional info into file that will be sent to i-tiva server
@@ -811,7 +817,7 @@ sub CreateTALKINGtechMESSAGE {
   }
   close(MSG);
 
-  return;
+  return 1;
 }
 
 =head2 _add_attachements
