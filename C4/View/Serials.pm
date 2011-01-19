@@ -261,17 +261,29 @@ sub SeedTemplateWithPeriodicalSearch($$$) {
 
 sub GetSubscriptionItemFields($) {
     my $subscription_id = shift;
-    my @subfields = C4::Koha::GetMarcSubfieldStructure( 'items', '',
-                                                        ['items.itemnumber', 'items.biblionumber',
-                                                         'items.biblioitemnumber', 'items.barcode',
-							 'items.callnumber', 'items.homebranch',
-							 'items.holdingbranch'] );
-    my $defaults = ($subscription_id && C4::Control::Subscription::GetSubscriptionDefaults($subscription_id)) // {};
+    my @subfields
+        = C4::Koha::GetMarcSubfieldStructure( 'items', '',
+                                              ['items.itemnumber',
+                                               'items.biblionumber',
+                                               'items.biblioitemnumber',
+                                               'items.barcode',
+                                               'items.callnumber',
+                                               'items.homebranch',
+                                               'items.holdingbranch'
+                                              ] );
+    # It doesn't make sense to set defaults for some of these subfields. Remove them.
+    @subfields = grep {$_->{tagsubfield} !~ /[012456dhjklmnqrs]/} @subfields;
+
+    my $defaults
+        = ($subscription_id && C4::Control::Subscription::GetSubscriptionDefaults($subscription_id))
+        // {};
     foreach my $s ( @subfields ) {
 	my ( $table, $column ) = split( /\./, $s->{kohafield} );
 	$s->{value} = $defaults->{ $column };
-	$s->{authorised_values} = GetAuthorisedValues( $s->{authorised_value}, $defaults->{ $column } ) if ( $s->{authorised_value} );
-	
+        if ($s->{authorised_value}) {
+            $s->{authorised_values}
+            = GetAuthorisedValues($s->{authorised_value}, $defaults->{$column});
+        }
 	if ( $column eq 'itype' ) {
 	    my @itemtypes = C4::ItemType->all;
 	    my @authorised_values;
