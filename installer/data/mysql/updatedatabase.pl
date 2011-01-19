@@ -4053,8 +4053,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 $DBversion = '4.03.08.002';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do("ALTER TABLE items ADD catstat varchar(80) default NULL");
-    $dbh->do("ALTER TABLE biblioitems ADD on_order_count varchar(80) default NULL");
-    $dbh->do("ALTER TABLE biblioitems ADD in_process_count varchar(80) default NULL");
+    $dbh->do("ALTER TABLE biblioitems ADD on_order_count varchar(80) default NULL, ADD in_process_count varchar(80) default NULL");
     $dbh->do("DELETE FROM authorised_values WHERE category='CATSTAT'");
     $dbh->do("INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','READY','Ready to be Cataloged')");
     $dbh->do("INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','BINDERY','Sent to Bindery')");
