@@ -785,16 +785,17 @@ sub ModMember {
         if C4::Context->preference("BorrowersLog");
 
    # a staff member's work libraries
-   $sth = $dbh->prepare("DELETE FROM borrower_worklibrary
-   WHERE borrowernumber = ?");
-   $sth->execute($data{borrowernumber});
-   foreach(@$worklibraries) {
-       $sth = $dbh->prepare("INSERT INTO borrower_worklibrary
-       (borrowernumber,branchcode) VALUES (?,?)");
-       $sth->execute($data{borrowernumber},$_);
+   if (defined $worklibraries) {
+      $sth = $dbh->prepare("DELETE FROM borrower_worklibrary
+      WHERE borrowernumber = ?");
+      $sth->execute($data{borrowernumber});
+      foreach(@$worklibraries) {
+          $sth = $dbh->prepare("INSERT INTO borrower_worklibrary
+          (borrowernumber,branchcode) VALUES (?,?)");
+          $sth->execute($data{borrowernumber},$_);
+      }
    }
-
-    return $execute_success;
+   return $execute_success;
 }
 
 sub GetWorkLibraries

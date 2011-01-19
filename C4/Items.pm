@@ -457,6 +457,21 @@ sub ModItemFromMarc {
     return ModItem($item, $biblionumber, $itemnumber, $dbh, $frameworkcode, $unlinked_item_subfields); 
 }
 
+## this is not exported.
+## returns boolean true/false whether or not the given item is the only or last
+## item for the given bib record.
+sub isLastItemInBib
+{
+   my($biblionumber,$itemnumber) = @_;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('SELECT count(*) FROM items
+      WHERE biblionumber = ?
+      AND   itemnumber  != ?');
+   $sth->execute($biblionumber,$itemnumber);
+   my $others = ($sth->fetchrow_array)[0];
+   return $others ?0:1;
+}
+
 =head2 ModItem
 
 =over 4
@@ -2111,7 +2126,11 @@ sub _koha_delete_item {
     my $sth = $dbh->prepare("SELECT * FROM items WHERE itemnumber=?");
     $sth->execute($itemnum);
     my $data = $sth->fetchrow_hashref();
-    $sth->finish();
+    
+    ## for development
+    $sth = $dbh->prepare("DELETE FROM deleteditems WHERE itemnumber=?");
+    $sth->execute($itemnum);
+
     my $query = "INSERT INTO deleteditems SET ";
     my @bind  = ();
     foreach my $key ( keys %$data ) {

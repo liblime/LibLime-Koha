@@ -81,7 +81,9 @@ function confirm_deletion(biblionumber,itemnumber) {
 function confirm_deletion_with_holds(biblionumber,itemnumber) {
 	var original = $("#row"+itemnumber).attr("class");
 	$("#row"+itemnumber).attr("class","confirm");
-    var is_confirmed = confirm(_("This item currently has holds placed on it. Are you sure you want to delete this item?"));
+    var is_confirmed = confirm(_('This item currently has item-level holds placed on it.\n'
+    +'Deleting this item will also delete its holds.\n'
+    +'Are you sure you want to delete this item?'));
     if (is_confirmed) {
     window.location = "additem.pl?op=delitem&biblionumber="+biblionumber+"&itemnumber="+itemnumber;
 	} else {
@@ -232,8 +234,32 @@ function checkForDuplicateDefaultsName() {
 <!-- TMPL_IF NAME="barcode_not_unique" --><div class="dialog alert"><strong>Error saving item</strong>: Barcode must be unique.</div><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="no_next_barcode" --><div class="dialog alert"><strong>Error saving items</strong>: Unable to automatically determine values for barcodes. No item has been inserted.</div><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="book_on_loan" --><div class="dialog alert"><strong>Cannot Delete</strong>: item is checked out.</div><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="item_has_holds" --><div class="dialog alert"><strong>Cannot Delete</strong>: item has holds placed on it.</div><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="item_waiting" --><div class="dialogalert"><strong>Cannot Delete</strong>: item has a waiting hold.</div><!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="title_has_holds" -->
+   <div class="dialog alert"><strong>Cannot Delete</strong>:
+   Title has holds placed on it; cannot delete last item for this record.
+   <!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_holds" -->
+   <form method=post action="additem.pl">
+   <input type=hidden name="op" value="delitem">
+   <input type=hidden name="forceDelLastItem" value="1">
+   <input type=hidden name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->">
+   <input type=hidden name="itemnumber" value="<!-- TMPL_VAR NAME="itemnumber" -->">
+   <input type=submit value="Delete Last Item and All Holds on this Bibliographic Record">
+   </form>
+   <!-- TMPL_ELSE -->
+   <br>You do not have permission to delete holds.
+   <!-- /TMPL_IF -->
+   </div>
+<!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="item_has_holds" --><div class="dialog alert"><strong>Cannot Delete</strong>: item has holds placed on it.</div>
+   <!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_holds" -->
+   <!-- TMPL_ELSE --><br>You do not have permissions to delete holds.
+   <!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="item_waiting" --><div class="dialogalert"><strong>Cannot Delete</strong>: item has a waiting hold.</div>
+   <!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_holds" -->
+   <!-- TMPL_ELSE --><br>You do not have permissions to delete holds.
+   <!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
 
 <div id="cataloguing_additem_itemlist">
     <!-- TMPL_IF name="item_loop" -->

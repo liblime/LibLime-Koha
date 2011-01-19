@@ -1375,6 +1375,11 @@ sub CancelReserve {
       $reserve->{'itemnumber'},undef,$reserve->{'borrowernumber'},
       undef,$moduser
     );
+
+    # remove from tmp_holdsqueue table
+    $sth = $dbh->prepare('DELETE FROM tmp_holdsqueue
+      WHERE reservenumber = ?');
+    $sth->execute($reservenumber);
     
     # Send cancellation notice, if desired
     my $mprefs = C4::Members::Messaging::GetMessagingPreferences( { 

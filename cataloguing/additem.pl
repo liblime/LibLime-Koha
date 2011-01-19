@@ -241,34 +241,49 @@ if ($op eq 'set_session_defaults') {
 #-------------------------------------------------------------------------------
 } elsif ($op eq "delitem") {
 #-------------------------------------------------------------------------------
-    # check that there is no issue on this item before deletion.
-    my $sth=$dbh->prepare("select * from issues i where i.itemnumber=?");
-    $sth->execute($itemnumber);
-    my $onloan=$sth->fetchrow;
-	$sth->finish();
-    $nextop="additem";
+   my $delete_holds_permission = $template->param('CAN_user_reserveforothers_delete_holds');    
 
-    my $delete_holds_permission = $template->param('CAN_user_reserveforothers_delete_holds');    
+   ## check whether this is the last item in the bib record,
+   ## if so, we can't delete it if there are holds on the bib.
+   my $forceDelLastItem = $input->param('forceDelLastItem');
+   if (C4::Items::isLastItemInBib($biblionumber,$itemnumber) && !$forceDelLastItem) {
+      if (C4::Reserves::GetReservesFromBiblionumber($biblionumber)) {
+         push @errors, 'title_has_holds';
+      }
+   }
+   else {
+      # check that there is no issue on this item before deletion.
+      my $sth=$dbh->prepare("select * from issues i where i.itemnumber=?");
+      $sth->execute($itemnumber);
+      my $onloan=$sth->fetchrow;
+	   $sth->finish();
+      $nextop="additem";
     
-    if ($onloan){
-        push @errors,"book_on_loan";
-    } elsif ( GetReservesFromItemnumber( $itemnumber ) && !$delete_holds_permission ) {
-        push @errors,"item_has_holds";
-    } else {
-		# check it doesnt have a waiting reserve
-		$sth=$dbh->prepare("SELECT * FROM reserves WHERE found = 'W' AND itemnumber = ?");
-		$sth->execute($itemnumber);
-		my $reserve=$sth->fetchrow;
-		if ($reserve) {
-		  push @errors, "item_waiting";
-		} else {
-		        CancelReserves({ itemnumber => $itemnumber });
-			&DelItem($dbh,$biblionumber,$itemnumber);
-			print $input->redirect("additem.pl?biblionumber=$biblionumber&frameworkcode=$frameworkcode");
-			exit;
-		}
-        push @errors,"book_reserved";
-    }
+      if ($onloan){
+         push @errors,"book_on_loan";
+      } elsif ( GetReservesFromItemnumber( $itemnumber ) && !$delete_holds_permission ) {
+         push @errors,"item_has_holds";
+      } else {
+		   # check it doesnt have a waiting reserve
+		   $sth=$dbh->prepare("SELECT * FROM reserves WHERE found = 'W' AND itemnumber = ?");
+		   $sth->execute($itemnumber);
+		   my $reserve=$sth->fetchrow;
+		   if ($reserve) {
+		      push @errors, "item_waiting";
+		   } else {
+		      if ($forceDelLastItem) {
+               CancelReserves({biblionumber=>$biblionumber,itemnumber=>$itemnumber});
+            }
+            else {
+               CancelReserves({ itemnumber => $itemnumber });
+            }
+			   &DelItem($dbh,$biblionumber,$itemnumber);
+			   print $input->redirect("additem.pl?biblionumber=$biblionumber&frameworkcode=$frameworkcode");
+			   exit;
+	   	}
+         push @errors,"book_reserved";
+      }
+   }
 #-------------------------------------------------------------------------------
 } elsif ($op eq "saveitem") {
 #-------------------------------------------------------------------------------
