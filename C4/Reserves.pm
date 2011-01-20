@@ -2050,7 +2050,6 @@ sub IsAvailableForItemLevelRequest {
     return 0 if $$item{itemlost};
     return 0 if $$item{wthdrawn};
     return 0 if $$item{suppress};
-    return 0 if $$item{onloan};
     if ($$item{otherstatus}) {
        $sth = $dbh->prepare('SELECT holdsallowed,holdsfilled
           FROM itemstatus
@@ -2061,10 +2060,12 @@ sub IsAvailableForItemLevelRequest {
     }
 
     ## check in transit
-    $sth = $dbh->prepare('SELECT 1 FROM branchtransfers
+    $sth = $dbh->prepare('SELECT * FROM branchtransfers
        WHERE itemnumber = ?');
     $sth->execute($itemnumber);
-    return 0 if ($sth->fetchrow_array)[0];
+    while (my $transfers = $sth->fetchrow_hashref) {
+      return 0 if (!defined($transfers->{'datearrived'}));
+    }
 
     # must check the notforloan setting of the itemtype
     # FIXME - a lot of places in the code do this
