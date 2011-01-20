@@ -20,6 +20,8 @@ package C4::Circulation;
 
 use strict;
 use warnings;
+use Carp;
+
 use C4::Context;
 use C4::Stats;
 use C4::Reserves;
@@ -1730,32 +1732,29 @@ Internal function, called only by AddReturn
 =cut
 
 sub _FixOverduesOnReturn {
-    my ($borrowernumber, $item);
-    unless ($borrowernumber = shift) {
-        warn "_FixOverduesOnReturn() not supplied valid borrowernumber";
-        return;
-    }
-    unless ($item = shift) {
-        warn "_FixOverduesOnReturn() not supplied valid itemnumber";
-        return;
-    }
-    my ($exemptfine, $dropbox) = @_;
-    my $dbh = C4::Context->dbh;
+    my ($borrowernumber, $item, $exemptfine, $dropbox) = @_;
+    croak 'Bogus args for _FixOverduesOnReturn'
+        unless defined $borrowernumber && defined $item;
 
+    my $dbh = C4::Context->dbh;
     # check for overdue fine
-    my $sth = $dbh->prepare(
-"SELECT * FROM accountlines WHERE (borrowernumber = ?) AND (itemnumber = ?) AND (accounttype='FU' OR accounttype='O')"
-    );
+    my $sth = $dbh->prepare(q{
+        SELECT *
+        FROM accountlines
+        WHERE borrowernumber = ?
+          AND itemnumber = ?
+          AND accounttype IN ('FU', 'O')
+    });
     $sth->execute( $borrowernumber, $item );
 
     # alter fine to show that the book has been returned
     my $data = $sth->fetchrow_hashref;
     return 0 unless $data;    # no warning, there's just nothing to fix
 
-    my $uquery;
+    my $uquery = 'UPDATE accountlines SET ';;
     my @bind = ($borrowernumber, $item, $data->{'accountno'});
     if ($exemptfine) {
-        $uquery = "update accountlines set accounttype='FFOR', amountoutstanding=0";
+        $uquery .= "accounttype='FFOR', amountoutstanding=0";
         if (C4::Context->preference("FinesLog")) {
             &logaction("FINES", 'MODIFY',$borrowernumber,"Overdue forgiven: item $item");
         }
@@ -1765,15 +1764,15 @@ sub _FixOverduesOnReturn {
         if (C4::Context->preference("FinesLog")) {
             &logaction("FINES", 'MODIFY',$borrowernumber,"Dropbox adjustment $amt, item $item");
         }
-         $uquery = "update accountlines set accounttype='F' ";
+         $uquery .= "accounttype='F' ";
          if($outstanding  >= 0 && $amt >=0) {
             $uquery .= ", amount = ? , amountoutstanding=? ";
             unshift @bind, ($amt, $outstanding) ;
         }
     } else {
-        $uquery = "update accountlines set accounttype='F' ";
+        $uquery .= "accounttype='F' ";
     }
-    $uquery .= " where (borrowernumber = ?) and (itemnumber = ?) and (accountno = ?)";
+    $uquery .= " WHERE (borrowernumber = ?) AND (itemnumber = ?) AND (accountno = ?)";
     my $usth = $dbh->prepare($uquery);
     return $usth->execute(@bind);
 }
