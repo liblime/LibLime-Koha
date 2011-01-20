@@ -37,6 +37,7 @@ use C4::LostItems;
 use C4::Message;
 use C4::Debug;
 use C4::Overdues;
+use C4::Members;
 use Date::Calc qw(
   Today
   Today_and_Now
@@ -1407,14 +1408,12 @@ sub AddReturn {
     
     # get information on item
     my $itemnumber      = GetItemnumberFromBarcode( $barcode );
-    my $iteminformation = GetItemIssue($itemnumber);
-    my $biblio          = GetBiblioItemData($iteminformation->{'biblioitemnumber'});
-#    use Data::Dumper;warn Data::Dumper::Dumper($iteminformation);
     unless ($itemnumber) {
         return (0, { BadBarcode => $barcode }); # no barcode means no item or borrower.  bail out.
     }
     my $issue  = GetItemIssue($itemnumber);
-#   warn Dumper($issue);
+    my $biblio = GetBiblioItemData($issue->{'biblioitemnumber'});
+
     if ($issue and $issue->{borrowernumber}) {
         $borrower = C4::Members::GetMemberDetails($issue->{borrowernumber})
             or die "Data inconsistency: barcode $barcode (itemnumber:$itemnumber) claims to be issued to non-existant borrowernumber '$issue->{borrowernumber}'\n"
@@ -1482,7 +1481,7 @@ sub AddReturn {
     # case of a return of document (deal with issues and holdingbranch)
     if ($doreturn) {
         $borrower or warn "AddReturn without current borrower";
-		my $circControlBranch;
+        my $circControlBranch;
         if ($dropbox) {
             # define circControlBranch only if dropbox mode is set
             # don't allow dropbox mode to create an invalid entry in issues (issuedate > today)
@@ -1505,20 +1504,6 @@ sub AddReturn {
             }
             $messages->{'WasReturned'} = 1;    # FIXME is the "= 1" right?  This could be the borrower hash.
         }
-
-            if ($returndate ) { # over ride in effect
-                MarkIssueReturned(
-                    $borrower->{'borrowernumber'},
-                    $issue->{'itemnumber'},
-                    $circControlBranch,
-                    $returndate);
-            } else {
-                MarkIssueReturned(
-                    $borrower->{'borrowernumber'},
-                    $issue->{'itemnumber'},
-                    $circControlBranch);
-            }
-            $messages->{'WasReturned'} = 1;    # FIXME is the "= 1" right?
     }
 
     # the holdingbranch is updated if the document is returned to another location.
@@ -1578,7 +1563,7 @@ sub AddReturn {
 
     # fix up the overdues in accounts...
     if ($borrowernumber) {
-        my $fix = _FixOverduesOnReturn($borrowernumber, $item->{itemnumber}, $exemptfine, $dropbox);
+        my $fix = _FixOverduesOnReturn($borrowernumber, $item->{itemnumber}, $exemptfine, $dropbox, $returndate);
         defined($fix) or warn "_FixOverduesOnReturn($borrowernumber, $item->{itemnumber}...) failed!";  # zero is OK, check defined
     }
 
@@ -1718,7 +1703,7 @@ sub MarkIssueReturned {
 
 =head2 _FixOverduesOnReturn
 
-    &_FixOverduesOnReturn($brn,$itm, $exemptfine, $dropboxmode);
+    &_FixOverduesOnReturn($brn,$itm, $exemptfine, $dropboxmode, $returndate);
 
 C<$brn> borrowernumber
 
@@ -1732,9 +1717,9 @@ Internal function, called only by AddReturn
 =cut
 
 sub _FixOverduesOnReturn {
-    my ($borrowernumber, $item, $exemptfine, $dropbox) = @_;
+    my ($borrowernumber, $itemnumber, $exemptfine, $dropbox, $returndate) = @_;
     croak 'Bogus args for _FixOverduesOnReturn'
-        unless defined $borrowernumber && defined $item;
+        unless defined $borrowernumber && defined $itemnumber;
 
     my $dbh = C4::Context->dbh;
     # check for overdue fine
@@ -1745,24 +1730,35 @@ sub _FixOverduesOnReturn {
           AND itemnumber = ?
           AND accounttype IN ('FU', 'O')
     });
-    $sth->execute( $borrowernumber, $item );
+    $sth->execute( $borrowernumber, $itemnumber );
 
     # alter fine to show that the book has been returned
     my $data = $sth->fetchrow_hashref;
     return 0 unless $data;    # no warning, there's just nothing to fix
 
     my $uquery = 'UPDATE accountlines SET ';;
-    my @bind = ($borrowernumber, $item, $data->{'accountno'});
+    my @bind = ($borrowernumber, $itemnumber, $data->{'accountno'});
     if ($exemptfine) {
         $uquery .= "accounttype='FFOR', amountoutstanding=0";
         if (C4::Context->preference("FinesLog")) {
-            &logaction("FINES", 'MODIFY',$borrowernumber,"Overdue forgiven: item $item");
+            &logaction("FINES", 'MODIFY',$borrowernumber,"Overdue forgiven: item $itemnumber");
         }
-    } elsif ($dropbox && $data->{lastincrement}) {
-        my $outstanding = $data->{amountoutstanding} - $data->{lastincrement} ;
-        my $amt = $data->{amount} - $data->{lastincrement} ;
+    } elsif (($dropbox || $returndate) && $data->{lastincrement}) {
+        my $increments = 1;
+        if ($returndate) {
+            my $branchcode = _GetCircControlBranch(
+                C4::Items::GetItem($itemnumber),
+                C4::Members::GetMember($borrowernumber));
+            my $cal = C4::Calendar->new(branchcode => $branchcode);
+            my $pretenddate = C4::Dates->new($returndate, 'iso');
+            $increments = $cal->daysBetween($pretenddate, C4::Dates->new()) - 1;
+        }
+        my $outstanding
+            = $data->{amountoutstanding} - ($data->{lastincrement} * $increments) ;
+        my $amt
+            = $data->{amount} - ($data->{lastincrement} * $increments);
         if (C4::Context->preference("FinesLog")) {
-            &logaction("FINES", 'MODIFY',$borrowernumber,"Dropbox adjustment $amt, item $item");
+            &logaction("FINES", 'MODIFY',$borrowernumber,"Dropbox adjustment $amt, item $itemnumber");
         }
          $uquery .= "accounttype='F' ";
          if($outstanding  >= 0 && $amt >=0) {
