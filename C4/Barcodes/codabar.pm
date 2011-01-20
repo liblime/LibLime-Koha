@@ -115,16 +115,7 @@ sub validate
       return 0,'Barcode must contain all digits';
    }
 
-   my($type,$prefix,$seq,$checkdigit) = $barcode =~ /^(\d)(\d{4})(\d{8})(\d)$/;
-   if (
-         ( ($type==2) && ($barcodetype eq 'patron') )
-      || ( ($type==3) && ($barcodetype eq 'item')   ) 
-      ) {
-      # do nothing
-   }
-   else {
-      return 0,'Invalid barcode type, check the first digit';
-   }
+   my($type,$infix,$seq,$checkdigit) = $barcode =~ /^(\d)(\d{4})(\d{8})(\d)$/;
 
    # dupecheck
    my $sth;
@@ -152,8 +143,8 @@ sub validate
    unless ($dbPrefix) {
       return 0,"${barcodetype}barcodeprefix not set in database";
    }
-   if ($prefix != $dbPrefix) {
-      return 0,"Invalid infix ($prefix), expected $dbPrefix";
+   if ("$type$infix" != $dbPrefix) {
+      return 0,"Invalid prefix ($type$infix), expected $dbPrefix";
    }
 
    # digit 14: check digit
