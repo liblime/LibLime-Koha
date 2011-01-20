@@ -20,7 +20,7 @@
 
 use CGI;
 use strict;
-#use warnings; FIXME - Bug 2505
+use warnings;
 use C4::Auth;
 use C4::Output;
 use C4::Biblio;
@@ -45,13 +45,10 @@ my $runinbackground = $input->param('runinbackground');
 
 
 my $template_name;
-my $template_flag;
 if (!defined $op) {
     $template_name = "tools/batchMod.tmpl";
-    $template_flag = { tools => '*' };
 } else {
     $template_name = ($del) ? "tools/batchMod-del.tmpl" : "tools/batchMod-edit.tmpl";
-    $template_flag = ($del) ? { tools => 'items_batchdel' }   : { tools => 'items_batchmod' };
 }
 
 
@@ -60,7 +57,7 @@ my ($template, $loggedinuser, $cookie)
                  query => $input,
                  type => "intranet",
                  authnotrequired => 0,
-                 flagsrequired => $template_flag,
+                 flagsrequired => { tools => q|batch_edit_items|, },
                  });
 
 
