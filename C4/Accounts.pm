@@ -302,7 +302,7 @@ sub getAllAccountsByBorrowerItem
       WHERE borrowernumber = ?
         AND itemnumber     = ?");
    $sth->execute($borrowernumber,$itemnumber);
-   my @all;
+   my @all = ();
    while(my $row = $sth->fetchrow_hashref()) {
       push @all, $row;
    }
@@ -408,7 +408,8 @@ sub rechargeClaimsReturnedUndo
       WHERE borrowernumber = ?
         AND itemnumber     = ?
         AND accounttype    = 'L'
-   ORDER BY accountno DESC /* get only the latest */");
+   ORDER BY timestamp DESC /* get only the latest */
+      LIMIT 1");
    $sth->execute($$li{borrowernumber},$$li{itemnumber});
    my $acct = $sth->fetchrow_hashref();
 
@@ -434,7 +435,9 @@ sub rechargeClaimsReturnedUndo
       }
 
       ## recharge the lost fee as a NEW line in the borrower's account
+      my $accountno = getnextacctno($$li{borrowernumber});
       $sth = $dbh->prepare('INSERT INTO accountlines (
+         accountno,
          itemnumber,
          amountoutstanding,
          date,
@@ -442,8 +445,9 @@ sub rechargeClaimsReturnedUndo
          accounttype,
          amount,
          borrowernumber)
-         VALUES(?,?,NOW(),?,?,?,?)');
+         VALUES(?,?,?,NOW(),?,?,?,?)');
       $sth->execute(
+         $accountno,
          $$li{itemnumber},
          $replacementprice,
          "Lost Item $$li{title} $$li{barcode}",

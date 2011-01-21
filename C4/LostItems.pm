@@ -134,7 +134,7 @@ sub CreateLostItem {
     $sth = $dbh->prepare('SELECT id FROM lost_items
       WHERE itemnumber     = ?
         AND borrowernumber = ?');
-    $sth->execute($$item{itemnumber},$borrowernumber);
+    $sth->execute($itemnumber,$borrowernumber);
     my $id = ($sth->fetchrow_array)[0];
     if ($id) {
         ## item already lost.  don't do an INSERT, just UPDATE
