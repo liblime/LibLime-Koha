@@ -890,7 +890,7 @@ sub AddMember {
     }
 
     # work libraries
-    if (@{$data{worklibrary}}) {
+    if (@{$data{worklibrary} // []}) {
         $sth = $dbh->prepare("DELETE FROM borrower_worklibrary
         WHERE borrowernumber = ?") || die $dbh->errstr();
         $sth->execute($data{borrowernumber});
