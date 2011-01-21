@@ -241,7 +241,7 @@ function refocus(calendar) {
                 <select name="type" id="type" onchange="this.form.borrower_message.value=this.options[this.selectedIndex].value;">
                     <option value="">Select Note</option>
                     <!-- TMPL_LOOP NAME="canned_bor_notes_loop" -->
-                    <option value="<!-- TMPL_VAR NAME="lib" -->"><!--TMPL_VAR NAME="authorised_value" --></option>
+                    <option value="<!-- TMPL_VAR NAME="lib" -->"><!--TMPL_VAR NAME="lib" --></option>
                     <!-- /TMPL_LOOP -->
                 </select>
         </li>
