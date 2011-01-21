@@ -1381,7 +1381,7 @@ sub CancelReserve {
       borrowernumber => $borrowernumber,
       message_name   => 'Hold Cancelled'
     } );
-    if ( $mprefs->{'transports'} ) {
+    if ( $mprefs->{'transports'} && C4::Context->preference('EnableHoldCancelledNotice')) {
       my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
       my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
       my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
@@ -1477,7 +1477,7 @@ sub ModReserve {
           borrowernumber => $borrowernumber,
           message_name   => 'Hold Cancelled'
         } );
-        if ( $mprefs->{'transports'} ) {
+        if ( $mprefs->{'transports'} && C4::Context->preference('EnableHoldCancelledNotice')) {
           my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
           my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
           my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
@@ -1900,7 +1900,7 @@ sub ModReserveAffect {
     }
     $sth = $dbh->prepare($query);
     $sth->execute( $itemnumber, $reservenumber );
-    _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber, $reservenumber ) if ( !$transferToDo && !$already_on_shelf );
+    _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber, $reservenumber ) if ( !$transferToDo && !$already_on_shelf && C4::Context->preference('EnableHoldOnShelfNotice'));
 
     if ( C4::Context->preference("ReturnToShelvingCart") ) {
       CartToShelf( $itemnumber );

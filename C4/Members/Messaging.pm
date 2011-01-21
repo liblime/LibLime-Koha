@@ -210,6 +210,7 @@ END_SQL
     while ( my $row = $sth->fetchrow_hashref() ) {
         next if (($row->{'message_name'} eq 'Hold Expired') && (! C4::Context->preference('EnableHoldExpiredNotice')));
         next if (($row->{'message_name'} eq 'Hold Cancelled') && (! C4::Context->preference('EnableHoldCancelledNotice')));
+        next if (($row->{'message_name'} eq 'Hold Filled') && (! C4::Context->preference('EnableHoldOnShelfNotice')));
         $choices->{ $row->{'message_name'} }->{'message_attribute_id'} = $row->{'message_attribute_id'};
         $choices->{ $row->{'message_name'} }->{'message_name'}         = $row->{'message_name'};
         $choices->{ $row->{'message_name'} }->{'takes_days'}           = $row->{'takes_days'};

@@ -4120,6 +4120,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
+$DBversion = '4.03.09.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('EnableHoldOnShelfNotice','0','If ON, allow hold awaiting pickup (holds shelf) notices to be sent.','','YesNo')|);
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Added syspref EnableHoldOnShelfNotice )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

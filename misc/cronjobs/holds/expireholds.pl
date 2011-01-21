@@ -63,6 +63,7 @@ $sth->execute($today_iso);
 while (my $expref = $sth->fetchrow_hashref) {
   C4::Reserves::_moveToOldReserves($expref->{reservenumber});
 
+  next if (! C4::Context->preference('EnableHoldExpiredNotice'));
   # Send expiration notice, if desired
   my $borrowernumber = $expref->{borrowernumber};
   my $biblionumber = $expref->{biblionumber};
