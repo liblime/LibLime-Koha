@@ -46,7 +46,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 my $op = $cgi->param('op') || $ARGV[0] || '';
 my $layout_id = $cgi->param('layout_id') || $cgi->param('element_id') || $ARGV[1] || '';
 my $layout_choice = $cgi->param('layout_choice') || '';
-my $layout = '';
+my $layout;
 
 sub _set_selected {
     my ($type_list, $object, $data_type) = @_;
@@ -183,7 +183,7 @@ $template->param(
         font_types      => $font_types,
         text_justification_types    => $text_justification_types,
         field_table     => $select_text_fields,
-        layout_id       => $layout->get_attr('layout_id') > -1 ? $layout->get_attr('layout_id') : '',
+        layout_id       => (($$layout{layout_id} // 0) >-1)?$$layout{layout_id}:'',
         layout_name     => $layout->get_attr('layout_name'),
         guidebox        => $layout->get_attr('guidebox'),
         break_rule_string => $layout->get_attr('break_rule_string'),

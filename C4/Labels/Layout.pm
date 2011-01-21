@@ -91,7 +91,7 @@ sub retrieve {
         warn sprintf('Database returned the following error: %s', $sth->errstr);
         return -1;
     }
-    my $self = $sth->fetchrow_hashref;
+    my $self = $sth->fetchrow_hashref // {};
     bless ($self, $type);
     return $self;
 }
@@ -160,21 +160,19 @@ sub save {
         return $self->{'layout_id'};
     }
     else {                      # otherwise create a new record
-        my @params;
-        my $query = "INSERT INTO labels_layouts (";
-        foreach my $key (keys %{$self}) {
-            push (@params, $self->{$key});
-            $query .= "$key, ";
-        }
-        $query = substr($query, 0, (length($query)-2));
-        $query .= ") VALUES (";
-        for (my $i=1; $i<=(scalar keys %$self); $i++) {
-            $query .= "?,";
-        }
-        $query = substr($query, 0, (length($query)-1));
-        $query .= ");";
-        my $sth = C4::Context->dbh->prepare($query);
-        $sth->execute(@params) || die C4::Context->dbh->errstr();
+        $$self{text_justify}      ||= $$self{justify} || 'L';
+        $$self{format_string}     ||= 'itemcallnumber';
+        $$self{break_rule_string} ||= '';
+        my $dbh = C4::Context->dbh;
+        my @f = qw(barcode_type printing_type layout_name guidebox font font_size
+         callnum_split text_justify format_string break_rule_string);
+        my @vals = ();
+        foreach(@f) { push @vals, $$self{$_} }
+        my $sth = $dbh->prepare(sprintf("INSERT INTO labels_layouts 
+         (%s) VALUES (%s)",
+         join(',',@f),
+         join(',',map{'?'}@f) ));
+        $sth->execute(@vals) || die C4::Context->dbh->errstr();
         my $sth1 = C4::Context->dbh->prepare("SELECT MAX(layout_id) FROM labels_layouts;");
         $sth1->execute();
         my $id = $sth1->fetchrow_array;
@@ -184,9 +182,6 @@ sub save {
 
 sub get_attr {
     my $self = shift;
-    if (_check_params(@_) eq 1) {
-        return;
-    }
     my ($attr) = @_;
     if (exists($self->{$attr})) {
         return $self->{$attr};

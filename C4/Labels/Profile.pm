@@ -208,7 +208,7 @@ sub save {
          join(',',@keys),
          join(',',map{'?'}@keys)
       );
-      my $sth = C4::Context->dbh->prepare($query);
+      $sth = C4::Context->dbh->prepare($query);
       unless ($sth->execute(@params)) {
          push @{$$self{_errs}},{msg=>"Database error: SQL=$query--\n"
          . C4::Context->dbh->errstr()};
