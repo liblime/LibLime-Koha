@@ -655,4 +655,9 @@ if (C4::Context->preference('GoogleIndicTransliteration')) {
         $template->param('GoogleIndicTransliteration' => 1);
 }
 
+# If ShowOPACAvailabilityFacetSearch system preference is On show the OPAC availablity facet search
+if (C4::Context->preference('ShowOPACAvailabilityFacetSearch')) {
+        $template->param('ShowAvailable' => 1);
+}
+
 output_with_http_headers $cgi, $cookie, $template->output, $content_type;

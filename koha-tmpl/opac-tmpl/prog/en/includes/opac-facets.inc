@@ -3,9 +3,11 @@
 <div id="search-facets">
 <h4>Refine your search</h4>
 <ul>
+<!-- TMPL_IF NAME="ShowAvailable" -->
 	<li>Availability<ul><li><!-- TMPL_IF NAME="available" -->Showing only <strong>available</strong> items. <a href="/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR NAME="query_cgi" --><!-- TMPL_VAR NAME="limit_cgi_not_availablity" --><!-- TMPL_IF NAME="sort_by" -->&amp;sort_by=<!-- TMPL_VAR NAME="sort_by" --><!-- /TMPL_IF -->">Show all items</a><!-- TMPL_ELSE -->Limit to <a href="/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR NAME="query_cgi" --><!-- TMPL_VAR NAME="limit_cgi" --><!-- TMPL_IF NAME="sort_by" -->&amp;sort_by=<!-- TMPL_VAR NAME="sort_by" --><!-- /TMPL_IF -->&amp;limit=available">currently available items.</a><!-- /TMPL_IF --></li></ul>
 	<!-- TMPL_IF NAME="related" --> <li>(related searches: <!-- TMPL_LOOP NAME="related" --><!-- TMPL_VAR NAME="related_search" --><!-- /TMPL_LOOP -->)</li><!-- /TMPL_IF -->
 	</li>
+<!-- /TMPL_IF -->
 	
 <!-- TMPL_LOOP NAME="facets_loop" -->
 <li id="<!-- TMPL_VAR NAME="type_id" -->">

@@ -4128,6 +4128,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Added syspref EnableHoldOnShelfNotice )\n";
 }
 
+$DBversion = '4.03.09.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('ShowOPACAvailabilityFacetSearch','1','If ON, show the availability search option in the OPAC Refine your search.','','YesNo')|);
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Added syspref ShowOPACAvailabilityFacetSearch)\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
