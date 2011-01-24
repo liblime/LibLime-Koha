@@ -24,7 +24,6 @@ use C4::Context;
 use C4::Labels::Label;
 use C4::Labels::Layout;
 
-#my $scheme = C4::Context->preference('SpineLabelFormat');
 my $query  = new CGI;
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {   template_name   => "labels/spinelabel-print.tmpl",
@@ -39,32 +38,20 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 my $barcode = $query->param('barcode');
 my $dbh = C4::Context->dbh;
 my $sth;
-my $item;
-my $sql = q|
-SELECT * FROM biblio, biblioitems, items 
- WHERE biblio.biblionumber = items.biblionumber 
-   AND biblioitems.biblioitemnumber = items.biblioitemnumber 
-   AND items.barcode = ?|;
-$sth = $dbh->prepare($sql);
-$sth->execute($barcode);
-# use a while loop b/c there are duplicate and null barcodes
-while(my $row = $sth->fetchrow_hashref()) {
-   $item = $row if $$row{barcode};
-}
-
+my $item = C4::Labels::Label::GetQuickItemFromBarcode($barcode);
 unless ($item) {
   $template->param( 'Barcode' => $barcode );
   $template->param( 'BarcodeNotFound' => 1 );
 }
 
-# get the layout and prefix so we'll know how to print this
+## get the layout and prefix so we'll know how to print this
 my $layout_id = $query->param('layout_id')  || $query->cookie('layout_id');
 my $profile_id= $query->param('profile_id') || $query->cookie('profile_id');
 my $prefix    = $query->param('prefix')     || $query->cookie('prefix');
 my $layout    = new C4::Labels::Layout;
 my $lay       = $layout->retrieve(layout_id=>$layout_id);
 
-# set the cookie
+## set the cookie
 my $cookie1 = $query->cookie(
    -name => 'layout_id',   -value=>$layout_id);
 my $cookie2 = $query->cookie(
@@ -106,7 +93,7 @@ foreach my $f(split(/\,/, $$lay{format_string})) {
    push @all, join(' ',@tmp);
 }
 
-if ($prefix ne '') {
+if ($prefix ne '_none') {
    # get authorised value
    my $dbh = C4::Context->dbh;
    my $sth = $dbh->prepare(q|
@@ -119,13 +106,13 @@ if ($prefix ne '') {
    while(my $row = $sth->fetchrow_hashref()) {
       if ($prefix eq 'LOC') {
          if ($$item{permanent_location} eq $$row{authorised_value}) {
-            unshift @all, $$row{prefix} || undef;
+            unshift @all, $$row{prefix};
             last PREFIX;
          }
       }
       elsif ($prefix eq 'CCODE') {
          if ($$item{ccode} eq $$row{authorised_value}) {
-            unshift @all, $$row{prefix} || undef;
+            unshift @all, $$row{prefix};
             last PREFIX;
          }
       }
@@ -140,7 +127,7 @@ foreach(@all) {
 
 # fonts support
 my %fonts = (
-   TR => ['times'       ,''      ,''      ], #fotn,weight,style
+   TR => ['times'       ,''      ,''      ], #font,weight,style
    TB => ['times'       ,'bold'  ,''      ],
    TI => ['times'       ,''      ,'italic'],
    TBI=> ['times'       ,'bold'  ,'italic'],
@@ -148,6 +135,9 @@ my %fonts = (
    CB => ['courier'     ,'bold'  ,''      ],
    CO => ['courier'     ,''      ,'italic'],# oblique
    CBO=> ['courier'     ,'bold'  ,'italic'],
+   CN => ['courier new' ,''      ,''      ],
+   CNB=> ['courier new' ,'bold'  ,''      ],
+   CNI=> ['courier new' ,'bold'  ,'italic'],
    H  => ['helvetica'   ,''      ,''      ],
    HB => ['helvetica'   ,'bold'  ,''      ],
    HBO=> ['helvetica'   ,'bold'  ,'italic'],
@@ -173,7 +163,7 @@ my $beg = sprintf(qq|<table border=0 cellspacing=0 cellpadding=0><tr><td>
 );
 my $end = '</div></td></tr></table>';
 
-$template->param( autoprint => C4::Context->preference("SpineLabelAutoPrint") );
+$template->param( autoprint => C4::Context->preference('SpineLabelAutoPrint') );
 $template->param( 
    content     => $beg . join("<br>\n",@body) . $end,
    layout_id   => $query->param('layout_id'),
@@ -198,6 +188,7 @@ sub _split
 
 
 __END__
+#my $scheme = C4::Context->preference('SpineLabelFormat');
 my $data;
 while ( my ( $key, $value ) = each(%$item) ) {
     $data->{$key} .= "<span class='field' id='$key'>";

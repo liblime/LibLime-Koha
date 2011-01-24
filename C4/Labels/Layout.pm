@@ -305,6 +305,15 @@ CO      = Courier Oblique (Italic)
 CBO     = Courier Bold Oblique
 
 =item .
+CN      = Courier New
+
+=item .
+CNB     = Courier New Bold
+
+=ite .
+CNI     = Courier New Bold Italic
+
+=item .
 H       = Helvetica
 
 =item .

@@ -18,6 +18,25 @@ BEGIN {
 
 my $possible_decimal = qr/\d{3,}(?:\.\d+)?/; # at least three digits for a DDCN
 
+
+sub GetQuickItemFromBarcode
+{
+   my $barcode = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('
+      SELECT * FROM biblio,biblioitems,items
+       WHERE biblio.biblionumber = items.biblionumber
+         AND biblioitems.biblioitemnumber = items.biblioitemnumber
+         AND items.barcode = ?');
+   $sth->execute($barcode);
+   ## use a while loop b/c there are duplicate and null barcodes
+   my $item;
+   while(my $row = $sth->fetchrow_hashref()) {
+      $item = $row if $$row{barcode};
+   }
+   return $item;
+}
+
 sub _check_params {
     my $given_params = {};
     my $exit_code = 0;

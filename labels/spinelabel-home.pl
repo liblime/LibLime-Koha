@@ -48,7 +48,7 @@ $template->param(
    layouts     => _sel('layout_id',get_all_layouts()),
    profiles    => _sel('profile_id',get_all_profiles()),
    prefixes    => _sel('prefix',[
-      { prefix=>''      ,name=>'None'              },
+      { prefix=>'_none' ,name=>'None'              },
       { prefix=>'LOC'   ,name=>'Shelving Location' },
       { prefix=>'CCODE' ,name=>'Collection Code'   },
    ]),
