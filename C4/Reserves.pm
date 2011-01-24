@@ -1200,7 +1200,7 @@ sub GetReserve_NextLocalReserve {
       $reserve = $r if ( $r->{'branchcode'} eq $branchcode && $r->{'priority'} < $reserve->{'priority'} );
   }
 
-  $reserve->{itemnumber} = $itemnumber;
+  $reserve->{itemnumber} = $itemnumber if (defined $reserve->{itemnumber});
   if (defined $reserve->{branchcode}) {
     return $reserve;
   }
@@ -1233,7 +1233,7 @@ sub GetReserve_OldestReserve {
       $reserve = $r if ($r->{reservedate} gt $reserve->{reservedate});
   }
   
-  $reserve->{itemnumber} = $itemnumber;
+  $reserve->{itemnumber} = $itemnumber if (defined $reserve->{itemnumber});
   if (defined $reserve->{branchcode}) {
     return $reserve;
   }

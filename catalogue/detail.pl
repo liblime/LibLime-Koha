@@ -219,6 +219,10 @@ foreach my $item (@items) {
       $ItemBorrowerReserveInfo = GetMemberDetails( $reservedfor, 0);
       undef $reservedate if ($reserves->{nullitem});
       $template->param( totalreserves => $rescount );
+      if ( defined $reserves->{itemnumber} ) {
+        $item->{reservedate} = format_date($reservedate);
+        $item->{waitingdate} = format_date($waitingdate);
+      }
     }
     if (C4::Context->preference('HidePatronName')){
 	$item->{'hidepatronname'} = 1;

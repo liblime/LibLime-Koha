@@ -190,7 +190,6 @@ foreach my $itm (@items) {
 
      if ($itm->{'reserve_status'}){
        if( $itm->{'reserve_status'} eq "Attached"){ $itm->{'waiting'} = 1; }
-       if( $itm->{'reserve_status'} eq "Reserved"){ $itm->{'waiting'} = 1; }
        $template->param( totalreserves => $itm->{'reserve_count'});
      }
     
