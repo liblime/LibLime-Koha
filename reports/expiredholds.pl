@@ -104,6 +104,15 @@ if (defined($holdexpdate)) {
   $fullstatement .= $expfilter;
   $whereclause = 1;
 }
+else {
+   if ($whereclause) {
+      $fullstatement .= " AND (old_reserves.expirationdate IS NOT NULL)";
+   }
+   else {
+      $fullstatement .= " WHERE (old_reserves.expirationdate IS NOT NULL)";
+   }
+   $whereclause = 1;
+}
 
 if (defined($branchcode)) {
   my $branchfilter;
@@ -117,12 +126,6 @@ if (defined($branchcode)) {
   $whereclause = 1;
 }
 
-if (($whereclause) && (!defined($holdexpdate))) {
-  $fullstatement .= " AND (old_reserves.expirationdate IS NOT NULL)";
-}
-else {
-  $fullstatement .= " WHERE (old_reserves.expirationdate IS NOT NULL)";
-}
 $fullstatement .= $endstatement;
 warn "SQL: $fullstatement\n";
 
