@@ -235,6 +235,7 @@ my $today       = POSIX::strftime("%Y-%m-%d", localtime);	# iso format
 my @issuedata;
 my $overdues_exist = 0;
 my $totalprice = 0;
+
 for ( my $i = 0 ; $i < $issuecount ; $i++ ) {
     my $datedue = $issue->[$i]{'date_due'};
     my $issuedate = $issue->[$i]{'issuedate'};
@@ -298,7 +299,11 @@ for ( my $i = 0 ; $i < $issuecount ; $i++ ) {
 	$row{'can_confirm'} = ( !$renewokay && $renewerror ne 'on_reserve' );
 	$row{"norenew_reason_$renewerror"} = 1 if $renewerror;
 	$row{'renew_failed'}  = $renew_failed{ $issue->[$i]{'itemnumber'} };
-	$row{'return_failed'} = $return_failed{$issue->[$i]{'barcode'}};   
+	$row{'return_failed'} = $return_failed{$issue->[$i]{'barcode'}};
+   $row{itemnotes} = $$issue[$i]{itemnotes} || '';
+   if ($row{itemnotes} =~ /FASTADD RECORD/) {
+      $row{itemnotes} = qq|<span style="color:red">$row{itemnotes}</span>|;
+   }
     push( @issuedata, \%row );
 }
 

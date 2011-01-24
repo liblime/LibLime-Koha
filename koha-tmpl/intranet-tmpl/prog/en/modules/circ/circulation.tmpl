@@ -386,11 +386,13 @@ function refocus(calendar) {
         <!-- TMPL_IF NAME="UNKNOWN_BARCODE" -->
             <li>The barcode was not found
              <!-- TMPL_IF NAME="CAN_user_circulate_fast_add" -->
-                <form method="post" class="confirm">
+                <form method="post" class="confirm" action="/cgi-bin/koha/circ/fastcat.pl">
+                <input type=hidden name="barcode" value="<!-- TMPL_VAR NAME="barcode" -->">
+                <input type=hidden name="borrowerernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->">
+                <input type=hidden name="branch" value="<!-- TMPL_VAR NAME="branch" -->">
+                <input type="submit" name="fastadd1" value="Fast Bib Add">
                 <!--TMPL_IF NAME="duedatespec" -->
-                <a href="/cgi-bin/koha/circ/fastcat.pl?barcode=<!-- TMPL_VAR NAME="barcode" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;duedatespec=<!-- TMPL_VAR NAME="duedatespec" -->&amp;branch=<!-- TMPL_VAR NAME="branch" -->&amp;stickyduedate=<!-- TMPL_VAR NAME="stickyduedate" -->"<input type="button" name="fastadd1" value="Fast Bib Add"></a>
-                <!-- TMPL_ELSE -->
-                <a href="/cgi-bin/koha/circ/fastcat.pl?barcode=<!-- TMPL_VAR NAME="barcode" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;branch=<!-- TMPL_VAR NAME="branch" -->"<input type="button" name="fastadd1" value="Fast Bib Add"></a>
+                <input type=hidden name="stickyduedate" value="<!-- TMPL_VAR NAME="stickyduedate" -->">
                 <!-- /TMPL_IF -->
                 </form>
                 <!-- /TMPL_IF -->
@@ -883,7 +885,13 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
         <!-- TMPL_IF NAME="od" --><td class="od"><!-- TMPL_ELSE --><td><!-- /TMPL_IF -->
         <!-- TMPL_VAR NAME="dd" -->
         </td>
-        <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;type=intra"><strong><!-- TMPL_VAR NAME="title" escape="html" --></strong></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --> <!-- TMPL_IF NAME="itemnotes" -->- <!-- TMPL_VAR name="itemnotes" --><!-- /TMPL_IF --> <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
+        <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;type=intra"><strong><!-- TMPL_VAR NAME="title" escape="html" --></strong></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --> <!-- TMPL_IF NAME="itemnotes" -->- 
+        <!-- TMPL_IF NAME="_redItemNotes" --><span style="color:red;">
+        <!-- TMPL_ELSE --><span>
+        <!-- /TMPL_IF -->
+        <!-- TMPL_VAR name="itemnotes" -->
+        </span>
+<!-- /TMPL_IF --> <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
         <td>
             <!-- TMPL_VAR NAME="itemtype" -->
         </td>

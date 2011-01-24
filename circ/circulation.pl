@@ -584,6 +584,9 @@ if ($borrower) {
           ( $it->{'renewals_intranet'}, $it->{'renewals_opac'} ) = GetRenewalDetails( $it->{'itemnumber'}, $borrower->{'borrowernumber'} );
         }
 
+      if ($$it{itemnotes} =~ /FASTADD RECORD/) {
+         $$it{_redItemNotes} = 1;
+      }
         if ( $todaysdate eq $it->{'issuedate'} or $todaysdate eq $it->{'lastreneweddate'} ) {
             push @todaysissues, $it;
         } else {
