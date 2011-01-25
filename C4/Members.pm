@@ -1397,17 +1397,18 @@ sub GetNotifiedMembers {
           surname, firstname, address, address2, city, zipcode, dateofbirth,
           phone, phonepro, contactfirstname, contactname, categorycode,
           last_reported_date, last_reported_amount, exclude_from_collection
-          FROM borrowers
-          WHERE
-            amount_notify_date IS NOT NULL
-            AND CURRENT_DATE BETWEEN DATE_ADD(amount_notify_date, INTERVAL ? DAY) AND DATE_ADD(amount_notify_date, INTERVAL ? DAY)
-          GROUP BY borrowers.borrowernumber
+        FROM borrowers
+        WHERE
+          amount_notify_date IS NOT NULL
+          AND CURRENT_DATE BETWEEN DATE_ADD(amount_notify_date, INTERVAL ? DAY)
+          AND DATE_ADD(amount_notify_date, INTERVAL ? DAY)
     ";
 
     $query .= " AND categorycode NOT IN (" . join( ", ", map( { "?" } @ignored_categories ) ) . ")" if ( @ignored_categories );
 
     if ( $branchcode ) {
         $query .= " AND borrowers.branchcode = ?";
+        $query .= " GROUP BY borrowers.borrowernumber";
         push @ignored_categories, $branchcode; # Just to get it in the right place
     }
 
