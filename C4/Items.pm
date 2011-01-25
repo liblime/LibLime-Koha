@@ -2121,9 +2121,15 @@ Internal function to delete an item record from the koha tables
 
 sub _koha_delete_item {
     my ( $dbh, $itemnum ) = @_;
+    my $sth;
+
+    ## for development: dupecheck deleteditems
+    $sth = $dbh->prepare('DELETE FROM deleteditems
+      WHERE itemnumber = ?');
+    $sth->execute($itemnum);
 
     # save the deleted item to deleteditems table
-    my $sth = $dbh->prepare("SELECT * FROM items WHERE itemnumber=?");
+    $sth = $dbh->prepare("SELECT * FROM items WHERE itemnumber=?");
     $sth->execute($itemnum);
     my $data = $sth->fetchrow_hashref();
     

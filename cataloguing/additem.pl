@@ -218,12 +218,11 @@ if ($op eq 'set_session_defaults') {
 	}
     }
 
-
 #-------------------------------------------------------------------------------
 } elsif ($op eq "edititem") {
 #-------------------------------------------------------------------------------
 # retrieve item if exist => then, it's a modif
-
+    $template->param('mv' => 1);
     $itemrecord = C4::Items::GetMarcItem($biblionumber,$itemnumber);
     $nextop = "saveitem";
 #-------------------------------------------------------------------------------
@@ -288,6 +287,9 @@ if ($op eq 'set_session_defaults') {
 } elsif ($op eq "saveitem") {
 #-------------------------------------------------------------------------------
     MoveItemToAnotherBiblio( $itemnumber, $biblionumber );
+    if ($input->param('mv')) {
+       C4::Reserves::fixPrioritiesOnItemMove($biblionumber);
+    }
     
     # rebuild
     my ( $itemtosave, $barcode_not_unique ) = C4::Form::AddItem::get_item_record( $input, $frameworkcode, 0, $itemnumber );
@@ -324,11 +326,18 @@ foreach my $field (@fields) {
     my %this_row;
 # loop through each subfield
     for my $i (0..$#subf) {
+       ## Suppress Perl warnings about uninitialized values.
+       next unless defined $field->tag();
+       next unless defined $tagslib->{$field->tag()};
+       next unless defined $subf[$i][0];
+       next unless defined $tagslib->{$field->tag()}->{$subf[$i][0]};
+       $tagslib->{$field->tag()}->{$subf[$i][0]}->{tab} //= undef;
         next if ($tagslib->{$field->tag()}->{$subf[$i][0]}->{tab} ne 10 
                 && ($field->tag() ne $itemtagfield 
                 && $subf[$i][0]   ne $itemtagsubfield));
 
         $witness{$subf[$i][0]} = $tagslib->{$field->tag()}->{$subf[$i][0]}->{lib} if ($tagslib->{$field->tag()}->{$subf[$i][0]}->{tab}  eq 10);
+      $tagslib->{$field->tag()} //= undef;
 		if ($tagslib->{$field->tag()}->{$subf[$i][0]}->{tab}  eq 10) {
         	$this_row{$subf[$i][0]}=GetAuthorisedValueDesc( $field->tag(),
                         $subf[$i][0], $subf[$i][1], '', $tagslib) 
@@ -396,7 +405,8 @@ for my $row ( @big_array ) {
             $$row{nomod} = 1;
         }
     }
-    $row_data{'nomod'} = $row->{'nomod'};
+    $row_data{'nomod'} = $row->{'nomod'} // 0;
+    $row_data{a}     //= '';
     push(@item_value_loop,\%row_data);
 }
 # re-sort, editable items on top, then by permanent location

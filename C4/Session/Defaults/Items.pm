@@ -208,7 +208,7 @@ sub getSavedDefaultsList {
     my $branchcode = $params{'branchcode'};
     my $getAll = $params{'getAll'};
 
-    warn "getSavedDefaultsList( branchcode => '$branchcode', getAll => '$getAll' )" if $debug;
+    #warn "getSavedDefaultsList( branchcode => '$branchcode', getAll => '$getAll' )" if $debug;
 
     my $branchcode = $branchcode || C4::Context->userenv->{'branch'};
     $branchcode = '%' if ( $getAll );

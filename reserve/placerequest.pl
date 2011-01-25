@@ -100,7 +100,7 @@ if ($type eq 'str8' && $borrowernumber ne ''){
             AddReserve($branch,$borrowernumber->{'borrowernumber'},$biblionumber,'a',[$biblionumber],
                        $bibinfo->{rank},$startdate,$notes,$bibinfo->{title},$checkitem,$found);
         } else {
-            if ($input->param('request') eq 'any'){
+            if (($input->param('request') // '') eq 'any'){
                 # place a request on 1st available
                 AddReserve($branch,$borrowernumber->{'borrowernumber'},$biblionumber,'a',\@realbi,$rank[0],$startdate,$notes,$title,$checkitem,$found);
             } elsif ($reqbib[0] && $reqbib[0] ne ''){

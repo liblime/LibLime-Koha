@@ -300,6 +300,7 @@ function checkForDuplicateDefaultsName() {
 <div id="cataloguing_additem_newitem">
     <form method="post" action="/cgi-bin/koha/cataloguing/additem.pl" name="f">
     <input type="hidden" name="op" value="<!-- TMPL_VAR NAME="op" -->" />
+    <input type="hidden" name="mv" value="<!-- TMPL_VAR NAME="mv" -->" />
     <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
     <!-- TMPL_IF name="opisadd" -->
     <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
@@ -522,7 +523,7 @@ Please use a different barcode.\
 				<!-- /TMPL_IF -->
 
 				if (answer) {
-					window.location="additem.pl?op=edititem&biblionumber=<!--TMPL_VAR NAME="biblionumber"-->&itemnumber=" + data.itemnumber;
+					window.location="additem.pl?op=edititem&mv=1&biblionumber=<!--TMPL_VAR NAME="biblionumber"-->&itemnumber=" + data.itemnumber;
 				} else {
 					$('#<!-- TMPL_VAR NAME="barcode_id" -->').attr('value','');
 					$('#<!-- TMPL_VAR NAME="barcode_id" -->').focus();

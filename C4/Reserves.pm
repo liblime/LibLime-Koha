@@ -929,7 +929,7 @@ sub GetReserveFee {
     $sth->execute($borrowernumber);
     my $data = $sth->fetchrow_hashref;
     $sth->finish();
-    my $fee      = $data->{'reservefee'};
+    my $fee = $data->{'reservefee'} // 0;
     $query = qq/
       SELECT * FROM items
     LEFT JOIN itemtypes ON items.itype = itemtypes.itemtype
@@ -1268,6 +1268,7 @@ sub GetReserve_OldestReserve {
 
   my @reserves = _Findgroupreserve( $biblioitemnumber, $biblionumber, $itemnumber );
   foreach my $r (@reserves) {
+      ## FIXME: $reserve hashref has no data yet! -hQ
       $reserve = $r if ($r->{reservedate} gt $reserve->{reservedate});
   }
   
@@ -2159,6 +2160,51 @@ sub CanHoldMultipleItems {
   }
   
   return 0;
+}
+
+sub fixPrioritiesOnItemMove
+{
+   my $biblionumber = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth;
+
+   ## check to see if we have conflicting priorities
+   $sth = $dbh->prepare('SELECT reservenumber,priority
+      FROM reserves
+     WHERE biblionumber = ?
+       AND priority > 0');
+   $sth->execute($biblionumber);
+   my %seen = ();
+   my $reshuffle = 0;
+   while (my $row = $sth->fetchrow_hashref()) {
+      if ($seen{$$row{priority}}) {
+         $reshuffle = 1;
+         last;
+      }
+      else {
+         $seen{$$row{priority}} = $$row{reservenumber};
+      }
+   }
+   return 1 unless $reshuffle;
+
+   ## more than one reserve has the same priority number.
+   ## ok, this is what they want: integrate the item-level hold to
+   ## the bib's holds queue, reshuffling the priorities based on datetime
+   $sth = $dbh->prepare('SELECT reservenumber,reservedate
+      FROM reserves
+     WHERE biblionumber = ?
+       AND priority > 0
+     ORDER BY reservedate ASC ');
+   $sth->execute($biblionumber);
+   my $c = 1;
+   while(my $row = $sth->fetchrow_hashref()) {
+      my $sth2 = $dbh->prepare('UPDATE reserves
+         SET priority      = ?
+       WHERE reservenumber = ?');
+      $sth2->execute($c,$$row{reservenumber});
+      $c++;
+   }
+   return 1;
 }
 
 =item _FixPriority

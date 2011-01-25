@@ -46,33 +46,34 @@ my $itemnumber = $cgi->param('itemnumber');
 my $params;
 
 my $item = GetItem('', $barcode );
-  
-if ( $item->{'itemnumber'} != $itemnumber ) {
-  my $biblio = GetBiblioData( $item->{'biblionumber'} );
-  my $issue = GetItemIssue( $item->{'itemnumber'} );
-  my ( $item_level_reserves ) = GetReservesFromItemnumber( $item->{'itemnumber'} );
-  my ( $bib_level_reserves ) = GetReservesFromBiblionumber( $item->{'biblionumber'}, '', 1 );
+if ($item) {  
+   if ( $item->{'itemnumber'} != $itemnumber ) {
+      my $biblio = GetBiblioData( $item->{'biblionumber'} );
+      my $issue = GetItemIssue( $item->{'itemnumber'} );
+      my ( $item_level_reserves ) = GetReservesFromItemnumber( $item->{'itemnumber'} );
+      my ( $bib_level_reserves ) = GetReservesFromBiblionumber( $item->{'biblionumber'}, '', 1 );
     
-  $params->{'itemnumber'} = $item->{'itemnumber'};
-  $params->{'location'} = $item->{'location'};
-  $params->{'holdingbranch'} = $item->{'holdingbranch'};
-  $params->{'homebranch'} = $item->{'homebranch'};
-  $params->{'title'} = $biblio->{'title'};
-  $params->{'subtitle'} = $biblio->{'subtitle'} || '';
-  $params->{'item_level_reserves'} = $item_level_reserves;
-  $params->{'bib_level_reserves'} = $bib_level_reserves;
+      $params->{'itemnumber'} = $item->{'itemnumber'};
+      $params->{'location'} = $item->{'location'};
+      $params->{'holdingbranch'} = $item->{'holdingbranch'};
+      $params->{'homebranch'} = $item->{'homebranch'};
+      $params->{'title'} = $biblio->{'title'};
+      $params->{'subtitle'} = $biblio->{'subtitle'} || '';
+      $params->{'item_level_reserves'} = $item_level_reserves;
+      $params->{'bib_level_reserves'} = $bib_level_reserves;
   
-  my $record = GetMarcBiblio( $item->{'biblionumber'} );
-  my $field_245 = $record->field('245');
-  if ( $field_245 ) {
-    $params->{'medium'} = $field_245->subfield('h') || '';
-    $params->{'field245n'} = $field_245->subfield('n') || '';
-    $params->{'field245p'} = $field_245->subfield('p') || '';
-  }
+      my $record = GetMarcBiblio( $item->{'biblionumber'} );
+      my $field_245 = $record->field('245');
+      if ( $field_245 ) {
+         $params->{'medium'} = $field_245->subfield('h') || '';
+         $params->{'field245n'} = $field_245->subfield('n') || '';
+         $params->{'field245p'} = $field_245->subfield('p') || '';
+      }
   
-  if ( $issue ) {
-    $params->{'date_due'} = C4::Dates->new( $issue->{'date_due'}, "iso")->output;
-  }
+      if ( $issue ) {
+         $params->{'date_due'} = C4::Dates->new( $issue->{'date_due'}, "iso")->output;
+      }
+   }
 }
 
 my($ok,$errStr) = C4::Barcodes::codabar::validate(

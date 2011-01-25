@@ -184,6 +184,8 @@ sub get_form_values {
         foreach my $subfield ( sort keys %{$tagslib->{$tag}} ) {
             next if subfield_is_koha_internal_p( $subfield );
             my $subfieldlib = $tagslib->{$tag}->{$subfield};
+            next unless $subfieldlib;
+            next unless defined $subfieldlib->{'tab'};
             next if ( $subfieldlib->{'tab'} ne "10" );
             next if ( $subfieldlib->{'kohafield'} && $options->{'omit'} && grep( { $_ eq $subfieldlib->{'kohafield'} } @{ $options->{'omit'} } ) ); 
             my %subfield_data;
@@ -230,7 +232,10 @@ sub get_form_values {
                 my $CNsubfield2 = substr( $pref_itemcallnumber, 4, 1 );
                 my $temp2 = $options->{'biblio'}->field( $CNtag );
                 if ( $temp2 ) {
-                    $value = ( $temp2->subfield( $CNsubfield )).' '.( $temp2->subfield( $CNsubfield2 ));
+                    $CNsubfield  //= undef;
+                    $CNsubfield2 //= undef;
+                    $value = ( $temp2->subfield( $CNsubfield ) // '')
+                    .' '.( $temp2->subfield( $CNsubfield2 ) // '');
                     #remove any trailing space incase one subfield is used
                     $value =~ s/^\s+|\s+$//g;
                 }
