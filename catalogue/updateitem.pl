@@ -60,16 +60,19 @@ for ($damaged,$itemlost,$wthdrawn,$suppress) {
 
 # modify MARC item if input differs from items table.
 my $item_changes = {};
+my $cancel_reserve = 0;
 if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
     if ((not defined $item_data_hashref->{'itemnotes'}) or $itemnotes ne $item_data_hashref->{'itemnotes'}) {
         $item_changes->{'itemnotes'} = $itemnotes;
     }
 } elsif ($itemlost ne $item_data_hashref->{'itemlost'}) {
     $item_changes->{'itemlost'} = $itemlost;
+    $cancel_reserve = 1;
 } elsif ($wthdrawn ne $item_data_hashref->{'wthdrawn'}) {
     $item_changes->{'wthdrawn'} = $wthdrawn;
 } elsif ($damaged ne $item_data_hashref->{'damaged'}) {
     $item_changes->{'damaged'} = $damaged;
+    $cancel_reserve = 1 if (!C4::Context->preference('AllowHoldsOnDamagedItems'));
 } elsif ($otherstatus ne $item_data_hashref->{'otherstatus'}) {
     $item_changes->{'otherstatus'} = $otherstatus;
     undef($item_changes->{'otherstatus'}) if ($otherstatus eq '');
@@ -90,6 +93,16 @@ foreach my $issue_ref (@$issues) {
   if ($issue_ref->{'itemnumber'} eq $itemnumber) {
     $lostreturned_issue = $issue_ref;
     last;
+  }
+}
+
+# Cancel item specific reserve (or next available reserve if only one item)
+# if changing to non-holdable status
+if ($cancel_reserve) {
+  my $item_count = GetItemsCount($biblionumber);
+  my ($restype,$reserves,$reserve_count) = CheckReserves($itemnumber);
+  if ($reserves != 0) {
+    CancelReserve($reserves->{reservenumber}) if ((defined $reserves->{itemnumber}) || $item_count == 1);
   }
 }
 
