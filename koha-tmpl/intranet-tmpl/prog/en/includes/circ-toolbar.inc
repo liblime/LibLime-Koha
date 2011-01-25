@@ -46,8 +46,21 @@ function update_child() {
 
 	// YUI Toolbar Functions
 	function printx_window(print_type) {
-		window.open("/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=" + print_type, "printwindow");
-		return false;
+		<!-- TMPL_IF NAME="UseReceiptTemplates" -->
+			if ( print_type == 'page' ) {
+				window.open("/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=" + print_type, "printwindow");
+			} else {
+				if ( print_type == 'slip' ) {
+					window.open("/cgi-bin/koha/tools/receipt_generation.pl?action=check_out&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->", "printwindow");
+				} else { // print_type = qslip
+					window.open("/cgi-bin/koha/tools/receipt_generation.pl?action=check_out_quick&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->", "printwindow");
+				}
+			}
+			return false;
+		<!-- TMPL_ELSE -->
+			window.open("/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=" + print_type, "printwindow");
+			return false;
+		<!-- /TMPL_IF -->
 	}
 
 	function yuiToolbar() {

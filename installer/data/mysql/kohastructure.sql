@@ -2816,6 +2816,21 @@ CREATE TABLE itemstatus (
   UNIQUE KEY statuscode (statuscode)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `receipt_templates` (
+  `module` varchar(20) NOT NULL default '',
+  `code` varchar(20) NOT NULL default '',
+  `branchcode` varchar(10) NOT NULL,
+  `name` varchar(100) NOT NULL default '',
+  `content` text,
+  PRIMARY KEY  (`code`,`branchcode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `receipt_template_assignments` (
+  `action` varchar(30) NOT NULL,
+  `branchcode` varchar(10) NOT NULL,
+  `code` varchar(20) default NULL,
+  PRIMARY KEY  (`action`,`branchcode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

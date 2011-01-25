@@ -67,5 +67,7 @@ INSERT INTO permissions (module_bit, code, description) VALUES
    (13, 'batch_upload_patron_images', 'Upload patron images in batch or one at a time'),
    (13, 'batch_edit_items', 'User can access the batch edit items function'),
    (13, 'schedule_tasks', 'Schedule tasks to run'),
-   (13, 'manage_csv_profiles', 'Manage CSV export profiles')
+   (13, 'manage_csv_profiles', 'Manage CSV export profiles'),
+   (13, 'receipts_manage', 'Create, Edit & Delete Receipt Templates'), 
+   (13, 'receipts_assign', 'Assign Receipt Templates to Various Actions')
 ;

@@ -4152,6 +4152,40 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Expand size of branches.branchip )\n";
 }
 
+$DBversion = '4.03.10.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+        CREATE TABLE IF NOT EXISTS `receipt_templates` (
+          `module` varchar(20) NOT NULL default '',
+          `code` varchar(20) NOT NULL default '',
+          `branchcode` varchar(10) NOT NULL,
+          `name` varchar(100) NOT NULL default '',
+          `content` text,
+          PRIMARY KEY  (`code`,`branchcode`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    });
+    $dbh->do(q{
+        CREATE TABLE IF NOT EXISTS `receipt_template_assignments` (
+          `action` varchar(30) NOT NULL,
+          `branchcode` varchar(10) NOT NULL,
+          `code` varchar(20) default NULL,
+          PRIMARY KEY  (`action`,`branchcode`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    });
+    $dbh->do(q{
+        INSERT INTO `systempreferences` (`variable` ,`value` ,`options` ,`explanation` ,`type`) VALUES
+            ('UseReceiptTemplates', '0', '', 'Enable the use of the Receipt Templates system.', 'YesNo')
+    });
+    $dbh->do(q{
+        INSERT INTO `permissions` (`module_bit`, `code`, `description`) VALUES 
+            ('13', 'receipts_manage', 'Create, Edit & Delete Receipt Templates'), 
+            ('13', 'receipts_assign', 'Assign Receipt Templates to Various Actions')
+    });
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add ReceiptTemplates)\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

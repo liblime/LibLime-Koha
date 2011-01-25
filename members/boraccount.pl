@@ -32,6 +32,7 @@ use CGI;
 use C4::Members;
 use C4::Branch;
 use C4::Accounts;
+use C4::ReceiptTemplates;
 
 my $input=new CGI;
 
@@ -136,6 +137,11 @@ $template->param(
     total               => sprintf("%.2f",$total),
     totalcredit         => $totalcredit,
 	is_child        => ($data->{'category_type'} eq 'C'),
-    accounts            => \@accountrows );
+    accounts            => \@accountrows ,
+
+    UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
+    UseReceiptTemplates_PaymentReceived => GetAssignedReceiptTemplate({ action => 'payment_received', branchcode => C4::Context->userenv->{'branch'} }),
+            
+    );
 
 output_html_with_http_headers $input, $cookie, $template->output;

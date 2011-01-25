@@ -96,6 +96,7 @@ $tabsysprefs{GranularPermissions}   = "Admin";
 $tabsysprefs{AllowOverrideLogin}    = "Admin";
 $tabsysprefs{itembarcodelength}     = "Admin";
 $tabsysprefs{patronbarcodelength}   = "Admin";
+$tabsysprefs{UseReceiptTemplates}   = "Admin";
 
 # Authorities
 $tabsysprefs{authoritysep}          = "Authorities";
@@ -104,7 +105,7 @@ $tabsysprefs{dontmerge}             = "Authorities";
 $tabsysprefs{BiblioAddsAuthorities} = "Authorities";
 
 # Cataloguing
-$tabsysprefs{BibliosCataloging}          = "Cataloging";
+$tabsysprefs{BibliosCataloging}           = "Cataloging";
 $tabsysprefs{advancedMARCeditor}          = "Cataloging";
 $tabsysprefs{autoBarcode}                 = "Cataloging";
 $tabsysprefs{hide_marc}                   = "Cataloging";

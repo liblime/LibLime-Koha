@@ -331,3 +331,4 @@ INSERT IGNORE INTO `systempreferences` (variable,value,explanation,options,type)
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('BatchItemEditor','PTFS','Choose the preferred bulk item editor.','PTFS|Community','Choice');
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('EnableHoldOnShelfNotice','0','If ON, allow hold awaiting pickup (holds shelf) notices to be sent.','','YesNo');
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('ShowOPACAvailabilityFacetSearch','1','If ON, show the availability search option in the OPAC Refine your search.','','YesNo');
+INSERT IGNORE INTO `systempreferences` (`variable` ,`value` ,`options` ,`explanation` ,`type`) VALUES ('UseReceiptTemplates', '0', '', 'Enable the use of the Receipt Templates system.', 'YesNo');

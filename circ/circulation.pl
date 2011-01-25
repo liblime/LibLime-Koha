@@ -887,6 +887,7 @@ $template->param(
     show_override             => $borrowernumber && C4::Context->preference("AllowOverrideLogin") && !$circ_session->{'override_user'},
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
     AllowDueDateInPast        => C4::Context->preference('AllowDueDateInPast'),
+    UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
 );
 
 # Pass off whether to display initials or not

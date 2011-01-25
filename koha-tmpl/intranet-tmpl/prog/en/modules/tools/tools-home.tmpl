@@ -85,6 +85,16 @@
     <dd>View lists of items selected for batch delete</dd>
     <!-- /TMPL_IF -->
 
+    <!-- TMPL_IF NAME="CAN_user_tools_receipts_manage" -->
+    <dt><a href="/cgi-bin/koha/tools/receipt_template_manager.pl">Receipt Template Manager</a></dt>
+    <dd>Create, Edit & Delete Receipt Templates</dd>
+    <!-- /TMPL_IF -->
+
+    <!-- TMPL_IF NAME="CAN_user_tools_receipts_assign" -->
+    <dt><a href="/cgi-bin/koha/tools/receipt_template_assignments.pl">Assign Receipt Templates</a></dt>
+    <dd>Assign Reciept Templates to Various Actions</dd>
+    <!-- /TMPL_IF -->
+
 	</dl>
 </div>
 <div class="yui-u">

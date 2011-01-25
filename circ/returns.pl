@@ -44,6 +44,7 @@ use C4::LostItems;
 use C4::Members;
 use C4::Branch; # GetBranches GetBranchName
 use C4::Koha;   # FIXME : is it still useful ?
+use C4::ReceiptTemplates;
 
 my $query = new CGI;
 
@@ -661,6 +662,12 @@ $template->param(
     soundon                 => C4::Context->preference("SoundOn"),
     DHTMLcalendar_dateformat=> C4::Dates->DHTMLcalendar(),
     AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange'),
+    UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
+    UseReceiptTemplates_NotFound => GetAssignedReceiptTemplate({ action => 'not_found', branchcode => C4::Context->userenv->{'branch'} }),
+    UseReceiptTemplates_HoldFound => GetAssignedReceiptTemplate({ action => 'hold_found', branchcode => C4::Context->userenv->{'branch'} }),
+    UseReceiptTemplates_TransitHold => GetAssignedReceiptTemplate({ action => 'transit_hold', branchcode => C4::Context->userenv->{'branch'} }),
+    UseReceiptTemplates_CheckIn => GetAssignedReceiptTemplate({ action => 'check_in', branchcode => C4::Context->userenv->{'branch'} }),
+    UseReceiptTemplates_ClaimsReturnedFound => GetAssignedReceiptTemplate({ action => 'claims_returned_found', branchcode => C4::Context->userenv->{'branch'} }),
 );
 
 # actually print the page!
