@@ -24,6 +24,7 @@ borrowernumber cardnumber reservedate title itemcallnumber holdingbranch pickbra
 notes item_level_request queue_sofar);
 
 C4::Reserves::UnorphanCancelledHolds();
+C4::Reserves::CleanupQueue();
 
 HOLD:
 foreach my $res(@{C4::Reserves::GetReservesForQueue() // []}) {

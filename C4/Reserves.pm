@@ -138,6 +138,33 @@ BEGIN {
     );
 }
 
+# not exported.
+# sanity checks for running build_holds_queue.pl
+sub CleanupQueue
+{
+   my $dbh = C4::Context->dbh;
+
+   ## if item reserve is not prioritized (found='W' or 'T', priority=0),
+   ## remove it from tmp_holdsqueue
+   my $sth = $dbh->prepare("
+         SELECT tmp_holdsqueue.reservenumber
+           FROM reserves,tmp_holdsqueue
+          WHERE reserves.found IS NOT NULL
+            AND reserves.priority = 0
+            AND reserves.reservenumber = tmp_holdsqueue.reservenumber
+   ");
+   $sth->execute();
+   my $c = 0;
+   while(my $row = $sth->fetchrow_hashref()) {
+      my $sth2 = $dbh->prepare("
+         DELETE FROM tmp_holdsqueue
+          WHERE reservenumber = ?");
+      $sth2->execute($$row{reservenumber});
+      $c++;
+   }
+   return $c;
+}
+
 sub SaveHoldInQueue
 {
    my %new = @_;
@@ -237,8 +264,19 @@ sub _itemfillbib
    my $dbh = C4::Context->dbh;
    my $sth;
 
+   ## trivial case: if item is currently checked out, it can't be used
+   ## to fill a hold.  this is an explicit check not caught by
+   ## IsAvailableForItemLevelRequest().
+   return if $$item{onloan};
+
+   ## theoretically, the above check should sync with the issues table,
+   ## so skip that check.
+
+   ## if the item can't be used to place a hold, it can't be used to
+   ## fill a hold.
    return unless IsAvailableForItemLevelRequest($$item{itemnumber});
-   ## check issuing rules
+
+   ## check with issuing rules
    $sth = $dbh->prepare("
       SELECT biblioitems.itemtype
         FROM biblioitems,items
