@@ -283,7 +283,7 @@ my $letter = {
 };
 
 foreach my $email ( @to ) {
-    print "sending reports to $email\n";
+    print "sending reports to $email\n" if ( $verbose );
 
     C4::Letters::EnqueueLetter( {
         borrowernumber => 1,
