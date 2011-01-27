@@ -324,7 +324,7 @@ if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
   }                                                                                              
 } 
 
-my $inBranchcode = IsIpInLibrary();
+my $inBranchcode = C4::Branch::GetBranchByIp();
 if ( $inBranchcode && C4::Context->preference('AllowOnShelfHolds') && !$branches->{ $inBranchcode }->{'branchonshelfholds'} ) {
   foreach my $biblionumber ( @biblionumbers ) {
     if ( GetAvailableItemsCount( $biblionumber, $inBranchcode ) ) {

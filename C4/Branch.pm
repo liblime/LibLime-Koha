@@ -17,6 +17,10 @@ package C4::Branch;
 
 
 use strict;
+use warnings;
+use Carp;
+use Net::CIDR::Compare;
+
 require Exporter;
 use Memoize;
 
@@ -571,6 +575,33 @@ sub get_branch_code_from_name {
    my $sth = $dbh->prepare($query);
    $sth->execute(@branch_name);
    return $sth->fetchrow_array;
+}
+
+
+# This searches the contents of branches.branchip for a match to parameter $ip.
+# Note that this means the matched branch is not predictable if there are
+# overlapping IP ranges!
+# 
+# Returns the branches.branchcode for the first match or undef if no match.
+sub GetBranchByIp {
+    my ($ip) = shift
+               // $ENV{HTTP_X_FORWARDED_FOR}
+               // $ENV{REMOTE_ADDR};
+
+    my $collection = Net::CIDR::Compare->new();
+
+    my $client_cidr = $collection->new_list();
+    $collection->add_range($client_cidr, $ip, 0);
+    
+    foreach my $branch (values %{GetBranches()}) {
+        my $library_cidr = $collection->new_list();
+        map {$collection->add_range($library_cidr, $_, 0)} split(/\n/, $branch->{branchip});
+        $collection->process_intersection();
+        return $branch->{branchcode} if ($collection->get_next_intersection_range());
+        $collection->remove_list($library_cidr);
+    }
+
+    return;
 }
 
 1;

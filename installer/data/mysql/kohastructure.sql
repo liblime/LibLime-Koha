@@ -593,7 +593,7 @@ CREATE TABLE `branches` (
   `branchemail` mediumtext,
   `branchurl` mediumtext,
   `issuing` tinyint(4) default NULL,
-  `branchip` varchar(15) default NULL,
+  `branchip` TEXT default NULL,
   `branchprinter` varchar(100) default NULL,
   `branchnotes` mediumtext,
   `patronbarcodeprefix` char(15) default NULL,

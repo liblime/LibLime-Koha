@@ -4142,6 +4142,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
+$DBversion = '4.03.10.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+        ALTER TABLE branches CHANGE branchip branchip TEXT DEFAULT NULL
+    });
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Expand size of branches.branchip )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

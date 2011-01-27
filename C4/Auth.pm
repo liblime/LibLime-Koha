@@ -18,6 +18,9 @@ package C4::Auth;
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+use warnings;
+use Carp;
+use Net::CIDR::Compare;
 use Digest::MD5 qw(md5_base64);
 use CGI::Session;
 
@@ -1561,39 +1564,34 @@ sub getborrowernumber {
   ip address list for the given branchcode. 
   
   If no ip address is given, it will default to
-  the ip address contained in $ENV{'REMOTE_ADDR'};
-  
-  if 'onlymine' is set, the function will only check
-  to see if the ip matches one of the ip address for
-  the logged in branch.
-  
-  Returns the branchcode of the first match found,
-  no value otherwise.
-  
-=cut
-  
-sub IsIpInLibrary {
-  my ( $params ) = @_;
-  my $ip 		= $params->{'ip'} || $ENV{'REMOTE_ADDR'};
-  my $branchcode	= $params->{'branchcode'};
-  
-  my $match = 0;
+  the ip address contained in $ENV{HTTP_X_FORWARDED_FOR}
+  or, if that's not set, $ENV{REMOTE_ADDR}.
+   
+  Returns 0 or 1 as boolean values.
 
-  my $branches = GetBranches( my $onlymine = 0, $branchcode);
-  
-  foreach my $key ( keys %$branches ) {
-    my $domain = $branches->{ $key }->{'branchip'};
-    my @domain = split( /\n/, $domain );
-    
-    foreach my $d ( @domain ) {
-      $d =~ s/\r//g; ## Strip carriage return aka "\r";
-      if ( $ip =~ m/^$d/ ) {
-        return $key; ## Return immediately for speed
-      }
-    }
-  }
-  
-  return;
+=cut
+
+sub IsIpInLibrary {
+    my ( $params ) = @_;
+
+    my $collection = Net::CIDR::Compare->new();
+
+    # Seed a list of CIDR blocks with the requestor's IP
+    my $client_ip = $params->{ip}
+                    // $ENV{HTTP_X_FORWARDED_FOR}
+                    // $ENV{REMOTE_ADDR};
+    my $client_cidr = $collection->new_list();
+    $collection->add_range($client_cidr, $client_ip, 0);
+
+    # Seed a list of CIDR blocks with branch details
+    my $branch = GetBranchDetail($params->{branchcode});
+    croak "Cannot retrieve details for branch '$params->{branchcode}'" if not $branch;
+    my $library_cidr = $collection->new_list();
+    map {$collection->add_range($library_cidr, $_, 0)} split(/\n/, $branch->{branchip});
+
+    # Finally find the (possibly null) intersection and return our answer
+    $collection->process_intersection();
+    return ($collection->get_next_intersection_range()) ? 1 : 0;
 }
 
 sub _uniq {
