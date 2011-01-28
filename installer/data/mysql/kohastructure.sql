@@ -964,6 +964,7 @@ CREATE TABLE `deleteditems` (
   `damaged` tinyint(1) NOT NULL default 0,
   `itemlost` tinyint(1) NOT NULL default 0,
   `wthdrawn` tinyint(1) NOT NULL default 0,
+  `suppress` tinyint(1) NOT NULL DEFAULT 0,
   `itemcallnumber` varchar(255) default NULL,
   `issues` smallint(6) default NULL,
   `renewals` smallint(6) default NULL,
@@ -987,6 +988,7 @@ CREATE TABLE `deleteditems` (
   `enumchron` varchar(80) default NULL,
   `copynumber` varchar(32) default NULL,
   `marc` longblob,
+  `otherstatus` varchar(10),
   PRIMARY KEY  (`itemnumber`),
   KEY `delitembarcodeidx` (`barcode`),
   KEY `delitembinoidx` (`biblioitemnumber`),
@@ -1211,6 +1213,7 @@ CREATE TABLE `items` (
   `damaged` tinyint(1) NOT NULL default 0,
   `itemlost` tinyint(1) NOT NULL default 0,
   `wthdrawn` tinyint(1) NOT NULL default 0,
+  `suppress` tinyint(1) NOT NULL DEFAULT 0,
   `itemcallnumber` varchar(255) default NULL,
   `issues` smallint(6) default NULL,
   `renewals` smallint(6) default NULL,
@@ -1234,6 +1237,7 @@ CREATE TABLE `items` (
   `enumchron` varchar(80) default NULL,
   `copynumber` varchar(32) default NULL,
   `catstat` varchar(80) default NULL,
+  `otherstatus` varchar(10),
   PRIMARY KEY  (`itemnumber`),
   UNIQUE KEY `itembarcodeidx` (`barcode`),
   KEY `itembinoidx` (`biblioitemnumber`),
@@ -2800,6 +2804,18 @@ CREATE TABLE `export_format` (
   `marcfields` mediumtext NOT NULL,
   PRIMARY KEY  (`export_format_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `itemstatus`;
+CREATE TABLE itemstatus (
+  statuscode_id int(11) NOT NULL auto_increment,
+  statuscode varchar(10) NOT NULL default '',
+  description varchar(25) default NULL,
+  holdsallowed tinyint(1) NOT NULL default 0,
+  holdsfilled tinyint(1) NOT NULL default 0,
+  PRIMARY KEY  (statuscode_id),
+  UNIQUE KEY statuscode (statuscode)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
