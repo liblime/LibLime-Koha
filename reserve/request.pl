@@ -481,12 +481,11 @@ foreach my $biblionumber (@biblionumbers) {
             my $policy_holdallowed = 1;
             $item->{'holdallowed'} = $issuingrule->{'holdallowed'};
 
-            if (!$issuingrule->{'holdallowed'} ||
-                ( 
-                  ($borrowerinfo->{branchcode} && $borrowerinfo->{'branchcode'} ne $item->{'homebranch'} ) 
-                  && ($issuingrule->{'branchcode'} eq '*')
-                  && $issuingrule->{holdallowed}
-                   ) 
+            if (!$issuingrule->{holdallowed}
+                || (
+                     ($borrowerinfo->{branchcode} && $borrowerinfo->{branchcode} ne $item->{homebranch} ) 
+                     && $issuingrule->{holdallowed} == 1
+                   )
                 ) {
                 $policy_holdallowed = 0;
             }
