@@ -790,6 +790,7 @@ sub _build_weighted_query {
     }
 
     $weighted_query .= "))";                       # close rank specification
+    $weighted_query = "ln,rtrn=$operand" if ($index eq "ln");
     return $weighted_query;
 }
 
