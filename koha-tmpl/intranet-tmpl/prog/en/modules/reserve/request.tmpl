@@ -248,7 +248,7 @@ function checkMultiHold() {
     </div>
 <!-- /TMPL_IF -->	
 
-<!-- TMPL_IF NAME="messages" -->
+<!-- TMPL_IF EXPR="messages && !none_available" -->
     <div class="dialog message"><ul>
     <!-- TMPL_IF NAME="expiry" -->
     <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a>'s <strong>account has expired</strong></li>
