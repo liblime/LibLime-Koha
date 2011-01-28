@@ -142,6 +142,7 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
 
     my $letter;
     my $borrower_preferences;
+    my @Ttitems;
     if ( 0 == $upcoming->{'days_until_due'} ) {
         # This item is due today. Send an 'item due' message.
         $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $upcoming->{'borrowernumber'},
@@ -242,6 +243,7 @@ END_SQL
 PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
     my @items = @{$upcoming_digest->{$borrowernumber}};
     my $count = scalar @items;
+    my $borrower = C4::Members::GetMember($borrowernumber);
     my $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $borrowernumber,
                                                                                   message_name   => 'advance notice' } );
     # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
@@ -259,6 +261,7 @@ PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
     }
     $letter = parse_letter( { letter         => $letter,
                               borrowernumber => $borrowernumber,
+                              branchcode     => $borrower->{branchcode},
                               substitute     => { count => $count,
                                                   'items.content' => $titles
                                                 }
@@ -280,6 +283,7 @@ PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
 PATRON: for my $borrowernumber ( keys %{ $due_digest} ) {
     my @items = @{$due_digest->{$borrowernumber}};
     my $count = scalar @items;
+    my $borrower = C4::Members::GetMember($borrowernumber);
     my $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $borrowernumber,
                                                                                   message_name   => 'item due' } );
     # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
@@ -296,6 +300,7 @@ PATRON: for my $borrowernumber ( keys %{ $due_digest} ) {
     }
     $letter = parse_letter( { letter         => $letter,
                               borrowernumber => $borrowernumber,
+                              branchcode     => $borrower->{branchcode},
                               substitute     => { count => $count,
                                                   'items.content' => $titles
                                                 }
