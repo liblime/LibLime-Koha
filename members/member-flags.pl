@@ -146,11 +146,18 @@ sub update_and_redirect {
       get_set_permissions( $input->param('flag') );
 
     my $dbh = C4::Context->dbh();
-    my $sth;
+    my ($sth,$sth2);
+
+    # examine existing sub permissions before deletion for logging purposes
+    $sth = $dbh->prepare(
+      'SELECT * FROM user_permissions WHERE borrowernumber = ?');
+    $sth->execute($member);
+    my $old_user_subpermissions = $sth->fetchall_arrayref({});
 
     # construct flags
     my $accessflags = $bor->{authflags};
     my $field;
+    my $all_subperms = get_all_subpermissions();
     my $module_flags = 0;
     my $userflags =
       $dbh->selectall_arrayref( 'SELECT bit,flag FROM userflags ORDER BY bit',
@@ -160,14 +167,19 @@ sub update_and_redirect {
             $module_flags += 2**$uf->{bit};
         }
         if (defined($accessflags->{$uf->{flag}}) && !defined($all_module_perms->{$uf->{flag}})) {
-          $sth = $dbh->prepare($query);
+          $sth2 = $dbh->prepare($query);
           $field = $uf->{flag} . " permission";
-          $sth->execute($member,$loggedinuser,$field,'ON','OFF');
+          $sth2->execute($member,$loggedinuser,$field,'ON','OFF');
+          foreach my $sub_perm ( keys %{$all_subperms->{$uf->{flag}}} ) {
+            push @$old_user_subpermissions,  { borrowernumber => $member,
+                                               module_bit     => $uf->{bit},
+                                               code           => $sub_perm };
+          }
         }
         if (!defined($accessflags->{$uf->{flag}}) && defined($all_module_perms->{$uf->{flag}})) {
-          $sth = $dbh->prepare($query);
+          $sth2 = $dbh->prepare($query);
           $field = $uf->{flag} . " permission";
-          $sth->execute($member,$loggedinuser,$field,'OFF','ON');
+          $sth2->execute($member,$loggedinuser,$field,'OFF','ON');
         }
     }
 
@@ -177,11 +189,13 @@ sub update_and_redirect {
 
     if ( C4::Context->preference('GranularPermissions') ) {
 
-        # examine existing sub permissions before deletion for logging purposes
-        $sth = $dbh->prepare(
-            'SELECT * FROM user_permissions WHERE borrowernumber = ?');
-        $sth->execute($member);
-        my $user_permissions = $sth->fetchall_arrayref({});
+        my %flags;
+        $sth2 = $dbh->prepare(
+            'SELECT bit,flag FROM userflags');
+        $sth2->execute();
+        while (my $userflag = $sth2->fetchrow_hashref) {
+          $flags{$userflag->{flag}} = $userflag->{bit};
+        }
 
         # remove existing sub permissions
         $sth = $dbh->prepare(
@@ -198,8 +212,9 @@ sub update_and_redirect {
             foreach my $sub_perm ( @{ $sub_perms->{$module} } ) {
                 $sth->execute( $member, $sub_perm, $module );
             }
-            foreach my $prev_perm (@$user_permissions) {
+            foreach my $prev_perm (@$old_user_subpermissions) {
               my $found = 0;
+              next if ($prev_perm->{module_bit} ne $flags{$module});
               foreach my $sub_perm ( @{ $sub_perms->{$module} } ) {
                 if ($prev_perm->{code} eq $sub_perm) {
                   $found = 1;
@@ -207,23 +222,24 @@ sub update_and_redirect {
                 }
               }
               if (!$found) {
-                $sth = $dbh->prepare($query);
+                $sth2 = $dbh->prepare($query);
                 $field = $prev_perm->{code} . " permission";
-                $sth->execute($member,$loggedinuser,$field,'ON','OFF');
+                $sth2->execute($member,$loggedinuser,$field,'ON','OFF');
               }
             }
             foreach my $sub_perm ( @{ $sub_perms->{$module} } ) {
               my $found = 0;
-              foreach my $prev_perm (@$user_permissions) {
+              foreach my $prev_perm (@$old_user_subpermissions) {
+                next if ($prev_perm->{module_bit} ne $flags{$module});
                 if ($prev_perm->{code} eq $sub_perm) {
                   $found = 1;
                   last;
                 }
               }
               if (!$found) {
-                $sth = $dbh->prepare($query);
+                $sth2 = $dbh->prepare($query);
                 $field = $sub_perm . " permission";
-                $sth->execute($member,$loggedinuser,$field,'OFF','ON');
+                $sth2->execute($member,$loggedinuser,$field,'OFF','ON');
               }
             }
         }
