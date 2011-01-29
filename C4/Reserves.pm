@@ -21,7 +21,7 @@ package C4::Reserves;
 
 
 use strict;
-use warnings;  # FIXME: someday
+use warnings;
 use Carp;
 
 use C4::Context;
@@ -41,7 +41,6 @@ use C4::Letters;
 use C4::Branch qw( GetBranchDetail );
 use C4::Dates qw( format_date_in_iso );
 use C4::Debug;
-use List::MoreUtils qw( firstidx );
 use Date::Calc qw(Today Add_Delta_Days);
 use Time::Local;
         
@@ -67,6 +66,8 @@ C4::Reserves - Koha functions for dealing with reservation.
             T(ransit)  : the reserve is linked to an item but is in transit to the pickup branch
             W(aiting)  : the reserve is linked to an item, is at the pickup branch, and is waiting on the hold shelf
             F(inished) : the reserve has been completed, and is done
+            R(trace)   : the reserve is set to 'trace' because it apparently can't be fulfilled
+            S(uspend)  : the reserve is suspended
   - itemnumber : empty : the reserve is still unaffected to an item
                  filled: the reserve is attached to an item
   The complete workflow is :
@@ -148,7 +149,8 @@ sub CleanupQueue
    my $sth = $dbh->prepare("
          SELECT tmp_holdsqueue.reservenumber
            FROM reserves,tmp_holdsqueue
-          WHERE reserves.found    IN ('W','T')
+          WHERE reserves.found IS NOT NULL
+            AND reserves.found IN ('W', 'T')
             AND reserves.priority = 0
             AND reserves.reservenumber = tmp_holdsqueue.reservenumber
    ");
@@ -345,10 +347,17 @@ sub UnorphanCancelledHolds
    }
 }
 
-sub GetReservesForQueue
-{
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("
+sub GetReservesForQueue {
+    my $dbh = C4::Context->dbh;
+    # This is an ugly but very useful hack which ends up returning the lowest priority
+    # reserve for each biblionumber that has reserves. The secret is in the ordering.
+    # It's ordered by biblionumber, then by priority. Because the whole she-bang is
+    # collected into a hash keyed on the biblionumber, each time a new row is read for
+    # an existing key, it gets overwritten. This has the effect of storing only the
+    # reserve with the lowest priority because of the query ordering.
+    # This would be much nicer if MySQL allowed "LIMIT 1" in sub-selects, but right
+    # now it does not.
+    my $all = $dbh->selectall_hashref(q{
       SELECT reserves.reservenumber,
              reserves.biblionumber,
              reserves.itemnumber,
@@ -365,18 +374,17 @@ sub GetReservesForQueue
              reserves.priority,
              reserves.found
         FROM reserves,borrowers
-       WHERE (
-         /* in transit or otherwise not waiting at pickup branch */
-          (reserves.found IS NULL AND reserves.priority = 1)
-       OR (reserves.found = 'T'   AND reserves.priority = 0)
-       )
+       WHERE
+         ( /* in transit or otherwise not waiting at pickup branch */
+           (reserves.found IS NULL AND reserves.priority >= 1)
+           OR (reserves.found = 'T' AND reserves.priority = 0)
+         )
          AND reserves.reservedate <= CURRENT_DATE()
          AND reserves.borrowernumber = borrowers.borrowernumber
-   ") || die $dbh->errstr();
-   $sth->execute() || die $dbh->errstr();
-   my @all = ();
-   while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
-   return \@all;
+       ORDER BY biblionumber, priority DESC
+    }, 'biblionumber');
+
+    return $all;
 }
 
 sub GetHoldsQueueItems 
@@ -542,6 +550,7 @@ sub GetReservesFromBiblionumber {
                 reserves.found,
                 reserves.itemnumber,
                 reserves.reservenotes,
+                reserves.waitingdate,
                 biblioitems.itemtype
         FROM     reserves
         LEFT JOIN biblioitems ON biblioitems.biblionumber = reserves.biblionumber
@@ -604,9 +613,10 @@ sub GetSuspendedReservesFromBiblionumber {
 
     # Find the desired items in the reserves
     my $query = "SELECT *
-        FROM  reserves_suspended, borrowers
+        FROM  reserves, borrowers
         WHERE biblionumber = ?
-        AND borrowers.borrowernumber = reserves_suspended.borrowernumber
+        AND reserves.found = 'S'
+        AND borrowers.borrowernumber = reserves.borrowernumber
         ORDER BY priority";
     my $sth = $dbh->prepare($query);
     $sth->execute($biblionumber);
@@ -654,7 +664,7 @@ sub GetReservesFromBorrowernumber {
     my ( $borrowernumber, $status ) = @_;
     my $dbh   = C4::Context->dbh;
     my $sth;
-    if ($status eq 'W') {
+    if ($status && $status eq 'W') {
         $sth = $dbh->prepare("
             SELECT *
             FROM   reserves
@@ -663,7 +673,7 @@ sub GetReservesFromBorrowernumber {
             ORDER BY reservedate
         ");
         $sth->execute($borrowernumber,$status);
-    } elsif ($status eq 'U') {
+    } elsif ($status && $status eq 'U') {
         $sth = $dbh->prepare("
             SELECT *
             FROM   reserves
@@ -825,8 +835,9 @@ sub GetSuspendedReservesFromBorrowernumber {
     my $sth;
     $sth = $dbh->prepare("
         SELECT *
-        FROM   reserves_suspended
+        FROM   reserves
         WHERE  borrowernumber=?
+        AND found = 'S'
         ORDER BY reservedate
     ");
     $sth->execute($borrowernumber);
@@ -1195,7 +1206,7 @@ sub CheckReserves {
             }
             # FIXME - $item might be undefined or empty: the caller
             # might be searching by barcode.
-            if ( $res->{'itemnumber'} == $item && $res->{'priority'} == 0) {
+            if ( ($res->{'itemnumber'}//-1) == $item && $res->{'priority'} == 0) {
                 # Found it
                 $exact = $res;
                 last;
@@ -1307,8 +1318,9 @@ sub GetReserve_OldestReserve {
 
   my @reserves = _Findgroupreserve( $biblioitemnumber, $biblionumber, $itemnumber );
   foreach my $r (@reserves) {
-      ## FIXME: $reserve hashref has no data yet! -hQ
-      $reserve = $r if ($r->{reservedate} gt $reserve->{reservedate});
+      if (!defined $reserve || $r->{reservedate} gt $reserve->{reservedate}) {
+          $reserve = $r;
+      }
   }
   
   $reserve->{itemnumber} = $itemnumber if (defined $reserve->{itemnumber});
@@ -1394,17 +1406,9 @@ who are waiting on the book.
 sub CancelReserve {
     my ( $reservenumber ) = @_;
     my $dbh = C4::Context->dbh;
-    my $sth;
 
-    my $branchcode = C4::Context->userenv->{'branch'};
- 
-    # Pull borrowernumber of the user performing the action for logging
-    my $moduser = C4::Context->userenv->{'number'};
-    
     my $reserve = GetReserve($reservenumber);
-    ## FIXME: CancelReserve() is being called more than once by caller,
-    ## so above could be undef on subsequent calls; just get out of here.
-    return unless $reserve;
+    croak "Unable to find reserve ($reservenumber)" if !$reserve;
 
     $dbh->do(q{
         UPDATE reserves
@@ -1418,27 +1422,38 @@ sub CancelReserve {
     _moveToOldReserves($reservenumber);
     _NormalizePriorities($reserve->{biblionumber});
 
-    # remove from tmp_holdsqueue table
-    $sth = $dbh->do('DELETE FROM tmp_holdsqueue WHERE reservenumber = ?',
-                    undef, $reservenumber);
-    
-    my $borrowernumber = $reserve->{'borrowernumber'};
-    my $biblionumber = $reserve->{'biblionumber'};
+    $dbh->do('DELETE FROM tmp_holdsqueue WHERE reservenumber = ?', undef, $reservenumber);
+
+    my $moduser    = C4::Context->userenv->{number};
+    my $branchcode = C4::Context->userenv->{branch};
     UpdateReserveCancelledStats(
-      $branchcode,'reserve_canceled',undef,$biblionumber,
-      $reserve->{'itemnumber'},undef,$reserve->{'borrowernumber'},
-      undef,$moduser
+      $branchcode, 'reserve_canceled', undef, $reserve->{biblionumber},
+      $reserve->{itemnumber}, undef, $reserve->{borrowernumber},
+      undef, $moduser
     );
 
+    _sendReserveCancellationLetter($reserve);
+}
+
+sub _sendReserveCancellationLetter {
+    my $reserve = shift;
+
+    # Pull borrowernumber of the user performing the action for logging
+    my $moduser    = C4::Context->userenv->{number};
+    my $branchcode = C4::Context->userenv->{branch};
+    
     # Send cancellation notice, if desired
     my $mprefs = C4::Members::Messaging::GetMessagingPreferences( { 
-      borrowernumber => $borrowernumber,
+      borrowernumber => $reserve->{borrowernumber},
       message_name   => 'Hold Cancelled'
     } );
+
     if ( $mprefs->{'transports'} && C4::Context->preference('EnableHoldCancelledNotice')) {
-      my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
-      my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d, 
-      CancelReserve()", $biblionumber;
+      my $borrower
+          = C4::Members::GetMember( $reserve->{borrowernumber}, 'borrowernumber');
+      my $biblio
+          = GetBiblioData($reserve->{biblionumber})
+          or die sprintf "BIBLIONUMBER: %d\n", $reserve->{biblionumber};
       my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
       my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');                
 
@@ -2026,7 +2041,7 @@ sub ModReserveAffect {
     # get request - need to find out if item is already
     # waiting in order to not send duplicate hold filled notifications
     my $request = GetReserveInfo($borrowernumber, $biblionumber);
-    my $already_on_shelf = ($request && $request->{found} eq 'W') ? 1 : 0;
+    my $already_on_shelf = ($request && ($request->{found}//'') eq 'W') ? 1 : 0;
 
     # If we affect a reserve that has to be transfered, don't set to Waiting
     my $query;
@@ -2481,7 +2496,8 @@ sub _Findgroupreserve {
     return @results if @results;
     
     # check for title-level targetted match
-    my $title_level_target_query = qq/
+
+    my $title_level_target_query = q/
         SELECT reserves.reservenumber AS reservenumber,
                reserves.biblionumber AS biblionumber,
                reserves.borrowernumber AS borrowernumber,
@@ -2503,8 +2519,7 @@ sub _Findgroupreserve {
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
         JOIN tmp_holdsqueue ON 
              (reserves.biblionumber=tmp_holdsqueue.biblionumber AND
-              reserves.borrowernumber=tmp_holdsqueue.borrowernumber AND
-              reserves.itemnumber=tmp_holdsqueue.itemnumber)
+              reserves.borrowernumber=tmp_holdsqueue.borrowernumber)
         WHERE found IS NULL
         AND priority > 0
         AND item_level_request = 0
@@ -2519,7 +2534,7 @@ sub _Findgroupreserve {
     }
     return @results if @results;
 
-    my $query = qq/
+    my $query = q/
         SELECT reserves.reservenumber AS reservenumber,
                reserves.biblionumber AS biblionumber,
                reserves.borrowernumber AS borrowernumber,
@@ -2540,10 +2555,11 @@ sub _Findgroupreserve {
           LEFT JOIN reserveconstraints ON reserves.biblionumber = reserveconstraints.biblionumber
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
         WHERE reserves.biblionumber = ?
+          AND found <> 'S'
           AND ( ( reserveconstraints.biblioitemnumber = ?
-          AND reserves.borrowernumber = reserveconstraints.borrowernumber
-          AND reserves.reservedate    = reserveconstraints.reservedate )
-          OR  reserves.constrainttype='a' )
+              AND reserves.borrowernumber = reserveconstraints.borrowernumber
+              AND reserves.reservedate    = reserveconstraints.reservedate )
+            OR  reserves.constrainttype='a' )
           AND (reserves.itemnumber IS NULL OR reserves.itemnumber = ?)
           AND reserves.reservedate <= CURRENT_DATE()
     /;
@@ -2718,79 +2734,39 @@ sub _ShiftPriorityByDateAndPriority {
 sub SuspendReserve {
     my ( $reservenumber, $resumedate ) = @_;
 
-    my $dbh = C4::Context->dbh;
-    my $sth;
-    my $query;
+    my $reserve = GetReserve($reservenumber);
+    croak sprintf 'Nonexistent reserve (%d)', $reservenumber unless $reserve;
+    croak 'Cannot suspend waiting or in-transit holds' if ([qw(W T)] ~~ ($reserve->{found} // ''));
 
-    $query = "SELECT * FROM reserves WHERE reservenumber = ?";
-    $sth = $dbh->prepare( $query );
-    my $data = $sth->execute( $reservenumber );
-    my $reserve = $sth->fetchrow_hashref();
-    $sth->finish();
-    
-    $query = "INSERT INTO reserves_suspended SELECT * FROM reserves WHERE reservenumber = ?";
-    $sth = $dbh->prepare( $query );
-    $sth->execute( $reservenumber );
-    $sth->finish();
-    
-    $query = "DELETE FROM reserves WHERE reservenumber = ?";
-    $sth = $dbh->prepare( $query );
-    $sth->execute( $reservenumber );
-    $sth->finish();
+    C4::Context->dbh->do(q{
+            UPDATE reserves SET
+              found = 'S',
+              waitingdate = ?
+            WHERE reservenumber = ?
+            }, undef, $resumedate, $reservenumber
+        );
 
-    ## Reuse waitingdate form resumedate, suspended reserves cannot be waiting.
-    if ( $resumedate ) {
-      $query = "UPDATE reserves_suspended SET waitingdate = ? WHERE reservenumber = ?";
-      $sth = $dbh->prepare( $query );
-      $sth->execute( $resumedate, $reservenumber );
-      $sth->finish();
-    }
-    
-    _FixPriority( $reservenumber, $reserve->{'priority'} );
+    _FixPriority( $reservenumber, $reserve->{priority} );
+    return;
 }
 
 sub ResumeReserve {
     my ( $reservenumber ) = @_;
 
-    my $dbh = C4::Context->dbh;
-    my $sth;
-    my $query;
+    my $reserve = GetReserve($reservenumber);
+    croak sprintf 'Nonexistent reserve (%d)', $reservenumber unless $reserve;
+    return if $reserve->{found} ne 'S';
 
-    $query = "SELECT * FROM reserves_suspended WHERE reservenumber = ?";
-    $sth = $dbh->prepare( $query );
-    my $data = $sth->execute( $reservenumber );
-    my $suspended_reserve = $sth->fetchrow_hashref();
-    $sth->finish();
+    C4::Context->dbh->do(q{
+            UPDATE reserves SET
+              found       = NULL,
+              waitingdate = NULL
+            WHERE reservenumber = ?
+            }, undef, $reservenumber
+        );
 
-    $query = "SELECT priority FROM reserves WHERE reservedate > ? AND biblionumber = ? ORDER BY reservedate ASC";
-    $sth = $dbh->prepare( $query );
-    $data = $sth->execute( $suspended_reserve->{'reservedate'}, $suspended_reserve->{'biblionumber'} );
-    my $next_reserve = $sth->fetchrow_hashref();
-    $sth->finish();
-    my $new_priority = $next_reserve->{'priority'};
-
-    $query = "INSERT INTO reserves SELECT * FROM reserves_suspended WHERE reservenumber = ?";
-    $sth = $dbh->prepare( $query );
-    $sth->execute( $reservenumber );
-    $sth->finish();
-    
-    $query = "DELETE FROM reserves_suspended WHERE reservenumber = ?";
-    $sth = $dbh->prepare( $query );
-    $sth->execute( $reservenumber );
-    $sth->finish();
-
-    $query = "UPDATE reserves SET waitingdate = NULL WHERE reservenumber = ?";
-    $sth = $dbh->prepare( $query );
-    $data = $sth->execute( $reservenumber );
-    $sth->finish();
-
-    $query = "SELECT * FROM reserves WHERE reservenumber = ?";
-    $sth = $dbh->prepare( $query );
-    $data = $sth->execute( $reservenumber );
-    my $reserve = $sth->fetchrow_hashref();
-    $sth->finish();
-
-    _FixPriority( $reservenumber, $new_priority );
+    _FixPriority( $reservenumber, $reserve->{priority} );
+    return;
 }
 
 sub ResumeSuspendedReservesWithResumeDate {

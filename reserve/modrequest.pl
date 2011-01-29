@@ -25,6 +25,7 @@
 use strict;
 use warnings;
 use CGI;
+use DateTime::Format::Strptime;
 use C4::Output;
 use C4::Reserves;
 use C4::Auth;
@@ -68,20 +69,13 @@ if ($CancelBorrowerNumber) {
 # 2) Cancel or modify the queue list of reserves (without item linked)
 else {
     for (my $i=0;$i<$count;$i++){
-        undef $itemnumber[$i] unless $itemnumber[$i] ne '';
+        undef $itemnumber[$i] unless ($itemnumber[$i]//'') ne '';
         ModReserve($rank[$i],$biblionumber[$i],$borrower[$i],$branch[$i],$itemnumber[$i],$reservenumber[$i]); #from C4::Reserves
 
-        if ( $query->param('suspend_' . $reservenumber[$i] ) ) {
-            my $resumedate = $query->param('resumedate_' . $reservenumber[$i] );
-            if ( $resumedate ) {
-                my @parts = split(/-/, $resumedate );
-                $resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1];
-            }
-            if ( $resumedate =~ m/(\d{4})-(0[13578]|1[02])-(0[1-9]|[12]\d|3[01])|(\d{4})-(0[469]|11])-(0[1-9]|[12]\d|30)|(\d{4})-(02)-(0[1-9]|1\d|2[0-9])/ ) {
-                SuspendReserve( $reservenumber[$i], $resumedate );
-            } else {
-                SuspendReserve( $reservenumber[$i] );
-            }
+        if ( $rank[$i] ne 'del' && $query->param('suspend_' . $reservenumber[$i] ) ) {
+            my $format = DateTime::Format::Strptime->new(pattern => C4::Dates->DHTMLcalendar());
+            my $resumedate = $format->parse_datetime($query->param('resumedate_' . $reservenumber[$i] ));
+            SuspendReserve( $reservenumber[$i], $resumedate );
         }
     }
 }

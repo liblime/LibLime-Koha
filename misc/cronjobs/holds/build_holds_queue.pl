@@ -27,7 +27,7 @@ C4::Reserves::UnorphanCancelledHolds();
 C4::Reserves::CleanupQueue();
 
 HOLD:
-foreach my $res(@{C4::Reserves::GetReservesForQueue() // []}) {
+foreach my $res (values %{C4::Reserves::GetReservesForQueue() // {}}) {
    ## dupecheck on reservenumber
    ## DupecheckQueue() already filters out holds on shelf (found=non-empty),
    ## priority, and reservedate.

@@ -19,29 +19,6 @@ var override_items = {<!-- TMPL_LOOP NAME="bibitemloop" --><!-- TMPL_LOOP NAME="
 };
 var MSG_NO_ITEMS_AVAILABLE = _("A hold cannot be requested on any of these items.");
 
-function checkDates(){
-  var AllDatesValid = true;
-  <!-- TMPL_LOOP NAME="biblioloop" -->
-    <!-- TMPL_LOOP NAME="reserveloop" -->
-      reserve_date = modifyReservesForm.elements["resumedate_<!-- TMPL_VAR NAME="reservenumber" -->"];
-      reserve_date.style.backgroundColor = 'white';
-      if ( reserve_date.value.length > 0 ) {
-        if (isDate(reserve_date.value)==false){
-	  reserve_date.style.backgroundColor = 'red';
-          AllDatesValid = false;
-        }
-      }
-    <!-- /TMPL_LOOP -->
-  <!-- /TMPL_LOOP -->
-  return AllDatesValid;
-}
-
-function isValidDate(theField){
-      if ( theField.value.length > 0 ) {
-        return isDate(theField.value);
-      }
-}
-
 function check() {
 	var msg = "";
 	var count_reserv = 0;
@@ -569,7 +546,7 @@ function checkMultiHold() {
 <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 <!-- TMPL_UNLESS NAME="cardnumber" -->
 <!-- TMPL_IF name="reserveloop" -->
-<form name="modifyReservesForm" action="modrequest.pl" method="post" onSubmit="return checkDates()">
+<form name="modifyReservesForm" action="modrequest.pl" method="post">
   <!-- TMPL_IF NAME="multi_hold" -->
     <input type = "hidden" name="multi_hold" value="1"/>
     <input type = "hidden" name="biblionumbers" value="<!-- TMPL_VAR NAME="biblionumbers" -->"/>
@@ -593,7 +570,8 @@ function checkMultiHold() {
                         <th>Date</th>
                         <th>Pick up Library</th>
                         <th>Details</th>
-                        <th>Suspend Hold</th>  
+                        <th>Suspended</th>
+                        <th></th>
                 </tr>
   <!-- TMPL_LOOP Name="reserveloop" -->
   <!-- TMPL_UNLESS Name="__odd__" --><tr class="highlight"><!-- TMPL_ELSE --><tr><!-- /TMPL_UNLESS -->
@@ -709,11 +687,24 @@ function checkMultiHold() {
       <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
         </td>
+        <td>
+	  <div style="text-align: center;"><input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" <TMPL_IF NAME="wbrname">disabled</TMPL_IF> <TMPL_IF NAME="suspended">checked</TMPL_IF> value="1" /></div>
+        </td>
 	<td>
-		<input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" <!-- TMPL_IF NAME="wbrname" -->disabled<!-- /TMPL_IF --> value="1" />
-		<label>Resume on:</label>
-		<input type="text" onblur="isValidDate(this)" size="10" maxlength="10" id="resumedate" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" />
-		<label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
+          <TMPL_IF NAME="wait">
+            Waiting since <TMPL_VAR NAME="waitingdate">
+          <TMPL_ELSE>
+	  <label>Resume on (optional):</label>
+	  <input type="text" size="10" maxlength="10" id="resumedate_<TMPL_VAR NAME="reservenumber">" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" <TMPL_IF NAME="waitingdate">value="<TMPL_VAR NAME="waitingdate">"</TMPL_IF> />
+          <script type="text/javascript">
+            Calendar.setup({
+              inputField: "resumedate_<TMPL_VAR NAME="reservenumber">",
+              ifFormat: "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+              button: "resumedate_<TMPL_VAR NAME="reservenumber">",
+              align: "T1"
+            });
+          </script>
+          </TMPL_IF>
 	</td>
       </tr>
   <!-- /TMPL_LOOP --> <!-- existing reserveloop -->
@@ -732,34 +723,6 @@ function checkMultiHold() {
 <!-- /TMPL_UNLESS -->
 <!-- /TMPL_IF -->
 
-<!-- TMPL_IF Name="suspended_reserves_loop" -->
-<fieldset class="rows left">
-	<legend>Suspended Holds</legend>
-	<table>
-		<tr>
-			<th>Priority</th>
-			<th>Patron</th>
-			<th>Notes</th>
-		        <th>Date</th>
-		        <th>Pick up Library</th>
-			<th>Resume Date</th>
-			<th>&nbsp</th>
-	      	</tr>
-
-		<!-- TMPL_LOOP NAME="suspended_reserves_loop" -->
-			<tr>
-				<td><!-- TMPL_VAR NAME="priority" --></td>
-				<td><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></td>
-				<td><!-- TMPL_VAR NAME="reservenotes" --></td>
-				<td><!-- TMPL_VAR NAME="reservedate" --></td>
-				<td><!-- TMPL_VAR NAME="branchcode" --></td>
-				<th><!-- TMPL_VAR NAME="waitingdate" --></td>
-				<td><a href="request.pl?action=resume&reservenumber=<!-- TMPL_VAR NAME="reservenumber"-->&biblionumber=<!-- TMPL_VAR NAME="biblionumber"-->">Resume Hold</a></td>				
-			</tr>
-		<!-- /TMPL_LOOP -->
-	</table>
-</fieldset>
-<!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 
 </div>
@@ -774,4 +737,5 @@ function checkMultiHold() {
 
 </div>
 </div>
+
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

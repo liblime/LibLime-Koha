@@ -60,8 +60,8 @@ $action = '' if not defined $action;
 if ( $action eq 'suspend' ) {
   my $resumedate = $input->param('resumedate');
   
-  if ( $resumedate =~ m/(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])-(\d{4})/ ) {
-    my @parts = split(/-/, $resumedate );
+  if ( $resumedate =~ m/(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/(\d{4})/ ) {
+    my @parts = split('/', $resumedate );
     $resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1];
   } else {
     $resumedate = '';
@@ -202,7 +202,10 @@ if ($cardnumber) {
     );
 }
 
-$template->param( messageborrower => $messageborrower );
+$template->param(
+    messageborrower => $messageborrower,
+    DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
+    );
 
 my $CGIselectborrower;
 if ($borrowerslist) {
@@ -552,7 +555,8 @@ foreach my $biblionumber (@biblionumbers) {
     my @reserveloop;
     my $populate_option_loop = $template->param('CAN_user_reserveforothers_reorder_holds');
     ( $count, $reserves ) = GetReservesFromBiblionumber($biblionumber);
-    foreach my $res ( sort { ($a->{found} // '') cmp ($b->{found} // '') } @$reserves ) {
+    # pretend all non-T/non-W reserves have an 'S' for sorting purposes
+    foreach my $res ( sort { ($a->{found} // 'S') cmp ($b->{found} // 'S') } @$reserves ) {
         my %reserve;
 
         $reserve{'reservenumber'}   = $res->{'reservenumber'};
@@ -603,6 +607,8 @@ foreach my $biblionumber (@biblionumbers) {
 	    $reserve{'hidename'} = 1;
 	    $reserve{'cardnumber'} = $reserveborrowerinfo->{'cardnumber'};
 	}
+        $reserve{suspended}        = (($res->{found} // '') eq 'S') ? 1 : 0;
+        $reserve{waitingdate}      = format_date( $res->{waitingdate} );
         $reserve{'date'}           = format_date( $res->{'reservedate'} );
         $reserve{'borrowernumber'} = $res->{'borrowernumber'};
         $reserve{'biblionumber'}   = $res->{'biblionumber'};
@@ -625,14 +631,6 @@ foreach my $biblionumber (@biblionumbers) {
         push( @reserveloop, \%reserve );
     }
 
-    my ( $suspended_count, $suspended_reserves ) = GetSuspendedReservesFromBiblionumber($biblionumber);
-    if ( $suspended_count ) {
-      foreach my $res ( @$suspended_reserves ) {
-        $res->{'waitingdate'} = format_date( $res->{'waitingdate'} );
-      }
-      $template->param( suspended_reserves_loop => $suspended_reserves );
-    }
-    
     # get the time for the form name...
     my $time = time();
     
@@ -687,7 +685,6 @@ if ($multihold) {
 if ( C4::Context->preference( 'AllowHoldDateInFuture' ) ) {
     $template->param(
 	reserve_in_future         => 1,
-	DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
 	);
 }
     
