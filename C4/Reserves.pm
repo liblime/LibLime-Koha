@@ -1449,7 +1449,7 @@ sub CancelReserve {
         $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
 
-        _FixPriority( '', '', $priority, $reservenumber );
+        _FixPriority( $reservenumber, $priority );
     }
 
     _moveToOldReserves($reservenumber);
@@ -1602,7 +1602,7 @@ sub ModReserve {
         my $sth = $dbh->prepare($query);
         $sth->execute( $rank, $branch, $itemnumber, $reservenumber );
         $sth->finish;
-        _FixPriority( $biblio, $borrower, $rank, $reservenumber );
+        _FixPriority( $reservenumber, $rank );
     }
 }
 
@@ -1968,12 +1968,7 @@ sub ModReserveTrace
               WHERE  reservenumber    = ?";
    $sth = $dbh->prepare($sql) || die $dbh->errstr();
    $sth->execute($$res{reservenumber});
-   _FixPriority(
-      $$res{biblionumber},
-      $$res{borrowernumber},
-      $$res{priority},
-      $$res{reservenumber}
-   );
+   _FixPriority( $$res{reservenumber}, $$res{priority} );
 
    # remove from queue
    $sth = $dbh->prepare("DELETE FROM tmp_holdsqueue
@@ -2184,7 +2179,7 @@ sub ModReserveMinusPriority {
     my $sth_upd = $dbh->prepare($query);
     $sth_upd->execute( $itemnumber, $reservenumber );
     # second step update all others reservs
-    _FixPriority($biblionumber, $borrowernumber, '0', $reservenumber );
+    _FixPriority( $reservenumber, '0' );
 }
 
 sub GetReserve
@@ -2397,92 +2392,74 @@ sub fixPrioritiesOnItemMove
 
 =item _FixPriority
 
-&_FixPriority($biblio,$borrowernumber,$rank,$reservenumber);
+&_FixPriority($reservenumber, $rank);
 
- Only used internally (so don't export it)
- Changed how this functions works #
- Now just gets an array of reserves in the rank order and updates them with
- the array index (+1 as array starts from 0)
- and if $rank is supplied will splice item from the array and splice it back in again
- in new priority rank
+ This splices the given reserve into the reserves list for all competing
+ reserves at the given $rank. Then it updates all the other reserves with
+ the new priorities. If there are duplicate priorities it will normalize
+ them into being unique and sequential.
 
 =cut 
 
 sub _FixPriority {
-    my ( $biblio, $borrowernumber, $rank, $reservenumber ) = @_;
+    my ( $reservenumber, $rank ) = @_;
     my $dbh = C4::Context->dbh;
-     if ( $rank eq "del" ) {
-         CancelReserve( $reservenumber );
-     }
-    if ( $rank eq "W" || $rank eq "0" ) {
 
+    my $reserve = GetReserve($reservenumber);
+    croak "Unable to find reserve ($reservenumber)" if !$reserve;
+
+    if ( $rank eq 'del' ) {
+        CancelReserve( $reservenumber );
+    }
+    elsif ( $rank eq 'W' || $rank eq '0' ) {
         # make sure priority for waiting or in-transit items is 0
-        my $query = qq/
+        $dbh->do(q{
             UPDATE reserves
             SET    priority = 0
             WHERE reservenumber = ?
-              AND found IN ('W', 'T')
-        /;
-        my $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
+        }, undef, $reservenumber);
     }
-    my @priority;
-    my @reservedates;
 
-    # get whats left
-# FIXME adding a new security in returned elements for changing priority,
-# now, we don't care anymore any reservations with itemnumber linked (suppose a waiting reserve)
-	# This is wrong a waiting reserve has W set
-	# The assumption that having an itemnumber set means waiting is wrong and should be corrected any place it occurs
-    my $query = qq/
-        SELECT borrowernumber, reservedate, constrainttype, reservenumber
+    my $query = q{
+        SELECT reservenumber
         FROM   reserves
-        WHERE  biblionumber   = ?
-          AND  ((found <> 'W' AND found <> 'T') or found is NULL)
-        ORDER BY priority ASC
-    /;
-    my $sth = $dbh->prepare($query);
-    $sth->execute($biblio);
-    while ( my $line = $sth->fetchrow_hashref ) {
-        push( @reservedates, $line );
-        push( @priority,     $line );
-    }
+        WHERE  biblionumber = ?
+          AND  (found IS NULL OR found = 'S')
+        ORDER BY priority ASC, timestamp DESC
+    };
+    my $priority_list
+        = $dbh->selectcol_arrayref($query, undef, $reserve->{biblionumber});
 
-    # To find the matching index
-    my $i;
-    my $key = -1;    # to allow for 0 to be a valid result
-    for ( $i = 0 ; $i < @priority ; $i++ ) {
-        if ( $borrowernumber == $priority[$i]->{'borrowernumber'} ) {
+    # We have our priority-ordered list of related reserves. Now find
+    # the index of the one that has $reservenumber.
+    my $key;
+    for ( my $i = 0 ; $i < @{$priority_list} ; $i++ ) {
+        if ( $reservenumber == $priority_list->[$i] ) {
             $key = $i;    # save the index
             last;
         }
     }
 
-    # if index exists in array then move it to new position
-    if ( $key > -1 && $rank ne 'del' && $rank > 0 ) {
-        my $new_rank = $rank -
-          1;    # $new_rank is what you want the new index to be in the array
-        my $moving_item = splice( @priority, $key, 1 );
-        splice( @priority, $new_rank, 0, $moving_item );
+    # If index exists in array then splice it into new position.
+    if ( defined $key && $rank ne 'del' && $rank > 0 ) {
+        # $new_rank is what you want the new index to be in the array
+        my $new_rank = $rank - 1;
+        my $moving_item = splice( @{$priority_list}, $key, 1 );
+        splice( @{$priority_list}, $new_rank, 0, $moving_item );
     }
 
-    # now fix the priority on those that are left....
-    $query = "
-            UPDATE reserves
-            SET    priority = ?
-                WHERE  reservenumber = ?
-                 AND reservedate = ?
-         AND found IS NULL
-    ";
-    $sth = $dbh->prepare($query);
-    for ( my $j = 0 ; $j < @priority ; $j++ ) {
-        $sth->execute(
-            $j + 1, 
-            $priority[$j]->{'reservenumber'},
-            $priority[$j]->{'reservedate'}
-        );
-        $sth->finish;
+    # Finally, update all the priorities to reflect the new order.
+    $query = q{
+        UPDATE reserves
+        SET    priority = ?
+        WHERE  reservenumber = ?
+    };
+    my $sth = $dbh->prepare_cached($query);
+    for ( my $j = 0 ; $j < @{$priority_list} ; $j++ ) {
+        $sth->execute( $j+1, $priority_list->[$j] );
     }
+
+    return;
 }
 
 =item _Findgroupreserve
@@ -2812,7 +2789,7 @@ sub SuspendReserve {
       $sth->finish();
     }
     
-    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $reserve->{'priority'}, $reservenumber );
+    _FixPriority( $reservenumber, $reserve->{'priority'} );
 }
 
 sub ResumeReserve {
@@ -2856,7 +2833,7 @@ sub ResumeReserve {
     my $reserve = $sth->fetchrow_hashref();
     $sth->finish();
 
-    _FixPriority( $reserve->{'biblionumber'}, $reserve->{'borrowernumber'}, $new_priority, $reservenumber );
+    _FixPriority( $reservenumber, $new_priority );
 }
 
 sub ResumeSuspendedReservesWithResumeDate {
