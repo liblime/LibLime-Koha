@@ -67,7 +67,6 @@ C4::Reserves - Koha functions for dealing with reservation.
             T(ransit)  : the reserve is linked to an item but is in transit to the pickup branch
             W(aiting)  : the reserve is linked to an item, is at the pickup branch, and is waiting on the hold shelf
             F(inished) : the reserve has been completed, and is done
-            R(trace)   : the reserve is set to 'trace'--which I don't know what this means yet -hQ
   - itemnumber : empty : the reserve is still unaffected to an item
                  filled: the reserve is attached to an item
   The complete workflow is :
@@ -144,25 +143,40 @@ sub CleanupQueue
 {
    my $dbh = C4::Context->dbh;
 
-   ## if item reserve is not prioritized (found='W' or 'T', priority=0),
-   ## remove it from tmp_holdsqueue
+   ## if reserve has been checked in at holdingbranch,
+   ## remove it from tmp_holdsqueue.
    my $sth = $dbh->prepare("
          SELECT tmp_holdsqueue.reservenumber
            FROM reserves,tmp_holdsqueue
-          WHERE reserves.found IS NOT NULL
+          WHERE reserves.found    IN ('W','T')
             AND reserves.priority = 0
             AND reserves.reservenumber = tmp_holdsqueue.reservenumber
    ");
    $sth->execute();
-   my $c = 0;
    while(my $row = $sth->fetchrow_hashref()) {
       my $sth2 = $dbh->prepare("
          DELETE FROM tmp_holdsqueue
           WHERE reservenumber = ?");
       $sth2->execute($$row{reservenumber});
-      $c++;
    }
-   return $c;
+
+   ## race condition: pickup branch changed after previous run of
+   ## build_holds_queue.pl.  Force sync data.
+   $sth = $dbh->prepare('
+      SELECT reserves.branchcode,tmp_holdsqueue.reservenumber
+        FROM reserves,tmp_holdsqueue
+       WHERE reserves.branchcode   != tmp_holdsqueue.pickbranch
+         AND reserves.reservenumber = tmp_holdsqueue.reservenumber
+   ');
+   $sth->execute();
+   while(my $row = $sth->fetchrow_hashref()) {
+      my $sth2 = $dbh->prepare('
+         UPDATE tmp_holdsqueue
+            SET pickbranch    = ?
+          WHERE reservenumber = ?');
+      $sth2->execute($$row{branchcode},$$row{reservenumber});
+   }
+   return 1;
 }
 
 sub SaveHoldInQueue
@@ -203,7 +217,8 @@ sub GetItemForBibPrefill
        AND priority > 0  /* is in the queue */
        AND found IS NULL /* has not been filled/waiting/in transit */
        AND reservedate <= CURRENT_DATE()
-       AND reservenumber != ?") || die $dbh->errstr();
+       AND reservenumber != ?
+       AND itemnumber IS NOT NULL") || die $dbh->errstr();
    $sth->execute($$res{biblionumber},$$res{reservenumber});
    my @items = $sth->fetchrow_array();
    
@@ -223,13 +238,20 @@ sub GetItemForBibPrefill
    $sth = $dbh->prepare($sql) || die $dbh->errstr();
    $sth->execute($$res{biblionumber},@items);
 
-   my $item = $sth->fetchrow_hashref();
-   return unless $item;
-   $$item{found}            = $$res{found};
-   $$item{borrowerbranch}   = $$res{borrowerbranch};
-   $$item{borrowercategory} = $$res{categorycode};
-   $$item{reservenumber}    = $$res{reservenumber};
-   return _itemfillbib($item);
+   my $item; # leave undef
+   ITEM:
+   while(my $row = $sth->fetchrow_hashref()) {
+      ## FIXME: more intelligent search for available item here
+      ## depending on passed-to library and which is most reasonable
+      ## for borrower based on borrower's home library -hQ
+      $$row{found}            = $$res{found};
+      $$row{borrowerbranch}   = $$res{borrowerbranch};
+      $$row{borrowercategory} = $$res{categorycode};
+      $$row{reservenumber}    = $$res{reservenumber};
+      $item = _itemfillbib($row);
+      last ITEM if $item;
+   }
+   return $item;
 }
 
 sub GetItemForQueue
@@ -343,8 +365,11 @@ sub GetReservesForQueue
              reserves.priority,
              reserves.found
         FROM reserves,borrowers
-       WHERE reserves.found IS NULL
-         AND reserves.priority = 1
+       WHERE (
+         /* in transit or otherwise not waiting at pickup branch */
+          (reserves.found IS NULL AND reserves.priority = 1)
+       OR (reserves.found = 'T'   AND reserves.priority = 0)
+       )
          AND reserves.reservedate <= CURRENT_DATE()
          AND reserves.borrowernumber = borrowers.borrowernumber
    ") || die $dbh->errstr();
@@ -374,16 +399,16 @@ sub GetHoldsQueueItems
          biblioitems.size,
          biblioitems.publicationyear,
          biblioitems.isbn
-   FROM tmp_holdsqueue
-        JOIN biblio      USING (biblionumber)
-   LEFT JOIN biblioitems USING (biblionumber)
-   LEFT JOIN items       USING (  itemnumber)
+    FROM tmp_holdsqueue
+         JOIN biblio      USING (biblionumber)
+    LEFT JOIN biblioitems USING (biblionumber)
+    LEFT JOIN items       USING (  itemnumber)
    |;
-    if ($branchlimit) {
-	    $query .="WHERE tmp_holdsqueue.holdingbranch = ? ";
-        push @bind_params, $branchlimit;
-    }
-    $query .= " ORDER BY ccode, location, cn_sort, author, title, pickbranch, reservedate";
+   if ($branchlimit) {
+	   $query .="WHERE tmp_holdsqueue.holdingbranch = ? ";
+      push @bind_params, $branchlimit;
+   }
+   $query .= " ORDER BY ccode, location, cn_sort, author, title, pickbranch, reservedate";
 	my $sth = $dbh->prepare($query);
 	$sth->execute(@bind_params);
 	my $items = [];
@@ -1908,6 +1933,16 @@ sub ModReserveTrace
    my $dbh = C4::Context->dbh;
    my $sth;
    
+   my $itemnumber = $$res{itemnumber};
+   unless ($itemnumber) { # bib-level hold
+      ## get the targeted item from tmp_holdsqueue table
+      $sth = $dbh->prepare('SELECT itemnumber
+         FROM tmp_holdsqueue
+        WHERE reservenumber = ?');
+      $sth->execute($$res{reservenumber});
+      $itemnumber = ($sth->fetchrow_array)[0];
+   }
+   
    # update item's LOST status
    ## get the authorised_value of 'trace'
    $sth = $dbh->prepare("SELECT authorised_value
@@ -1916,11 +1951,14 @@ sub ModReserveTrace
        AND LCASE(lib) = 'trace'");
    $sth->execute();
    my $traceAuthVal = ($sth->fetchrow_array)[0];
+   die "No authorised value 'Trace' set for category 'LOST'\n" 
+   unless defined $traceAuthVal;
+   
    $sth = $dbh->prepare("
       UPDATE items
-         SET itemlost = ?
+         SET itemlost    = ?
        WHERE itemnumber  = ?");
-   $sth->execute($traceAuthVal,$$res{itemnumber});
+   $sth->execute($traceAuthVal,$itemnumber);
 
    # update the database
    my $sql = "UPDATE reserves
@@ -1942,7 +1980,7 @@ sub ModReserveTrace
        WHERE reservenumber = ?");
    $sth->execute($$res{reservenumber});
 
-    return 1;
+   return 1;
 }
 
 =item ModReserveStatus
