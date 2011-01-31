@@ -1095,6 +1095,20 @@ C<$count> is the number of reserves for this item.
 
 =cut
 
+# any hold matches on biblionumber
+sub CheckReservesByBibBorrower
+{
+   my($biblionumber,$borrowernumber) = @_;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('
+      SELECT * FROM reserves
+       WHERE biblionumber   = ?
+         AND borrowernumber = ?');
+   $sth->execute($biblionumber,$borrowernumber);
+   my $res = $sth->fetchrow_hashref() // {};
+   return $res;
+}
+
 sub CheckReserves {
     my ( $item, $barcode ) = @_;
     my $dbh = C4::Context->dbh;
@@ -1364,6 +1378,9 @@ sub CancelReserve {
     my $sth = $dbh->prepare('SELECT * FROM reserves WHERE reservenumber = ?');
     $sth->execute( $reservenumber );
     my $reserve = $sth->fetchrow_hashref();
+    ## FIXME: CancelReserve() is being called more than once by caller,
+    ## so above could be undef on subsequent calls; just get out of here.
+    return unless $reserve;
 
     my $borrowernumber = $reserve->{'borrowernumber'};
     my $biblionumber = $reserve->{'biblionumber'};
@@ -1385,12 +1402,14 @@ sub CancelReserve {
         # removing a reserve record....
         # get the priority on this record....
         my $priority;
-        my $query = qq/
+        my $query = qq|
             SELECT priority FROM reserves
             WHERE reservenumber = ?
+            /*
               AND cancellationdate IS NULL
               AND itemnumber IS NULL
-        /;
+            */
+        |;
         my $sth = $dbh->prepare($query);
         $sth->execute( $reservenumber );
         ($priority) = $sth->fetchrow_array;
@@ -1427,7 +1446,8 @@ sub CancelReserve {
     } );
     if ( $mprefs->{'transports'} && C4::Context->preference('EnableHoldCancelledNotice')) {
       my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
-      my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
+      my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d, 
+      CancelReserve()", $biblionumber;
       my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
       my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');                
 
@@ -1523,7 +1543,8 @@ sub ModReserve {
         } );
         if ( $mprefs->{'transports'} && C4::Context->preference('EnableHoldCancelledNotice')) {
           my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
-          my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
+          my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d,
+          ModReserve()\n", $biblionumber;
           my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
           my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');
 
@@ -1720,17 +1741,146 @@ whose keys are fields from the reserves table in the Koha database.
 Returns true on success.
 
 =cut
+
+# not exported.
+# upon checkout, set that the reserve is completed.
+# overlying logic assumes item-level hold, however this can be true
+# also of bib-level holds.
+# $co* prefix is checkout
 sub ModReserveFillCheckout
 {
-   my $res = shift; # the reserves hash should be complete
+   my($coBorrowernumber,$coBiblionumber,$coItemnumber,$res) = @_; # the reserves hash should be complete
    my $dbh = C4::Context->dbh;
-   my $query = "UPDATE reserves
-                   SET priority         = 0,
-                       expirationdate   = NULL
-                 WHERE reservenumber    = ?";
-   my $sth = $dbh->prepare($query);
+   my $sth;
+   my $proceed = 0;
+   my $currBranch = C4::Context->userenv->{branch};
+   $res //= {};
+   
+   ## trivial: do nothing if there are no reserves
+   return 1 unless $res;
+
+   ## for whatever reason, this is the wrong bib.
+   ## hold harmless and do nothing.
+   return 1 if $coBiblionumber != $$res{biblionumber};
+
+   ## patron who is checking out is not the one who placed the hold.
+   ## ignore, do nothing.  If we get here, overrides were performed.
+   return 1 if $coBorrowernumber != $$res{borrowernumber};
+
+   ## item-level hold
+   if ($$res{itemnumber}) {
+      ## edge case
+      if ($$res{itemnumber} != $coItemnumber) {
+         die qq|Unexpected workflow: not the right item (checkout itemnumber=$coItemnumber)
+            for item-level hold requested by this patron (reserve itemnumber=$$res{itemnumber})
+         |;
+         ## it is possible for patron to check out a different item of the same bib
+         ## (see behavior of CheckReserves(\$itemnumber) called in Circulation::AddIssue(),
+         ## in which case the above if() would never occur.
+      }
+      ## else patron is checking out item-level hold
+   }
+   ## else patron is checking out item for correct bib-level hold
+
+   ## first of all, make sure we are checking out item at pickup branch
+   if ($currBranch ne $$res{branchcode}) {
+      die qq|Unexpected workflow: item probably needs checkin and transfer before checkout
+         reserves.branchcode=$$res{branchcode}
+         currBranch=$currBranch (*** HERE ***)
+         checkout itemnumber=$coItemnumber
+         reserves.biblionumber=$$res{biblionumber}
+         reserves.reservenumber=$$res{reservenumber}
+         borrowernumber=$coBorrowernumber is same as hold's borrower
+      |;
+   }
+
+   ## sanity check on status of hold.  It *should* be in Waiting mode and
+   ## no longer in the bib's holds list priorities.  That is, it was properly 
+   ## checked in (and transferred, if applicable).
+   if (($$res{found} eq 'W') && ($$res{priority}==0)) {
+      ## do nothing right now.
+   }
+   else { ## sigh, this means Workflow wasn't followed.
+      ## If we get here, the patron is checking out an item that fills the
+      ## hold, whether it was bib-level or item-level.
+      
+      ## for whatever reason, the item is still in the bib's holds queue
+      ## with a priority number and was never pulled to the holds shelf.
+      if ($$res{priority} != 0) {
+         ## do nothing
+      }
+      elsif ($$res{priority} != 1) {
+         die qq|Unexpected workflow: reserve priority is not at the top of bib's 
+            queue (priority=1).  Cannot checkout to borrower 
+            (borrowernumber=$coBorrowernumber) lower in precedence in queue 
+            (priority=$$res{priority}) without override
+         |;
+      }
+
+      ## Let's see... hold is still set to 'in transit'
+      if ($$res{found} eq 'T') {
+         ## look for the item in the branchtransfers table.
+         ## maybe they forgot to tell Koha that it has arrived?
+         $sth = $dbh->prepare('
+            SELECT * FROM branchtransfers
+             WHERE itemnumber = ?
+               AND tobranch   = ?
+               AND datearrived IS NULL');
+         $sth->execute($coItemnumber,$currBranch);
+         my $bt = $sth->fetchrow_hashref() // {};
+         if ($bt) { ## it was never set to arrived, but here we are already at checkout
+            $sth = $dbh->prepare('
+               UPDATE branchtransfers
+                  SET datearrived = NOW()
+                WHERE datearrived IS NULL
+                  AND itemnumber = ?
+                  AND tobranch   = ?');
+            $sth->execute($coItemnumber,$currBranch);
+         }
+      }
+      elsif ($$res{found} eq 'F') {
+         ## old data from legacy ModReserveFill() or otherwise messed up workflow
+         die qq|Cannot handle reserves.found='F' still in reserves table at checkout.
+            Should have been moved to old_reserves (reservenumber=$$res{reservenumber})
+         |;
+      }
+   }
+
+   ## set the reserve to fill
+   $sth = $dbh->prepare(q|
+      UPDATE reserves
+         SET found         = 'F',
+             priority      = 0
+       WHERE reservenumber = ?|);
    $sth->execute($$res{reservenumber});
 
+   ## move it to old_reserves
+   $sth = $dbh->prepare(q|
+      DELETE FROM old_reserves
+       WHERE reservenumber = ?|);
+   $sth->execute($$res{reservenumber});
+   $sth = $dbh->prepare(q|
+      INSERT INTO old_reserves
+      SELECT * FROM reserves
+       WHERE reservenumber = ?|);
+   $sth->execute($$res{reservenumber});
+
+   ## delete from reserves
+   $sth = $dbh->prepare(q|
+      DELETE FROM reserves
+       WHERE reservenumber = ?|);
+   $sth->execute($$res{reservenumber});
+
+   ## force removal from Holds Queue Report
+   $sth = $dbh->prepare('
+      DELETE FROM tmp_holdsqueue
+       WHERE reservenumber = ?');
+   $sth->execute($$res{reservenumber});
+   
+   ## fix other holds' priorities.
+   _FixPriority($coBiblionumber,$coBorrowernumber);
+
+   return 1;
 }
 
 sub ModReserveFillCheckin

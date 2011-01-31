@@ -406,26 +406,45 @@ if ($barcode) {
         }
     if( !$blocker ){
         my $confirm_required = 0;
-    	unless($issueconfirmed){
+    	  unless($issueconfirmed) {
             #  Get the item title for more information
             my $getmessageiteminfo  = GetBiblioFromItemNumber(undef,$barcode);
-		    $template->param( itemhomebranch => $getmessageiteminfo->{'homebranch'} );
+		      $template->param( itemhomebranch => $getmessageiteminfo->{'homebranch'} );
 
-		    # pass needsconfirmation to template if issuing is possible and user hasn't yet confirmed.
-       	    foreach my $needsconfirmation ( keys %$question ) {
-                 # PTFS PT 7310367 don't display confirmation for holds
-                 next if $needsconfirmation eq 'RESERVED';
-       	        $template->param(
-       	            $needsconfirmation => $$question{$needsconfirmation},
-       	            getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
-       	            NEEDSCONFIRMATION  => 1
-       	        );
-       	        $confirm_required = 1;
+		      # pass needsconfirmation to template if issuing is possible and user hasn't yet confirmed.
+       	   foreach my $needsconfirmation ( keys %$question ) {
+                 ## PTFS PT 7310367 don't display confirmation for holds
+                 # next if $needsconfirmation eq 'RESERVED';
+                 
+                 ## PT 7310367 depracated, added syspref reservesNeedConfirmationOnCheckout
+                 ## for work done on PT 9244211 holds should clear on checkout.
+                 ## only skip confirmation for the syspref if borrower is the one who placed
+                 ## a hold, either bib- or item-level.  This logic assumes the converse,
+                 ## catching the case of an item-level hold.
+                 ## FIXME: outstanding question is for a bib-level hold and no other
+                 ## item is available to fill the hold. -hQ
+                 if (C4::Context->preference('reservesNeedConfirmationOnCheckout')
+                  && $needsconfirmation eq 'RESERVED') {
+       	            $template->param(
+       	               $needsconfirmation => $$question{$needsconfirmation},
+       	               getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
+       	               NEEDSCONFIRMATION  => 1
+       	            );
+       	            $confirm_required = 1;
+                  }
        	    }
-		}
+		  }
         unless($confirm_required) {
-            AddIssue( $borrower, $barcode, $datedue, $cancelreserve, undef, 0 );
-			$inprocess = 1;
+            C4::Circulation::AddIssue( 
+               $borrower, 
+               $barcode, 
+               $datedue, 
+               $cancelreserve, 
+               undef, 
+               0 
+            );
+            
+			   $inprocess = 1;
             if($globalduedate && ! $stickyduedate && $duedatespec_allow ){
                 $duedatespec = $globalduedate->output();
                 $stickyduedate = 1;
@@ -545,8 +564,10 @@ my @issued_itemtypes_count_loop;
 my $totalprice = 0;
 
 if ($borrower) {
-# get each issue of the borrower & separate them in todayissues & previous issues
+    ## get each issue of the borrower & separate them in todayissues & previous issues
     my ($issueslist) = GetPendingIssues($borrower->{'borrowernumber'});
+    ## get borrower's reserves
+
 
     my $ren_override_limit = $template->param('CAN_user_circulate_override_renewals');
     # split in 2 arrays for today & previous
@@ -564,6 +585,8 @@ if ($borrower) {
         );
         $it->{"renew_error_${can_renew_error}"} = 1 if defined $can_renew_error;
         my ( $restype, $reserves ) = CheckReserves( $it->{'itemnumber'} );
+
+
 		$it->{'can_renew'} = $can_renew;
 		$it->{'can_confirm'} = !$can_renew && !$restype;
 		$it->{'renew_error'} = $restype;

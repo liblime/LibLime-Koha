@@ -923,19 +923,21 @@ AddIssue does the following things :
 =cut
 
 sub AddIssue {
-    my ( $borrower, $barcode, $datedue, $cancelreserve, $issuedate, $sipmode ) = @_;
-    my $dbh = C4::Context->dbh;
+   my ($borrower,$barcode,$datedue,$cancelreserve,$issuedate,$sipmode) = @_;
+   my $dbh = C4::Context->dbh;
 	my $barcodecheck=CheckValidBarcode($barcode);
-
-    # $issuedate defaults to today.
-    if ( ! defined $issuedate ) {
-        $issuedate = strftime( "%Y-%m-%d", localtime );
-        # TODO: for hourly circ, this will need to be a C4::Dates object
-        # and all calls to AddIssue including issuedate will need to pass a Dates object.
-    }
-	if ($borrower and $barcode and $barcodecheck ne '0'){
+   my $item;
+   
+   # $issuedate defaults to today.
+   if ( ! defined $issuedate ) {
+      $issuedate = strftime( "%Y-%m-%d", localtime );
+      # TODO: for hourly circ, this will need to be a C4::Dates object
+      # and all calls to AddIssue including issuedate will need to pass a Dates object.
+   }
+	
+   if ($borrower and $barcode and $barcodecheck ne '0'){
 		# find which item we issue
-		my $item = GetItem('', $barcode) or return undef;	# if we don't get an Item, abort.
+		$item = GetItem('', $barcode) or return undef;	# if we don't get an Item, abort.
 		my $branch = _GetCircControlBranch($item,$borrower);
 		
 		# get actual issuing if there is one
@@ -948,6 +950,7 @@ sub AddIssue {
 		# check if we just renew the issue.
 		#
 		if (($actualissue->{borrowernumber} // '') eq $borrower->{'borrowernumber'}) {
+         ## we can afford to ignore holds.
 			$datedue = AddRenewal(
 				$borrower->{'borrowernumber'},
 				$item->{'itemnumber'},
@@ -967,17 +970,25 @@ sub AddIssue {
 				);
 			}
 
-			# See if the item is on reserve.
-			my ( $restype, $res ) =
-			  C4::Reserves::CheckReserves( $item->{'itemnumber'} );
-			if ($restype) {
+			my($restype,$res) = C4::Reserves::CheckReserves($item->{'itemnumber'});
+         ## value(s) of $restype:
+         ##    'Reserved'
+         ##    'Waiting'
+         ##    empty or undef or otherwise false (zero, I believe)
+			
+         if ($restype) {
 				my $resbor = $res->{'borrowernumber'};
 				if ( $resbor eq $borrower->{'borrowernumber'} ) {
-					# The item is reserved by the current patron
-					C4::Reserves::ModReserveFillCheckout($res);
+					# The item is reserved by the current patron.
+               # For now, ignore the fact the item is in any Waiting or Transfer status
+					C4::Reserves::ModReserveFillCheckout(
+                  $$borrower{borrowernumber},
+                  $$item{biblionumber},
+                  $$item{itemnumber},
+                  $res
+               );
 				}
 				elsif ( $restype eq "Waiting" ) {
-					# warn "Waiting";
 					# The item is on reserve and waiting, but has been
 					# reserved by some other patron.
                     ModReserve(1,$res->{'biblionumber'},
@@ -990,11 +1001,11 @@ sub AddIssue {
 					# warn "Reserved";
 					# The item is reserved by someone else.
 					if ($cancelreserve) { # cancel reserves on this item
-						CancelReserve($res->{'reservenumber'});
+						C4::Reserves::CancelReserve($res->{'reservenumber'});
 					}
 				}
 				if ($cancelreserve) {
-					CancelReserve($res->{'reservenumber'});
+					C4::Reserves::CancelReserve($res->{'reservenumber'});
 				}
 				else {
 					# set waiting reserve to first in reserve queue as book isn't waiting now
@@ -1007,8 +1018,9 @@ sub AddIssue {
 					);
 				}
 			}
-
-			# Starting process for transfer job (checking transfert and validate it if we have one)
+			
+         ## Starting process for transfer job (checking transfert 
+         ## and validate it if we have one)
             my ($datesent) = GetTransfers($item->{'itemnumber'});
             if ($datesent) {
         # 	updating line of branchtranfert to finish it, and changing the to branch value, implement a comment for visibility of this case (maybe for stats ....)
@@ -1099,8 +1111,9 @@ sub AddIssue {
     logaction("CIRCULATION", "ISSUE", $borrower->{'borrowernumber'}, $biblio->{'biblionumber'})
         if C4::Context->preference("IssueLog");
   }
-  return ($datedue);	# not necessarily the same as when it came in!
+  return $datedue;	# not necessarily the same as when it came in!
 }
+
 
 =head2 GetIssuingRule
 
@@ -1586,6 +1599,8 @@ sub AddReturn {
         # For some reason, the itemnumber in $resrec was being returned as 
         # NULL.  Accidental change in the return workflow? At any rate, 
         # forcing itemnumber into $resrec.
+        # FIXME: umm... this might be a bib-level hold, so there wouldn't be an 
+        # itemnumber in the reserve record. -hQ
         $resrec->{'itemnumber'} = $item->{'itemnumber'};
           $resrec->{'ResFound'} = $resfound;
         $messages->{'ResFound'} = $resrec;
@@ -1898,10 +1913,6 @@ sub _GetCircControlBranch {
     }
     return $branch;
 }
-
-
-
-
 
 
 =head2 GetItemIssue

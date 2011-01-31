@@ -4186,6 +4186,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add ReceiptTemplates)\n";
 }
 
+$DBversion = '4.03.10.003';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+   $dbh->do(q{
+      INSERT INTO `systempreferences` (variable,value,options,explanation,type) VALUES (
+      'reservesNeedConfirmationOnCheckout',0,'','If ON, an item that can fill an item-level hold request requires confirmation to check out regardless whether the check out patron is the one who placed the hold or not','YesNo')
+   });
+   SetVersion ($DBversion);
+   print "Upgrade to $DBversion done ( Added syspref reservesNeedConfirmationOnCheckout )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
