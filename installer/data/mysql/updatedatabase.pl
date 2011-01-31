@@ -4202,6 +4202,22 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
+$DBversion = '4.03.11.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+        ALTER TABLE deleteditems
+            ADD catstat varchar(80) default NULL
+    });
+    $dbh->do(q{
+        ALTER TABLE deletedbiblioitems
+            ADD on_order_count varchar(80) default NULL,
+            ADD in_process_count varchar(80) default NULL
+    });
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Sync deleteditems/deletedbiblioitems schema for changes made in 4.03.08.002 )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
