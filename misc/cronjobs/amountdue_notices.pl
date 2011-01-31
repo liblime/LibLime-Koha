@@ -283,17 +283,16 @@ foreach my $branchcode (@branches) {
 
     my $notify_value = C4::Context->preference('OwedNotificationValue');
     my $sth = $dbh->prepare( <<'END_SQL' );
-SELECT borrowernumber, SUM(amountoutstanding) AS amountdue
+SELECT accountlines.borrowernumber, SUM(accountlines.amountoutstanding) AS amountdue
   FROM accountlines
-  NATURAL JOIN borrowers
-  WHERE accounttype <> 'FU'
-    AND amount_notify_date IS NULL
-    AND branchcode = ? 
-    AND (description NOT LIKE '%Debt Collect%')
-    AND (description NOT LIKE '%collections agency%')
-  GROUP BY borrowernumber
-  HAVING SUM(amountoutstanding) >= ?
-END_SQL
+  LEFT JOIN borrowers on (accountlines.borrowernumber = borrowers.borrowernumber)
+  WHERE accountlines.accounttype <> 'FU'
+    AND borrowers.amount_notify_date IS NULL
+    AND borrowers.branchcode = ?
+    AND (accountlines.description NOT LIKE '%Debt Collect%')
+    AND (accountlines.description NOT LIKE '%collections agency%')
+  GROUP BY accountlines.borrowernumber
+  HAVING SUM(accountlines.amountoutstanding) >= ?
 
     $sth->execute( $branchcode, $notify_value );
     while ( my $patron_hits = $sth->fetchrow_hashref() ) {
