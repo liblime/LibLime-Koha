@@ -301,7 +301,7 @@ SELECT accountlines.borrowernumber, SUM(accountlines.amountoutstanding) AS amoun
     AND (accountlines.description NOT LIKE '%collections agency%')
   GROUP BY accountlines.borrowernumber
   HAVING SUM(accountlines.amountoutstanding) >= ?
-
+END_SQL
     $sth->execute( $branchcode, $notify_value );
     while ( my $patron_hits = $sth->fetchrow_hashref() ) {
       my $letter = C4::Letters::getletter( 'circulation', $letter_code );
