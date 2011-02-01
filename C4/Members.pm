@@ -235,18 +235,20 @@ sub SearchMember {
             push( @bind, "$term%", "% $term%", "$term%", "% $term%", "$term%", "$term%" );
         }
         $query =~ s/ AND $/ /;
-        $query .= " AND category_type = " . $dbh->quote($category_type) if $category_type;
-        $query .= ") OR cardnumber LIKE ? ";
-        push( @bind, $searchstring );
+        $query .= ' AND category_type = ' . $dbh->quote($category_type) if $category_type;
+        $query .= ') ';
         if (C4::Context->preference('ExtendedPatronAttributes')) {
-            $query .= "OR borrowernumber IN (
+            my $borrowers = $dbh->selectcol_arrayref(q{
                 SELECT borrowernumber
                 FROM borrower_attributes
                 JOIN borrower_attribute_types USING (code)
                 WHERE staff_searchable = 1
                 AND attribute like ?
-                )";
-            push (@bind, $searchstring);
+            }, undef, $searchstring);
+            if(@$borrowers) {
+                $query .= sprintf ' OR borrowernumber IN (%s) ', join(', ', split(//, '?' x @$borrowers));
+                push (@bind, @$borrowers);
+            }
         }
         $query .= "order by $orderby" if $orderby;
     }
