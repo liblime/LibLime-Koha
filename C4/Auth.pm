@@ -652,7 +652,7 @@ sub checkauth {
         else {
             $cookie = $query->cookie( CGISESSID => $session->id );
             $session->param('lasttime',time());
-            unless ( $sessiontype eq 'anon' ) { #if this is an anonymous session, we want to update the session, but not behave as if they are logged in...
+            unless ( $sessiontype && $sessiontype eq 'anon' ) { #if this is an anonymous session, we want to update the session, but not behave as if they are logged in...
                 $flags = haspermission($userid, $flagsrequired);
                 if ($flags) {
                     $loggedin = 1;
