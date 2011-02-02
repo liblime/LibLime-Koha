@@ -31,7 +31,9 @@ my $input = new CGI;
 my $order     = $input->param('order') || '';
 my $startdate = $input->param('from')  || '';
 my $enddate   = $input->param('to')    || '';
-my $max_bill  = $input->param('ratio') || C4::Context->preference('noissuescharge') || 20.00;
+# noissuescharge is deprecated, uses circ_block_threshold by patron category
+#my $max_bill  = $input->param('ratio') || C4::Context->preference('noissuescharge') || 20.00;
+my $max_bill = $input->param('ratio') || 20;
 
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
@@ -131,7 +133,6 @@ if (C4::Context->preference('IndependantBranches')){
 }
 $strsth .= " GROUP BY accountlines.borrowernumber HAVING sum(amountoutstanding) >= ? " . $sqlorderby;
 push @query_params, $max_bill;
-
 my $sth = $dbh->prepare($strsth);
 $sth->execute(@query_params);
 

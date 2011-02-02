@@ -225,8 +225,11 @@ function checkMultiHold() {
     <!-- TMPL_UNLESS NAME="multi_hold" -->
       <h3>Cannot Place Hold</h3>
   	  <ul>
-        <!-- TMPL_IF NAME="maxreserves" -->
-          <li><strong>Too Many Holds: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --> </a> has too many holds.</li>
+        <!-- TMPL_IF NAME="maxholds" -->
+          <li><strong>Too Many Holds: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> has too many holds.  Max for this patron is <!-- TMPL_VAR NAME="cat_maxholds" -->.</li>
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="maxamount" -->
+          <li><strong>Too Much Owed: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> exceeded amount limit.  <!-- TMPL_VAR NAME="amount_msg" -->.  Max owed for this patron is <!-- TMPL_VAR NAME="cat_amount_symbol" --><!-- TMPL_VAR NAME="cat_maxamount" -->.</li>
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="max_shelf_holds_per_day" -->
           <li><strong>Too Many Shelf Holds Today: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --> </a> has placed too many holds in one day for bibs with at least one available item.</li>

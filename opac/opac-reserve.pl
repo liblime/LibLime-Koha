@@ -31,8 +31,6 @@ use C4::Members;
 use C4::Branch; # GetBranches
 use C4::Debug;
 
-my $MAXIMUM_NUMBER_OF_RESERVES = C4::Context->preference("maxreserves");
-
 my $query = new CGI;
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     {
@@ -52,6 +50,8 @@ sub get_out ($$$) {
 
 # get borrower information ....
 my ( $borr ) = GetMemberDetails( $borrowernumber );
+## get borrower's maxholds, holds_block_threshold (price), circ_block_threshold (price)
+my $cat = C4::Members::GetCategoryInfo($$borr{categorycode});
 
 if ( C4::Context->preference('singleBranchMode') ) {
   $template->param( branch => $borr->{'branchcode'} );
@@ -233,15 +233,33 @@ if ( $query->param('place_reserve') ) {
 # Here we check that the borrower can actually make reserves Stage 1.
 #
 #
-my $noreserves     = 0;
-my $maxoutstanding = C4::Context->preference("maxoutstanding");
-$template->param( noreserve => 1 ) unless $maxoutstanding;
-if ( $borr->{'amountoutstanding'} && ($borr->{'amountoutstanding'} > $maxoutstanding) ) {
+my $noreserves = 0;
+my $gran       = C4::Context->preference('UseGranularMaxHolds');
+$template->param( noreserve => 1 ) unless $$cat{holds_block_threshold};
+if ( ($borr->{'amountoutstanding'}>0 && $gran) 
+  && ($borr->{'amountoutstanding'} > $$cat{holds_block_threshold})
+  && ($$cat{holds_block_threshold} > 0) ) {
     my $amount = sprintf "\$%.02f", $borr->{'amountoutstanding'};
     $template->param( message => 1 );
     $noreserves = 1;
     $template->param( too_much_oweing => $amount );
 }
+## data sync issues: check flags instead of amoutoutstanding
+elsif ($$cat{holds_block_threshold}>0 && $gran) {
+   my $amount_owed = $$borr{flags}{CHARGES}{amount} // 0.00;
+   if ($amount_owed > $$cat{holds_block_threshold}) {
+      ## get the symbol of the currency, usually before the money figure
+      $$borr{flags}{CHARGES}{message} ||= 'Patron owes $0.00';
+      my($sym) = $$borr{flags}{CHARGES}{message} =~ /patron owes (.)\d/i;
+      $sym   ||= '$';
+      $noreserves = 1;
+      $template->param(
+         message        => 1,
+         too_much_owed  => "$sym$amount_owed",
+      );
+   }
+}
+
 if ( $borr->{gonenoaddress} && ($borr->{gonenoaddress} eq 1) ) {
     $noreserves = 1;
     $template->param(
@@ -292,7 +310,8 @@ if ( C4::Context->preference('UseGranularMaxHolds') ) {
 
             my $branch = C4::Circulation::_GetCircControlBranch($item, $borr);
             my $irule = GetIssuingRule($borr->{'categorycode'}, $itemtype, $branch);
-            if ( $irule->{max_holds} && $res_count >= $irule->{max_holds} ) {
+            
+            if (($irule->{max_holds}>0) && ($res_count >= $irule->{max_holds})) {
                 $template->param( message => 1, too_many_reserves => $res_count );
                 $noreserves = 1;
                 last;
@@ -305,11 +324,19 @@ if ( C4::Context->preference('UseGranularMaxHolds') ) {
     if ($noreserves && ! $template->param('too_many_reserves')) {
         $template->param( message => 1, none_available => 1 );
     }
-} elsif ( scalar(@reserves) >= $MAXIMUM_NUMBER_OF_RESERVES ) {
-    $template->param( message => 1 );
-    $noreserves = 1;
-    $template->param( too_many_reserves => scalar(@reserves));
+    elsif ((@reserves >= $$cat{maxholds}) && $$cat{maxholds}) {
+        $template->param(message => 1);
+        $noreserves = 1;
+        $template->param( too_many_reserves => scalar(@reserves));
+    }
 }
+########## as of PTFS PT 5915233 01 Feb 2011: requires UseGranularMaxHolds
+#elsif ( scalar(@reserves) >= $$cat{maxholds} ) {
+#    $template->param( message => 1 );
+#    $noreserves = 1;
+#    $template->param( too_many_reserves => scalar(@reserves));
+#}
+##########
 
 if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
   foreach my $biblionumber (@biblionumbers) {

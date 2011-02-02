@@ -747,24 +747,32 @@ sub CanBookBeIssued {
     # DEBTS
     my ($amount) =
       C4::Members::GetMemberAccountRecords( $borrower->{'borrowernumber'}, '' && $duedate->output('iso') );
+    my $cat = C4::Members::GetCategoryInfo($$borrower{categorycode}) // {};
+    $$cat{circ_block_threshold} //= 0;
     if ( C4::Context->preference("IssuingInProcess") ) {
-        my $amountlimit = C4::Context->preference("noissuescharge");
-                
-        if ( $amount > $amountlimit && !$inprocess ) {
-            $issuingimpossible{DEBT} = sprintf( "%.2f", $amount );
-        }
-        elsif ( $amount > 0 && $amount <= $amountlimit && !$inprocess && !C4::Context->preference('WarnOnlyOnMaxFine') ) {
-            $needsconfirmation{DEBT} = sprintf( "%.2f", $amount );
+        my $amountlimit = (C4::Context->preference('UseGranularMaxFines')
+        && ($$cat{circ_block_threshold}>0))? $$cat{circ_block_threshold} : 0;
+
+        if ($amountlimit) {
+           if ( $amount > $amountlimit && !$inprocess ) {
+               $issuingimpossible{DEBT} = sprintf( "%.2f", $amount );
+           }
+           elsif ( $amount > 0 && $amount <= $amountlimit && !$inprocess && !C4::Context->preference('WarnOnlyOnMaxFine') ) {
+               $needsconfirmation{DEBT} = sprintf( "%.2f", $amount );
+           }
         }
     }
     else {
         my $max_fine = 0;
-        if ( C4::Context->preference('WarnOnlyOnMaxFine') ) {
-          $max_fine = C4::Context->preference("noissuescharge");
+        if ( C4::Context->preference('WarnOnlyOnMaxFine') &&
+             C4::Context->preference('UseGranularMaxFines') ) {
+            $max_fine = $$cat{circ_block_threshold};
         }
 
-        if ( $amount > $max_fine ) {
-            $needsconfirmation{DEBT} = sprintf( "%.2f", $amount );
+        if ($max_fine) {
+           if ( $amount > $max_fine ) {
+               $needsconfirmation{DEBT} = sprintf( "%.2f", $amount );
+           }
         }
     }
 

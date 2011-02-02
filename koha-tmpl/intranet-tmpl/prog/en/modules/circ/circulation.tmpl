@@ -375,6 +375,10 @@ function refocus(calendar) {
 <div id="circ_impossible" class="dialog alert">
 <!-- RESULT OF ISSUING REQUEST -->
         <ul>
+         <!-- TMPL_IF NAME="DEBT" -->
+            <li>The patron has a debt of <!-- TMPL_VAR name="DEBT" --></li>
+         <!-- /TMPL_IF -->
+
         <!-- TMPL_IF NAME="STATS" -->
             <li>Local Use Recorded</li>
         <!-- /TMPL_IF -->

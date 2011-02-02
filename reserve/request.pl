@@ -131,23 +131,33 @@ if ($findborrower) {
 
 if ($cardnumber) {
     my $borrowerinfo = GetMemberDetails( 0, $cardnumber );
+    my $cat          = C4::Members::GetCategoryInfo($$borrowerinfo{categorycode});
     my $diffbranch;
     my @getreservloop;
     my $count_reserv = 0;
-    my $maxreserves;
+    my $maxholds;
+    my $maxamount;
 
 #   we check the reserves of the borrower, and if he can reserv a document
 # FIXME At this time we have a simple count of reservs, but, later, we could improve the infos "title" ...
 
-  my $number_reserves = GetReserveCount( $borrowerinfo->{'borrowernumber'} );    
-  if ( ! C4::Context->preference('UseGranularMaxHolds') ) {
-    if ( $number_reserves > C4::Context->preference('maxreserves') ) {
-      $warnings = 1;
-      $maxreserves = 1;
-    }
-  }
-
-    
+   my $number_reserves   = GetReserveCount( $borrowerinfo->{'borrowernumber'} ) // 0;
+   my $amount_msg        = $$borrowerinfo{flags}{CHARGES}{message} // '';
+   my $cat_amount_symbol = '';
+   $$cat{holds_block_threshold} //= 0;
+   if (C4::Context->preference('UseGranularMaxHolds') ) {
+      if ($$cat{maxholds} && ($number_reserves >= $$cat{maxholds})) {
+         $warnings = 1;
+         $maxholds = 1;
+      }
+      if ($$cat{holds_block_threshold}>0 && $amount_msg) {
+         if ($$borrowerinfo{flags}{CHARGES}{amount} > $$cat{holds_block_threshold}) {
+            $warnings  = 1;
+            $maxamount = 1;
+            ($cat_amount_symbol) = $amount_msg =~ /patron owes (.)\d/i;
+         }
+      }
+   }
 
     # we check the date expiry of the borrower (only if there is an expiry date, otherwise, set to 1 (warn)
     my $expiry_date = $borrowerinfo->{dateexpiry};
@@ -165,24 +175,30 @@ if ($cardnumber) {
     }
 
     $template->param(
-                borrowernumber => $borrowerinfo->{'borrowernumber'},
-                borrowersurname   => $borrowerinfo->{'surname'},
-                borrowerfirstname => $borrowerinfo->{'firstname'},
-                borrowerstreetaddress => $borrowerinfo->{'address'},
-                borrowercity => $borrowerinfo->{'city'},
-                borrowerphone => $borrowerinfo->{'phone'},
-                borrowermobile => $borrowerinfo->{'mobile'},
-                borrowerfax => $borrowerinfo->{'fax'},
-                borrowerphonepro => $borrowerinfo->{'phonepro'},
-                borroweremail => $borrowerinfo->{'email'},
-                borroweremailpro => $borrowerinfo->{'emailpro'},
-                borrowercategory => $borrowerinfo->{'category'},
-                borrowerreservs   => $count_reserv,
-                maxreserves       => $maxreserves,
-                expiry            => $expiry,
-                diffbranch        => $diffbranch,
-                messages => $messages,
-		warnings => $warnings
+                borrowernumber         => $borrowerinfo->{'borrowernumber'},
+                borrowersurname        => $borrowerinfo->{'surname'},
+                borrowerfirstname      => $borrowerinfo->{'firstname'},
+                borrowerstreetaddress  => $borrowerinfo->{'address'},
+                borrowercity           => $borrowerinfo->{'city'},
+                borrowerphone          => $borrowerinfo->{'phone'},
+                borrowermobile         => $borrowerinfo->{'mobile'},
+                borrowerfax            => $borrowerinfo->{'fax'},
+                borrowerphonepro       => $borrowerinfo->{'phonepro'},
+                borroweremail          => $borrowerinfo->{'email'},
+                borroweremailpro       => $borrowerinfo->{'emailpro'},
+                borrowercategory       => $borrowerinfo->{'category'},
+
+                borrowerreservs        => $count_reserv,
+                maxholds               => $maxholds,
+                cat_maxholds           => $$cat{maxholds},
+                maxamount              => $maxamount,
+                amount_msg             => $amount_msg,
+                cat_maxamount          => sprintf("%.2f",$$cat{holds_block_threshold}),
+                cat_amount_symbol      => $cat_amount_symbol,
+                expiry                 => $expiry,
+                diffbranch             => $diffbranch,
+                messages               => $messages,
+		          warnings               => $warnings
     );
 }
 
@@ -258,7 +274,7 @@ foreach my $biblionumber (@biblionumbers) {
     	my $max_holds = $irule->{'max_holds'};    	
     	if ( $max_holds && $number_reserves >= $max_holds ) {
     	  $template->param( warnings => 1 );
-    	  $template->param( maxreserves => 1);
+    	  $template->param( maxholds => 1);
     	  $template->param( override_required => 1 );
     	}
     }

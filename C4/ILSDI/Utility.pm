@@ -79,13 +79,13 @@ Checks if a book (at bibliographic level) can be reserved by a borrower.
 
 sub CanBookBeReserved {
     my ( $borrower, $biblionumber ) = @_;
-
-    my $MAXIMUM_NUMBER_OF_RESERVES = C4::Context->preference("maxreserves");
-    my $MAXOUTSTANDING             = C4::Context->preference("maxoutstanding");
+    my $cat = C4::Members::GetCategoryInfo($$borrower{categorycode});
+    my $MAXIMUM_NUMBER_OF_HOLDS = $$cat{maxholds};
+    my $BLOCK_AMOUNT            = $$cat{holds_block_threshold};
 
     my $out = 1;
 
-    if ( $borrower->{'amountoutstanding'} > $MAXOUTSTANDING ) {
+    if ( $borrower->{'amountoutstanding'} > $BLOCK_AMOUNT ) {
         $out = undef;
     }
     if ( $borrower->{gonenoaddress} eq 1 ) {
@@ -98,7 +98,7 @@ sub CanBookBeReserved {
         $out = undef;
     }
     my @reserves = GetReservesFromBorrowernumber( $borrower->{'borrowernumber'} );
-    if ( scalar(@reserves) >= $MAXIMUM_NUMBER_OF_RESERVES ) {
+    if ( scalar(@reserves) >= $MAXIMUM_NUMBER_OF_HOLDS ) {
         $out = undef;
     }
     foreach my $res (@reserves) {

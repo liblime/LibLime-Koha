@@ -430,7 +430,8 @@ sub GetMemberDetails {
 
  The following will be set where applicable:
  $flags->{CHARGES}->{amount}        Amount of debt
- $flags->{CHARGES}->{noissues}      Set if debt amount >$5.00 (or syspref noissuescharge)
+ $flags->{CHARGES}->{noissues}      Set if debt amount >$5.00
+                                    or circ_block_threshold by patron category
  $flags->{CHARGES}->{message}       Message -- deprecated
 
  $flags->{CREDITS}->{amount}        Amount of credit
@@ -491,13 +492,17 @@ sub patronflags {
     $circ_session ||= {};
     my $dbh=C4::Context->dbh;
     my ($amount) = GetMemberAccountRecords( $patroninformation->{'borrowernumber'});
+    my $cat      = GetCategoryInfo($$patroninformation{categorycode});
 
     if ( $amount > 0 ) {
         my %flaginfo;
-        my $noissuescharge = C4::Context->preference("noissuescharge") || 5;
+        my $blockamount = 
+         C4::Context->preference('UseGranularMaxFines') &&
+         ($$cat{circ_block_threshold} > 0)? $$cat{circ_block_threshold} : 5;
         $flaginfo{'message'} = sprintf "Patron owes \$%.02f", $amount;
-        $flaginfo{'amount'} = sprintf "%.02f",$amount;
-        if ( $amount > $noissuescharge && !$circ_session->{'charges_overridden'} ) {
+        $flaginfo{'amount'}  = sprintf "%.02f",$amount;
+        
+        if ( ($amount > $blockamount) && !$circ_session->{'charges_overridden'} ) {
             $flaginfo{'noissues'} = 1;
         }
         $flags{'CHARGES'} = \%flaginfo;
@@ -1737,6 +1742,20 @@ data hashref for a comprehensive information display.
 If no category code provided, the function returns all the categories.
 
 =cut
+
+## Given a borrower's category, get data from the
+## categories table.
+sub GetCategoryInfo
+{
+   my $categorycode = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("
+      SELECT * FROM categories
+       WHERE categorycode = ?
+   ");
+   $sth->execute($categorycode);
+   return $sth->fetchrow_hashref() // {};
+}
 
 sub GetBorrowerFromUser
 {

@@ -132,9 +132,8 @@ $tabsysprefs{SpineLabelAutoPrint}         = "Cataloging";
 $tabsysprefs{UsePeriodicals}              = "Cataloging";
 
 # Circulation
-$tabsysprefs{maxoutstanding}                 = "Circulation";
-$tabsysprefs{maxreserves}                    = "Circulation";
-$tabsysprefs{noissuescharge}                 = "Circulation";
+$tabsysprefs{UseGranularMaxHolds}            = "Circulation";
+$tabsysprefs{UseGranularMaxFines}            = "Circulation";
 $tabsysprefs{IssuingInProcess}               = "Circulation";
 $tabsysprefs{patronimages}                   = "Circulation";
 $tabsysprefs{printcirculationslips}          = "Circulation";

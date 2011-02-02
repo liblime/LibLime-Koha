@@ -298,8 +298,20 @@ sub inet_privileges {
 }
 
 sub fee_limit {
-    # my $self = shift;
-    return C4::Context->preference("noissuescharge") || 5;
+    #my $self = shift;
+
+    ## Dave, this needs to read something like
+    ##
+    ##      my($self, $categorycode) = @_;
+    ##      my $fee      = 5;
+    ##      my $category = C4::Members::GetCatgoryInfo($categorycode);
+    ##      if (C4::Context->preference('UseGranularMaxFines')) {
+    ##         $fee = $category->{'circ_block_threshold'} || 5;
+    ##      }
+    ##      return $fee;
+    #return C4::Context->preference("noissuescharge") || 5;
+    die "noissuecharge syspref is deprecated, use UseGranularMaxFines syspref 
+      with circ_block_threshold by-patron category";
 }
 
 sub excessive_fees {

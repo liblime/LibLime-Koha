@@ -187,12 +187,19 @@
               </div>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="too_much_oweing" -->
-              <div class="dialog alert">
+              <div class="dialog alert"><!-- amountoutstanding -->
                 Sorry, you cannot place holds because you owe <!-- TMPL_VAR NAME="too_much_oweing" -->.
               </div>
+            <!-- TMPL_ELSE -->
+               <!-- TMPL_IF NAME="too_much_owed" -->
+               <div class="dialog alert"><!-- flag msg -->
+               Sorry, you cannot place holds because you owe <!-- TMPL_VAR NAME="too_much_owed" -->.
+               </div>
+               <!-- /TMPL_IF -->
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="too_many_reserves" -->
-              <div class="dialog alert">Sorry, you cannot place more than <!-- TMPL_VAR NAME="too_many_reserves" --> holds.
+              <div class="dialog alert"><!-- too_many_reserves -->
+              Sorry, you cannot place more than <!-- TMPL_VAR NAME="too_many_reserves" --> holds.
               </div>
             <!-- /TMPL_IF -->
 	    <!-- TMPL_IF NAME="too_many_shelf_holds_per_day" -->
