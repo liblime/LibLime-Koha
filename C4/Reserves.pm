@@ -1394,76 +1394,42 @@ who are waiting on the book.
 sub CancelReserve {
     my ( $reservenumber ) = @_;
     my $dbh = C4::Context->dbh;
+    my $sth;
 
     my $branchcode = C4::Context->userenv->{'branch'};
  
     # Pull borrowernumber of the user performing the action for logging
     my $moduser = C4::Context->userenv->{'number'};
     
-    my $sth = $dbh->prepare('SELECT * FROM reserves WHERE reservenumber = ?');
-    $sth->execute( $reservenumber );
-    my $reserve = $sth->fetchrow_hashref();
+    my $reserve = GetReserve($reservenumber);
     ## FIXME: CancelReserve() is being called more than once by caller,
     ## so above could be undef on subsequent calls; just get out of here.
     return unless $reserve;
 
-    my $borrowernumber = $reserve->{'borrowernumber'};
-    my $biblionumber = $reserve->{'biblionumber'};
-    if ( $reserve->{'found'} eq 'W' ) {
-        # removing a waiting reserve record....
-        # update the database...
-        my $query = "
-            UPDATE reserves
-            SET    cancellationdate = now(),
-                   found            = Null,
-                   priority         = 0,
-                   expirationdate   = NULL
-            WHERE  reservenumber    = ?
-        ";
-        my $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-    }
-    else {
-        # removing a reserve record....
-        # get the priority on this record....
-        my $priority;
-        my $query = qq|
-            SELECT priority FROM reserves
-            WHERE reservenumber = ?
-            /*
-              AND cancellationdate IS NULL
-              AND itemnumber IS NULL
-            */
-        |;
-        my $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-        ($priority) = $sth->fetchrow_array;
-        $query = qq/
-            UPDATE reserves
-            SET    cancellationdate = now(),
-                   found            = Null,
-                   priority         = 0,
-                   expirationdate   = NULL
-            WHERE  reservenumber   = ?
-        /;
-        $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-
-        _FixPriority( $reservenumber, $priority );
-    }
+    $dbh->do(q{
+        UPDATE reserves
+        SET    cancellationdate = now(),
+               found            = NULL,
+               priority         = 0,
+               expirationdate   = NULL
+        WHERE  reservenumber    = ?
+    }, undef, $reservenumber);
 
     _moveToOldReserves($reservenumber);
+    _NormalizePriorities($reserve->{biblionumber});
+
+    # remove from tmp_holdsqueue table
+    $sth = $dbh->do('DELETE FROM tmp_holdsqueue WHERE reservenumber = ?',
+                    undef, $reservenumber);
+    
+    my $borrowernumber = $reserve->{'borrowernumber'};
+    my $biblionumber = $reserve->{'biblionumber'};
     UpdateReserveCancelledStats(
       $branchcode,'reserve_canceled',undef,$biblionumber,
       $reserve->{'itemnumber'},undef,$reserve->{'borrowernumber'},
       undef,$moduser
     );
 
-    # remove from tmp_holdsqueue table
-    $sth = $dbh->prepare('DELETE FROM tmp_holdsqueue
-      WHERE reservenumber = ?');
-    $sth->execute($reservenumber);
-    
     # Send cancellation notice, if desired
     my $mprefs = C4::Members::Messaging::GetMessagingPreferences( { 
       borrowernumber => $borrowernumber,
@@ -1552,6 +1518,7 @@ sub ModReserve {
         $sth->finish;
 
         _moveToOldReserves($reservenumber);
+        _NormalizePriorities($biblio);
         
         UpdateReserveCancelledStats(
           $branch,'reserve_canceled',undef,$biblio,
@@ -2041,6 +2008,7 @@ sub ModReserveStatus {
       $sth_set = $dbh->prepare($query);
       $sth_set->execute( $newstatus, $itemnumber );
     }
+    _NormalizePriorities(GetReserve($reservenumber)->{biblionumber});
 
     if ( C4::Context->preference("ReturnToShelvingCart") && $newstatus ) {
       CartToShelf( $itemnumber );
@@ -2066,7 +2034,7 @@ sub ModReserveAffect {
     my $dbh = C4::Context->dbh;
     # we want to attach $itemnumber to $borrowernumber, find the biblionumber
     # attached to $itemnumber
-    my $sth = $dbh->prepare("SELECT biblionumber FROM items WHERE itemnumber=?");
+    my $sth = $dbh->prepare('SELECT biblionumber FROM items WHERE itemnumber=? LIMIT 1');
     $sth->execute($itemnumber);
     my ($biblionumber) = $sth->fetchrow;
 
@@ -2078,13 +2046,13 @@ sub ModReserveAffect {
     # If we affect a reserve that has to be transfered, don't set to Waiting
     my $query;
     if ($transferToDo) {
-    $query = "
-        UPDATE reserves
-        SET    priority = 0,
-               itemnumber = ?,
-               found = 'T'
-        WHERE reservenumber = ?
-    ";
+        $query = q{
+            UPDATE reserves
+            SET    priority = 0,
+                   itemnumber = ?,
+                   found = 'T'
+            WHERE reservenumber = ?
+        };
     }
     else {
     # affect the reserve to Waiting as well.
@@ -2116,17 +2084,18 @@ sub ModReserveAffect {
         my $sqlexpdate = $holdexpdate->output('iso');
         $query = "
             UPDATE reserves
-            SET     priority = 0,
-                    found = 'W',
-                    waitingdate=now(),
-                    itemnumber = ?,
-                    expirationdate='$sqlexpdate'
-        WHERE reservenumber = ?
+            SET    priority = 0,
+                   found = 'W',
+                   waitingdate=now(),
+                   itemnumber = ?,
+                   expirationdate='$sqlexpdate'
+            WHERE  reservenumber = ?
         ";
       }
     }
     $sth = $dbh->prepare($query);
     $sth->execute( $itemnumber, $reservenumber );
+    _NormalizePriorities( $biblionumber );
     _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber, $reservenumber ) if ( !$transferToDo && !$already_on_shelf && C4::Context->preference('EnableHoldOnShelfNotice'));
 
     if ( C4::Context->preference("ReturnToShelvingCart") ) {
@@ -2390,6 +2359,39 @@ sub fixPrioritiesOnItemMove
    return 1;
 }
 
+sub _NormalizePriorities {
+    my $biblionumber = shift or croak 'Must supply biblionumber';
+    my $dbh = C4::Context->dbh;
+
+    # Important part is to order by priority *and* timestamp.
+    # This allows the most recently modified instance of all instances
+    # of identical priority to now take the lowest priority, which is
+    # what we want in most cases.
+    my $query = q{
+        SELECT reservenumber
+        FROM   reserves
+        WHERE  biblionumber = ?
+          AND  (found IS NULL OR found = 'S')
+          AND  priority > 0
+        ORDER BY priority ASC, timestamp DESC
+    };
+    my $reserves_list
+        = $dbh->selectcol_arrayref($query, undef, $biblionumber);
+
+    # Just iterate over the list of reservenumbers and set their
+    # priorities to be an increasing monotonic sequence.
+    $query = q{
+        UPDATE reserves
+        SET    priority = ?
+        WHERE  reservenumber = ?
+    };
+    my $sth = $dbh->prepare_cached($query);
+    for ( my $j = 0 ; $j < @{$reserves_list} ; $j++ ) {
+        $sth->execute( $j+1, $reserves_list->[$j] );
+    }
+    return;
+}
+
 =item _FixPriority
 
 &_FixPriority($reservenumber, $rank);
@@ -2405,13 +2407,15 @@ sub _FixPriority {
     my ( $reservenumber, $rank ) = @_;
     my $dbh = C4::Context->dbh;
 
-    my $reserve = GetReserve($reservenumber);
-    croak "Unable to find reserve ($reservenumber)" if !$reserve;
-
     if ( $rank eq 'del' ) {
         CancelReserve( $reservenumber );
+        return;
     }
-    elsif ( $rank eq 'W' || $rank eq '0' ) {
+
+    my $reserve = GetReserve($reservenumber)
+        // croak "Unable to find reserve ($reservenumber)";
+
+    if ( $rank eq 'W' || $rank eq '0' ) {
         # make sure priority for waiting or in-transit items is 0
         $dbh->do(q{
             UPDATE reserves
@@ -2419,46 +2423,14 @@ sub _FixPriority {
             WHERE reservenumber = ?
         }, undef, $reservenumber);
     }
-
-    my $query = q{
-        SELECT reservenumber
-        FROM   reserves
-        WHERE  biblionumber = ?
-          AND  (found IS NULL OR found = 'S')
-        ORDER BY priority ASC, timestamp DESC
-    };
-    my $priority_list
-        = $dbh->selectcol_arrayref($query, undef, $reserve->{biblionumber});
-
-    # We have our priority-ordered list of related reserves. Now find
-    # the index of the one that has $reservenumber.
-    my $key;
-    for ( my $i = 0 ; $i < @{$priority_list} ; $i++ ) {
-        if ( $reservenumber == $priority_list->[$i] ) {
-            $key = $i;    # save the index
-            last;
-        }
+    else {
+        $dbh->do(q{
+            UPDATE reserves SET
+            priority = ?
+            WHERE reservenumber = ?
+        }, undef, $rank, $reservenumber);
     }
-
-    # If index exists in array then splice it into new position.
-    if ( defined $key && $rank ne 'del' && $rank > 0 ) {
-        # $new_rank is what you want the new index to be in the array
-        my $new_rank = $rank - 1;
-        my $moving_item = splice( @{$priority_list}, $key, 1 );
-        splice( @{$priority_list}, $new_rank, 0, $moving_item );
-    }
-
-    # Finally, update all the priorities to reflect the new order.
-    $query = q{
-        UPDATE reserves
-        SET    priority = ?
-        WHERE  reservenumber = ?
-    };
-    my $sth = $dbh->prepare_cached($query);
-    for ( my $j = 0 ; $j < @{$priority_list} ; $j++ ) {
-        $sth->execute( $j+1, $priority_list->[$j] );
-    }
-
+    _NormalizePriorities($reserve->{biblionumber});
     return;
 }
 
