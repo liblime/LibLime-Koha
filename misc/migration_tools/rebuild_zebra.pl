@@ -542,7 +542,7 @@ sub add_isbn13s {
           $marc->field('999')->add_subfields(map { ('e' => $_) } keys %isbns);
         }
     } else {
-        $marc->append_field(MARC::Field->new('999', ' ', ' ', map { ('e' => $_) } keys %isbns));
+        $marc->append_fields(MARC::Field->new('999', ' ', ' ', map { ('e' => $_) } keys %isbns));
     }
 }
 
