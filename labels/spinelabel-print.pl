@@ -102,10 +102,11 @@ if ($prefix ne '_none') {
       WHERE  category=?
    |) || die $dbh->errstr;
    $sth->execute($prefix);
+
    PREFIX:
    while(my $row = $sth->fetchrow_hashref()) {
       if ($prefix eq 'LOC') {
-         if ($$item{permanent_location} eq $$row{authorised_value}) {
+         if ($$item{location} eq $$row{authorised_value}) {
             unshift @all, $$row{prefix};
             last PREFIX;
          }
