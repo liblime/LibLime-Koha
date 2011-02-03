@@ -368,41 +368,80 @@
                         <table>
                           <tr>
                             <td>
-                              <!-- TMPL_UNLESS NAME="holdable" -->
-                                <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
-                                       id="reqany_<!-- TMPL_VAR NAME="biblionumber" -->"
-                                       class="selectany"
-                                       value="Any"
-                                       disabled="disabled"
-                                />
-                              <!-- TMPL_ELSE -->
-                                <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
-                                       id="reqany_<!-- TMPL_VAR NAME="biblionumber" -->"
-                                       class="selectany"
-                                       value="Any"
-                                       checked="checked"
-                                />
-                              <!-- /TMPL_UNLESS -->
-                              <label for="reqany_<!-- TMPL_VAR NAME="biblionumber" -->">Next available copy</label>
+                              <!-- TMPL_IF NAME="itemtitle_level" -->
+                                <!-- TMPL_UNLESS NAME="holdable" -->
+                                  <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         id="reqany_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         class="selectany"
+                                         value="Any"
+                                         disabled="disabled"
+                                  />
+                                <!-- TMPL_ELSE -->
+                                  <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         id="reqany_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         class="selectany"
+                                         value="Any"
+                                         checked="checked"
+                                  />
+                                <!-- /TMPL_UNLESS -->
+                                <label for="reqany_<!-- TMPL_VAR NAME="biblionumber" -->">Next available copy</label>
+                              <!-- /TMPL_IF -->
+                              <!-- TMPL_IF NAME="title_level" -->
+                                <!-- TMPL_UNLESS NAME="holdable" -->
+                                  <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         id="reqany_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         class="selectany"
+                                         value="Any"
+                                         disabled="disabled"
+                                  />
+                                <!-- TMPL_ELSE -->
+                                  <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         id="reqany_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         class="selectany"
+                                         value="Any"
+                                         checked="checked"
+                                  />
+                                <!-- /TMPL_UNLESS -->
+                                <label for="reqany_<!-- TMPL_VAR NAME="biblionumber" -->">Next available copy</label>
+                              <!-- /TMPL_IF -->
                             </td>
                           </tr>
                           <tr>
                             <td>
-                              <!-- TMPL_UNLESS NAME="holdable" -->
-                                <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
-                                       id="reqspecific_<!-- TMPL_VAR NAME="biblionumber" -->"
-                                       class="selectspecific"
-                                       disabled="disabled"
-                                       value="Specific"
-                                />
-                              <!-- TMPL_ELSE -->
-                                <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
-                                       id="reqspecific_<!-- TMPL_VAR NAME="biblionumber" -->"
-                                       class="selectspecific"
-                                       value="Specific"
-                                />
-                              <!-- /TMPL_UNLESS -->
-                              <label for="reqspecific_<!-- TMPL_VAR NAME="biblionumber"-->">A specific copy</label>
+                              <!-- TMPL_IF NAME="itemtitle_level" -->
+                                <!-- TMPL_UNLESS NAME="holdable" -->
+                                  <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         id="reqspecific_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         class="selectspecific"
+                                         disabled="disabled"
+                                         value="Specific"
+                                  />
+                                <!-- TMPL_ELSE -->
+                                  <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         id="reqspecific_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         class="selectspecific"
+                                         value="Specific"
+                                  />
+                                <!-- /TMPL_UNLESS -->
+                                <label for="reqspecific_<!-- TMPL_VAR NAME="biblionumber"-->">A specific copy</label>
+                              <!-- /TMPL_IF -->
+                              <!-- TMPL_IF NAME="item_level" -->
+                                <!-- TMPL_UNLESS NAME="holdable" -->
+                                  <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         id="reqspecific_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         class="selectspecific"
+                                         disabled="disabled"
+                                         value="Specific"
+                                  />
+                                <!-- TMPL_ELSE -->
+                                  <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         id="reqspecific_<!-- TMPL_VAR NAME="biblionumber" -->"
+                                         class="selectspecific"
+                                         value="Specific"
+                                  />
+                                <!-- /TMPL_UNLESS -->
+                                <label for="reqspecific_<!-- TMPL_VAR NAME="biblionumber"-->">A specific copy</label>
+                              <!-- /TMPL_IF -->
                             </td>
                           </tr>
                         </table>
@@ -484,12 +523,13 @@
                               <!-- TMPL_IF NAME="itemdata_enumchron" --><!-- test -->
                                 <td><!-- TMPL_VAR NAME="enumchron" --></td>
                               <!-- /TMPL_IF -->
+                              <!--
                               <td>
                               <!-- TMPL_IF NAME="enumchron" -->
                               <!-- TMPL_VAR NAME="enumchron" --><!-- TMPL_IF NAME="serialseq" --> -- <!-- /TMPL_IF -->
                               <!-- /TMPL_IF -->
                               <!-- TMPL_VAR NAME="serialseq" --><!-- TMPL_IF NAME="publisheddate" --> (<!-- TMPL_VAR NAME="publisheddate" -->)<!-- /TMPL_IF -->
-                              <!-- TMPL_IF NAME="copynumber" --><br /><!-- TMPL_VAR NAME="copynumber" --><!-- TMPL_ELSE -->&nbsp;<!-- /TMPL_IF --></td>
+                              <!-- TMPL_IF NAME="copynumber" --><br /><!-- TMPL_VAR NAME="copynumber" --><!-- TMPL_ELSE -->&nbsp;<!-- /TMPL_IF --></td> -->
                               <td>
                                 <!-- TMPL_IF NAME="date_due" -->
                                   <span class="checkedout">Due <!-- TMPL_VAR NAME="date_due" --></span>

@@ -4218,6 +4218,33 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Sync deleteditems/deletedbiblioitems schema for changes made in 4.03.08.002 )\n";
 }
 
+$DBversion = '4.03.11.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('OPACUseHoldType','0','If ON, allow OPAC users to place hold on specific items that are designated as item-level hold records.  Used in conjuction with OPACItemHolds.','','YesNo')|);
+    $dbh->do(q{
+        ALTER TABLE biblio
+            ADD `holdtype` ENUM('item','title','itemtitle') NOT NULL DEFAULT 'itemtitle'
+    });
+    my $insert_sth = $dbh -> prepare("
+        INSERT INTO marc_subfield_structure
+        (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
+        VALUES ('942', 'r', 'Hold Type','Hold Type',0,0,'biblio.holdtype',9,'HOLD_TYPE','','',0,0,?,NULL,'','itemtitle');");
+    $dbh->do("
+        INSERT INTO authorised_values
+        (category,authorised_value,prefix,lib,opaclib,imageurl) VALUES
+        ('HOLD_TYPE',item,'','Item Hold','',''),
+        ('HOLD_TYPE',title,'','Title Hold','',''),
+        ('HOLD_TYPE',itemtitle,'','Item & Title Hold','','')
+    ");
+     $dbh->do("
+        UPDATE biblio SET holdtype='item' WHERE biblionumber IN
+          (SELECT biblionumber FROM subscription)
+    ");
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Added syspref OPACUseHoldType )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

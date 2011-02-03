@@ -381,6 +381,7 @@ $tabsysprefs{OpacBrowser}            = "OPAC";
 $tabsysprefs{kohaspsuggest}          = "OPAC";
 $tabsysprefs{OpacRenewalAllowed}     = "OPAC";
 $tabsysprefs{OPACItemHolds}          = "OPAC";
+$tabsysprefs{OPACUseHoldType}        = "OPAC";
 $tabsysprefs{OPACGroupResults}       = "OPAC";
 $tabsysprefs{OPACXSLTDetailsDisplay} = "OPAC";
 $tabsysprefs{OPACXSLTResultsDisplay} = "OPAC";

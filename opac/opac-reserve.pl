@@ -587,6 +587,23 @@ foreach my $biblioNum (@biblionumbers) {
         warn "Already_Reserved";
     }
 
+    if (C4::Context->preference('OPACItemHolds')) {
+      if (C4::Context->preference('OPACUseHoldType')) {
+        if ($biblioData->{holdtype} eq 'item') {
+          $biblioLoopIter{item_level} = 1;
+        }
+        elsif ($biblioData->{holdtype} eq 'title') {
+          $biblioLoopIter{title_level} = 1;
+        }
+        else {
+          $biblioLoopIter{itemtitle_level} = 1;
+        }
+      }
+      else {
+        $biblioLoopIter{itemtitle_level} = 1;
+      }
+    }
+
     push @$biblioLoop, \%biblioLoopIter;
 }
 
