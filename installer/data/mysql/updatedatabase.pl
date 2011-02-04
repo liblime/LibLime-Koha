@@ -4245,6 +4245,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Added syspref OPACUseHoldType )\n";
 }
 
+$DBversion = '4.03.11.003';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+   $dbh->do(q{
+      INSERT IGNORE INTO `systempreferences` (variable,value,options,explanation,type) VALUES (
+      'UsePatronBranchForPatronInfo',0,'','If ON, the SIP patron information response (64) will use the patron branch rather than the institution ID in the AO field','YesNo')
+   });
+   SetVersion ($DBversion);
+   print "Upgrade to $DBversion done ( Added syspref UsePatronBranchForPatronInfo )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

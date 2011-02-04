@@ -331,4 +331,4 @@ INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) V
 INSERT IGNORE INTO `systempreferences` (`variable` ,`value` ,`options` ,`explanation` ,`type`) VALUES ('UseReceiptTemplates', '0', '', 'Enable the use of the Receipt Templates system.', 'YesNo');
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('reservesNeedConfirmationOnCheckout',0,'If ON, an item that can fill an item-level hold request requires confirmation to check out regardless whether the check out patron is the one who placed the hold or not','','YesNo');
 INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('OPACUseHoldType','0','If ON, allow OPAC users to place hold on specific items that are designated as item-level hold records.  Used in conjuction with OPACItemHolds.','','YesNo');
-
+INSERT IGNORE INTO systempreferences (variable,value,options,explanation,type) VALUES ('UsePatronBranchForPatronInfo',0,'','If ON, the SIP patron information response (64) will use the patron branch rather than the institution ID in the AO field','YesNo');

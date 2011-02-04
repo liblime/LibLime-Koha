@@ -1014,7 +1014,12 @@ sub handle_patron_info {
         }
     }
 
-    $resp .= add_field(FID_INST_ID,       ($ils->institution_id || 'SIP2'));
+    if (C4::Context->preference('UsePatronBranchForPatronInfo')) {
+      $resp .= add_field(FID_INST_ID,       ($patron->{branchcode} || 'SIP2'));
+    }
+    else {
+      $resp .= add_field(FID_INST_ID,       ($ils->institution_id || 'SIP2'));
+    }
     $self->write_msg($resp);
     return(PATRON_INFO);
 }
