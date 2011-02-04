@@ -1846,22 +1846,7 @@ sub ModReserveFillCheckout
        WHERE reservenumber = ?|);
    $sth->execute($$res{reservenumber});
 
-   ## move it to old_reserves
-   $sth = $dbh->prepare(q|
-      DELETE FROM old_reserves
-       WHERE reservenumber = ?|);
-   $sth->execute($$res{reservenumber});
-   $sth = $dbh->prepare(q|
-      INSERT INTO old_reserves
-      SELECT * FROM reserves
-       WHERE reservenumber = ?|);
-   $sth->execute($$res{reservenumber});
-
-   ## delete from reserves
-   $sth = $dbh->prepare(q|
-      DELETE FROM reserves
-       WHERE reservenumber = ?|);
-   $sth->execute($$res{reservenumber});
+   _moveToOldReserves($$res{reservenumber});
 
    ## force removal from Holds Queue Report
    $sth = $dbh->prepare('
@@ -1870,7 +1855,7 @@ sub ModReserveFillCheckout
    $sth->execute($$res{reservenumber});
    
    ## fix other holds' priorities.
-   _FixPriority($coBiblionumber,$coBorrowernumber);
+   _NormalizePriorities($$res{biblionumber});
 
    return 1;
 }
