@@ -1004,19 +1004,6 @@ sub AddIssue {
 						C4::Reserves::CancelReserve($res->{'reservenumber'});
 					}
 				}
-				if ($cancelreserve) {
-					C4::Reserves::CancelReserve($res->{'reservenumber'});
-				}
-				else {
-					# set waiting reserve to first in reserve queue as book isn't waiting now
-					ModReserve(1,
-						$res->{'biblionumber'},
-						$res->{'borrowernumber'},
-						$res->{'branchcode'},
-						$res->{'itemnumber'},
-						$res->{'reservenumber'}
-					);
-				}
 			}
 			
          ## Starting process for transfer job (checking transfert 
