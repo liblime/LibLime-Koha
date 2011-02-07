@@ -369,6 +369,7 @@ my @operators;
 
 # indexes are query qualifiers, like 'title', 'author', etc. They
 # can be single or multiple parameters separated by comma: kw,right-Truncation 
+# a simple search has no index (yet!)
 my @indexes;
 @indexes = split("\0",$params->{'idx'});
 
@@ -426,14 +427,14 @@ if ($suggest_count) {
   $template->param(SPELL_SUGGEST => \@spellcheckarray) if (@spellcheckarray);
 }
 
-# limits are use to limit to results to a pre-defined category such as branch or language
+# limits are used to limit to results to a pre-defined category such as branch or language
 my @limits;
 @limits = split("\0",$params->{'limit'}) if $params->{'limit'};
-
 if($params->{'multibranchlimit'}) {
-push @limits, join(" or ", map { "branch: $_ "}  @{GetBranchesInCategory($params->{'multibranchlimit'})}) ;
+   push @limits, join(" or ", 
+      map { "branch: $_ "}  @{GetBranchesInCategory($params->{'multibranchlimit'})}
+   ) ;
 }
-
 my $available;
 foreach my $limit(@limits) {
     if ($limit =~/available/) {
@@ -441,6 +442,29 @@ foreach my $limit(@limits) {
     }
 }
 $template->param(available => $available);
+
+## special case for barcode suffixes: expand to use active library's prefix.
+if (C4::Context->preference('itembarcodelength')
+&& ($operands[0] !~ /\D/)) {
+   my $expectedLen = C4::Context->preference('itembarcodelength');
+   ## for simple earch
+   if (  (length($operands[0])<$expectedLen)
+      && (length($operands[0]) != 10)
+      && (length($operands[0]) != 13) ) { # exclude looks like isbn
+      $indexes[0] = 'bc';
+   }
+
+   ## advanced search
+   for my $i(0..$#indexes) {
+      next unless $indexes[$i] eq 'bc';
+      if (length($operands[$i]) < $expectedLen) {
+         $operands[$i] = C4::Circulation::barcodedecode(
+            barcode    => $operands[$i]
+         );
+      }
+   }
+}
+
 
 # append year limits if they exist
 my $limit_yr;

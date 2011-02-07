@@ -100,7 +100,7 @@ elsif ( $request eq 'KillReserved' ) {
     $reqmessage  = 1;
 }
 
-# collect the stack of books already transfered so they can printed...
+# collect the stack of books already transfered so they can be printed...
 my @trsfitemloop;
 my %transfereditems;
 my $transfered;
@@ -109,32 +109,48 @@ my $barcode = $query->param('barcode');
 defined $barcode and $barcode =~ s/\s*//g;  # FIXME: barcodeInputFilter
 # warn "barcode : $barcode";
 if ($barcode) {
-
-    my $iteminformation;
-    ( $transfered, $messages, $iteminformation ) =
-      transferbook( $tobranchcd, $barcode, $ignoreRs );
-#       use Data::Dumper;
-#       warn "Transfered : $transfered / ".Dumper($messages);
-    $found = $messages->{'ResFound'};
-    if ($transfered) {
-        my %item;
-        my $frbranchcd =  C4::Context->userenv->{'branch'};
-#         if ( not($found) ) {
-        $item{'biblionumber'} = $iteminformation->{'biblionumber'};
-        $item{'title'}        = $iteminformation->{'title'};
-        $item{'author'}       = $iteminformation->{'author'};
-        $item{'itemtype'}     = $iteminformation->{'itemtype'};
-        $item{'ccode'}        = $iteminformation->{'ccode'};
-        $item{'frbrname'}     = $branches->{$frbranchcd}->{'branchname'};
-        $item{'tobrname'}     = $branches->{$tobranchcd}->{'branchname'};
-#         }
-        $item{counter}  = 0;
-        $item{barcode}  = $barcode;
-        $item{frombrcd} = $frbranchcd;
-        $item{tobrcd}   = $tobranchcd;
-        push( @trsfitemloop, \%item );
-#         warn Dumper(@trsfitemloop);
+    my $exactBarcode = $query->param('exactBarcode');
+    if (!$exactBarcode) {
+       my @itemsbc = @{C4::Circulation::GetItemnumbersFromBarcodeStr($barcode)};
+       if (@itemsbc==1) {
+         $barcode = $itemsbc[0]{barcode};
+      }
+      elsif (@itemsbc) {
+         my @itemnumbers = ();
+         foreach(@itemsbc) { push @itemnumbers, $$_{itemnumber} }
+         my @items = @{C4::Items::GetItemsFreeDetails(itemnumbers => \@itemnumbers)};
+         $template->param(
+            items       => \@items,
+            tobranchcd  => $tobranchcd,
+         );
+         $barcode = undef;
+      }
     }
+    
+    if ($barcode) {
+       my $iteminformation;
+       ( $transfered, $messages, $iteminformation ) =
+         transferbook( $tobranchcd, $barcode, $ignoreRs );
+       $found = $messages->{'ResFound'};
+       if ($transfered) {
+         my %item;
+         my $frbranchcd =  C4::Context->userenv->{'branch'};
+#         if ( not($found) ) {
+         $item{'biblionumber'} = $iteminformation->{'biblionumber'};
+         $item{'title'}        = $iteminformation->{'title'};
+         $item{'author'}       = $iteminformation->{'author'};
+         $item{'itemtype'}     = $iteminformation->{'itemtype'};
+         $item{'ccode'}        = $iteminformation->{'ccode'};
+         $item{'frbrname'}     = $branches->{$frbranchcd}->{'branchname'};
+         $item{'tobrname'}     = $branches->{$tobranchcd}->{'branchname'};
+#         }
+         $item{counter}  = 0;
+         $item{barcode}  = $barcode;
+         $item{frombrcd} = $frbranchcd;
+         $item{tobrcd}   = $tobranchcd;
+         push( @trsfitemloop, \%item );
+      }
+   }
 }
 
 foreach ( $query->param ) {
@@ -216,6 +232,12 @@ foreach my $code ( keys %$messages ) {
 		$err{firstname}  = $borrower->{'firstname'};
 		$err{surname}    = $borrower->{'surname'};
 		$err{cardnumber} = $borrower->{'cardnumber'};
+    }
+    elsif ($code eq 'PendingTransfer') {
+       $err{errpending} = 1;
+       $err{frombranch} = $$messages{PendingTransfer}{frombranch};
+       $err{tobranch}   = $$messages{PendingTransfer}{tobranch};
+       $err{datesent}   = $$messages{PendingTransfer}{datesent};
     }
     $err{errdesteqholding} = ( $code eq 'DestinationEqualsHolding' );
     push( @errmsgloop, \%err );

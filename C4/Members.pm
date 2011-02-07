@@ -175,28 +175,41 @@ C<$count> is the number of elements in C<$borrowers>.
 
 =cut
 
-#'
 #used by member enquiries from the intranet
 #called by member.pl and circ/circulation.pl
 sub SearchMember {
     my ($searchstring, $orderby, $type,$category_type,$filter,$showallbranches ) = @_;
     my $dbh   = C4::Context->dbh;
-    my $query = "";
     my $count;
     my @data;
     my @bind = ();
+    my $sth;
 
     # FIXME: find where in members.pl this function is being called a second time with no args
     return (0, undef) if not defined $searchstring or $searchstring eq '';
 
     # this is used by circulation everytime a new borrowers cardnumber is scanned
     # so we can check an exact match first, if that works return, otherwise do the rest
-    my $cardnum = _prefix_cardnum($searchstring);
-    $query = "SELECT * FROM borrowers
-        LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
-        ";
-    my $sth = $dbh->prepare("$query WHERE cardnumber = ?");
-    $sth->execute($cardnum);
+    my $query = 'SELECT * FROM borrowers
+      LEFT JOIN categories
+             ON borrowers.categorycode=categories.categorycode ';
+
+    if (($searchstring !~ /\D/) && C4::Context->preference('patronbarcodelength')) {
+      ## this handles the edge case of multiple barcodes with same right-hand 
+      ## significant digits, different branch prefixes.
+      my @in = @{_prefix_cardnum_multibranch($searchstring)};
+      $sth = $dbh->prepare(sprintf(
+            "$query WHERE cardnumber IN(%s)",
+            join(',',map{'?'}@in)
+         )
+      );
+      $sth->execute(@in);
+    }
+    else {
+       $sth = $dbh->prepare("$query WHERE cardnumber=?");
+       $sth->execute($searchstring);
+    }
+    
     my $data = $sth->fetchall_arrayref({});
     if (@$data){
         return ( scalar(@$data), $data );
@@ -290,7 +303,6 @@ sub SearchMemberField {
     my $count;
     my @data;
     my @bind = ();
-
     $searchstring =~ s/\*/%/g;
 
     return SearchMember( $searchstring, $orderby ) unless ( $field );
@@ -756,7 +768,7 @@ sub ModMember {
     }
     # modify cardnumber if necessary.
     if(C4::Context->preference('patronbarcodelength') && exists($data{'cardnumber'})){
-        $data{'cardnumber'} = _prefix_cardnum($data{'cardnumber'}); 
+        $data{'cardnumber'} = _prefix_cardnum(cardnumber=>$data{'cardnumber'}); 
         # TODO : generate error if cardnumber does not match barcode schema, 
         #        or length not sufficient to prefix without corrupting input string.
     }
@@ -840,7 +852,7 @@ sub AddMember {
     my $dbh = C4::Context->dbh;
     $data{'userid'} = '' unless $data{'password'};
     $data{'password'} = md5_base64( $data{'password'} ) if $data{'password'};
-    $data{'cardnumber'} = _prefix_cardnum($data{'cardnumber'}) if(C4::Context->preference('patronbarcodelength'));
+    $data{'cardnumber'} = _prefix_cardnum(cardnumber=>$data{'cardnumber'}) if(C4::Context->preference('patronbarcodelength'));
 
     # WE SHOULD NEVER PASS THIS SUBROUTINE ANYTHING OTHER THAN ISO DATES
     # IF YOU UNCOMMENT THESE LINES YOU BETTER HAVE A DARN COMPELLING REASON
@@ -848,6 +860,7 @@ sub AddMember {
 #    $data{'dateenrolled'} = format_date_in_iso( $data{'dateenrolled'});
 #    $data{'dateexpiry'}   = format_date_in_iso( $data{'dateexpiry'}  );
     # This query should be rewritten to use "?" at execute.
+    # Done -hQ
     if (!$data{'dateofbirth'}){
         undef ($data{'dateofbirth'});
     }
@@ -2060,6 +2073,10 @@ sub DelMember {
     my $sth = $dbh->prepare($query);
     $sth->execute($borrowernumber);
     $sth->finish;
+    $sth = $dbh->prepare('DELETE
+      FROM borrower_worklibrary
+     WHERE borrowernumber = ?');
+    $sth->execute($borrowernumber);
     $query = "
        DELETE
        FROM borrowers
@@ -2192,22 +2209,32 @@ sub GetPatronImage {
 
 =head2 PutPatronImage
 
-    PutPatronImage($cardnumber, $mimetype, $imgfile);
+    PutPatronImage(
+      cardnumber => $cardnumber, 
+      mimetype   => $mimetype
+      imgfile    => $imgfile
+    );
 
 Stores patron binary image data and mimetype in database.
 NOTE: This function is good for updating images as well as inserting new images in the database.
 
 =cut
 
-sub PutPatronImage {
-    my ($cardnumber, $mimetype, $imgfile) = @_;
-    warn "Parameters passed in: Cardnumber=$cardnumber, Mimetype=$mimetype, " . ($imgfile ? "Imagefile" : "No Imagefile") if $debug;
+sub PutPatronImage 
+{
+    my %g = @_;
     my $dbh = C4::Context->dbh;
-    my $query = "INSERT INTO patronimage (cardnumber, mimetype, imagefile) VALUES (?,?,?) ON DUPLICATE KEY UPDATE imagefile = ?;";
+    my $query = "INSERT INTO patronimage (cardnumber, mimetype, imagefile) 
+      VALUES (?,?,?) 
+      ON DUPLICATE KEY UPDATE imagefile = ?;";
     my $sth = $dbh->prepare($query);
-    $sth->execute($cardnumber,$mimetype,$imgfile,$imgfile);
-    warn "Error returned inserting $cardnumber.$mimetype." if $sth->errstr;
-    return $sth->errstr;
+    $sth->execute(
+      $g{cardnumber},
+      $g{mimetype},
+      $g{imgfile},
+      $g{imgfile},
+   );
+   return $sth->errstr;
 }
 
 =head2 RmPatronImage
@@ -2650,7 +2677,7 @@ sub SetDisableReadingHistory {
 
 sub SearchMemberAdvanced {
   my ( $params ) = @_;
-  warn Data::Dumper::Dumper( $params );
+#  warn Data::Dumper::Dumper( $params );
       
   my $orderby = $params->{'orderby'} || 'borrowers.surname';
   
@@ -2664,9 +2691,15 @@ sub SearchMemberAdvanced {
     push( @sql_params, $params->{'borrowernumber'} );
   }
   
-  if ( defined $params->{'cardnumber'} ) {
-    push( @limits, "borrowers.cardnumber = ?" );
-    push( @sql_params, $params->{'cardnumber'} );
+   if ( defined $params->{'cardnumber'} ) {
+      my @in = @{_prefix_cardnum_multibranch($$params{cardnumber})};
+      push(@limits, 
+         sprintf(
+            "borrowers.cardnumber IN(%s)", 
+            join(',',map{'?'}@in)
+         )
+      );
+      push( @sql_params, @in );
   }
   
   if ( defined $params->{'categorycode'} ) {
@@ -2879,30 +2912,60 @@ sub SearchMemberAdvanced {
 
 =over 4
 
-$cardnum = _prefix_cardnum($cardnum,$branchcode);
+$cardnum = _prefix_cardnum(
+   cardnumber           => $cardnumber,
+  [branchcode           => $branchcode,]
+  [patronbarcodeprefix  => $prefix,]
+  [prefix               => $prefix,]
+);
 
-If a system-wide barcode length is defined, and a prefix defined for the passed branch or the user's branch,
-modify the barcode by prefixing and padding.
+If a system-wide barcode length is defined, and a prefix defined for the 
+passed branch or the user's branch, modify the barcode by prefixing and padding.
+Uses logged in user's active branch if $branchcode is not passed in.
+The parameter 'prefix' is a synonymn for 'patronbarcodeprefix' if you don't 
+feel like typing.
 
 =back
 =cut
 
-sub _prefix_cardnum{
-    my ($cardnum,$branchcode) = @_;
-    
-    if(C4::Context->preference('patronbarcodelength') && (length($cardnum) < C4::Context->preference('patronbarcodelength'))) {
-        #if we have a system-wide cardnum length and a branch prefix, prepend the prefix.
-        if( ! $branchcode && defined(C4::Context->userenv) ) {
-            $branchcode = C4::Context->userenv->{'branch'};
-        }
-        return $cardnum unless $branchcode;
-        my $branch = GetBranchDetail( $branchcode );
-        return $cardnum unless( defined($branch) && defined($branch->{'patronbarcodeprefix'}) );
-        my $prefix = $branch->{'patronbarcodeprefix'} ;
-        my $padding = C4::Context->preference('patronbarcodelength') - length($prefix) - length($cardnum) ;
-        $cardnum = $prefix . '0' x $padding . $cardnum if($padding >= 0) ;
+sub _prefix_cardnum_multibranch
+{
+   my $str = shift;
+   my $dbh = C4::Context->dbh;
+   my @all;
+   my $sth = $dbh->prepare('SELECT branchcode,patronbarcodeprefix FROM branches');
+   $sth->execute();
+   while(my $row = $sth->fetchrow_hashref()) {
+      die "No patronbarcodeprefix set for branch $$row{branchcode} in table branches"
+         unless $$row{patronbarcodeprefix};
+      push @all, _prefix_cardnum(
+         cardnumber           => $str,
+         branchcode           => $$row{branchcode},
+         patronbarcodeprefix  => $$row{patronbarcodeprefix}
+      );
    }
-    return $cardnum;
+   return \@all // [];
+}
+
+sub _prefix_cardnum
+{
+   my %g = @_;
+   my $pbclen = C4::Context->preference('patronbarcodelength');
+   if($pbclen && (length($g{cardnumber}) < $pbclen)) {
+      #if we have a system-wide cardnum length and a branch prefix, prepend the prefix.
+      if(!$g{branchcode} && defined(C4::Context->userenv) ) {
+         $g{branchcode} = C4::Context->userenv->{'branch'};
+      }
+      return $g{cardnumber} unless $g{branchcode};
+      my $prefix = $g{patronbarcodeprefix} || $g{prefix} || 0;
+      unless ($prefix) {
+         my $branch = GetBranchDetail($g{branchcode}) // {};
+         return $g{cardnumber} unless $$branch{patronbarcodeprefix};
+      }
+      my $padding = $pbclen - length($prefix) - length($g{cardnumber});
+      $g{cardnumber} = $prefix . '0' x $padding . $g{cardnumber} if($padding >= 0);
+   }
+   return $g{cardnumber};
 }
 
 END { }    # module clean-up code here (global destructor)

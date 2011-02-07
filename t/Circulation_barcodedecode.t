@@ -28,7 +28,9 @@ my @filters = sort keys %inputs;
 foreach my $filter (@filters) {
     foreach my $datum (@{$inputs{$filter}}) {
         my $expect = shift @{$outputs{$filter}} or die "Internal Test Error: missing expected output for filter '$filter' on input '$datum'";
-        my $output = C4::Circulation::barcodedecode($datum, $filter);
+        my $output = C4::Circulation::barcodedecode(
+         barcode =>$datum, 
+         filter  =>$filter);
         ok($output eq $expect, sprintf("%12s: %20s => %15s", $filter, "'$datum'", "'$expect'")); 
         ($output eq $expect) or diag  "Bad output: '$output'";
     }
@@ -40,6 +42,7 @@ __END__
 
 This tests avoids being dependent on the database by using the optional
 second argument to barcodedecode.
+## NOTE: barcodedecode() no longer takes a list of args but a hash. -hQ
 
 T-prefix style is derived from zero-padded "Follett Classic Code 3 of 9".  From:
     www.fsc.follett.com/_file/File/pdf/Barcode%20Symbology%20Q%20%20A%203_05.pdf

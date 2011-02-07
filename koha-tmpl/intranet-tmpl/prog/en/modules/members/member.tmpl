@@ -84,7 +84,6 @@ function CheckCheckAll(fmobj) {
 
 <!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
 
-
 <div class="browse">
     Browse by last name:
     <a href="/cgi-bin/koha/members/member.pl?member=a">A</a>
@@ -345,7 +344,7 @@ function CheckCheckAll(fmobj) {
 		    </div>
 		</fieldset>
 	</form>
-</div>
+</div><!-- end advanced search -->
 
 <!-- TMPL_IF NAME="resultsloop" -->
    <div id="searchheader"> <h3>Results <!-- TMPL_VAR Name ="from" --> to <!-- TMPL_VAR Name ="to" --> of <!-- TMPL_VAR Name ="numresults" --> found for '<span class="ex"><!-- TMPL_VAR NAME="member" --></span>'</h3></div>
@@ -408,11 +407,11 @@ function CheckCheckAll(fmobj) {
 </form>
     </table>
 	<div class="pages"><!--TMPL_IF Name="multipage"--><!--TMPL_VAR Name="paginationbar" --><!--/TMPL_IF--></div>
-</div>
+</div><!-- end resultsloop -->
 <!-- TMPL_ELSE -->
-<!-- TMPL_IF NAME="searching" -->
+   <!-- TMPL_IF NAME="searching" -->
 No results found
-<!-- /TMPL_IF -->
+   <!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="ShowPatronSearchBySQL" -->
@@ -429,7 +428,16 @@ No results found
 </div>
 
 <div class="yui-b">
-<!-- TMPL_INCLUDE NAME="members-menu.inc" -->
+<!-- TMPL_IF NAME="resultsloop" -->
+<!-- TMPL_ELSE -->
+   <!-- TMPL_IF NAME="searching" -->
+   <!-- TMPL_ELSE -->
+      <!-- TMPL_IF NAME="borrowernumber" -->
+      <!-- TMPL_INCLUDE NAME="members-menu.inc" -->
+      <!-- /TMPL_IF -->
+   <!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
+
 </div>
 </div>
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

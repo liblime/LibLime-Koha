@@ -62,7 +62,7 @@ BEGIN {
 
 	# FIXME subs that should probably be elsewhere
 	push @EXPORT, qw(
-		&barcodedecode
+      barcodedecode
 		GetRenewalDetails 
 	);
 
@@ -123,7 +123,14 @@ Also deals with stocktaking.
 
 =head2 barcodedecode
 
-=head3 $str = &barcodedecode($barcode, [$filter]);
+=head3 $str = &barcodedecode(
+   barcode           => $barcode, 
+  [str               => $barcode], # synonymn for barcode
+  [filter            => $filter],
+  [prefix            => $prefix],
+  [itembarcodeprefix => $prefix],  # synonymn for prefix
+  [branchcode        => $branchcode],
+);
 
 =over 4
 
@@ -151,41 +158,91 @@ System Pref options.
 # FIXME -- the &decode fcn below should be wrapped into this one.
 # FIXME -- these plugins should be moved out of Circulation.pm
 #
-sub barcodedecode {
-    my ($barcode, $filter) = @_;
-    $filter = C4::Context->preference('itemBarcodeInputFilter') unless $filter;
+sub barcodedecode 
+{
+   my %g = @_;
+   $g{barcode} ||= $g{str} || return '';
+   $g{filter}    = C4::Context->preference('itemBarcodeInputFilter') unless $g{filter};
 
-    my $filter_dispatch = {
+   my $filter_dispatch = {
         'whitespace' => sub {
-		                    $barcode =~ s/\s//g;
-		                    return $barcode;
+		                    $g{barcode} =~ s/\s//g;
+		                    return $g{barcode};
                         },
 	    'T-prefix'  =>  sub {
-                            if ($barcode =~ /^[Tt]\s*(\d+)/) {
+                            if ($g{barcode} =~ /^[Tt]\s*(\d+)/) {
                                 return sprintf("T%07d", $1 );
                             } else {
-                                return $barcode;
+                                return $g{barcode};
                             }
                          },
 	     'cuecat'   =>  sub {
-		                    chomp($barcode);
-	                        my @fields = split( /\./, $barcode );
+		                    chomp($g{barcode});
+	                        my @fields = split( /\./, $g{barcode} );
 	                        my @results = map( decode($_), @fields[ 1 .. $#fields ] );
 	                        if ( $#results == 2 ) {
 	                            return $results[2];
 	                        } else {
-	                            return $barcode;
+	                            return $g{barcode};
 	                        }
                         },
     };
-    my $filtered = ($filter && exists($filter_dispatch->{$filter})) ? $filter_dispatch->{$filter}() : $barcode;
-    if(C4::Context->preference('itembarcodelength') && (length($filtered) < C4::Context->preference('itembarcodelength'))) {
-        my $prefix = GetBranchDetail(C4::Context->userenv->{'branch'})->{'itembarcodeprefix'} ;
-        my $padding = C4::Context->preference('itembarcodelength') - length($prefix) - length($filtered) ;
+    my $filtered = ($g{filter} && exists($filter_dispatch->{$g{filter}})) 
+    ? $filter_dispatch->{$g{filter}}() : $g{barcode};
+    if(C4::Context->preference('itembarcodelength') && 
+    (length($filtered) < C4::Context->preference('itembarcodelength'))) {
+        my $branchcode = $g{branchcode} || C4::Context->userenv->{'branch'};
+        my $prefix     = $g{prefix} || $g{itembarcodeprefix} || '';
+        if ($prefix) {
+            # do nothing
+        }
+        elsif ($branchcode) {
+            $prefix ||= GetBranchDetail($branchcode)->{'itembarcodeprefix'};
+        }
+        else {
+            die "No library set and/or no branchcode passed to barcodedecode()";
+        }
+        my $padding = C4::Context->preference('itembarcodelength') - length($prefix) - length($filtered);
         # FIXME : error check?
-        $filtered = $prefix . '0' x $padding . $filtered if($padding >= 0) ;
+        $filtered = $prefix . '0' x $padding . $filtered if($padding >= 0);
     }
-    return $filtered || $barcode ;
+    return $filtered || $g{barcode};
+}
+
+## not exported
+## handle partial barcode strings, possibly multiple branches leading to result
+## of multiple partials with same significant digits but different prefixes.
+## Unfortunately, this sub goes here b/c we don't want Items.pm to call Circulation.pm
+## backwards.
+sub GetItemnumbersFromBarcodeStr
+{
+   my $str = shift;
+   my @all;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('SELECT branchcode,itembarcodeprefix FROM branches');
+   $sth->execute();
+   while (my $row = $sth->fetchrow_hashref()) {
+      die "No itembarcodeprefix set for branch $$row{branchcode} in table branches"
+         unless $$row{itembarcodeprefix};
+      my $barcode = barcodedecode(
+         barcode  => $str,
+         prefix   => $$row{itembarcodeprefix},
+      );
+      push @all, $barcode;
+   }
+   return [] unless @all;
+   my $sql = sprintf("
+         SELECT itemnumber,barcode 
+           FROM items
+          WHERE barcode IN (%s)",
+         join(',',map{'?'}@all)
+      )
+   ;
+   $sth = $dbh->prepare($sql);
+   $sth->execute(@all);
+   undef(@all);
+   while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
+   return \@all // [];
 }
 
 =head2 decode
@@ -256,6 +313,11 @@ is a reference-to-hash which may have any of the following keys:
 
 =over 4
 
+=item C<PendingTransfer>
+
+Item already has a pending transfer; cannot do a parallel transfer at the same time.
+Message returns a hashref of tobranch, frombranch, and datesent.
+
 =item C<BadBarcode>
 
 There is no item in the catalog with the given barcode. The value is C<$barcode>.
@@ -278,7 +340,8 @@ The item was reserved. The value is a reference-to-hash whose keys are fields fr
 
 =item C<WasTransferred>
 
-The item was eligible to be transferred. Barring problems communicating with the database, the transfer should indeed have succeeded. The value should be ignored.
+The item was eligible to be transferred. Barring problems communicating with the 
+database, the transfer should indeed have succeeded. The value should be ignored.
 
 =back
 
@@ -343,6 +406,20 @@ sub transferbook {
 
         #         $messages->{'ResFound'} = $resrec;
         $dotransfer = 1;
+    }
+
+    ## dupecheck: prevent parallel transfers.
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare('
+      SELECT frombranch,tobranch,datesent
+        FROM branchtransfers
+       WHERE itemnumber  = ?
+         AND datearrived IS NULL');
+    $sth->execute($itemnumber);
+    my %bt = %{$sth->fetchrow_hashref() // {}};
+    if (%bt) {
+       $dotransfer = 0;
+       $messages->{PendingTransfer} = \%bt;
     }
 
     #actually do the transfer....

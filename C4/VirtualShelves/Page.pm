@@ -29,6 +29,7 @@ use C4::Items;
 use C4::Koha;
 use C4::Auth qw/get_session/;
 use C4::Members;
+use C4::Circulation;
 use C4::Output;
 use C4::Dates qw/format_date/;
 use Exporter;
@@ -89,12 +90,33 @@ if ( $query->param('modifyshelfcontents') ) {
     if ($shelfnumber = $query->param('viewshelf')) {
     	if (ShelfPossibleAction($loggedinuser, $shelfnumber, 'manage')) {
     		if ($barcode = $query->param('addbarcode')) {
-    			if ($item = GetItem( 0, $barcode )) {
-    				$biblio = GetBiblioFromItemNumber($item->{'itemnumber'});
-        			AddToShelf($biblio->{'biblionumber'}, $shelfnumber) or 
-						push @paramsloop, {duplicatebiblio=>$barcode};
-				} else { push @paramsloop, {failgetitem=>$barcode}; }
-        	} else { 
+            my $exactBarcode = $query->param('exactBarcode');
+            if (!$exactBarcode) {
+               my @itemsbc = @{C4::Circulation::GetItemnumbersFromBarcodeStr($barcode)};
+               if (@itemsbc==1) {
+                  $barcode = $itemsbc[0]{barcode};
+               }
+               elsif (@itemsbc) {
+                  my @itemnumbers = ();
+                  foreach(@itemsbc) { push @itemnumbers, $$_{itemnumber} }
+                  my @items = @{C4::Items::GetItemsFreeDetails(itemnumbers=>\@itemnumbers)};
+                  $template->param(
+                     items       => \@items,
+                     shelfnumber => $shelfnumber,
+                  );
+                  $barcode = undef;
+               }
+            }
+            
+            if ($barcode) {
+    			   $item = GetItem( 0, $barcode );
+               if ($$item{itemnumber}) {
+       		      $biblio = GetBiblioFromItemNumber($item->{'itemnumber'});
+           		   AddToShelf($biblio->{'biblionumber'}, $shelfnumber) or 
+		   	      push @paramsloop, {duplicatebiblio=>$barcode};
+				   } else { push @paramsloop, {failgetitem=>$barcode}; }
+            }
+        	} else { # not addbarcode
 				(grep {/REM-(\d+)/} $query->param) or push @paramsloop, {nobarcode=>1};
         		foreach ($query->param) {
 					/REM-(\d+)/ or next;

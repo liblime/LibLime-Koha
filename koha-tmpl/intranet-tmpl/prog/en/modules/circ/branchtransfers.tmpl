@@ -109,12 +109,28 @@
                     </select>
             </li>
             <li>
+               <!-- TMPL_IF NAME="items" -->
+               <br>More than one matching barcodes found:
+               <table border=0 cellspacing=0 cellpadding=4>
+                  <tr><th>Title</th>
+                      <th>Barcode</th>
+                      <th>Action</th></tr>
+                  <!-- TMPL_LOOP NAME="items" -->
+                  <tr><td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a> by 
+                     <!-- TMPL_VAR NAME="author" --></td>
+                      <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
+                      <td><a href="branchtransfers.pl?barcode=<!-- TMPL_VAR NAME="barcode" -->&tobranchcd=<!-- TMPL_VAR NAME="tobranchcd" -->&exactBarcode=1">Transfer</a></td>
+                   </tr>
+                  <!-- /TMPL_LOOP -->
+               </table>
+               <!-- TMPL_ELSE -->
                 <label for="barcode">Enter barcode: </label>
                 <input name="barcode" id="barcode" size="15" class="focus" /> <input type="submit" value="Submit" />
+               <!-- /TMPL_IF -->
             </li>
 			</ol>
         </fieldset>
-        <input type="hidden" name="tobranchcd" value="<!-- TMPL_VAR Name="tobrancd" -->" />
+        <input type="hidden" name="tobranchcd" value="<!-- TMPL_VAR Name="tobranchcd" -->" />
         <!-- TMPL_LOOP Name="trsfitemloop" -->
             <input type="hidden" name="bc-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
             <input type="hidden" name="fb-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="frombrcd" -->" />
@@ -150,6 +166,12 @@
 <!-- TMPL_VAR Name="firstname" --> <!-- TMPL_VAR NAME="surname" -->
 (<!--TMPL_VAR NAME="cardnumber" -->)</a> and has been returned.</li>
                     <!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="errpending" -->
+                        <li>Cannot transfer twice, another transfer already pending:
+                        <br>From: <!-- TMPL_VAR NAME="frombranch" -->
+                        <br>To: <!-- TMPL_VAR NAME="tobranch" -->
+                        <br>Sent: <!-- TMPL_VAR NAME="datesent" -->
+                     <!-- /TMPL_IF -->
                 <!-- /TMPL_LOOP -->
         </ul>
     </div><!-- /yui-u -->

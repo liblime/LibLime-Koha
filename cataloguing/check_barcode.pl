@@ -47,7 +47,7 @@ my $params;
 
 my $item = GetItem('', $barcode );
 if ($item) {  
-   if ( $item->{'itemnumber'} != $itemnumber ) {
+   if ( $item->{'itemnumber'} != $itemnumber && $item->{itemnumber}) {
       my $biblio = GetBiblioData( $item->{'biblionumber'} );
       my $issue = GetItemIssue( $item->{'itemnumber'} );
       my ( $item_level_reserves ) = GetReservesFromItemnumber( $item->{'itemnumber'} );

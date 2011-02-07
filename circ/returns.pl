@@ -143,7 +143,7 @@ foreach ( $query->param ) {
     $counter++;
 
     # decode barcode
-    $barcode = barcodedecode($barcode) if(C4::Context->preference('itemBarcodeInputFilter') || C4::Context->preference('itembarcodelength'));
+    $barcode = barcodedecode(barcode=>$barcode) if(C4::Context->preference('itemBarcodeInputFilter') || C4::Context->preference('itembarcodelength'));
 
     ######################
     #Are these lines still useful ?
@@ -241,8 +241,15 @@ if (C4::Context->preference('LinkLostItemsToPatron')) {
 
 # actually return book and prepare item table.....
 if ($barcode) {
+   ## edge case: multiple barcodes w/ same right-side partial, different
+   ## branch prefix.
+#   my @barcodes = 
 
-    $barcode = barcodedecode($barcode)  if(C4::Context->preference('itemBarcodeInputFilter') || C4::Context->preference('itembarcodelength'));
+
+   ## this possibly expands a partial barcode using current active library prefix 
+    $barcode = C4::Circulation::barcodedecode(barcode=>$barcode) 
+    if(C4::Context->preference('itemBarcodeInputFilter') 
+    || C4::Context->preference('itembarcodelength'));
     $itemnumber = GetItemnumberFromBarcode($barcode);
 
     if ( C4::Context->preference("InProcessingToShelvingCart") ) {

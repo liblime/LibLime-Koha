@@ -66,7 +66,6 @@ BEGIN {
         GetItemsInfo
         get_itemnumbers_of
         GetItemnumberFromBarcode
-
         CartToShelf
     );
 }
@@ -129,7 +128,7 @@ names to values.  If C<$serial> is true, include serial publication data.
 sub GetItem {
     my ($itemnumber,$barcode, $serial) = @_;
     my $dbh = C4::Context->dbh;
-	my $data;
+	 my $data;
     if ($itemnumber) {
         my $sth = $dbh->prepare("
             SELECT * FROM items 
@@ -158,6 +157,7 @@ sub GetItem {
 	}
     return $data;
 }    # sub GetItem
+
 
 =head2 CartToShelf
 
@@ -457,20 +457,6 @@ sub ModItemFromMarc {
     return ModItem($item, $biblionumber, $itemnumber, $dbh, $frameworkcode, $unlinked_item_subfields); 
 }
 
-## this is not exported.
-## returns boolean true/false whether or not the given item is the only or last
-## item for the given bib record.
-sub isLastItemInBib
-{
-   my($biblionumber,$itemnumber) = @_;
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare('SELECT count(*) FROM items
-      WHERE biblionumber = ?
-      AND   itemnumber  != ?');
-   $sth->execute($biblionumber,$itemnumber);
-   my $others = ($sth->fetchrow_array)[0];
-   return $others ?0:1;
-}
 
 =head2 ModItem
 
@@ -1496,6 +1482,7 @@ sub get_itemnumbers_of {
     return \%itemnumbers_of;
 }
 
+
 =head2 GetItemnumberFromBarcode
 
 =over 4
@@ -1626,6 +1613,57 @@ purpose, and should not be used in any other context
 without careful thought.
 
 =cut
+
+## not exported.
+## The idea behind this is to get sketchy details for display of items where
+## itemnumbers are known.  Instead of going through a foreach $item(@items) loop
+## and do a join multiple times, we do one SQL 'WHERE IN()' statement for more
+## efficient processing.
+sub GetItemsFreeDetails
+{
+   my %g = @_;
+   return [] unless exists $g{itemnumbers};
+   return [] unless @{$g{itemnumbers}};
+   unless ($g{fields}) {
+      $g{fields} = [
+         'title',
+         'author',
+         'barcode',
+         'holdingbranch',
+         'items.biblionumber as biblionumber',
+         'itemnumber'
+      ];
+   }
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare(
+      sprintf("SELECT %s FROM items
+         LEFT JOIN biblio ON (items.biblionumber=biblio.biblionumber)
+             WHERE items.itemnumber IN (%s)",
+         join(',',@{$g{fields}}),
+         join(',',map{'?'}@{$g{itemnumbers}})
+      )
+   );
+   $sth->execute(@{$g{itemnumbers}});
+   my @all;
+   while(my $row = $sth->fetchrow_hashref()) { push @all, $row };
+   return \@all // [];
+}
+
+## not exported.
+## returns boolean true/false whether or not the given item is the only or last
+## item for the given bib record.
+sub isLastItemInBib
+{
+   my($biblionumber,$itemnumber) = @_;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('SELECT count(*) FROM items
+      WHERE biblionumber = ?
+      AND   itemnumber  != ?');
+   $sth->execute($biblionumber,$itemnumber);
+   my $others = ($sth->fetchrow_array)[0];
+   return $others ?0:1;
+}
+
 
 =head2 GetMarcItem
 

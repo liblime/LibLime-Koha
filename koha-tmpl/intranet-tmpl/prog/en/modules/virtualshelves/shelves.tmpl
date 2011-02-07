@@ -114,7 +114,24 @@ function placeHold () {
 	</div>
 </div>
 <!-- /TMPL_LOOP -->
-<!-- /TMPL_IF --> 
+<!-- /TMPL_IF -->
+
+<!-- TMPL_IF NAME="items" -->
+More than one barcode found:
+<table border=0 cellspacing=0 cellpadding=4>
+   <tr><th>Title</th>
+      <th>Barcode</th>
+      <th>Library</th>
+      <th>Add to List</th></tr>
+   <!-- TMPL_LOOP NAME="items" -->
+      <tr><td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a> by
+         <!-- TMPL_VAR NAME="author" --></td>
+         <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
+         <td><!-- TMPL_VAR NAME="holdingbranch" --></td>
+         <td><a href="shelves.pl?addbarcode=<!-- TMPL_VAR NAME="barcode" -->&exactBarcode=1&viewshelf=<!-- TMPL_VAR NAME="shelfnumber" -->&modifyshelfcontents=1">Add</a></td></tr>
+   <!-- /TMPL_LOOP -->
+</table>
+<!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="viewshelf" -->
    <div class="yui-g">

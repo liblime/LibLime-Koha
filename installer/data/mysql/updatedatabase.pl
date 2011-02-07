@@ -4255,6 +4255,23 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
    print "Upgrade to $DBversion done ( Added syspref UsePatronBranchForPatronInfo )\n";
 }
 
+$DBversion = '4.03.11.004';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q|
+        UPDATE systempreferences 
+           SET explanation='Number of characters in system-wide barcode schema (patron cardnumbers)'
+         WHERE variable   ='patronbarcodelength'
+    |);
+    $dbh->do(q|
+        UPDATE systempreferences
+           SET explanation='Number of characters in system-wide barcode schema (item barcodes)'
+         WHERE variable   ='itembarcodelength'
+    |);
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Sync sysprefs patronbarcodelength and itembarcodelength w/ explanations in koahstructure.sql )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
