@@ -163,74 +163,80 @@
     <!--TMPL_IF Name="usmarc"-->
         <!-- SUBTYPE LIMITS -->
             <div id="subtypes" class="container"><fieldset>
-            <legend>Subtype limits</legend><select name="limit" class="subtype">
-                <option value="" selected="selected" class="menuheader">Any Audience</option>
-                    <option value="aud:a">Preschool</option>
-                    <option value="aud:b">Primary</option>
-                    <option value="aud:c">Pre-teen</option>
-                    <option value="(aud:a or aud:b or aud:c or aud:j)">Children's</option>
-                    <option value="aud:d">Teen</option>
-                    <option value="(aud:d or aud:e or aud:f or aud:g)">Adult</option>
-                </select>
-            
+            <legend>Subtype limits</legend>
             <select name="limit" class="subtype">
+            <option value="" selected="selected" class="menuheader">Any audience</option>
+            <option value="aud:a or aud:b or aud:c or aud:j">Children</option>
+			<option value="aud:a">Preschool</option>
+			<option value="aud:b">Primary</option>
+			<option value="aud:c">Pre-teen</option>
+			<option value="aud:d">Teen</option>
+			<option value="aud:e or aud:f or aud:g">Adult</option>
+			<!--<option value="aud:g">General</option>
+			<option value="aud:j">Juvenile</option-->
+             </select>
+        
+              <select name="limit" class="subtype">
                 <option value="" selected="selected" class="menuheader">Any Content</option>
-                    <option value="(fic:1 or fic:c or fic:f or fic:j)">Fiction</option>
-                    <option value="(fic:0 or fic:d or fic:e or fic:h or fic:i or fic:m or fic:s)">Non Fiction</option>
-                    <option value="fic:p">Poetry</option>
-                    <option value="fic:j">Short stories</option>
-                    <option value="(bio:b or bio:c or bio:d)">Biography</option>
-                    <option value="bio:a">Auto-biography</option>
-                    <option value="mus:j">Musical recording</option>
-                    <option value="mus:i">Non-musical recording</option>
-                    <option value="ctype:6">Graphic novel</option>
-                    <option value="(ctype:g and l-format:c)">Video game</option>
+                    <option value="rtype:a and fic:1 or fic:c or fic:f or fic:j">Fiction books</option>
+                    <option value="rtype:a and fic:0 or fic:d or fic:e or fic:h or fic:i or fic:m or fic:s">Non-fiction books</option>
+                    <option value="rtype:a and fic:p">Poetry</option>
+                    <option value="rtype:a and fic:j">Short stories</option>
+                    <option value="rtype:a and bio:b or bio:c">Biographies</option>
+                    <option value="rtype:a and bio:a">Autobiographies</option>
                 </select>
-    
-            
-            <select name="limit" class="subtype">
-                <option value="" selected="selected" class="menuheader">Any Format</option>
-                    <option value="l-format:ta">Regular print</option>
-                    <option value="l-format:tb">Large print</option>
-                    <option value="l-format:fk">Braille</option>
+
+        
+                <select name="limit" class="subtype">
+                    <option value="" selected="selected" class="menuheader">Any Format</option>
+                    <option value="ff8-23:r">Regular print books</option>
+                    <option value="ff8-23:d">Large print books</option>
+                    <option value="ff8-23:f">Braille books</option>
+                    <option value="fic:c">Graphic novels</option>
                     <option value="">-----------</option>
-                    <option value="l-format:vf">Videocassette</option>
-                    <option value="l-format:vs">Blu-ray DVD</option>
-                    <option value="l-format:vd">DVD</option>
+                    <option value="l-format:vd">DVDs</option>
+                    <option value="l-format:vs">Blu-ray DVDs</option>
+                    <option value="l-format:vf">Videocassettes</option>
                     <option value="">-----------</option>
-                    <option value="l-format:sd">CD audio</option>
-                    <option value="l-format:sz">Digital audio player</option>
-                    <option value="l-format:ss">Cassette recording</option>
+                    <option value="l-format:sd">Compact discs</option>
+                    <option value="l-format:sz">Digital audio players</option>
+                    <option value="l-format:ss">Cassettes</option>
+                    <option value="">-----------</option>
                     <option value="">-----------</option>
                     <option value="l-format:co">CD Software</option>
-                    <option value="l-format:cr">Website</option>
+                    <option value="ctype:g and l-format:c">Video games</option>
+                    <option value="l-format:cr">Websites and downloadables</option>
+                    <option value="">-----------</option>
+                    <option value="mus:j">Music</option>
+                    <option value="mus:i">Audiobooks</option>
                 </select>
-            
-            <select name="limit" class="subtype">
-                <option value="">Additional Content Types for Books/Printed Materials</option>
-                    <option value="ctype:a">Abstracts/summaries</option>
-                    <option value="ctype:b">Bibliographies</option>
-                    <option value="ctype:c">Catalogs</option>
-                    <option value="ctype:d">Dictionaries</option>
-                    <option value="ctype:e">Encyclopedias </option>
-                    <option value="ctype:f">Handbooks</option>
-                    <option value="ctype:g">Legal articles</option>
-                    <option value="ctype:i">Indexes</option>
-                    <option value="ctype:j">Patent document</option>
-                    <option value="ctype:k">Discographies</option>
-                    <option value="ctype:l">Legislation</option>
-                    <option value="ctype:m">Theses</option>
-                    <option value="ctype:n">Surveys</option>
-                    <option value="ctype:o">Reviews</option>
-                    <option value="ctype:p">Programmed texts</option>
-                    <option value="ctype:q">Filmographies</option>
-                    <option value="ctype:r">Directories</option>
-                    <option value="ctype:s">Statistics</option>
-                    <option value="ctype:t">Technical reports</option>
-                    <option value="ctype:v">Legal cases and case notes</option>
-                    <option value="ctype:w">Law reports and digests</option>
-                    <option value="ctype:z">Treaties </option>
-                </select>
+        
+       <!-- <select name="limit" class="subtype">
+            <option value="" >Additional content types</option>
+            <option value="ctype:a" >Abstracts/summaries</option>
+            <option value="ctype:b" >Bibliographies</option>
+            <option value="ctype:c" >Catalogs</option>
+            <option value="ctype:d" >Dictionaries</option>
+            <option value="ctype:e" >Encyclopedias </option>
+            <option value="ctype:f" >Handbooks</option>
+            <option value="ctype:g" >Legal articles</option>
+            <option value="ctype:i" >Indexes</option>
+            <option value="ctype:j" >Patent document</option>
+            <option value="ctype:k" >Discographies</option>
+            <option value="ctype:l" >Legislation</option>
+            <option value="ctype:m" >Theses</option>
+            <option value="ctype:n" >Surveys</option>
+            <option value="ctype:o" >Reviews</option>
+            <option value="ctype:p" >Programmed texts</option>
+            <option value="ctype:q" >Filmographies</option>
+            <option value="ctype:r" >Directories</option>
+            <option value="ctype:s" >Statistics</option>
+            <option value="ctype:t" >Technical reports</option>
+            <option value="ctype:v" >Legal cases and case notes</option>
+            <option value="ctype:w" >Law reports and digests</option>
+            <option value="ctype:z" >Treaties </option>
+        </select> -->
+
     
     </fieldset></div>
     <!--/TMPL_IF -->
