@@ -69,6 +69,7 @@ $template->param(
 my @borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'fill');
 my @filledreservloop;
 foreach my $num_res (@borroweroldreserv) {
+  next unless $$num_res{found} eq 'F';  # distinguish this from cancelled holds
   my %getreserv;
   my $getiteminfo  = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
   my $itemtypeinfo = getitemtypeinfo( $getiteminfo->{'itemtype'} );

@@ -271,7 +271,11 @@ if ($op eq 'set_session_defaults') {
 		      push @errors, "item_waiting";
 		   } else {
 		      if ($forceDelLastItem) {
-               CancelReserves({biblionumber=>$biblionumber,itemnumber=>$itemnumber});
+               #CancelReserves({biblionumber=>$biblionumber,itemnumber=>$itemnumber});
+               ## SCLS policy, per PT 9446773: delete all holds on bib as well,
+               ## don't magically spring them back to life when a new item is added
+               ## for this bib
+               CancelReserves({biblionumber=>$biblionumber});
             }
             else {
                CancelReserves({ itemnumber => $itemnumber });
