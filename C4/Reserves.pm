@@ -178,6 +178,22 @@ sub CleanupQueue
           WHERE reservenumber = ?');
       $sth2->execute($$row{branchcode},$$row{reservenumber});
    }
+
+   ## rare condition: priorities collapsed for same borrower with
+   ## multiple bib-level holds on same bib
+   $sth = $dbh->prepare('
+      SELECT count(*),reservenumber,biblionumber,borrowernumber,priority
+        FROM reserves
+       WHERE priority > 0
+         AND found IS NULL
+    GROUP BY borrowernumber,biblionumber,priority
+      HAVING count(*)>1
+         AND MIN(priority)
+   ');
+   $sth->execute();
+   while(my $r = $sth->fetchrow_hashref()) {
+      _NormalizePriorities($$r{biblionumber});
+   }
    return 1;
 }
 
@@ -381,8 +397,10 @@ sub GetReservesForQueue {
          )
          AND reserves.reservedate <= CURRENT_DATE()
          AND reserves.borrowernumber = borrowers.borrowernumber
-       ORDER BY biblionumber, priority DESC
-    }, 'biblionumber');
+    /* this was added for the case of suspended reserves with high (low number) priority */
+    GROUP BY reserves.biblionumber 
+      HAVING MIN(priority)
+    },'biblionumber');
 
     return $all;
 }
