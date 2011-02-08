@@ -4232,9 +4232,9 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do("
         INSERT INTO authorised_values
         (category,authorised_value,prefix,lib,opaclib,imageurl) VALUES
-        ('HOLD_TYPE',item,'','Item Hold','',''),
-        ('HOLD_TYPE',title,'','Title Hold','',''),
-        ('HOLD_TYPE',itemtitle,'','Item & Title Hold','','')
+        ('HOLD_TYPE','item','','Item Hold','',''),
+        ('HOLD_TYPE','title','','Title Hold','',''),
+        ('HOLD_TYPE','itemtitle','','Item & Title Hold','','')
     ");
      $dbh->do("
         UPDATE biblio SET holdtype='item' WHERE biblionumber IN
