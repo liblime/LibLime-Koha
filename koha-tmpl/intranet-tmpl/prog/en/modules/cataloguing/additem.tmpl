@@ -238,12 +238,15 @@ function checkForDuplicateDefaultsName() {
    <div class="dialog alert"><strong>Cannot Delete</strong>:
    Title has holds placed on it; cannot delete last item for this record.
    <!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_holds" -->
-   <form method=post action="additem.pl">
+   <form method=post action="additem.pl" name="myf">
    <input type=hidden name="op" value="delitem">
    <input type=hidden name="forceDelLastItem" value="1">
    <input type=hidden name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->">
    <input type=hidden name="itemnumber" value="<!-- TMPL_VAR NAME="itemnumber" -->">
-   <input type=submit value="Delete Last Item and All Holds on this Bibliographic Record">
+   <input type=hidden name="also_delete_holds" value=0>
+   <input type=button value="Delete Last Item and All Holds on this Bibliographic Record" 
+   onclick="document.myf.also_delete_holds.value=1;document.myf.submit();return;"><br>
+   <input type=submit  value="Delete Last Item, Keep Bib-Level Holds">
    </form>
    <!-- TMPL_ELSE -->
    <br>You do not have permission to delete holds.
