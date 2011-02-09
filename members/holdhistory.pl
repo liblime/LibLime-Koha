@@ -96,7 +96,6 @@ $template->param( filledreservloop => \@filledreservloop,
 );
 
 # show the borrower's old expired reservations on Expired Holds tab
-my @borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'expiration');
 my @expiredreservloop;
 foreach my $num_res (@borroweroldreserv) {
   my %getreserv;

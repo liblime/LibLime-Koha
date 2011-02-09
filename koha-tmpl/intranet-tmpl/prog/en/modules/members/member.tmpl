@@ -115,7 +115,15 @@ function CheckCheckAll(fmobj) {
 </div>
 
 <div id="advanced_search" name="advanced_search">
+   <script>
+   function goAdv(v) {
+      document.advanced_search_form.currPage.value=v;
+      document.advanced_search_form.submit();
+      return;
+   }
+   </script>
 	<form action="member.pl" id="advanced_search_form" name="advanced_search_form" method="post">
+   <input type=hidden name="currPage" value="0">
 		<fieldset>
 			<legend id="advanced_search_legend">Advanced Patron Search</legend>
 

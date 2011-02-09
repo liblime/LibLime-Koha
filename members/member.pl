@@ -30,6 +30,7 @@ use C4::Members;
 use C4::Members::AttributeTypes;
 use C4::Members::Lists;
 use C4::Branch;
+use URI::Escape qw(uri_escape);
 
 my $input = new CGI;
 my $quicksearch = $input->param('quicksearch');
@@ -96,6 +97,8 @@ $template->param(
  SearchBorrowerListsLoop => GetLists({ selected => $input->param('from_list_id') }),
 );     
 
+my $to;
+my $currPage = $input->param('currPage') || 1;
 my @adv_params;
 if ( $input->param('advanced_patron_search') ) {  
   my $adv_params;
@@ -133,6 +136,8 @@ if ( $input->param('advanced_patron_search') ) {
   $adv_params->{'list_id'} = $input->param('from_list_id') if ( $input->param('from_list_id') );
 
   $adv_params->{'orderby'} = $input->param('orderby') if ( $input->param('orderby') );
+  $adv_params->{'limit'}   = $input->param('limit') || 20;
+  $adv_params->{'offset'}  = $input->param('offset') || 0;
 
   my @attributes = C4::Members::AttributeTypes::GetAttributeTypes();
   foreach my $a ( @attributes ) {
@@ -141,6 +146,8 @@ if ( $input->param('advanced_patron_search') ) {
 
   my $cgi_params = $input->Vars;
   delete $cgi_params->{'orderby'};
+  delete $cgi_params->{'limit'};
+  delete $cgi_params->{'offset'};
   $template->param( %$cgi_params );
   
   foreach my $k ( keys %$cgi_params ) {
@@ -149,8 +156,11 @@ if ( $input->param('advanced_patron_search') ) {
     $t->{'value'} = $cgi_params->{$k};
     push( @adv_params, $t );
   }
-  $template->param( AdvancedSearchParametersLoop => \@adv_params );  
-  ($count, $results) = SearchMemberAdvanced( $adv_params );
+  $template->param( AdvancedSearchParametersLoop => \@adv_params );
+  $startfrom          = 1;
+  $$adv_params{limit} = $resultsperpage;
+  $$adv_params{offset}= ($currPage -1)*$resultsperpage;
+  ($count, $results)  = SearchMemberAdvanced( $adv_params );
 
   ## Add results to a borrower list, if neccessary
   if ( $input->param('add_to_list') ) {
@@ -192,8 +202,11 @@ else
 
 
 my @resultsdata;
-my $to=($count>($startfrom*$resultsperpage)?$startfrom*$resultsperpage:$count);
+$to ||=($count>($startfrom*$resultsperpage)?$startfrom*$resultsperpage:$count);
+
+PATRON:
 for (my $i=($startfrom-1)*$resultsperpage; $i < $to; $i++){
+  last PATRON unless $$results[$i];
   #find out stats
   my ($od,$issue,$fines)=GetMemberIssuesAndFines($results->[$i]{'borrowernumber'});
 
@@ -225,10 +238,11 @@ for (my $i=($startfrom-1)*$resultsperpage; $i < $to; $i++){
     );
   push(@resultsdata, \%row);
 }
+
 my $base_url =
-    'member.pl?&amp;'
+    'member.pl?'
   . join(
-    '&amp;',
+    '&',
     map { $_->{term} . '=' . $_->{val} } (
         { term => 'member', val => $member_orig},
         { term => 'orderby', val => $orderby },
@@ -240,20 +254,38 @@ my $base_url =
 
 foreach my $a ( @adv_params ) {
   my $name = $a->{'name'};
-  my $value = $a->{'value'};
-  $base_url .= "&amp;$name=$value";
-}
+  next if $name eq 'currPage';
+  next if $name eq 'advanced_patron_search';
 
-$template->param(
-    paginationbar => pagination_bar(
-        $base_url,  int( $count / $resultsperpage ) + 1,
-        $startfrom, 'startfrom'
-    ),
-    startfrom => $startfrom,
-    from      => ($startfrom-1)*$resultsperpage+1,  
-    to        => $to,
-    multipage => ($count != $to || $startfrom!=1),
-);
+  my $value = $a->{'value'};
+  $base_url .= uri_escape("&$name=$value");
+}
+if ( $input->param('advanced_patron_search') && $count) {
+   my $pg   = $input->param('currPage') || 1;
+   my $from = ($count>$resultsperpage)?($resultsperpage*($pg-1))+1 : 1;
+   $to      = ($from+$resultsperpage)>$count? $count : $from+$resultsperpage;
+   $template->param(
+      paginationbar => _adv_pagination(),
+      startfrom     => $startfrom,
+      from          => $from,
+      to            => $to,
+      resultsperpage=> $resultsperpage,
+      multipage     => ($count>$resultsperpage)? 1:0,
+   );
+}
+else {
+   ## FIXME: use SQL for paging instead of truncated results set
+   $template->param(
+      paginationbar => pagination_bar(
+         $base_url,  int( $count / $resultsperpage ) + 1,
+         $startfrom, 'startfrom'
+      ),
+      startfrom => $startfrom,
+      from      => ($startfrom-1)*$resultsperpage+1,  
+      to        => $to,
+      multipage => ($count != $to || $startfrom!=1),
+   );
+}
 
 $template->param( 
         searching       => "1",
@@ -278,5 +310,39 @@ $template->param(
   AttributesLoop => \@attributes,
 );
 
-
 output_html_with_http_headers $input, $cookie, $template->output;
+exit;
+
+sub _adv_pagination
+{
+   my $out = '';
+   my $totalPages = $count%$resultsperpage? int($count/$resultsperpage)+1 : $count/$resultsperpage;
+   my $prev = $currPage -1;
+   if ($currPage>1) {
+      $out = qq|<a href="javascript:;" onclick="goAdv(1)">&lt;&lt;</a> 
+                <a href="javascript:;" onclick="goAdv($prev)">&lt;</a>|;
+   }
+   if ($totalPages >1) {
+      $out .= qq| <a href="javascript:;" onclick="goAdv(1)">1</a>|;
+   }
+
+   my $lastI;
+   PAGE:
+   for my $i(2..$totalPages) {
+      my $prevv = $i-2;
+      my $prev  = $i-1;
+      my $next  = $i+1;
+      my $nextt = $i+2;
+   }
+
+   $out .= qq| ... <a href="javascript:;" onclick="goAdv($totalPages);">$totalPages</a>|
+   unless $lastI==$totalPages;
+   if ($currPage != $totalPages) {
+      my $next = $currPage + 1;
+      $out .= qq| <a href="javascript:;" onclick="goAdv($next);">&gt;</a> 
+                  <a href="javascript:;" onclick="goAdv($totalPages);">&gt;&gt;</a>|;
+   }
+   return $out;
+}
+
+__END__

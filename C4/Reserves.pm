@@ -1786,7 +1786,7 @@ sub ModReserveFillCheckout
    ## sanity check on status of hold.  It *should* be in Waiting mode and
    ## no longer in the bib's holds list priorities.  That is, it was properly 
    ## checked in (and transferred, if applicable).
-   if (($$res{found} eq 'W') && ($$res{priority}==0)) {
+   if (($$res{found} eq 'W') && (($$res{priority} // '')==0)) {
       ## do nothing right now.
    }
    else { ## sigh, this means Workflow wasn't followed.

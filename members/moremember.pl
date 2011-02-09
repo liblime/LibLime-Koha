@@ -430,7 +430,9 @@ $template->param( picture => 1 ) if $picture;
 my $branch=C4::Context->userenv->{'branch'};
 
 $data->{worklibraries} //= [];
-$$data{_worklibraries} = join("<br>\n",@{$$data{worklibraries}});
+$$data{_worklibraries} = join(", ",@{$$data{worklibraries}});
+$$data{_worklibraries} ||= '(none)';
+$$data{_worklibraries}   = '(none, not staff)' if $$data{category_type} ne 'S';
 $template->param($data);
 
 $template->param( lost_summary => GetLostStats( $borrowernumber, 1 ) );

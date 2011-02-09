@@ -775,6 +775,7 @@ sub ModMember {
     my @badkeys;
     foreach (keys %data) {  
         next if ($_ eq 'borrowernumber' or $_ eq 'flags');
+        next if $_ eq 'select_city';
         if ($hashborrowerfields{$_}){
             $query .= " $_=?, "; 
             push @parameters,$data{$_};
@@ -2680,11 +2681,15 @@ sub SearchMemberAdvanced {
       
   my $orderby = $params->{'orderby'} || 'borrowers.surname';
   
-  my $sql = "SELECT * FROM borrowers LEFT JOIN categories ON borrowers.categorycode = categories.categorycode WHERE ";
-  my @sql_params;
-  
-  my @limits;
-  
+  my $sql = "SELECT COUNT(*) FROM borrowers "
+          . "LEFT JOIN categories ON borrowers.categorycode = categories.categorycode ";
+  my @limits     = ();
+  my @sql_params = ();
+  if ( defined $params->{'categorycode'} ) {
+    push( @limits, "categories.categorycode = ?" );
+    push( @sql_params, $params->{'categorycode'} );
+  }
+
   if ( defined $params->{'borrowernumber'} ) {
     push( @limits, "borrowers.borrowernumber = ?" );
     push( @sql_params, $params->{'borrowernumber'} );
@@ -2701,10 +2706,6 @@ sub SearchMemberAdvanced {
       push( @sql_params, @in );
   }
   
-  if ( defined $params->{'categorycode'} ) {
-    push( @limits, "borrowers.categorycode = ?" );
-    push( @sql_params, $params->{'categorycode'} );
-  }
 
   if ( defined $params->{'dateenrolled_after'} ) {
     push( @limits, "borrowers.dateenrolled >= DATE(?)" );
@@ -2888,23 +2889,23 @@ sub SearchMemberAdvanced {
   }
   
   my $limits = join( ' AND ', @limits );
-  
-  $sql .= $limits;
-
-  $sql .= " ORDER BY ? ";
-  push( @sql_params, $orderby );
-
-  warn "SearchMemberAdvanced::SQL = '$sql'";
-  warn Data::Dumper::Dumper( @sql_params );
-
+  if ($limits) { $sql .= " WHERE $limits "; }
   my $dbh = C4::Context->dbh;
   my $sth = $dbh->prepare( $sql );
   $sth->execute( @sql_params );
-  
-  my $data = $sth->fetchall_arrayref({});
+  my $cnt = ($sth->fetchrow_array)[0];
 
-  return ( scalar(@$data), $data );
-  
+  $sql =~ s/COUNT\(\*\)/\*/s;
+  $sql .= " ORDER BY $orderby ";
+  $$params{offset} ||= 0;
+  $$params{limit}  ||= 20;
+  $sql .= " LIMIT $$params{offset},$$params{limit}";
+  warn "SearchMemberAdvanced::SQL = '$sql'";
+  #warn Data::Dumper::Dumper( @sql_params );
+  $sth = $dbh->prepare($sql);
+  $sth->execute(@sql_params);
+  my $data = $sth->fetchall_arrayref({});
+  return ( $cnt, $data );
 }
 
 =head2 _prefix_cardnum

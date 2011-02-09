@@ -305,7 +305,9 @@ if ($op eq 'save' || $op eq 'insert'){
   if ($newdata{dateofbirth} && $dateofbirthmandatory) {
     my $age = GetAge($newdata{dateofbirth});
     my $borrowercategory=GetBorrowercategory($newdata{'categorycode'});   
-	my ($min,$max) = ($borrowercategory->{'dateofbirthrequired'}, $borrowercategory->{'upperagelimit'});
+	 my ($min,$max) = ($borrowercategory->{'dateofbirthrequired'}, $borrowercategory->{'upperagelimit'});
+    $min ||= 0;
+    $max ||= 0;
    
       if (($max && ($age <= $max)) || ($age < $min)) {
          push @errors, 'ERROR_age_limitations';
