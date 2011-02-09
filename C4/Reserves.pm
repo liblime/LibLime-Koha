@@ -658,17 +658,32 @@ sub GetReservesFromItemnumber {
     my ( $itemnumber, $all_dates ) = @_;
     my $dbh   = C4::Context->dbh;
     my $query = "
-    SELECT reservenumber,reservedate,borrowernumber,branchcode
+    SELECT reservenumber,reservedate,borrowernumber,branchcode,found
     FROM   reserves
     WHERE  itemnumber=?
     ";
     unless ( $all_dates ) {
-	$query .= " AND reservedate <= CURRENT_DATE()";
+	   $query .= " AND reservedate <= CURRENT_DATE()";
     }
+    $query .= ' ORDER BY priority ASC';
     my $sth_res = $dbh->prepare($query);
     $sth_res->execute($itemnumber);
-    my ( $reservenumber, $reservedate, $borrowernumber,$branchcode ) = $sth_res->fetchrow_array;
-    return ( $reservenumber, $reservedate, $borrowernumber, $branchcode );
+    my %res = ();
+    while(my $r = $sth_res->fetchrow_hashref()) {
+       ## mysql bug workaround.  can't do 
+       ## /* itemnumber=$itemnumber AND found != 'S' 
+       ##  * returns empty set erroneously
+       ##  */
+       next if $$r{found} eq 'S'; # skip suspended holds
+       %res = %$r;
+       last;
+    }
+    return (
+      $res{reservenumber}, 
+      $res{reservedate}, 
+      $res{borrowernumber}, 
+      $res{branchcode} 
+    );
 }
 
 =item GetReservesFromBorrowernumber
@@ -2179,7 +2194,6 @@ item-level hold request.  An item is available if
 * it is not withdrawn
 * it is not suppressed
 * it is not marked notforloan (is false)
-* it is not currently in transit
 * it is not set to trace or other blocking status
 * it is not on loan (see below)
 * itemstatus
@@ -2202,6 +2216,10 @@ a request on the item - in particular,
 this routine does not check IndependantBranches
 and canreservefromotherbranches.
 
+Item *may* be held for reserve even if
+
+* it is currently in transit
+
 =cut
 
 sub IsAvailableForItemLevelRequest {
@@ -2222,13 +2240,14 @@ sub IsAvailableForItemLevelRequest {
        return 0 unless ($holdsallowed && $holdsfilled);
     }
 
-    ## check in transit
-    $sth = $dbh->prepare('SELECT * FROM branchtransfers
-       WHERE itemnumber = ?');
-    $sth->execute($itemnumber);
-    while (my $transfers = $sth->fetchrow_hashref) {
-      return 0 if (!defined($transfers->{'datearrived'}));
-    }
+    ## check in transit .. deprecated
+    #$sth = $dbh->prepare('SELECT * FROM branchtransfers
+    #   WHERE itemnumber = ?');
+    #$sth->execute($itemnumber);
+    #while (my $transfers = $sth->fetchrow_hashref) {
+    #  return 0 if (!defined($transfers->{'datearrived'}));
+    #}
+    #### one just can't cancel the hold, that's all
 
     # must check the notforloan setting of the itemtype
     # FIXME - a lot of places in the code do this
@@ -2503,7 +2522,7 @@ sub _Findgroupreserve {
     }
     return @results if @results;
 
-    my $query = q/
+    my $query = q|
         SELECT reserves.reservenumber AS reservenumber,
                reserves.biblionumber AS biblionumber,
                reserves.borrowernumber AS borrowernumber,
@@ -2531,12 +2550,12 @@ sub _Findgroupreserve {
             OR  reserves.constrainttype='a' )
           AND (reserves.itemnumber IS NULL OR reserves.itemnumber = ?)
           AND reserves.reservedate <= CURRENT_DATE()
-        ORDER BY priority ASC
-    /;
+    |;
     $sth = $dbh->prepare($query);
     $sth->execute( $biblio, $bibitem, $itemnumber );
     @results = ();
     while ( my $data = $sth->fetchrow_hashref ) {
+        next if $$data{found} eq 'S';
         push( @results, $data );
     }
     return @results;

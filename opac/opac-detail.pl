@@ -187,7 +187,7 @@ foreach my $itm (@items) {
          $itm->{'lostimageurl'}   = $lostimageinfo->{ 'imageurl' };
          $itm->{'lostimagelabel'} = $lostimageinfo->{ 'label' };
      }
-
+     
      if ($itm->{'reserve_status'}){
        if( $itm->{'reserve_status'} eq "Attached"){ $itm->{'waiting'} = 1; }
        $template->param( totalreserves => $itm->{'reserve_count'});
@@ -213,6 +213,9 @@ foreach my $itm (@items) {
      $items[$item_count] = $itm;
      $item_count++;
 }
+## get a more or less accurate count of reserves for this bib
+my($cnt,$toss) = C4::Reserves::GetReservesFromBiblionumber($biblionumber);
+$template->param(totalreserves=>$cnt);
 
 ## get notes and subjects from MARC record
 my $dbh              = C4::Context->dbh;
