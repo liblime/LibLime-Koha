@@ -400,6 +400,7 @@ sub GetHoldsQueueItems
          items.location, 
          items.enumchron, 
          items.cn_sort, 
+         items.copynumber,
          biblioitems.publishercode,
          biblio.copyrightdate,
          biblioitems.publicationyear,
