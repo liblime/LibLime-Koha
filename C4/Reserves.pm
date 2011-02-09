@@ -2774,7 +2774,7 @@ sub ResumeSuspendedReservesWithResumeDate {
     my $sth;
     my $query;
 
-    $query = "SELECT reservenumber FROM reserves_suspended WHERE DATE(waitingdate) <= DATE( NOW() )";
+    $query = q{SELECT reservenumber FROM reserves WHERE found = 'S' AND DATE(waitingdate) <= DATE(NOW())};
     $sth = $dbh->prepare( $query );
     my $data = $sth->execute();
     my $res = $sth->fetchall_arrayref();

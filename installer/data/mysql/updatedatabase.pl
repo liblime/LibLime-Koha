@@ -4278,6 +4278,47 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update )\n";
 }
 
+$DBversion = '4.03.12.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    use C4::Reserves;
+
+    foreach my $reservenumber (@{$dbh->selectcol_arrayref('SELECT reservenumber FROM reserves_suspended')}) {
+        my $sth;
+        my $query;
+
+        $query = 'SELECT * FROM reserves_suspended WHERE reservenumber = ?';
+        my $suspended_reserve = $dbh->selectrow_hashref( $query, undef, $reservenumber );
+
+        $query = 'SELECT priority FROM reserves WHERE reservedate > ? AND biblionumber = ? ORDER BY reservedate ASC LIMIT 1';
+        my $next_reserve = $dbh->selectrow_hashref( $query, undef, $suspended_reserve->{reservedate}, $suspended_reserve->{biblionumber} );
+
+        my $new_priority = $next_reserve->{priority};
+        if (!defined $new_priority) {
+            my $res = $dbh->selectcol_arrayref(
+                'SELECT priority FROM reserves WHERE biblionumber = ? ORDER BY priority DESC LIMIT 1',
+                undef, $suspended_reserve->{biblionumber});
+            $new_priority = ($res->[0] // 0);
+        }
+        $new_priority++;
+
+        $query = 'INSERT INTO reserves SELECT * FROM reserves_suspended WHERE reservenumber = ?';
+        $dbh->do( $query, undef, $reservenumber );
+    
+        $query = 'DELETE FROM reserves_suspended WHERE reservenumber = ?';
+        $dbh->do( $query, undef, $reservenumber );
+
+        $query = 'UPDATE reserves SET waitingdate = NULL, priority = ? WHERE reservenumber = ?';
+        $dbh->do( $query, undef, $new_priority, $reservenumber );
+
+        C4::Reserves::_NormalizePriorities( $suspended_reserve->{biblionumber} );
+    }
+
+    $dbh->do('DROP TABLE reserves_suspended');
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Merge reserves_suspended entries back into reserves )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
