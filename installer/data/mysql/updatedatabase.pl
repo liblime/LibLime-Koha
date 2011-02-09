@@ -4310,7 +4310,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         $query = 'UPDATE reserves SET waitingdate = NULL, priority = ? WHERE reservenumber = ?';
         $dbh->do( $query, undef, $new_priority, $reservenumber );
 
-        C4::Reserves::_NormalizePriorities( $suspended_reserve->{biblionumber} );
+        C4::Reserves::SuspendReserve($reservenumber, $suspended_reserve->{waitingdate});
     }
 
     $dbh->do('DROP TABLE reserves_suspended');
