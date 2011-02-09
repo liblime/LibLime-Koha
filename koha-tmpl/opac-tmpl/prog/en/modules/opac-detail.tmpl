@@ -766,10 +766,10 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
         <!-- TMPL_IF NAME="opacuserlogin" -->
 		<!-- TMPL_IF NAME="RequestOnOpac" -->
 			<!-- TMPL_IF NAME="AllowOnShelfHolds" -->
-	            		<li><a class="reserve" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Place Hold</a></li>
+                            <li><a class="reserve" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Place Hold <!-- TMPL_IF NAME="totalreserves" --> (<!-- TMPL_VAR NAME="totalreserves" --> holds, <!-- TMPL_VAR NAME="activereserves" --> active) <!-- TMPL_ELSE --> (0 holds, 0 active) <!-- /TMPL_IF --></a></li>
 			<!-- TMPL_ELSE -->
 				<!-- TMPL_IF NAME="ItemsIssued" -->
-		            		<li><a class="reserve" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Place Hold</a></li>
+	                    <li><a class="reserve" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Place Hold <!-- TMPL_IF NAME="totalreserves" --> (<!-- TMPL_VAR NAME="totalreserves" --> holds, <!-- TMPL_VAR NAME="activereserves" --> active) <!-- TMPL_ELSE --> (0 holds, 0 active) <!-- /TMPL_IF --></a></li>
 				<!-- /TMPL_IF -->
 			<!-- /TMPL_IF -->
         	<!-- /TMPL_IF -->

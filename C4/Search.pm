@@ -1269,12 +1269,14 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 
         my %restype;
         my ($rescount,$reserves) = C4::Reserves::GetReservesFromBiblionumber($oldbiblio->{biblionumber});
+        my $total_rescount = $rescount;
         foreach my $res (@$reserves) {
           if ($res->{itemnumber}) {
             $restype{$res->{itemnumber}} = "Attached";
             $rescount--;
           }
         }
+        my ($suspended_rescount,$suspended_reserves) = C4::Reserves::GetSuspendedReservesFromBiblionumber($oldbiblio->{biblionumber});
 
         ($i % 2) and $oldbiblio->{'toggle'} = 1;
 
@@ -1524,6 +1526,8 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
         $oldbiblio->{intransitcount}       = $item_in_transit_count;
         $oldbiblio->{orderedcount}         = $ordered_count;
         $oldbiblio->{reservecount}         = $item_reserve_count;
+        $oldbiblio->{total_reservecount}   = $total_rescount;
+        $oldbiblio->{active_reservecount}  = $total_rescount - $suspended_rescount;
         $oldbiblio->{other_otherstatus}    = $other_otherstatus;
         $oldbiblio->{other_otherstatuscount} = $other_otherstatus_count;
         push( @newresults, $oldbiblio );

@@ -4319,6 +4319,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Merge reserves_suspended entries back into reserves )\n";
 }
 
+$DBversion = '4.03.12.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+   $dbh->do(q{
+      INSERT IGNORE INTO `systempreferences` (variable,value,options,explanation,type) VALUES (
+      'OPACXSLTResultsAvailabilityDisplay',1,'','If ON, the availability section of the OPAC results will display when OPACXLSTResultsDisplay is also ON','YesNo')
+   });
+   SetVersion ($DBversion);
+   print "Upgrade to $DBversion done ( Added syspref OPACXSLTResultsAvailabilityDisplay )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

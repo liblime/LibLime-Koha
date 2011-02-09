@@ -1271,6 +1271,7 @@ sub GetItemsInfo {
         $rescount--;
       }
     }
+    my ($suspended_rescount,$suspended_reserves) = C4::Reserves::GetSuspendedReservesFromBiblionumber($biblionumber);
 
     my $dbh   = C4::Context->dbh;
     my $itemcount;
@@ -1356,6 +1357,8 @@ sub GetItemsInfo {
         $data->{'datedue'}        = $datedue;
         $data->{'reserve_status'} = $reserve_status;
         $data->{'reserve_count'}  = $rescount + $attached_count;
+        $data->{'active_reserve_count'} = $rescount + $attached_count -
+                                          $suspended_rescount;
 
         # Comment
         my %authmap = ( 'DAMAGED'   => 'damaged',

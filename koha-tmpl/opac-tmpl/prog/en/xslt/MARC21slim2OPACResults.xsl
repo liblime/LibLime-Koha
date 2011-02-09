@@ -21,6 +21,7 @@
     <xsl:variable name="DisplayOPACiconsXSLT" select="marc:sysprefs/marc:syspref[@name='DisplayOPACiconsXSLT']"/>
     <xsl:variable name="OPACURLOpenInNewWindow" select="marc:sysprefs/marc:syspref[@name='OPACURLOpenInNewWindow']"/>
     <xsl:variable name="URLLinkText" select="marc:sysprefs/marc:syspref[@name='URLLinkText']"/>
+    <xsl:variable name="OPACXSLTResultsAvailabilityDisplay" select="marc:sysprefs/marc:syspref[@name='OPACXSLTResultsAvailabilityDisplay']"/>
         <xsl:variable name="leader" select="marc:leader"/>
         <xsl:variable name="leader6" select="substring($leader,7,1)"/>
         <xsl:variable name="leader7" select="substring($leader,8,1)"/>
@@ -891,7 +892,8 @@
 	</span>
     </xsl:if>
 
-    <span class="results_summary">
+    <xsl:if test="$OPACXSLTResultsAvailabilityDisplay='1'">
+        <span class="results_summary">
 			   <span class="label">Availability: </span>
 			        <xsl:choose>
                         <xsl:when test="marc:datafield[@tag=856]">
@@ -1026,7 +1028,8 @@
                        <xsl:value-of select="count(key('item-by-status', 'In transit'))"/>
                        <xsl:text>). </xsl:text>                   </span>
                    </xsl:if>
-               </span>
+        </span>
+    </xsl:if>
     </xsl:template>
 
     <xsl:template name="nameABCDQ">
