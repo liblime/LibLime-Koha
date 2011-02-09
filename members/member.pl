@@ -329,6 +329,7 @@ sub _adv_pagination
 {
    my $out = '';
    my $totalPages = $count%$resultsperpage? int($count/$resultsperpage)+1 : $count/$resultsperpage;
+<<<<<<< HEAD:members/member.pl
    if ($currPage==1) {
       $out .= ' <b>1</b>';
    }
@@ -363,6 +364,32 @@ sub _adv_pagination
    }
    else {
       $out .= " <b>$totalPages</b>";
+   }
+=======
+   my $prev = $currPage -1;
+   if ($currPage>1) {
+      $out = qq|<a href="javascript:;" onclick="goAdv(1)">&lt;&lt;</a> 
+                <a href="javascript:;" onclick="goAdv($prev)">&lt;</a>|;
+   }
+   if ($totalPages >1) {
+      $out .= qq| <a href="javascript:;" onclick="goAdv(1)">1</a>|;
+   }
+
+   my $lastI;
+   PAGE:
+   for my $i(2..$totalPages) {
+      my $prevv = $i-2;
+      my $prev  = $i-1;
+      my $next  = $i+1;
+      my $nextt = $i+2;
+   }
+
+   $out .= qq| ... <a href="javascript:;" onclick="goAdv($totalPages);">$totalPages</a>|
+   unless $lastI==$totalPages;
+   if ($currPage != $totalPages) {
+      my $next = $currPage + 1;
+      $out .= qq| <a href="javascript:;" onclick="goAdv($next);">&gt;</a> 
+                  <a href="javascript:;" onclick="goAdv($totalPages);">&gt;&gt;</a>|;
    }
    return $out;
 }
