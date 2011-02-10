@@ -1522,59 +1522,7 @@ sub ModReserve {
      return if $rank eq "n";
     my $dbh = C4::Context->dbh;
     if ( $rank eq "del" ) {
-        my $query = qq/
-            UPDATE reserves
-            SET    cancellationdate=now(),
-                   expirationdate = NULL
-            WHERE  reservenumber   = ?
-        /;
-        my $sth = $dbh->prepare($query);
-        $sth->execute( $reservenumber );
-        $sth->finish;
-
-        _moveToOldReserves($reservenumber);
-        _NormalizePriorities($biblio);
-        
-        UpdateReserveCancelledStats(
-          $branch,'reserve_canceled',undef,$biblio,
-          $itemnumber,undef,$borrower,undef,$moduser
-        );
-
-        # Send expiration notice, if desired
-        my $borrowernumber = $borrower;
-        my $biblionumber = $biblio;
-        my $branchcode = $branch;
-        my $mprefs = C4::Members::Messaging::GetMessagingPreferences( {
-          borrowernumber => $borrowernumber,
-          message_name   => 'Hold Cancelled'
-        } );
-        if ( $mprefs->{'transports'} && C4::Context->preference('EnableHoldCancelledNotice')) {
-          my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
-          my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d,
-          ModReserve()\n", $biblionumber;
-          my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
-          my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');
-
-          my %keys = (%$borrower, %$biblio);
-          $keys{'branchname'} = C4::Branch::GetBranchName( $branchcode );
-          my $replacefield;
-          foreach my $key (keys %keys) {
-            foreach my $table qw(biblio borrowers branches items reserves) {
-              $replacefield = "<<$table.$key>>";
-              $letter->{content} =~ s/$replacefield/$keys{$key}/g;
-            }
-          }
-
-          C4::Letters::EnqueueLetter(
-            { letter                 => $letter,
-              borrowernumber         => $borrower->{'borrowernumber'},
-              message_transport_type => $mprefs->{'transports'}->[0],
-              from_address           => $admin_email_address,
-              to_address             => $borrower->{'email'},
-            }
-          );
-        }
-
+        ModReserveCancelAll($reservenumber, $itemnumber);
     }
     elsif ($rank =~ /^\d+/ and $rank > 0) {
         my $query = qq/
@@ -2486,6 +2434,7 @@ sub _Findgroupreserve {
         AND item_level_request = 1
         AND reserves.itemnumber = ?
         AND reserves.reservedate <= CURRENT_DATE()
+        ORDER BY priority ASC
     /;
     my $sth = $dbh->prepare($item_level_target_query);
     $sth->execute($itemnumber);
@@ -2525,6 +2474,7 @@ sub _Findgroupreserve {
         AND item_level_request = 0
         AND tmp_holdsqueue.itemnumber = ?
         AND reserves.reservedate <= CURRENT_DATE()
+        ORDER BY priority ASC
     /;
     $sth = $dbh->prepare($title_level_target_query);
     $sth->execute($itemnumber);
@@ -2555,13 +2505,14 @@ sub _Findgroupreserve {
           LEFT JOIN reserveconstraints ON reserves.biblionumber = reserveconstraints.biblionumber
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
         WHERE reserves.biblionumber = ?
-          AND found <> 'S'
+          AND (found <> 'S' OR FOUND IS NULL)
           AND ( ( reserveconstraints.biblioitemnumber = ?
               AND reserves.borrowernumber = reserveconstraints.borrowernumber
               AND reserves.reservedate    = reserveconstraints.reservedate )
             OR  reserves.constrainttype='a' )
           AND (reserves.itemnumber IS NULL OR reserves.itemnumber = ?)
           AND reserves.reservedate <= CURRENT_DATE()
+        ORDER BY priority ASC
     /;
     $sth = $dbh->prepare($query);
     $sth->execute( $biblio, $bibitem, $itemnumber );
