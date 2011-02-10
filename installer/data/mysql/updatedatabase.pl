@@ -4225,10 +4225,18 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         ALTER TABLE biblio
             ADD `holdtype` ENUM('item','title','itemtitle') NOT NULL DEFAULT 'itemtitle'
     });
-    my $insert_sth = $dbh -> prepare("
+    # Altering MARC subfield structure for biblio holdtype
+    my $frames_sth = $dbh->prepare("SELECT frameworkcode FROM biblio_framework");
+
+    my $insert_sth = $dbh->prepare("
         INSERT INTO marc_subfield_structure
         (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
         VALUES ('942', 'r', 'Hold Type','Hold Type',0,0,'biblio.holdtype',9,'HOLD_TYPE','','',0,0,?,NULL,'','itemtitle');");
+    $insert_sth->execute('');
+    $frames_sth->execute;
+    while (my $frame = $frames_sth->fetchrow_hashref) {
+        $insert_sth->execute($frame->{frameworkcode});
+    }
     $dbh->do("
         INSERT INTO authorised_values
         (category,authorised_value,prefix,lib,opaclib,imageurl) VALUES
@@ -4242,7 +4250,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     ");
 
     SetVersion ($DBversion);
-    print "Upgrade to $DBversion done ( Added syspref OPACUseHoldType )\n";
+    print "Upgrade to $DBversion done ( Added syspref OPACUseHoldType and biblio.holdtype )\n";
 }
 
 $DBversion = '4.03.11.003';

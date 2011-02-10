@@ -48,3 +48,7 @@ INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT',
 INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','BINDERY','Sent to Bindery');
 INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('CATSTAT','CATALOGED','Cataloged');
 
+-- hold type of a biblio, linked to biblio.holdtype
+INSERT INTO authorised_values (category,authorised_value,prefix,lib,opaclib,imageurl) VALUES ('HOLD_TYPE','item','','Item Hold','','');
+INSERT INTO authorised_values (category,authorised_value,prefix,lib,opaclib,imageurl) VALUES ('HOLD_TYPE','title','','Title Hold','','');
+INSERT INTO authorised_values (category,authorised_value,prefix,lib,opaclib,imageurl) VALUES ('HOLD_TYPE','itemtitle','','Item & Title Hold','','');
