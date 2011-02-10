@@ -1,8 +1,8 @@
-package C4::Model::PeriodicalSerial;
+package C4::Schema::PeriodicalSerial;
 
 use strict;
 
-use base qw(C4::Model::DB::Object::AutoBase1);
+use base qw(C4::Schema::DB::Object::AutoBase1);
 
 __PACKAGE__->meta->setup(
     table   => 'periodical_serials',
@@ -19,21 +19,21 @@ __PACKAGE__->meta->setup(
 
     foreign_keys => [
         periodical => {
-            class       => 'C4::Model::Periodical',
+            class       => 'C4::Schema::Periodical',
             key_columns => { periodical_id => 'id' },
         },
     ],
 
     relationships => [
         items => {
-            map_class => 'C4::Model::SubscriptionSerial',
+            map_class => 'C4::Schema::SubscriptionSerial',
             map_from  => 'periodical_serial',
             map_to    => 'item',
             type      => 'many to many',
         },
 
         subscription_serials => {
-            class      => 'C4::Model::SubscriptionSerial',
+            class      => 'C4::Schema::SubscriptionSerial',
             column_map => { id => 'periodical_serial_id' },
             type       => 'one to many',
         },

@@ -1,4 +1,4 @@
-package C4::Model::DB::Object::AutoBase1;
+package C4::Schema::DB::Object::AutoBase1;
 
 use base 'Rose::DB::Object';
 

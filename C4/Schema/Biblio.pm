@@ -1,8 +1,8 @@
-package C4::Model::Biblio;
+package C4::Schema::Biblio;
 
 use strict;
 
-use base qw(C4::Model::DB::Object::AutoBase1);
+use base qw(C4::Schema::DB::Object::AutoBase1);
 
 __PACKAGE__->meta->setup(
     table   => 'biblio',
@@ -20,19 +20,20 @@ __PACKAGE__->meta->setup(
         timestamp     => { type => 'timestamp', not_null => 1 },
         datecreated   => { type => 'date', not_null => 1 },
         abstract      => { type => 'scalar', length => 16777215 },
+        holdtype      => { type => 'enum', check_in => [ 'item', 'title', 'itemtitle' ], default => 'itemtitle', not_null => 1 },
     ],
 
     primary_key_columns => [ 'biblionumber' ],
 
     relationships => [
         biblioitems => {
-            class      => 'C4::Model::Biblioitem',
+            class      => 'C4::Schema::Biblioitem',
             column_map => { biblionumber => 'biblionumber' },
             type       => 'one to many',
         },
 
         periodical => {
-            class                => 'C4::Model::Periodical',
+            class                => 'C4::Schema::Periodical',
             column_map           => { biblionumber => 'biblionumber' },
             type                 => 'one to one',
             with_column_triggers => '0',

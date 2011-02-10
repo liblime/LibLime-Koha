@@ -3043,7 +3043,7 @@ sub _koha_modify_biblio {
         "
     ;
     my $sth = $dbh->prepare($query);
-    
+
     $sth->execute(
         $frameworkcode,
         $biblio->{'author'},

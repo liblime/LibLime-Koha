@@ -1,8 +1,8 @@
-package C4::Model::Biblioitem;
+package C4::Schema::Biblioitem;
 
 use strict;
 
-use base qw(C4::Model::DB::Object::AutoBase1);
+use base qw(C4::Schema::DB::Object::AutoBase1);
 
 __PACKAGE__->meta->setup(
     table   => 'biblioitems',
@@ -40,20 +40,22 @@ __PACKAGE__->meta->setup(
         cn_sort               => { type => 'varchar', length => 30 },
         totalissues           => { type => 'integer' },
         marcxml               => { type => 'scalar', length => 4294967295, not_null => 1 },
+        on_order_count        => { type => 'varchar', length => 80 },
+        in_process_count      => { type => 'varchar', length => 80 },
     ],
 
     primary_key_columns => [ 'biblioitemnumber' ],
 
     foreign_keys => [
         biblio => {
-            class       => 'C4::Model::Biblio',
+            class       => 'C4::Schema::Biblio',
             key_columns => { biblionumber => 'biblionumber' },
         },
     ],
 
     relationships => [
         items => {
-            class      => 'C4::Model::Item',
+            class      => 'C4::Schema::Item',
             column_map => { biblioitemnumber => 'biblioitemnumber' },
             type       => 'one to many',
         },

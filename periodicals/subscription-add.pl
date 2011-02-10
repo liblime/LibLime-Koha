@@ -22,7 +22,7 @@ use CGI;
 use C4::Auth;
 use C4::Output;
 use C4::Debug;
-use C4::Model::Subscription;
+use C4::Schema::Subscription;
 use C4::View::Serials qw(
     SeedTemplateWithPeriodicalData
     SeedTemplateWithSubscriptionData
@@ -59,7 +59,7 @@ if (($subscription_id and C4::Control::Subscription::UserCanViewSubscription($su
     SeedTemplateWithSubscriptionDefaults($template);
 }
 
-$periodical_id //= C4::Model::Subscription->new(id => $subscription_id)->load->periodical_id;
+$periodical_id //= C4::Schema::Subscription->new(id => $subscription_id)->load->periodical_id;
 
 SeedTemplateWithPeriodicalData($template, $periodical_id);
 

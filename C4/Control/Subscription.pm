@@ -32,16 +32,16 @@ use JSON;
 use Rose::DB::Object::Helpers qw(column_value_pairs);
 use DateTime::Format::Strptime;
 
-use C4::Model::Subscription;
-use C4::Model::SubscriptionSerial;
-use C4::Model::SubscriptionSerial::Manager;
+use C4::Schema::Subscription;
+use C4::Schema::SubscriptionSerial;
+use C4::Schema::SubscriptionSerial::Manager;
 use C4::Control::SubscriptionSerial;
 use C4::Auth;
 
 sub _create_first_subscriptionserial($$) {
     my ($query, $subscription_id) = @_;
 
-    my $subscription_serial = C4::Model::SubscriptionSerial->new;
+    my $subscription_serial = C4::Schema::SubscriptionSerial->new;
     $subscription_serial->subscription_id($subscription_id);
     $subscription_serial->periodical_serial_id($query->param('firstserial'));
     $subscription_serial->expected_date($query->param('expected_date') || undef);
@@ -56,7 +56,7 @@ sub UserCanViewSubscription($;$) {
     my $s = shift;
     my $userid = shift;
 
-    $s = C4::Model::Subscription->new(id => $s)->load if not ref $s;
+    $s = C4::Schema::Subscription->new(id => $s)->load if not ref $s;
     
     my %branches;
     @branches{GetUserGroupBranches('subscriptions', $userid)} = ();
@@ -82,7 +82,7 @@ sub UpdateOrCreate($) {
     my $subscription_id = $query->param('subscription_id');
 
     $subscription_id = try {
-        my $subscription = C4::Model::Subscription->new;
+        my $subscription = C4::Schema::Subscription->new;
         if (defined $subscription_id) {
             $subscription->id($subscription_id);
             $subscription->load;
@@ -119,7 +119,7 @@ sub Delete($) {
     croak 'Unable to determine subscription_id' if not defined $subscription_id;
 
     my $retval = try {
-        my $s = C4::Model::Subscription->new(id => $subscription_id)->load;
+        my $s = C4::Schema::Subscription->new(id => $subscription_id)->load;
         my $parent = $s->periodical_id;
         foreach ($s->subscription_serials) {
             C4::Control::SubscriptionSerial::Delete($_->id);
@@ -141,7 +141,7 @@ sub SetSubscriptionDefaults($$) {
     my ($subscription_id, $item_defaults) = @_;
     croak if (not ($subscription_id and $item_defaults));
 
-    my $subscription = C4::Model::Subscription->new(id => $subscription_id)->load();
+    my $subscription = C4::Schema::Subscription->new(id => $subscription_id)->load();
     $subscription->item_defaults(to_json($item_defaults));
     $subscription->save;
 }
@@ -149,7 +149,7 @@ sub SetSubscriptionDefaults($$) {
 sub GetSubscriptionDefaults($) {
     my $subscription_id = shift or croak;
 
-    my $subscription = C4::Model::Subscription->new(id => $subscription_id)->load();
+    my $subscription = C4::Schema::Subscription->new(id => $subscription_id)->load();
     return try {
         from_json($subscription->item_defaults);
     } catch {
@@ -180,7 +180,7 @@ sub GetSummary {
 
     my $subscription_serials;
     $subscription_serials
-        = C4::Model::SubscriptionSerial::Manager->get_subscription_serials(
+        = C4::Schema::SubscriptionSerial::Manager->get_subscription_serials(
             with_objects => ['periodical_serial'],
             query => [
                 subscription_id => $subscription_id,
@@ -195,7 +195,7 @@ sub GetSummary {
     my $first_serial = shift(@$subscription_serials);
 
     $subscription_serials
-        = C4::Model::SubscriptionSerial::Manager->get_subscription_serials(
+        = C4::Schema::SubscriptionSerial::Manager->get_subscription_serials(
             with_objects => ['periodical_serial'],
             query => [
                 subscription_id => $subscription_id,

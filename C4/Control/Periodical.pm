@@ -33,12 +33,12 @@ use DateTime::Format::Strptime;
 use MARC::Field;
 use MARC::Record;
 
-use C4::Model::Periodical;
-use C4::Model::Periodical::Manager;
-use C4::Model::Subscription::Manager;
-use C4::Model::PeriodicalSerial;
-use C4::Model::Biblio;
-use C4::Model::Biblioitem;
+use C4::Schema::Periodical;
+use C4::Schema::Periodical::Manager;
+use C4::Schema::Subscription::Manager;
+use C4::Schema::PeriodicalSerial;
+use C4::Schema::Biblio;
+use C4::Schema::Biblioitem;
 use C4::Control::Subscription;
 use C4::Control::PeriodicalSerial;
 use C4::Biblio;
@@ -46,7 +46,7 @@ use C4::Branch qw(GetBranchName);
 
 sub _createFirstPeriodicalSerial($$) {
     my ($query, $periodical_id) = @_;
-    my $periodical_serial = C4::Model::PeriodicalSerial->new;
+    my $periodical_serial = C4::Schema::PeriodicalSerial->new;
     $periodical_serial->periodical_id($periodical_id);
     $periodical_serial->sequence($query->param('first_sequence'));
     $periodical_serial->publication_date($query->param('firstacquidate'));
@@ -81,7 +81,7 @@ sub UpdateOrCreate($) {
     my $periodical_id = $query->param('periodical_id');
 
     $periodical_id = try {
-        my $periodical = C4::Model::Periodical->new;
+        my $periodical = C4::Schema::Periodical->new;
         if ($periodical_id) {
             $periodical->id($periodical_id);
             $periodical->load;
@@ -114,7 +114,7 @@ sub Delete($) {
     croak 'Unable to determine periodical_id' if not defined $periodical_id;
 
     my $retval = try {
-        my $p = C4::Model::Periodical->new(id => $periodical_id)->load;
+        my $p = C4::Schema::Periodical->new(id => $periodical_id)->load;
         foreach ($p->subscriptions) {
             C4::Control::Subscription::Delete($_->id);
         }
@@ -139,9 +139,12 @@ sub SearchPeriodicals {
     $value = '%'.$value.'%';
     $value =~ s/\s/%/g;
 
+$Rose::DB::Object::Debug = 1;
+$Rose::DB::Object::Manager::Debug = 1;
+
     my $periodicals;
     if ($key eq 'title') {
-        $periodicals = C4::Model::Periodical::Manager->get_periodicals(
+        $periodicals = C4::Schema::Periodical::Manager->get_periodicals(
             with_objects => [ 'biblio' ],
             query => [ 't2.title' => { like => $value } ],
             );
@@ -152,7 +155,7 @@ sub SearchPeriodicals {
                 NATURAL JOIN biblioitems t2
             WHERE t2.issn LIKE ?
         };
-        $periodicals = C4::Model::Periodical::Manager->get_objects_from_sql(sql => $query, args => [ $value ]);
+        $periodicals = C4::Schema::Periodical::Manager->get_objects_from_sql(sql => $query, args => [ $value ]);
     }
     return $periodicals;
 }
@@ -161,7 +164,7 @@ sub GetSummary {
     my $periodical_id = shift // croak;
 
     my $subscriptions
-        = C4::Model::Subscription::Manager->get_subscriptions(
+        = C4::Schema::Subscription::Manager->get_subscriptions(
             query => [
                 periodical_id => $periodical_id
             ],
@@ -204,7 +207,7 @@ sub GetSummaryAsMarc {
 sub UpdateBiblioSummary {
     my $periodical_id = shift // croak;
 
-    my $p = C4::Model::Periodical->new(id => $periodical_id)->load;
+    my $p = C4::Schema::Periodical->new(id => $periodical_id)->load;
     my $record = GetMarcBiblio($p->biblionumber);
 
     my $fields = GetSummaryAsMarc($periodical_id);

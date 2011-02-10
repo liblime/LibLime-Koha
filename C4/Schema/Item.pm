@@ -1,8 +1,8 @@
-package C4::Model::Item;
+package C4::Schema::Item;
 
 use strict;
 
-use base qw(C4::Model::DB::Object::AutoBase1);
+use base qw(C4::Schema::DB::Object::AutoBase1);
 
 __PACKAGE__->meta->setup(
     table   => 'items',
@@ -49,6 +49,7 @@ __PACKAGE__->meta->setup(
         enumchron            => { type => 'varchar', length => 80 },
         copynumber           => { type => 'varchar', length => 32 },
         otherstatus          => { type => 'varchar', length => 10 },
+        catstat              => { type => 'varchar', length => 80 },
     ],
 
     primary_key_columns => [ 'itemnumber' ],
@@ -57,21 +58,21 @@ __PACKAGE__->meta->setup(
 
     foreign_keys => [
         biblioitem => {
-            class       => 'C4::Model::Biblioitem',
+            class       => 'C4::Schema::Biblioitem',
             key_columns => { biblioitemnumber => 'biblioitemnumber' },
         },
     ],
 
     relationships => [
         periodical_serials => {
-            map_class => 'C4::Model::SubscriptionSerial',
+            map_class => 'C4::Schema::SubscriptionSerial',
             map_from  => 'item',
             map_to    => 'periodical_serial',
             type      => 'many to many',
         },
 
         subscription_serials => {
-            class      => 'C4::Model::SubscriptionSerial',
+            class      => 'C4::Schema::SubscriptionSerial',
             column_map => { itemnumber => 'itemnumber' },
             type       => 'one to many',
         },

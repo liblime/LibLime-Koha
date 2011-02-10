@@ -43,12 +43,12 @@ my ($template, $loggedinuser, $cookie) =
                 debug => 1,
                 });
 
-my $subscription_serial = C4::Model::SubscriptionSerial->new(id => $subscription_serial_id)->load;
+my $subscription_serial = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;
 if ($subscription_serial and C4::Control::Subscription::UserCanViewSubscription($subscription_serial->subscription_id)) {
     if ($op eq 'save') {
         $subscription_serial_id = C4::Control::SubscriptionSerial::Update($query);
         my $periodical_id
-            = C4::Model::SubscriptionSerial->new(id => $subscription_serial_id)->load->subscription->periodical_id;
+            = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load->subscription->periodical_id;
         C4::Control::Periodical::UpdateBiblioSummary($periodical_id);
         print $query->redirect("subscription-detail.pl?subscription_id=".$subscription_serial->subscription_id);
     }

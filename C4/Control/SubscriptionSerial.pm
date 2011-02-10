@@ -8,18 +8,18 @@ use Try::Tiny;
 use DateTime;
 use JSON;
 
-use C4::Model::SubscriptionSerial;
-use C4::Model::SubscriptionSerial::Manager;
-use C4::Model::PeriodicalSerial;
-use C4::Model::PeriodicalSerial::Manager;
+use C4::Schema::SubscriptionSerial;
+use C4::Schema::SubscriptionSerial::Manager;
+use C4::Schema::PeriodicalSerial;
+use C4::Schema::PeriodicalSerial::Manager;
 use C4::Control::PeriodicalSerial;
 use C4::Items qw();
 
 sub _GenerateNextSubscriptionSerial($) {
     my $ss = shift or croak;
-    $ss->isa('C4::Model::SubscriptionSerial');
+    $ss->isa('C4::Schema::SubscriptionSerial');
 
-    my $ss_list = C4::Model::SubscriptionSerial::Manager->get_subscription_serials(
+    my $ss_list = C4::Schema::SubscriptionSerial::Manager->get_subscription_serials(
 	with_objects => ['periodical_serial'],
 	query => [ subscription_id => $ss->subscription_id ],
 	sort_by => 't2.publication_date DESC',
@@ -27,7 +27,7 @@ sub _GenerateNextSubscriptionSerial($) {
 	);
     return if $ss_list->[0]->id != $ss->id;
 
-    my $ps_list = C4::Model::PeriodicalSerial::Manager->get_periodical_serials(
+    my $ps_list = C4::Schema::PeriodicalSerial::Manager->get_periodical_serials(
 	query => [
 	    periodical_id => $ss_list->[0]->subscription->periodical_id,
 	    publication_date => { gt => $ss_list->[0]->periodical_serial->publication_date },
@@ -40,7 +40,7 @@ sub _GenerateNextSubscriptionSerial($) {
 	    C4::Control::PeriodicalSerial::GenerateNextInSeries($ss->subscription->periodical);
     }
 
-    my $new_ss = C4::Model::SubscriptionSerial->new();
+    my $new_ss = C4::Schema::SubscriptionSerial->new();
     $new_ss->subscription_id($ss->subscription_id);
     $new_ss->periodical_serial_id($ps_list->[0]->id);
     $new_ss->status(1);
@@ -63,7 +63,7 @@ sub Update($) {
 
     $subscription_serial_id = try {
         my $subscription_serial
-            = C4::Model::SubscriptionSerial->new(id => $subscription_serial_id)->load;;
+            = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;;
 	$subscription_serial->expected_date($query->param('expected_date') || undef);
         $subscription_serial->received_date($query->param('received_date') || undef);
 	$subscription_serial->status($query->param('status'));
@@ -105,7 +105,7 @@ sub Delete($) {
     my $retval = try {
         # FIXME: first delete any associated items, but C4::Items::DelItem is
         # currently too broken
-        my $ss = C4::Model::SubscriptionSerial->new(id => $subscription_serial_id)->load;
+        my $ss = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;
         my $parent = $ss->subscription_id;
         $ss->delete;
         return $parent;
