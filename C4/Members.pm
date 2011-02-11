@@ -1296,11 +1296,10 @@ sub GetMemberAccountRecords {
         $acctlines[$numlines] = $data;
         $numlines++;
         if (defined($data->{'amountoutstanding'})) {
-          $total += int(100 * $data->{'amountoutstanding'}); # convert float to integer to avoid round-off errors
+          $total += int(10000 * $data->{'amountoutstanding'}); # convert float to integer to avoid round-off errors
         }
     }
-    $total /= 100;
-    $sth->finish;
+    $total /= 10000;
     return ( $total, \@acctlines,$numlines);
 }
 
