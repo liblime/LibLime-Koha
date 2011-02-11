@@ -1553,9 +1553,9 @@ sub AddReturn {
         $messages->{'wthdrawn'} = 1;
         $doreturn = 0;
     }
-        if ( C4::Context->preference('AllowReadingHistoryAnonymizing') && $borrower->{'disable_reading_history'} ) {
-          AnonymiseIssueHistory( '', $borrower->{'borrowernumber'} );
-        }
+    if ( C4::Context->preference('AllowReadingHistoryAnonymizing') && $borrower->{'disable_reading_history'} ) {
+        AnonymiseIssueHistory( '', $borrower->{'borrowernumber'} );
+    }
 
     # Set items.otherstatus back to NULL on check in regardless of whether the
     # item was actually checked out.
@@ -1629,10 +1629,10 @@ sub AddReturn {
         my $issues = GetItemIssues($itemnumber, 1);
         my $lostreturned_issue;
         foreach my $issue_ref (@$issues) {
-          if ($issue_ref->{'itemnumber'} eq $item->{'itemnumber'}) {
-            $lostreturned_issue = $issue_ref;
-            last;
-          }
+            if ($issue_ref->{'itemnumber'} eq $item->{'itemnumber'}) {
+                $lostreturned_issue = $issue_ref;
+                last;
+            }
         }
         DeleteLostItem($lost_item->{id});
         $messages->{'WasLost'} = 1;
@@ -1648,21 +1648,22 @@ sub AddReturn {
 
     # fix up the overdues in accounts...
     if ($borrowernumber) {
-        my $fix = _FixOverduesOnReturn($borrowernumber, $item->{itemnumber}, $exemptfine, $dropbox, $returndate);
-        defined($fix) or warn "_FixOverduesOnReturn($borrowernumber, $item->{itemnumber}...) failed!";  # zero is OK, check defined
+        _FixOverduesOnReturn(
+            $issue,
+            {exemptfine => $exemptfine, dropbox => $dropbox, returndate => $returndate}
+            );
     }
 
-
-        # For claims-returned items, update the fine to be as-if they returned it for normal overdue
-        if ($issue->{'date_due'} && $issue->{'itemlost'} && $issue->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){
-          my $datedue = C4::Dates->new($issue->{'date_due'},'iso'); 
-          my $due_str = $datedue->output();
-          my $today = C4::Dates->new();
-          my ($amt, $type, $daycounttotal, $daycount) =
-              C4::Overdues::CalcFine($issue, $borrower->{'categorycode'},$branch, undef, undef,$datedue, $today);
-              (defined $type) or $type= '';
-              C4::Overdues::UpdateFine($issue->{'itemnumber'},$issue->{'borrowernumber'},$amt, $type, $due_str) if ($amt > 0); 
-        }
+    # For claims-returned items, update the fine to be as-if they returned it for normal overdue
+    if ($issue->{'date_due'} && $issue->{'itemlost'} && $issue->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){
+        my $datedue = C4::Dates->new($issue->{'date_due'},'iso'); 
+        my $due_str = $datedue->output();
+        my $today = C4::Dates->new();
+        my ($amt, $type, $daycounttotal, $daycount)
+            = C4::Overdues::CalcFine($issue, $borrower->{'categorycode'},$branch, undef, undef,$datedue, $today);
+        $type //= '';
+        C4::Overdues::UpdateFine($issue->{'itemnumber'},$issue->{'borrowernumber'},$amt, $type, $due_str) if ($amt > 0); 
+    }
 
     # find reserves.....
     # if we don't have a reserve with the status W, we launch the Checkreserves routine
@@ -1790,74 +1791,80 @@ sub MarkIssueReturned {
 
 =head2 _FixOverduesOnReturn
 
-    &_FixOverduesOnReturn($brn,$itm, $exemptfine, $dropboxmode, $returndate);
+    _FixOverduesOnReturn($issue, $flags)
 
-C<$brn> borrowernumber
+C<$issue> : hashref of the pertinent row from the issues table
 
-C<$itm> itemnumber
+C<$flags> : hashref containing flags indicating checkin options. Can be one of:
 
-C<$exemptfine> BOOL -- remove overdue charge associated with this issue. 
-C<$dropboxmode> BOOL -- remove lastincrement on overdue charge associated with this issue.
+    exemptfine: BOOL -- remove overdue charge associated with this issue. 
+    dropbox: BOOL -- remove one business day from overdue charge associated with this issue.
+    returndate: ISO date -- recalculate fine based on the item being returned on this date
 
-Internal function, called only by AddReturn
+Returns nothing.
 
 =cut
 
 sub _FixOverduesOnReturn {
-    my ($borrowernumber, $itemnumber, $exemptfine, $dropbox, $returndate) = @_;
-    croak 'Bogus args for _FixOverduesOnReturn'
-        unless defined $borrowernumber && defined $itemnumber;
+    my ($issue, $flags) = @_;
 
     my $dbh = C4::Context->dbh;
     # check for overdue fine
-    my $sth = $dbh->prepare(q{
+    my $accountline = $dbh->selectrow_hashref(q{
         SELECT *
         FROM accountlines
         WHERE borrowernumber = ?
           AND itemnumber = ?
           AND accounttype IN ('FU', 'O')
-    });
-    $sth->execute( $borrowernumber, $itemnumber );
+    }, undef, $issue->{borrowernumber}, $issue->{itemnumber});
 
-    # alter fine to show that the book has been returned
-    my $data = $sth->fetchrow_hashref;
-    return 0 unless $data;    # no warning, there's just nothing to fix
+    return unless $accountline;    # no warning, there's just nothing to fix
 
-    my $uquery = 'UPDATE accountlines SET ';;
-    my @bind = ($borrowernumber, $itemnumber, $data->{'accountno'});
-    if ($exemptfine) {
-        $uquery .= "accounttype='FFOR', amountoutstanding=0";
-        if (C4::Context->preference("FinesLog")) {
-            &logaction("FINES", 'MODIFY',$borrowernumber,"Overdue forgiven: item $itemnumber");
-        }
-    } elsif (($dropbox || $returndate) && $data->{lastincrement}) {
-        my $increments = 1;
-        if ($returndate) {
-            my $branchcode = _GetCircControlBranch(
-                C4::Items::GetItem($itemnumber),
-                C4::Members::GetMember($borrowernumber));
-            my $cal = C4::Calendar->new(branchcode => $branchcode);
-            my $pretenddate = C4::Dates->new($returndate, 'iso');
-            $increments = $cal->daysBetween($pretenddate, C4::Dates->new()) - 1;
-        }
-        my $outstanding
-            = $data->{amountoutstanding} - ($data->{lastincrement} * $increments) ;
-        my $amt
-            = $data->{amount} - ($data->{lastincrement} * $increments);
-        if (C4::Context->preference("FinesLog")) {
-            &logaction("FINES", 'MODIFY',$borrowernumber,"Dropbox adjustment $amt, item $itemnumber");
-        }
-         $uquery .= "accounttype='F' ";
-         if($outstanding  >= 0 && $amt >=0) {
-            $uquery .= ", amount = ? , amountoutstanding=? ";
-            unshift @bind, ($amt, $outstanding) ;
-        }
-    } else {
-        $uquery .= "accounttype='F' ";
+    my $start_date = C4::Dates->new($issue->{date_due}, 'iso');
+    my $item = C4::Items::GetItem($issue->{itemnumber});
+    my $borrower = C4::Members::GetMember($issue->{borrowernumber});
+
+    # Set up default values. At the very least we'll change
+    # accountlines.accounttype to 'F'.
+    my ($accounttype, $amount, $msg) = ('F', $accountline->{amount}, undef);
+
+    # Alter them based on flags.
+    if ($flags->{exemptfine}) {
+        $accounttype = 'FFOR';
+        $amount = 0;
+        $msg = "Overdue forgiven: item $issue->{itemnumber}";
     }
-    $uquery .= " WHERE (borrowernumber = ?) AND (itemnumber = ?) AND (accountno = ?)";
-    my $usth = $dbh->prepare($uquery);
-    return $usth->execute(@bind);
+    elsif ($flags->{dropbox} || $flags->{returndate}) {
+        my $branchcode = _GetCircControlBranch($item, $borrower);
+        my $cal = C4::Calendar->new(branchcode => $branchcode);
+        my $end_date = ($flags->{dropbox})
+            ? $cal->addDate(C4::Dates->new(), -2) # why doesn't -1 work?
+            : C4::Dates->new($flags->{returndate}, 'iso');
+
+        ($amount, undef, undef, undef)
+            = C4::Overdues::CalcFine($item, $borrower->{categorycode}, $branchcode,
+                                     undef, undef, $start_date, $end_date);
+        $msg = "Adjusted fine: $amount, item $issue->{itemnumber}";
+    }
+
+    C4::Overdues::UpdateFine(
+        $issue->{itemnumber}, $issue->{borrowernumber}, $amount, undef, $start_date->output('us'));
+
+    $dbh->do(q{
+        UPDATE accountlines SET
+          accounttype = ?,
+          amountoutstanding = LEAST(amountoutstanding, amount)
+        WHERE borrowernumber = ?
+          AND itemnumber = ?
+          AND accountno = ?
+        }, undef,
+        $accounttype, $issue->{borrowernumber}, $issue->{itemnumber}, $accountline->{accountno});
+
+    if ($msg && C4::Context->preference('FinesLog')) {
+        logaction('FINES', 'MODIFY', $issue->{borrowernumber}, $msg);
+    }
+
+    return;
 }
 
 =head2 FixAccountForLostAndReturned
