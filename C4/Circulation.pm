@@ -604,7 +604,6 @@ sub itemissues {
     my $sth =
       $dbh->prepare("Select * from items where items.biblioitemnumber = ?")
       || die $dbh->errstr;
-    my $i = 0;
     my @results;
 
     $sth->execute($bibitem) || die $sth->errstr;
@@ -637,25 +636,23 @@ sub itemissues {
 
         $sth2->finish;
 
-        # Find the last 3 people who borrowed this item.
+        # Find the last 3 people who borrowed this item.  while() loop controls <3
         $sth2 = $dbh->prepare(
             "SELECT * FROM old_issues
                 LEFT JOIN borrowers ON  issues.borrowernumber = borrowers.borrowernumber
                 WHERE itemnumber = ?
+                LIMIT 3
                 ORDER BY returndate DESC,timestamp DESC"
         );
 
+        my $i = 0;
         $sth2->execute( $data->{'itemnumber'} );
-        for ( my $i2 = 0 ; $i2 < 2 ; $i2++ )
-        {    # FIXME : error if there is less than 3 pple borrowing this item
-            if ( my $data2 = $sth2->fetchrow_hashref ) {
-                $data->{"timestamp$i2"} = $data2->{'timestamp'};
-                $data->{"card$i2"}      = $data2->{'cardnumber'};
-                $data->{"borrower$i2"}  = $data2->{'borrowernumber'};
-            }    # if
-        }    # for
+        while(my $data2 = $sth->fetchrow_hashref()) {
+            $data->{"timestamp$i"} = $data2->{'timestamp'};
+            $data->{"card$i"}      = $data2->{'cardnumber'};
+            $data->{"borrower$i"}  = $data2->{'borrowernumber'};
+        }
 
-        $sth2->finish;
         $results[$i] = $data;
         $i++;
     }
@@ -1637,13 +1634,17 @@ sub AddReturn {
         DeleteLostItem($lost_item->{id});
         $messages->{'WasLost'} = 1;
         if (C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem') && ! $exemptfine) {
-            my $gmborrower = C4::Members::GetMember($lostreturned_issue->{borrowernumber},'borrowernumber');
-            my ($circ_policy) = C4::Circulation::GetIssuingRule($gmborrower->{categorycode},$lost_item->{itemtype},$lostreturned_issue->{branchcode});
-            if ($circ_policy->{max_fine}) {
+            ## we say 'if' b/c legacy data migration sometimes does not have old issues and
+            ## hence no borrower for a lost item
+            if ($lostreturned_issue->{borrowernumber}) {
+               my $gmborrower = C4::Members::GetMember($lostreturned_issue->{borrowernumber},'borrowernumber');
+               my ($circ_policy) = C4::Circulation::GetIssuingRule($gmborrower->{categorycode},$lost_item->{itemtype},$lostreturned_issue->{branchcode});
+               if ($circ_policy->{max_fine}) {
+                ## don't invoice legacy data with no old issues and hence no borrower
                 manualinvoice($lostreturned_issue->{borrowernumber},$itemnumber, 'Max overdue fine', 'F', $circ_policy->{max_fine});
+               }
             }
         }
-
     }
 
     # fix up the overdues in accounts...

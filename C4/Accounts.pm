@@ -543,7 +543,6 @@ should be the empty string.
 # I am guessing $user refers to the username (userid) of the logged in librarian -hQ
 sub manualinvoice {
     my ( $borrowernumber, $itemnum, $desc, $type, $amount, $user ) = @_;
-    
     my $dbh      = C4::Context->dbh;
     my $notifyid = 0;
     my $insert;
