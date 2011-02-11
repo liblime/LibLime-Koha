@@ -645,13 +645,13 @@ sub itemissues {
                 ORDER BY returndate DESC,timestamp DESC"
         );
 
-        my $i = 0;
         $sth2->execute( $data->{'itemnumber'} );
+        my $i2 = 0;
         while(my $data2 = $sth2->fetchrow_hashref()) {
-            $data->{"timestamp$i"} = $data2->{'timestamp'};
-            $data->{"card$i"}      = $data2->{'cardnumber'};
-            $data->{"borrower$i"}  = $data2->{'borrowernumber'};
-            $i++;
+            $data->{"timestamp$i2"} = $data2->{'timestamp'};
+            $data->{"card$i2"}      = $data2->{'cardnumber'};
+            $data->{"borrower$i2"}  = $data2->{'borrowernumber'};
+            $i2++;
         }
         push @results, $data;
     }
