@@ -29,7 +29,7 @@ use CGI;
 use C4::Auth;
 use C4::Output;
 use C4::Biblio;
-use C4::LostItems;
+use C4::Items;
 use C4::Koha;                  # GetItemTypes
 use C4::Branch; # GetBranches
 use C4::Dates qw/format_date/;
@@ -52,19 +52,19 @@ my $get_items = $params->{'get_items'};
 if ( $get_items ) {
     my $orderbyfilter    = $params->{'orderbyfilter'}   || undef;
     my $barcodefilter    = $params->{'barcodefilter'}   || undef;
-    my @branchfilter     = $query->param('branchfilter');
-    my @itemtypesfilter  = $query->param('itemtypesfilter');
-    my @loststatusfilter = $query->param('loststatusfilter');
+    my $branchfilter     = $query->param('branchfilter');
+    my $itemtypesfilter  = $query->param('itemtypesfilter');
+    my $loststatusfilter = $query->param('loststatusfilter');
 
     my %where;
     $where{'barcode'}          = $barcodefilter   if defined $barcodefilter;
-    $where{'homebranch'}       = \@branchfilter if @branchfilter;
-    $where{'authorised_value'} = \@loststatusfilter if @loststatusfilter;
+    $where{'homebranch'}       = $branchfilter if $branchfilter;
+    $where{'authorised_value'} = $loststatusfilter if $loststatusfilter;
     
     my $itype = C4::Context->preference('item-level_itypes') ? "itype" : "itemtype";
-    $where{$itype}            = \@itemtypesfilter if @itemtypesfilter;
+    $where{$itype}            = $itemtypesfilter if $itemtypesfilter;
 
-    my $items = GetLostItems( \%where, $orderbyfilter ); 
+    my $items = GetItemsLost( \%where, $orderbyfilter );
     foreach my $it (@$items) {
         $it->{'datelastseen'} = format_date($it->{'datelastseen'});
     }
