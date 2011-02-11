@@ -99,6 +99,7 @@ $template->param(
 
 my $to;
 my $currPage = $input->param('currPage') || 1;
+my $offset;
 my @adv_params;
 if ( $input->param('advanced_patron_search') ) {  
   my $adv_params;
@@ -160,6 +161,7 @@ if ( $input->param('advanced_patron_search') ) {
   $startfrom          = 1;
   $$adv_params{limit} = $resultsperpage;
   $$adv_params{offset}= ($currPage -1)*$resultsperpage;
+  $offset             = $$adv_params{offset};
   ($count, $results)  = SearchMemberAdvanced( $adv_params );
 
   ## Add results to a borrower list, if neccessary
@@ -271,6 +273,8 @@ if ( $input->param('advanced_patron_search') && $count) {
       to            => $to,
       resultsperpage=> $resultsperpage,
       multipage     => ($count>$resultsperpage)? 1:0,
+      currPage      => $pg,
+      offset        => $offset,
    );
 }
 else {
@@ -304,9 +308,17 @@ $template->param("showinitials" => C4::Context->preference('DisplayInitials'));
 ## Advanced Patron Search
 my @attributes = C4::Members::AttributeTypes::GetAttributeTypes() if ( C4::Context->preference('ExtendedPatronAttributes') );
 foreach my $a ( @attributes ) { $a->{'value'} = $input->param( $a->{'code'} ); }
+
+my $cat = GetBorrowercategoryList();
+foreach(@$cat) {
+   if ($$_{categorycode} eq $input->param('categorycode')) {
+      $$_{selected} = 1;
+      last;
+   }
+}
 $template->param(
-  CategoriesLoop => GetBorrowercategoryList(),
-  BranchesLoop => GetBranchesLoop(),
+  CategoriesLoop => $cat,
+  BranchesLoop => GetBranchesLoop($input->param('branchcode')),
   AttributesLoop => \@attributes,
 );
 
@@ -317,30 +329,40 @@ sub _adv_pagination
 {
    my $out = '';
    my $totalPages = $count%$resultsperpage? int($count/$resultsperpage)+1 : $count/$resultsperpage;
-   my $prev = $currPage -1;
-   if ($currPage>1) {
+   if ($currPage==1) {
+      $out .= ' <b>1</b>';
+   }
+   else {
+      my $prev = $currPage -1;
       $out = qq|<a href="javascript:;" onclick="goAdv(1)">&lt;&lt;</a> 
-                <a href="javascript:;" onclick="goAdv($prev)">&lt;</a>|;
+                <a href="javascript:;" onclick="goAdv($prev)">&lt;</a>
+                <a href="javascript:;" onclick="goAdv(1)">1</a>|;
    }
-   if ($totalPages >1) {
-      $out .= qq| <a href="javascript:;" onclick="goAdv(1)">1</a>|;
+   if ($currPage-2 >2) {
+      $out .= ' ... ';
+   }
+   for my $i($currPage-2..$currPage+2) {
+      next if $i<2;
+      if ($i==$currPage) {
+         $out .= " <b>$i</b>";
+      }
+      else {
+         $out .= qq| <a href="javascript:;" onclick="goAdv($i)">$i</a>|;
+      }
+      last if $i+1 >=$totalPages;
+   }
+   if ($currPage+3 < $totalPages) {
+      $out .= ' ... ';
    }
 
-   my $lastI;
-   PAGE:
-   for my $i(2..$totalPages) {
-      my $prevv = $i-2;
-      my $prev  = $i-1;
-      my $next  = $i+1;
-      my $nextt = $i+2;
-   }
-
-   $out .= qq| ... <a href="javascript:;" onclick="goAdv($totalPages);">$totalPages</a>|
-   unless $lastI==$totalPages;
    if ($currPage != $totalPages) {
-      my $next = $currPage + 1;
-      $out .= qq| <a href="javascript:;" onclick="goAdv($next);">&gt;</a> 
+      my $next = $currPage +1;
+      $out .= qq| <a href="javascript:;" onclick="goAdv($totalPages);">$totalPages</a>
+                  <a href="javascript:;" onclick="goAdv($next);">&gt;</a> 
                   <a href="javascript:;" onclick="goAdv($totalPages);">&gt;&gt;</a>|;
+   }
+   else {
+      $out .= " <b>$totalPages</b>";
    }
    return $out;
 }

@@ -82,18 +82,38 @@ sub CreateList {
     my $list_owner = $params->{'list_owner'};
     
     return unless ( $list_name );
+    my $dbh = C4::Context->dbh;
+    my $sth;
     
     unless ( $list_owner ) {
         my $userenv = C4::Context->userenv();
         $list_owner = ( ref($userenv) eq 'HASH' ) ? $userenv->{'number'} : '0';
     }
 
-    my $sql = "INSERT INTO borrower_lists ( list_name, list_owner ) VALUE ( ?, ? )";
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare( $sql );
-    $sth->execute( $list_name, $list_owner );
-    
-    my $list_id = $dbh->{ q{mysql_insertid} };
+    ## dupecheck
+    $sth = $dbh->prepare('SELECT *
+      FROM borrower_lists
+     WHERE list_name = ?');
+    $sth->execute($list_name);
+    my $row = $sth->fetchrow_hashref() // {};
+    my $list_id;
+    if ($$row{list_id} && ($list_owner ne $$row{list_owner})) {
+      $sth = $dbh->prepare('
+         UPDATE borrower_lists
+            SET list_owner = ?
+          WHERE list_id    = ?');
+      $sth->execute($list_owner,$$row{list_id});
+      $list_id = $$row{list_id};
+    }
+    elsif ($$row{list_id}) {
+      # do nothing
+    }
+    else {
+      my $sql = "INSERT INTO borrower_lists ( list_name, list_owner ) VALUES ( ?, ? )";
+      $sth = $dbh->prepare( $sql );
+      $sth->execute( $list_name, $list_owner );
+      $list_id = $dbh->{ q{mysql_insertid} };
+    }
     return $list_id;
 }
 
@@ -212,10 +232,19 @@ sub AddBorrowerToList {
     my $borrowernumber = $params->{'borrowernumber'};
     
     return unless ( $list_id && $borrowernumber );
+    my $dbh = C4::Context->dbh;
+    my $sth;
+
+    ## dupecheck
+    $sth = $dbh->prepare('SELECT 1 FROM borrower_lists_tracking
+      WHERE list_id        = ?
+        AND borrowernumber = ?');
+    $sth->execute($list_id,$borrowernumber);
+    my $dupe = ($sth->fetchrow_array)[0];
+    return 1 if $dupe;
     
     my $sql = "INSERT INTO borrower_lists_tracking ( list_id, borrowernumber ) VALUES ( ?, ? )";
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare( $sql );
+    $sth = $dbh->prepare( $sql );
     return $sth->execute( $list_id, $borrowernumber );
 }
 

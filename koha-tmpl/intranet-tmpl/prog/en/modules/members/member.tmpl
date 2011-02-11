@@ -123,7 +123,9 @@ function CheckCheckAll(fmobj) {
    }
    </script>
 	<form action="member.pl" id="advanced_search_form" name="advanced_search_form" method="post">
-   <input type=hidden name="currPage" value="0">
+   <input type=hidden name="currPage" value="<!-- TMPL_VAR NAME="currPage" -->">
+   <input type=hidden name="orderby"  value="">
+   <input type=hidden name="offset"   value="<!-- TMPL_VAR NAME="offset" -->">
 		<fieldset>
 			<legend id="advanced_search_legend">Advanced Patron Search</legend>
 
@@ -153,7 +155,8 @@ function CheckCheckAll(fmobj) {
 				<select name="branchcode" id="branchcode">
 					<option value="">All Branches</option>
 					<!-- TMPL_LOOP NAME="BranchesLoop" -->
-						<option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="branchname" --></option>
+						<option value="<!-- TMPL_VAR NAME="value" -->" 
+                  <!-- TMPL_IF NAME="selected" -->selected<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="branchname" --></option>
 					<!-- /TMPL_LOOP -->
 				</select>
 				<p>
@@ -364,10 +367,11 @@ function CheckCheckAll(fmobj) {
     <table style="width:100%">
     <tr>
     <th><input style="border:inset 1px;" name="allbox" type="checkbox" value="Check All" onclick="CheckAll(document.bookbag_form);" /></th>
-    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=cardnumber<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->">Card</a></th>
-    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=surname<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->">Name</a></th>
-    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=borrowers.categorycode<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->">Cat</a></th>
-    <th><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=branchcode<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->">Library</a></th>
+    <th><!-- TMPL_IF NAME="advanced_patron_search" -->
+        <a href="javascript:;" onclick="document.advanced_search_form.orderby.value='borrowers.cardnumber';document.advanced_search_form.submit();"><!-- TMPL_ELSE --><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=cardnumber<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->"><!-- /TMPL_IF -->Card</a></th>
+    <th><!-- TMPL_IF NAME="advanced_patron_search" --><a href="javascript:;" onclick="document.advanced_search_form.orderby.value='borrowers.surname,borrowers.firstname';document.advanced_search_form.submit();"><!-- TMPL_ELSE --><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=surname<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->"><!-- /TMPL_IF -->Name</a></th>
+    <th><!-- TMPL_IF NAME="advanced_patron_search" --><a href="javascript:;" onclick="document.advanced_search_form.orderby.value='categories.description,borrowers.surname';document.advanced_search_form.submit();"><!-- TMPL_ELSE --><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=borrowers.categorycode<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->"><!-- /TMPL_IF -->Cat</a></th>
+    <th><!-- TMPL_IF NAME="advanced_patron_search" --><a href="javascript:;" onclick="document.advanced_search_form.orderby.value='borrowers.branchcode,borrowers.surname';document.advanced_search_form.submit();"><!-- TMPL_ELSE --><a href="member.pl?member=<!--TMPL_VAR Name="member" -->&amp;orderby=branchcode<!-- TMPL_LOOP NAME="AdvancedSearchParametersLoop" -->&amp;<!-- TMPL_VAR NAME="name" -->=<!-- TMPL_VAR NAME="value" --><!-- /TMPL_LOOP -->"><!-- /TMPL_IF -->Library</a></th>
     <th>Expires on</th>
     <th>OD/Issues</th>
     <th>Fines</th>
