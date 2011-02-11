@@ -647,14 +647,13 @@ sub itemissues {
 
         my $i = 0;
         $sth2->execute( $data->{'itemnumber'} );
-        while(my $data2 = $sth->fetchrow_hashref()) {
+        while(my $data2 = $sth2->fetchrow_hashref()) {
             $data->{"timestamp$i"} = $data2->{'timestamp'};
             $data->{"card$i"}      = $data2->{'cardnumber'};
             $data->{"borrower$i"}  = $data2->{'borrowernumber'};
+            $i++;
         }
-
-        $results[$i] = $data;
-        $i++;
+        push @results, $data;
     }
 
     $sth->finish;

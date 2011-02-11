@@ -2524,7 +2524,7 @@ sub _Findgroupreserve {
     }
     return @results if @results;
 
-    my $query = q|
+    my $query = q/
         SELECT reserves.reservenumber AS reservenumber,
                reserves.biblionumber AS biblionumber,
                reserves.borrowernumber AS borrowernumber,
