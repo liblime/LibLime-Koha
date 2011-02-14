@@ -32,11 +32,11 @@ use C4::Auth;
 my $query = new CGI;
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
-        template_name   => "about.tmpl",
+        template_name   => "opac-holdhistory.tmpl",
         query           => $query,
-        type            => "intranet",
+        type            => "opac",
         authnotrequired => 0,
-        flagsrequired   => { catalogue => 1 },
+        flagsrequired   => { borrow => 1 },
         debug           => 1,
     }
 );
@@ -52,4 +52,4 @@ for (my $i=0;$i<$count;$i++){
   ModOldReservesDisplay($reservenumber[$i]) if ($deletes[$i] eq 'del');
 }
 
-print $query->redirect("/cgi-bin/koha/opac-user.pl#opac-user-expired-holds");
+print $query->redirect("/cgi-bin/koha/opac-holdhistory.pl#opac-user-expired-holds");

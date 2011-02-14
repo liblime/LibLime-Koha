@@ -65,8 +65,9 @@ $template->param(
 );
 
 
+my @borroweroldreserv;
 # show the borrower's old filled reservations on Filled Holds tab
-my @borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'fill');
+@borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'fill');
 my @filledreservloop;
 foreach my $num_res (@borroweroldreserv) {
   next unless $$num_res{found} eq 'F';  # distinguish this from cancelled holds
@@ -96,6 +97,7 @@ $template->param( filledreservloop => \@filledreservloop,
 );
 
 # show the borrower's old expired reservations on Expired Holds tab
+@borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'expiration');
 my @expiredreservloop;
 foreach my $num_res (@borroweroldreserv) {
   next if $$num_res{cancellationdate}; #cancelled reserves distinct from expired

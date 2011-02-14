@@ -779,7 +779,7 @@ sub GetOldReservesFromBorrowernumber {
             SELECT *
             FROM   old_reserves
             WHERE  borrowernumber=?
-                AND priority = 'F'
+                AND found = 'F'
             ORDER BY timestamp DESC
         ");
         $sth->execute($borrowernumber);
