@@ -376,6 +376,7 @@ if ($borrowernumber) {
             $getreserv{author}          = $getbibinfo->{'author'};
             $getreserv{biblionumber}    = $num_res->{'biblionumber'};	
         }
+        $getreserv{pickupbranch} = C4::Branch::GetBranchName($num_res->{branchcode});
         $getreserv{waitingposition} = $num_res->{'priority'};
         $getreserv{reservenumber} = $num_res->{'reservenumber'};
         push( @reservloop, \%getreserv );

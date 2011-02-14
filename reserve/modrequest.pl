@@ -70,12 +70,15 @@ if ($CancelBorrowerNumber) {
 else {
     for (my $i=0;$i<$count;$i++){
         undef $itemnumber[$i] unless ($itemnumber[$i]//'') ne '';
-        ModReserve($rank[$i],$biblionumber[$i],$borrower[$i],$branch[$i],$itemnumber[$i],$reservenumber[$i]); #from C4::Reserves
+        ModReserve($rank[$i],$biblionumber[$i],$borrower[$i],$branch[$i],$itemnumber[$i],$reservenumber[$i]);
 
         if ( $rank[$i] ne 'del' && $query->param('suspend_' . $reservenumber[$i] ) ) {
             my $format = DateTime::Format::Strptime->new(pattern => C4::Dates->DHTMLcalendar());
             my $resumedate = $format->parse_datetime($query->param('resumedate_' . $reservenumber[$i] ));
             SuspendReserve( $reservenumber[$i], $resumedate );
+        }
+        elsif ( $rank[$i] ne 'del' ) {
+            ResumeReserve( $reservenumber[$i] );
         }
     }
 }
