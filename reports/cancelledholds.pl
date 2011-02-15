@@ -20,14 +20,12 @@
 use strict;
 use CGI;
 use C4::Auth;
-use C4::Context;
-use C4::Koha;
 use C4::Output;
-use C4::Circulation;
 use C4::Reports;
 use C4::Members;
+use C4::Reserves;
+use C4::Dates;
 use C4::Branch;
-use C4::Dates qw/format_date_in_iso/;
 
 =head1 NAME
 
@@ -40,96 +38,20 @@ plugin that shows cancelled holds
 =cut
 
 my $input = new CGI;
-my $do_it=$input->param('do_it');
 my $fullreportname = "reports/cancelledholds.tmpl";
-my $output = $input->param("output");
-my $basename = $input->param("basename");
-my $mime = $input->param("MIME");
 
-my $initstatement = "SELECT DISTINCT biblio.title as 'Title', borrowers.surname as 'Last Name', borrowers.firstname as 'First Name', old_reserves.cancellationdate as 'Date Cancelled', branches.branchname as 'Library' FROM old_reserves LEFT JOIN borrowers ON (old_reserves.borrowernumber = borrowers.borrowernumber) LEFT JOIN biblio ON (old_reserves.biblionumber = biblio.biblionumber) LEFT JOIN branches ON (old_reserves.branchcode = branches.branchcode)";
-
-my $patron      = $input->param('patron')   || undef;
-my $fromdate    = $input->param('from')    || undef;
-my $todate      = $input->param('to')   || undef;
-my $holdcandate = $input->param('holdcandate')   || undef;
-my $branchcode  = $input->param('branch') || undef;
-
-my $branches = &GetBranchesLoop();
-
-my $endstatement = " ORDER BY borrowers.surname, old_reserves.reservedate";
-my $fullstatement = $initstatement;
-my $whereclause = 0;
-if (defined($patron)) {
-  my $patfilter = " WHERE borrowers.surname = '" . $patron . "'";
-  $fullstatement .= $patfilter;
-  $whereclause = 1;
-}
-my ($mm,$dd,$yyyy);
-if (defined($fromdate)) {
-  ($mm,$dd,$yyyy) = split(/\//,$fromdate);
-  my $sqlfromdate = sprintf "%4d-%02d-%02d",$yyyy,$mm,$dd;
-  my $fromfilter;
-  if ($whereclause) {
-    $fromfilter = " AND old_reserves.reservedate >= '" . $sqlfromdate . "'";
-  }
-  else {
-    $fromfilter = " WHERE old_reserves.reservedate >= '" . $sqlfromdate . "'";
-  }
-  $fullstatement .= $fromfilter;
-  $whereclause = 1;
-}
-if (defined($todate)) {
-  ($mm,$dd,$yyyy) = split(/\//,$todate);
-  my $sqltodate = sprintf "%4d-%02d-%02d",$yyyy,$mm,$dd;
-  my $tofilter;
-  if ($whereclause) {
-    $tofilter = " AND old_reserves.reservedate <= '" . $sqltodate . "'";
-  }
-  else {
-    $tofilter = " WHERE old_reserves.reservedate <= '" . $sqltodate . "'";
-  }
-  $fullstatement .= $tofilter;
-  $whereclause = 1;
-}
-if (defined($holdcandate)) {
-  ($mm,$dd,$yyyy) = split(/\//,$holdcandate);
-  my $sqltodate = sprintf "%4d-%02d-%02d",$yyyy,$mm,$dd;
-  my $canfilter;
-  if ($whereclause) {
-    $canfilter = " AND (old_reserves.cancellationdate = '" . $sqltodate . "')";
-  }
-  else {
-    $canfilter = " WHERE (old_reserves.cancellationdate = '" . $sqltodate . "')";
-  }
-  $fullstatement .= $canfilter;
-  $whereclause = 1;
-}
-
-if (defined($branchcode)) {
-  my $branchfilter;
-  if ($whereclause) {
-    $branchfilter = " AND old_reserves.branchcode = '" . $branchcode . "'";
-  }
-  else {
-    $branchfilter = " WHERE old_reserves.branchcode = '" . $branchcode . "'";
-  }
-  $fullstatement .= $branchfilter;
-  $whereclause = 1;
-}
-
-if (($whereclause) && (!defined($holdcandate))) {
-  $fullstatement .= " AND (old_reserves.cancellationdate IS NOT NULL)";
-}
-else {
-  if (!defined($holdcandate)) {
-    $fullstatement .= " WHERE (old_reserves.cancellationdate IS NOT NULL)";
-  }
-}
-$fullstatement .= $endstatement;
-warn "SQL: $fullstatement\n";
-
-our $sep     = $input->param("sep");
-$sep = "\t" if ($sep eq 'tabulation');
+my $do_it      = $input->param('do_it');
+my $patron     = $input->param('patron')        || undef;
+my $fromdate   = $input->param('from')          || undef;
+my $todate     = $input->param('to')            || undef;
+my $holdcandate= $input->param('holdcandate')   || undef;
+my $branchcode = $input->param('branch')        || undef;
+my $output     = $input->param("output");
+my $basename   = $input->param("basename");
+my $mime       = $input->param("MIME");
+our $sep       = $input->param("sep");
+$sep           = "\t" if ($sep eq 'tabulation');
+my $branches   = C4::Branch::GetBranchesLoop();
 my ($template, $borrowernumber, $cookie) = get_template_and_user(
         { template_name => $fullreportname,
           query => $input,
@@ -139,85 +61,92 @@ my ($template, $borrowernumber, $cookie) = get_template_and_user(
           debug => 1,
         });
 $template->param(do_it => $do_it,
-        DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
-        );
+   DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
+);
 $template->param(branchloop => $branches);
-if ($do_it)
-{
-  # Obtain results
-  my @rows = ();
-  my $dbh = C4::Context->dbh;
-  my $sth = $dbh->prepare($fullstatement);
-  $sth->execute();
-  my $headref = $sth->{NAME} || [];
-  my @headers = map { +{ cell => $_ } } @$headref;
-  $template->param(header_row => \@headers);
-  while (my $row = $sth->fetchrow_arrayref()) {
-    my @cells = map { +{ cell => $_ } } @$row;
-    push @rows, { cells => \@cells };
-  }
 
-  # Displaying results
-  if ($output eq "screen") {
-# Printing results to screen
-    $template->param(header_row => \@headers);
-    $template->param(results => \@rows);
-    output_html_with_http_headers $input, $cookie, $template->output;
-    exit(1);
-  }
-  else {
-# Printing to a csv file
+if ($do_it) {
+   # Obtain results
+   my @rows = @{C4::Reports::CancelledHolds(
+      patron      => $patron,
+      fromdate    => $fromdate,
+      todate      => $todate,
+      holdcandate => $holdcandate,
+      branchcode  => $branchcode,
+   )};
+   die "More than 1000 rows: needs refactoring to page, KNOWN ISSUE"
+      if @rows > 1000;
+   my @headers = ();
+   foreach(@rows) {
+      $$_{status} = '';
+      if ($$_{found}) { 
+         $$_{status} = $C4::Reserves::found{$$_{found}};
+      }
+   }
+   # Displaying results
+   if ($output eq "screen") {
+      # Printing results to screen
+      $template->param(results => \@rows);
+      output_html_with_http_headers $input, $cookie, $template->output;
+      exit(1);
+   }
+   else {
+   # Printing to a csv file
     print $input->header(-type => 'application/vnd.sun.xml.calc',
                          -encoding    => 'utf-8',
                          -attachment=>"$basename.csv",
                          -filename=>"$basename.csv" );
-# Print column headers
-    foreach my $head ( @headers ) {
-      print $head->{cell}.$sep;
+   # Print column headers
+   @headers = (
+      ['ResNo.'   ,   'reservenumber'   ],
+      ['Title'    ,   'title'           ],
+      ['Biblionumber','biblionumber'    ],
+      ['Cardnumber',  'cardnumber'      ],
+      ['Last Name',,  'surname'         ],
+      ['First Name',  'firstname'       ],
+      ['Placed On',   'reservedate'     ],
+      ['Cancelled',   'cancellationdate'],
+      ['Expired',     'expirationdate'  ],
+      ['Library',     'branchname'      ],
+      ['Last Status', 'status'          ],
+    );
+    foreach( @headers ) {
+      print $$_[0].$sep;
     }
-    print "\r\n";
-# Print table
+    print "\n";
+   # Print table
     foreach my $row ( @rows ) {
-      my $col = $row->{cells};
-      foreach my $cell (@$col) {
-        print $cell->{cell}.$sep;
-      }
-      print "\r\n";
+      print join($sep,map{$$row{$$_[1]}}@headers);
+      print "$sep\n";
     }
-    exit(1);
+    exit;
   }
 # Displaying choices
-}
-else {
-  my $dbh = C4::Context->dbh;
-  my @values;
-  my %labels;
-  my %select;
-  my $req;
 
-  my @mime = ( C4::Context->preference("MIME") );
-  my $CGIextChoice=CGI::scrolling_list(
+exit;
+}
+  
+my @mime = ( C4::Context->preference("MIME") );
+my $CGIextChoice=CGI::scrolling_list(
                 -name     => 'MIME',
                 -id       => 'MIME',
                 -values   => \@mime,
                 -size     => 1,
                 -multiple => 0 );
 
-  my $CGIsepChoice = GetDelimiterChoices;
-
-  my ($codes,$labels) = GetborCatFromCatType(undef,undef);
-  my @borcatloop;
-  foreach my $thisborcat (sort keys %$labels) {
-    my %row =(value => $thisborcat,
-              description => $labels->{$thisborcat});
+my $CGIsepChoice = GetDelimiterChoices;
+my ($codes,$labels) = GetborCatFromCatType(undef,undef);
+my(@borcatloop,$labels);
+foreach my $thisborcat (sort keys %$labels) {
+   my %row =(value => $thisborcat,
+       description => $labels->{$thisborcat});
     push @borcatloop, \%row;
-  }
-  $template->param(
+}
+$template->param(
      CGIextChoice => $CGIextChoice,
      CGIsepChoice => $CGIsepChoice,
      borcatloop =>\@borcatloop,
-  );
-  output_html_with_http_headers $input, $cookie, $template->output;
-}
-
-1;
+);
+output_html_with_http_headers $input, $cookie, $template->output;
+exit;
+__END__

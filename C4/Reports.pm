@@ -129,8 +129,154 @@ sub AddCondition {
     }
 }
 
-1;
+# not exported.
+sub HoldsShelf
+{
+   my %g   = @_;
+   my $dbh = C4::Context->dbh;
+   my $lim = '';
+   my @lims;
+   if ($g{branchcode}) { 
+      $lim .= " AND <table>.branchcode = ?"; 
+      push @lims, $g{branchcode}; 
+   }
+   my %d = (
+      'fromdate'        => 'reservedate >='     ,
+      'todate'          => 'reservedate <='     ,
+      'holdexpdate'     => 'expirationdate >='  ,
+      'holdcandate'     => 'cancellationdate IS NOT NULL AND cancellationdate >=',
+      'waitingdate'     => 'waitingdate >='     ,
+   );
+   foreach(keys %d) {
+      next unless exists $g{$_};
+      if ($g{$_} =~ /^(\d\d)\/(\d\d)\/(\d{4})$/) {
+         $lim .= " AND <table>.$d{$_} ?";
+         push @lims, "$3-$1-$2";
+      }
+      elsif ($g{$_}) {
+         die "Malformed $_, expected mm/dd/yyyy";
+      }
+   }
+   my $sql = qq|
+      SELECT <table>.reservenumber,
+             <table>.reservedate,
+             <table>.waitingdate,
+             <table>.cancellationdate,
+             <table>.expirationdate,
+             <table>.biblionumber,
+             branches.branchname,
+             borrowers.borrowernumber,
+             borrowers.surname,
+             borrowers.firstname,
+             borrowers.cardnumber,
+             biblio.title
+        FROM <table>
+   LEFT JOIN biblio    ON (<table>.biblionumber   = biblio.biblionumber)
+   LEFT JOIN borrowers ON (<table>.borrowernumber = borrowers.borrowernumber)
+   LEFT JOIN branches  ON (<table>.branchcode     = branches.branchcode)
+       WHERE <table>.found = 'W' $lim
+   |;
+   my $stm1 = my $stm2 = $sql;
+   $stm1    =~ s/<table>/reserves/sg;
+   $stm2    =~ s/<table>/old_reserves/sg;
+   my $sth; my @all;
+   unless ($g{holdcandate}) { # don't go through reserves table for cancelled holds
+      $sth  = $dbh->prepare($stm1);
+      $sth->execute(@lims);
+      while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
+   }
+   $sth = $dbh->prepare($stm2);
+   $sth->execute(@lims);
+   while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
+   return \@all // [];
+}
 
+sub _prepSqlHolds
+{
+   my %g = @_;
+   my $f = []; # 2-dimensional array of subclauses after WHERE and params
+   if ($g{patron}) {
+      $g{patron} =~ s/['"]//g;
+      push @$f, ["LCASE(borrowers.surname) LIKE(LCASE('%$g{patron}%'))",'_undef'];
+   }
+   my %d = ( 
+      'fromdate'     , 'reservedate >='      ,
+      'todate'       , 'reservedate <='      ,
+      'holdexpdate'  , 'expirationdate ='    ,
+      'holdcandate'  , 'cancellationdate ='  ,
+   );
+   foreach(keys %d) {
+      next unless exists $g{$_};
+      if ($g{$_} =~ /^(\d\d)\/(\d\d)\/(\d{4})$/) {
+         push @$f, ["old_reserves.$d{$_} ?","$3-$1-$2"];
+      }
+      elsif ($g{$_}) {
+         die "Malformed $_, expected mm/dd/yyyy";
+      }
+   }
+   if ($g{branchcode}) {
+      push @$f, ['old_reserves.branchcode = ?',$g{branchcode}];
+   }
+   return $f;
+}
+
+sub _getSqlHolds
+{
+   my $f      = shift;
+   my $dbh    = C4::Context->dbh;
+   my @vals   = ();
+   my %res    = ();
+   foreach(@$f) { if ($$_[1] ne '_undef') { push @vals, $$_[1] } }
+   my $sth = $dbh->prepare(sprintf(qq|
+      SELECT biblio.title,
+             borrowers.surname,
+             borrowers.firstname,
+             borrowers.borrowernumber,
+             borrowers.cardnumber,
+             old_reserves.reservenumber,
+             old_reserves.biblionumber,
+             old_reserves.itemnumber,
+             old_reserves.reservedate,
+             old_reserves.cancellationdate,
+             old_reserves.expirationdate,
+             old_reserves.found,
+             old_reserves.priority,
+             branches.branchname
+        FROM old_reserves 
+   LEFT JOIN borrowers ON (old_reserves.borrowernumber = borrowers.borrowernumber) 
+   LEFT JOIN biblio    ON (old_reserves.biblionumber   = biblio.biblionumber) 
+   LEFT JOIN branches  ON (old_reserves.branchcode     = branches.branchcode) 
+            %s
+    ORDER BY borrowers.surname, old_reserves.reservedate|,
+         @$f? sprintf("WHERE %s",join(' AND ',map{$$_[0]}@$f)):''
+      )
+   );
+   $sth->execute(@vals);
+   my @all;
+   while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
+   return \@all // [];
+}
+
+# not exported.
+sub ExpiredHolds
+{
+   my %g = @_;
+   my $f = _prepSqlHolds(%g);
+   push @$f, ['old_reserves.cancellationdate IS NULL','_undef'];
+   push @$f, ["(old_reserves.found != 'F' OR old_reserves.found IS NULL)",'_undef'];
+   return _getSqlHolds($f);
+}
+
+# not exported.
+sub CancelledHolds
+{
+   my %g = @_;
+   my $f = _prepSqlHolds(%g);
+   push @$f, ['old_reserves.cancellationdate IS NOT NULL','_undef'];
+   return _getSqlHolds($f);
+}
+
+1;
 __END__
 
 =head1 AUTHOR

@@ -1,13 +1,19 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
-<title>Koha &rsaquo; Reports &rsaquo; Expired Holds</title>
+<title>Koha &rsaquo; Reports &rsaquo; Holds Shelf Action</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
+<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script type="application/javascript">
+$(document).ready(function() {
+   $("table").tablesorter();
+});
+</script>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="cat-search.inc" -->
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; <a href="/cgi-bin/koha/reports/expiredholds.pl">Expired Holds</a></div>
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; <a href="/cgi-bin/koha/reports/holdsaction.pl">Holds Shelf Action</a></div>
 
 <div id="doc3" class="yui-t2">
 
@@ -17,23 +23,24 @@
 
 <!-- TMPL_IF NAME="novarset" -->
 Cannot proceed.
-<a href="/cgi-bin/koha/admin/systempreferences.pl?op=add_form&searchfield=HoldExpireLength">System preference <b>HoldExpireLength</b></a> needs to be set.
+<a href="/cgi-bin/koha/admin/systempreferences.pl?op=add_form&searchfield=ReservesMaxPickupDelay">System preference <b>ReservesMaxPickupDelay</b></a> needs to be set.
 <!-- TMPL_ELSE -->
 
-<!-- TMPL_IF NAME="do_it" -->
-    <h1>Expired Holds</h1>
+<!-- TMPL_IF NAME="go" -->
+    <h1>Waiting on Holds Shelf</h1>
 
     <!-- TMPL_IF NAME="results" -->
-    <table id="holdst">
+    <table>
         <thead>
         <tr>
             <th>No.</th>
             <th>Title</th>
             <th>Name</th>
             <th>Placed On</th>
-            <th>Expired</th>
+            <th>Waiting Since</th>
+            <th>Cancelled</th>
+            <th>Expires</th>
             <th>Library</th>
-            <th>Last Status</th>
         </tr>
         </thead>
             <!-- TMPL_LOOP NAME="results" -->
@@ -43,25 +50,47 @@ Cannot proceed.
                      <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" -->, 
                         <!-- TMPL_VAR NAME="firstname" --></a></td>
                      <td nowrap><!-- TMPL_VAR NAME="reservedate" --></td>
+                     <td nowrap><!-- TMPL_VAR NAME="waitingdate" --></td>
+                     <td nowrap><!-- TMPL_VAR NAME="cancellationdate" --></td>
                      <td nowrap><!-- TMPL_VAR NAME="expirationdate" --></td>
                      <td><!-- TMPL_VAR NAME="branchname" --></td>
-                     <td><!-- TMPL_VAR NAME="status" --></td>
                 </tr>
             <!-- /TMPL_LOOP -->
     </table>
-    <input type=button value="&lt; Back" onclick="document.location.href='expiredholds.pl';">
     <!-- TMPL_ELSE -->
-    No results found.
+      No results found.
     <!-- /TMPL_IF -->
+     <br>
+     <input type=button value="&lt; Back" onclick="document.location.href='holdsaction.pl';">
 <!-- TMPL_ELSE -->
-    <h1>Expired Holds</h1>
-    <form method="post" action="/cgi-bin/koha/reports/expiredholds.pl">
+    <h1>Waiting on Holds Shelf</h1>
+    <form method="post" action="/cgi-bin/koha/reports/holdsaction.pl">
     <fieldset class="rows">
 		<ol>
-			<li><label for="patron">Patron Last Name (leave blank for all patrons): </label> <input type="text" size=30 name="patron" id="patron"></input> 
-</li>
-	<li><label for="from">Hold placed after: </label> <input size="10" id="from" name="from" value="" type="text" />
-                        <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarFrom" style="cursor: pointer;" border="0" />
+
+        <li><label for="branch">Library: </label>
+        <select name="branch" id="branch"><option value="">All Libraries</option>
+          <!-- TMPL_LOOP NAME="branchloop" -->
+            <!-- TMPL_IF NAME="selected" -->
+              <option value="<!-- TMPL_VAR Name="value" -->" selected="selected"><!-- TMPL_VAR Name="branchname" --> </option>
+            <!-- TMPL_ELSE -->
+              <option value="<!-- TMPL_VAR Name="value" -->" ><!-- TMPL_VAR Name="branchname" --> </option>
+            <!-- /TMPL_IF -->
+          <!-- /TMPL_LOOP -->
+        </select></li>
+         <li><label for="waitingdate">Waiting since: </label> <input size="10" id="waitingdate" name="waitingdate" value="" type="text" />
+                           <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarWait" style="cursor: pointer;" border="0" />
+                            <script type="text/javascript">
+                                Calendar.setup(
+                                    {
+                                        inputField : "waitingdate",
+                                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                                        button : "openCalendarWait",
+                                    }
+                                );
+                            </script></li>
+         <li><label for="from">Hold placed after: </label> <input size="10" id="from" name="from" value="" type="text" />
+                           <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarFrom" style="cursor: pointer;" border="0" />
                             <script type="text/javascript">
                                 Calendar.setup(
                                     {
@@ -71,8 +100,8 @@ Cannot proceed.
                                     }
                                 );
                             </script></li>
-	<li><label for="to">Hold placed before: </label> <input size="10" id="to" name="to" value="" type="text" />
-                        <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarTo" style="cursor: pointer;" border="0" />
+         <li><label for="to">Hold placed before: </label> <input size="10" id="to" name="to" value="" type="text" />
+                           <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarTo" style="cursor: pointer;" border="0" />
                             <script type="text/javascript">
                                 Calendar.setup(
                                     {
@@ -82,7 +111,18 @@ Cannot proceed.
                                     }
                                 );
                             </script></li>
-	<li><label for="holdexpdate">Expiration date: </label> <input size="10" id="holdexpdate" name="holdexpdate" value="" type="text" />
+         <li><label for="holdcandate">Cancelled on or after: </label> <input size="10" id="holdcandate" name="holdcandate" value="" type="text" />
+                           <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarCan" style="cursor: pointer;" border="0" />
+                            <script type="text/javascript">
+                                Calendar.setup(
+                                    {
+                                        inputField : "holdcandate",
+                                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                                        button : "openCalendarCan",
+                                    }
+                                );
+                            </script></li>
+	      <li><label for="holdexpdate">Expired on or after: </label> <input size="10" id="holdexpdate" name="holdexpdate" value="" type="text" />
                         <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarExp" style="cursor: pointer;" border="0" />
                             <script type="text/javascript">
                                 Calendar.setup(
@@ -93,16 +133,6 @@ Cannot proceed.
                                     }
                                 );
                             </script></li>
-        <li><label for="branch">Library: </label>
-        <select name="branch" id="branch"><option value="" >Any Library</option>
-          <!-- TMPL_LOOP NAME="branchloop" -->
-            <!-- TMPL_IF NAME="selected" -->
-              <option value="<!-- TMPL_VAR Name="value" -->" selected="selected">><!-- TMPL_VAR Name="branchname" --> </option>
-            <!-- TMPL_ELSE -->
-              <option value="<!-- TMPL_VAR Name="value" -->" ><!-- TMPL_VAR Name="branchname" --> </option>
-            <!-- /TMPL_IF -->
-          <!-- /TMPL_LOOP -->
-        </select> </li>
 		</ol>
 	</fieldset>
 
@@ -117,7 +147,7 @@ Cannot proceed.
 	<fieldset class="action">
 	<input type="submit" value="Submit" />
 	<input type="hidden" name="report_name" value="<!--TMPL_VAR NAME="report_name" -->" />
-	<input type="hidden" name="do_it" value="1" />
+	<input type="hidden" name="go" value="1" />
 	</fieldset>
 	</form>
 <!-- /TMPL_IF -->
@@ -129,10 +159,4 @@ Cannot proceed.
 <!-- TMPL_INCLUDE NAME="reports-menu.inc" -->
 </div>
 </div>
-<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script> 
-<script type="application/javascript">  
-$(document).ready(function() { 
-   $("table").tablesorter(); 
-}); 
-</script> 
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

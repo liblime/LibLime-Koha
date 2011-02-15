@@ -4345,6 +4345,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = '4.03.13.001';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    
     $dbh->do(q{
         ALTER TABLE reserves MODIFY reservedate DATETIME DEFAULT NULL
     });
@@ -4357,9 +4358,18 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(q{
         ALTER TABLE tmp_holdsqueue MODIFY reservedate DATETIME DEFAULT NULL
     });
+    $dbh->do("DELETE FROM systempreferences WHERE variable='holdCancelLength'");
+    $dbh->do("INSERT INTO systempreferences VALUES(
+      'HoldExpireLength',
+      '30',
+      NULL,
+      'Specify how many days before a hold expires',
+      'Integer'
+    )");
 
     SetVersion ($DBversion);
-    print "Upgrade to $DBversion done ( Changing reserves.reservedate et al to datetime )\n";
+    print "Upgrade to $DBversion done ( Changing reserves.reservedate et al to datetime; replace syspref holdCancelLength with HoldExpireLength )\n";
+    
 }
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;

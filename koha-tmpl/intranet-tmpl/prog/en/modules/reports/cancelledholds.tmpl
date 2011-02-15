@@ -7,7 +7,7 @@
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="cat-search.inc" -->
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; Cancelled Holds</div>
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; <a href="/cgi-bin/koha/reports/cancelledholds.pl">Cancelled Holds</a></div>
 
 <div id="doc3" class="yui-t2">
 
@@ -17,22 +17,39 @@
 
 <!-- TMPL_IF NAME="do_it" -->
     <h1>Cancelled Holds</h1>
-    <table>
+
+    <!-- TMPL_IF NAME="results" -->
+    <table id="holdst">
+        <thead>
         <tr>
-            <!-- TMPL_LOOP NAME="header_row" -->
-                <th><!-- TMPL_VAR NAME="cell" --></th>
-            <!-- /TMPL_LOOP -->
+            <th>No.</th>
+            <th>Title</th>
+            <th>Name</th>
+            <th>Placed On</th>
+            <th>Cancelled</th>
+            <th>Expired</th>
+            <th>Library</th>
+            <th>Last Status</th>
         </tr>
+        </thead>
             <!-- TMPL_LOOP NAME="results" -->
                 <tr>
-                    <!-- TMPL_LOOP NAME="cells" -->
-                        <td>
-                            <!-- TMPL_IF NAME="cell" --><!-- TMPL_VAR NAME="cell" --><!-- /TMPL_IF -->
-                        </td>
-                    <!-- /TMPL_LOOP -->
+                     <td><a href="/cgi-bin/koha/members/holdhistory.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->#cancelledholds"><!-- TMPL_VAR NAME="reservenumber" --></a></td>
+                     <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a></td>
+                     <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" -->, 
+                        <!-- TMPL_VAR NAME="firstname" --></a></td>
+                     <td nowrap><!-- TMPL_VAR NAME="reservedate" --></td>
+                     <td nowrap><!-- TMPL_VAR NAME="cancellationdate" --></td>
+                     <td nowrap><!-- TMPL_VAR NAME="expirationdate" --></td>
+                     <td><!-- TMPL_VAR NAME="branchname" --></td>
+                     <td><!-- TMPL_VAR NAME="status" --></td>
                 </tr>
             <!-- /TMPL_LOOP -->
     </table>
+    <input type=button value="&lt; Back" onclick="document.location.href='cancelledholds.pl';">
+    <!-- TMPL_ELSE -->
+    No results found.
+    <!-- /TMPL_IF -->
 <!-- TMPL_ELSE -->
     <h1>Cancelled Holds</h1>
     <form method="post" action="/cgi-bin/koha/reports/cancelledholds.pl">
@@ -62,14 +79,14 @@
                                     }
                                 );
                             </script></li>
-	<li><label for="holdcandate">Cancelled date: </label> <input size="10" id="holdcandate" name="holdcandate" value="" type="text" />
-                        <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarExp" style="cursor: pointer;" border="0" />
+	<li><label for="holdcandate">Cancellation date: </label> <input size="10" id="holdcandate" name="holdcandate" value="" type="text" />
+                        <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarCan" style="cursor: pointer;" border="0" />
                             <script type="text/javascript">
                                 Calendar.setup(
                                     {
                                         inputField : "holdcandate",
                                         ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-                                        button : "openCalendarExp",
+                                        button : "openCalendarCan",
                                     }
                                 );
                             </script></li>
@@ -108,4 +125,13 @@
 <!-- TMPL_INCLUDE NAME="reports-menu.inc" -->
 </div>
 </div>
+<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script> 
+<script type="application/javascript"> 
+ 
+ $(document).ready(function() { 
+     $("table").tablesorter(); 
+     }); 
+      
+           
+           </script> 
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

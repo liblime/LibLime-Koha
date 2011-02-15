@@ -31,9 +31,9 @@ or, in crontab:
 =head1 DESCRIPTION
 
 This script simply removes holds in the reserves table that have expired.
-Previously, the ReservesMaxPickUpDelay syspref was being used to display
-that holds had expired, but they were not being deleted from the reserves
-table.  This script corrects that problem.
+Expired can occur two ways:
+(1) Unfilled holds that exceed HoldExpireLength.
+(2) Filled holds that exceed ReservesMaxPickupDelay.
 
 =cut
 

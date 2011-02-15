@@ -98,6 +98,7 @@ $template->param( filledreservloop => \@filledreservloop,
 # show the borrower's old expired reservations on Expired Holds tab
 my @expiredreservloop;
 foreach my $num_res (@borroweroldreserv) {
+  next if $$num_res{cancellationdate}; #cancelled reserves distinct from expired
   my %getreserv;
   my $getiteminfo  = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
   my $itemtypeinfo = getitemtypeinfo( $getiteminfo->{'itemtype'} );
@@ -126,6 +127,7 @@ my $dbh = C4::Context->dbh;
 my @cancelledreservloop;
 my ($sth,$modresnumber);
 foreach my $num_res (@borroweroldreserv) {
+  next unless $$num_res{cancellationdate};
   my %getreserv;
   my (@bind,$query);
   $query = "SELECT usercode FROM statistics WHERE type='reserve_canceled' AND other = ? AND borrowernumber = ? AND datetime LIKE ? ";

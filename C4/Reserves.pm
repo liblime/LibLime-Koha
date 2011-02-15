@@ -46,6 +46,13 @@ use Time::Local;
         
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
+%C4::Reserves::found = (
+   'F'   => 'Filled',      # hold completed at checkout
+   'S'   => 'Suspended',
+   'T'   => 'In Transit',
+   'W'   => 'Waiting',     # hold "filled" at checkin
+);
+
 =head1 NAME
 
 C4::Reserves - Koha functions for dealing with reservation.
@@ -363,16 +370,9 @@ sub UnorphanCancelledHolds
    }
 }
 
-sub GetReservesForQueue {
+sub GetReservesForQueue 
+{
     my $dbh = C4::Context->dbh;
-    # This is an ugly but very useful hack which ends up returning the lowest priority
-    # reserve for each biblionumber that has reserves. The secret is in the ordering.
-    # It's ordered by biblionumber, then by priority. Because the whole she-bang is
-    # collected into a hash keyed on the biblionumber, each time a new row is read for
-    # an existing key, it gets overwritten. This has the effect of storing only the
-    # reserve with the lowest priority because of the query ordering.
-    # This would be much nicer if MySQL allowed "LIMIT 1" in sub-selects, but right
-    # now it does not.
     my $all = $dbh->selectall_hashref(q{
       SELECT reserves.reservenumber,
              reserves.biblionumber,
@@ -453,10 +453,10 @@ sub GetHoldsQueueItems
    return $items;
 }
 
-
 =item AddReserve
-
-    AddReserve($branch,$borrowernumber,$biblionumber,$constraint,$bibitems,$priority,$resdate,$notes,$title,$checkitem,$found)
+    
+    AddReserve($branch,$borrowernumber,$biblionumber,$constraint,
+    $bibitems,$priority,$notes,$title,$checkitem,$found)
 
 =cut
 
@@ -484,14 +484,23 @@ sub AddReserve {
         $waitingdate = $resdate;
     }
 
+    my $expDays = C4::Context->preference('HoldExpireLength');
+    my $expirationdate = '';
+    if ($expDays) {
+       $expirationdate = "DATE_ADD(NOW(),INTERVAL $expDays DAY)";
+    }
+    else {
+       $expirationdate = 'NULL';
+    }
+
     # updates take place here
     my $query = qq/
         INSERT INTO reserves
             (borrowernumber,biblionumber,reservedate,branchcode,constrainttype,
-            priority,reservenotes,itemnumber,found,waitingdate)
+            priority,reservenotes,itemnumber,found,waitingdate,expirationdate)
         VALUES
              (?,?,?,?,?,
-             ?,?,?,?,?)
+             ?,?,?,?,?,$expirationdate)
     /;
     my $sth = $dbh->prepare($query);
     $sth->execute(
@@ -499,6 +508,9 @@ sub AddReserve {
         $const,          $priority,     $notes,   $checkitem,
         $found,          $waitingdate
     );
+    $sth = $dbh->prepare('SELECT MAX(reservenumber) FROM reserves');
+    $sth->execute();
+    my $new_reservenumber = ($sth->fetchrow_array)[0];
 
     # Assign holds fee if applicable
     my $fee =
@@ -517,7 +529,7 @@ sub AddReserve {
 
     }
 
-    ($const eq "o" || $const eq "e") or return;   # FIXME: why not have a useful return value?
+    ($const eq "o" || $const eq "e") or return $new_reservenumber;
     $query = qq/
         INSERT INTO reserveconstraints
             (borrowernumber,biblionumber,reservedate,biblioitemnumber)
@@ -540,7 +552,7 @@ sub AddReserve {
       my $accountno
     );
 
-    return;     # FIXME: why not have a useful return value?
+    return $new_reservenumber;     # FIXME: why not have a useful return value?
 }
 
 =item GetReservesFromBiblionumber
@@ -1009,7 +1021,8 @@ sub GetReserveFee {
     /;
     my $isth = $dbh->prepare($query);
     $isth->execute($biblionumber);
-    my $idata = $isth->fetchrow_hashref;
+    my $idata = $isth->fetchrow_hashref // {};
+    $$idata{reservefee} //= 0;
     $fee += $idata->{'reservefee'};
 
     if ( $fee > 0 ) {
@@ -1449,9 +1462,9 @@ sub CancelReserve {
     $dbh->do(q{
         UPDATE reserves
         SET    cancellationdate = now(),
-               found            = NULL,
-               priority         = 0,
-               expirationdate   = NULL
+          /*   expirationdate   = NULL, */
+          /*   found            = NULL, */
+               priority         = 0
         WHERE  reservenumber    = ?
     }, undef, $reservenumber);
 
@@ -1862,10 +1875,21 @@ sub ModReserveFillCheckout
 sub ModReserveFillCheckin
 {
    my $res = shift; # the reserves hash should be complete
+   
+   ## how many days it's going to sit on the hold shelf awaiting pickup
+   my $delay = C4::Context->preference('ReservesMaxPickupDelay');
+   my $expirationdate = '';
+   if ($delay) {
+      $expirationdate = ",expirationdate=DATE_ADD(NOW(),INTERVAL $delay DAY)";
+   }
+   else {
+      $expirationdate = ",expirationdate=NULL";
+   }
    my $dbh = C4::Context->dbh;
    my $query = "UPDATE reserves
-                   SET expirationdate   = NULL,
-                       priority         = 0
+                   SET priority         = 0
+                       $expirationdate ,
+                       waitingdate      = NOW()
                  WHERE reservenumber    = ?";
    my $sth = $dbh->prepare($query);
    $sth->execute($$res{reservenumber});
@@ -2524,7 +2548,7 @@ sub _Findgroupreserve {
     }
     return @results if @results;
 
-    my $query = q/
+    my $query = q|
         SELECT reserves.reservenumber AS reservenumber,
                reserves.biblionumber AS biblionumber,
                reserves.borrowernumber AS borrowernumber,
@@ -2545,7 +2569,7 @@ sub _Findgroupreserve {
           LEFT JOIN reserveconstraints ON reserves.biblionumber = reserveconstraints.biblionumber
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
         WHERE reserves.biblionumber = ?
-          AND (found <> 'S' OR FOUND IS NULL)
+          AND (found <> 'S' OR found IS NULL)
           AND ( ( reserveconstraints.biblioitemnumber = ?
               AND reserves.borrowernumber = reserveconstraints.borrowernumber
               AND reserves.reservedate    = reserveconstraints.reservedate )
@@ -2557,6 +2581,8 @@ sub _Findgroupreserve {
     $sth->execute( $biblio, $bibitem, $itemnumber );
     @results = ();
     while ( my $data = $sth->fetchrow_hashref ) {
+        ## taken care of by SQL statement above
+        #next if $$data{found} eq 'S';
         push( @results, $data );
     }
     return @results;
