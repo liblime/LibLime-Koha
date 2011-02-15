@@ -53,11 +53,13 @@ $(document).ready(function(){
     </tr>
 
     <!-- TMPL_LOOP NAME="accounts" -->
+       <tr>
        <td> <!-- TMPL_VAR NAME="type" --> </td>
        <td> Lost Item: <i> <!-- TMPL_VAR NAME="title" --> </i> </td>
        <td> <!-- TMPL_VAR NAME="amount" --> </td>
        <input type="hidden" name="itemnumber" id="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
        <input type="hidden" name="accountno" id="accountno" value="<!-- TMPL_VAR Name="accountno" -->" />
+       </tr>
     <!-- /TMPL_LOOP -->
   </table>
   <fieldset class="action"><input type="submit" name="refund" value="Refund" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
@@ -74,11 +76,13 @@ $(document).ready(function(){
     </tr>
 
     <!-- TMPL_LOOP NAME="accounts" -->
+       <tr>
        <td> <!-- TMPL_VAR NAME="type" --> </td>
        <td> Lost Item: <i> <!-- TMPL_VAR NAME="title" --> </i> </td>
        <td> <!-- TMPL_VAR NAME="amount" --> </td>
        <input type="hidden" name="itemnumber" id="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
        <input type="hidden" name="accountno" id="accountno" value="<!-- TMPL_VAR Name="accountno" -->" />
+       </tr>
     <!-- /TMPL_LOOP -->
   </table>
   <fieldset class="action"><input type="submit" name="refund" value="Refund" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
