@@ -78,7 +78,7 @@ BEGIN {
 			$main::SIG{__DIE__} = \&CGI::Carp::confess;
 		}
     }  	# else there is no browser to send fatals to!
-	$VERSION = '4.03.12.002';
+	$VERSION = '4.03.13.000';
 }
 
 use DBI;
