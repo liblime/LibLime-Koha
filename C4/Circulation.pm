@@ -823,8 +823,7 @@ sub CanBookBeIssued {
     my $cat = C4::Members::GetCategoryInfo($$borrower{categorycode}) // {};
     $$cat{circ_block_threshold} //= 0;
     if ( C4::Context->preference("IssuingInProcess") ) {
-        my $amountlimit = (C4::Context->preference('UseGranularMaxFines')
-        && ($$cat{circ_block_threshold}>0))? $$cat{circ_block_threshold} : 0;
+        my $amountlimit = ($$cat{circ_block_threshold}>0)? $$cat{circ_block_threshold} : 0;
 
         if ($amountlimit) {
            if ( $amount > $amountlimit && !$inprocess ) {
@@ -837,8 +836,7 @@ sub CanBookBeIssued {
     }
     else {
         my $max_fine = 0;
-        if ( C4::Context->preference('WarnOnlyOnMaxFine') &&
-             C4::Context->preference('UseGranularMaxFines') ) {
+        if ( C4::Context->preference('WarnOnlyOnMaxFine')) {
             $max_fine = $$cat{circ_block_threshold};
         }
 

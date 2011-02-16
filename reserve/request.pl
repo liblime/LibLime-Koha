@@ -145,17 +145,15 @@ if ($cardnumber) {
    my $amount_msg        = $$borrowerinfo{flags}{CHARGES}{message} // '';
    my $cat_amount_symbol = '';
    $$cat{holds_block_threshold} //= 0;
-   if (C4::Context->preference('UseGranularMaxHolds') ) {
-      if ($$cat{maxholds} && ($number_reserves >= $$cat{maxholds})) {
-         $warnings = 1;
-         $maxholds = 1;
-      }
-      if ($$cat{holds_block_threshold}>0 && $amount_msg) {
-         if ($$borrowerinfo{flags}{CHARGES}{amount} > $$cat{holds_block_threshold}) {
-            $warnings  = 1;
-            $maxamount = 1;
-            ($cat_amount_symbol) = $amount_msg =~ /patron owes (.)\d/i;
-         }
+   if ($$cat{maxholds} && ($number_reserves >= $$cat{maxholds})) {
+      $warnings = 1;
+      $maxholds = 1;
+   }
+   if ($$cat{holds_block_threshold}>0 && $amount_msg) {
+      if ($$borrowerinfo{flags}{CHARGES}{amount} > $$cat{holds_block_threshold}) {
+         $warnings  = 1;
+         $maxamount = 1;
+         ($cat_amount_symbol) = $amount_msg =~ /patron owes (.)\d/i;
       }
    }
 

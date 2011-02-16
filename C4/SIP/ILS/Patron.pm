@@ -302,9 +302,7 @@ sub fee_limit {
 
     my $fee = 5;
     my $category = C4::Members::GetCategoryInfo($self->{ptype});
-    if (C4::Context->preference('UseGranularMaxFines')) {
-      $fee = $category->{'circ_block_threshold'} || 5;
-    }
+    $fee = $category->{'circ_block_threshold'} || 5;
     return $fee;
 }
 

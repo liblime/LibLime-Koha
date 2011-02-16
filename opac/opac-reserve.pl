@@ -234,9 +234,8 @@ if ( $query->param('place_reserve') ) {
 #
 #
 my $noreserves = 0;
-my $gran       = C4::Context->preference('UseGranularMaxHolds');
 $template->param( noreserve => 1 ) unless $$cat{holds_block_threshold};
-if ( ($borr->{'amountoutstanding'}>0 && $gran) 
+if ( ($borr->{'amountoutstanding'}>0) 
   && ($borr->{'amountoutstanding'} > $$cat{holds_block_threshold})
   && ($$cat{holds_block_threshold} > 0) ) {
     my $amount = sprintf "\$%.02f", $borr->{'amountoutstanding'};
@@ -245,7 +244,7 @@ if ( ($borr->{'amountoutstanding'}>0 && $gran)
     $template->param( too_much_oweing => $amount );
 }
 ## data sync issues: check flags instead of amoutoutstanding
-elsif ($$cat{holds_block_threshold}>0 && $gran) {
+elsif ($$cat{holds_block_threshold}>0) {
    my $amount_owed = $$borr{flags}{CHARGES}{amount} // 0.00;
    if ($amount_owed > $$cat{holds_block_threshold}) {
       ## get the symbol of the currency, usually before the money figure
@@ -330,13 +329,6 @@ if ( C4::Context->preference('UseGranularMaxHolds') ) {
         $template->param( too_many_reserves => scalar(@reserves));
     }
 }
-########## as of PTFS PT 5915233 01 Feb 2011: requires UseGranularMaxHolds
-#elsif ( scalar(@reserves) >= $$cat{maxholds} ) {
-#    $template->param( message => 1 );
-#    $noreserves = 1;
-#    $template->param( too_many_reserves => scalar(@reserves));
-#}
-##########
 
 if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
   foreach my $biblionumber (@biblionumbers) {

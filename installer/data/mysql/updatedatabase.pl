@@ -4366,10 +4366,12 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
       'Specify how many days before a hold expires',
       'Integer'
     )");
+    $dbh->do("DELETE FROM systempreferences WHERE LCASE(variable)='maxreserves'");
+    $dbh->do("DELETE FROM systempreferences WHERE LCASE(variable)='noissuescharge'");
+    $dbh->do("DELETE FROM systempreferences WHERE LCASE(variable)='maxoutstanding'");
 
     SetVersion ($DBversion);
-    print "Upgrade to $DBversion done ( Changing reserves.reservedate et al to datetime; replace syspref holdCancelLength with HoldExpireLength )\n";
-    
+    print "Upgrade to $DBversion done ( Changing reserves.reservedate et al to datetime; replace syspref holdCancelLength with HoldExpireLength; delete sysprefs maxreserves, noissuescharge, maxoutstanding )\n";
 }
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;

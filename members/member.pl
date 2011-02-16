@@ -329,7 +329,6 @@ sub _adv_pagination
 {
    my $out = '';
    my $totalPages = $count%$resultsperpage? int($count/$resultsperpage)+1 : $count/$resultsperpage;
-<<<<<<< HEAD:members/member.pl
    if ($currPage==1) {
       $out .= ' <b>1</b>';
    }
@@ -365,7 +364,6 @@ sub _adv_pagination
    else {
       $out .= " <b>$totalPages</b>";
    }
-=======
    my $prev = $currPage -1;
    if ($currPage>1) {
       $out = qq|<a href="javascript:;" onclick="goAdv(1)">&lt;&lt;</a> 

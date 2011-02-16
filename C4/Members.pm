@@ -508,9 +508,7 @@ sub patronflags {
 
     if ( $amount > 0 ) {
         my %flaginfo;
-        my $blockamount = 
-         C4::Context->preference('UseGranularMaxFines') &&
-         ($$cat{circ_block_threshold} > 0)? $$cat{circ_block_threshold} : 5;
+        my $blockamount = ($$cat{circ_block_threshold} > 0)? $$cat{circ_block_threshold} : 5;
         $flaginfo{'message'} = sprintf "Patron owes \$%.02f", $amount;
         $flaginfo{'amount'}  = sprintf "%.02f",$amount;
         
