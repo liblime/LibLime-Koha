@@ -47,11 +47,12 @@
             // gather up form submission
             var inputs = [];
             $(':input', f).each(function() {
-                if (this.type == 'radio') {
+                if ((this.type == 'radio') || (this.type == 'checkbox')) {
                     if (this.checked) {
                         inputs.push(this.name + '=' + escape(this.value));
                     }
-                } else if (this.type == 'button') {
+                }
+                else if (this.type == 'button') {
                     ; // do nothing
                 } else {
                     inputs.push(this.name + '=' + escape(this.value));
@@ -63,6 +64,7 @@
 			$("#jobpanel").show();
             $("#jobstatus").show();
             $.ajax({
+                type: 'POST',
                 data: inputs.join('&'),
                 url: f.action,
                 dataType: 'json',

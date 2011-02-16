@@ -143,10 +143,11 @@ for( x=0; x<allColumns.length; x++ ){
        <div id="jobstatus">Job progress: <div id="jobprogress"></div> <span id="jobprogresspercent">0</span>%</div>
        <div id="jobfailed"></div>
    </div>
-   <input type="submit" name="mainformsubmit" value="Save" onclick="return submitBackgroundJob(this.form);" />
+   <input type="submit" name="mainformsubmit" value="Save" onclick="return submitBackgroundJob(document.f);" />
          <a href="/cgi-bin/koha/tools/batchMod.pl" class="cancel" onclick="history.back();return false;">Cancel</a>
     </fieldset>
 </div>
+</form>
 <!-- TMPL_ELSE --> <!-- // show -->
 <fieldset class="action">
   <a href="/cgi-bin/koha/tools/batchMod.pl">Done</a>
