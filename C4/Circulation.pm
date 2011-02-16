@@ -219,16 +219,23 @@ sub GetItemnumbersFromBarcodeStr
    my $str = shift;
    my @all;
    my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare('SELECT branchcode,itembarcodeprefix FROM branches');
-   $sth->execute();
-   while (my $row = $sth->fetchrow_hashref()) {
-      die "No itembarcodeprefix set for branch $$row{branchcode} in table branches"
-         unless $$row{itembarcodeprefix};
-      my $barcode = barcodedecode(
-         barcode  => $str,
-         prefix   => $$row{itembarcodeprefix},
-      );
-      push @all, $barcode;
+   my $sth;
+
+   unless(C4::Context->preference('itembarcodelength')) {
+      push @all, $str;
+   }
+   else {
+      $sth = $dbh->prepare('SELECT branchcode,itembarcodeprefix FROM branches');
+      $sth->execute();
+      while (my $row = $sth->fetchrow_hashref()) {
+         die "No itembarcodeprefix set for branch $$row{branchcode} in table branches"
+            unless $$row{itembarcodeprefix};
+         my $barcode = barcodedecode(
+            barcode  => $str,
+            prefix   => $$row{itembarcodeprefix},
+         );
+         push @all, $barcode;
+      }
    }
    return [] unless @all;
    my $sql = sprintf("
