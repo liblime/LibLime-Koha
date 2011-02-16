@@ -10,12 +10,11 @@ use C4::Output;
 use C4::View::Serials;
 
 my $query = new CGI;
-warn 'authnotrequired is on';
 my ($template, $loggedinuser, $cookie) = 
     get_template_and_user({template_name => "periodicals/delete.tmpl",
                            query => $query,
                            type => "intranet",
-                           authnotrequired => 1,
+                           authnotrequired => 0,
                            flagsrequired => {serials => 1},
                            debug => 1,
                           });
