@@ -35,7 +35,6 @@ use Carp;
 use CGI;
 use HTML::Template;
 use Rose::DB::Object::Helpers qw(column_value_pairs);
-use DateTime::Format::Strptime;
 use Try::Tiny;
 
 use C4::Schema::Periodical;
@@ -46,6 +45,7 @@ use C4::Schema::Subscription;
 use C4::Schema::Subscription::Manager;
 use C4::Schema::SubscriptionSerial;
 use C4::Schema::SubscriptionSerial::Manager;
+use C4::Model::Periodical::Chronology;
 use C4::Control::PeriodicalSerial;
 use C4::Control::Periodical;
 use C4::Control::Subscription;
@@ -85,10 +85,10 @@ sub _set_datetime_format {
     my ($array, $field) = @_;
 
     if(defined $array) {
-        $_->{$field} && $_->{$field}->set_formatter(DateTime::Format::Strptime->new(pattern => C4::Dates->DHTMLcalendar)) for (@{$array});
+        $_->{$field} && $_->{$field}->set_formatter(C4::Model::Periodical::Chronology->new(pattern => C4::Dates->DHTMLcalendar)) for (@{$array});
     } elsif ($field) {
         croak unless $field->isa('DateTime');
-        $field->set_formatter(DateTime::Format::Strptime->new(pattern => C4::Dates->DHTMLcalendar));
+        $field->set_formatter(C4::Model::Periodical::Chronology->new(pattern => C4::Dates->DHTMLcalendar));
     }
 }
 

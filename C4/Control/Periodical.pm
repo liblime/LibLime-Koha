@@ -29,7 +29,6 @@ use Carp;
 use Try::Tiny;
 use CGI;
 use Rose::DB::Object::Helpers qw(column_value_pairs);
-use DateTime::Format::Strptime;
 use MARC::Field;
 use MARC::Record;
 
@@ -138,9 +137,6 @@ sub SearchPeriodicals {
 
     $value = '%'.$value.'%';
     $value =~ s/\s/%/g;
-
-$Rose::DB::Object::Debug = 1;
-$Rose::DB::Object::Manager::Debug = 1;
 
     my $periodicals;
     if ($key eq 'title') {

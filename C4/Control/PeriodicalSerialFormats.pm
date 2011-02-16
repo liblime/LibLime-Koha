@@ -16,6 +16,8 @@ use warnings;
 use Carp;
 use Try::Tiny;
 
+use C4::Model::Periodical::Chronology;
+
 sub PredictNextSequenceFromSeed($$) {
     my $iterator = shift or croak;
     my $seq_string = shift or croak;
@@ -101,7 +103,7 @@ sub FormatSequence($$$) {
 sub FormatChronology($$) {
     my ($format, $date) = @_;
     croak unless $date->isa('DateTime');
-    return $date->set_formatter(DateTime::Format::Strptime->new(pattern => $format));
+    return $date->set_formatter(C4::Model::Periodical::Chronology->new(pattern => $format));
 }
 
 sub FormatVintage($$) {

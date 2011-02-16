@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 32;
+use Test::More tests => 35;
 use DateTime;
 
 BEGIN {
@@ -43,6 +43,10 @@ BEGIN {
     ok(C4::Control::PeriodicalSerialFormats::FormatSequence('{Xs} {Ys+1}',      '1:3:0',  '2010') eq '2010 Summer/Fall', 'FormatSequence 5');
     ok(C4::Control::PeriodicalSerialFormats::FormatSequence('{Xs} {Ys+2}',      '1:3:0',  '2010') eq '2010 Summer/Fall/Winter', 'FormatSequence 6');
     ok(C4::Control::PeriodicalSerialFormats::FormatSequence('Vol. {Xn} Issue {Yn} No. {Zn}', '1:12:4', '2010') eq 'Vol. 1 Issue 12 No. 4', 'FormatSequence 7');
+
+    ok(C4::Control::PeriodicalSerialFormats::FormatChronology('%Y-%m-%d', $date) eq '2010-01-01', 'FormatChronology 1');
+    ok(C4::Control::PeriodicalSerialFormats::FormatChronology('%q %Y', $date) eq 'Winter 2010', 'FormatChronology 2');
+    ok(C4::Control::PeriodicalSerialFormats::FormatChronology('%Q %Y', $date) eq 'Summer 2010', 'FormatChronology 3');
 
     ok(C4::Control::PeriodicalSerialFormats::FormatVintage('Vol. 1', '2010-01-01') eq 'Vol. 1 - 2010-01-01', 'FormatVintage 1');
     ok(C4::Control::PeriodicalSerialFormats::FormatVintage(undef, '2010-01-01')    eq '2010-01-01',          'FormatVintage 2');
