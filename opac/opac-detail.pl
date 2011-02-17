@@ -192,7 +192,6 @@ foreach my $itm (@items) {
        if( $itm->{'reserve_status'} eq "Attached"){ $itm->{'waiting'} = 1; }
        $template->param( totalreserves => $itm->{'reserve_count'});
        $template->param( activereserves => $itm->{'active_reserve_count'});
-       #$template->param( totalreserves => $itm->{'reserve_count'});
      }
     
      my ( $transfertwhen, $transfertfrom, $transfertto ) = GetTransfers($itm->{itemnumber});

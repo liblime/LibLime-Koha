@@ -4358,6 +4358,10 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(q{
         ALTER TABLE tmp_holdsqueue MODIFY reservedate DATETIME DEFAULT NULL
     });
+}
+
+$DBversion = '4.03.13.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do("DELETE FROM systempreferences WHERE variable='holdCancelLength'");
     $dbh->do("INSERT INTO systempreferences VALUES(
       'HoldExpireLength',

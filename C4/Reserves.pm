@@ -508,9 +508,7 @@ sub AddReserve {
         $const,          $priority,     $notes,   $checkitem,
         $found,          $waitingdate
     );
-    $sth = $dbh->prepare('SELECT MAX(reservenumber) FROM reserves');
-    $sth->execute();
-    my $new_reservenumber = ($sth->fetchrow_array)[0];
+    my $new_reservenumber = $dbh->last_insert_id(undef, undef, undef, undef);
 
     # Assign holds fee if applicable
     my $fee =
@@ -529,16 +527,17 @@ sub AddReserve {
 
     }
 
-    ($const eq "o" || $const eq "e") or return $new_reservenumber;
-    $query = qq/
-        INSERT INTO reserveconstraints
-            (borrowernumber,biblionumber,reservedate,biblioitemnumber)
-        VALUES
-            (?,?,?,?)
-    /;
-    $sth = $dbh->prepare($query);    # keep prepare outside the loop!
-    foreach (@$bibitems) {
-        $sth->execute($borrowernumber, $biblionumber, $resdate, $_);
+    if ( !($const eq 'o' || $const eq 'e') ) {
+        $query = q/
+            INSERT INTO reserveconstraints
+                (borrowernumber,biblionumber,reservedate,biblioitemnumber)
+            VALUES
+                (?,?,?,?)
+        /;
+        $sth = $dbh->prepare_cached($query);
+        foreach (@$bibitems) {
+            $sth->execute($borrowernumber, $biblionumber, $resdate, $_);
+        }
     }
 
     UpdateStats(
@@ -552,7 +551,7 @@ sub AddReserve {
       my $accountno
     );
 
-    return $new_reservenumber;     # FIXME: why not have a useful return value?
+    return $new_reservenumber;
 }
 
 =item GetReservesFromBiblionumber
@@ -1462,8 +1461,6 @@ sub CancelReserve {
     $dbh->do(q{
         UPDATE reserves
         SET    cancellationdate = now(),
-          /*   expirationdate   = NULL, */
-          /*   found            = NULL, */
                priority         = 0
         WHERE  reservenumber    = ?
     }, undef, $reservenumber);
@@ -1929,11 +1926,12 @@ sub ModReserveTrace
    die "No authorised value 'Trace' set for category 'LOST'\n" 
    unless defined $traceAuthVal;
    
-   $sth = $dbh->prepare("
+   $dbh->do(q{
       UPDATE items
          SET itemlost    = ?
-       WHERE itemnumber  = ?");
-   $sth->execute($traceAuthVal,$itemnumber);
+       WHERE itemnumber  = ?
+      }, undef,
+   $traceAuthVal, $itemnumber);
 
    # update the database
    my $sql = "UPDATE reserves
@@ -1941,8 +1939,7 @@ sub ModReserveTrace
                      priority         = 0,
                      expirationdate   = NULL
               WHERE  reservenumber    = ?";
-   $sth = $dbh->prepare($sql) || die $dbh->errstr();
-   $sth->execute($$res{reservenumber});
+   $dbh->do($sql, undef, $$res{reservenumber});
    _FixPriority( $$res{reservenumber}, $$res{priority} );
 
    # remove from queue
