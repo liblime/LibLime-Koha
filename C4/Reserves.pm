@@ -234,7 +234,7 @@ sub GetItemForBibPrefill
      WHERE biblionumber = ?
        AND priority > 0  /* is in the queue */
        AND found IS NULL /* has not been filled/waiting/in transit */
-       AND reservedate <= CURRENT_DATE()
+       AND reservedate <= NOW()
        AND reservenumber != ?
        AND itemnumber IS NOT NULL") || die $dbh->errstr();
    $sth->execute($$res{biblionumber},$$res{reservenumber});
@@ -395,7 +395,7 @@ sub GetReservesForQueue {
            (reserves.found IS NULL AND reserves.priority >= 1)
            OR (reserves.found = 'T' AND reserves.priority = 0)
          )
-         AND reserves.reservedate <= CURRENT_DATE()
+         AND reserves.reservedate <= NOW()
          AND reserves.borrowernumber = borrowers.borrowernumber
     /* this was added for the case of suspended reserves with high (low number) priority */
     GROUP BY reserves.biblionumber 
@@ -442,7 +442,6 @@ sub GetHoldsQueueItems
    my $userenv = C4::Context->userenv;
    use C4::Dates 'format_date';
    while (my $row = $sth->fetchrow_hashref){
-      $$row{reservedate} = format_date($$row{reservedate});
       $$row{fillable}    = $$userenv{branch} eq $$row{holdingbranch} ?1:0;
       my $sth2 = $dbh->prepare('SELECT found FROM reserves WHERE reservenumber = ?');
       $sth2->execute($$row{reservenumber});
@@ -457,7 +456,7 @@ sub GetHoldsQueueItems
 
 =item AddReserve
 
-    AddReserve($branch,$borrowernumber,$biblionumber,$constraint,$bibitems,$priority,$notes,$title,$checkitem,$found)
+    AddReserve($branch,$borrowernumber,$biblionumber,$constraint,$bibitems,$priority,$resdate,$notes,$title,$checkitem,$found)
 
 =cut
 
@@ -469,14 +468,17 @@ sub AddReserve {
     ) = @_;
     my $dbh     = C4::Context->dbh;
     my $const   = lc substr( $constraint, 0, 1 );
-    $resdate = format_date_in_iso( $resdate ) if ( $resdate );
-    $resdate = C4::Dates->today( 'iso' ) unless ( $resdate );
+
+    my ($sec,$min,$hour,$day,$mon,$year,undef,undef,undef) = localtime();
+    my $timestamp = sprintf '%04d-%02d-%02d %02d:%02d:%02d', 1900+$year, 1+$mon, $day, $hour, $min, $sec;
+    $resdate = ($resdate) ? format_date_in_iso($resdate) : $timestamp;
+
     if ( C4::Context->preference( 'AllowHoldDateInFuture' ) ) {
 	# Make room in reserves for this before those of a later reserve date
 	$priority = _ShiftPriorityByDateAndPriority( $biblionumber, $resdate, $priority );
     }
-    my $waitingdate;
 
+    my $waitingdate;
     # If the reserv had the waiting status, we had the value of the resdate
     if ( $found && $found eq 'W' ) {
         $waitingdate = $resdate;
@@ -575,7 +577,7 @@ sub GetReservesFromBiblionumber {
         LEFT JOIN biblioitems ON biblioitems.biblionumber = reserves.biblionumber
         WHERE reserves.biblionumber = ? ";
     unless ( $all_dates ) {
-        $query .= "AND reservedate <= CURRENT_DATE() ";
+        $query .= "AND reservedate <= NOW() ";
     }
     if ( $bib_level_only ) {
         $query .= "AND reserves.itemnumber IS NULL ";
@@ -663,7 +665,7 @@ sub GetReservesFromItemnumber {
     WHERE  itemnumber=?
     ";
     unless ( $all_dates ) {
-	   $query .= " AND reservedate <= CURRENT_DATE()";
+	   $query .= " AND reservedate <= NOW()";
     }
     $query .= ' ORDER BY priority ASC';
     my $sth_res = $dbh->prepare($query);
@@ -2471,7 +2473,7 @@ sub _Findgroupreserve {
         AND priority > 0
         AND item_level_request = 1
         AND reserves.itemnumber = ?
-        AND reserves.reservedate <= CURRENT_DATE()
+        AND reserves.reservedate <= NOW()
         ORDER BY priority ASC
     /;
     my $sth = $dbh->prepare($item_level_target_query);
@@ -2511,7 +2513,7 @@ sub _Findgroupreserve {
         AND priority > 0
         AND item_level_request = 0
         AND tmp_holdsqueue.itemnumber = ?
-        AND reserves.reservedate <= CURRENT_DATE()
+        AND reserves.reservedate <= NOW()
         ORDER BY priority ASC
     /;
     $sth = $dbh->prepare($title_level_target_query);
@@ -2549,13 +2551,12 @@ sub _Findgroupreserve {
               AND reserves.reservedate    = reserveconstraints.reservedate )
             OR  reserves.constrainttype='a' )
           AND (reserves.itemnumber IS NULL OR reserves.itemnumber = ?)
-          AND reserves.reservedate <= CURRENT_DATE()
+          AND reserves.reservedate <= NOW()
     |;
     $sth = $dbh->prepare($query);
     $sth->execute( $biblio, $bibitem, $itemnumber );
     @results = ();
     while ( my $data = $sth->fetchrow_hashref ) {
-        next if $$data{found} eq 'S';
         push( @results, $data );
     }
     return @results;
@@ -2784,4 +2785,3 @@ Koha Developement team <info@koha.org>
 
 1;
 __END__
-

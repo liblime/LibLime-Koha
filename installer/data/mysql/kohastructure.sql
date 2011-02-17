@@ -1574,7 +1574,7 @@ DROP TABLE IF EXISTS `old_reserves`;
 CREATE TABLE `old_reserves` (
   `reservenumber` int(11) AUTO_INCREMENT PRIMARY KEY,
   `borrowernumber` int(11) default NULL,
-  `reservedate` date default NULL,
+  `reservedate` datetime default NULL,
   `biblionumber` int(11) default NULL,
   `constrainttype` varchar(1) default NULL,
   `branchcode` varchar(10) default NULL,
@@ -1736,7 +1736,7 @@ CREATE TABLE reports_dictionary (
 DROP TABLE IF EXISTS `reserveconstraints`;
 CREATE TABLE `reserveconstraints` (
   `borrowernumber` int(11) NOT NULL default 0,
-  `reservedate` date default NULL,
+  `reservedate` datetime default NULL,
   `biblionumber` int(11) NOT NULL default 0,
   `biblioitemnumber` int(11) default NULL,
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP
@@ -1750,7 +1750,7 @@ DROP TABLE IF EXISTS `reserves`;
 CREATE TABLE `reserves` (
   `reservenumber` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `borrowernumber` int(11) NOT NULL default 0,
-  `reservedate` date default NULL,
+  `reservedate` datetime default NULL,
   `biblionumber` int(11) NOT NULL default 0,
   `constrainttype` varchar(1) default NULL,
   `branchcode` varchar(10) default NULL,
@@ -2763,7 +2763,7 @@ CREATE TABLE `tmp_holdsqueue` (
    `phone` text,
    `borrowernumber` int(11) NOT NULL,
    `cardnumber` varchar(16) default NULL,
-   `reservedate` date default NULL,
+   `reservedate` datetime default NULL,
    `title` mediumtext,
    `itemcallnumber` varchar(30) default NULL,
    `holdingbranch` varchar(10) default NULL,

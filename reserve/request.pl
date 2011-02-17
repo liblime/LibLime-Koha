@@ -609,7 +609,7 @@ foreach my $biblionumber (@biblionumbers) {
 	}
         $reserve{suspended}        = (($res->{found} // '') eq 'S') ? 1 : 0;
         $reserve{waitingdate}      = format_date( $res->{waitingdate} );
-        $reserve{'date'}           = format_date( $res->{'reservedate'} );
+        $reserve{'date'}           = $res->{'reservedate'};
         $reserve{'borrowernumber'} = $res->{'borrowernumber'};
         $reserve{'biblionumber'}   = $res->{'biblionumber'};
         $reserve{'borrowernumber'} = $res->{'borrowernumber'};

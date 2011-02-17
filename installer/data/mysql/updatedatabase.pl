@@ -4343,6 +4343,25 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update to $DBversion )\n";
 }
 
+$DBversion = '4.03.13.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+        ALTER TABLE reserves MODIFY reservedate DATETIME DEFAULT NULL
+    });
+    $dbh->do(q{
+        ALTER TABLE old_reserves MODIFY reservedate DATETIME DEFAULT NULL
+    });
+    $dbh->do(q{
+        ALTER TABLE reserveconstraints MODIFY reservedate DATETIME DEFAULT NULL
+    });
+    $dbh->do(q{
+        ALTER TABLE tmp_holdsqueue MODIFY reservedate DATETIME DEFAULT NULL
+    });
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Changing reserves.reservedate et al to datetime )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
