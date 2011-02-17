@@ -761,7 +761,9 @@ sub GetOldReservesFromBorrowernumber {
             SELECT *
             FROM   old_reserves
             WHERE  borrowernumber=?
-                AND expirationdate IS NOT NULL
+                AND cancellationdate IS NULL
+                AND waitingdate IS NULL
+                AND (found IS NULL OR found <> 'F')
             ORDER BY expirationdate DESC
         ");
         $sth->execute($borrowernumber);
@@ -774,7 +776,7 @@ sub GetOldReservesFromBorrowernumber {
             ORDER BY cancellationdate DESC
         ");
         $sth->execute($borrowernumber);
-    } else {
+    } else { # filled
         $sth = $dbh->prepare("
             SELECT *
             FROM   old_reserves

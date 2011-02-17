@@ -70,7 +70,6 @@ my @borroweroldreserv;
 @borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'fill');
 my @filledreservloop;
 foreach my $num_res (@borroweroldreserv) {
-  next unless $$num_res{found} eq 'F';  # distinguish this from cancelled holds
   my %getreserv;
   my $getiteminfo  = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
   my $itemtypeinfo = getitemtypeinfo( $getiteminfo->{'itemtype'} );
@@ -100,7 +99,6 @@ $template->param( filledreservloop => \@filledreservloop,
 @borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'expiration');
 my @expiredreservloop;
 foreach my $num_res (@borroweroldreserv) {
-  next if $$num_res{cancellationdate}; #cancelled reserves distinct from expired
   my %getreserv;
   my $getiteminfo  = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
   my $itemtypeinfo = getitemtypeinfo( $getiteminfo->{'itemtype'} );
@@ -129,7 +127,6 @@ my $dbh = C4::Context->dbh;
 my @cancelledreservloop;
 my ($sth,$modresnumber);
 foreach my $num_res (@borroweroldreserv) {
-  next unless $$num_res{cancellationdate};
   my %getreserv;
   my (@bind,$query);
   $query = "SELECT usercode FROM statistics WHERE type='reserve_canceled' AND other = ? AND borrowernumber = ? AND datetime LIKE ? ";
