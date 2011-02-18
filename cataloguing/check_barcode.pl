@@ -40,8 +40,8 @@ my $cgi = new CGI;
 my $barcode    = $cgi->param('barcode');
 my $branchcode = $cgi->param('branchcode');
 my $btype      = $cgi->param('barcodetype');
-my $dupecheck  = $cgi->param('dupecheck');
-#my $dupecheck  = 0;
+#my $dupecheck  = $cgi->param('dupecheck');
+my $dupecheck  = 0;
 my $itemnumber = $cgi->param('itemnumber') || 0; # scalar-or, not undef-or
 my $params;
 
