@@ -166,7 +166,7 @@ function FindAcqui(f)
             <label class="required" for="expiration_date">Subscription end date</label>
             <input type="text" name="expiration_date" size="13" maxlength="10" value="<TMPL_VAR NAME="expiration_date">"id="expiration_date"/><span class="required">Required</span>
         </li>
-        <TMPL_UNLESS NAME="subscription_id">
+        <TMPL_IF EXPR="needs_firstserial || !subscription_id">
         <li>
             <label for="expected_date">Expected arrival date</label>
             <input type="text" name="expected_date" size="13" maxlength="10" id="expected_date"/>
@@ -179,7 +179,7 @@ function FindAcqui(f)
             </TMPL_LOOP>
             </select><span class="required">Required</span>
         </li>
-        </TMPL_UNLESS>
+        </TMPL_IF>
     </ul>
     <input type="hidden" name="op" value="save" />
     <input type="submit" value="<TMPL_IF NAME="subscription_id">Alter<TMPL_ELSE>Create</TMPL_IF> Subscription" />

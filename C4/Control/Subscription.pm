@@ -77,6 +77,16 @@ sub ConvertQueryToItemDefaults($) {
     return $item_defaults;
 }
 
+sub HasSerialsAssociated {
+    my $subscription_id = shift;
+
+    my $count
+        = C4::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
+            query => [ subscription_id => $subscription_id ]
+        );
+    return ($count != 0) ? 1 : 0;
+}
+
 sub UpdateOrCreate($) {
     my $query = shift;
     my $subscription_id = $query->param('subscription_id');
@@ -99,7 +109,11 @@ sub UpdateOrCreate($) {
 	$subscription->item_defaults(to_json($item_defaults));
         $subscription->save;
 
-        _create_first_subscriptionserial($query, $subscription->id) if (not defined $query->param('subscription_id'));
+        if (! defined $query->param('subscription_id')
+            || ! HasSerialsAssociated($subscription->id)
+            ) {
+            _create_first_subscriptionserial($query, $subscription->id);
+        }
 
         print $query->redirect("/cgi-bin/koha/periodicals/subscription-detail.pl?subscription_id=".$subscription->id);
         $subscription->id;

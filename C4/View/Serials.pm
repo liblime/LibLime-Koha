@@ -236,6 +236,9 @@ sub SeedTemplateWithSubscriptionData($$) {
                          C4::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
                              query => [subscription_id => $subscription_id]
                          ));
+        if (!C4::Control::Subscription::HasSerialsAssociated($subscription_id)) {
+            $template->param(needs_firstserial => 1);
+        }
         $template;
     } catch {
         my $message = sprintf "Error seeding data for subscription #%d: $_", $subscription_id // -1;
