@@ -22,6 +22,7 @@ use warnings;
 use C4::Auth;
 use C4::Output;  # contains gettemplate
 use C4::Biblio;  # GetMarcBiblio GetXmlBiblio
+use C4::Items;
 use CGI;
 use C4::Koha;    # GetItemTypes
 use C4::Branch;  # GetBranches
@@ -127,19 +128,23 @@ if ($op eq "export") {
     $sth->execute(@sql_params);
     
     while (my ($biblionumber) = $sth->fetchrow) {
-        my $record = eval{ GetMarcBiblio($biblionumber); };
-        # FIXME: decide how to handle records GetMarcBiblio can't parse or retrieve
+        my $record = eval{ ($dont_export_items)
+            ? C4::Biblio::GetMarcBiblio($biblionumber)
+            : C4::Items::GetMarcWithItems($biblionumber);
+        };
+        # FIXME: decide how to handle unparseable or irretrievable records
         if ($@) {
+            warn "Error processing biblio $biblionumber";
             next;
         }
         next if not defined $record;
-        if ( $dont_export_items || $strip_nonlocal_items || $limit_ind_branch) {
+        if ( $strip_nonlocal_items || $limit_ind_branch) {
             my ( $homebranchfield, $homebranchsubfield ) =
                 GetMarcFromKohaField( 'items.homebranch', '' );
 			for my $itemfield ($record->field($homebranchfield)){
 				# if stripping nonlocal items, use loggedinuser's branch if they didn't select one
 				$branch = C4::Context->userenv->{'branch'} unless $branch;
-                $record->delete_field($itemfield) if($dont_export_items || ($itemfield->subfield($homebranchsubfield) ne $branch) ) ;
+                $record->delete_field($itemfield) if ($itemfield->subfield($homebranchsubfield) ne $branch);
             }
         }
         
