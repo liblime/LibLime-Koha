@@ -19,8 +19,7 @@
         });
         $("#holdingst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
     dateFormat: 'uk',<!-- /TMPL_IF -->
-            widgets : ['zebra'],
-            sortList: [[0,0], [1,0]]
+            widgets : ['zebra']
         });<!-- TMPL_IF NAME="GoogleJackets" -->
         KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF --><!-- TMPL_IF NAME="TagsEnabled" -->
         $(".tagbutton").click(KOHA.Tags.add_tag_button);<!-- /TMPL_IF -->

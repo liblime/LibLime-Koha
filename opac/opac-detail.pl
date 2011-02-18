@@ -296,6 +296,15 @@ if(C4::Context->preference("ISBD")) {
 	$template->param(ISBD => 1);
 }
 
+# arrange the items owned by the "active branch" to show up first
+my $activebranch = $ENV{KOHA_ACTIVE_BRANCH};
+$activebranch //= ($borrowernumber)
+    ? GetMember($borrowernumber)->{branchcode}
+    : undef;
+if ($activebranch) {
+    @items = sort {($a->{homebranch} eq $activebranch) ? -1 : 1} @items;
+}
+
 $template->param(
     ITEM_RESULTS        => \@items,
     subscriptionsnumber => $subscriptionsnumber,
