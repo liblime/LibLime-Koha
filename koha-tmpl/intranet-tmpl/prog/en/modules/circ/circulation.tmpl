@@ -729,7 +729,35 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 	
      <!-- /If flagged --><!-- /TMPL_IF -->
 
-	
+   <TMPL_IF NAME="lostitems">
+   <div id="lostitems" class="circlostitems">
+      <h4><span class="circ-hlt">Lost Items:</span> 
+      <TMPL_IF EXPR="numlostitems > 5">
+      <span style="font-size:10pt;font-weight:normal;"><a 
+      href="/cgi-bin/koha/members/lost_items.pl?borrowernumber=<TMPL_VAR NAME="borrowernumber">">View all 
+      <TMPL_VAR NAME="numlostitems"> lost items</a></span>
+      </TMPL_IF>
+      </h4>
+      <table border=0 cellspacing=0 cellpadding=0>
+      <tr><th>Title</th>
+          <th>Barcode</th>
+          <th>Call no</th>
+          <th>Date Lost</th>
+          <th>Claims<br>Returned</th>
+      </tr>
+      <TMPL_LOOP NAME="lostitems">
+      <tr><td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a></td>
+          <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a></td>
+          <td nowrap><TMPL_VAR NAME="itemcallnumber"></td>
+          <td nowrap><TMPL_VAR NAME="date_lost"></td>
+          <td><TMPL_IF EXPR="claims_returned == 1"><span style="font-size:8pt;">Claims Returned</span>
+              <TMPL_ELSE>&nbsp;
+              </TMPL_IF></td>
+      </tr>
+      </TMPL_LOOP>
+      </table>
+   </div>
+   </TMPL_IF>
 
 </div>
 </div>

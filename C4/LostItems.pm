@@ -196,7 +196,10 @@ sub DeleteLostItem {
 sub GetLostItems {
     my $borrowernumber = shift;
     my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM lost_items WHERE borrowernumber=?");
+    my $sth = $dbh->prepare("
+      SELECT * FROM lost_items 
+       WHERE borrowernumber=?
+    ORDER BY date_lost DESC");
     $sth->execute($borrowernumber);
     my @lost_items;
     while (my $row = $sth->fetchrow_hashref) {

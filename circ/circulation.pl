@@ -56,30 +56,22 @@ sub FormatFinesSummary {
     );
 
     my $dbh = C4::Context->dbh;
-
     my $summary = GetFinesSummary( $borrower->{'borrowernumber'} );
-
     my %params;
-
     foreach my $type ( keys %type_map ) {
         next if ( !$summary->{$type} );
-
-        $params{$type_map{$type} . "_total"} = ( $params{ $type_map{$type} .  "_total" } || 0 ) + $summary->{$type};
-
+        $params{$type_map{$type} . "_total"} = ( $params{ $type_map{$type} .  "_total" } || 0 ) 
+        + $summary->{$type};
         delete $summary->{$type};
     }
-
     foreach my $type ( keys %$summary ) {
         next if ( $summary->{$type} > 0 );
-
         $params{"credits_total"} = ( $params{"credits_total"} || 0 ) - $summary->{$type};
-
         delete $summary->{$type};
     }
 
     # Since the types we care about have already been removed, all that is left is 'Other'
     $params{'other_fees_total'} = sum( values %$summary );
-
     return +{ map { $params{$_} ? ( $_ => sprintf( '%0.2f', $params{$_} ) ) : undef } keys %params };
 }
 
@@ -335,6 +327,17 @@ if ($borrowernumber) {
     $cookie = [$cookie, $lbb, $lbc, $lbf, $lbs];        
     
     my ( $od, $issue, $fines ) = GetMemberIssuesAndFines( $borrowernumber );
+    my $li = C4::Members::GetMemberLostItems(
+      borrowernumber       => $borrowernumber,
+      formatdate           => 1,
+      only_claimsreturned  => 0,
+    );
+    my $numlostitems = scalar @$li;
+    @$li = splice(@$li,0,5);
+    $template->param( 
+      lostitems    => $li,
+      numlostitems => $numlostitems,
+    );
 
     # Warningdate is the date that the warning starts appearing
     my (  $today_year,   $today_month,   $today_day) = Today();
