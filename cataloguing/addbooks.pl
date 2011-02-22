@@ -33,6 +33,7 @@ use C4::Breeding;
 use C4::Output;
 use C4::Koha;
 use C4::Search;
+use C4::Circulation;
 
 my $input = new CGI;
 
@@ -67,6 +68,10 @@ foreach my $thisframeworkcode ( keys %{$frameworks} ) {
 
 # Searching the catalog.
 if ($query) {
+   ## special case for barcode suffixes: expand to use active library's prefix
+   if (C4::Context->preference('itembarcodelength') && $query !~ /\D/) {
+      $query = C4::Circulation::barcodedecode(barcode=>$query);
+   }
 
     # find results
     my ( $error, $marcresults, $total_hits ) = SimpleSearch($query, $results_per_page * ($page - 1), $results_per_page);

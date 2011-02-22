@@ -36,6 +36,10 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 
 my $barcode = $query->param('barcode');
+my $bclen   = C4::Context->preference('itembarcodelength');
+if ($bclen && length($barcode)<$bclen) {
+   $barcode = C4::Circulation::barcodedecode(barcode=>$barcode);
+}
 my $dbh = C4::Context->dbh;
 my $sth;
 my $item = C4::Labels::Label::GetQuickItemFromBarcode($barcode);

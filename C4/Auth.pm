@@ -670,7 +670,28 @@ sub checkauth {
         $cookie = $query->cookie(CGISESSID => $sessionID);
         if ( $userid    = $query->param('userid') ) {
             my $password = $query->param('password');
-            my ( $return, $cardnumber ) = checkpw( $dbh, $userid, $password );
+            my $return; my $cardnumber;
+            if ($userid !~ /\D/) {
+               my $bclen = C4::Context->preference('patronbarcodelength');
+               if ($bclen && length($userid)<$bclen) {
+                  my @bc = @{C4::Members::_prefix_cardnum_multibranch($userid) // []};
+                  CHECKBC:
+                  foreach my $bc(@bc) {
+                     ($return,$cardnumber) = checkpw($dbh,$bc,$password);
+                     if ($return) {
+                        $userid = $bc;
+                        last CHECKBC;
+                     }
+                  }
+               }
+               else {
+                  ($return,$cardnumber) = checkpw($dbh,$userid,$password);
+               }
+            }
+            else {
+               ( $return, $cardnumber ) = checkpw( $dbh, $userid, $password );
+            }
+            
             if ($return) {
                 _session_log(sprintf "%20s from %16s logged in  at %30s.\n", $userid,$ENV{'REMOTE_ADDR'},(strftime "%c",localtime));
                 if ( $flags = haspermission($userid, $flagsrequired) ) {

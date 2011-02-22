@@ -30,6 +30,7 @@ use C4::Branch qw(get_branch_code_from_name);
 use C4::Items qw(GetItemnumberFromBarcode);
 use C4::Labels::Lib 1.000000 qw(get_label_summary html_table);
 use C4::Labels::Batch 1.000000;
+use C4::Circulation;
 
 my $cgi = new CGI;
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
@@ -84,14 +85,20 @@ elsif ($op eq 'add') {
     $batch = C4::Labels::Batch->new(branch_code => $branch_code) if $batch == -2;
     if ($branch_code){
         my @barcodes = split(/\s+/,$barcode);
+        my $bclen    = C4::Context->preference('itembarcodelength');
         foreach my $number(@barcodes) {
-            $number =~ s/\r*\n*$//;
+            #$number =~ s/\r*\n*$//s;
             next unless $number;
+            ## expand suffix using branch prefix
+            if ($bclen && (length($number)<$bclen)) {
+               $number = C4::Circulation::barcodedecode(barcode=>$number);
+            }
             if (my $item_number = GetItemnumberFromBarcode($number)) {
-               push @item_numbers, $item_number;
+               push @item_numbers, $item_number if $item_number;
             }
         }
         foreach my $item_number (@item_numbers) {
+            next unless $item_number;
             $err = $batch->add_item($item_number);
         }
         $errstr = "item(s) not added to batch $batch_id." if $err;

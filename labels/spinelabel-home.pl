@@ -22,6 +22,7 @@ use C4::Auth;
 use C4::Output;
 use C4::Context;
 use C4::Labels::Lib qw(get_all_layouts get_all_profiles);
+use C4::Circulation;
 # use Smart::Comments;
 
 my $query = new CGI;
@@ -40,9 +41,13 @@ my %in;
 foreach(qw(layout_id profile_id prefix)) {
    $in{$_} = $query->param($_) || $query->cookie($_);
 }
-
+my $barcode = $query->param('barcode');
+my $bclen   = C4::Context->preference('itembarcodelength');
+if ($bclen && length($barcode)<$bclen) {
+   $barcode = C4::Circulation::barcodedecode(barcode=>$barcode);
+}
 $template->param(
-   barcode     => $query->param('barcode')    || '',
+   barcode     => $barcode || '',
    layout_id   => $query->param('layout_id')  || 0,
    profile_id  => $query->param('profile_id') || 0,
    layouts     => _sel('layout_id',get_all_layouts()),
