@@ -605,6 +605,7 @@ sub EnqueueLetter ($) {
     return unless exists $params->{'letter'};
     return unless exists $params->{'borrowernumber'};
     return unless exists $params->{'message_transport_type'};
+    return unless $params->{'message_transport_type'};
 
     # If we have any attachments we should encode then into the body.
     if ( $params->{'attachments'} ) {
