@@ -4378,6 +4378,12 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Changing reserves.reservedate et al to datetime; replace syspref holdCancelLength with HoldExpireLength; delete sysprefs maxreserves, noissuescharge, maxoutstanding )\n";
 }
 
+$DBversion = '4.03.14.000';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Micro version update to $DBversion )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
