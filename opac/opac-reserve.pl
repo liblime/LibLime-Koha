@@ -549,6 +549,9 @@ foreach my $biblioNum (@biblionumbers) {
             } else {
                 $numPolicyBlocked++;
             }
+            if ($biblioLoopIter{already_reserved} && !CanHoldMultipleItems($itemInfo->{itype})) {
+                $itemLoopIter->{available} = undef;
+            }
         }
 
 	# FIXME: move this to a pm
@@ -573,10 +576,6 @@ foreach my $biblioNum (@biblionumbers) {
         $numBibsAvailable++;
         $biblioLoopIter{bib_available} = 1;
         $biblioLoopIter{holdable} = 1;
-    }
-    if ( $biblioLoopIter{already_reserved} && !CanHoldMultipleItems($biblioLoopIter{itemtype}) ) {
-        $biblioLoopIter{holdable} = undef;
-        warn "Already_Reserved";
     }
 
     if (C4::Context->preference('OPACItemHolds')) {

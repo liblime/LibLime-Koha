@@ -73,6 +73,8 @@ if ( $action eq 'suspend' ) {
   ResumeReserve( $input->param('reservenumber') );
 }
 
+my ($maxholds_warn,$maxamount_warn,$max_shelf_holds_per_day_warn) = 0;
+
 my $multihold = $input->param('multi_hold');
 $template->param(multi_hold => $multihold);
 
@@ -149,11 +151,13 @@ if ($cardnumber) {
    if ($$cat{maxholds} && ($number_reserves >= $$cat{maxholds})) {
       $warnings = 1;
       $maxholds = 1;
+      $maxholds_warn = 1;
    }
    if ($$cat{holds_block_threshold}>0 && $amount_msg) {
       if ($$borrowerinfo{flags}{CHARGES}{amount} > $$cat{holds_block_threshold}) {
          $warnings  = 1;
          $maxamount = 1;
+         $maxamount_warn = 1;
          ($cat_amount_symbol) = $amount_msg =~ /patron owes (.)\d/i;
       }
    }
@@ -278,6 +282,7 @@ foreach my $biblionumber (@biblionumbers) {
     	  $template->param( warnings => 1 );
     	  $template->param( maxholds => 1);
     	  $template->param( override_required => 1 );
+          $maxholds_warn = 1;
     	}
     }
 
@@ -288,6 +293,7 @@ foreach my $biblionumber (@biblionumbers) {
 
       if ( $shelf_holds_today >= $max_shelf_holds_per_day ) {
         $warnings = 1;
+        $max_shelf_holds_per_day_warn = 1;
         $template->param( 
           override_required => 1,
           max_shelf_holds_per_day => $max_shelf_holds_per_day
@@ -310,14 +316,13 @@ foreach my $biblionumber (@biblionumbers) {
             $count--;
         }
 
-        if ( defined $borrowerinfo && exists $borrowerinfo->{'borrowernumber'} &&
-          ($borrowerinfo->{borrowernumber} eq $res->{borrowernumber}) && !CanHoldMultipleItems($res->{itemtype}) ) {
-            if ( $borrowerinfo->{borrowernumber} eq $res->{borrowernumber} && !CanHoldMultipleItems($res->{itemtype}) ) {
+        if ( defined $borrowerinfo && exists $borrowerinfo->{'borrowernumber'} ) {
+          if ( $borrowerinfo->{borrowernumber} eq $res->{borrowernumber} ) {
                 $warnings = 1;
                 $alreadyreserved = 1;
                 $biblioloopiter{warn} = 1;
                 $biblioloopiter{alreadyres} = 1;
-            }
+          }
         }
     }
 
@@ -519,6 +524,13 @@ foreach my $biblionumber (@biblionumbers) {
                 } elsif (( $policy_holdallowed ) && (!$item->{noresstatus} )) {
                     $item->{available} = 1;
                     $num_available++;
+                }
+                if ($alreadyreserved && CanHoldMultipleItems($item->{itype})) {
+                  $template->param( alreadyreserved => undef);
+                  $template->param( warnings => undef) if (!$maxholds_warn && !$maxamount_warn && !$max_shelf_holds_per_day_warn)
+                }
+                elsif ($alreadyreserved) {
+                    $item->{available} = undef;
                 }
             }
             # If none of the conditions hold true, then neither override nor available is set and the item cannot be checked
