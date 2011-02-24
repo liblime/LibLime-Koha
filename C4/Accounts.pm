@@ -131,23 +131,6 @@ sub recordpayment {
     C4::Stats::UpdateStats( $branch, 'payment', $data, '', '', '', $borrowernumber, $nextaccntno );
     $sth->finish;
 
-    # Check if EnableOwedNotification is ON.  If so, then check the total
-    # amount owed on the patron account.  If less than OwedNotificationValue,
-    # then NULL out the amount_notify_date field in the borrowers table.
-
-    if (C4::Context->preference('EnableOwedNotification')) {
-      $sth = $dbh->prepare(
-        "SELECT SUM(amountoutstanding) AS amountdue FROM accountlines WHERE borrowernumber=?"
-      );
-      $sth->execute($borrowernumber);
-      my $data = $sth->fetchrow_hashref;
-      if ($data->{amountdue} < C4::Context->preference('OwedNotificationValue')){
-        my $sth2 = $dbh->prepare(
-          "UPDATE borrowers SET amount_notify_date=NULL WHERE borrowernumber = ?"
-        );
-        $sth2->execute($borrowernumber);
-      }
-    }
 }
 
 =head2 makepayment
@@ -222,24 +205,6 @@ sub makepayment {
     #check to see what accounttype
     if ( $data->{'accounttype'} eq 'Rep' || $data->{'accounttype'} eq 'L' ) {
         returnlost( $borrowernumber, $data->{'itemnumber'} );
-    }
-
-    # Check if EnableOwedNotification is ON.  If so, then check the total
-    # amount owed on the patron account.  If less than OwedNotificationValue,
-    # then NULL out the amount_notify_date field in the borrowers table.
-
-    if (C4::Context->preference('EnableOwedNotification')) {
-      $sth = $dbh->prepare(
-        "SELECT SUM(amountoutstanding) AS amountdue FROM accountlines WHERE borrowernumber=?"
-      );
-      $sth->execute($borrowernumber);
-      $data = $sth->fetchrow_hashref;
-      if ($data->{amountdue} < C4::Context->preference('OwedNotificationValue')){
-        my $sth2 = $dbh->prepare(
-          "UPDATE borrowers SET amount_notify_date=NULL WHERE borrowernumber = ?"
-        );
-        $sth2->execute($borrowernumber);
-      }
     }
 
 }
@@ -486,29 +451,11 @@ sub manualinvoice {
             $amountleft, $notifyid );
     }
 
-    # Check if EnableOwedNotification is ON.  If so, then check the total
-    # amount owed on the patron account.  If less than OwedNotificationValue,
-    # then NULL out the amount_notify_date field in the borrowers table.
-
-    if (C4::Context->preference('EnableOwedNotification')) {
-      my $sth = $dbh->prepare(
-        "SELECT SUM(amountoutstanding) AS amountdue FROM accountlines WHERE borrowernumber=?"
-      );
-      $sth->execute($borrowernumber);
-      my $data = $sth->fetchrow_hashref;
-      if ($data->{amountdue} < C4::Context->preference('OwedNotificationValue')){
-        my $sth2 = $dbh->prepare(
-          "UPDATE borrowers SET amount_notify_date=NULL WHERE borrowernumber = ?"
-        );
-        $sth2->execute($borrowernumber);
-      }
-    }
-
     UpdateStats( my $branch = '', my $stattype = 'maninvoice', $amount, my $other = $type, $itemnum, my $itemtype, $borrowernumber, $accountno);
     return 0;
 }
 
-=head2 fixcredit #### DEPRECATED
+=head2 fixcredit
 
  $amountleft = &fixcredit($borrowernumber, $data, $barcode, $type, $user);
 

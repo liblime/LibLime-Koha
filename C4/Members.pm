@@ -1420,12 +1420,24 @@ sub MarkMemberReported {
     my ( $borrowernumber, $amount ) = @_;
 
     my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare( "
-        UPDATE borrowers
-          SET last_reported_date = CURRENT_DATE,
-            last_reported_amount = ?
-          WHERE borrowernumber = ?
-    " );
+    my $sth;
+    if ($amount == 0) {
+      $sth = $dbh->prepare( "
+          UPDATE borrowers
+            SET last_reported_date = CURRENT_DATE,
+              last_reported_amount = ?,
+              amount_notify_date   = NULL
+            WHERE borrowernumber = ?
+      " );
+    }
+    else {
+      $sth = $dbh->prepare( "
+          UPDATE borrowers
+            SET last_reported_date = CURRENT_DATE,
+              last_reported_amount = ?
+            WHERE borrowernumber = ?
+      " );
+    }
     $sth->execute( $amount, $borrowernumber );
 }
 
