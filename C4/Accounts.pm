@@ -148,23 +148,6 @@ sub recordpayment
     C4::Stats::UpdateStats( $branch, 'payment', $data, '', '', '', $borrowernumber, $nextaccntno );
     $sth->finish;
 
-    # Check if EnableOwedNotification is ON.  If so, then check the total
-    # amount owed on the patron account.  If less than OwedNotificationValue,
-    # then NULL out the amount_notify_date field in the borrowers table.
-
-    if (C4::Context->preference('EnableOwedNotification')) {
-      $sth = $dbh->prepare(
-        "SELECT SUM(amountoutstanding) AS amountdue FROM accountlines WHERE borrowernumber=?"
-      );
-      $sth->execute($borrowernumber);
-      my $data = $sth->fetchrow_hashref;
-      if ($data->{amountdue} < C4::Context->preference('OwedNotificationValue')){
-        my $sth2 = $dbh->prepare(
-          "UPDATE borrowers SET amount_notify_date=NULL WHERE borrowernumber = ?"
-        );
-        $sth2->execute($borrowernumber);
-      }
-    }
 }
 
 sub MemberAllAccounts
@@ -286,24 +269,6 @@ sub makepayment {
     #check to see what accounttype
     if ( $data->{'accounttype'} eq 'Rep' || $data->{'accounttype'} eq 'L' ) {
         returnlost( $borrowernumber, $data->{'itemnumber'} );
-    }
-
-    # Check if EnableOwedNotification is ON.  If so, then check the total
-    # amount owed on the patron account.  If less than OwedNotificationValue,
-    # then NULL out the amount_notify_date field in the borrowers table.
-
-    if (C4::Context->preference('EnableOwedNotification')) {
-      $sth = $dbh->prepare(
-        "SELECT SUM(amountoutstanding) AS amountdue FROM accountlines WHERE borrowernumber=?"
-      );
-      $sth->execute($borrowernumber);
-      $data = $sth->fetchrow_hashref;
-      if ($data->{amountdue} < C4::Context->preference('OwedNotificationValue')){
-        my $sth2 = $dbh->prepare(
-          "UPDATE borrowers SET amount_notify_date=NULL WHERE borrowernumber = ?"
-        );
-        $sth2->execute($borrowernumber);
-      }
     }
 
 }
@@ -639,50 +604,117 @@ sub manualinvoice
    my $sth = $dbh->prepare($sql);
    $sth->execute(values %g);
 
-    # Check if EnableOwedNotification is ON.  If so, then check the total
-    # amount owed on the patron account.  If less than OwedNotificationValue,
-    # then NULL out the amount_notify_date field in the borrowers table.
+    UpdateStats( my $branch = '', my $stattype = 'maninvoice', $g{amount}, my $other = $g{accounttype}, my $itemnum, my $itemtype, $g{borrowernumber}, $g{accountno});
+    return 0;
+}
 
-   if (C4::Context->preference('EnableOwedNotification')) {
-      $sth = $dbh->prepare(
-        "SELECT SUM(amountoutstanding) AS amountdue FROM accountlines WHERE borrowernumber=?"
-      );
-      $sth->execute($g{borrowernumber});
-      my $data = $sth->fetchrow_hashref;
-      if ($data->{amountdue} < C4::Context->preference('OwedNotificationValue')){
-        my $sth2 = $dbh->prepare(
-          "UPDATE borrowers SET amount_notify_date=NULL WHERE borrowernumber = ?"
+=head2 fixcredit #### DEPRECATED
+
+ $amountleft = &fixcredit($borrowernumber, $data, $barcode, $type, $user);
+
+ This function is only used internally, not exported.
+
+=cut
+
+# This function is deprecated in 3.0
+
+sub fixcredit {
+
+    #here we update both the accountoffsets and the account lines
+    my ( $borrowernumber, $data, $barcode, $type, $user ) = @_;
+    my $dbh        = C4::Context->dbh;
+    my $newamtos   = 0;
+    my $accdata    = "";
+    my $amountleft = $data;
+    if ( $barcode ne '' ) {
+        my $item        = GetBiblioFromItemNumber( '', $barcode );
+        my $nextaccntno = getnextacctno($borrowernumber);
+        my $query       = "SELECT * FROM accountlines WHERE (borrowernumber=?
+    AND itemnumber=? AND amountoutstanding > 0)";
+        if ( $type eq 'CL' ) {
+            $query .= " AND (accounttype = 'L' OR accounttype = 'Rep')";
+        }
+        elsif ( $type eq 'CF' ) {
+            $query .= " AND (accounttype = 'F' OR accounttype = 'FU' OR
+      accounttype='Res' OR accounttype='Rent')";
+        }
+        elsif ( $type eq 'CB' ) {
+            $query .= " and accounttype='A'";
+        }
+
+        #    print $query;
+        my $sth = $dbh->prepare($query);
+        $sth->execute( $borrowernumber, $item->{'itemnumber'} );
+        $accdata = $sth->fetchrow_hashref;
+        $sth->finish;
+        if ( $accdata->{'amountoutstanding'} < $amountleft ) {
+            $newamtos = 0;
+            $amountleft -= $accdata->{'amountoutstanding'};
+        }
+        else {
+            $newamtos   = $accdata->{'amountoutstanding'} - $amountleft;
+            $amountleft = 0;
+        }
+        my $thisacct = $accdata->{accountno};
+        my $usth     = $dbh->prepare(
+            "UPDATE accountlines SET amountoutstanding= ?
+     WHERE (borrowernumber = ?) AND (accountno=?)"
         );
-        $sth2->execute($g{borrowernumber});
-      }
-   }
+        $usth->execute( $newamtos, $borrowernumber, $thisacct );
+        $usth->finish;
+        $usth = $dbh->prepare(
+            "INSERT INTO accountoffsets
+     (borrowernumber, accountno, offsetaccount,  offsetamount)
+     VALUES (?,?,?,?)"
+        );
+        $usth->execute( $borrowernumber, $accdata->{'accountno'},
+            $nextaccntno, $newamtos );
+        $usth->finish;
+    }
 
-   my $itemtype;
-   ITYPE: {
-      last ITYPE unless $g{itemnumber};
-      $sth = $dbh->prepare('SELECT itype FROM items WHERE itemnumber=?');
-      $sth->execute($g{itemnumber});
-      $itemtype = ($sth->fetchrow_array)[0];
-      last ITYPE if $itemtype;
-      $sth = $dbh->prepare('
-         SELECT itemtype FROM biblioitems
-      LEFT JOIN items ON (items.biblionumber = biblioitems.biblionumber)
-          WHERE items.itemnumber = ?');
-      $sth->execute($g{itemnumber});
-      $itemtype = ($sth->fetchrow_array)[0];
-      ; # last ITYPE
-   }
-   C4::Stats::UpdateStats( 
-      '', # branch
-      'maninvoice', 
-      $g{amount}, 
-      $g{accounttype}, 
-      $g{itemnumber}, 
-      $itemtype, 
-      $g{borrowernumber}, 
-      $g{accountno}
-   );
-   return $g{accountno};
+    # begin transaction
+    my $nextaccntno = getnextacctno($borrowernumber);
+
+    # get lines with outstanding amounts to offset
+    my $sth = $dbh->prepare(
+        "SELECT * FROM accountlines
+  WHERE (borrowernumber = ?) AND (amountoutstanding >0)
+  ORDER BY date"
+    );
+    $sth->execute($borrowernumber);
+
+    #  print $query;
+    # offset transactions
+    while ( ( $accdata = $sth->fetchrow_hashref ) and ( $amountleft > 0 ) ) {
+        if ( $accdata->{'amountoutstanding'} < $amountleft ) {
+            $newamtos = 0;
+            $amountleft -= $accdata->{'amountoutstanding'};
+        }
+        else {
+            $newamtos   = $accdata->{'amountoutstanding'} - $amountleft;
+            $amountleft = 0;
+        }
+        my $thisacct = $accdata->{accountno};
+        my $usth     = $dbh->prepare(
+            "UPDATE accountlines SET amountoutstanding= ?
+     WHERE (borrowernumber = ?) AND (accountno=?)"
+        );
+        $usth->execute( $newamtos, $borrowernumber, $thisacct );
+        $usth->finish;
+        $usth = $dbh->prepare(
+            "INSERT INTO accountoffsets
+     (borrowernumber, accountno, offsetaccount,  offsetamount)
+     VALUE (?,?,?,?)"
+        );
+        $usth->execute( $borrowernumber, $accdata->{'accountno'},
+            $nextaccntno, $newamtos );
+        $usth->finish;
+    }
+    $sth->finish;
+    $type = "Credit " . $type;
+    C4::Stats::UpdateStats( $user, $type, $data, $user, '', '', $borrowernumber );
+    $amountleft *= -1;
+    return ($amountleft);
 }
 
 =head2 refund

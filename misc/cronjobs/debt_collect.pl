@@ -287,12 +287,14 @@ my $letter = {
     content => $subject,
 };
 
+my $admin_email = C4::Context->preference('KohaAdminEmailAddress');
 foreach my $email ( @to ) {
     print "sending reports to $email\n" if ( $verbose );
 
     C4::Letters::EnqueueLetter( {
         borrowernumber => 1,
         to_address => $email,
+        from_address => $admin_email,
         letter => $letter,
         message_transport_type => 'email',
         attachments => \@attachments
