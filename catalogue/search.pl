@@ -444,27 +444,30 @@ foreach my $limit(@limits) {
 $template->param(available => $available);
 
 ## special case for barcode suffixes: expand to use active library's prefix.
-if (C4::Context->preference('itembarcodelength')
-&& ($operands[0] !~ /\D/)) {
-   my $expectedLen = C4::Context->preference('itembarcodelength');
+my $isBarcode   = 0;
+my $newq        = '';
+my $expectedLen = C4::Context->preference('itembarcodelength');
+if ($expectedLen && ($operands[0] !~ /\D/)) {
    ## for simple earch
    if (  (length($operands[0])<$expectedLen)
       && (length($operands[0]) != 10)
       && (length($operands[0]) != 13) ) { # exclude looks like isbn
       $indexes[0] = 'bc';
+      $isBarcode  = 1;
    }
 
    ## advanced search
    for my $i(0..$#indexes) {
       next unless $indexes[$i] eq 'bc';
+      $isBarcode = 1;
       if (length($operands[$i]) < $expectedLen) {
          $operands[$i] = C4::Circulation::barcodedecode(
             barcode    => $operands[$i]
          );
+         $newq = $operands[$i];
       }
    }
 }
-
 
 # append year limits if they exist
 my $limit_yr;
@@ -602,14 +605,14 @@ for (my $i=0;$i<@servers;$i++) {
                 print $cgi->redirect("/cgi-bin/koha/catalogue/labeledMARCdetail.pl?biblionumber=$biblionumber");
             } else {
                # warp to item view for a barcode
-               if (  ($cgi->param('q') !~ /\D/)  
-                 &&  (length($cgi->param('q'))==14) ) { # guess that it's a barcode
+               if ($isBarcode) {
                   my @inums = split(/\s*\|\s*/,$newresults[0]->{itemnumber});
                   my @bc    = split(/\s*\|\s*/,$newresults[0]->{barcode});
                   my $itemnumber;
                   for my $i(0..$#bc) {
-                     if ($cgi->param('q')==$bc[$i]) {
+                     if ($newq == $bc[$i]) {
                         $itemnumber = $inums[$i];
+                        last;
                      }
                   }
                   print $cgi->redirect('/cgi-bin/koha/catalogue/moredetail.pl'
@@ -617,8 +620,8 @@ for (my $i=0;$i<@servers;$i++) {
                   ."&bi=$biblionumber#item$itemnumber");
                   exit;
                }
-                print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?q="
-                . $cgi->param('q')."&biblionumber=$biblionumber&last_borrower_show_button=$last_borrower_show_button");
+               print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?q="
+               . $cgi->param('q') . "&biblionumber=$biblionumber&last_borrower_show_button=$last_borrower_show_button");
             } 
             exit;
         }
