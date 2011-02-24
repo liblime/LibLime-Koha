@@ -21,7 +21,7 @@
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
-# use warnings;  # FIXME
+use warnings;
 use CGI;
 use C4::Output;
 use C4::Print;
@@ -36,6 +36,7 @@ use C4::Members;
 use C4::Biblio;
 use C4::Reserves;
 use C4::Context;
+use C4::View::Member;
 use CGI::Session;
 
 use Date::Calc qw(
@@ -79,6 +80,8 @@ sub FormatFinesSummary {
 # PARAMETERS READING
 #
 my $query = new CGI;
+
+my $dbh = C4::Context->dbh;
 
 my $sessionID = $query->cookie("CGISESSID") ;
 my $session = get_session($sessionID);
@@ -162,10 +165,10 @@ my $print          = $query->param('print');
 my $newexpiry      = $query->param('dateexpiry');
 
 my $circ_session = {
-    debt_confirmed => $query->param('debt_confirmed') || 0, # Don't show the debt error dialog twice
-    charges_overridden => $query->param('charges_overridden') || 0,
-    override_user => $query->param('override_user') || '',
-    override_pass => $query->param('override_pass'),
+    debt_confirmed => $query->param('debt_confirmed') // 0, # Don't show the debt error dialog twice
+    charges_overridden => $query->param('charges_overridden') // 0,
+    override_user => $query->param('override_user') // '',
+    override_pass => $query->param('override_pass') // '',
 };
 
 if ( !override_can( $circ_session, 'override_max_fines' ) ) {
@@ -472,202 +475,9 @@ if ($borrowernumber) {
 ##################################################################################
 # BUILD HTML
 # show all reserves of this borrower, and the position of the reservation ....
-if ($borrowernumber) {
 
-    # new op dev
-    # now we show the status of the borrower's reservations
-    my @borrowerreserv = GetReservesFromBorrowernumber($borrowernumber );
-    my @reservloop;
-    my @WaitingReserveLoop;
-    
-    foreach my $num_res (@borrowerreserv) {
-        my %getreserv;
-        my %getWaitingReserveInfo;
-        my $getiteminfo  = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
-        my $itemtypeinfo = getitemtypeinfo( (C4::Context->preference('item-level_itypes')) ? $getiteminfo->{'itype'} : $getiteminfo->{'itemtype'} );
-        my ( $transfertwhen, $transfertfrom, $transfertto ) =
-          GetTransfers( $num_res->{'itemnumber'} );
-
-        $getreserv{waiting}       = 0;
-        $getreserv{transfered}    = 0;
-        $getreserv{nottransfered} = 0;
-
-        $getreserv{reservenumber}    = $num_res->{'reservenumber'};
-        $getreserv{reservedate}    = format_date( $num_res->{'reservedate'} );
-        $getreserv{title}          = $getiteminfo->{'title'};
-        $getreserv{itemtype}       = $itemtypeinfo->{'description'};
-        $getreserv{author}         = $getiteminfo->{'author'};
-        $getreserv{barcodereserv}  = $getiteminfo->{'barcode'};
-        $getreserv{itemcallnumber} = $getiteminfo->{'itemcallnumber'};
-        $getreserv{biblionumber}   = $getiteminfo->{'biblionumber'};
-        $getreserv{waitingat}      = GetBranchName( $num_res->{'branchcode'} );
-        #         check if we have a waiting status for reservations
-        if ( $num_res->{'found'} eq 'W' ) {
-          $getreserv{color}   = 'reserved';
-          $getreserv{waiting} = 1;
-          $getreserv{holdexpdate}    = format_date( $num_res->{'expirationdate'} );
-# generate information displaying only waiting reserves
-          $getWaitingReserveInfo{title}        = $getiteminfo->{'title'};
-          $getWaitingReserveInfo{biblionumber} = $getiteminfo->{'biblionumber'};
-          $getWaitingReserveInfo{itemtype}     = $itemtypeinfo->{'description'};
-          $getWaitingReserveInfo{author}       = $getiteminfo->{'author'};
-          $getWaitingReserveInfo{reservedate}  = format_date( $num_res->{'reservedate'} );
-          $getWaitingReserveInfo{waitingat}    = GetBranchName( $num_res->{'branchcode'} );
-          $getWaitingReserveInfo{waitinghere}  = 1 if $num_res->{'branchcode'} eq $branch;
-        }
-        #         check transfers with the itemnumber foud in th reservation loop
-        if ($transfertwhen) {
-            $getreserv{color}      = 'transfered';
-            $getreserv{transfered} = 1;
-            $getreserv{datesent}   = format_date($transfertwhen);
-            $getreserv{frombranch} = GetBranchName($transfertfrom);
-        } elsif ($getiteminfo->{'holdingbranch'} ne $num_res->{'branchcode'}) {
-            $getreserv{nottransfered}   = 1;
-            $getreserv{nottransferedby} = GetBranchName( $getiteminfo->{'holdingbranch'} );
-        }
-
-#         if we don't have a reserv on item, we put the biblio infos and the waiting position
-        if ( $getiteminfo->{'title'} eq '' ) {
-            my $getbibinfo = GetBiblioData( $num_res->{'biblionumber'} );
-            my $getbibtype = getitemtypeinfo( $getbibinfo->{'itemtype'} );  # fixme - we should have item-level reserves here ?
-            $getreserv{color}           = 'inwait';
-            $getreserv{title}           = $getbibinfo->{'title'};
-            $getreserv{nottransfered}   = 0;
-            $getreserv{itemtype}        = $getbibtype->{'description'};
-            $getreserv{author}          = $getbibinfo->{'author'};
-            $getreserv{biblionumber}    = $num_res->{'biblionumber'};
-        }
-        $getreserv{waitingposition} = $num_res->{'priority'};
-        push( @reservloop, \%getreserv );
-
-#         if we have a reserve waiting, initiate waitingreserveloop
-        if ($getreserv{waiting} == 1) {
-        push (@WaitingReserveLoop, \%getWaitingReserveInfo)
-        }
-      
-    }
-
-    # return result to the template
-    $template->param( 
-        countreserv => scalar @reservloop,
-        reservloop  => \@reservloop ,
-        WaitingReserveLoop  => \@WaitingReserveLoop,
-    );
-    $template->param( adultborrower => 1 ) if ( $borrower->{'category_type'} eq 'A' );
-}
-
-# make the issued books table.
-my $todaysissues = '';
-my $previssues   = '';
-my @todaysissues;
-my @previousissues;
-## ADDED BY JF: new itemtype issuingrules counter stuff
-my $issued_itemtypes_count;
-my @issued_itemtypes_count_loop;
-my $totalprice = 0;
-
-if ($borrower) {
-    ## get each issue of the borrower & separate them in todayissues & previous issues
-    my ($issueslist) = GetPendingIssues($borrower->{'borrowernumber'});
-    ## get borrower's reserves
-
-
-    my $ren_override_limit = $template->param('CAN_user_circulate_override_renewals');
-    # split in 2 arrays for today & previous
-    foreach my $it ( @$issueslist ) {
-        my $itemtypeinfo = getitemtypeinfo( (C4::Context->preference('item-level_itypes')) ? $it->{'itype'} : $it->{'itemtype'} );
-        # set itemtype per item-level_itype syspref - FIXME this is an ugly hack
-        $it->{'itemtype'} = ( C4::Context->preference( 'item-level_itypes' ) ) ? $it->{'itype'} : $it->{'itemtype'};
-
-        ($it->{'charge'}, $it->{'itemtype_charge'}) = GetIssuingCharges(
-            $it->{'itemnumber'}, $borrower->{'borrowernumber'}
-        );
-        $it->{'charge'} = sprintf("%.2f", $it->{'charge'});
-        my ($can_renew, $can_renew_error) = CanBookBeRenewed( 
-            $borrower->{'borrowernumber'},$it->{'itemnumber'},$ren_override_limit
-        );
-        $it->{"renew_error_${can_renew_error}"} = 1 if defined $can_renew_error;
-        my ( $restype, $reserves ) = CheckReserves( $it->{'itemnumber'} );
-
-
-		$it->{'can_renew'} = $can_renew;
-		$it->{'can_confirm'} = !$can_renew && !$restype;
-		$it->{'renew_error'} = $restype;
-	    $it->{'checkoutdate'} = C4::Dates->new($it->{'issuedate'},'iso')->output('syspref');
-
-	    $totalprice += $it->{'replacementprice'};
-		$it->{'itemtype'} = $itemtypeinfo->{'description'};
-		$it->{'itemtype_image'} = $itemtypeinfo->{'imageurl'};
-        $it->{'dd'} = format_date($it->{'date_due'});
-        $it->{'displaydate'} = format_date($it->{'issuedate'});
-        $it->{'od'} = ( $it->{'date_due'} lt $todaysdate ) ? 1 : 0 ;
-        ($it->{'author'} eq '') and $it->{'author'} = ' ';
-        $it->{'renew_failed'} = $renew_failed{$it->{'itemnumber'}};
-        # ADDED BY JF: NEW ITEMTYPE COUNT DISPLAY
-        $issued_itemtypes_count->{ $it->{'itemtype'} }++;
-
-        if ( $it->{'renewals'} ) {
-          ( $it->{'renewals_intranet'}, $it->{'renewals_opac'} ) = GetRenewalDetails( $it->{'itemnumber'}, $borrower->{'borrowernumber'} );
-        }
-
-      if ($$it{itemnotes} =~ /FASTADD RECORD/) {
-         $$it{_redItemNotes} = 1;
-      }
-        if ( $todaysdate eq $it->{'issuedate'} or $todaysdate eq $it->{'lastreneweddate'} ) {
-            push @todaysissues, $it;
-        } else {
-            push @previousissues, $it;
-        }
-    }
-    if ( C4::Context->preference( "todaysIssuesDefaultSortOrder" ) eq 'asc' ) {
-        @todaysissues   = sort { $a->{'timestamp'} cmp $b->{'timestamp'} } @todaysissues;
-    }
-    else {
-        @todaysissues   = sort { $b->{'timestamp'} cmp $a->{'timestamp'} } @todaysissues;
-    }
-    if ( C4::Context->preference( "previousIssuesDefaultSortOrder" ) eq 'asc' ){
-        @previousissues = sort { $a->{'date_due'} cmp $b->{'date_due'} } @previousissues;
-    }
-    else {
-        @previousissues = sort { $b->{'date_due'} cmp $a->{'date_due'} } @previousissues;
-    }
-}
-
-#### ADDED BY JF FOR COUNTS BY ITEMTYPE RULES
-# FIXME: This should utilize all the issuingrules options rather than just the defaults
-# and it should be moved to a module
-my $dbh = C4::Context->dbh;
-
-# how many of each is allowed?
-my $issueqty_sth = $dbh->prepare( '
-SELECT itemtypes.description AS description,issuingrules.itemtype,maxissueqty
-FROM issuingrules
-  LEFT JOIN itemtypes ON (itemtypes.itemtype=issuingrules.itemtype)
-  WHERE categorycode=?
-' );
-#my @issued_itemtypes_count;  # huh?
-$issueqty_sth->execute("*");	# This is a literal asterisk, not a wildcard.
-
-while ( my $data = $issueqty_sth->fetchrow_hashref() ) {
-
-    # subtract how many of each this borrower has
-    $data->{'count'} = $issued_itemtypes_count->{ $data->{'description'} };  
-    $data->{'left'}  =
-      ( $data->{'maxissueqty'} -
-          $issued_itemtypes_count->{ $data->{'description'} } );
-
-    # can't have a negative number of remaining
-    if ( $data->{'left'} < 0 ) { $data->{'left'} = "0" }
-    $data->{'flag'} = 1 unless ( $data->{'maxissueqty'} > $data->{'count'} );
-    unless ( ( $data->{'maxissueqty'} < 1 )
-        || ( $data->{'itemtype'} eq "*" )
-        || ( $data->{'itemtype'} eq "CIRC" ) )
-    {
-        push @issued_itemtypes_count_loop, $data;
-    }
-}
-
-#### / JF
+my $patron_infobox = C4::View::Member::BuildFinesholdsissuesBox($borrowernumber, $query);
+$template->param(%$patron_infobox);
 
 my @values;
 my %labels;
@@ -832,7 +642,6 @@ my $bor_messages_loop = GetMessages( $borrowernumber, 'B', $branch );
 if($bor_messages_loop){ $template->param(flagged => 1 ); }
 
 $template->param(
-    issued_itemtypes_count_loop => \@issued_itemtypes_count_loop,
     lib_messages_loop		=> $lib_messages_loop,
     bor_messages_loop		=> $bor_messages_loop,
     all_messages_del		=> C4::Context->preference('AllowAllMessageDeletion'),
@@ -868,10 +677,7 @@ $template->param(
     duedatespec       => $duedatespec,
     message           => $message,
     CGIselectborrower => $CGIselectborrower,
-	totalprice => sprintf("%.2f", $totalprice),
     totaldue        => sprintf("%.2f", $total),
-    todayissues       => \@todaysissues,
-    previssues        => \@previousissues,
     inprocess         => $inprocess,
     memberofinstution => $member_of_institution,
     CGIorganisations  => $CGIorganisations,
@@ -891,7 +697,6 @@ $template->param( picture => 1 ) if $picture;
 
 # get authorised values with type of BOR_NOTES
 my @canned_notes;
-my $dbh = C4::Context->dbh;
 my $sth = $dbh->prepare('SELECT * FROM authorised_values WHERE category = "BOR_NOTES"');
 $sth->execute();
 while ( my $row = $sth->fetchrow_hashref() ) {
