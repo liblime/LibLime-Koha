@@ -1273,6 +1273,7 @@ sub CheckReserves {
             }
         }
     }
+    return (0,0,0) if ($nohold==$count);
 
     if ( 
         ( $count > C4::Context->preference('HoldsTransportationReductionThreshold') )
@@ -1289,7 +1290,6 @@ sub CheckReserves {
         );
     }
 
-    if ($nohold==$count) { return (0,0,0) }
     if ( $oldest ) {
       return( 'Reserved', $oldest, $count );
     } elsif ( $local ) {
