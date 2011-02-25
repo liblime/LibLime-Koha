@@ -41,6 +41,7 @@ use C4::Members;
 use C4::Members::Attributes;
 use C4::Members::AttributeTypes;
 use C4::Members::Lists;
+use C4::Accounts;
 use C4::Dates qw/format_date/;
 use C4::Reserves;
 use C4::Circulation;
@@ -196,7 +197,6 @@ if ( C4::Context->preference("IndependantBranches") ) {
 }
 my $branchdetail = GetBranchDetail( $data->{'branchcode'});
 $data->{'branchname'} = $branchdetail->{branchname};
-
 my $lib1 = &GetSortDetails( "Bsort1", $data->{'sort1'} );
 my $lib2 = &GetSortDetails( "Bsort2", $data->{'sort2'} );
 $template->param( lib1 => $lib1 ) if ($lib1);

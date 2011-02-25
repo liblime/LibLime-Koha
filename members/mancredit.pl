@@ -39,16 +39,22 @@ my $borrowernumber=$input->param('borrowernumber');
 
 #get borrower details
 my $data=GetMember($borrowernumber,'borrowernumber');
-my $add=$input->param('add');
 
-if ($add){
-    my $barcode=$input->param('barcode');
+if ($input->param('add')){
+    my $barcode = $input->param('barcode');
     my $itemnum = GetItemnumberFromBarcode($barcode) if $barcode;
-    my $desc=$input->param('desc');
-    my $amount=$input->param('amount') || 0;
-    $amount = -$amount;
-    my $type=$input->param('type');
-    manualinvoice($borrowernumber,$itemnum,$desc,$type,$amount);
+    my $desc    = $input->param('desc');
+    my $amount  = $input->param('amount') || 0;
+    $amount     = -$amount;
+    my $type    = $input->param('type');
+    C4::Accounts::manualinvoice(
+      borrowernumber => $borrowernumber,
+      itemnumber     => GetItemnumberFromBarcode($input->param('barcode')),
+      description    => $input->param('desc'),
+      amount         => -($input->param('amount') || 0),
+      type           => $input->param('type'),
+#      $borrowernumber,$itemnum,$desc,$type,$amount
+    );
     print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
 } else {
 	my ($template, $loggedinuser, $cookie)

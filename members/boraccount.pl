@@ -64,21 +64,11 @@ if ( $data->{'category_type'} eq 'C') {
 }
 
 #get account details
-my ($total,$accts,$numaccts)=GetMemberAccountRecords($borrowernumber);
-my $totalcredit;
-if($total <= 0){
-        $totalcredit = 1;
-}
+my ($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
+my $totalcredit = ($total <= 0) ? 1:0;
 my @accountrows; # this is for the tmpl-loop
 
-my $toggle;
-for (my $i=0;$i<$numaccts;$i++){
-    if($i%2){
-            $toggle = 0;
-    } else {
-            $toggle = 1;
-    }
-    $accts->[$i]{'toggle'} = $toggle;
+for (my $i=0;$i<@$accts;$i++) {
     $accts->[$i]{'amount'}+=0.00;
     if($accts->[$i]{'amount'} <= 0){
         $accts->[$i]{'amountcredit'} = 1;
@@ -88,23 +78,20 @@ for (my $i=0;$i<$numaccts;$i++){
         $accts->[$i]{'amountoutstandingcredit'} = 1;
     }
     my %row = ( 'date'              => format_date($accts->[$i]{'date'}),
-                'amountcredit' => $accts->[$i]{'amountcredit'},
+                'amountcredit'      => $accts->[$i]{'amountcredit'},
                 'amountoutstandingcredit' => $accts->[$i]{'amountoutstandingcredit'},
-                'toggle' => $accts->[$i]{'toggle'},
+                'toggle'            => ($i%2)? 0:1,
                 'description'       => $accts->[$i]{'description'},
-                'itemnumber'        => $accts->[$i]{'itemnumber'},
-                'biblionumber'      => $accts->[$i]{'biblionumber'},
                 'amount'            => sprintf("%.2f",$accts->[$i]{'amount'}),
                 'amountoutstanding' => sprintf("%.2f",$accts->[$i]{'amountoutstanding'}),
-                'accountno' => $accts->[$i]{'accountno'},
-                'payment' => ( $accts->[$i]{'accounttype'} eq 'Pay' ),
-                
+                'accountno'         => $accts->[$i]{'accountno'},
+                'payment'           => ( $accts->[$i]{'accounttype'} eq 'Pay' ),
+                'itemnumber'        => $$accts[$i]{itemnumber},
+                'biblionumber'      => $$accts[$i]{biblionumber},
+                'title'             => $$accts[$i]{title},
+                'barcode'           => $$accts[$i]{barcode},
                 );
     
-    if ($accts->[$i]{'accounttype'} ne 'F' && $accts->[$i]{'accounttype'} ne 'FU'){
-        $row{'printtitle'}=1;
-        $row{'title'} = $accts->[$i]{'title'};
-    }
     $template->param( refundtab => 1 ) if (($accts->[$i]{'accounttype'} eq 'RCR') && ($accts->[$i]{'amountoutstanding'} < 0.0));
     
     push(@accountrows, \%row);

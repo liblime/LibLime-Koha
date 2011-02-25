@@ -33,6 +33,7 @@ use C4::Branch; # GetBranches
 use C4::Koha;   # GetPrinter
 use C4::Circulation;
 use C4::Members;
+use C4::Accounts;
 use C4::Biblio;
 use C4::Reserves;
 use C4::Context;
@@ -607,7 +608,10 @@ foreach my $flag ( sort keys %{$flags} ) {
 my $amountold = $borrower->{flags}->{'CHARGES'}->{'message'} || 0;
 $amountold =~ s/^.*\$//;    # remove upto the $, if any
 
-my ( $total, $accts, $numaccts) = GetMemberAccountRecords( $borrowernumber );
+my $total = C4::Accounts::MemberAllAccounts(
+   borrowernumber => $borrowernumber,
+   total_only     => 1
+);
 
 if ( $borrower->{'category_type'} eq 'C') {
     my  ( $catcodes, $labels ) =  GetborCatFromCatType( 'A', 'WHERE category_type = ?' );

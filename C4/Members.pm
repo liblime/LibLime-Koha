@@ -72,7 +72,6 @@ BEGIN {
 		&PutPatronImage
 		&RmPatronImage
 
-		&GetMemberAccountRecords
 		&GetBorNotifyAcctRecord
         &GetLostStats
         &GetNotifiedMembers
@@ -407,9 +406,12 @@ sub GetMemberDetails {
         return undef;
     }
     my $borrower = $sth->fetchrow_hashref;
-    my ($amount) = GetMemberAccountRecords( $borrowernumber);
+    my $amount = C4::Accounts::MemberAllAccounts( 
+      borrowernumber => $borrowernumber,
+      total_only     => 1
+    );
     $borrower->{'amountoutstanding'} = $amount;
-    # FIXME - patronflags calls GetMemberAccountRecords... just have patronflags return $amount
+    # FIXME - just have patronflags return $amount
     my $flags = patronflags( $borrower, $circ_session );
     my $accessflagshash;
 
@@ -503,8 +505,11 @@ sub patronflags {
     my ( $patroninformation, $circ_session ) = @_;
     $circ_session ||= {};
     my $dbh=C4::Context->dbh;
-    my ($amount) = GetMemberAccountRecords( $patroninformation->{'borrowernumber'});
-    my $cat      = GetCategoryInfo($$patroninformation{categorycode});
+    my $amount = C4::Accounts::MemberAllAccounts( 
+      borrowernumber => $patroninformation->{'borrowernumber'},
+      total_only     => 1
+    );
+    my $cat = GetCategoryInfo($$patroninformation{categorycode});
 
     if ( $amount > 0 ) {
         my %flaginfo;
@@ -905,7 +910,11 @@ sub AddMember {
     my ($enrolmentfee) = $sth->fetchrow;
     if ($enrolmentfee && $enrolmentfee > 0) {
         # insert fee in patron debts
-        manualinvoice($data{'borrowernumber'}, '', '', 'A', $enrolmentfee);
+        C4::Accounts::manualinvoice(
+         borrowernumber => $data{'borrowernumber'},
+         accounttype    => 'A', 
+         amount         => $enrolmentfee
+        );
     }
 
     # work libraries
@@ -1329,52 +1338,6 @@ sub GetEarliestDueDate {
     ", {}, $borrowernumber );
 }
 
-=head2 GetMemberAccountRecords
-
-  ($total, $acctlines, $count) = &GetMemberAccountRecords($borrowernumber);
-
-Looks up accounting data for the patron with the given borrowernumber.
-
-C<&GetMemberAccountRecords> returns a three-element array. C<$acctlines> is a
-reference-to-array, where each element is a reference-to-hash; the
-keys are the fields of the C<accountlines> table in the Koha database.
-C<$count> is the number of elements in C<$acctlines>. C<$total> is the
-total amount outstanding for all of the account lines.
-
-=cut
-
-#'
-sub GetMemberAccountRecords {
-    my ($borrowernumber,$date) = @_;
-    my $dbh = C4::Context->dbh;
-    my @acctlines;
-    my $numlines = 0;
-    my $strsth      = qq(
-                        SELECT * 
-                        FROM accountlines 
-                        WHERE borrowernumber=?);
-    my @bind = ($borrowernumber);
-    if ($date && $date ne ''){
-            $strsth.=" AND date < ? ";
-            push(@bind,$date);
-    }
-    $strsth.=" ORDER BY date desc,timestamp DESC";
-    my $sth= $dbh->prepare( $strsth );
-    $sth->execute( @bind );
-    my $total = 0;
-    while ( my $data = $sth->fetchrow_hashref ) {
-        my $biblio = GetBiblioFromItemNumber($data->{itemnumber}) if $data->{itemnumber};
-        $data->{biblionumber} = $biblio->{biblionumber};
-        $data->{title} = $biblio->{title};
-        $acctlines[$numlines] = $data;
-        $numlines++;
-        if (defined($data->{'amountoutstanding'})) {
-          $total += int(10000 * $data->{'amountoutstanding'}); # convert float to integer to avoid round-off errors
-        }
-    }
-    $total /= 10000;
-    return ( $total, \@acctlines,$numlines);
-}
 
 =head2 GetBorNotifyAcctRecord
 
@@ -2136,7 +2099,11 @@ EOF
     my ($enrolmentfee) = $sth->fetchrow;
     if ($enrolmentfee && $enrolmentfee > 0) {
         # insert fee in patron debts
-        manualinvoice($borrower->{'borrowernumber'}, '', '', 'A', $enrolmentfee);
+        C4::Accounts::manualinvoice(
+         borrowernumber => $borrower->{'borrowernumber'},
+         accounttype    => 'A', 
+         amount         => $enrolmentfee
+        );
     }
     return $date if ($sth);
     return 0;

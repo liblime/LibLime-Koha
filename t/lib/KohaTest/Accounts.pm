@@ -16,7 +16,6 @@ sub methods : Test( 1 ) {
                       makepayment
                       getnextacctno
                       returnlost
-                      manualinvoice
                       fixcredit
                       refund
                       getcharges

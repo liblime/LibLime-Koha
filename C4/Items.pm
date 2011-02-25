@@ -159,6 +159,30 @@ sub GetItem {
     return $data;
 }    # sub GetItem
 
+## not exported.
+## given an array of itemnumbers, get the biblionumbers and map, returning a hash.
+## an undef itemnumber gets an undef biblionumber.
+## This function is for lookup outside of a loop for swifter processing, relying on
+## SQL subquery IN().
+sub MapBibs2Items
+{
+   my %g     = @_;
+   my %i2b   = (); # empty, don't void
+   my $dbh   = C4::Context->dbh();
+   my $sth   = $dbh->prepare(sprintf("
+      SELECT itemnumber,biblionumber
+        FROM items
+       WHERE itemnumber IN(%s)",
+         join(',',map{'?'}@{$g{inums}})
+      )
+   );
+   $sth->execute(@{$g{inums}});
+   while(my $row = $sth->fetchrow_hashref()) {
+      $i2b{$$row{itemnumber}} = $$row{biblionumber};
+   }
+   return \%i2b;
+}
+
 
 =head2 CartToShelf
 

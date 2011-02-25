@@ -7,6 +7,7 @@ use warnings;
 use Test::More;
 
 use C4::Members;
+use C4::Accounts;
 
 sub testing_class { 'C4::Members' }
 
@@ -53,8 +54,13 @@ sub startup_create_detailed_borrower : Test( startup => 2 ) {
     $user        = '';
 
     my $acct_added =
-      C4::Accounts::manualinvoice( $borrowernumber, undef, $description, $type, $amount,
-        $user );
+      C4::Accounts::manualinvoice( 
+         borrowernumber => $borrowernumber,
+         description    => $description, 
+         accounttype    => $type, 
+         amount         => $amount,
+         user           => $user 
+      );
 
     ok( $acct_added == 0, 'added account for borrower' );
 

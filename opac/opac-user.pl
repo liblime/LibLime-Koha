@@ -31,6 +31,7 @@ use C4::Items;
 use C4::LostItems;
 use C4::Dates qw/format_date/;
 use C4::Letters;
+use C4::Accounts;
 use C4::Branch; # GetBranches
 
 my $query = new CGI;
@@ -128,7 +129,7 @@ foreach my $issue ( @issue_list ) {
         $issue->{'reserved'} = 1;
     }
     
-    my ( $total , $accts, $numaccts) = GetMemberAccountRecords( $borrowernumber );
+    my ($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
     my $charges = 0;
     foreach my $ac (@$accts) {
         if ( $ac->{'itemnumber'} == $issue->{'itemnumber'} ) {

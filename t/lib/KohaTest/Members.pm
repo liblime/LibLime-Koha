@@ -26,7 +26,6 @@ sub methods : Test( 1 ) {
                       UpdateGuarantees 
                       GetPendingIssues 
                       GetAllIssues 
-                      GetMemberAccountRecords 
                       GetBorNotifyAcctRecord 
                       checkuniquemember 
                       checkcardnumber 

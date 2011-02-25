@@ -38,7 +38,7 @@ $(document).ready(function(){
 </ul>
 <div class="tabs-container">
 
-<form action="/cgi-bin/koha/members/mancredit.pl" method="post">
+<form action="/cgi-bin/koha/members/mancredit.pl" method="post" name="myf">
 <input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
 
 <fieldset class="rows">
@@ -51,8 +51,31 @@ $(document).ready(function(){
 	<li><label for="desc">Description: </label><input type="text" name="desc" size="50" id="desc" /></li>
 	<li><label for="amount">Amount: </label><input type="text" name="amount" id="amount" /> Example: 5.00</li>
 </ol></fieldset>
+<input type=hidden name="add" value="1">
+<fieldset class="action"><input type="button" value="Add Credit" 
+onclick="valForm();"/> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
+<script>
+function valForm() {
+   var msg = '';
+   if (document.myf.desc.value=='') {
+      msg += 'Description is required.\n';
+   }
+   if (document.myf.amount.value=='') {
+      msg += 'Amount is required.\n';
+   }
+   else if (document.myf.amount.value==0) {
+      msg += 'Amount must be non-zero.\n';
+      documnet.myf.amount.value = '';
+   }
 
-<fieldset class="action"><input type="submit" name="add" value="Add Credit" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
+   if (msg != '') {
+      alert(msg);
+   }
+   else {
+      return document.myf.submit();
+   }
+}
+</script>
 </form>
 
 </div></div>

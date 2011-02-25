@@ -825,8 +825,10 @@ sub CanBookBeIssued {
     #
 
     # DEBTS
-    my ($amount) =
-      C4::Members::GetMemberAccountRecords( $borrower->{'borrowernumber'}, '' && $duedate->output('iso') );
+    my $amount = C4::Accounts::MemberAllAccounts( 
+      borrowernumber => $borrower->{'borrowernumber'}, 
+      date           => '' && $duedate->output('iso'),
+    );
     my $cat = C4::Members::GetCategoryInfo($$borrower{categorycode}) // {};
     $$cat{circ_block_threshold} //= 0;
     if ( C4::Context->preference("IssuingInProcess") ) {
@@ -1645,7 +1647,13 @@ sub AddReturn {
                my ($circ_policy) = C4::Circulation::GetIssuingRule($gmborrower->{categorycode},$lost_item->{itemtype},$lostreturned_issue->{branchcode});
                if ($circ_policy->{max_fine}) {
                 ## don't invoice legacy data with no old issues and hence no borrower
-                manualinvoice($lostreturned_issue->{borrowernumber},$itemnumber, 'Max overdue fine', 'F', $circ_policy->{max_fine});
+                C4::Accounts::manualinvoice(
+                  borrowernumber => $lostreturned_issue->{borrowernumber},
+                  itemnumber     => $itemnumber, 
+                  description    => 'Max overdue fine', 
+                  accounttype    => 'F', 
+                  amount         => $circ_policy->{max_fine}
+                );
                }
             }
         }

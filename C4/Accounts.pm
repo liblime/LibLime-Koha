@@ -33,11 +33,10 @@ BEGIN {
 	require Exporter;
 	@ISA    = qw(Exporter);
 	@EXPORT = qw(
-		&recordpayment &makepayment &manualinvoice
+		&recordpayment &makepayment
 		&getnextacctno &reconcileaccount &getcharges &getcredits
 		&ReversePayment
 		&getrefunds &chargelostitem makepartialpayment
-                &refundlostitemreturned
 	); # removed &fixaccounts
 }
 
@@ -55,7 +54,7 @@ The functions in this module deal with the monetary aspect of Koha,
 including looking up and modifying the amount of money owed by a
 patron.
 
-## FIXME: Please complete this list; see manualinvoice() -hQ
+## FIXME: Please complete this list -hQ
 Account types (accounttype):
 
    A     ??
@@ -88,7 +87,8 @@ will be credited to the next one.
 =cut
 
 #'
-sub recordpayment {
+sub recordpayment 
+{
 
     #here we update the account lines
     my ( $borrowernumber, $data ) = @_;
@@ -164,6 +164,48 @@ sub recordpayment {
         $sth2->execute($borrowernumber);
       }
     }
+}
+
+sub MemberAllAccounts
+{
+   my %g = @_;
+   die "borrowernumber required" unless $g{borrowernumber};
+   my $dbh = C4::Context->dbh;
+   my $sth;
+
+   if ($g{total_only}) {
+      $sth = $dbh->prepare('
+         SELECT SUM(amountoutstanding)
+           FROM accountlines
+          WHERE borrowernumber = ?');
+      $sth->execute($g{borrowernumber});
+      return ($sth->fetchrow_array)[0];
+   }
+
+   my @vals  = ($g{borrowernumber});
+   my $total = 0;
+   my $sql = "
+      SELECT accountlines.*,
+             biblio.title,
+             items.biblionumber,
+             items.barcode
+        FROM accountlines
+   LEFT JOIN items ON  (accountlines.itemnumber = items.itemnumber)
+   LEFT JOIN biblio ON (items.biblionumber      = biblio.biblionumber)
+       WHERE accountlines.borrowernumber        = ?";
+   if ($g{date}) {
+      $sql .= ' AND date < ? ';
+      push @vals, $g{date};
+   }
+   $sql .= ' ORDER BY date desc,timestamp DESC';
+   $sth = $dbh->prepare($sql);
+   $sth->execute(@vals);
+   my @all = ();
+   while(my $row = $sth->fetchrow_hashref()) { 
+      $total += $$row{amountoutstanding};
+      push @all, $row;
+   }
+   return $total, \@all;
 }
 
 =head2 makepayment
@@ -332,24 +374,46 @@ sub getnextacctno ($) {
     return ($sth->fetchrow || 1);
 }
 
-=head2 refundlostitemreturned ($borrowernumber, $accountnumber)
+sub refundlostitemreturned 
+{
+   my %g = @_;
+   die "requires accountno of lost item: $!" unless $g{accountno};
+   die "requires borrowernumber: $!" unless $g{borrowernumber};
+   die "requires itemnumber of lost item" unless $g{itemnumber};
+   my $dbh = C4::Context->dbh;
+   my $sth;
 
-  &refundlostitemreturned($borrowernumber, $accountnumber)
+   unless ($g{amount}) {
+      $sth = $dbh->prepare('SELECT amountoutstanding FROM accountlines
+         WHERE accountno = ?
+           AND borrowernumber = ?
+           AND itemnumber = ?');
+      $sth->execute($g{accountno},$g{borrowernumber},$g{itemnumber});
+      $g{amount} = ($sth->fetchrow_array)[0];
+   }
 
-=cut
-
-sub refundlostitemreturned($$) {
-
-  my ($borrowernumber, $accountnumber) = @_;
-  my $dbh = C4::Context->dbh;
-  my $sth = $dbh->prepare(
-    "UPDATE accountlines
-       SET amountoutstanding = 0, accounttype = 'CR'
-       WHERE borrowernumber = ?
-         AND accountno = ?"
-  );
-  $sth->execute($borrowernumber, $accountnumber);
-
+   my $newno = getnextacctno($g{borrowernumber});
+   $sth = $dbh->prepare("
+      INSERT INTO accountlines(
+         date,
+         accountno,
+         borrowernumber,
+         itemnumber,
+         description,
+         amount,
+         amountoutstanding,
+         accounttype
+      ) VALUES (NOW(),?,?,?,?,?,?,?)");
+   $sth->execute(
+      $newno,
+      $g{borrowernumber},
+      $g{itemnumber},
+      'Refund lost item returned',
+      $g{amount},
+      0,
+      'REF'
+   );
+   return $newno;
 }
 
 =head2 fixaccounts (removed)
@@ -450,7 +514,7 @@ sub rechargeClaimsReturnedUndo
          $accountno,
          $$li{itemnumber},
          $replacementprice,
-         "Lost Item $$li{title} $$li{barcode}",
+         'Lost Item',
          'L',
          $replacementprice,
          $$li{borrowernumber}
@@ -501,7 +565,7 @@ sub chargelostitem{
             (borrowernumber,accountno,date,amount,description,accounttype,amountoutstanding,itemnumber)
             VALUES (?,?,now(),?,?,'L',?,?)");
             $sth2->execute($issues->{'borrowernumber'},$accountno,$issues->{'replacementprice'} || $issues->{'replacement_price'} || 0,
-            "Lost Item $issues->{'title'} $issues->{'barcode'}",
+            'Lost Item',
             $issues->{'replacementprice'} || $issues->{'replacement_price'} || 0,$itemnumber);
             $sth2->finish;
         # FIXME: Log this ?
@@ -517,115 +581,96 @@ sub chargelostitem{
 
 =head2 manualinvoice
 
-  &manualinvoice($borrowernumber, $itemnumber, $description, $type,
-                 $amount, $user);
+args:
 
-C<$borrowernumber> is the patron's borrower number.
-C<$description> is a description of the transaction.
-C<$type> may be one of C<CS>, C<CB>, C<CW>, C<CF>, C<CL>, C<N>, C<L>,
-or C<REF>.
-C<$itemnumber> is the item involved, if pertinent; otherwise, it
-should be the empty string.
+   borrowernumber req
+   accounttype    req   pseudonymn type
+   amount         req
+   itemnumber     op
+   description    op
+   user           op
 
 =cut
 
-#'
-# FIXME: In Koha 3.0 , the only account adjustment 'types' passed to this function
-# are :  
-# 		'C' = CREDIT
-# 		'FOR' = FORGIVEN  (Formerly 'F', but 'F' is taken to mean 'FINE' elsewhere)
-# 		'N' = New Card fee
-# 		'F' = Fine
-# 		'A' = Account Management fee
-# 		'M' = Sundry
-# 		'L' = Lost Item
-#
 # I am guessing $user refers to the username (userid) of the logged in librarian -hQ
-sub manualinvoice {
-    my ( $borrowernumber, $itemnum, $desc, $type, $amount, $user ) = @_;
-    my $dbh      = C4::Context->dbh;
-    my $notifyid = 0;
-    my $insert;
-    $itemnum =~ s/ //g;
-    my $accountno  = getnextacctno($borrowernumber);
-    my $amountleft = $amount;
 
-#    if (   $type eq 'CS'
-#        || $type eq 'CB'
-#        || $type eq 'CW'
-#        || $type eq 'CF'
-#        || $type eq 'CL' )
-#    {
-#        my $amount2 = $amount * -1;    # FIXME - $amount2 = -$amount
-#        $amountleft =
-#          fixcredit( $borrowernumber, $amount2, $itemnum, $type, $user );
-#    }
-    if ( $type eq 'N' ) {
-        $desc .= " New Card";
-    }
-    if ( $type eq 'F' ) {
-        $desc .= " Fine";
-    }
-    if ( $type eq 'A' ) {
-        $desc .= " Account Management fee";
-    }
-    if ( $type eq 'M' ) {
-        $desc .= " Sundry";
-    }
-
-    if ( $type eq 'L' && $desc eq '' ) {
-
-        $desc = " Lost Item";
-    }
-#    if ( $type eq 'REF' ) {
-#        $desc .= " Cash Refund";
-#        $amountleft = refund( '', $borrowernumber, $amount );
-#    }
-    if (   ( $type eq 'L' )
-        or ( $type eq 'F' )
-        or ( $type eq 'A' )
-        or ( $type eq 'N' )
-        or ( $type eq 'M' ) )
-    {
-        $notifyid = 1;
-    }
-
-    if ( $itemnum ne '' ) {
-        $desc .= " " . $itemnum;
-        my $sth = $dbh->prepare(
-            "INSERT INTO  accountlines
-                        (borrowernumber, accountno, date, amount, description, accounttype, amountoutstanding, itemnumber,notify_id)
-        VALUES (?, ?, now(), ?,?, ?,?,?,?)");
-     $sth->execute($borrowernumber, $accountno, $amount, $desc, $type, $amountleft, $itemnum,$notifyid) || return $sth->errstr;
-  } else {
-    my $sth=$dbh->prepare("INSERT INTO  accountlines
-            (borrowernumber, accountno, date, amount, description, accounttype, amountoutstanding,notify_id)
-            VALUES (?, ?, now(), ?, ?, ?, ?,?)"
-        );
-        $sth->execute( $borrowernumber, $accountno, $amount, $desc, $type,
-            $amountleft, $notifyid );
-    }
+sub manualinvoice 
+{
+    my %g = @_;
+    foreach(qw(amount borrowernumber)) { die "$_ is required" unless $g{$_} }
+    $g{accounttype} ||= $g{type} || 'M';
+    delete ($g{type});
+    my $dbh = C4::Context->dbh;
+    my %t = (
+      'N'   ,'New Card',
+      'F'   ,'Fine',
+      'A'   ,'Account Management Fee',
+      'M'   ,'Sundry',
+      'L'   ,'Lost Item'
+    );
+   $g{notify_id} = 0;
+   if (exists $t{$g{accounttype}}) {
+      $g{description} = $t{$g{accounttype}} . ($g{description}? ", $g{description}" : '');
+      $g{notify_id}   = 1;
+   }
+   if ($g{description} && $g{user}) {
+      $g{description} .= "- $g{user}";
+      delete $g{user};
+   }
+   $g{accountno}         = getnextacctno($g{borrowernumber});
+   $g{amountoutstanding} = $g{amount};
+   my $sql = sprintf("INSERT INTO  accountlines (date,%s)
+      VALUES(NOW(),%s)",
+      join(',',keys %g),
+      join(',',map{'?'}keys %g)
+   );
+   my $sth = $dbh->prepare($sql);
+   $sth->execute(values %g);
 
     # Check if EnableOwedNotification is ON.  If so, then check the total
     # amount owed on the patron account.  If less than OwedNotificationValue,
     # then NULL out the amount_notify_date field in the borrowers table.
 
-    if (C4::Context->preference('EnableOwedNotification')) {
-      my $sth = $dbh->prepare(
+   if (C4::Context->preference('EnableOwedNotification')) {
+      $sth = $dbh->prepare(
         "SELECT SUM(amountoutstanding) AS amountdue FROM accountlines WHERE borrowernumber=?"
       );
-      $sth->execute($borrowernumber);
+      $sth->execute($g{borrowernumber});
       my $data = $sth->fetchrow_hashref;
       if ($data->{amountdue} < C4::Context->preference('OwedNotificationValue')){
         my $sth2 = $dbh->prepare(
           "UPDATE borrowers SET amount_notify_date=NULL WHERE borrowernumber = ?"
         );
-        $sth2->execute($borrowernumber);
+        $sth2->execute($g{borrowernumber});
       }
-    }
+   }
 
-    UpdateStats( my $branch = '', my $stattype = 'maninvoice', $amount, my $other = $type, $itemnum, my $itemtype, $borrowernumber, $accountno);
-    return 0;
+   my $itemtype;
+   ITYPE: {
+      last ITYPE unless $g{itemnumber};
+      $sth = $dbh->prepare('SELECT itype FROM items WHERE itemnumber=?');
+      $sth->execute($g{itemnumber});
+      $itemtype = ($sth->fetchrow_array)[0];
+      last ITYPE if $itemtype;
+      $sth = $dbh->prepare('
+         SELECT itemtype FROM biblioitems
+      LEFT JOIN items ON (items.biblionumber = biblioitems.biblionumber)
+          WHERE items.itemnumber = ?');
+      $sth->execute($g{itemnumber});
+      $itemtype = ($sth->fetchrow_array)[0];
+      ; # last ITYPE
+   }
+   C4::Stats::UpdateStats( 
+      '', # branch
+      'maninvoice', 
+      $g{amount}, 
+      $g{accounttype}, 
+      $g{itemnumber}, 
+      $itemtype, 
+      $g{borrowernumber}, 
+      $g{accountno}
+   );
+   return $g{accountno};
 }
 
 =head2 fixcredit #### DEPRECATED

@@ -156,8 +156,10 @@ if ( $check == 0 ) {  # fetch and display accounts
 sub add_accounts_to_template {
     my $borrowernumber = shift;
 
-    my ( $total, $accts, $numaccts) = GetMemberAccountRecords( $borrowernumber );
-
+    my ($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
+    my $numaccts = scalar @$accts;
+    my @inums = map {$$_{itemnumber}} @$accts;
+    my %i2b = %{C4::Items::MapBibs2Items(inums=>\@inums)};
 
     my $allfile = [];
     my @notify = NumberNotifyId($borrowernumber);
@@ -170,13 +172,14 @@ sub add_accounts_to_template {
         if (!$numaccts) {
             next;
         }
-        for my $acct ( @{$accts} ) {
+        foreach my $acct (@$accts) {
             if ( $acct->{amountoutstanding} != 0 ) {
                 $acct->{amount}            += 0.00;
                 $acct->{amountoutstanding} += 0.00;
                 my $line = {
                     i                 => "_$line_id",
                     itemnumber        => $acct->{itemnumber},
+                    biblionumber      => $i2b{$$acct{itemnumber}},
                     accounttype       => $acct->{accounttype},
                     amount            => sprintf('%.2f', $acct->{amount}),
                     amountoutstanding => sprintf('%.2f', $acct->{amountoutstanding}),

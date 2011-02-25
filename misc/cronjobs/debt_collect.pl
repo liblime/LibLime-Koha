@@ -121,7 +121,7 @@ use C4::Overdues::UniqueMgmt;
 use C4::Branch qw( GetBranchName );
 use C4::Circulation;
 use C4::Overdues;
-use C4::Accounts qw( manualinvoice );
+use C4::Accounts;
 use C4::Members;
 use C4::Letters;
 use Getopt::Long;
@@ -182,7 +182,7 @@ foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignore
     }
     my $sent_fine = GetFineByDescription( $borrower->{'borrowernumber'}, 'A', "Sent to collections agency" );
     $sent_fine = GetFineByDescription( $borrower->{'borrowernumber'}, 'A', $once ) if ( !($sent_fine || $sent_fine->{'amountoutstanding'}) && $once && $once ne '1' ); # Since $once might be a string
-    my ( $total, $acctlines, $numlines ) = GetMemberAccountRecords( $borrower->{'borrowernumber'} );
+    my ($total,$acctlines) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrower->{'borrowernumber'});
 
     if ( $borrower->{'last_reported_date'} && $borrower->{'last_reported_amount'} > 0 ) {
         if ( $borrower->{'last_reported_date'} eq $today ) {
@@ -246,7 +246,12 @@ foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignore
         }
 
         if ( $confirm && !( $once && $sent_fine && $sent_fine->{'amountoutstanding'} ) ) {
-            manualinvoice( $borrower->{borrowernumber}, '', 'Sent to collections agency - ', 'A', $send_fine, '' );
+            C4::Accounts::manualinvoice( 
+               borrowernumber => $borrower->{borrowernumber},
+               description    => 'Sent to collections agency', 
+               accounttype    => 'A', 
+               amount         => $send_fine
+            );
             $total += $send_fine;
         }
 

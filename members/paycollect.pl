@@ -49,7 +49,7 @@ my $user = $input->remote_user;
 my $branches = GetBranches();
 my $branch = GetBranch( $input, $branches );
 
-my ( $total_due, $accts, $numaccts ) = GetMemberAccountRecords($borrowernumber);
+my $total_due = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber,total_only=>1);
 my $total_paid = $input->param('paid');
 
 my $individual = $input->param('pay_individual');

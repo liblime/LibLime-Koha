@@ -99,9 +99,11 @@ sub ForgiveFineForClaimsReturned
    ACCOUNT:
    foreach(@$acctLns) {
       if ($$_{accounttype} eq 'L') {
-         C4::Accounts::refundlostitemreturned(
-            $$li{borrowernumber},
-            $$_{accountno}
+         my $newno = C4::Accounts::refundlostitemreturned(
+            borrowernumber => $$li{borrowernumber},
+            accountno      => $$_{accountno},
+            itemnumber     => $$_{itemnumber},
+            description    => $$_{description},
          );
          ## change the description to something meaningful
          $sth = $dbh->prepare('UPDATE accountlines 
@@ -109,9 +111,9 @@ sub ForgiveFineForClaimsReturned
                 accounttype = ?
           WHERE accountno   = ?');
          $sth->execute(
-            "Claims Returned $$li{title} $$li{barcode}",
+            'Claims Returned',
             'FOR',
-            $$_{accountno}
+            $newno
          );
          last ACCOUNT;
       }

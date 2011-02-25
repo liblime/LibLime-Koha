@@ -147,7 +147,13 @@ elsif ($lost_item && $itemlost==0) {
         my $borrower = GetMember($lostreturned_issue->{borrowernumber},'borrowernumber');
         my ($circ_policy) = C4::Circulation::GetIssuingRule($borrower->{categorycode},$lost_item->{itemtype},$lostreturned_issue->{branchcode});
         if ($circ_policy->{max_fine}) {
-            manualinvoice($lostreturned_issue->{borrowernumber},$itemnumber, 'Max overdue fine', 'F', $circ_policy->{max_fine});
+            C4::Accounts::manualinvoice(
+               borrowernumber => $lostreturned_issue->{borrowernumber},
+               itemnumber     => $itemnumber, 
+               description    => 'Max overdue fine', 
+               accounttype    => 'F', 
+               amount         => $circ_policy->{max_fine}
+            );
         }
     }
 }

@@ -55,7 +55,11 @@ if ($refund){
     my $accountno=$input->param('accountno');
     my $itemnumber=$input->param('itemnumber');
     my $borrowernumber=$input->param('borrowernumber');
-    refundlostitemreturned($borrowernumber,$accountno);
+    C4::Accounts::refundlostitemreturned(
+      borrowernumber => $borrowernumber,
+      accountno      => $accountno,
+      itemnumber     => $itemnumber,
+    );
     print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
 } else {
 	my ($template, $loggedinuser, $cookie)
@@ -67,9 +71,9 @@ if ($refund){
 					  debug => 1,
 					  });
 
-    my ($total, $accts, $numaccts) = GetMemberAccountRecords($borrowernumber);
+    my ($total, $accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
     my @accountrows;
-    for (my $i = 0; $i < $numaccts; $i++) {
+    for (my $i = 0; $i < @$accts; $i++) {
       if ($accts->[$i]{'accounttype'} eq 'RCR') {
         $accts->[$i]{'amount'}            += 0.00;
         $accts->[$i]{'amountoutstanding'} += 0.00;

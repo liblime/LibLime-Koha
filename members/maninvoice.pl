@@ -39,39 +39,17 @@ my $borrowernumber=$input->param('borrowernumber');
 
 # get borrower details
 my $data=GetMember($borrowernumber,'borrowernumber');
-my $add=$input->param('add');
-if ($add){
-#  print $input->header;
-    my $barcode=$input->param('barcode');
-	my $itemnum;
-    if ($barcode) {
-        $itemnum = GetItemnumberFromBarcode($barcode);
-    }
-    my $desc=$input->param('desc');
-    my $amount=$input->param('amount');
-    my $type=$input->param('type');
-    my $error=manualinvoice($borrowernumber,$itemnum,$desc,$type,$amount);
-	if ($error){
-		my ($template, $loggedinuser, $cookie)
-		  = get_template_and_user({template_name => "members/maninvoice.tmpl",
-					query => $input,
-					type => "intranet",
-					authnotrequired => 0,
-					flagsrequired => {borrowers => '*'},
-					debug => 1,
-					});
-		if ($error =~ /FOREIGN KEY/ && $error =~ /itemnumber/){
-			$template->param('ITEMNUMBER' => 1);
-		}
-		$template->param('ERROR' => $error);
-        output_html_with_http_headers $input, $cookie, $template->output;
-	}
-	else {
-		print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
-		exit;
-	}
+if ($input->param('add')){
+   C4::Accounts::manualinvoice(
+      borrowernumber => $borrowernumber,
+      itemnumber     => GetItemnumberFromBarcode($input->param('barcode')),
+      description    => $input->param('desc'),
+      accounttype    => $input->param('type'),
+      amount         => $input->param('amount'),
+   );
+   print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
+   exit;
 } else {
-
 	my ($template, $loggedinuser, $cookie)
 	= get_template_and_user({template_name => "members/maninvoice.tmpl",
 					query => $input,

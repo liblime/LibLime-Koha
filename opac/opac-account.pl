@@ -21,6 +21,7 @@
 use strict;
 use CGI;
 use C4::Members;
+use C4::Accounts;
 use C4::Circulation;
 use C4::Auth;
 use C4::Output;
@@ -47,9 +48,9 @@ $bordat[0] = $borr;
 $template->param( BORROWER_INFO => \@bordat );
 
 #get account details
-my ( $total , $accts, $numaccts) = GetMemberAccountRecords( $borrowernumber );
+my ($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
 
-for ( my $i = 0 ; $i < $numaccts ; $i++ ) {
+for ( my $i = 0 ; $i < @$accts ; $i++ ) {
     $accts->[$i]{'date'} = format_date( $accts->[$i]{'date'} );
     $accts->[$i]{'amount'} = sprintf( "%.2f", $accts->[$i]{'amount'} );
     if ( $accts->[$i]{'amount'} >= 0 ) {
