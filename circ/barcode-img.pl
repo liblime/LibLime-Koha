@@ -28,7 +28,7 @@ use GD::Barcode;
 
 my $input = new CGI;
 my %cookies = fetch CGI::Cookie;
-my ($auth_status, $sessionID) = check_cookie_auth($cookies{'CGISESSID'}->value, { circulation => 1 });
+my ($auth_status, $sessionID) = check_cookie_auth($cookies{'CGISESSID'}->value, { circulate => '*' });
 
 if ($auth_status ne "ok") {
     my $reply = CGI->new("");
