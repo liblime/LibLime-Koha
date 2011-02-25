@@ -4384,6 +4384,37 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update to $DBversion )\n";
 }
 
+$DBversion = '4.03.14.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do("
+       UPDATE language_rfc4646_to_iso639 SET iso639_2_code='arm' WHERE rfc4646_subtag='hy'");
+    $dbh->do("
+       UPDATE language_rfc4646_to_iso639 SET iso639_2_code='eng' WHERE rfc4646_subtag='en'");
+    $dbh->do("
+       UPDATE language_rfc4646_to_iso639 SET iso639_2_code='fre' WHERE rfc4646_subtag='fr'");
+    $dbh->do("
+       UPDATE language_rfc4646_to_iso639 SET iso639_2_code='ita' WHERE rfc4646_subtag='it'");
+    $dbh->do("
+       INSERT INTO language_rfc4646_to_iso639 VALUES
+         ('fi','fin'),
+         ('hmn','hmn'),
+         ('lo','lao'),
+         ('sr','srp'),
+         ('tet','tet'),
+         ('ur','urd')
+    ");
+    $dbh->do("
+       INSERT INTO language_subtag_registry VALUES
+         ('hmn','language','Hmong',NOW()) ");
+    $dbh->do("
+       INSERT INTO language_descriptions VALUES
+         ('hmn','language','en','Hmong'),
+         ('hmn','language','hmn','Hmoob') ");
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Corrected ISO639-2 language codes )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
