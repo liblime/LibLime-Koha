@@ -872,7 +872,7 @@ sub CheckReserves {
             }
             # FIXME - $item might be undefined or empty: the caller
             # might be searching by barcode.
-            if ( $res->{'itemnumber'} == $item && $res->{'priority'} == 0) {
+            if ( ($res->{itemnumber} // -1) == $item && $res->{priority} == 0) {
                 # Found it
                 $exact = $res;
                 last;
