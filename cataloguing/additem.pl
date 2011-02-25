@@ -320,8 +320,7 @@ foreach my $field (@fields) {
         push(@big_array, \%this_row);
     }
 }
-use Data::Dumper;
-warn Dumper \%witness;
+
 my ($holdingbrtagf,$holdingbrtagsubf) = &GetMarcFromKohaField("items.holdingbranch",$frameworkcode);
 @big_array = sort {$a->{$holdingbrtagsubf} cmp $b->{$holdingbrtagsubf}} @big_array;
 
