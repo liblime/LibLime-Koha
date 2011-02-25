@@ -260,10 +260,11 @@ $(document).ready(function() {
 	  <th>Placed</th>
 	  <th>Expires</th>
 	  <th>Title</th>
+          <th>Note</th>
           <th>Item Type</th>
 	  <th>Call Number</th>
 	  <th>Barcode</th>
-	  <th>Priority</th>
+	  <th>Rank</th>
 	  <th>Cancel?</th>
 	  <th>Suspended?</th>
       </tr></thead>
@@ -273,6 +274,7 @@ $(document).ready(function() {
           <td><!-- TMPL_VAR NAME="reservedate" --></td>
           <td align=center><!-- TMPL_VAR NAME="holdexpdate" --></td>
           <td><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
+          <td><TMPL_VAR NAME="reservenotes"></td>
           <td><!-- TMPL_VAR NAME="itemtype" --></td>
           <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
           <td>

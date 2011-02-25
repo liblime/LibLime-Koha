@@ -26,7 +26,7 @@ sub GetReservesLoop {
         foreach (qw(waiting transfered nottransfered)) {
             $getreserv{$_} = 0;
         }
-        $getreserv{reservedate}  = C4::Dates->new($num_res->{'reservedate'},'iso')->output('syspref');
+        $getreserv{reservedate}  = $num_res->{'reservedate'};
         if (($num_res->{'found'} // '') eq 'W') {
             $getreserv{holdexpdate} = format_date($num_res->{'expirationdate'});
         }
@@ -76,6 +76,7 @@ sub GetReservesLoop {
         $getreserv{pickupbranch} = C4::Branch::GetBranchName($num_res->{branchcode});
         $getreserv{waitingposition} = $num_res->{'priority'};
         $getreserv{reservenumber} = $num_res->{'reservenumber'};
+        $getreserv{reservenotes} = $num_res->{reservenotes};
         push( @reserveloop, \%getreserv );
     }
     return \@reserveloop;
