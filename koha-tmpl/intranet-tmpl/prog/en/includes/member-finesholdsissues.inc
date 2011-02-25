@@ -6,10 +6,9 @@ $(document).ready(function() {
 		dateFormat: 'uk',<!-- /TMPL_IF -->
 		headers: { 1: { sorter: 'articles' },5: { sorter: false },6:{sorter:false},7:{sorter:false},8:{sorter:false}}
 	}); 
-	$("#holdst").tablesorter({<!-- TMPL_IF NAME="dateformat_metric" -->
-		dateFormat: 'uk',<!-- /TMPL_IF -->
-		sortList: [[0,0]],
-		headers: { 1: { sorter: 'articles' },6: { sorter: false }}
+	$("#holdst").tablesorter({
+		sortList: [[1,0]],
+		headers: { 9: {sorter: false}, 10: {sorter: false} }
 	}); 
     <!-- TMPL_IF NAME="picture" -->
     // new YAHOO.widget.Button("delpicture");   // FIXME: formatting mismatch between YUI and normal button
@@ -53,6 +52,13 @@ $(document).ready(function() {
            });
 		}
 	});
+
+  $('#SuspendAll').click(
+    function() {
+      $("INPUT[class='suspend_checkbox']").attr('checked', $('#SuspendAll').is(':checked'));
+    }
+  );
+
  });
 </script>
 
@@ -266,7 +272,7 @@ $(document).ready(function() {
 	  <th>Barcode</th>
 	  <th>Rank</th>
 	  <th>Cancel?</th>
-	  <th>Suspended?</th>
+          <th>Suspend?<br/>(all: <input type="checkbox" id="SuspendAll"/>)</th>
       </tr></thead>
       <tbody><!-- TMPL_LOOP NAME="reservloop" -->
 	<tr class="<!-- TMPL_VAR NAME="color" -->">
@@ -317,7 +323,7 @@ $(document).ready(function() {
 	    <!-- TMPL_IF EXPR="waiting || transfered" -->
 	    Cannot Suspend Waiting or In-transit Items
 	    <!-- TMPL_ELSE -->
-	    <input type="checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" <TMPL_IF NAME="suspended">checked</TMPL_IF> value="1" />
+	    <input type="checkbox" class="suspend_checkbox" name="suspend_<!-- TMPL_VAR NAME="reservenumber" -->" <TMPL_IF NAME="suspended">checked</TMPL_IF> value="1" />
 	    <label>Resume on (optional):</label>
 	    <input type="text" size="10" maxlength="10" id="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" name="resumedate_<!-- TMPL_VAR NAME="reservenumber" -->" value="<TMPL_VAR NAME="waitingdate">" />
             <script type="text/javascript">
