@@ -168,8 +168,7 @@ sub recordpayment
 
 sub MemberAllAccounts
 {
-   my %g = @_;
-   die "borrowernumber required" unless $g{borrowernumber};
+   my %g   = @_;
    my $dbh = C4::Context->dbh;
    my $sth;
 

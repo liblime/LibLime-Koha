@@ -245,12 +245,14 @@ if ($op eq 'set_session_defaults') {
    ## check whether this is the last item in the bib record,
    ## if so, we can't delete it if there are holds on the bib.
    my $forceDelLastItem = $input->param('forceDelLastItem');
+   my $continue = 1;
    if (C4::Items::isLastItemInBib($biblionumber,$itemnumber) && !$forceDelLastItem) {
-      if (C4::Reserves::GetReservesFromBiblionumber($biblionumber)) {
+      if (@{C4::Reserves::GetReservesFromBiblionumber($biblionumber) // []}) {
          push @errors, 'title_has_holds';
+         $continue = 0;
       }
    }
-   else {
+   if ($continue) {
       # check that there is no issue on this item before deletion.
       my $sth=$dbh->prepare("select * from issues i where i.itemnumber=?");
       $sth->execute($itemnumber);

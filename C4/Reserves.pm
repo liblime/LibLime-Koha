@@ -1429,6 +1429,10 @@ sub _moveToOldReserves {
     my $sth;
     my $query;
 
+    ## dupecheck for development
+    $sth = $dbh->prepare('DELETE FROM old_reserves WHERE reservenumber=?');
+    $sth->execute($reservenumber);
+
     $query = "INSERT INTO old_reserves SELECT * FROM reserves WHERE reservenumber = ?";
     $sth = $dbh->prepare($query);
     $sth->execute($reservenumber) or
