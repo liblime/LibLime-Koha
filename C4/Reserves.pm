@@ -762,7 +762,6 @@ sub GetOldReservesFromBorrowernumber {
             FROM   old_reserves
             WHERE  borrowernumber=?
                 AND cancellationdate IS NULL
-                AND waitingdate IS NULL
                 AND (found IS NULL OR found <> 'F')
             ORDER BY expirationdate DESC
         ");
