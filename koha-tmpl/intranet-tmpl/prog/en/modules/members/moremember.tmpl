@@ -175,7 +175,7 @@ if (nodename =="barcodes[]"){
             <span class="label"><!-- TMPL_VAR NAME="description" -->:</span>
             <!-- TMPL_LOOP NAME="items" -->
             <!-- TMPL_IF NAME="itemnumber" -->
-            <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a><!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
+            <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<TMPL_VAR NAME="itemnumber">"><!-- TMPL_VAR NAME="barcode" --></a><!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
             <!-- TMPL_ELSE -->
             &lt;deleted item&gt;<!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
             <!-- /TMPL_IF -->

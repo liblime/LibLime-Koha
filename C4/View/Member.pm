@@ -10,6 +10,7 @@ use C4::Circulation;
 use C4::Dates qw(format_date);
 use C4::Branch;
 use C4::Members;
+use C4::Accounts;
 
 sub GetReservesLoop {
     my $borrowernumber = shift;
@@ -35,7 +36,7 @@ sub GetReservesLoop {
             $getreserv{waitingdate} = format_date($num_res->{waitingdate});
             $getreserv{holdexpdate} = '';
         }
-	foreach (qw(biblionumber title author itemcallnumber )) {
+	foreach (qw(biblionumber title author itemcallnumber itemnumber)) {
             $getreserv{$_} = $getiteminfo->{$_};
 	}
         $getreserv{barcodereserv}  = $getiteminfo->{'barcode'};
@@ -184,7 +185,10 @@ sub GetIssuesLoop {
 
 sub GetTotalFines {
     my $borrowernumber = shift;
-    my ( $total, undef, undef) = GetMemberAccountRecords( $borrowernumber );
+    my $total = C4::Accounts::MemberAllAccounts( 
+      borrowernumber => $borrowernumber,
+      total_only     => 1
+    );
     return $total;
 }
 

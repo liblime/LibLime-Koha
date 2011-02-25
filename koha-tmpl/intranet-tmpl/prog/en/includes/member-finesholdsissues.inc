@@ -285,7 +285,7 @@ $(document).ready(function() {
           <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
           <td>
             <!-- TMPL_IF name="barcodereserv" -->
-            <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="barcodereserv" --></a>
+            <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><!-- TMPL_VAR NAME="barcodereserv" --></a>
             <!-- /TMPL_IF -->
           </td>
           <td><!-- TMPL_IF name="waiting" -->

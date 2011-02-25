@@ -671,7 +671,7 @@ function checkMultiHold() {
       <!-- TMPL_IF Name="constrainttypea" -->
             <!-- TMPL_IF Name="item_level_hold" -->
                 <i>Only item
-                <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->">
+                <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">">
                      <!-- TMPL_IF NAME="barcodenumber" -->
                          <!-- TMPL_VAR NAME="barcodenumber" -->
                         <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
