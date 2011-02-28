@@ -26,6 +26,7 @@ use C4::Members;
 use C4::Accounts;
 use C4::Koha;
 use C4::Branch;
+use C4::Dates;
 
 my $input = new CGI;
 
@@ -43,7 +44,7 @@ my $borrowernumber = $input->param('borrowernumber');
 
 # get borrower details
 my $data = GetMember( $borrowernumber, 'borrowernumber' );
-my $user = $input->remote_user;
+my $user = C4::Context->userenv->{id};
 
 # get account details
 my $branches = GetBranches();
@@ -70,12 +71,20 @@ if ( $individual || $writeoff ) {
     my $title        = $input->param('title');
     my $notify_id    = $input->param('notify_id');
     my $notify_level = $input->param('notify_level');
+    my $itemnumber   = $input->param('itemnumber');
+    my $biblionumber = $input->param('biblionumber');
+    my $barcode      = $input->param('barcode');
+    my $date         = $input->param('date');
     $total_due = $amountoutstanding;
     $template->param(
+        itemnumber        => $itemnumber,
+        biblionumber      => $biblionumber,
+        barcode           => $barcode,
         accounttype       => $accounttype,
         accountno         => $accountno,
         amount            => $amount,
         amountoutstanding => $amountoutstanding,
+        date              => $date,
         title             => $title,
         description       => $description,
         notify_id         => $notify_id,

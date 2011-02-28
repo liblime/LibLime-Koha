@@ -1952,7 +1952,7 @@ sub FixAccountForLostAndReturned {
         $msth->finish;  # $msth might actually have data left
     }
     $amountleft *= -1 if ($amountleft > 0);
-    my $desc = "Item Returned " . $item_id;
+    my $desc = 'Lost Item Returned';
     my $type = (C4::Context->preference('RefundLostReturnedAmount')) ? 'RCR' : 'CR';
     $usth = $dbh->prepare("INSERT INTO accountlines
         (borrowernumber,accountno,itemnumber,date,amount,description,accounttype,amountoutstanding)
@@ -2364,7 +2364,7 @@ sub AddRenewal {
                     VALUES (now(),?,?,?,?,?,?,?)"
         );
         $sth->execute( $borrowernumber, $accountno, $charge,
-            "Renewal of Rental Item $item->{'title'} $item->{'barcode'}",
+            "Renewal of Rental Item",
             'Rent', $charge, $itemnumber );
         $sth->finish;
     }

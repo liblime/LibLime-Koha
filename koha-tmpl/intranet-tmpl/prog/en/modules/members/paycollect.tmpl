@@ -90,9 +90,15 @@ function moneyFormat(textObj) {
 <input type="hidden" name="amountoutstanding" id="amountoutstanding" value="<!-- TMPL_VAR name="amountoutstanding" -->" />
 <input type="hidden" name="accountno" id="accountno" value="<!-- TMPL_VAR name="accountno" -->" />
 <input type="hidden" name="title" id="title" value="<!-- TMPL_VAR name="title" -->" />
+<input type=hidden name="itemnumber" value="<TMPL_VAR NAME="itemnumber">">
+<input type=hidden name="biblionumber" value="<TMPL_VAR NAME="biblionumber">">
+<input type=hidden name="barcode" value="<TMPL_VAR NAME="barcode">">
 <table>
 <tr>
+<th>No.</th>
+<th>Date</th>
 <th>Description</th>
+<th>Title</th>
 <th>Account Type</th>
 <th>Notify id</th>
 <th>Level</th>
@@ -100,38 +106,34 @@ function moneyFormat(textObj) {
 <th>Amount Outstanding</th>
 </tr>
 <tr>
-<td>
-<!-- TMPL_VAR NAME="description" --> <!-- TMPL_VAR="title" escape="html" -->
-</td>
+<td><TMPL_VAR NAME="accountno"></td>
+<td><TMPL_VAR NAME="date"></td>
+<td><!-- TMPL_VAR NAME="description" --></td>
+<td><TMPL_IF NAME="itemnumber"><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a><br><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a><TMPL_ELSE>&nbsp;</TMPL_IF></td>
 <td><!-- TMPL_VAR name="accounttype" --></td>
 <td><!-- TMPL_VAR name="notify_id" --></td>
 <td><!-- TMPL_VAR name="notify_level" --></td>
 <td class="debit"><!-- TMPL_VAR name="amount" --></td>
-<td class="debit"><!-- TMPL_VAR name="amountoutstanding" --></td>
+<td class="debit" align=right><!-- TMPL_VAR name="amountoutstanding" --></td>
 </tr>
 <tr>
-<td>Total Amount Payable : </td>
-<td>
-<!-- TMPL_VAR NAME="amountoutstanding" -->
-</td>
+<td colspan=3>Total Amount Payable: </td>
+<td colspan=6 align=right><!-- TMPL_VAR NAME="amountoutstanding" --></td>
 </tr>
-<tr><td> </td></tr>
 <tr>
-<td>Collect From Patron: </td>
-<td>
+<td colspan=3>Collect From Patron: </td>
+<td colspan=6 align=right>
 <!-- default to paying all -->
-<input name="paid" id="paid" value="<!-- TMPL_VAR NAME="amountoutstanding" -->" onchange="moneyFormat(document.payindivfine.paid)"/>
+<input name="paid" id="paid" value="<!-- TMPL_VAR NAME="amountoutstanding" -->" onchange="moneyFormat(document.payindivfine.paid)" size="5" />
 </td>
 </tr>
-<tr><td>  </td></tr>
 <tr>
-<td rowspan="2">
+</td>
+</tr>
+</table><br>
 <input type="submit" name="submitbutton" value="Confirm" />
 <a class="cancel" href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a>
-</td>
-</tr>
 
-</table>
 <!-- TMPL_ELSIF NAME="writeoff_individual"-->
 <form name="woindivfine" action="/cgi-bin/koha/members/pay.pl" method="post" >
 <input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" />
@@ -144,9 +146,14 @@ function moneyFormat(textObj) {
 <input type="hidden" name="amountoutstanding" id="amountoutstanding" value="<!-- TMPL_VAR name="amountoutstanding" -->" />
 <input type="hidden" name="accountno" id="accountno" value="<!-- TMPL_VAR name="accountno" -->" />
 <input type="hidden" name="title" id="title" value="<!-- TMPL_VAR name="title" -->" />
+<input type=hidden name="itemnumber" value="<TMPL_VAR NAME="itemnumber">">
+<input type=hidden name="biblionumber" value="<TMPL_VAR NAME="biblionumber">">
+<input type=hidden name="barcode" value="<TMPL_VAR NAME="barcode">">
 <table>
 <tr>
+<th>Date</th>
 <th>Description</th>
+<th>Title</th>
 <th>Account Type</th>
 <th>Notify id</th>
 <th>Level</th>
@@ -154,26 +161,19 @@ function moneyFormat(textObj) {
 <th>Amount Outstanding</th>
 </tr>
 <tr>
-<td>
-<!-- TMPL_VAR NAME="description" --> <!-- TMPL_VAR="title" escape="html" -->
-</td>
+<td><TMPL_VAR NAME="date"></td>
+<td><!-- TMPL_VAR NAME="description" --></td>
+<td><TMPL_IF NAME="itemnumber"><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a><br><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a><TMPL_ELSE>&nbsp;</TMPL_IF></td>
 <td><!-- TMPL_VAR name="accounttype" --></td>
 <td><!-- TMPL_VAR name="notify_id" --></td>
 <td><!-- TMPL_VAR name="notify_level" --></td>
 <td class="debit"><!-- TMPL_VAR name="amount" --></td>
-<td class="debit"><!-- TMPL_VAR name="amountoutstanding" --></td>
+<td class="debit" align=right><!-- TMPL_VAR name="amountoutstanding" --></td>
 </tr>
-<tr><td> </td></tr>
-<tr><td rowspan="2"><strong>Writeoff This Charge?</strong></td></tr>
-<tr><td> </td></tr>
-<tr>
-<td rowspan="2">
+</table><br>
+<strong>Writeoff This Charge?</strong><br>
 <input type="submit" name="confirm_writeoff" id="confirm_writeoff" value="Confirm" />
 <a class="cancel" href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a>
-</td>
-</tr>
-
-</table>
 <!-- TMPL_ELSE -->
 
 <form name="payfine" onsubmit="return validatePayment(this);" method="post" action="/cgi-bin/koha/members/paycollect.pl">
@@ -198,9 +198,8 @@ function moneyFormat(textObj) {
 <input name="paid" id="paid" value="<!-- TMPL_VAR NAME="total" -->" onchange="moneyFormat(document.payfine.paid)"/>
 </td>
 </tr>
-<tr><td>  </td></tr>
 <tr>
-<td rowspan="2">
+<td colspan="2">
 <input type="submit" name="submitbutton" value="Confirm" />
 <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a>
 </td>

@@ -42,28 +42,30 @@
 <!-- /TMPL_IF -->
 </p>
 <!-- The table with the account items -->
-<table>
+<table><thead>
   <tr>
     <th>No.</th>
     <th>Date</th>
-    <th>Title</th>
     <th>Description of charges</th>
+    <th>Title</th>
     <th>Amount</th>
     <th>Outstanding</th>
     <th>&nbsp;</th>
   </tr>
+  </thead>
 
   <!-- TMPL_LOOP NAME="accounts" -->
 
    <!-- TMPL_IF NAME="toggle" --> <tr><!-- TMPL_ELSE --><tr class="highlight"><!-- /TMPL_IF -->
       <td><TMPL_VAR NAME="accountno"></td>
       <td><!-- TMPL_VAR NAME="date" --></td>
+      <td><TMPL_VAR NAME="description"></td>
       <td><TMPL_IF NAME="itemnumber">
           <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a><br>
           <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a>
           <TMPL_ELSE>&nbsp;
           </TMPL_IF></td>
-      <td><TMPL_VAR NAME="description"></td>
+
       <!-- TMPL_IF NAME="amountcredit" --><td class="credit" align=right><!-- TMPL_ELSE --><td class="debit" align=right><!-- /TMPL_IF --><!-- TMPL_VAR NAME="amount" --></td>
       <!-- TMPL_IF NAME="amountoutstandingcredit" --><td class="credit" align=right><!-- TMPL_ELSE --><td class="debit" align=right><!-- /TMPL_IF --><!-- TMPL_VAR NAME="amountoutstanding" --></td>
       <td>
@@ -78,17 +80,24 @@
     </tr>
 
   <!-- /TMPL_LOOP -->
+  <tfoot>
   <tr>
     <td colspan="4"><b>Total due</b></td>
     <!-- TMPL_IF NAME="totalcredit" --><td colspan="2" class="credit" align=right style="color:green">(Credit) <!-- TMPL_ELSE --><td colspan="2" class="debit" align=right style="color:red"><!-- /TMPL_IF --><b><TMPL_VAR NAME="total"></b></td>
     <td>&nbsp;</td>
   </tr>
+  </tfoot>
 </table>
 </div></div>
 
 </div>
 </div>
-
+<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script> 
+<script type="application/javascript"> 
+$(document).ready(function() { 
+   $("table").tablesorter(); 
+}); 
+</script> 
 <div class="yui-b">
 <!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
 </div>

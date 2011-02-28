@@ -87,7 +87,6 @@ if ($wo_all) {
 my @names = $input->param;
 my %inp;
 my $check = 0;
-
 ## Create a structure
 for ( my $i = 0 ; $i < @names ; $i++ ) {
     my $temp = $input->param( $names[$i] );
@@ -156,18 +155,14 @@ if ( $check == 0 ) {  # fetch and display accounts
 sub add_accounts_to_template {
     my $borrowernumber = shift;
 
-    my ($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
+    my ($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=> $borrowernumber);
     my $numaccts = scalar @$accts;
-    my @inums = map {$$_{itemnumber}} @$accts;
-    my %i2b = %{C4::Items::MapBibs2Items(inums=>\@inums)};
-
     my $allfile = [];
     my @notify = NumberNotifyId($borrowernumber);
-
     my $line_id = 0;
     for my $n (@notify) {
         my $pay_loop = [];
-        my ( $total , $accts, $numaccts) =
+        my ( $total ,$toss, $numaccts) =
         GetBorNotifyAcctRecord( $borrowernumber, $n );
         if (!$numaccts) {
             next;
@@ -179,7 +174,7 @@ sub add_accounts_to_template {
                 my $line = {
                     i                 => "_$line_id",
                     itemnumber        => $acct->{itemnumber},
-                    biblionumber      => $i2b{$$acct{itemnumber}},
+                    biblionumber      => $acct->{biblionumber},
                     accounttype       => $acct->{accounttype},
                     amount            => sprintf('%.2f', $acct->{amount}),
                     amountoutstanding => sprintf('%.2f', $acct->{amountoutstanding}),
@@ -187,6 +182,8 @@ sub add_accounts_to_template {
                     accountno         => $acct->{accountno},
                     description       => $acct->{description},
                     title             => $acct->{title},
+                    date              => C4::Dates::format_date($acct->{date}),
+                    barcode           => $acct->{barcode},
                     notify_id         => $acct->{notify_id},
                     notify_level      => $acct->{notify_level},
                 };
@@ -273,9 +270,12 @@ sub redirect_to_paycollect {
     $redirect .= get_for_redirect('amount',"amount_$line_no",1);
     $redirect .= get_for_redirect('amountoutstanding',"out_$line_no",1);
     $redirect .= get_for_redirect('accountno',"accountno_$line_no",0);
+    $redirect .= get_for_redirect('date',"date_$line_no",0);
     $redirect .= get_for_redirect('description',"description_$line_no",0);
     $redirect .= get_for_redirect('title',"title_$line_no",0);
     $redirect .= get_for_redirect('itemnumber',"itemnumber_$line_no",0);
+    $redirect .= get_for_redirect('biblionumber',"biblionumber_$line_no",0);
+    $redirect .= get_for_redirect('barcode',"barcode_$line_no",0);
     $redirect .= get_for_redirect('notify_id',"notify_id_$line_no",0);
     $redirect .= get_for_redirect('notify_level',"notify_level_$line_no",0);
     $redirect .= '&remote_user=';
@@ -305,7 +305,6 @@ sub writeoff_all {
 
 sub writeoff {
     my ( $borrowernumber, $accountnum, $itemnum, $accounttype, $amount ) = @_;
-    my $user = $input->remote_user;
     my $dbh  = C4::Context->dbh;
     undef $itemnum unless $itemnum; # if no item is attached to fine, make sure to store it as a NULL
     my $sth =
@@ -320,10 +319,10 @@ sub writeoff {
     my $account = $sth->fetchrow_hashref;
     $sth->finish;
     $account->{'max(accountno)'}++;
-    $sth = $dbh->prepare(
-"insert into accountlines (borrowernumber,accountno,itemnumber,date,amount,description,accounttype)
-						values (?,?,?,now(),?,'Writeoff','W')"
-    );
+    my $user = C4::Context->userenv->{'id'};
+    $sth = $dbh->prepare(qq|insert into accountlines (borrowernumber,accountno,itemnumber,date,amount,description,accounttype)
+						values (?,?,?,now(),?,"Writeoff for No.$accountnum (-$user)",'W')
+    |);
     $sth->execute( $borrowernumber, $account->{'max(accountno)'},
         $itemnum, $amount );
     $sth->finish;

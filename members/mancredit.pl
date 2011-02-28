@@ -32,32 +32,12 @@ use C4::Members;
 use C4::Branch;
 use C4::Accounts;
 use C4::Items;
+use C4::Context;
 
 my $input=new CGI;
 
 my $borrowernumber=$input->param('borrowernumber');
-
-#get borrower details
-my $data=GetMember($borrowernumber,'borrowernumber');
-
-if ($input->param('add')){
-    my $barcode = $input->param('barcode');
-    my $itemnum = GetItemnumberFromBarcode($barcode) if $barcode;
-    my $desc    = $input->param('desc');
-    my $amount  = $input->param('amount') || 0;
-    $amount     = -$amount;
-    my $type    = $input->param('type');
-    C4::Accounts::manualinvoice(
-      borrowernumber => $borrowernumber,
-      itemnumber     => GetItemnumberFromBarcode($input->param('barcode')),
-      description    => $input->param('desc'),
-      amount         => -($input->param('amount') || 0),
-      type           => $input->param('type'),
-#      $borrowernumber,$itemnum,$desc,$type,$amount
-    );
-    print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
-} else {
-	my ($template, $loggedinuser, $cookie)
+my ($template, $loggedinuser, $cookie)
 	  = get_template_and_user({template_name => "members/mancredit.tmpl",
 					  query => $input,
 					  type => "intranet",
@@ -65,7 +45,21 @@ if ($input->param('add')){
 					  flagsrequired => {borrowers => '*', updatecharges => '*'},
 					  debug => 1,
 					  });
-					  
+
+#get borrower details
+my $data=GetMember($borrowernumber,'borrowernumber');
+if ($input->param('add')){
+    C4::Accounts::manualinvoice(
+      borrowernumber => $borrowernumber,
+      itemnumber     => GetItemnumberFromBarcode($input->param('barcode')),
+      description    => $input->param('desc'),
+      amount         => -($input->param('amount') || 0),
+      accounttype    => $input->param('type'),
+      isCredit       => 1,
+      user           => C4::Context->userenv->{'id'},
+    );
+    print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
+} else {
     if ( $data->{'category_type'} eq 'C') {
         my  ( $catcodes, $labels ) =  GetborCatFromCatType( 'A', 'WHERE category_type = ?' );
         my $cnt = scalar(@$catcodes);

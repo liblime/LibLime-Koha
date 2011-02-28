@@ -33,15 +33,20 @@
 	<input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" />
 
 <table>
+<thead>
 <tr>
 	<th>Fines &amp; Charges</th>
+   <th>No.</th>
+   <th>Date</th>
 	<th>Description</th>
-	<th>Account Type</th>
+   <th>Title</th>
+	<th>Account<br>Type</th>
 	<th>Notify id</th>
 	<th>Level</th>
 	<th>Amount</th>
-	<th>Amount Outstanding</th>
+	<th>Amount<br>Outstanding</th>
 </tr>
+</thead>
 	
 <!-- TMPL_LOOP name="allfile" -->
 	<!-- TMPL_LOOP name="loop_pay" -->
@@ -60,40 +65,47 @@
 	<!-- /TMPL_IF -->
 	<input type="hidden" name="line_id<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="i" -->" />
 	<input type="hidden" name="itemnumber<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="itemnumber" -->" />
+   <input type=hidden name="biblionumber<TMPL_VAR NAME="i">" value="<TMPL_VAR NAME="biblionumber">">
 	<input type="hidden" name="description<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="description" -->" />
 	<input type="hidden" name="title<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="title" -->" />
+   <input type=hidden name="barcode<TMPL_VAR NAME="i">" value="<TMPL_VAR NAME="barcode">">
 	<input type="hidden" name="accounttype<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="accounttype" -->" />
 	<input type="hidden" name="amount<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="amount" -->" />
 	<input type="hidden" name="out<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="amountoutstanding" -->" />
 	<input type="hidden" name="borrowernumber<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="borrowernumber" -->" />
 	<input type="hidden" name="accountno<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="accountno" -->" />
+   <input type=hidden name="date<TMPL_VAR NAME="i">" value="<TMPL_VAR NAME="date">">
 	<input type="hidden" name="notify_id<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="notify_id" -->" />
 	<input type="hidden" name="notify_level<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="notify_level" -->" />
 	<input type="hidden" name="totals<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="totals" -->" />
 	</td>
-	<td><!-- TMPL_VAR name="description" --> <!-- TMPL_VAR name="title" escape="html" -->
-   <TMPL_IF NAME="biblionumber">
-   <a href="/cgi-bin/koha/catalogue/moredetail.pl?itemnumber=<TMPL_VAR NAME="itemnumber">&biblionumber=<TMPL_VAR NAME="biblionumber">#item<TMPL_VAR NAME="itemnumber">">View</a>
-   </TMPL_IF></td>
+   <td><TMPL_VAR NAME="accountno"></td>
+   <td><TMPL_VAR NAME="date"></td>
+	<td><!-- TMPL_VAR name="description" --></td>
+   <td><TMPL_IF NAME="itemnumber"><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a><br>
+      <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a></TMPL_IF></td>
 	<td><!-- TMPL_VAR name="accounttype" --></td>
 	<td><!-- TMPL_VAR name="notify_id" --></td>
 	<td><!-- TMPL_VAR name="notify_level" --></td>
 	<td class="debit"><!-- TMPL_VAR name="amount" --></td>
-	<td class="debit"><!-- TMPL_VAR name="amountoutstanding" --></td>
+	<td class="debit" align=right><!-- TMPL_VAR name="amountoutstanding" --></td>
 </tr>
 <!-- /TMPL_LOOP  -->
 <!-- TMPL_IF  NAME="total"-->
+<tfoot>
 <tr>
-
-	<td colspan="6">Sub Total</td>
-	<td><!-- TMPL_VAR name="total" --></td>
+	<td colspan="8">Sub Total</td>
+	<td colspan=2 align=right><!-- TMPL_VAR name="total" --></td>
 </tr>
+</tfoot>
 <!--/TMPL_IF-->
 <!-- /TMPL_LOOP  -->
+<tfoot>
 <tr>
-	<td colspan="6">Total Due</td>
-	<td><!-- TMPL_VAR name="total" --></td>
+	<td colspan="8">Total Due</td>
+	<td colspan=2 align=right><!-- TMPL_VAR name="total" --></td>
 </tr>
+</tfoot>
 </table>
 <!-- <p>On All Or Part Of The Total Sum Due:</p> -->
 <fieldset class="action">
@@ -109,7 +121,12 @@
 
 </div>
 </div>
-
+<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script> 
+<script type="application/javascript"> 
+$(document).ready(function() { 
+   $("table").tablesorter(); 
+}); 
+</script> 
 <div class="yui-b">
 <!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
 </div>

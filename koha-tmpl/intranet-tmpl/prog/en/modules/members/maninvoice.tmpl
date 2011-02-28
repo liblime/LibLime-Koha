@@ -7,6 +7,22 @@ $(document).ready(function(){
 	$("fieldset.rows input").keydown(function(e){ return checkEnter(e); });
 });
 //]]>
+function valForm() {
+   var msg = '';
+   if (document.myf.desc.value=='') {
+      msg += 'Description is required.\n';
+   }
+   if (document.myf.amount.value=='') {
+      msg += 'Amount is required.\n';
+   }
+
+   if (msg=='') {
+      document.myf.submit();
+   }
+   else{
+      alert(msg);
+   }
+}
 </script>
 </head>
 <body>
@@ -43,7 +59,8 @@ $(document).ready(function(){
   ERROR an invalid itemnumber was entered, please hit back and try again
 <!-- /TMPL_IF -->
 <!-- TMPL_ELSE -->
-<form action="/cgi-bin/koha/members/maninvoice.pl" method="post"><input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+<form action="/cgi-bin/koha/members/maninvoice.pl" method="post" name="myf">
+<input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
 	<fieldset class="rows">
 	<legend>Manual Invoice</legend>
 	<ol>
@@ -72,10 +89,11 @@ type_fees['<!-- TMPL_VAR NAME="authorised_value" -->'] = "<!-- TMPL_VAR NAME="li
         </select>
       </li>
 	<li><label for="barcode">Barcode: </label><input type="text" name="barcode" id="barcode" /></li>
-	<li><label for="desc">Description: </label><input type="text" name="desc" id="desc" size="50" /></li>
+	<li><label for="desc">Description: </label>(Manual invoice) <input type="text" name="desc" id="desc" size="30" /></li>
 	<li><label for="amount">Amount: </label><input type="text" name="amount" id="amount" /> Example: 5.00</li>
 	</ol></fieldset>
-<fieldset class="action"><input type="submit" name="add" value="Save" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
+   <input type=hidden name="add" value="1">
+<fieldset class="action"><input type="button" value="Save" onclick="valForm()" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
 </form>
 
 <!-- /TMPL_IF -->
