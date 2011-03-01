@@ -4395,21 +4395,24 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do("
        UPDATE language_rfc4646_to_iso639 SET iso639_2_code='ita' WHERE rfc4646_subtag='it'");
     $dbh->do("
-       INSERT INTO language_rfc4646_to_iso639 VALUES
-         ('fi','fin',null),
-         ('hmn','hmn',null),
-         ('lo','lao',null),
-         ('sr','srp',null),
-         ('tet','tet',null),
-         ('ur','urd',null)
+       INSERT INTO language_rfc4646_to_iso639 (rfc4646_subtag,iso639_2_code)
+       VALUES
+         ('fi','fin'),
+         ('hmn','hmn'),
+         ('lo','lao'),
+         ('sr','srp'),
+         ('tet','tet'),
+         ('ur','urd')
     ");
     $dbh->do("
-       INSERT INTO language_subtag_registry VALUES
-         ('hmn','language','Hmong',NOW(),null) ");
+       INSERT INTO language_subtag_registry (subtag, type, description, added)
+       VALUES
+         ('hmn','language','Hmong',NOW()) ");
     $dbh->do("
-       INSERT INTO language_descriptions VALUES
-         ('hmn','language','en','Hmong',null),
-         ('hmn','language','hmn','Hmoob',null) ");
+       INSERT INTO language_descriptions (subtag, type, lang, description)
+       VALUES
+         ('hmn','language','en','Hmong'),
+         ('hmn','language','hmn','Hmoob') ");
 
     SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Corrected ISO639-2 language codes )\n";
