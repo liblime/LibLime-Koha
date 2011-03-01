@@ -527,19 +527,6 @@ sub AddReserve {
 
     }
 
-    if ( !($const eq 'o' || $const eq 'e') ) {
-        $query = q/
-            INSERT INTO reserveconstraints
-                (borrowernumber,biblionumber,reservedate,biblioitemnumber)
-            VALUES
-                (?,?,?,?)
-        /;
-        $sth = $dbh->prepare_cached($query);
-        foreach (@$bibitems) {
-            $sth->execute($borrowernumber, $biblionumber, $resdate, $_);
-        }
-    }
-
     UpdateStats(
       $branch,
       my $type = 'reserve',
@@ -594,49 +581,9 @@ sub GetReservesFromBiblionumber {
         $query .= "AND reserves.itemnumber IS NULL ";
     }
     $query .= "ORDER BY reserves.priority";
-    my $sth = $dbh->prepare($query);
-    $sth->execute($biblionumber);
-    my @results;
-    my $i = 0;
-    while ( my $data = $sth->fetchrow_hashref ) {
-        # FIXME - What is this doing? How do constraints work?
-        if ($data->{constrainttype} eq 'o') {
-            $query = '
-                SELECT biblioitemnumber
-                FROM  reserveconstraints
-                WHERE  biblionumber   = ?
-                AND   borrowernumber = ?
-                AND   reservedate    = ?
-            ';
-            my $csth = $dbh->prepare($query);
-            $csth->execute($data->{biblionumber}, $data->{borrowernumber}, $data->{reservedate});
-            my @bibitemno;
-            while ( my $bibitemnos = $csth->fetchrow_array ) {
-                push( @bibitemno, $bibitemnos );    # FIXME: inefficient: use fetchall_arrayref
-            }
-            my $count = scalar @bibitemno;
-    
-            # if we have two or more different specific itemtypes
-            # reserved by same person on same day
-            my $bdata;
-            if ( $count > 1 ) {
-                $bdata = GetBiblioItemData( $bibitemno[$i] );   # FIXME: This doesn't make sense.
-                $i++; #  $i can increase each pass, but the next @bibitemno might be smaller?
-            }
-            else {
-                # Look up the book we just found.
-                $bdata = GetBiblioItemData( $bibitemno[0] );
-            }
-            # Add the results of this latest search to the current
-            # results.
-            # FIXME - An 'each' would probably be more efficient.
-            foreach my $key ( keys %$bdata ) {
-                $data->{$key} = $bdata->{$key};
-            }
-        }
-        push @results, $data;
-    }
-    return ( $#results + 1, \@results );
+
+    my $reserves = $dbh->selectall_arrayref($query, {Slice => {}}, $biblionumber);
+    return (scalar @$reserves, $reserves);
 }
 
 sub GetSuspendedReservesFromBiblionumber {
@@ -644,19 +591,16 @@ sub GetSuspendedReservesFromBiblionumber {
     my $dbh   = C4::Context->dbh;
 
     # Find the desired items in the reserves
-    my $query = "SELECT *
+    my $query = q{
+        SELECT *
         FROM  reserves, borrowers
         WHERE biblionumber = ?
-        AND reserves.found = 'S'
-        AND borrowers.borrowernumber = reserves.borrowernumber
-        ORDER BY priority";
-    my $sth = $dbh->prepare($query);
-    $sth->execute($biblionumber);
-    my @results;
-    while ( my $data = $sth->fetchrow_hashref ) {
-        push @results, $data;
-    }
-    return ( $#results + 1, \@results );
+          AND reserves.found = 'S'
+          AND borrowers.borrowernumber = reserves.borrowernumber
+        ORDER BY priority
+    };
+    my $reserves = $dbh->selectall_arrayref($query, {Slice => {}}, $biblionumber);
+    return (scalar @$reserves, $reserves);
 }
 
 =item GetReservesFromItemnumber
@@ -669,34 +613,19 @@ sub GetSuspendedReservesFromBiblionumber {
 
 sub GetReservesFromItemnumber {
     my ( $itemnumber, $all_dates ) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $query = "
-    SELECT reservenumber,reservedate,borrowernumber,branchcode,found
+
+    my $query = q{
+    SELECT reservenumber,reservedate,borrowernumber,branchcode
     FROM   reserves
     WHERE  itemnumber=?
-    ";
+      AND  (found <> 'S' OR found IS NULL)
+    };
     unless ( $all_dates ) {
-	   $query .= " AND reservedate <= NOW()";
+	   $query .= ' AND reservedate <= NOW()';
     }
-    $query .= ' ORDER BY priority ASC';
-    my $sth_res = $dbh->prepare($query);
-    $sth_res->execute($itemnumber);
-    my %res = ();
-    while(my $r = $sth_res->fetchrow_hashref()) {
-       ## mysql bug workaround.  can't do 
-       ## /* itemnumber=$itemnumber AND found != 'S' 
-       ##  * returns empty set erroneously
-       ##  */
-       next if $$r{found} eq 'S'; # skip suspended holds
-       %res = %$r;
-       last;
-    }
-    return (
-      $res{reservenumber}, 
-      $res{reservedate}, 
-      $res{borrowernumber}, 
-      $res{branchcode} 
-    );
+    $query .= ' ORDER BY priority ASC LIMIT 1';
+
+    return C4::Context->dbh->selectrow_array($query, undef, $itemnumber);
 }
 
 =item GetReservesFromBorrowernumber
@@ -1180,20 +1109,6 @@ C<$count> is the number of reserves for this item.
 
 =cut
 
-# any hold matches on biblionumber
-sub CheckReservesByBibBorrower
-{
-   my($biblionumber,$borrowernumber) = @_;
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare('
-      SELECT * FROM reserves
-       WHERE biblionumber   = ?
-         AND borrowernumber = ?');
-   $sth->execute($biblionumber,$borrowernumber);
-   my $res = $sth->fetchrow_hashref() // {};
-   return $res;
-}
-
 sub CheckReserves {
     my ( $item, $barcode ) = @_;
     my $dbh = C4::Context->dbh;
@@ -1229,7 +1144,7 @@ sub CheckReserves {
     return ( 0, 0, 0 ) if  ( $notforloan_per_item > 0 ) or $notforloan_per_itemtype;
 
     # Find this item in the reserves
-    my @reserves = _Findgroupreserve( $bibitem, $biblio, $itemnumber );
+    my $reserves = _Findgroupreserve( $itemnumber );
 
     # $priority and $highest are used to find the most important item
     # in the list returned by &_Findgroupreserve. (The lower $priority,
@@ -1240,11 +1155,11 @@ sub CheckReserves {
     my $local;
     my $oldest;
 
-    my $count = @reserves;
+    my $count = scalar @$reserves;
     my $nohold = 0;
-    if (@reserves) {
+    if (@$reserves) {
         my $priority = 10000000;
-        foreach my $res (@reserves) {
+        foreach my $res (@$reserves) {
             my $issuingrule = C4::Circulation::GetIssuingRule ($$res{borrowercategory},$itemtype,$itembranch);
             unless ($issuingrule) {
                next;
@@ -1278,8 +1193,8 @@ sub CheckReserves {
         ( $count > C4::Context->preference('HoldsTransportationReductionThreshold') )
         || ( C4::Context->preference('HoldsTransportationReductionThreshold') eq '0' ) 
     ) {
-        $local = GetReserve_NextLocalReserve( $item, $barcode );
-        $oldest = GetReserve_OldestReserve( $item, $barcode );
+        $local = GetReserve_NextLocalReserve( $reserves );
+        $oldest = GetReserve_OldestReserve( $reserves );
 
         undef $oldest unless ( 
             defined $oldest && (
@@ -1290,17 +1205,22 @@ sub CheckReserves {
     }
 
     if ( $oldest ) {
-      return( 'Reserved', $oldest, $count );
-    } elsif ( $local ) {
-      return( 'Reserved', $local, $count );
-    } elsif ( $exact ) {
+        $oldest->{itemnumber} = $itemnumber;
+        return( 'Reserved', $oldest, $count );
+    }
+    elsif ( $local ) {
+        $local->{itemnumber} = $itemnumber;
+        return( 'Reserved', $local, $count );
+    }
+    elsif ( $exact ) {
         # Found an exact match, return it
-        return ( "Waiting", $exact, $count );
-    } elsif ($highest) {
+        return ( 'Waiting', $exact, $count );
+    }
+    elsif ($highest) {
         # If we get this far, then no exact match was found.
         # We return the most important (i.e. next) reservation.
-        $highest->{'itemnumber'} = $item;
-        return ( "Reserved", $highest, $count );
+        $highest->{itemnumber} = $itemnumber;
+        return ( 'Reserved', $highest, $count );
     }
     else {
         return ( 0, 0, 0 );
@@ -1309,76 +1229,35 @@ sub CheckReserves {
 
 =item GetReserve_NextLocalReserve
 
-  my $reserve = GetReserve_NextLocalReserve( $itemnumber[, $barcode ] );
+  my $reserve = GetReserve_NextLocalReserve( $reserves );
   
-  Returns the highest priority reserve for the given itemnumber/barcode
-  whose pickup location is the logged in branch, if any.  
+  Returns the highest priority reserve for the given list
+  (from _Findgroupreserve) whose pickup location is the logged in branch, if any.
 =cut
 
 sub GetReserve_NextLocalReserve {
-  my ( $itemnumber, $barcode ) = @_;
+    my ( $reserves ) = @_;
 
-  my $branchcode = C4::Context->userenv->{"branch"};
-  
-  my $dbh = C4::Context->dbh;
-  my $sth;
-  
-  my $item = GetItem( $itemnumber, $barcode );
-  $itemnumber = $item->{'itemnumber'};
-  my $biblionumber = $item->{'biblionumber'};
-  my $biblioitemnumber = $item->{'biblioitemnumber'};
+    my $branchcode = (C4::Context->userenv) ? C4::Context->userenv->{branch} : '';
+    my @pruned = grep {$_->{branchcode} eq $branchcode} @$reserves;
 
-  my $reserve;
-  $reserve->{'priority'} = 10000000;
-
-  my @reserves = _Findgroupreserve( $biblioitemnumber, $biblionumber, $itemnumber );
-
-  foreach my $r (@reserves) {
-      $reserve = $r if ( $r->{'branchcode'} eq $branchcode && $r->{'priority'} < $reserve->{'priority'} );
-  }
-
-  $reserve->{itemnumber} = $itemnumber if (defined $reserve->{itemnumber});
-  if (defined $reserve->{branchcode}) {
-    return $reserve;
-  }
-  else {
-    return;
-  }
+    return $pruned[0];
 }
 
 =item GetReserve_OldestReserve
 
-  my $reserve = GetReserve_OldestReserve( $itemnumber[, $barcode ] );
+  my $reserve = GetReserve_OldestReserve( @$reserves );
   
-  Returns the oldest reserve for the given itemnumber/barcode, if any.
+  Returns the oldest reserve from the given list (from _Findgroupreserve) if any.
   
 =cut
 
 sub GetReserve_OldestReserve {
-  my ( $itemnumber, $barcode ) = @_;
-  my $branchcode = C4::Context->userenv->{"branch"};
+  my ( $reserves ) = @_;
   
-  my $item = GetItem( $itemnumber, $barcode );
-  $itemnumber = $item->{'itemnumber'};
-  my $biblionumber = $item->{'biblionumber'};
-  my $biblioitemnumber = $item->{'biblioitemnumber'};
+  my @sorted = sort {$a->{reservedate} cmp $b->{reservedate}} @$reserves;
 
-  my $reserve;
-
-  my @reserves = _Findgroupreserve( $biblioitemnumber, $biblionumber, $itemnumber );
-  foreach my $r (@reserves) {
-      if (!defined $reserve || $r->{reservedate} gt $reserve->{reservedate}) {
-          $reserve = $r;
-      }
-  }
-  
-  $reserve->{itemnumber} = $itemnumber if (defined $reserve->{itemnumber});
-  if (defined $reserve->{branchcode}) {
-    return $reserve;
-  }
-  else {
-    return;
-  }
+  return $sorted[0];
 }
 
 =item CancelReserves
@@ -2450,28 +2329,16 @@ sub _FixPriority {
 
 =item _Findgroupreserve
 
-  @results = &_Findgroupreserve($biblioitemnumber, $biblionumber, $itemnumber);
+  @results = &_Findgroupreserve($itemnumber);
 
-Looks for an item-specific match first, then for a title-level match, returning the
-first match found.  If neither, then we look for a 3rd kind of match based on
-reserve constraints.
-
-TODO: add more explanation about reserve constraints
-
-C<&_Findgroupreserve> returns :
-C<@results> is an array of references-to-hash whose keys are mostly
-fields from the reserves table of the Koha database, plus
-C<biblioitemnumber>.
+  Gets the priority-ordered list of reserves for a given item.
 
 =cut
 
 sub _Findgroupreserve {
-    my ( $bibitem, $biblio, $itemnumber ) = @_;
-    my $dbh   = C4::Context->dbh;
+    my $itemnumber = shift;
 
-    # TODO: consolidate at least the SELECT portion of the first 2 queries to a common $select var.
-    # check for exact targetted match
-    my $item_level_target_query = qq/
+    my $query = q{
         SELECT reserves.reservenumber AS reservenumber,
                reserves.biblionumber AS biblionumber,
                reserves.borrowernumber AS borrowernumber,
@@ -2483,111 +2350,22 @@ sub _Findgroupreserve {
                reserves.waitingdate AS waitingdate,
                reserves.priority AS priority,
                reserves.timestamp AS timestamp,
-               biblioitems.biblioitemnumber AS biblioitemnumber,
-               reserves.itemnumber          AS itemnumber,
-               borrowers.categorycode       AS borrowercategory,
-               borrowers.branchcode         AS borrowerbranch,
+               reserves.itemnumber AS itemnumber,
+               borrowers.categorycode AS borrowercategory,
+               borrowers.branchcode AS borrowerbranch,
                DATEDIFF(NOW(),reserves.reservedate) AS age_in_days
         FROM reserves
-        JOIN biblioitems USING (biblionumber)
+        JOIN items ON (items.biblionumber = reserves.biblionumber)
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
-        JOIN tmp_holdsqueue ON 
-             (reserves.biblionumber=tmp_holdsqueue.biblionumber AND
-              reserves.borrowernumber=tmp_holdsqueue.borrowernumber AND
-              reserves.itemnumber=tmp_holdsqueue.itemnumber)
-        WHERE found IS NULL
-        AND priority > 0
-        AND item_level_request = 1
-        AND reserves.itemnumber = ?
-        AND reserves.reservedate <= NOW()
-        ORDER BY priority ASC
-    /;
-    my $sth = $dbh->prepare($item_level_target_query);
-    $sth->execute($itemnumber);
-    my @results;
-    if ( my $data = $sth->fetchrow_hashref ) {
-        push( @results, $data );
-    }
-    return @results if @results;
-    
-    # check for title-level targetted match
-
-    my $title_level_target_query = q/
-        SELECT reserves.reservenumber AS reservenumber,
-               reserves.biblionumber AS biblionumber,
-               reserves.borrowernumber AS borrowernumber,
-               reserves.reservedate AS reservedate,
-               reserves.branchcode AS branchcode,
-               reserves.cancellationdate AS cancellationdate,
-               reserves.found AS found,
-               reserves.reservenotes AS reservenotes,
-               reserves.waitingdate AS waitingdate,
-               reserves.priority AS priority,
-               reserves.timestamp AS timestamp,
-               biblioitems.biblioitemnumber AS biblioitemnumber,
-               reserves.itemnumber          AS itemnumber,
-               borrowers.categorycode       AS borrowercategory,
-               borrowers.branchcode         AS borrowerbranch,
-               DATEDIFF(NOW(),reserves.reservedate) AS age_in_days
-        FROM reserves
-        JOIN biblioitems USING (biblionumber)
-        JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
-        JOIN tmp_holdsqueue ON 
-             (reserves.biblionumber=tmp_holdsqueue.biblionumber AND
-              reserves.borrowernumber=tmp_holdsqueue.borrowernumber)
-        WHERE found IS NULL
-        AND priority > 0
-        AND item_level_request = 0
-        AND tmp_holdsqueue.itemnumber = ?
-        AND reserves.reservedate <= NOW()
-        ORDER BY priority ASC
-    /;
-    $sth = $dbh->prepare($title_level_target_query);
-    $sth->execute($itemnumber);
-    @results = ();
-    if ( my $data = $sth->fetchrow_hashref ) {
-        push( @results, $data );
-    }
-    return @results if @results;
-
-    my $query = q|
-        SELECT reserves.reservenumber AS reservenumber,
-               reserves.biblionumber AS biblionumber,
-               reserves.borrowernumber AS borrowernumber,
-               reserves.reservedate AS reservedate,
-               reserves.branchcode AS branchcode,
-               reserves.cancellationdate AS cancellationdate,
-               reserves.found AS found,
-               reserves.reservenotes AS reservenotes,
-               reserves.waitingdate AS waitingdate,
-               reserves.priority AS priority,
-               reserves.timestamp AS timestamp,
-               reserveconstraints.biblioitemnumber AS biblioitemnumber,
-               reserves.itemnumber                 AS itemnumber,
-               borrowers.categorycode       AS borrowercategory,
-               borrowers.branchcode         AS borrowerbranch,
-               DATEDIFF(NOW(),reserves.reservedate) AS age_in_days
-        FROM reserves
-          LEFT JOIN reserveconstraints ON reserves.biblionumber = reserveconstraints.biblionumber
-        JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
-        WHERE reserves.biblionumber = ?
+        WHERE reserves.biblionumber = items.biblionumber
           AND (found <> 'S' OR found IS NULL)
-          AND ( ( reserveconstraints.biblioitemnumber = ?
-              AND reserves.borrowernumber = reserveconstraints.borrowernumber
-              AND reserves.reservedate    = reserveconstraints.reservedate )
-            OR  reserves.constrainttype='a' )
-          AND (reserves.itemnumber IS NULL OR reserves.itemnumber = ?)
+          AND (reserves.itemnumber IS NULL OR reserves.itemnumber = items.itemnumber)
           AND reserves.reservedate <= NOW()
-    |;
-    $sth = $dbh->prepare($query);
-    $sth->execute( $biblio, $bibitem, $itemnumber );
-    @results = ();
-    while ( my $data = $sth->fetchrow_hashref ) {
-        ## taken care of by SQL statement above
-        #next if $$data{found} eq 'S';
-        push( @results, $data );
-    }
-    return @results;
+          AND items.itemnumber = ?
+        ORDER BY priority ASC
+    };
+
+    return C4::Context->dbh->selectall_arrayref($query, {Slice => {}}, $itemnumber) // [];
 }
 
 =item _koha_notify_reserve
@@ -2773,7 +2551,7 @@ sub ResumeReserve {
 
     my $reserve = GetReserve($reservenumber);
     croak sprintf 'Nonexistent reserve (%d)', $reservenumber unless $reserve;
-    return if $reserve->{found} ne 'S';
+    return if ($reserve->{found} // '') ne 'S';
 
     C4::Context->dbh->do(q{
             UPDATE reserves SET
