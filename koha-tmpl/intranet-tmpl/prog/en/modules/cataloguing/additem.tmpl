@@ -454,7 +454,8 @@ function checkForDuplicateDefaultsName() {
 
 		function checkBarcode() {
 			if ( $('#<!-- TMPL_VAR NAME="barcode_id" -->').val() ) {
-            var branchcode = document.f.field_value_0[10].options[document.f.field_value_0[10].selectedIndex].value;
+            var perm = document.getElementById('<TMPL_VAR NAME="branchcode_tag_id">');
+            var branchcode = perm.options[perm.selectedIndex].value;
             var dupecheck = 0;
             var itemnumber = '<!-- TMPL_VAR NAME="itemnumber" -->';
             var id = '<!-- TMPL_VAR NAME="itemnumber" -->';

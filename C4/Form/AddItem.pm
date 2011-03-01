@@ -167,7 +167,7 @@ sub get_form_values {
                    C4::Context->userenv->{flags} % 2 == 0         && 
                    C4::Context->userenv->{branch};
     my $branches = GetBranchesLoop();  # build once ahead of time, instead of multiple times later.
-    # restrict ot only my work libraries
+    # restrict to only my work libraries
     if (@{$$options{worklibs} // []}) {
         my %br = (); # faster than grep
         foreach(@{$$options{worklibs}}) { $br{$_}=1 }

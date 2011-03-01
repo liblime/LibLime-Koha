@@ -456,11 +456,12 @@ if (@worklibs) { # item ownership
 }
 
 ## Move barcode field to the top of the list.
-my $barcode_index = 0;                                              
+my $barcode_index = 0;
 foreach my $i ( @$item ) {
   if ( $i->{'marc_lib'} =~ m/Barcode/ ) {
-    last;
-  } else {
+      last;
+  }
+  else {
     $barcode_index++;
   }
 }
@@ -468,6 +469,14 @@ my @tmp = splice( @$item, $barcode_index, 1 );
 my $t = $tmp[0];
 my $barcode_id = $t->{id};
 unshift( @$item, $t );
+## pass DOM id of permanent location 952$a to template so
+## that ajax call for barcode validation knows the branchcode
+foreach(@$item) {
+   if (($$_{tag} eq '952') && ($$_{subfield} eq 'a')) {
+      $template->param(branchcode_tag_id => $$_{id});
+      last;
+   }
+}
 
 # what's the next op ? it's what we are not in : an add if we're editing, otherwise, and edit.
 $template->param( title => $record->title() ) if ($record ne "-1");
