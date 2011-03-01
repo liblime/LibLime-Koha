@@ -4396,20 +4396,20 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
        UPDATE language_rfc4646_to_iso639 SET iso639_2_code='ita' WHERE rfc4646_subtag='it'");
     $dbh->do("
        INSERT INTO language_rfc4646_to_iso639 VALUES
-         ('fi','fin'),
-         ('hmn','hmn'),
-         ('lo','lao'),
-         ('sr','srp'),
-         ('tet','tet'),
-         ('ur','urd')
+         ('fi','fin',null),
+         ('hmn','hmn',null),
+         ('lo','lao',null),
+         ('sr','srp',null),
+         ('tet','tet',null),
+         ('ur','urd',null)
     ");
     $dbh->do("
        INSERT INTO language_subtag_registry VALUES
-         ('hmn','language','Hmong',NOW()) ");
+         ('hmn','language','Hmong',NOW(),null) ");
     $dbh->do("
        INSERT INTO language_descriptions VALUES
-         ('hmn','language','en','Hmong'),
-         ('hmn','language','hmn','Hmoob') ");
+         ('hmn','language','en','Hmong',null),
+         ('hmn','language','hmn','Hmoob',null) ");
 
     SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Corrected ISO639-2 language codes )\n";
