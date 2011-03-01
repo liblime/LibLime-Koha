@@ -13,7 +13,7 @@
      var index = s.indexOf(tok);
      return s.substring(index + 1);
  }
-
+ 
  $(document).ready(function() {
     var copiesRowId = null;
     var wasSpecific = false;
@@ -83,7 +83,6 @@
         // Show the specific copy table for this radio button.
         $(newCopiesRowId).show();
     });
-
 
     // When 'first available' radion button is clicked
     $(".selectany").click(function() {
@@ -417,6 +416,7 @@
                                          value="Specific"
                                   />
                                 <!-- TMPL_ELSE -->
+
                                   <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
                                          id="reqspecific_<!-- TMPL_VAR NAME="biblionumber" -->"
                                          class="selectspecific"
@@ -437,8 +437,14 @@
                                   <input type="radio" name="reqtype_<!-- TMPL_VAR NAME="biblionumber" -->"
                                          id="reqspecific_<!-- TMPL_VAR NAME="biblionumber" -->"
                                          class="selectspecific"
-                                         value="Specific"
+                                         value="Specific" checked
                                   />
+                                  <script>
+                                    $(document).ready(function() {
+                                       $('.copiesrow').show();
+                                       $('#copiesrow_<TMPL_VAR NAME="biblionumber">').show();
+                                    })
+                                  </script>
                                 <!-- /TMPL_UNLESS -->
                                 <label for="reqspecific_<!-- TMPL_VAR NAME="biblionumber"-->">A specific copy</label>
                               <!-- /TMPL_IF -->

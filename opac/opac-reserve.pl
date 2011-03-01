@@ -121,10 +121,9 @@ my %biblioDataHash;
 
 # Hash of itemnumber to item info.
 my %itemInfoHash;
-
 foreach my $biblioNumber (@biblionumbers) {
-
     my $biblioData = GetBiblioData($biblioNumber);
+
     $biblioDataHash{$biblioNumber} = $biblioData;
 
     my @itemInfos = GetItemsInfo($biblioNumber);
@@ -389,6 +388,7 @@ foreach my $biblioNum (@biblionumbers) {
 
     my $record = GetMarcBiblio($biblioNum);
     my $subtitle = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 'subtitle', $record, '');
+
     # Init the bib item with the choices for branch pickup
     my %biblioLoopIter = ( branchChoicesLoop => $CGIbranchloop );
 
