@@ -50,19 +50,8 @@ use C4::Koha;
 use C4::Context;
 use C4::Auth;
 use C4::Output;
+use C4::ItemType;
 
-sub StringSearch {
-    my ( $searchstring, $type ) = @_;
-    my $dbh = C4::Context->dbh;
-    $searchstring =~ s/\'/\\\'/g;
-    my @data = split( ' ', $searchstring );
-    my $sth = $dbh->prepare(
-        "SELECT * FROM itemtypes WHERE (description LIKE ?) ORDER BY itemtype"
-	);
-    $sth->execute("$data[0]%");
-    return $sth->fetchall_arrayref({});		# return ref-to-array of ref-to-hashes
-								# like [ fetchrow_hashref(), fetchrow_hashref() ... ]
-}
 
 my $input       = new CGI;
 my $searchfield = $input->param('description');
@@ -97,13 +86,9 @@ if ( $op eq 'add_form' ) {
     #---- if primkey exists, it's a modify action, so read values to modify...
     my $data;
     if ($itemtype) {
-        my $sth = $dbh->prepare("select * from itemtypes where itemtype=?");
-        $sth->execute($itemtype);
-        $data = $sth->fetchrow_hashref;
+      $data = C4::ItemType->get($itemtype);
     }
-
     my $imagesets = C4::Koha::getImageSets( checked => $data->{'imageurl'} );
-
     my $remote_image = undef;
     if ( defined $data->{imageurl} and $data->{imageurl} =~ /^http/i ) {
         $remote_image = $data->{imageurl};
@@ -121,7 +106,8 @@ if ( $op eq 'add_form' ) {
         summary         => $data->{summary},
         imagesets       => $imagesets,
         remote_image    => $remote_image,
-        reservefee      => sprintf( "%.2f", $data->{'reservefee'} )
+        reservefee      => sprintf( "%.2f", $data->{'reservefee'} ),
+        check_notforhold=> $$data{notforhold}? 'checked':'',
     );
 
     # END $OP eq ADD_FORM
@@ -129,102 +115,45 @@ if ( $op eq 'add_form' ) {
     # called by add_form, used to insert/modify data in DB
 }
 elsif ( $op eq 'add_validate' ) {
-    my $query = "
-        SELECT itemtype
-        FROM   itemtypes
-        WHERE  itemtype = ?
-    ";
-    my $sth = $dbh->prepare($query);
-    $sth->execute($itemtype);
-    if ( $sth->fetchrow ) {		# it's a modification
-        my $query2 = '
-            UPDATE itemtypes
-            SET    description = ?
-                 , renewalsallowed = ?
-                 , rentalcharge = ?
-                 , replacement_price = ?
-                 , notforloan = ?
-                 , imageurl = ?
-                 , summary = ?
-                 , reservefee = ?
-            WHERE itemtype = ?
-        ';
-        $sth = $dbh->prepare($query2);
-        $sth->execute(
-            $input->param('description'),
-            $input->param('renewalsallowed'),
-            $input->param('rentalcharge'),
-            $input->param('replacement_price'),
-            ( $input->param('notforloan') ? 1 : 0 ),
-            (
-                $input->param('image') eq 'removeImage' ? '' : (
-                      $input->param('image') eq 'remoteImage'
-                    ? $input->param('remoteImage')
-                    : $input->param('image') . ""
-                )
-            ),
-            $input->param('summary'),
-            $input->param('reservefee'),
-            $input->param('itemtype')
-        );
-    }
-    else {    # add a new itemtype & not modif an old
-        my $query = "
-            INSERT INTO itemtypes
-                (itemtype,description,renewalsallowed,rentalcharge,replacement_price,notforloan,imageurl,summary,reservefee)
-            VALUES
-                (?,?,?,?,?,?,?,?,?);
-            ";
-        my $sth = $dbh->prepare($query);
-		my $image = $input->param('image');
-        $sth->execute(
-            $input->param('itemtype'),
-            $input->param('description'),
-            $input->param('renewalsallowed'),
-            $input->param('rentalcharge'),
-            $input->param('replacement_price'),
-            $input->param('notforloan') ? 1 : 0,
-            $image eq 'removeImage' ?           ''                 :
-            $image eq 'remoteImage' ? $input->param('remoteImage') :
-            $image,
-            $input->param('summary'),
-            $input->param('reservefee')
-        );
-    }
+   ## toss errors from save()
+   C4::ItemType->save(
+      description       => $input->param('description'),
+      renewalsallowed   => $input->param('renewalsallowed'),
+      rentalcharge      => $input->param('rentalcharge'),
+      replacement_price => $input->param('replacement_price'),
+      notforloan        => $input->param('notforloan')? 1:0,
+      notforhold        => $input->param('notforhold')? 1:0,
+      imageurl          => $input->param('image') eq 'removeImage' ? '' : (
+                              $input->param('image') eq 'remoteImage'
+                              ? $input->param('remoteImage')
+                              : $input->param('image') . ""
+                            ),
+      summary           => $input->param('summary'),
+      reservefee        => $input->param('reservefee'),
+      itemtype          => $input->param('itemtype'),
+   );
 
-    print $input->redirect('itemtypes.pl');
-    exit;
+   print $input->redirect('itemtypes.pl');
+   exit;
 
     # END $OP eq ADD_VALIDATE
 ################## DELETE_CONFIRM ##################################
     # called by default form, used to confirm deletion of data in DB
 }
 elsif ( $op eq 'delete_confirm' ) {
-    # Check both categoryitem and biblioitems, see Bug 199
-    my $total = 0;
-    for my $table ('biblioitems') {
-        my $sth =
-          $dbh->prepare(
-            "select count(*) as total from $table where itemtype=?");
-        $sth->execute($itemtype);
-        $total += $sth->fetchrow_hashref->{total};
-    }
-
-    my $sth =
-      $dbh->prepare(
-"select itemtype,description,renewalsallowed,rentalcharge,replacement_price,reservefee from itemtypes where itemtype=?"
-      );
-    $sth->execute($itemtype);
-    my $data = $sth->fetchrow_hashref;
+    my $total = C4::ItemType->checkUsed($itemtype);
+    my $data  = C4::ItemType->get($itemtype);
     $template->param(
+        total           => $total,
         itemtype        => $itemtype,
         description     => $data->{description},
         renewalsallowed => $data->{renewalsallowed},
         rentalcharge    => sprintf( "%.2f", $data->{rentalcharge} ),
         replacement_price => sprintf( "%.2f", $data->{replacement_price} ),
         imageurl        => $data->{imageurl},
-        total           => $total,
-        reservefee      => sprintf( "%.2f", $data->{reservefee} )
+        reservefee      => sprintf( "%.2f", $data->{reservefee} ),
+        notforloan      => $data->{notforloan},
+        notforhold      => $data->{notforhold},
     );
 
     # END $OP eq DELETE_CONFIRM
@@ -232,18 +161,14 @@ elsif ( $op eq 'delete_confirm' ) {
   # called by delete_confirm, used to effectively confirm deletion of data in DB
 }
 elsif ( $op eq 'delete_confirmed' ) {
-    my $itemtype = uc( $input->param('itemtype') );
-    my $sth      = $dbh->prepare("delete from itemtypes where itemtype=?");
-    $sth->execute($itemtype);
-    $sth = $dbh->prepare("delete from issuingrules where itemtype=?");
-    $sth->execute($itemtype);
+    C4::ItemType->del($itemtype);
     print $input->redirect('itemtypes.pl');
     exit;
     # END $OP eq DELETE_CONFIRMED
 ################## DEFAULT ##################################
 }
 else {    # DEFAULT
-    my ($results) = StringSearch( $searchfield, 'web' );
+    my ($results) = C4::ItemType->search( $searchfield, 'web' );
     my $page = $input->param('page') || 1;
     my $first = ( $page - 1 ) * $pagesize;
 
@@ -269,3 +194,4 @@ else {    # DEFAULT
 }    #---- END $OP eq DEFAULT
 
 output_html_with_http_headers $input, $cookie, $template->output;
+exit;

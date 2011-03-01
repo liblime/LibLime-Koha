@@ -2103,6 +2103,7 @@ item-level hold request.  An item is available if
 * it is not marked notforloan (is false)
 * it is not set to trace or other blocking status
 * it is not on loan (see below)
+* it is not notforhold by itemtype
 * itemstatus
       holdsallowed = 1
       holdsfilled  = 1
@@ -2160,14 +2161,15 @@ sub IsAvailableForItemLevelRequest {
     # FIXME - a lot of places in the code do this
     #         or something similar - need to be
     #         consolidated
+    # ALSO - checks notforhold
     my $notforloan_query;
     if (C4::Context->preference('item-level_itypes')) {
-        $notforloan_query = "SELECT itemtypes.notforloan
+        $notforloan_query = "SELECT itemtypes.notforloan,itemtypes.notforhold
                              FROM items
                              JOIN itemtypes ON (itemtypes.itemtype = items.itype)
                              WHERE itemnumber = ?";
     } else {
-        $notforloan_query = "SELECT itemtypes.notforloan
+        $notforloan_query = "SELECT itemtypes.notforloan,itemtypes.notforhold
                              FROM items
                              JOIN biblioitems USING (biblioitemnumber)
                              JOIN itemtypes ON ( itemtypes.itemtype = biblioitems.itemtype )
@@ -2176,7 +2178,9 @@ sub IsAvailableForItemLevelRequest {
     $sth = $dbh->prepare($notforloan_query);
     $sth->execute($itemnumber);
     my $notforloan_per_itemtype = 0;
-    if (my ($notforloan) = $sth->fetchrow_array) {
+    my($notforloan,$notforhold) = $sth->fetchrow_array();
+    return 0 if $notforhold;
+    if ($notforloan) {
         $notforloan_per_itemtype = 1 if $notforloan;
     }
 

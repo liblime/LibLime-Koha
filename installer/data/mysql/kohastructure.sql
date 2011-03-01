@@ -1268,6 +1268,7 @@ CREATE TABLE `itemtypes` (
   `imageurl` varchar(200) default NULL,
   `summary` text,
   `reservefee` decimal(28,6),
+  `notforhold` tinyint(1) NOT NULL default 0,
   PRIMARY KEY  (`itemtype`),
   UNIQUE KEY `itemtype` (`itemtype`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -4421,6 +4421,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update to $DBversion )\n";
 }
 
+$DBversion = '4.03.15.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+   $dbh->do('ALTER TABLE itemtypes DROP notforhold');
+   $dbh->do('ALTER TABLE itemtypes ADD notforhold tinyint(1) NOT NULL DEFAULT 0 
+      AFTER reservefee');
+   SetVersion ($DBversion);
+   print "Upgrade to $DBversion done ( Corrected itemtypes.notforhold )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

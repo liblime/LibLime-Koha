@@ -60,6 +60,116 @@ sub new {
     bless $opts => $class;
 }
 
+## check to see if this itemtype is used.
+## returns a total number
+sub checkUsed
+{
+   my($s,$type) = @_;
+   my $total = 0;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('
+      SELECT COUNT(*) as total
+        FROM biblioitems
+       WHERE itemtype = ?');
+   $sth->execute($type);
+   $total += $sth->fetchrow_hashref->{'total'};
+   return $total;
+}
+
+sub search
+{
+   my($s,$str,$type) = @_;
+   my $dbh = C4::Context->dbh;
+   $str  ||= '';
+   $str    =~ s/\'/\\\'/g;
+   my @d   = split(' ',$str);
+   my $sth = $dbh->prepare('
+      SELECT * FROM itemtypes
+       WHERE (description LIKE ?)
+    ORDER BY itemtype');
+   $d[0] //= '';
+   $sth->execute("$d[0]%");
+   return $sth->fetchall_arrayref({});
+}
+
+## get one row by itemtype
+sub get
+{
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('SELECT * FROM itemtypes 
+      WHERE UCASE(itemtype)=UCASE(?)');
+   $sth->execute($_[1]);
+   return $sth->fetchrow_hashref() // {};
+}
+
+sub del
+{
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('DELETE FROM itemtypes WHERE UCASE(itemtype)=UCASE(?)');
+   $sth->execute($_[1]);
+   return 1;
+}
+
+sub save
+{
+   my($s,%g) = @_;
+   my $dbh = C4::Context->dbh;
+   my $sth;
+
+      #col    required 0=str,1=bool,2=money,3=int
+   my @f = ( 
+      ['itemtype'         ,1, 0],
+      ['description'      ,0, 0],
+      ['renewalsallowed'  ,1, 3],
+      ['rentalcharge'     ,0, 2],
+      ['replacement_price',0, 2],
+      ['notforloan'       ,1, 1],
+      ['imageurl'         ,0, 0],
+      ['summary'          ,0, 0],
+      ['reservefee'       ,0, 2],
+      ['notforhold'       ,1, 1]
+   );
+   $sth = $dbh->prepare('SELECT 1 FROM itemtypes WHERE itemtype=?');
+   $sth->execute($g{itemtype});
+   my $update = ($sth->fetchrow_array)[0] // 0;
+   
+   my %new = ();
+   foreach(@f) {
+      if (defined $g{$$_[0]}) { $new{$$_[0]} = $g{$$_[0]} }
+      else                    { $new{$$_[0]} = undef      }
+      if ($$_[2]==1) {
+         $new{$$_[0]} = $g{$$_[0]}? 1:0;
+      }
+      elsif ($$_[2]==3) {
+         $new{$$_[0]} = $g{$$_[0]};
+         $new{$$_[0]} =~ s/\D//g;
+      }
+      else {
+         $new{$$_[0]} = $g{$$_[0]} || '';
+      }
+   }
+   
+   my $sql = '';
+   my @vals= ();
+   if ($update) {
+      my $itemtype = $new{itemtype};
+      delete($new{itemtype});
+      $sql = sprintf("UPDATE itemtypes SET %s WHERE itemtype=?",
+         join(',',map{"$_=?"}keys %new)
+      );
+      @vals = (values %new, $itemtype);
+   }
+   else {
+      $sql = sprintf("INSERT INTO itemtypes(%s) VALUES(%s)",
+         join(',',keys %new),
+         join(',',map{'?'}keys %new)
+      );
+      @vals = values %new;
+   }
+   $sth = $dbh->prepare($sql);
+   $sth->execute(@vals);
+   return;
+}
 
 
 
@@ -80,8 +190,6 @@ sub all {
         { Slice => {} },
     )};
 }
-
-
 
 
 =head2 Object Methods
