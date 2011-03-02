@@ -608,8 +608,9 @@ sub checkauth {
             $userid   = $session->param('id');
             $sessiontype = $session->param('sessiontype');
         }
-   
-        if ( ($query->param('koha_login_context')) && ($query->param('userid') ne $session->param('id')) ) {
+
+        if ( ($query->param('koha_login_context')) 
+        && ($query->param('userid') ne ($session->param('id') // ''))  ) {
             #if a user enters an id ne to the id in the current session, we need to log them in...
             #first we need to clear the anonymous session...
             $debug and warn "query id = " . $query->param('userid') . " but session id = " . $session->param('id');
@@ -1412,7 +1413,7 @@ sub getuserflags {
     $sth->execute;
 
     while ( my ( $bit, $flag, $defaulton ) = $sth->fetchrow ) {
-        if ( ( $flags & ( 2**$bit ) ) || $defaulton ) {
+        if ( ( ($flags?1:0) & ( 2**$bit ) ) || $defaulton ) {
             $userflags->{$flag} = 1;
         }
         else {

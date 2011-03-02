@@ -210,7 +210,7 @@ sub barcodedecode
             die "No library set and/or no branchcode passed to barcodedecode()";
         }
         my $padding = C4::Context->preference('itembarcodelength') - length($prefix) - length($filtered);
-        $filtered = $prefix . '0' x $padding . $filtered if ($padding > 0);
+        $filtered = $prefix . '0' x $padding . $filtered if ($padding >= 0);
     }
     return $filtered || $g{barcode};
 }

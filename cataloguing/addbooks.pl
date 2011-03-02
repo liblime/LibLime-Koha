@@ -74,7 +74,8 @@ if ($query) {
    }
 
     # find results
-    my ( $error, $marcresults, $total_hits ) = SimpleSearch($query, $results_per_page * ($page - 1), $results_per_page);
+    my $offset = $results_per_page * ($page - 1);
+    my ( $error, $marcresults, $total_hits ) = SimpleSearch($query, $offset, $results_per_page);
 
     if ( defined $error ) {
         $template->param( error => $error );
@@ -92,7 +93,7 @@ if ($query) {
    foreach my $result(@newresults) {
       my(@barcodes) = split(/\s*\|\s*/,$$result{barcode});
       foreach my $i(0..$#barcodes) {
-         if ($barcodes[$i] eq $input->param('q')) { # exact search match on barcode
+         if ($barcodes[$i] eq $query) { # exact search match on barcode
             my @inums = split(/\s*\|\s*/, $$result{itemnumber});
             print $input->redirect('additem.pl?biblionumber='
             . $$result{biblionumber}.'&op=edititem&itemnumber='
