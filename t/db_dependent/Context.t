@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 91;
+use Test::More 'no_plan';
 use vars qw($debug $koha $dbh $config $ret);
 
 BEGIN {
