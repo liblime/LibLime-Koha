@@ -18,7 +18,7 @@ use Try::Tiny;
 
 use C4::Model::Periodical::Chronology;
 
-sub PredictNextSequenceFromSeed($$) {
+sub PredictNextSequenceFromSeed {
     my $iterator = shift or croak;
     my $seq_string = shift or croak;
 
@@ -50,7 +50,7 @@ sub PredictNextSequenceFromSeed($$) {
     return $new_seq_string;
 }
 
-sub PredictNextChronologyFromSeed($$) {
+sub PredictNextChronologyFromSeed {
     my ($frequency, $current_date) = @_;
 
     croak unless $current_date->isa('DateTime');
