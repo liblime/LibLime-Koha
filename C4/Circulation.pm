@@ -170,14 +170,16 @@ sub barcodedecode
 		                    return $g{barcode};
                         },
 	    'T-prefix'  =>  sub {
-                            if ($g{barcode} =~ /^[Tt]\s*(\d+)/) {
-                                return sprintf("T%07d", $1 );
+                            if ($g{barcode} =~ /^[Tt]\D*(\d+)/) {
+                                my $t = $1;
+                                ($t) = $t =~ /(\d)$/ if length($t) < 7;
+                                return sprintf("T%07d", $t);
                             } else {
                                 return $g{barcode};
                             }
                          },
 	     'cuecat'   =>  sub {
-		                    chomp($g{barcode});
+		                     chomp($g{barcode});
 	                        my @fields = split( /\./, $g{barcode} );
 	                        my @results = map( decode($_), @fields[ 1 .. $#fields ] );
 	                        if ( $#results == 2 ) {
@@ -189,22 +191,26 @@ sub barcodedecode
     };
     my $filtered = ($g{filter} && exists($filter_dispatch->{$g{filter}})) 
     ? $filter_dispatch->{$g{filter}}() : $g{barcode};
-    if(C4::Context->preference('itembarcodelength') && 
-    (length($filtered) < C4::Context->preference('itembarcodelength'))) {
-        my $branchcode = $g{branchcode} || C4::Context->userenv->{'branch'};
-        my $prefix     = $g{prefix} || $g{itembarcodeprefix} || '';
+    
+    ## pull it out for running on commandline, esp. *.t
+    my %userenv    = %{C4::Context->userenv || {}};
+    my $branchcode = $g{branchcode} || $userenv{branch}  || '_TEST';
+    my $bclen      = $branchcode eq '_TEST'? length($filtered) 
+    : C4::Context->preference('itembarcodelength');
+    if($bclen && (length($filtered) < $bclen)) {
+        my $prefix = $g{prefix} || $g{itembarcodeprefix} || '';
         if ($prefix) {
             # do nothing
         }
         elsif ($branchcode) {
-            $prefix ||= GetBranchDetail($branchcode)->{'itembarcodeprefix'};
+            $prefix ||= $branchcode eq '_TEST' ? 12345 
+            : GetBranchDetail($branchcode)->{'itembarcodeprefix'};
         }
         else {
             die "No library set and/or no branchcode passed to barcodedecode()";
         }
         my $padding = C4::Context->preference('itembarcodelength') - length($prefix) - length($filtered);
-        # FIXME : error check?
-        $filtered = $prefix . '0' x $padding . $filtered if($padding >= 0);
+        $filtered = $prefix . '0' x $padding . $filtered if ($padding > 0);
     }
     return $filtered || $g{barcode};
 }
@@ -217,7 +223,7 @@ sub barcodedecode
 sub GetItemnumbersFromBarcodeStr
 {
    my $str = shift;
-   my @all;
+   my @all = ();
    my $dbh = C4::Context->dbh;
    my $sth;
 
