@@ -100,7 +100,7 @@ $.tablesorter.addParser({
 			<tbody>
             <!-- TMPL_LOOP NAME="FILLEDRESERVES" -->
             <tr>
-                <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
+            <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" title="<!-- TMPL_IF NAME="reserves_245b" --><!-- TMPL_VAR NAME="reserves_245b" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_author" --> by <!-- TMPL_VAR NAME="reserves_author" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245h" --> <!-- TMPL_VAR NAME="reserves_245h" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245n" --> <!-- TMPL_VAR NAME="reserves_245n" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245p" --> <!-- TMPL_VAR NAME="reserves_245p" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="callnumber" --> <!-- TMPL_VAR NAME="callnumber" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="enumchron" --> <!-- TMPL_VAR NAME="enumchron" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="copynumber" --> Copy: <!-- TMPL_VAR NAME="copynumber" --><!-- /TMPL_IF -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
                     <!-- TMPL_VAR NAME="author" -->
                 </td>
                 <td align=center><!-- TMPL_VAR NAME="reservedate" --></td>
@@ -130,7 +130,7 @@ $.tablesorter.addParser({
 			<tbody>
             <!-- TMPL_LOOP NAME="EXPIREDRESERVES" -->
             <tr>
-                <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
+            <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" title="<!-- TMPL_IF NAME="reserves_245b" --><!-- TMPL_VAR NAME="reserves_245b" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_author" --> by <!-- TMPL_VAR NAME="reserves_author" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245h" --> <!-- TMPL_VAR NAME="reserves_245h" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245n" --> <!-- TMPL_VAR NAME="reserves_245n" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245p" --> <!-- TMPL_VAR NAME="reserves_245p" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="callnumber" --> <!-- TMPL_VAR NAME="callnumber" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="enumchron" --> <!-- TMPL_VAR NAME="enumchron" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="copynumber" --> Copy: <!-- TMPL_VAR NAME="copynumber" --><!-- /TMPL_IF -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
                     <!-- TMPL_VAR NAME="author" -->
                 </td>
                 <td align=center><!-- TMPL_VAR NAME="reservedate" --></td>
@@ -169,7 +169,7 @@ $.tablesorter.addParser({
 			<tbody>
             <!-- TMPL_LOOP NAME="CANCELLEDRESERVES" -->
             <tr>
-                <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
+            <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" title="<!-- TMPL_IF NAME="reserves_245b" --><!-- TMPL_VAR NAME="reserves_245b" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_author" --> by <!-- TMPL_VAR NAME="reserves_author" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245h" --> <!-- TMPL_VAR NAME="reserves_245h" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245n" --> <!-- TMPL_VAR NAME="reserves_245n" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245p" --> <!-- TMPL_VAR NAME="reserves_245p" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="callnumber" --> <!-- TMPL_VAR NAME="callnumber" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="enumchron" --> <!-- TMPL_VAR NAME="enumchron" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="copynumber" --> Copy: <!-- TMPL_VAR NAME="copynumber" --><!-- /TMPL_IF -->"><!-- TMPL_VAR NAME="reserves_title" --></a>
                     <!-- TMPL_VAR NAME="author" -->
                 </td>
                 <td align=center><!-- TMPL_VAR NAME="reservedate" --></td>

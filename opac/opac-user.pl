@@ -215,6 +215,19 @@ foreach my $res (@reserves) {
     $res->{'branch'} = $branches->{ $res->{'branchcode'} }->{'branchname'};
     my $biblioData = GetBiblioData($res->{'biblionumber'});
     $res->{'reserves_title'} = $biblioData->{'title'};
+    $res->{'reserves_author'} = $biblioData->{'author'};
+    my $marc = MARC::Record->new_from_usmarc($biblioData->{'marc'});
+    foreach my $subfield ( qw/b h n p/) {
+      my $hashkey = "reserves_245" . $subfield;
+      $res->{$hashkey} = $marc->subfield('245',$subfield)
+        if (defined($marc->subfield('245',$subfield)));
+    }
+    if (defined($res->{'itemnumber'})) {
+      my $item = GetItem($res->{'itemnumber'});
+      $res->{callnumber} = $item->{'itemcallnumber'};
+      $res->{enumchron} = $item->{'enumchron'};
+      $res->{copynumber} = $item->{'copynumber'};
+    }
     if ($OPACDisplayRequestPriority) {
         $res->{'priority'} = '' if $res->{'priority'} eq '0';
     }

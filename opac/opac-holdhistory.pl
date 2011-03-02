@@ -61,6 +61,7 @@ foreach my $res (@filledreserves) {
     $filledreserve{filldate} = format_date( $filldate );
     my $biblioData = GetBiblioData($res->{'biblionumber'});
     $filledreserve{reserves_title} = $biblioData->{'title'};
+    _get_additional_item_info(\%filledreserve,$biblioData);
     push( @filledreservesloop, \%filledreserve );
 }
 $template->param( FILLEDRESERVES => \@filledreservesloop );
@@ -79,6 +80,7 @@ foreach my $res (@expiredreserves) {
     $expiredreserve{holdexpdate} = format_date( $res->{'expirationdate'} );
     my $biblioData = GetBiblioData($res->{'biblionumber'});
     $expiredreserve{reserves_title} = $biblioData->{'title'};
+    _get_additional_item_info(\%expiredreserve,$biblioData);
     push( @expiredreservesloop, \%expiredreserve );
 }
 $template->param( EXPIREDRESERVES => \@expiredreservesloop );
@@ -108,6 +110,7 @@ foreach my $res (@cancelledreserves) {
     $cancelledreserve{cancellationdate} = format_date( $res->{'cancellationdate'} );
     my $biblioData = GetBiblioData($res->{'biblionumber'});
     $cancelledreserve{reserves_title} = $biblioData->{'title'};
+    _get_additional_item_info(\%cancelledreserve,$biblioData);
     push( @cancelledreservesloop, \%cancelledreserve );
 }
 $template->param( CANCELLEDRESERVES => \@cancelledreservesloop );
@@ -117,3 +120,22 @@ $template->param( holdhistoryview => 1 );
 
 output_html_with_http_headers $query, $cookie, $template->output;
 
+sub _get_additional_item_info {
+
+  my ($reserve,$bibinfo) = @_;
+
+  $reserve->{reserves_author} = $bibinfo->{'author'};
+  my $marc = MARC::Record->new_from_usmarc($bibinfo->{'marc'});
+  foreach my $subfield ( qw/b h n p/) {
+    my $hashkey = "reserves_245" . $subfield;
+    $reserve->{$hashkey} = $marc->subfield('245',$subfield)
+      if (defined($marc->subfield('245',$subfield)));
+  }
+  if (defined($reserve->{'itemnumber'})) {
+    my $item = GetItem($reserve->{'itemnumber'});
+    $reserve->{callnumber} = $item->{'itemcallnumber'};
+    $reserve->{enumchron}  = $item->{'enumchron'};
+    $reserve->{copynumber} = $item->{'copynumber'};
+  }
+  return;
+}
