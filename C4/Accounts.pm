@@ -185,7 +185,7 @@ sub MemberAllAccounts
    $sth->execute(@vals);
    my @all = ();
    while(my $row = $sth->fetchrow_hashref()) { 
-      $total += $$row{amountoutstanding};
+      $total += ($$row{amountoutstanding} // 0);
       push @all, $row;
    }
    return $total, \@all;
