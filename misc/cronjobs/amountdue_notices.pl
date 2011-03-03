@@ -364,7 +364,19 @@ END_SQL
                     email          => $patron->{email},
                     outputformat   => defined $csvfilename ? 'csv' : defined $htmlfilename ? 'html' : '',
                 }
+          );
+          # Log as a print message in the message_queue table
+          # for patron messaging tab
+          if ($nomail) {
+            C4::Letters::EnqueueLetter(
+                {   letter                 => $letter,
+                    borrowernumber         => $patron->{borrowernumber},
+                    message_transport_type => 'print',
+                    from_address           => $admin_email_address,
+                    to_address             => undef
+                }
             );
+          }
       } else {
           C4::Letters::EnqueueLetter(
               {  letter                 => $letter,
