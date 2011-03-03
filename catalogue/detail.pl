@@ -380,9 +380,10 @@ if (C4::Context->preference('OPACBaseURL')){
 ## Process 'Hold For' button data
 my $last_borrower_show_button = 0;
 if ( $query->cookie('last_borrower_borrowernumber') && $query->param('last_borrower_show_button') ) {
-  $last_borrower_show_button = 1;
+  my $searchtohold = $query->param('searchtohold');
   $template->param(
-    last_borrower_show_button => $last_borrower_show_button,
+    searchtohold              => $searchtohold,
+    last_borrower_show_button => 1,
     last_borrower_borrowernumber => $query->cookie('last_borrower_borrowernumber'),
     last_borrower_cardnumber => $query->cookie('last_borrower_cardnumber'),
     last_borrower_firstname => $query->cookie('last_borrower_firstname'),  

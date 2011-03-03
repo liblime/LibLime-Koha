@@ -9,6 +9,12 @@
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/dates.js"></script>
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
 <script type="text/javascript">
+var close_greybox = '<TMPL_VAR NAME="close_greybox">';
+if (close_greybox==1) {
+   parent.parent.location.href='/cgi-bin/koha/circ/circulation.pl?borrowernumber=<TMPL_VAR NAME="borrowernumber">&from_searchtohold=1';
+   parent.parent.GB_hide();
+}
+
     // <![CDATA[
 var patron_homebranch = "<!-- TMPL_VAR NAME="borrower_branchname" ESCAPE="JS" -->";
 var override_items = {<!-- TMPL_LOOP NAME="bibitemloop" --><!-- TMPL_LOOP NAME="itemloop" --><!-- TMPL_IF NAME="override" -->
@@ -161,6 +167,7 @@ function checkMultiHold() {
 			</p>
 			<form name="cancelReservewithtransfert" action="branchreserves.pl" method="post">
 				<input type="submit" class="button" />
+         <input type=hidden name="searchtohold" value="<TMPL_VAR NAME="searchtohold">">
 			</form>
 		</div>
   <!-- /TMPL_IF -->
@@ -195,6 +202,7 @@ function checkMultiHold() {
             <input type="hidden" name="multi_hold" value="<!-- TMPL_VAR NAME="multi_hold" -->"/>
             <input type="hidden" name="biblionumbers" value="<!-- TMPL_VAR NAME="biblionumbers" -->"/>
         <!-- /TMPL_IF -->
+    <input type=hidden name="searchtohold" value="<TMPL_VAR NAME="searchtohold">">
     </form>
   <!-- TMPL_ELSE -->
 
@@ -541,6 +549,7 @@ function checkMultiHold() {
             <!-- /TMPL_IF -->
         <!-- /TMPL_IF -->
     </fieldset>
+    <input type=hidden name="searchtohold" value="<TMPL_VAR NAME="searchtohold">">
     </form>
 	</fieldset>
 <!-- /TMPL_UNLESS -->
@@ -723,6 +732,7 @@ function checkMultiHold() {
 </fieldset>
 <!-- /TMPL_IF -->
 </fieldset>
+<input type=hidden name="searchtohold" value="<TMPL_VAR NAME="searchtohold">">
 </form>
 <!-- /TMPL_IF -->
 <!-- /TMPL_UNLESS -->

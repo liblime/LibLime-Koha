@@ -132,6 +132,11 @@ if ($findborrower) {
     $findborrower =~ s|,| |g;
 #$findborrower =~ s|'| |g;
 }
+
+my $from_searchtohold = $query->param('from_searchtohold') // 0;
+if ($from_searchtohold) {
+   $template->param(from_searchtohold => 1);
+}
 my $borrowernumber = $query->param('borrowernumber');
 
 my $orderby = $query->param('orderby');

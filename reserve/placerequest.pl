@@ -104,13 +104,15 @@ if ($type eq 'str8' && $borrowernumber ne ''){
         }
     }
 
+    my $searchtohold = $input->param('searchtohold');
+    my $url = "request.pl?searchtohold=$searchtohold&close_greybox=$searchtohold&borrowernumber=$$borrowernumber{borrowernumber}";
     if ($multi_hold) {
         if ($bad_bibs) {
             $biblionumbers .= $bad_bibs;
         }
-        print $input->redirect("request.pl?biblionumbers=$biblionumbers&multi_hold=1");
+        print $input->redirect("$url&biblionumbers=$biblionumbers&multi_hold=1");
     } else {
-        print $input->redirect("request.pl?biblionumber=$biblionumber");
+        print $input->redirect("$url&biblionumber=$biblionumber");
     }
 } elsif ($borrowernumber eq ''){
 	print $input->header();

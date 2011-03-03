@@ -778,5 +778,12 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 
 </div>
 </div>
+<TMPL_IF NAME="from_searchtohold">
+<script>
+$(document).ready(function(){
+   $('#onholdlink').click();
+});
+</script>
+</TMPL_IF>
 <!-- /TMPL_IF -->
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

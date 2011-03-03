@@ -46,7 +46,7 @@ use C4::Search;		# enabled_staff_search_views
 my $dbh = C4::Context->dbh;
 my $sth;
 my $input = new CGI;
-my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
+my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
         template_name   => "reserve/request.tmpl",
         query           => $input,
@@ -54,6 +54,15 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
         authnotrequired => 0,
         flagsrequired   => { reserveforothers => '*' },
     }
+);
+
+my $searchtohold   = $input->param('searchtohold');
+my $close_greybox  = $input->param('close_greybox');
+my $borrowernumber = $input->param('borrowernumber');
+$template->param(
+   searchtohold  =>$searchtohold,
+   close_greybox =>$close_greybox,
+   borrowernumber=>$borrowernumber,
 );
 
 my $action = $input->param('action');
