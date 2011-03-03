@@ -351,6 +351,16 @@ function isValidDate(theFieldName){
     
 
         <div id="opac-user-holds">
+        <form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
+           <!-- TMPL_LOOP NAME="RESERVES" -->
+             <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
+             <input type="hidden" name="suspend" value="1" />
+           <!-- /TMPL_LOOP -->
+           <input type="submit" name="submit" class="icon delete cancel" value="Suspend All" />
+           <label>Resume on:</label>
+           <input type="text" size="10" maxlength="10" id="resumealldate" name="resumealldate" />
+           <label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
+        </form>
         <table id="holdst">
         <caption>Holds <span class="count">(<!-- TMPL_VAR NAME="reserves_count" --> total)</span></caption>
             <!-- RESERVES TABLE ROWS -->
@@ -442,6 +452,14 @@ function isValidDate(theFieldName){
 
         <div>
 	<!-- TMPL_IF NAME="suspended_reserves_count" -->
+        <p>
+        <form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
+           <!-- TMPL_LOOP NAME="SUSPENDED_RESERVES" -->
+             <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
+             <input type="hidden" name="resume" value="1" />
+           <!-- /TMPL_LOOP -->
+           <input type="submit" name="submit" class="icon delete cancel" value="Resume All" />
+        </form>
        <table id="holdst"> 
         <caption>Suspended Holds <span class="count">(<!-- TMPL_VAR NAME="suspended_reserves_count" --> total)</span></caption>
             <!-- RESERVES TABLE ROWS -->
