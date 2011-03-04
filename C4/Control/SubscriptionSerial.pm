@@ -78,6 +78,8 @@ sub Update($) {
             my $item = from_json($subscription_serial->subscription->item_defaults);
             $item->{dateaccessioned} = $subscription_serial->received_date->ymd;
             $item->{enumchron} = $subscription_serial->periodical_serial->vintage;
+            $item->{homebranch} = $subscription_serial->subscription->branchcode;
+            $item->{holdingbranch} = $subscription_serial->subscription->branchcode;
             my (undef, undef, $itemnumber) = C4::Items::AddItem($item,
                 $subscription_serial->subscription->periodical->biblionumber
                 );

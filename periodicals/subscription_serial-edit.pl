@@ -35,11 +35,11 @@ my $query = new CGI;
 my $op = $query->param('op') || '';
 my $subscription_serial_id = $query->param('subscription_serial_id');
 my ($template, $loggedinuser, $cookie) = 
-  get_template_and_user({template_name => "periodicals/subscription_serial-edit.tmpl",
+  get_template_and_user({template_name => 'periodicals/subscription_serial-edit.tmpl',
                 query => $query,
-                type => "intranet",
+                type => 'intranet',
                 authnotrequired => 0,
-                flagsrequired => {serials => 1},
+                flagsrequired => {serials => '*'},
                 debug => 1,
                 });
 
@@ -50,7 +50,19 @@ if ($subscription_serial and C4::Control::Subscription::UserCanViewSubscription(
         my $periodical_id
             = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load->subscription->periodical_id;
         C4::Control::Periodical::UpdateBiblioSummary($periodical_id);
-        print $query->redirect("subscription-detail.pl?subscription_id=".$subscription_serial->subscription_id);
+
+        my $subscription_serial = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;
+        my $redirect_url;
+        if ($query->param('status') == 2 && defined $subscription_serial->itemnumber) {
+            $redirect_url
+                = sprintf '/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=%d&itemnumber=%d',
+                $subscription_serial->periodical_serial->periodical->biblionumber,
+                $subscription_serial->itemnumber;
+        }
+        else {
+            $redirect_url = sprintf 'subscription-detail.pl?subscription_id=%d', $subscription_serial->subscription_id;
+        }
+        print $query->redirect($redirect_url);
     }
     SeedTemplateWithSubscriptionSerialData($template, $subscription_serial_id) if $subscription_serial_id;
     SeedTemplateWithGeneralData($template);
