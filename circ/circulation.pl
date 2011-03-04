@@ -686,7 +686,7 @@ $template->param(
     duedatespec       => $duedatespec,
     message           => $message,
     CGIselectborrower => $CGIselectborrower,
-    totaldue        => sprintf("%.2f", $total),
+    totaldue          => sprintf("%.2f", $total // 0),
     inprocess         => $inprocess,
     memberofinstution => $member_of_institution,
     CGIorganisations  => $CGIorganisations,

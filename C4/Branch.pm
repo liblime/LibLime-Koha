@@ -171,7 +171,7 @@ sub GetBranchesLoop (;$$) {  # since this is what most pages want anyway
     foreach (sort { $branches->{$a}->{branchname} cmp $branches->{$b}->{branchname} } keys %$branches) {
         push @loop, {
             value => $_,
-            selected => ($_ eq $branch) ? 1 : 0, 
+            selected => ($_ ~~ $branch) ? 1 : 0, 
             branchname => $branches->{$_}->{branchname},
         };
     }
@@ -377,7 +377,7 @@ sub GetBranch ($$) {
     my ( $query, $branches ) = @_;    # get branch for this query from branches
     my $branch = $query->param('branch');
     my %cookie = $query->cookie('userenv');
-    ($branch)                || ($branch = $cookie{'branchname'});
+    $branch ||= $cookie{'branchname'};
     ( $branches->{$branch} ) || ( $branch = ( keys %$branches )[0] );
     return $branch;
 }

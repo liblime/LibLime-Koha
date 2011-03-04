@@ -224,7 +224,7 @@ sub BuildFinesholdsissuesBox {
         = ($issuedata, scalar @$issuedata, sprintf('%.2f', $totalprice), $overdues_exist);
 
     ### fines tab
-    my $total = GetTotalFines($borrowernumber);
+    my $total = GetTotalFines($borrowernumber) // 0;
     @output{qw(totaldue totaldue_raw)} = (sprintf("%.2f", $total), $total);
 
     return \%output;

@@ -1887,7 +1887,8 @@ h1#xml a {
 	z-index : 50;
 }
 #cartmenulink {
-        background: transparent url("../../img/cart-small.gif") 0 3px no-repeat;
+        background: transparent url("../../img/cart.gif") no-repeat;
+        /* 0 3px no-repeat */
         padding-left : 15px;
 }
 #cartmenulink span#basketcount span {
