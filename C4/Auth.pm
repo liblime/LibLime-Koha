@@ -1413,7 +1413,7 @@ sub getuserflags {
     $sth->execute;
 
     while ( my ( $bit, $flag, $defaulton ) = $sth->fetchrow ) {
-        if ( ( ($flags?1:0) & ( 2**$bit ) ) || $defaulton ) {
+        if ( ($flags & 2**$bit) || $defaulton ) {
             $userflags->{$flag} = 1;
         }
         else {
