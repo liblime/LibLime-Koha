@@ -171,6 +171,7 @@ sub GetSummary {
             branchname => GetBranchName($s->branchcode),
             summary => C4::Control::Subscription::GetSummary($s->id),
         };
+        next if (scalar @{$summary->{summary}} == 0);
         push @$summaries, $summary;
     }
 
