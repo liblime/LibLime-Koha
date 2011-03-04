@@ -203,7 +203,7 @@ sub get_template_and_user {
         if (C4::Context->preference('GranularPermissions')) {
             if ( $flags ) {
                 foreach my $module (keys %$all_perms) {
-                    if ( $flags->{$module} == 1) {
+                    if ( $flags->{superlibrarian} || $flags->{$module} == 1) {
                         foreach my $subperm (keys %{ $all_perms->{$module} }) {
                             $template->param( "CAN_user_${module}_${subperm}" => 1 );
                         }
@@ -1522,9 +1522,8 @@ Returns member's flags or 0 if a permission is not met.
 
 sub haspermission {
     my ($userid, $flagsrequired) = @_;
-    my $sth = C4::Context->dbh->prepare("SELECT flags FROM borrowers WHERE userid=?");
-    $sth->execute($userid);
-    my $flags = getuserflags( $sth->fetchrow(), $userid );
+
+    my $flags = {};
     if ( $userid eq C4::Context->config('user') ) {
         # Super User Account from /etc/koha.conf
         $flags->{'superlibrarian'} = 1;
@@ -1534,6 +1533,12 @@ sub haspermission {
         $flags->{'superlibrarian'} = 1;
     }
     return $flags if $flags->{superlibrarian};
+
+    my ($raw_flags)
+        = C4::Context->dbh->selectrow_array('SELECT flags FROM borrowers WHERE userid=?', undef, $userid);
+    $flags = getuserflags( $raw_flags, $userid );
+    return $flags if $flags->{superlibrarian};
+
     foreach my $module ( keys %$flagsrequired ) {
         if (C4::Context->preference('GranularPermissions')) {
             my $subperm = $flagsrequired->{$module};
