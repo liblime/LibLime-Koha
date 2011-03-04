@@ -61,7 +61,7 @@ our @statuses = (
     {id => 1, human => 'Expected'},
     {id => 2, human => 'Arrived'},
     {id => 3, human => 'Late'},
-    {id => 4, human => 'Missing'},
+    {id => 4, human => 'Not Available'},
     {id => 7, human => 'Claimed'},
     );
 
