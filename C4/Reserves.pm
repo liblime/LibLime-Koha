@@ -1444,26 +1444,30 @@ itemnumber and supplying itemnumber.
 =cut
 
 sub ModReserve {
-    #subroutine to update a reserve
-    my ( $rank, $biblio, $borrower, $branch , $itemnumber, $reservenumber ) = @_;
-    # Pull borrowernumber of the user performing the action for logging
-    my $moduser = C4::Context->userenv->{'number'};
-     return if $rank eq "W";
-     return if $rank eq "n";
-    my $dbh = C4::Context->dbh;
-    if ( $rank eq "del" ) {
+    my ($priority, $biblionumber, $borrowernumber, $branchcode, $itemnumber, $reservenumber) = @_;
+
+    return if $priority eq 'W';
+    return if $priority eq 'n';
+
+    if ( $priority eq "del" ) {
         ModReserveCancelAll($reservenumber, $itemnumber);
     }
-    elsif ($rank =~ /^\d+/ and $rank > 0) {
-        my $query = qq/
-        UPDATE reserves SET priority = ? ,branchcode = ?, itemnumber = ?, found = NULL, waitingdate = NULL, expirationdate = NULL
-            WHERE reservenumber = ?
-        /;
-        my $sth = $dbh->prepare($query);
-        $sth->execute( $rank, $branch, $itemnumber, $reservenumber );
-        $sth->finish;
-        _FixPriority( $reservenumber, $rank );
+    elsif ($priority =~ /^\d+/ and $priority > 0) {
+        my $query = q{
+        UPDATE reserves
+        SET    priority = ?,
+               branchcode = ?,
+               itemnumber = ?,
+               found = NULL,
+               waitingdate = NULL,
+               expirationdate = NULL
+        WHERE  reservenumber = ?
+        };
+        C4::Context->dbh->do(
+            $query, undef, $priority, $branchcode, $itemnumber, $reservenumber);
+        _FixPriority($reservenumber, $priority);
     }
+    return;
 }
 
 
@@ -2270,7 +2274,7 @@ sub _NormalizePriorities {
         WHERE  biblionumber = ?
           AND  (found IS NULL OR found = 'S')
           AND  priority > 0
-        ORDER BY priority ASC, timestamp DESC
+        ORDER BY priority ASC, timestamp ASC
     };
     my $reserves_list
         = $dbh->selectcol_arrayref($query, undef, $biblionumber);
