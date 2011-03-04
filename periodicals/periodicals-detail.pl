@@ -33,7 +33,7 @@ my ($template, $loggedinuser, $cookie) =
                 query => $query,
                 type => "intranet",
                 authnotrequired => 0,
-                flagsrequired => {serials => 1},
+                flagsrequired => {serials => '*'},
                 debug => 1,
                 });
 

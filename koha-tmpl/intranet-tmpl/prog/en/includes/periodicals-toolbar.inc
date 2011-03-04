@@ -36,7 +36,7 @@
 	//]]>
 	</script>
 <ul class="toolbar">
-	<li><a id="new_periodical" href="periodicals-add.pl">New Periodical</a></li>
+	<TMPL_IF NAME="CAN_user_serials_periodical_create"><li><a id="new_periodical" href="periodicals-add.pl">New Periodical</a></li></TMPL_IF>
 
 <!--
     <TMPL_IF NAME="periodical_id">

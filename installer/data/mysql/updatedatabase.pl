@@ -4433,6 +4433,20 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
    print "Upgrade to $DBversion done ( Corrected itemtypes.notforhold )\n";
 }
 
+$DBversion = '4.03.15.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+   $dbh->do(q{
+        INSERT INTO permissions (module_bit, code, description) VALUES
+            (15, 'periodical_view', 'Basic periodicals permissions'),
+            (15, 'periodical_create', 'Create a new periodical definition'),
+            (15, 'periodical_edit', 'Modify a periodical definition'),
+            (15, 'periodical_delete', 'Delete a periodical definition')
+      });
+
+   SetVersion ($DBversion);
+   print "Upgrade to $DBversion done ( Add granular permissions for periodicals )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

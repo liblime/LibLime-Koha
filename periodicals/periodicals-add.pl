@@ -33,11 +33,16 @@ my ($template, $loggedinuser, $cookie) =
                 query => $query,
                 type => "intranet",
                 authnotrequired => 0,
-                flagsrequired => {serials => 1},
+                flagsrequired => {serials => '*'},
                 debug => 1,
                 });
 
-$periodical_id = C4::Control::Periodical::UpdateOrCreate($query) if ($op eq 'save');
+if ($op eq 'save' && (
+        (C4::Auth::haspermission(C4::Context->userenv->{id}, {serials => 'periodical_edit'}) && defined $periodical_id)
+        || (C4::Auth::haspermission(C4::Context->userenv->{id}, {serials => 'periodical_create'}) && ! defined $periodical_id)
+    )) {
+    $periodical_id = C4::Control::Periodical::UpdateOrCreate($query);
+}
 
 SeedTemplateWithPeriodicalData($template, $periodical_id) if $periodical_id;
 SeedTemplateWithGeneralData($template);

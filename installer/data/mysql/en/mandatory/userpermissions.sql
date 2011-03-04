@@ -69,5 +69,9 @@ INSERT INTO permissions (module_bit, code, description) VALUES
    (13, 'schedule_tasks', 'Schedule tasks to run'),
    (13, 'manage_csv_profiles', 'Manage CSV export profiles'),
    (13, 'receipts_manage', 'Create, Edit & Delete Receipt Templates'), 
-   (13, 'receipts_assign', 'Assign Receipt Templates to Various Actions')
+   (13, 'receipts_assign', 'Assign Receipt Templates to Various Actions'),
+   (15, 'periodical_view', 'Basic periodicals permissions'),
+   (15, 'periodical_create', 'Create a new periodical definition'),
+   (15, 'periodical_edit', 'Modify a periodical definition'),
+   (15, 'periodical_delete', 'Delete a periodical definition')
 ;

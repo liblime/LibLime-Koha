@@ -31,8 +31,8 @@
           <td><a href="periodicals-detail.pl?periodical_id=<TMPL_VAR NAME="id">"><TMPL_VAR NAME="bibliotitle"></a></td>
           <td><TMPL_VAR NAME="subscription_count"></td>
           <td>
-            <a href="periodicals-add.pl?periodical_id=<TMPL_VAR NAME="id">">Edit</a> |
-            <a href="delete.pl?type=periodical&id=<TMPL_VAR NAME="id">">Delete</a>
+            <TMPL_IF NAME="CAN_user_serials_periodical_edit">(<a href="periodicals-add.pl?periodical_id=<TMPL_VAR NAME="id">">Edit</a>)</TMPL_IF>
+            <TMPL_IF NAME="CAN_user_serials_periodical_delete">(<a href="delete.pl?type=periodical&id=<TMPL_VAR NAME="id">">Delete</a>)</TMPL_IF>
           </td>
         </tr>   
     </TMPL_LOOP>

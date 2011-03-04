@@ -18,11 +18,15 @@
     <h1>Periodical description for &quot;<!-- TMPL_VAR name="bibliotitle" -->&quot;</h1>
     
     <div id="periodical_info">
-        <h2>Periodical Information</h2>
-		<ul>
-		<li><span class="label">Periodical ID: </span><!--TMPL_VAR name="periodical_id"--> (<a href="periodicals-add.pl?periodical_id=<TMPL_VAR NAME="periodical_id">">Edit</a>)(<a href="subscription-add.pl?periodical_id=<TMPL_VAR NAME="periodical_id">">Subscribe</a>)</li>
-        <li><span class="label">Biblio:</span> <i>(<!-- TMPL_VAR name="biblionumber" -->)</i> <a href="/cgi-bin/koha/catalogue/MARCdetail.pl?biblionumber=<!-- TMPL_VAR name="biblionumber" -->"><!-- TMPL_VAR name="bibliotitle" --></a></li>
-     </ul>
+      <h2>Periodical Information</h2>
+      <ul>
+        <li>
+          <span class="label">Periodical ID: </span><TMPL_VAR name="periodical_id">
+            <TMPL_IF NAME="CAN_user_serials_periodical_edit">(<a href="periodicals-add.pl?periodical_id=<TMPL_VAR NAME="periodical_id">">Edit</a>)</TMPL_IF>
+            (<a href="subscription-add.pl?periodical_id=<TMPL_VAR NAME="periodical_id">">Subscribe</a>)
+        </li>
+        <li><span class="label">Biblio:</span> <i>(<TMPL_VAR name="biblionumber">)</i> <a href="/cgi-bin/koha/catalogue/MARCdetail.pl?biblionumber=<TMPL_VAR name="biblionumber">"><TMPL_VAR name="bibliotitle"></a></li>
+      </ul>
     </div>
     <div id="sequence_numbering" >
         <h3>Sequence Prediction</h3>
@@ -51,15 +55,17 @@
             <td><TMPL_VAR NAME="expected"></td>
             <td><TMPL_VAR NAME="arrived"></td>
             <td>
-              <a href="periodical_serial-edit.pl?periodical_serial_id=<TMPL_VAR NAME="id">">Edit</a> |
-              <a href="delete.pl?type=periodical_serial&id=<TMPL_VAR NAME="id">">Delete</a>
-              <TMPL_IF NAME="__last__">| <a href="periodical_serial-edit.pl?periodical_serial_id=<TMPL_VAR NAME="id">&op=combine">Combine</a></TMPL_IF>
+              <TMPL_IF NAME="CAN_user_serials_periodical_edit">(<a href="periodical_serial-edit.pl?periodical_serial_id=<TMPL_VAR NAME="id">">Edit</a>)</TMPL_IF>
+              <TMPL_IF NAME="CAN_user_serials_periodical_delete">(<a href="delete.pl?type=periodical_serial&id=<TMPL_VAR NAME="id">">Delete</a>)</TMPL_IF>
+              <TMPL_IF EXPR="__last__ && CAN_user_serials_periodical_edit">(<a href="periodical_serial-edit.pl?periodical_serial_id=<TMPL_VAR NAME="id">&op=combine">Combine</a>)</TMPL_IF>
             </td>
         </tr>
         </TMPL_LOOP>
+        <TMPL_IF NAME="CAN_user_serials_periodical_create">
         <tr>
-            <td colspan="4"><a href="periodicals-detail.pl?periodical_id=<TMPL_VAR NAME="periodical_id">&op=gen_next_seq">Generate Next Issue Record</a></td>
+          <td colspan="4"><a href="periodicals-detail.pl?periodical_id=<TMPL_VAR NAME="periodical_id">&op=gen_next_seq">Generate Next Issue Record</a></td>
         </tr>
+        </TMPL_IF>
     </table>
     </div>
 
