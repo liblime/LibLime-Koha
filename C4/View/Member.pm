@@ -11,6 +11,7 @@ use C4::Dates qw(format_date);
 use C4::Branch;
 use C4::Members;
 use C4::Accounts;
+use C4::Items;
 
 sub GetReservesLoop {
     my $borrowernumber = shift;
@@ -73,6 +74,20 @@ sub GetReservesLoop {
             $getreserv{itemtype}        = $getbibtype->{'description'};
             $getreserv{author}          = $getbibinfo->{'author'};
             $getreserv{biblionumber}    = $num_res->{'biblionumber'};	
+        }
+        my $getbibinfo = GetBiblioData( $num_res->{'biblionumber'} );
+        my $marc = MARC::Record->new_from_usmarc($getbibinfo->{'marc'});
+        foreach my $subfield ( qw/b h n p/) {
+          my $hashkey = "reserves_245" . $subfield;
+          $getreserv{$hashkey} = $marc->subfield('245',$subfield)
+            if (defined($marc->subfield('245',$subfield)));
+        }
+        $getreserve{reserves_260c} = $marc->subfield('260','c');
+        if (defined($num_res->{'itemnumber'})) {
+          my $item = GetItem($num_res->{'itemnumber'});
+          $getreserv{callnumber} = $item->{'itemcallnumber'};
+          $getreserv{enumchron}  = $item->{'enumchron'};
+          $getreserv{copynumber} = $item->{'copynumber'};
         }
         $getreserv{pickupbranch} = C4::Branch::GetBranchName($num_res->{branchcode});
         $getreserv{waitingposition} = $num_res->{'priority'};
