@@ -35,6 +35,7 @@ BEGIN {
 }
 
 our @sequence_formats = (
+    {format => 'v. {Xn} no. {Yn}', human => 'v. 14 no. 2'},
     {format => 'No. {Xn}', human => 'No. 14'},
     {format => 'Vol. {Xn}, No. {Yn}, Issue {Zn}', human => 'Vol. 14, No. 2, Issue 1'},
     {format => 'Vol. {Xn}, No. {Yn}', human => 'Vol 14, No. 2'},
@@ -49,6 +50,8 @@ our @chronology_formats = (
     {format => '%m/%d/%Y', human => '02/19/2010'},
     {format => '%d/%m/%Y', human => '19/02/2010'},
     {format => '%b %d, %Y', human => 'Feb 19, 2010'},
+    {format => '%Y %b %d', human => '2010 Feb 19'},
+    {format => '%Y %b', human => '2010 Feb'},
     {format => '%B %d, %Y', human => 'February 19, 2010'},
     {format => '%a, %b %d, %Y', human => 'Fri, Feb 19, 2010'},
     {format => '%A, %B %d, %Y', human => 'Friday, February 19, 2010'},

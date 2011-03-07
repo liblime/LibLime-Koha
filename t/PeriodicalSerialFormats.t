@@ -55,7 +55,7 @@ ok(C4::Control::PeriodicalSerialFormats::FormatChronology('%Y-%m-%d', $date) eq 
 ok(C4::Control::PeriodicalSerialFormats::FormatChronology('%q %Y', $date) eq 'Winter 2010', 'FormatChronology 2');
 ok(C4::Control::PeriodicalSerialFormats::FormatChronology('%Q %Y', $date) eq 'Summer 2010', 'FormatChronology 3');
 
-ok(C4::Control::PeriodicalSerialFormats::FormatVintage('Vol. 1', '2010-01-01') eq 'Vol. 1 - 2010-01-01', 'FormatVintage 1');
+ok(C4::Control::PeriodicalSerialFormats::FormatVintage('Vol. 1', '2010-01-01') eq 'Vol. 1 : 2010-01-01', 'FormatVintage 1');
 ok(C4::Control::PeriodicalSerialFormats::FormatVintage(undef, '2010-01-01')    eq '2010-01-01',          'FormatVintage 2');
 ok(C4::Control::PeriodicalSerialFormats::FormatVintage('Vol. 1', undef)        eq 'Vol. 1',              'FormatVintage 3');
 

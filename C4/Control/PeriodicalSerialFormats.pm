@@ -111,7 +111,7 @@ sub FormatVintage($$) {
     my $vintage;
 
     $vintage .= $formatted_sequence // '';
-    $vintage .= ' - ' if $formatted_sequence and $formatted_chronology;
+    $vintage .= ' : ' if $formatted_sequence and $formatted_chronology;
     $vintage .= $formatted_chronology // '';
 }
 
