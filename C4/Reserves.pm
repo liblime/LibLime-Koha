@@ -230,12 +230,46 @@ sub DupecheckQueue
    return ($sth->fetchrow_array)[0];
 }
 
+sub _getBranchesQueueWeight
+{
+   my $dbh = C4::Context->dbh;
+   my $sth;
+   my $dorand   = C4::Context->preference('RandomizeHoldsQueueWeight')   // 0;
+   my $staylibs = C4::Context->preference('StaticHoldsQueueWeight')      // '';
+   my $nextlibs = C4::Context->preference('NextLibraryHoldsQueueWeight') // '';
+   my @staylibs = split(/\,\s*/,$staylibs);
+   my @nextlibs = split(/\,\s*/,$nextlibs);
+   my @branches = ();
+
+   if (@nextlibs) {
+      @branches = @nextlibs; undef @nextlibs;
+   }
+   elsif ($dorand) {
+      if (@staylibs) { 
+         use List::Util 'shuffle';
+         @branches = shuffle(@staylibs);
+      }
+      else {
+         $sth = $dbh->prepare('SELECT branchcode FROM branches ORDER BY RAND()');
+         $sth->execute();
+         @branches = $sth->fetchall_array;
+      }
+   }
+   elsif (@staylibs) {
+      @branches = @staylibs;
+   }
+   else {
+      $sth = $dbh->prepare('SELECT branchcode FROM branches');
+      $sth->execute();
+      @branches = $sth->fetchall_array;
+   }
+   return @branches;
+}
+
 sub GetItemForBibPrefill
 {
    my $res = shift;
    my $dbh = C4::Context->dbh;
-   
-   ## other item-level holds of the same bib are ineligible for this hold
    my $sth = $dbh->prepare("SELECT itemnumber
       FROM reserves
      WHERE biblionumber = ?
@@ -245,7 +279,25 @@ sub GetItemForBibPrefill
        AND reservenumber != ?
        AND itemnumber IS NOT NULL") || die $dbh->errstr();
    $sth->execute($$res{biblionumber},$$res{reservenumber});
-   my @items = $sth->fetchrow_array();
+   my @notitems = $sth->fetchrow_array();
+   $sth->finish();
+
+   my @vals     = ($$res{biblionumber});
+   my @branches = _getBranchesQueueWeight();
+   my $starti   = 0;
+   if (!!$$res{_pass}) {
+      my $idx = 0;
+      IDX:
+      for my $i(0..$#branches) {
+         if ($$res{holdingbranch} eq $branches[$i]) {
+            $idx = $i;
+            last IDX;
+         }
+      }
+      my @lob   = splice(@branches,$idx);
+      @branches = (@lob,@branches);
+      $starti   = 1;
+   }
    
    my $sql = sprintf("
       SELECT biblio.title,
@@ -257,24 +309,33 @@ sub GetItemForBibPrefill
         FROM items,biblio
        WHERE items.biblionumber = ? %s
          AND items.biblionumber = biblio.biblionumber",
-      @items? sprintf("AND items.itemnumber NOT IN (%s)", 
-         join(',',map{'?'}@items)) : ''
+      @notitems? sprintf("AND items.itemnumber NOT IN (%s)", 
+         join(',',map{'?'}@notitems)) : ''
    );
    $sth = $dbh->prepare($sql) || die $dbh->errstr();
-   $sth->execute($$res{biblionumber},@items);
+   $sth->execute($$res{biblionumber},@notitems);
+   my @all = ();
+   while(my $row = $sth->fetchrow_hashref()) { push @all, $row }
+   $sth->finish();
+   return unless @all;
 
-   my $item; # leave undef
-   ITEM:
-   while(my $row = $sth->fetchrow_hashref()) {
-      ## FIXME: more intelligent search for available item here
-      ## depending on passed-to library and which is most reasonable
-      ## for borrower based on borrower's home library -hQ
-      $$row{found}            = $$res{found};
-      $$row{borrowerbranch}   = $$res{borrowerbranch};
-      $$row{borrowercategory} = $$res{categorycode};
-      $$row{reservenumber}    = $$res{reservenumber};
-      $item = _itemfillbib($row);
-      last ITEM if $item;
+   my $item; # leave void
+   BRANCHITEM:
+   for my $i($starti..$#branches) {
+      foreach(@all) {
+         if ($$_{holdingbranch} eq $branches[$i]) {
+            $$_{found}            = $$res{found};
+            $$_{borrowerbranch}   = $$res{borrowerbranch};
+            $$_{borrowercategory} = $$res{categorycode};
+            $$_{reservenumber}    = $$res{reservenumber};
+            $item = _itemfillbib($_);
+            last BRANCHITEM if $item;
+         }
+      }
+   }
+
+   if (!$item && $$res{_pass}) { ## back to the beginning
+      $$item{_wraparound} = 1;   ## this flag only updates queue_sofar
    }
    return $item;
 }
@@ -407,8 +468,19 @@ sub GetReservesForQueue
 
 sub GetHoldsQueueItems 
 {
-	my ($branchlimit,$itemtypelimit) = @_;
+	my %g   = @_;
+   $g{branch} ||= $g{branchlimit} || '';
 	my $dbh = C4::Context->dbh;
+   my $sth;
+   my $sql  = 'SELECT COUNT(*) FROM tmp_holdsqueue ';
+   my @vals = ();
+   if (!!$g{branch}) {
+      $sql .= "WHERE holdingbranch = ?";
+      push @vals, $g{branch};
+   }
+   $sth = $dbh->prepare($sql);
+   $sth->execute(@vals);
+   my $total = ($sth->fetchrow_array)[0];
 
    my @bind_params = ();
 	my $query = q|SELECT 
@@ -431,12 +503,17 @@ sub GetHoldsQueueItems
     LEFT JOIN biblioitems USING (biblionumber)
     LEFT JOIN items       USING (  itemnumber)
    |;
-   if ($branchlimit) {
+   if ($g{branch}) {
 	   $query .="WHERE tmp_holdsqueue.holdingbranch = ? ";
-      push @bind_params, $branchlimit;
+      push @bind_params, $g{branch};
    }
-   $query .= " ORDER BY ccode, location, cn_sort, author, title, pickbranch, reservedate";
-	my $sth = $dbh->prepare($query);
+   $g{orderby} ||= 'tmp_holdsqueue.reservedate';
+   $query .= " ORDER BY $g{orderby}";
+   if ($g{limit}) {
+      $g{offset} ||= 0;
+      $query .= " LIMIT $g{offset},$g{limit} ";
+   }
+	$sth = $dbh->prepare($query);
 	$sth->execute(@bind_params);
 	my $items = [];
    my $userenv = C4::Context->userenv;
@@ -448,9 +525,10 @@ sub GetHoldsQueueItems
       $$row{found} = ($sth2->fetchrow_array)[0];
       $$row{found_waiting}   = 1 if $$row{found} eq 'W';
       $$row{found_intransit} = 1 if $$row{found} eq 'T';
+      $$row{reservedate}     = format_date($$row{reservedate});
       push @$items, $row;
    }
-   return $items;
+   return $total,$items;
 }
 
 =item AddReserve
@@ -1470,61 +1548,6 @@ sub ModReserve {
     return;
 }
 
-
-sub _getNextBranchInQueue
-{
-   my($currLib,$queue_sofar) = @_;
-   my $nextLib  = '';
-   my @branches;
-   my $nextpref = C4::Context->preference('NextLibraryHoldsQueueWeight');
-   my $staypref = C4::Context->preference('StaticHoldsQueueWeight');
-   my $dorand   = C4::Context->preference('RandomizeHoldsQueueWeight');
-   if ($nextpref) {
-      @branches = split(/\,\s*/,$nextpref);
-   }
-   elsif ($staypref) {
-      @branches = split(/\,\s*/, $staypref);
-   }
-   else {
-      @branches = keys %{C4::Branch::GetBranches()};
-   }
-
-   if (@branches && !$dorand) {
-      BRANCH:
-      for my $i(0..$#branches) {
-         if ($branches[$i] eq $currLib) {
-            if ($i+1 >scalar@branches) {
-               $nextLib = $branches[0];
-            }
-            else {
-               $nextLib = $branches[$i+1];
-            }
-            last BRANCH;
-         }
-      }
-      $nextLib ||= $branches[0];
-   }
-   elsif ($dorand) {
-      use List::Util qw(shuffle);
-      @branches = shuffle @branches; 
-      my @q = split(/\,/, $queue_sofar);
-      if (scalar @q >= scalar @branches) {
-         @q = splice(@q,-1*(@q%@branches));         
-      }
-      my %seen = ();
-      foreach(@q) { $seen{$_}++ }
-      foreach(@branches) {
-         next if $seen{$_};
-         $nextLib = $_;
-         last;
-      }
-      $nextLib ||= $branches[0];
-      $nextLib = $branches[-1] if $nextLib eq $currLib;
-      $nextLib = $branches[-2] if $nextLib eq $currLib;
-   }
-   return $nextLib, scalar @branches;
-}
-
 sub ModReservePass
 {
    my $res = shift;
@@ -1570,31 +1593,16 @@ sub ModReservePass
 
    ## for a bib-level request, pass it to the next library with an 
    ## available item.
-   $sth = $dbh->prepare('SELECT * FROM items
-      WHERE biblionumber   = ?
-        AND holdingbranch != ?
-        AND itemnumber    != ?');
-   $sth->execute(
-      $$res{biblionumber},
-      $$res{holdingbranch},
-      $$res{itemnumber}
-   );
-   
-   my $item;
-   ITEM:
-   while($item = $sth->fetchrow_hashref()) {
-      $$item{found}            = $$res{found};
-      $$item{borrowerbranch}   = $$res{borrowerbranch};
-      $$item{borrowercategory} = $$res{categorycode};
-      $$item{reservenumber}    = $$res{reservenumber};
-      $item = _itemfillbib($item);
-      if ($$item{itemnumber}) {
-         last ITEM;
-      }
-      else {
-         undef($item);
-         next ITEM;
-      }
+   $$res{_pass} = 1;
+   my $item = GetItemForBibPrefill($res);
+   if ($$item{_wraparound}) {
+      $$res{queue_sofar} .= ",$$res{holdingbranch}";
+      $sth = $dbh->prepare('
+      UPDATE tmp_holdsqueue
+         SET queue_sofar   = ?
+       WHERE reservenumber = ?');
+      $sth->execute($$res{queue_sofar},$$res{reservenumber});
+      return $$res{reservenumber};
    }
    return undef, 'Not available at other libraries' unless $$item{itemnumber};
 

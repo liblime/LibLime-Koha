@@ -36,9 +36,11 @@ function Xport(barcode) {
 <form name="f" action="/cgi-bin/koha/circ/view_holdsqueue.pl" method="post">
 <!-- TMPL_IF NAME="run_report" -->
     <!-- TMPL_IF NAME="total" -->
-        <div class="results"><!-- TMPL_VAR NAME="total" --> items found for
+        <div class="results">Showing <TMPL_VAR NAME="from"> to <TMPL_VAR NAME="to"> 
+            of <TMPL_VAR NAME="total"> items found for
             <!-- TMPL_IF NAME="branch" --><!-- TMPL_VAR NAME="branch" --><!-- TMPL_ELSE-->ALL libraries<!-- /TMPL_IF -->
         </div>
+        <TMPL_VAR NAME="pager">
     <!-- TMPL_ELSE-->
         <div class="dialog message">No items found.</div>
     <!-- /TMPL_IF -->
@@ -142,17 +144,33 @@ function Xport(barcode) {
                 <!-- /TMPL_LOOP -->
             </select></li>
 			-->
+
+      <li><label for="limit">View: </label>
+         <select name="limit">
+         <option>20
+         <option>50
+         <option>100
+         <option>200</select> records per page</li>
+      <li><label for="orderby">Sort by: </label>
+         <select name="orderby">
+            <option value="tmp_holdsqueue.title">Title
+            <option value="tmp_holdsqueue.surname">Name
+            <option value="tmp_holdsqueue.reservedate">Date
+         </select>
     </ol></fieldset>
 <!-- /TMPL_UNLESS -->
 <fieldset class="action">
 
 <!-- TMPL_IF NAME="total" -->
+<TMPL_VAR NAME="pager">
 <input type="button" value="Submit" onclick="confirmSubmit();"/>
 <input type=button value="Cancel" onclick="document.location.href='view_holdsqueue.pl';">
 <input type=hidden name="branchlimit" value="<!-- TMPL_VAR NAME="branch" -->">
 <input type=hidden name="branch"      value="<!-- TMPL_VAR NAME="branch" -->">
 <input type=hidden name="run_pass" value="1">
-<input type=hidden name="cnt_filled" value="<!-- TMPL_VAR NAME="cnt_filled" -->">
+<input type="hidden" name="currPage"   value="<TMPL_VAR NAME="currPage">">
+<input type=hidden name="limit" value="<TMPL_VAR NAME="limit">">
+<input type=hidden name="orderby" value="<TMPL_VAR NAME="orderby">">
 <!-- TMPL_ELSE -->
 <input type="hidden" name="run_report" value="1" />
 <input type=submit value="Submit">
@@ -162,6 +180,10 @@ function Xport(barcode) {
 </form>
 <script>
 <!-- TMPL_IF NAME="run_report" -->
+function pager(v) {
+   document.f.currPage.value=v;
+   document.f.submit();
+}
 function confirmSubmit() {
    var rc = confirm('Do you want continue?');
    if (rc) { document.f.submit() }

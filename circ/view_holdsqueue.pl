@@ -35,8 +35,13 @@ use C4::Reserves;
 my $query          = new CGI;
 my $run_report     = $query->param('run_report');
 my $run_pass       = $query->param('run_pass');
-my $branchlimit    = $query->param('branchlimit');
-my $itemtypeslimit = $query->param('itemtypeslimit');
+my $branchlimit    = $query->param('branchlimit')  // '';
+my $limit          = $query->param('limit')        // 20;
+my $currPage       = $query->param('currPage')     // 1;
+my $orderby        = $query->param('orderby')      // 'tmp_holdsqueue.title';
+my $offset         = ($currPage -1)*$limit;
+my $total          = 0;
+my $qitems         = [];
 
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
@@ -48,19 +53,26 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         debug           => 1,
     }
 );
+$template->param(
+   currPage => $currPage,
+   limit    => $limit,
+);
 
 if ($run_pass) {
-   my $qitems = C4::Reserves::GetHoldsQueueItems($branchlimit, $itemtypeslimit);
+   ($total,$qitems) = C4::Reserves::GetHoldsQueueItems(
+      branch   => $branchlimit,
+      offset   => $offset,
+      limit    => $limit,
+      orderby  => $orderby,
+   );
    my $c = 0;
-   my %items = ();
-
    foreach my $item(@$qitems) {
-      my $res = C4::Reserves::GetReserve($$item{reservenumber});
-      if ($query->param("action_$c") eq 'pass') {
-         C4::Reserves::ModReservePass($res);
-      }
-      elsif ($query->param("action_$c") eq 'trace') {
-         C4::Reserves::ModReserveTrace($res);
+      my $action = $query->param("action_$c") // '';
+      my @actions = qw(pass trace);
+      if ($action ~~ @actions) {
+         my $res = C4::Reserves::GetReserve($$item{reservenumber});
+         if    ($action eq 'pass')  { C4::Reserves::ModReservePass($res) }
+         elsif ($action eq 'trace') { C4::Reserves::ModReserveTrace($res)}
       }
       $c++;
    }
@@ -68,9 +80,16 @@ if ($run_pass) {
 }
 
 if ($run_report) {
-    my $items = C4::Reserves::GetHoldsQueueItems($branchlimit, $itemtypeslimit);
+   $total  = 0;
+   $qitems = [];
+    ($total,$qitems) = C4::Reserves::GetHoldsQueueItems(
+      branch => $branchlimit, 
+      limit  => $limit,
+      offset => $offset,
+      orderby=> $orderby,
+    );
     my $c = 0;
-    foreach my $item(@$items) {
+    foreach my $item(@$qitems) {
        $$item{action_cnt} = $c;
        my @qbranches = split(/\,/,$$item{queue_sofar});
        @qbranches    = reverse @qbranches;
@@ -80,22 +99,77 @@ if ($run_report) {
     }
 
     $template->param(
-        branch     => $branchlimit,
-        total      => scalar @$items,
-        itemsloop  => $items,
+        itemsloop  => $qitems,
         run_report => $run_report,
         action_cnts=> $c,
         dateformat => C4::Context->preference("dateformat"),
-        branchlimit=> $branchlimit,
     );
 }
 
-$template->param(
-     branchloop => GetBranchesLoop(C4::Context->userenv->{'branch'}),
-#   itemtypeloop => \@itemtypesloop,
-);
+if ($run_report || $run_pass) {
+   $template->param(
+      total       => $total,
+      from        => ($offset+1),
+      to          => ($offset+$limit),
+      pager       => _pager(),
+      branch      => $branchlimit,
+      branchlimit => $branchlimit,
+      orderby     => $orderby,
+   );
+}
+else {
+   $template->param(
+      branchloop  => GetBranchesLoop(C4::Context->userenv->{'branch'}),
+   );
+}
+
 
 # writing the template
 output_html_with_http_headers $query, $cookie, $template->output;
 exit;
+
+sub _pager
+{
+   my $out = '';
+   my $totalPages = $total%$limit? int($total/$limit)+1 : $total/$limit;
+   return $out if $totalPages == 1;
+   if ($currPage==1) {
+      $out .= ' <b>1</b>';
+   }
+   else {
+      my $prev = $currPage -1;
+      $out = qq|<a href="javascript:;" onclick="pager(1)">&lt;&lt;</a> 
+                <a href="javascript:;" onclick="pager($prev)">&lt;</a>
+                <a href="javascript:;" onclick="pager(1)">1</a>|;
+   }
+   if ($currPage-2 >2) {
+      $out .= ' ... ';
+   }
+   for my $i($currPage-2..$currPage+2) {
+      next if $i<2;
+      if ($i==$currPage) {
+         $out .= " <b>$i</b>";
+      }
+      else {
+         $out .= qq| <a href="javascript:;" onclick="pager($i)">$i</a>|;
+      }
+      last if $i+1 >=$totalPages;
+   }
+   if ($currPage+3 < $totalPages) {
+      $out .= ' ... ';
+   }
+
+   if ($currPage != $totalPages) {
+      my $next = $currPage +1;
+      $out .= qq| <a href="javascript:;" onclick="pager($totalPages);">$totalPages</a>
+                  <a href="javascript:;" onclick="pager($next);">&gt;</a> 
+                  <a href="javascript:;" onclick="pager($totalPages);">&gt;&gt;</a>|;
+   }
+   else {
+      $out .= " <b>$totalPages</b>";
+   }
+
+   return qq|<div style="font-size:10pt;">$out</div><br>|;
+}
+
 __END__
