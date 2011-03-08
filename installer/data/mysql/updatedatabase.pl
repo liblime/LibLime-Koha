@@ -4453,6 +4453,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update to $DBversion )\n";
 }
 
+$DBversion = '4.03.16.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do("
+       UPDATE language_rfc4646_to_iso639 SET iso639_2_code='por' WHERE rfc4646_subtag='pt'");
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Corrected ISO639-2 language codes )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
