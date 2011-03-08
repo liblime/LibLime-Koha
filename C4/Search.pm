@@ -309,6 +309,9 @@ sub getRecords {
     for ( my $i = 0 ; $i < @servers ; $i++ ) {
         $zconns[$i] = C4::Context->Zconn( $servers[$i], 1 );
 
+    ###This is to address extraneous "and" operators generated in the zebra query
+        $koha_query    =~ s{(\band\b\s+)(?=\1)}{}g;
+
 # perform the search, create the results objects
 # if this is a local search, use the $koha-query, if it's a federated one, use the federated-query
         my $query_to_use = ($servers[$i] =~ /biblioserver/) ? $koha_query : $simple_query;
