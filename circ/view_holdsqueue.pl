@@ -110,10 +110,11 @@ if ($run_report || $run_pass) {
    $template->param(
       total       => $total,
       from        => ($offset+1),
-      to          => ($offset+$limit),
+      to          => ($total< ($offset+$limit))? $total: ($offset+$limit),
       pager       => _pager(),
-      branch      => $branchlimit,
-      branchlimit => $branchlimit,
+      branch      => $branchlimit || '',
+      branchlimit => $branchlimit || '',
+      branchname  => $branchlimit? C4::Branch::GetBranchName($branchlimit) : 'ALL',
       orderby     => $orderby,
    );
 }

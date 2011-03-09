@@ -314,6 +314,9 @@ if ($borrowernumber) {
     if ($query->param('fromqueue')) {
         $template->param(
             queue_branchlimit => $query->param("queue_branchlimit"),
+            queue_currPage    => $query->param('queue_currPage'),
+            queue_limit       => $query->param('queue_limit'),
+            queue_orderby     => $query->param('queue_orderby'),
             fromqueue         => 1,
             qbarcode          => $query->param("qbarcode")
         );

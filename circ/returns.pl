@@ -204,6 +204,9 @@ if ( $query->param('resbarcode') ) {
        $template->param(
          closeGB     => 1,
          queue_branchlimit => $query->param('queue_branchlimit'),
+         queue_currPage    => $query->param('queue_currPage'),
+         queue_orderby     => $query->param('queue_orderby'),
+         queue_limit       => $query->param('queue_limit'),
        );
     }
 }
@@ -650,6 +653,9 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
 ## pull variable out here or it'll insist queue_branchlimit='genbrname' literal
 my $fromqueue         = $query->param('fromqueue');
 my $queue_branchlimit = $query->param('queue_branchlimit');
+my $queue_limit       = $query->param('queue_limit');
+my $queue_currPage    = $query->param('queue_currPage');
+my $queue_orderby     = $query->param('queue_orderby');
 $template->param(
     riloop                  => \@riloop,
     HoldButtonConfirm       => $HoldButtonConfirm,
@@ -657,6 +663,9 @@ $template->param(
     HoldButtonPrintConfirm  => $HoldButtonPrintConfirm,
     fromqueue               => $fromqueue,
     queue_branchlimit       => $queue_branchlimit,
+    queue_currPage          => $queue_currPage,
+    queue_limit             => $queue_limit,
+    queue_orderby           => $queue_orderby,
     genbrname               => $branches->{C4::Context->userenv->{'branch'}}->{'branchname'},
     genprname               => $printers->{$printer}->{'printername'},
     branchname              => $branches->{C4::Context->userenv->{'branch'}}->{'branchname'},

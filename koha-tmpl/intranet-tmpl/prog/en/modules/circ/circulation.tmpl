@@ -18,7 +18,10 @@
 var backtoqueue = '<!-- TMPL_VAR NAME="backtoqueue" -->';
 if (backtoqueue=='1') {
    window.parent.location.href='/cgi-bin/koha/circ/view_holdsqueue.pl'
-   +'?run_report=1&branchlimit=<!-- TMPL_VAR NAME="queue_branchlimit" -->';
+   +'?run_report=1&branchlimit=<!-- TMPL_VAR NAME="queue_branchlimit" -->'
+   +'&currPage=<TMPL_VAR NAME="queue_currPage">'
+   +'&orderby=<TMPL_VAR NAME="queue_orderby">'
+   +'&limit=<TMPL_VAR NAEM="queue_limit">';
    window.parent.GB_hide();
 }
 
@@ -309,6 +312,9 @@ function refocus(calendar) {
 
 <form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="confirm">
 <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
+<input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">
+<input type=hidden name="queue_limit" value="<TMPL_VAR NAME="queue_limit">">
+<input type=hidden name='queue_orderby" value="<TMPL_VAR NAME="queue_orderby">">
 <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
 <input type=hidden name="qbarcode" value="<!-- TMPL_VAR NAME="qbarcode" -->">
 

@@ -10,6 +10,9 @@ p { margin-top: 0; }
 function Xport(barcode) {
    return GB_showCenter('Check In Item','/cgi-bin/koha/circ/returns.pl'
    +'?queue_branchlimit=<!-- TMPL_VAR NAME="branchlimit" -->'
+   +'&queue_limit=<TMPL_VAR NAME="limit">'
+   +'&queue_orderby=<TMPL_VAR NAME="orderby">'
+   +'&queue_currPage=<TMPL_VAR NAME="currPage">'
    +'&fromqueue=1&barcode='+barcode,
    700,800);
 }
@@ -37,8 +40,12 @@ function Xport(barcode) {
 <!-- TMPL_IF NAME="run_report" -->
     <!-- TMPL_IF NAME="total" -->
         <div class="results">Showing <TMPL_VAR NAME="from"> to <TMPL_VAR NAME="to"> 
-            of <TMPL_VAR NAME="total"> items found for
-            <!-- TMPL_IF NAME="branch" --><!-- TMPL_VAR NAME="branch" --><!-- TMPL_ELSE-->ALL libraries<!-- /TMPL_IF -->
+            of <TMPL_VAR NAME="total"> items found for 
+            <TMPL_IF NAME="branchlimit">
+               <TMPL_VAR NAME="branchname">
+               (<TMPL_VAR NAME="branchlimit">)
+            <TMPL_ELSE>ALL libraries
+            </TMPL_IF>
         </div>
         <TMPL_VAR NAME="pager">
     <!-- TMPL_ELSE-->

@@ -9,7 +9,12 @@
 
 var closeGB = '<!-- TMPL_VAR NAME="closeGB" -->';
 if (closeGB=='1') { // confirmed filled from Holds Queue
-   parent.parent.document.location.href = '/cgi-bin/koha/circ/view_holdsqueue.pl?branchlimit=<!-- TMPL_VAR NAME="queue_branchlimit" -->&run_report=1&filled=1';
+   parent.parent.document.location.href = '/cgi-bin/koha/circ/view_holdsqueue.pl'
+   + '?branchlimit=<!-- TMPL_VAR NAME="queue_branchlimit" -->'
+   + '&run_report=1&filled=1'
+   + '&currPage=<TMPL_VAR NAME="queue_currPage">'
+   + '&limit=<TMPL_VAR NAME="queue_limit">'
+   + '&orderby=<TMPL_VAR NAME="queue_orderby">';
    parent.parent.GB_hide();
 }
 function Dopop(link) {
@@ -161,6 +166,9 @@ function ContinueReturns() {
             <input type="hidden" name="WT-From" value="<!-- TMPL_VAR Name="wtransfertFrom" -->" />
             <input type="hidden" name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
             <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
+            <input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">
+            <input type=hidden name="queue_limit"    value="<TMPL_VAR NAME="queue_limit">">
+            <input type=hidden name="queue_orderby"  value="<TMPL_VAR NAME="queue_orderby">">
 		<!-- TMPL_IF name="HoldButtonConfirm" -->
         <input type="submit" class="approve" value="Confirm" />
         	<!-- /TMPL_IF -->
@@ -232,6 +240,9 @@ function ContinueReturns() {
                 <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
                 <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
                 <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
+                <input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">
+                <input type=hidden name="queue_limit"    value="<TMPL_VAR NAME="queue_limit">">
+                <input type=hidden name="queue_orderby"  value="<TMPL_VAR NAME="queue_orderby">">
         	<!-- /TMPL_IF -->
                 </form>
 	</div>
@@ -283,6 +294,9 @@ function ContinueReturns() {
         	<!-- /TMPL_IF -->
         <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
         <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
+        <input type=hidden name="queue_currpage" value="<TMPL_VAR NAME="queue_currPage">">
+        <input type=hidden name="queue_limit"    value="<TMPL_VAR NAME="queue_limit">">
+        <input type=hidden name="queue_orderby"  value="<TMPL_VAR NAME="queue_orderby">">
         </form>
 		</div>
     <!-- /TMPL_IF -->
@@ -430,6 +444,9 @@ function ContinueReturns() {
             <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
             <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
             <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
+            <input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">
+            <input type=hidden name="queue_limit"    value="<TMPL_VAR NAME="queue_limit">">
+            <input type=hidden name="queue_orderby"  value="<TMPL_VAR NAME="queue_orderby">">
         </form>
 	</div>
     <!-- /TMPL_IF -->
