@@ -92,23 +92,13 @@ if (($#biblionumbers < 0) && (! $query->param('place_reserve'))) {
 }
 
 # pass the pickup branch along....
-my $branch = $query->param('branch') || C4::Context->userenv->{branch} || '' ;
+my $branch = $query->param('branch') || $borr->{branchcode} || '' ;
 ($branches->{$branch}) or $branch = "";     # Confirm branch is real
 $template->param( branch => $branch );
 
 # make branch selection options...
 my $CGIbranchloop = GetBranchesLoop($branch);
 $template->param( CGIbranch => $CGIbranchloop );
-
-#Debug
-#output_html_with_http_headers($query,$cookie,"<html><head></head><body> @biblionumbers </body></html>\n");
-#exit;
-#my %bibdata;
-#my $rank;
-#my $biblionumber;
-#my $bibdata;
-#my %itemhash;
-#my $forloan;
 
 #
 #
