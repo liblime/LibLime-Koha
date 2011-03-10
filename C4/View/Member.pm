@@ -82,7 +82,7 @@ sub GetReservesLoop {
           $getreserv{$hashkey} = $marc->subfield('245',$subfield)
             if (defined($marc->subfield('245',$subfield)));
         }
-        $getreserve{reserves_260c} = $marc->subfield('260','c');
+        $getreserv{reserves_260c} = $marc->subfield('260','c');
         if (defined($num_res->{'itemnumber'})) {
           my $item = GetItem($num_res->{'itemnumber'});
           $getreserv{callnumber} = $item->{'itemcallnumber'};
