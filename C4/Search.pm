@@ -399,6 +399,8 @@ sub getRecords {
         if ( $ev == ZOOM::Event::ZEND ) {
             next unless $results[ $i - 1 ];
             my $size = $results[ $i - 1 ]->size();
+
+            my %format_tie; ##used to verify fixed-field format for facets
             if ( $size > 0 ) {
                 my $results_hash;
 
@@ -471,9 +473,15 @@ sub getRecords {
                                             $facets_counter->{ $facets->[$k]->{'link_value'} }->{$data}++;
                                         }
                                     } else {
-                                        my ($first, $last) = split(/:/, $facets->[$k]{span});
-                                        my $data = substr($field->data, $first, $last-$first+1);
-                                        $facets_counter->{$facets->[$k]{link_value}}{$data}++
+                                        for my $fixed_field (@{$facets->[$k]{'span'}} ){  
+                                            my ($link_valueF,$tagX,$first, $last) = split(/:/, $fixed_field);
+                                            my $link_valueX = $link_valueF;
+                                            my $data = substr($field->data, $first, $last-$first+1);
+                                            
+                                            $data =~ s{^\+|\s+$|\d{2,}|\|}{}g;
+                                            push @{$format_tie{$data}},$link_valueX,$tagX,$data if ($data ne undef && ! exists $format_tie{$data} );
+                                            $facets_counter->{$facets->[$k]{'link_value'}}{$data}++ if exists $format_tie{$data};
+                                        }
                                     }
                                 }
                                 $facets_info->{ $facets->[$k]->{'link_value'} }->{'label_value'} =
@@ -525,31 +533,32 @@ sub getRecords {
                             if ( $link_value =~ /branch/ ) {
                                 $facet_label_value =
                                   $branches->{$one_facet}->{'branchname'};
-                            } elsif ($link_value eq 'l-format') {
-                                my $authval = GetAuthorisedValue('HINGS_PF', $facet_link_value);
-                                $facet_label_value =
-                                    ($authval) ? $authval->{lib} :
-                                    ($facet_link_value) ? $facet_link_value :
-                                    'Unspecified';
-                            } elsif ($link_value eq 'ctype') {
-                                my $authval = GetAuthorisedValue('CTYPE', $facet_link_value);
-                                $facet_label_value =
-                                    ($authval) ? $authval->{lib} :
-                                    ($facet_link_value) ? $facet_link_value :
-                                    'Unspecified';
                             }
+                             elsif($link_value eq 'fixed'){
+                              
+                                  my $authval;
+                                  if ($format_tie{$facet_link_value}[0] eq 'l-format' && $format_tie{$facet_link_value}[2] eq $facet_link_value){
+                                     $authval = GetAuthorisedValue('HINGS_PF', $facet_link_value) ;
+                                   }
+                                  if ($format_tie{$facet_link_value}[0] eq 'ctype' && $format_tie{$facet_link_value}[2] eq $facet_link_value){
+                                    $authval = GetAuthorisedValue('CTYPE', $facet_link_value);
+                                   }   
+                                  if ($format_tie{$facet_link_value}[0] eq 'ff8-23' && $format_tie{$facet_link_value}[2] eq $facet_link_value){
+                                    $authval = GetAuthorisedValue('CTYPE', $facet_link_value);
+                                  }                                                                 
+                                  $facet_label_value = ($authval) ? $authval->{lib} : undef;
+                             }
 
-                            # but we're down with the whole label being in the link's title.
+                          # but we're down with the whole label being in the link's title.
                             push @this_facets_array, {
-                                facet_count       => $facets_counter->{$link_value}->{$one_facet},
+                                facet_count       => $facets_counter->{$link_value}->{$facet_link_value},
                                 facet_label_value => $facet_label_value,
                                 facet_title_value => $one_facet,
                                 facet_link_value  => $facet_link_value,
-                                type_link_value   => $link_value,
+                                type_link_value   => $link_value eq 'fixed' ? $format_tie{$facet_link_value}[0]: $link_value ,
                             };
                         }
                     }
-
                     # handle expanded option
                     unless ( $facets_info->{$link_value}->{'expanded'} ) {
                         $expandable = 1

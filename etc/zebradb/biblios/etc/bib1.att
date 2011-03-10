@@ -187,6 +187,7 @@ att 8700    ff7-00
 att 8701    ff7-01
 att 8702    ff7-02
 att 8703    ff7-01-02
+att 8704    ff7-04
 # Author-personal-bibliography - lastname,firstname in 100$a
 att 9900    Author-personal-bibliography
 # Author-in-order - firstname lastname in 245$c statement of responsibility

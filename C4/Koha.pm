@@ -713,24 +713,11 @@ sub getFacets {
                 tags        => ['650'],
                 subfield    => 'a',
             },
-
-            #        {
-            #        link_value => 'su-na',
-            #        label_value => 'People and Organizations',
-            #        tags => ['600', '610', '611'],
-            #        subfield => 'a',
-            #        },
             {
-                link_value  => 'l-format',
+                link_value  => 'fixed',
                 label_value => 'Formats',
-                tags        => ['007'],
-                span        => '0:1',
-            },
-            {
-                link_value  => 'ctype',
-                label_value => 'Content',
-                tags        => ['008'],
-                span        => '24:27',
+                tags        => ['007','008'],
+                span        => ['l-format:007:0:1','ctype:008:24:27','ff8-23:008:23:23'],
             },
             {
                 link_value  => 'su-geo',
