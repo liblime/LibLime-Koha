@@ -1178,25 +1178,19 @@ in a reference to array of hashrefs.
 =cut
 
 sub GetOtherItemStatus {
-  my ($selected) = @_;
-  my @results;
-  my $dbh      = C4::Context->dbh;
-  my $query    = "SELECT * FROM itemstatus ORDER BY description";
+    my $selected = shift;
+    
+    my $statuses
+        = C4::Context->dbh->selectall_arrayref('SELECT * FROM itemstatus ORDER BY description', {Slice => {}});
+    unshift @$statuses, {statuscode => '', description => ''}; #some callers expect an initial empty record
+    return $statuses if !defined $selected;
 
-# Push an initial empty record
-  my %data;
-  $data{'statuscode'} = $data{'description'} = '';
-  push @results, \%data;
-
-  my $sth = $dbh->prepare($query);
-  $sth->execute;
-  while (my $data=$sth->fetchrow_hashref) {
-    if ($selected eq $data->{'statuscode'} ) {
-      $data->{'selected'} = 1;
+    for my $status (@$statuses) {
+        if ($selected eq $status->{statuscode}) {
+            $status->{selected} = 1;
+        }
     }
-    push @results, $data;
-  }
-  return \@results; #$data;
+    return $statuses;
 }
 
 =head2 GetMarcSubfieldStructure
