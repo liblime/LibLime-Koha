@@ -248,20 +248,8 @@ build a HTML select with the following code :
 =cut
 
 sub GetItemTypes {
-
-    # returns a reference to a hash of references to itemtypes...
-    my %itemtypes;
-    my $dbh   = C4::Context->dbh;
-    my $query = qq|
-        SELECT *
-        FROM   itemtypes
-    |;
-    my $sth = $dbh->prepare($query);
-    $sth->execute;
-    while ( my $IT = $sth->fetchrow_hashref ) {
-        $itemtypes{ $IT->{'itemtype'} } = $IT;
-    }
-    return ( \%itemtypes );
+    return C4::Context->dbh->selectall_hashref(
+        'SELECT * FROM itemtypes', ['itemtype']);
 }
 
 sub get_itemtypeinfos_of {
