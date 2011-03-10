@@ -17,12 +17,11 @@ package C4::Koha;
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-
+use warnings;
 use strict;
 use C4::Context;
 use C4::Output;
 use URI::Split qw(uri_split);
-use Memoize;
 
 use vars qw($VERSION @ISA @EXPORT $DEBUG);
 
@@ -65,9 +64,6 @@ BEGIN {
 	);
 	$DEBUG = 0;
 }
-
-# expensive functions
-memoize('GetAuthorisedValues');
 
 =head1 NAME
 
@@ -282,27 +278,6 @@ SELECT itemtype,
 END_SQL
 
     return get_infos_of( $query, 'itemtype', undef, \@itemtypes );
-}
-
-# this is temporary until we separate collection codes and item types
-sub GetCcodes {
-    my $count = 0;
-    my @results;
-    my $dbh = C4::Context->dbh;
-    my $sth =
-      $dbh->prepare(
-        "SELECT * FROM authorised_values ORDER BY authorised_value");
-    $sth->execute;
-    while ( my $data = $sth->fetchrow_hashref ) {
-        if ( $data->{category} eq "CCODE" ) {
-            $count++;
-            $results[$count] = $data;
-
-            #warn "data: $data";
-        }
-    }
-    $sth->finish;
-    return ( $count, @results );
 }
 
 =head2 getauthtypes
@@ -875,34 +850,16 @@ labels.
 
 =cut
 
-# FIXME - why not use GetAuthorisedValues ??
-#
 sub get_notforloan_label_of {
-    my $dbh = C4::Context->dbh;
+    my ($statuscode) = C4::Context->dbh->selectrow_array( q{
+        SELECT authorised_value
+        FROM   marc_subfield_structure
+        WHERE  kohafield = 'items.notforloan'
+        LIMIT  0, 1
+    });
 
-    my $query = '
-SELECT authorised_value
-  FROM marc_subfield_structure
-  WHERE kohafield = \'items.notforloan\'
-  LIMIT 0, 1
-';
-    my $sth = $dbh->prepare($query);
-    $sth->execute();
-    my ($statuscode) = $sth->fetchrow_array();
-
-    $query = '
-SELECT lib,
-       authorised_value
-  FROM authorised_values
-  WHERE category = ?
-';
-    $sth = $dbh->prepare($query);
-    $sth->execute($statuscode);
-    my %notforloan_label_of;
-    while ( my $row = $sth->fetchrow_hashref ) {
-        $notforloan_label_of{ $row->{authorised_value} } = $row->{lib};
-    }
-    $sth->finish;
+    my %notforloan_label_of
+        = map {$_->{authorised_value} => $_->{lib}} @{GetAuthorisedValues($statuscode)};
 
     return \%notforloan_label_of;
 }
@@ -1001,14 +958,14 @@ sub GetAuthValCode {
 
 =cut
 
-our $authval_cache = undef;
+my $authval_cache = undef;
 
 sub _populate_authval_cache() {
-    $authval_cache = C4::Context->dbh->selectall_hashref('SELECT * FROM authorised_values', ['category', 'authorised_value']) or die;
+    $authval_cache = C4::Context->dbh->selectall_hashref('SELECT * FROM authorised_values', ['category', 'authorised_value']);
     return $authval_cache;
 }
 
-sub GetAuthorisedValue($$) {
+sub GetAuthorisedValue {
     my ($category, $authorised_value) = @_;
     $authval_cache //= _populate_authval_cache();
     return $authval_cache->{$category}{$authorised_value};
@@ -1025,22 +982,22 @@ C<$category> returns authorised values for just one category (optional).
 =cut
 
 sub GetAuthorisedValues {
-    my ($category,$selected) = @_;
-	my @results;
-    my $dbh      = C4::Context->dbh;
-    my $query    = "SELECT * FROM authorised_values";
-    $query .= " WHERE category = '" . $category . "'" if $category;
+    my ($category, $selected) = @_;
+    $authval_cache //= _populate_authval_cache();
+    my @vals
+        = (defined $category)
+        ? map {$_} values %{$authval_cache->{$category}}
+        : map {values %{$_}} map {$_} values %{$authval_cache};
 
-    my $sth = $dbh->prepare($query);
-    $sth->execute;
-	while (my $data=$sth->fetchrow_hashref) {
-		if ($selected eq $data->{'authorised_value'} ) {
-			$data->{'selected'} = 1;
-		}
-        push @results, $data;
-	}
-    #my $data = $sth->fetchall_arrayref({});
-    return \@results; #$data;
+    return \@vals if !defined $selected;
+
+    for my $val (@vals) {
+        if ($val->{authorised_value} eq $selected) {
+            $val->{selected} = 1;
+        }
+    }
+
+    return \@vals;
 }
 
 =head2 GetAuthorisedValueCategories
@@ -1053,14 +1010,13 @@ value categories.
 =cut
 
 sub GetAuthorisedValueCategories {
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT DISTINCT category FROM authorised_values ORDER BY category");
-    $sth->execute;
-    my @results;
-    while (my $category = $sth->fetchrow_array) {
-        push @results, $category;
-    }
-    return \@results;
+    return C4::Context->dbh->selectcol_arrayref(
+        'SELECT DISTINCT category FROM authorised_values ORDER BY category');
+}
+
+sub GetCcodes {
+    my $ccodes = GetAuthorisedValues('CCODE');
+    return (scalar @$ccodes, @$ccodes);
 }
 
 =head2 GetKohaAuthorisedValues
@@ -1073,21 +1029,16 @@ sub GetAuthorisedValueCategories {
 =cut
 
 sub GetKohaAuthorisedValues {
-  my ($kohafield,$fwcode,$codedvalue,$opac) = @_;
-  $fwcode='' unless $fwcode;
-  my %values;
-  my $dbh = C4::Context->dbh;
-  my $avcode = GetAuthValCode($kohafield,$fwcode);
-  if ($avcode) {  
-	my $sth = $dbh->prepare("select authorised_value,opaclib,lib from authorised_values where category=? ");
-   	$sth->execute($avcode);
-	while ( my ($val,$opaclib,$lib) = $sth->fetchrow_array ) {
-          $values{$val} = ($opac && $opaclib) ? $opaclib : $lib;
-   	}
-   	return \%values;
-  } else {
-  	return undef;
-  }
+  my ($kohafield, $fwcode, undef, $opac) = @_;
+  $fwcode //= '';
+
+  my $avcode = GetAuthValCode($kohafield, $fwcode);
+  return if !defined $avcode;
+
+  my %values
+      = map {$_->{authorised_value} => (($opac && $_->{opaclib}) ? $_->{opaclib} : $_->{lib})} @{GetAuthorisedValues($avcode)};
+
+  return \%values;
 }
 
 =head2 display_marc_indicators
