@@ -11,8 +11,12 @@ use Exporter 'import';
 use strict;
 use warnings;
 
+use C4::Control::PeriodicalSerialFormats qw(FormatSequence FormatChronology);
+
 our %frequency_map;
 our @frequency_formats;
+our @sequence_formats;
+our @chronology_formats;
 
 BEGIN {
     %frequency_map = (
@@ -32,30 +36,32 @@ BEGIN {
         );
 
     @frequency_formats = map { {format=>$_, human=>$frequency_map{$_}} } (keys %frequency_map);
+
+    my @sequence_formats_list = (
+        'v.{Xn} no.{Yn}',
+        'no.{Xn}',
+        'No. {Xn}',
+        'Vol. {Xn}, No. {Yn}, Issue {Zn}',
+        'Vol. {Xn}, No. {Yn}',
+        'Vol. {Xn}, Issue {Yn}',
+        'No. {Xn}, Issue {Yn}',
+        '{Ys} {Xs}',
+        '{Xs}/{Yn}',
+        );
+    @sequence_formats = map { {format=>$_, human=>FormatSequence($_, '14:2:1', '2011')} } @sequence_formats_list;
+
+    my @chronology_formats_list = (
+        '%F',
+        '%m/%d/%Y',
+        '%d/%m/%Y',
+        '%b %d, %Y',
+        '%Y %b %d',
+        '%Y %b',
+        '%B %d, %Y',
+        '%a, %b %d, %Y',
+        '%A, %B %d, %Y',
+        );
+    @chronology_formats = map { {format=>$_, human=>sprintf FormatChronology($_, DateTime->now)} } @chronology_formats_list;
 }
-
-our @sequence_formats = (
-    {format => 'v.{Xn} no.{Yn}', human => 'v.14 no.2'},
-    {format => 'no.{Xn}', human => 'no.14'},
-    {format => 'No. {Xn}', human => 'No. 14'},
-    {format => 'Vol. {Xn}, No. {Yn}, Issue {Zn}', human => 'Vol. 14, No. 2, Issue 1'},
-    {format => 'Vol. {Xn}, No. {Yn}', human => 'Vol 14, No. 2'},
-    {format => 'Vol. {Xn}, Issue {Yn}', human => 'Vol. 14, Issue 2'},
-    {format => 'No. {Xn}, Issue {Yn}', human => 'No. 14, Issue 2'},
-    {format => '{Ys} {Xs}', human => 'Fall 2010'},
-    {format => '{Xs}/{Yn}', human => '2010/17'},
-    );
-
-our @chronology_formats = (
-    {format => '%F', human => '2010-02-19'},
-    {format => '%m/%d/%Y', human => '02/19/2010'},
-    {format => '%d/%m/%Y', human => '19/02/2010'},
-    {format => '%b %d, %Y', human => 'Feb 19, 2010'},
-    {format => '%Y %b %d', human => '2010 Feb 19'},
-    {format => '%Y %b', human => '2010 Feb'},
-    {format => '%B %d, %Y', human => 'February 19, 2010'},
-    {format => '%a, %b %d, %Y', human => 'Fri, Feb 19, 2010'},
-    {format => '%A, %B %d, %Y', human => 'Friday, February 19, 2010'},
-    );
 
 1;
