@@ -69,7 +69,7 @@ border-style: inherit;
       <tr>
         <td><label for="frequency">Frequency:</label></td>
         <td><select name="frequency" size="1" id="frequency">
-                <TMPL_IF NAME="frequency_expressed"><option><TMPL_VAR NAME="frequency_expressed"></option></TMPL_IF>
+                <TMPL_IF NAME="frequency_expressed"><option value="<TMPL_VAR NAME="frequency">"><TMPL_VAR NAME="frequency_expressed"></option></TMPL_IF>
                 <option value="">-- please choose --</option>
                 <TMPL_LOOP NAME="frequency_formats">
                 <option value="<TMPL_VAR NAME="format">"><TMPL_VAR NAME="human"></option>

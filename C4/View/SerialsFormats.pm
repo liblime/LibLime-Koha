@@ -34,7 +34,6 @@ BEGIN {
         '1y' => 'Annually',
         '2y' => 'Bi-annually',
         );
-
     @frequency_formats = map { {format=>$_, human=>$frequency_map{$_}} } (keys %frequency_map);
 
     my @sequence_formats_list = (

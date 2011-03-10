@@ -124,7 +124,7 @@ sub SeedTemplateWithPeriodicalData($$) {
         if($periodical->chronology_format ne '') {
             $template->param(
                 chronology_expressed => C4::Control::PeriodicalSerialFormats::FormatChronology(
-                    $periodical->chronology_format, DateTime->new(year=>2010, month=>2, day=>19)),
+                    $periodical->chronology_format, DateTime->now),
             );
         }
         my @periodical_serials = map {scalar column_value_pairs($_)} @{C4::Schema::PeriodicalSerial::Manager->get_periodical_serials(
