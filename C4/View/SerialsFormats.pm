@@ -35,7 +35,8 @@ BEGIN {
 }
 
 our @sequence_formats = (
-    {format => 'v. {Xn} no. {Yn}', human => 'v. 14 no. 2'},
+    {format => 'v.{Xn} no.{Yn}', human => 'v.14 no.2'},
+    {format => 'no.{Xn}', human => 'no.14'},
     {format => 'No. {Xn}', human => 'No. 14'},
     {format => 'Vol. {Xn}, No. {Yn}, Issue {Zn}', human => 'Vol. 14, No. 2, Issue 1'},
     {format => 'Vol. {Xn}, No. {Yn}', human => 'Vol 14, No. 2'},
