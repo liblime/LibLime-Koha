@@ -141,7 +141,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'BKS', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'BKS', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'BKS', '', '', NULL),
-                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, 'biblio.holdtype', 9, 'HOLD_TYPE', '', '', 0, 0, 'BKS', NULL, '', 'itemtitle'),
+                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, '', 9, 'HOLD_TYPE', '', '', 0, 0, 'BKS', NULL, '', 'itemtitle'),
         ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'BKS', '', '', NULL),
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'BKS', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'BKS', '', '', NULL);
@@ -4065,7 +4065,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'CF', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'CF', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'CF', '', '', NULL),
-                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, 'biblio.holdtype', 9, 'HOLD_TYPE', '', '', 0, 0, 'CF', NULL, '', 'itemtitle'),
+                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, '', 9, 'HOLD_TYPE', '', '', 0, 0, 'CF', NULL, '', 'itemtitle'),
         ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'CF', '', '', NULL),
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'CF', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'CF', '', '', NULL);
@@ -7990,7 +7990,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'SR', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'SR', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'SR', '', '', NULL),
-                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, 'biblio.holdtype', 9, 'HOLD_TYPE', '', '', 0, 0, 'SR', NULL, '', 'itemtitle'),
+                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, '', 9, 'HOLD_TYPE', '', '', 0, 0, 'SR', NULL, '', 'itemtitle'),
         ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'SR', '', '', NULL),
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'SR', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'SR', '', '', NULL);
@@ -11914,7 +11914,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'VR', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'VR', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'VR', '', '', NULL),
-                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, 'biblio.holdtype', 9, 'HOLD_TYPE', '', '', 0, 0, 'VR', NULL, '', 'itemtitle'),
+                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, '', 9, 'HOLD_TYPE', '', '', 0, 0, 'VR', NULL, '', 'itemtitle'),
         ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'VR', '', '', NULL),
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'VR', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'VR', '', '', NULL);
@@ -15837,7 +15837,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'AR', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'AR', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'AR', '', '', NULL),
-                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, 'biblio.holdtype', 9, 'HOLD_TYPE', '', '', 0, 0, 'AR', NULL, '', 'itemtitle'),
+                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, '', 9, 'HOLD_TYPE', '', '', 0, 0, 'AR', NULL, '', 'itemtitle'),
         ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'AR', '', '', NULL),
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'AR', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'AR', '', '', NULL);
@@ -19759,7 +19759,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'KT', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'KT', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'KT', '', '', NULL),
-                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, 'biblio.holdtype', 9, 'HOLD_TYPE', '', '', 0, 0, 'KT', NULL, '', 'itemtitle'),
+                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, '', 9, 'HOLD_TYPE', '', '', 0, 0, 'KT', NULL, '', 'itemtitle'),
         ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'KT', '', '', NULL),
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'KT', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'KT', '', '', NULL);
@@ -23682,7 +23682,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'IR', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'IR', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'IR', '', '', NULL),
-                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, 'biblio.holdtype', 9, 'HOLD_TYPE', '', '', 0, 0, 'IR', NULL, '', 'itemtitle'),
+                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, '', 9, 'HOLD_TYPE', '', '', 0, 0, 'IR', NULL, '', 'itemtitle'),
         ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'IR', '', '', NULL),
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'IR', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'IR', '', '', NULL);
@@ -27603,7 +27603,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, 'SER', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, 'SER', '', '', NULL),
 		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, 'SER', '', '', NULL),
-                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, 'biblio.holdtype', 9, 'HOLD_TYPE', '', '', 0, 0, 'SER', NULL, '', 'itemtitle'),
+                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, '', 9, 'HOLD_TYPE', '', '', 0, 0, 'SER', NULL, '', 'itemtitle'),
         ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, 'SER', '', '', NULL),
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, 'SER', '', '', NULL),
 		('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', 0, -5, 'SER', '', '', NULL);

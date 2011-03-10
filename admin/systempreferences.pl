@@ -387,6 +387,7 @@ $tabsysprefs{OPACXSLTDetailsDisplay}             = "OPAC";
 $tabsysprefs{OPACXSLTResultsDisplay}             = "OPAC";
 $tabsysprefs{OPACShowCheckoutName}               = "OPAC";
 $tabsysprefs{OPACXSLTResultsAvailabilityDisplay} = "OPAC";
+$tabsysprefs{DefaultOPACHoldType}                = "OPAC";
 
 # Serials
 $tabsysprefs{OPACSerialIssueDisplayCount}  = "Serials";

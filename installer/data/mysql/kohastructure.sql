@@ -366,7 +366,6 @@ CREATE TABLE `biblio` (
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `datecreated` DATE NOT NULL,
   `abstract` mediumtext,
-  `holdtype` enum('item','title','itemtitle') NOT NULL default 'itemtitle',
   PRIMARY KEY  (`biblionumber`),
   KEY `blbnoidx` (`biblionumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -570,10 +570,13 @@ foreach my $biblioNum (@biblionumbers) {
 
     if (C4::Context->preference('OPACItemHolds')) {
       if (C4::Context->preference('OPACUseHoldType')) {
-        if ($biblioData->{holdtype} eq 'item') {
+        my $holdtype = (defined($record->subfield('942','r'))) ?
+          $record->subfield('942','r') :
+          C4::Context->preference('DefaultOPACHoldType');
+        if ($holdtype eq 'item') {
           $biblioLoopIter{item_level} = 1;
         }
-        elsif ($biblioData->{holdtype} eq 'title') {
+        elsif ($holdtype eq 'title') {
           $biblioLoopIter{title_level} = 1;
         }
         else {

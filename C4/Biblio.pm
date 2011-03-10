@@ -3037,8 +3037,7 @@ sub _koha_modify_biblio {
                serial = ?,
                seriestitle = ?,
                copyrightdate = ?,
-               abstract = ?,
-               holdtype = ?
+               abstract = ?
         WHERE  biblionumber = ?
         "
     ;
@@ -3054,7 +3053,6 @@ sub _koha_modify_biblio {
         $biblio->{'seriestitle'},
         $biblio->{'copyrightdate'},
         $biblio->{'abstract'},
-        $biblio->{'holdtype'},
         $biblio->{'biblionumber'}
     ) if $biblio->{'biblionumber'};
 

@@ -99,7 +99,7 @@ INSERT IGNORE INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblib
                 ('942', '0', 'Koha issues (borrowed), all copies', 'Koha issues (borrowed), all copies', 0, 0, 'biblioitems.totalissues', 9, '', '', '', NULL, 5, 'FA', '', '', NULL),
                 ('942', 'c', 'Koha [default] item type', 'Koha item type', 0, 1, 'biblioitems.itemtype', 9, 'itemtypes', '', '', NULL, 5, 'FA', '', '', NULL),
                 ('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 5, 'FA', '', '', NULL),
-                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, 'biblio.holdtype', 9, 'HOLD_TYPE', '', '', 0, 0, 'FA', NULL, '', 'itemtitle'),
+                ('942', 'r', 'Hold Type', 'Hold Type', 0, 0, '', 9, 'HOLD_TYPE', '', '', 0, 0, 'FA', NULL, '', 'itemtitle'),
                 ('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', NULL, 5, 'FA', '', '', NULL),
 		('952','0','Withdrawn status','Withdrawn status',0,0,'items.wthdrawn',10,'WITHDRAWN','','',NULL,0,'FA','',NULL,NULL),
 		('952','1','Lost status','Lost status',0,0,'items.itemlost',10,'LOST','','',NULL,0,'FA','',NULL,NULL),

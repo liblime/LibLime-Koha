@@ -4221,33 +4221,33 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 $DBversion = '4.03.11.002';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(q|INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES('OPACUseHoldType','0','If ON, allow OPAC users to place hold on specific items that are designated as item-level hold records.  Used in conjuction with OPACItemHolds.','','YesNo')|);
-    $dbh->do(q{
-        ALTER TABLE biblio
-            ADD `holdtype` ENUM('item','title','itemtitle') NOT NULL DEFAULT 'itemtitle'
-    });
+#    $dbh->do(q{
+#        ALTER TABLE biblio
+#            ADD `holdtype` ENUM('item','title','itemtitle') NOT NULL DEFAULT 'itemtitle'
+#    });
     # Altering MARC subfield structure for biblio holdtype
     my $frames_sth = $dbh->prepare("SELECT frameworkcode FROM biblio_framework");
 
     my $insert_sth = $dbh->prepare("
         INSERT INTO marc_subfield_structure
         (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
-        VALUES ('942', 'r', 'Hold Type','Hold Type',0,0,'biblio.holdtype',9,'HOLD_TYPE','','',0,0,?,NULL,'','itemtitle');");
+        VALUES ('942', 'r', 'Hold Type','Hold Type',0,0,NULL,9,'HOLD_TYPE','','',0,0,?,NULL,'','itemtitle');");
     $insert_sth->execute('');
     $frames_sth->execute;
     while (my $frame = $frames_sth->fetchrow_hashref) {
         $insert_sth->execute($frame->{frameworkcode});
     }
-    $dbh->do("
+    $dbh->do(q{
         INSERT INTO authorised_values
         (category,authorised_value,prefix,lib,opaclib,imageurl) VALUES
         ('HOLD_TYPE','item','','Item Hold','',''),
         ('HOLD_TYPE','title','','Title Hold','',''),
         ('HOLD_TYPE','itemtitle','','Item & Title Hold','','')
-    ");
-     $dbh->do("
-        UPDATE biblio SET holdtype='item' WHERE biblionumber IN
-          (SELECT biblionumber FROM subscription)
-    ");
+    });
+#     $dbh->do("
+#        UPDATE biblio SET holdtype='item' WHERE biblionumber IN
+#          (SELECT biblionumber FROM subscription)
+#    ");
 
     SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Added syspref OPACUseHoldType and biblio.holdtype )\n";
@@ -4460,6 +4460,17 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
     SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Corrected ISO639-2 language codes )\n";
+}
+
+$DBversion = '4.03.16.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+   $dbh->do("ALTER TABLE biblio DROP holdtype");
+   $dbh->do("UPDATE marc_subfield_structure SET kohafield=NULL WHERE tagfield='942' AND tagsubfield='r'");
+   $dbh->do("INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('DefaultOPACHoldType','title','If OPACUseHoldType is ON, this type will be used when a record is missing a 942\$r subfield','item|title|itemtitle','Choice')
+   ");
+
+   SetVersion ($DBversion);
+   print "Upgrade to $DBversion done ( Added DefaultOPACHoldType syspref and removed biblio.holdtype column )\n";
 }
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
