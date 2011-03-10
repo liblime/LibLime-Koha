@@ -231,7 +231,7 @@ sub select_zebraqueue_records {
     my $server = ($record_type eq 'biblio') ? 'biblioserver' : 'authorityserver';
     my $op = ($update_type eq 'deleted') ? 'recordDelete' : 'specialUpdate';
 
-    my $sth = $dbh->prepare("SELECT id, biblio_auth_number 
+    my $sth = C4::Context->dbh->prepare("SELECT id, biblio_auth_number 
                              FROM zebraqueue
                              WHERE server = ?
                              AND   operation = ?
@@ -246,7 +246,7 @@ sub mark_all_zebraqueue_done {
 
     my $server = ($record_type eq 'biblio') ? 'biblioserver' : 'authorityserver';
 
-    my $sth = $dbh->prepare("UPDATE zebraqueue SET done = 1
+    my $sth = C4::Context->dbh->prepare("UPDATE zebraqueue SET done = 1
                              WHERE server = ?
                              AND done = 0");
     $sth->execute($server);
@@ -255,6 +255,7 @@ sub mark_all_zebraqueue_done {
 sub mark_zebraqueue_batch_done {
     my ($entries) = @_;
 
+    $dbh = C4::Context->dbh;
     $dbh->{AutoCommit} = 0;
     my $sth = $dbh->prepare("UPDATE zebraqueue SET done = 1 WHERE id = ?");
     $dbh->commit();
@@ -270,13 +271,13 @@ sub select_all_records {
 }
 
 sub select_all_authorities {
-    my $sth = $dbh->prepare("SELECT authid FROM auth_header");
+    my $sth = C4::Context->dbh->prepare("SELECT authid FROM auth_header");
     $sth->execute();
     return $sth;
 }
 
 sub select_all_biblios {
-    my $sth = $dbh->prepare("SELECT biblionumber FROM biblioitems ORDER BY biblionumber");
+    my $sth = C4::Context->dbh->prepare("SELECT biblionumber FROM biblioitems ORDER BY biblionumber");
     $sth->execute();
     return $sth;
 }
@@ -415,7 +416,7 @@ sub get_raw_marc_record {
     my $marc; 
     if ($record_type eq 'biblio') {
         if ($noxml) {
-            my $fetch_sth = $dbh->prepare_cached("SELECT marc FROM biblioitems WHERE biblionumber = ?");
+            my $fetch_sth = C4::Context->dbh->prepare_cached("SELECT marc FROM biblioitems WHERE biblionumber = ?");
             $fetch_sth->execute($record_number);
             if (my ($blob) = $fetch_sth->fetchrow_array) {
                 $marc = MARC::Record->new_from_usmarc($blob);
@@ -471,7 +472,7 @@ sub fix_biblio_ids {
     if (@_) {
         $biblioitemnumber = shift;
     } else {    
-        my $sth = $dbh->prepare(
+        my $sth = C4::Context->dbh->prepare(
             "SELECT biblioitemnumber FROM biblioitems WHERE biblionumber=?");
         $sth->execute($biblionumber);
         ($biblioitemnumber) = $sth->fetchrow_array;
