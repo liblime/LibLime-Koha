@@ -17,10 +17,24 @@
             $("#tagform").hide();
             return false;
         });
+        <TMPL_IF NAME="js_sort">
+        $('#holdingst th').each(function(idx,el) {
+          if (el.innerHTML == '<TMPL_VAR NAME="js_sort">') {
+            $('#holdingst').tablesorter({
+               sortList:  [[idx,0]],<TMPL_IF EXPR="dateformat eq 'metric'">
+               dateFomrat:'uk',</TMPL_IF>
+               widget:    ['zebra']
+            });
+            return false;
+          }
+        });
+        <TMPL_ELSE>
         $("#holdingst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
     dateFormat: 'uk',<!-- /TMPL_IF -->
-            widgets : ['zebra']
-        });<!-- TMPL_IF NAME="GoogleJackets" -->
+            widgets : ['zebra']        
+        });
+        </TMPL_IF>
+        <!-- TMPL_IF NAME="GoogleJackets" -->
         KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF --><!-- TMPL_IF NAME="TagsEnabled" -->
         $(".tagbutton").click(KOHA.Tags.add_tag_button);<!-- /TMPL_IF -->
 		<!-- TMPL_IF NAME="opacbookbag" -->$("a.print").parent().after("<li><a class=\"addtocart\" href=\"#\" onclick=\"addRecord('"+$("input[name=bib]").val()+"'); return false;\">"+_("Add to Your <TMPL_VAR NAME="opacbookbagName">")+"<\/a><\/li>");
@@ -354,7 +368,9 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
     <!-- TMPL_IF name="lotsofitems" -->
 	<p>This record has many physical items. <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;viewallitems=1">Click here to view them all.</a></p>
     <!-- TMPL_ELSE -->
-	<table id="holdingst">
+
+   
+	<table id="<TMPL_IF EXPR="count == 1">nosort<TMPL_ELSE>holdingst</TMPL_IF>">
 	    <thead><tr>
       <!-- TMPL_UNLESS NAME="HideItypeInOPAC" -->
 		<!-- TMPL_IF NAME="item-level_itypes" --><th>Item type</th><!-- /TMPL_IF -->

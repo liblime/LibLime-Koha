@@ -270,6 +270,9 @@ sub GetItemForBibPrefill
 {
    my $res = shift;
    my $dbh = C4::Context->dbh;
+
+   ## other item-level requests upon this bib are excluded from 
+   ## eligible items for this bib
    my $sth = $dbh->prepare("SELECT itemnumber
       FROM reserves
      WHERE biblionumber = ?
@@ -285,7 +288,7 @@ sub GetItemForBibPrefill
    my @vals     = ($$res{biblionumber});
    my @branches = _getBranchesQueueWeight();
    my $starti   = 0;
-   if (!!$$res{_pass}) {
+   if (!!$$res{_pass}) { # force boolean context
       my $idx = 0;
       IDX:
       for my $i(0..$#branches) {
@@ -468,8 +471,8 @@ sub GetReservesForQueue
 
 sub GetHoldsQueueItems 
 {
-	my %g   = @_;
-   $g{branch} ||= $g{branchlimit} || '';
+	my %g = @_;
+   $g{branch} ||= $g{branchlimit} || ''; # allow synonymn
 	my $dbh = C4::Context->dbh;
    my $sth;
    my $sql  = 'SELECT COUNT(*) FROM tmp_holdsqueue ';
@@ -517,15 +520,14 @@ sub GetHoldsQueueItems
 	$sth->execute(@bind_params);
 	my $items = [];
    my $userenv = C4::Context->userenv;
-   use C4::Dates 'format_date';
    while (my $row = $sth->fetchrow_hashref){
-      $$row{fillable}    = $$userenv{branch} eq $$row{holdingbranch} ?1:0;
+      $$row{fillable} = $$userenv{branch} eq $$row{holdingbranch} ?1:0;
       my $sth2 = $dbh->prepare('SELECT found FROM reserves WHERE reservenumber = ?');
       $sth2->execute($$row{reservenumber});
-      $$row{found} = ($sth2->fetchrow_array)[0];
+      $$row{found}           = ($sth2->fetchrow_array)[0];
       $$row{found_waiting}   = 1 if $$row{found} ~~ 'W';
       $$row{found_intransit} = 1 if $$row{found} ~~ 'T';
-      $$row{reservedate}     = format_date($$row{reservedate});
+      $$row{reservedate}     = C4::Dates::format_date($$row{reservedate});
       push @$items, $row;
    }
    return $total,$items;

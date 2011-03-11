@@ -296,13 +296,32 @@ if(C4::Context->preference("ISBD")) {
 	$template->param(ISBD => 1);
 }
 
-# arrange the items owned by the "active branch" to show up first
-my $activebranch = $ENV{KOHA_ACTIVE_BRANCH};
-$activebranch //= ($borrowernumber)
-    ? GetMember($borrowernumber)->{branchcode}
-    : undef;
-if ($activebranch) {
-    @items = sort {($a->{homebranch} eq $activebranch) ? -1 : 1} @items;
+my $sortby = C4::Context->preference('OPACDefaultItemSort') || 'itemtype';
+SORTITEMS: {
+   if ($sortby eq 'activebranch') {
+      my $activebranch = $ENV{KOHA_ACTIVE_BRANCH};
+      $activebranch  ||= ($borrowernumber)
+         ? GetMember($borrowernumber)->{branchcode}
+         : '';
+      if ($activebranch) {
+         @items = sort {($a->{homebranch} eq $activebranch) ? -1 : 1} @items;
+         last SORTITEMS;
+      }
+      else {
+         $sortby = 'itemtype';
+      }
+   }
+   ## this doesn't work in Perl 5.10...
+   # if ($sortby ~~ qw(library itemtype location itemcallnumber datedue)) {
+   my @f = qw(library itemtype location_description itemcallnumber datedue);
+   if ($sortby ~~ @f) {
+      @items = sort { ($$a{$sortby} // '') cmp ($$b{$sortby} // '') } @items;
+      last SORTITEMS;
+   }
+
+   # else sort by javascript, HTML table column header
+   $template->param(js_sort => 'Status');
+   ; # last SORTITEMS.  don't remove, for closure
 }
 
 $template->param(
@@ -606,6 +625,7 @@ if (C4::Context->preference('CourseReserves')) {
 
 #Search for title in links
 if (my $search_for_title = C4::Context->preference('OPACSearchForTitleIn')){
+    $$dat{author} ||= '';
     $search_for_title =~ s/{AUTHOR}/$dat->{author}/g;
     $search_for_title =~ s/{TITLE}/$dat->{title}/g;
     $search_for_title =~ s/{ISBN}/$isbn/g;
