@@ -3640,7 +3640,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
     $dbh->do(qq/
       INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES (
-        'HoldsTransportationReductionThreshold', '0', '', 'The number of holds that must be in the queue for the holds transportation reduction to be enabled ( assuming FillRequestsAtPickupLibrary is enabled ).', 'Integer'
+        'HoldsTransportationReductionThreshold', '1000000', '', 'The number of holds that must be in the queue for the holds transportation reduction to be enabled ( assuming FillRequestsAtPickupLibrary is enabled ).', 'Integer'
       )
     /);
     
