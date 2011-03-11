@@ -2219,16 +2219,21 @@ sub IsAvailableForItemLevelRequest {
 }
 
 sub CanHoldMultipleItems {
-  my ( $itemtype ) = @_;
+  my ( $itemtype, $user ) = @_;
   
-  my @multi_itemtypes = split( / /, C4::Context->preference('AllowMultipleHoldsPerBib') );
-  for my $mtype ( @multi_itemtypes ) {
-    if ( $itemtype eq $mtype ) {
-      return 1;
+  if ($user eq 'opac') {
+    my @multi_itemtypes = split( / /, C4::Context->preference('AllowMultipleHoldsPerBib') );
+    for my $mtype ( @multi_itemtypes ) {
+      if ( $itemtype eq $mtype ) {
+        return 1;
+      }
     }
+    return 0;
   }
-  
-  return 0;
+  else {
+    return 1;
+  }
+
 }
 
 sub fixPrioritiesOnItemMove

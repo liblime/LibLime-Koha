@@ -471,7 +471,6 @@ foreach my $biblioNum (@biblionumbers) {
             $itemLoopIter->{ReservedForFirstname}      = $ItemBorrowerReserveInfo->{'firstname'};
             $itemLoopIter->{ExpectedAtLibrary}         = $expectedAt;
             $itemLoopIter->{ReservedForThisBorrower}   = ( $reservedfor eq $borrowernumber );
-            warn "ReservedForThisBorrower: " . $itemLoopIter->{ReservedForThisBorrower};
         }
 
         $itemLoopIter->{notforloan} = $itemInfo->{notforloan};
@@ -540,8 +539,9 @@ foreach my $biblioNum (@biblionumbers) {
             } else {
                 $numPolicyBlocked++;
             }
-            if ($biblioLoopIter{already_reserved} && !CanHoldMultipleItems($itemInfo->{itype})) {
+            if ($biblioLoopIter{already_reserved} && !CanHoldMultipleItems($itemInfo->{itype},'opac')) {
                 $itemLoopIter->{available} = undef;
+                $numCopiesAvailable--;
             }
         }
 

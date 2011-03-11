@@ -534,7 +534,7 @@ foreach my $biblionumber (@biblionumbers) {
                     $item->{available} = 1;
                     $num_available++;
                 }
-                if ($alreadyreserved && CanHoldMultipleItems($item->{itype})) {
+                if ($alreadyreserved && CanHoldMultipleItems($item->{itype},'intranet')) {
                   $template->param( alreadyreserved => undef);
                   $template->param( warnings => undef) if (!$maxholds_warn && !$maxamount_warn && !$max_shelf_holds_per_day_warn)
                 }
