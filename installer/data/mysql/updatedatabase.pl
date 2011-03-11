@@ -4477,11 +4477,14 @@ $DBversion = '4.03.16.003';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
     $dbh->do(q/
+    INSERT INTO `systempreferences`
+    (variable,value,options,explanation,type)
+    VALUES('OPACShowActiveBranchFirstInResults','0','','If ON, in the OPAC, use the active library as the primary sort field for a record\'s holdings.  Used in conjunction with OPACDefaultItemSort where OPACDefaultItemSort is the secondary sort field.  Otherwise if Off, sort by OPACDefaultItemSort.','YesNo')/);
+    $dbh->do(q/
     INSERT INTO `systempreferences` 
     (variable,value,options,explanation,type) 
-    VALUES('OPACDefaultItemSort','itemtype','activebranch|library|itemtype|location_description|itemcallnumber|status|datedue','Choice','Sort items by a field.  Default is \'itemtype\'.');
-    /);
-    print "Upgrade to $DBversion done ( Added syspref OPACDefaultItemSort )\n";
+    VALUES('OPACDefaultItemSort','itemtype','library|itemtype|location_description|itemcallnumber','Specify record holdings sort by what field in the OPAC.  Default is \'itemtype\'.','Choice')/);
+    print "Upgrade to $DBversion done ( Added sysprefs OPACShowActiveBranchFirstInResults and OPACDefaultItemSort )\n";
 }
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;

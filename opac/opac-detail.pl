@@ -296,33 +296,24 @@ if(C4::Context->preference("ISBD")) {
 	$template->param(ISBD => 1);
 }
 
-my $sortby = C4::Context->preference('OPACDefaultItemSort') || 'itemtype';
-SORTITEMS: {
-   if ($sortby eq 'activebranch') {
-      my $activebranch = $ENV{KOHA_ACTIVE_BRANCH};
-      $activebranch  ||= ($borrowernumber)
-         ? GetMember($borrowernumber)->{branchcode}
-         : '';
-      if ($activebranch) {
-         @items = sort {($a->{homebranch} eq $activebranch) ? -1 : 1} @items;
-         last SORTITEMS;
-      }
-      else {
-         $sortby = 'itemtype';
-      }
+## primary and secondary sort by ActiveBranch then DefaultItemSort or
+## by DefaultItemSort only if ..ShowActiveBranch.. is off.
+my $activefirst = C4::Context->preference('OPACShowActiveBranchFirstInResults');
+my $sortby      = C4::Context->preference('OPACDefaultItemSort') || 'itemtype';
+my @f           = qw(library itemtype location_description itemcallnumber);
+my $sorted      = 0;
+if (!!$activefirst) {
+   my $activebranch = $ENV{KOHA_ACTIVE_BRANCH};
+   $activebranch  ||= ($borrowernumber)
+      ? GetMember($borrowernumber)->{branchcode}
+      : '';
+   if ($activebranch) {
+      @items = sort { ($$a{homebranch} eq $activebranch)? -1:1
+                    || $$a{$sortby}   cmp $$b{$sortby} } @items;
+      $sorted = 1;
    }
-   ## this doesn't work in Perl 5.10...
-   # if ($sortby ~~ qw(library itemtype location itemcallnumber datedue)) {
-   my @f = qw(library itemtype location_description itemcallnumber datedue);
-   if ($sortby ~~ @f) {
-      @items = sort { ($$a{$sortby} // '') cmp ($$b{$sortby} // '') } @items;
-      last SORTITEMS;
-   }
-
-   # else sort by javascript, HTML table column header
-   $template->param(js_sort => 'Status');
-   ; # last SORTITEMS.  don't remove, for closure
 }
+@items = sort{ $$a{$sortby} cmp $$b{$sortby} } @items unless $sorted;
 
 $template->param(
     ITEM_RESULTS        => \@items,
