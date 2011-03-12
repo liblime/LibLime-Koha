@@ -8,13 +8,13 @@ __PACKAGE__->meta->setup(
     table   => 'subscription_serials',
 
     columns => [
-        id                   => { type => 'serial', not_null => 1 },
-        subscription_id      => { type => 'integer', not_null => 1 },
-        periodical_serial_id => { type => 'integer', not_null => 1 },
-        status               => { type => 'integer', default => 1, not_null => 1 },
-        received_date        => { type => 'datetime' },
-        itemnumber           => { type => 'integer' },
         expected_date        => { type => 'date' },
+        id                   => { type => 'serial', not_null => 1 },
+        itemnumber           => { type => 'integer' },
+        periodical_serial_id => { type => 'integer', not_null => 1 },
+        received_date        => { type => 'datetime' },
+        status               => { type => 'integer', default => 1, not_null => 1 },
+        subscription_id      => { type => 'integer', not_null => 1 },
     ],
 
     primary_key_columns => [ 'id' ],

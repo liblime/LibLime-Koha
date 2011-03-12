@@ -8,12 +8,12 @@ __PACKAGE__->meta->setup(
     table   => 'periodicals',
 
     columns => [
-        id                => { type => 'serial', not_null => 1 },
         biblionumber      => { type => 'integer', not_null => 1 },
-        iterator          => { type => 'varchar', length => 48, not_null => 1 },
-        frequency         => { type => 'varchar', length => 16, not_null => 1 },
-        sequence_format   => { type => 'varchar', length => 64 },
         chronology_format => { type => 'varchar', length => 64 },
+        frequency         => { type => 'varchar', length => 16, not_null => 1 },
+        id                => { type => 'serial', not_null => 1 },
+        iterator          => { type => 'varchar', length => 48, not_null => 1 },
+        sequence_format   => { type => 'varchar', length => 64 },
     ],
 
     primary_key_columns => [ 'id' ],

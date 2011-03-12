@@ -10,9 +10,9 @@ __PACKAGE__->meta->setup(
     columns => [
         id               => { type => 'serial', not_null => 1 },
         periodical_id    => { type => 'integer', not_null => 1 },
+        publication_date => { type => 'date', not_null => 1 },
         sequence         => { type => 'varchar', length => 16 },
         vintage          => { type => 'varchar', length => 64, not_null => 1 },
-        publication_date => { type => 'date', not_null => 1 },
     ],
 
     primary_key_columns => [ 'id' ],

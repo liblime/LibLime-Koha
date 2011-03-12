@@ -20,7 +20,6 @@ __PACKAGE__->meta->setup(
         timestamp     => { type => 'timestamp', not_null => 1 },
         datecreated   => { type => 'date', not_null => 1 },
         abstract      => { type => 'scalar', length => 16777215 },
-        holdtype      => { type => 'enum', check_in => [ 'item', 'title', 'itemtitle' ], default => 'itemtitle', not_null => 1 },
     ],
 
     primary_key_columns => [ 'biblionumber' ],
