@@ -33,7 +33,6 @@ our @EXPORT_OK = qw(
 
 use Carp;
 use CGI;
-use HTML::Template;
 use Rose::DB::Object::Helpers qw(column_value_pairs);
 use Try::Tiny;
 
