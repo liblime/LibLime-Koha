@@ -27,7 +27,7 @@ use File::Spec;
 use Getopt::Long;
 
 my $DEBUG = 0;
-die "perl 5.6.1 or later required" unless ($] >= 5.006001);
+die "perl 5.10.0 or later required" unless ($] >= 5.010000);
 
 # Hash up directory structure & files beginning with the directory we were called from (should be the base of koha)...
 
@@ -537,16 +537,24 @@ WriteMakefile(
               NO_META      => 1,
               PREREQ_PM => {
                             'Algorithm::CheckDigits'           => 0.50,
+                            'Attribute::Handlers'              => 0.79,
                             'Biblio::EndnoteStyle'             => 0.05,
                             'Business::ISBN'                   => 2.05,
+                            'Cache::Memcached'                 => 1.24,
+                            'Cache::Memcached::Fast'           => 0.19,
                             'CGI'                              => 3.15,
                             'CGI::Carp'                        => 1.29,
+                            'CGI::Cookie'                      => 1.29,
                             'CGI::Session'                     => 4.20,
                             'CGI::Session::Serialize::yaml'    => 4.20,
                             'Class::Factory::Util'             => 1.6,
                             'Class::Accessor'                  => 0.30,
+                            'Clone'                            => 0.31,
+                            'DateTime'                         => 0.65,
+                            'DateTime::Format::DateParse'      => 0.05,
+                            'DateTime::Format::Strptime'       => 1.5000,
                             'DBD::mysql'                       => 4.004,
-                            'DBD::SQLite2'                     => 0.33, # optional, used for offline circulation
+                            'DBD::SQLite'                      => 0.33, # optional, used for offline circulation
                             'DBI'                              => 1.53,
                             'Data::Dumper'                     => 2.121,
                             'Data::ICal'                       => 0.13,
@@ -583,8 +591,10 @@ WriteMakefile(
                             'MIME::QuotedPrint'                => 3.07,
                             'Mail::Sendmail'                   => 0.79,
                             'Memoize::Memcached'               => 0.03, # optional
+                            'Net::CIDR::Compare'               => 0.03,
                             'Net::LDAP'                        => 0.33, # optional
                             'Net::LDAP::Filter'                => 0.14, # optional
+                            'Net::Server::PreFork'             => 0.97,
                             'Net::Z3950::ZOOM'                 => 1.16,
                             'PDF::API2'                        => 2.000,
                             'PDF::API2::Page'                  => 2.000,
@@ -593,23 +603,31 @@ WriteMakefile(
                             'PDF::Reuse::Barcode'              => 0.05,
                             'POE'                              => 0.9999,
                             'POSIX'                            => 1.09,
+                            'Rose::DB'                         => 0.762,
+                            'Rose::DB::Object'                 => 0.791,
+                            'Rose::DB::Object::Helpers'        => 0.784,
+                            'Rose::DB::Object::Loader'         => 0.787,
                             'Schedule::At'                     => 1.06,
                             'SMS::Send'                        => 0.05, # optional
                             'Term::ANSIColor'                  => 1.10,
                             'Test'                             => 1.25,
                             'Test::Harness'                    => 2.56,
                             'Test::More'                       => 0.80,
+                            'Text::Aspell'                     => 0.04,
                             'Text::CSV'                        => 0.01,
                             'Text::CSV_XS'                     => 0.32,
                             'Text::Iconv'                      => 1.7,
                             'Text::Wrap'                       => 2005.082401,
+                            'Tie::File'                        => '0.97_02',
                             'Time::HiRes'                      => 1.86,
                             'Time::localtime'                  => 1.02,
+                            'Try::Tiny'                        => 0.06,
                             'Unicode::Normalize'               => 0.32,
                             'URI::Escape'                      => 1.36,
                             'XML::Dumper'                      => 0.81,
                             'XML::LibXML'                      => 1.59,
                             'XML::LibXSLT'                     => 1.59,
+                            'XML::SAX::ExpatXS'                => 1.31,
                             'XML::SAX::ParserFactory'          => 1.01,
                             'XML::SAX::Writer'                 => 0.44,
                             'XML::Simple'                      => 2.14,
