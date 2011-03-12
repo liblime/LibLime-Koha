@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # This script can be used to generate rss 0.91 files for syndication.
 

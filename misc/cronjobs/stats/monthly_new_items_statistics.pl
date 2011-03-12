@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 #-----------------------------------
 # Script Name: addstats.pl
 # Script Version: 1.0

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # This file is part of Koha
 # Parts copyright 2003-2004 Paul Poulain
 # Parts copyright 2003-2004 Jerome Vizcaino

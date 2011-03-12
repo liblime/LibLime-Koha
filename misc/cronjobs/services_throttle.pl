@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # run nightly -- resets the xisbn services throttle
 
 use strict;

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # small script that import an iso2709 file into koha 2.0
 
 use strict;

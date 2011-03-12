@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # script to update all translations
 use strict;
 use warnings;

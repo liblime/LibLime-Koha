@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # WARNING: This file uses 4-character tabs!
 
 #written 11/3/2002 by Finlay

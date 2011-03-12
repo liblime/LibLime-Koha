@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/env perl 
 #run nightly -- changes J to A on someone's 18th birthday
 use strict;
 BEGIN {

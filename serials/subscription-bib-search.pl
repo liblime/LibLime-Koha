@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # WARNING: 4-character tab stops here
 
 # Copyright 2000-2002 Katipo Communications

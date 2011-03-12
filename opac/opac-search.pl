@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Script to perform searching
 # Mostly copied from search.pl, see POD there
 use strict;            # always use

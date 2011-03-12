@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # script that rebuild thesaurus from biblio table.
 
 # delete  FROM  `marc_subfield_table`  WHERE tag =  "606" AND subfieldcode = 9;

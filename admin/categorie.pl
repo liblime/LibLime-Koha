@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #script to administer the categories table
 #written 20/02/2002 by paul.poulain@free.fr

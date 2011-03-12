@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # This code  (originally from circulation.pl) has been modified by:
 #   Trendsetters, 

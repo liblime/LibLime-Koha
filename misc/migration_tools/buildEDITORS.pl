@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # script that rebuild EDITORS
 
 use strict;

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # load records that already have biblionumber set into a koha system
 # Written by TG on 10/04/2006
 use strict;

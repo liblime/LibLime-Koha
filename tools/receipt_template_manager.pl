@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Copyright 2011 Kyle M Hall <kyle@kylehall.info>
 #

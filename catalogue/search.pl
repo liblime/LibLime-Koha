@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Script to perform searching
 # For documentation try 'perldoc /path/to/search'
 #

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # vim: et ts=4 sw=4
 # Copyright 2000-2002 Katipo Communications
 #

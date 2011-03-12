@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #script to receive orders
 #written by chris@katipo.co.nz 24/2/2000

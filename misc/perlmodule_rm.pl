@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 # Remove a perl module
 use ExtUtils::Packlist;
 use ExtUtils::Installed;

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # NOTE: Use standard 8-space tabs for this file (indents are 4 spaces)
 
 # Copyright 2000-2002 Katipo Communications

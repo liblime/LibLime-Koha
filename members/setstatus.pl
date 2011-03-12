@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #script to set or lift debarred status
 #written 2/8/04

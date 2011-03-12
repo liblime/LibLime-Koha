@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # patron_info: test Patron Information Response
 
 use strict;

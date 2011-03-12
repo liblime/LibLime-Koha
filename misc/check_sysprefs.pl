@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # script to test for missing systempreferences
 # export KOHA_CONF

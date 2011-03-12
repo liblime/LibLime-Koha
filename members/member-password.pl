@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #script to set the password, and optionally a userid, for a borrower
 #written 2/5/00
 #by chris@katipo.co.nz

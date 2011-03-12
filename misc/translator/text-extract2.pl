@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Test filter partially based on Ambrose's hideous subst.pl code
 # The idea is that the .tmpl files are not valid HTML, and as a result

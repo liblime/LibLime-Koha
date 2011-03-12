@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #script to add an order into the system
 #written 29/2/00 by chris@katipo.co.nz

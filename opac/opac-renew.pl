@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #written 18/1/2000 by chris@katipo.co.nz
 # adapted for use in the hlt opac by finlay@katipo.co.nz 29/11/2002

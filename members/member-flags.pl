@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # script to edit a member's flags
 # Written by Steve Tonnesen

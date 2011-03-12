@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #origninally script to provide intranet (librarian) advanced search facility
 #now script to do searching for acquisitions

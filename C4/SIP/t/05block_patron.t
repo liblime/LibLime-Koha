@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # block_patron: test Block Patron Response
 
 use strict;

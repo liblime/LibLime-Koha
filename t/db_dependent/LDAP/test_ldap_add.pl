@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # To start out, try something like this against your LDAP:
 # ldapadd    -w metavore -D'cn=Manager,dc=metavore,dc=com' -c -f example3.ldif 

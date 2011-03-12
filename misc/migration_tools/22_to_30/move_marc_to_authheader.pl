@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # script to shift marc to biblioitems
 # scraped from updatedatabase for dev week by chris@katipo.co.nz

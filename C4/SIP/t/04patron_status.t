@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # patron_status: test Patron Status Response
 
 use strict;

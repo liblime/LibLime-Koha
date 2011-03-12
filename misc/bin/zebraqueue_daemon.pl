@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # daemon to watch the zebraqueue and update zebra as needed
 

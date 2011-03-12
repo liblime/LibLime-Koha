@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # small script that builds the tag cloud
 
 use strict;

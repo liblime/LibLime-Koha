@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Copyright 2003-2004 Nathan Walp <faceprint@faceprint.com>
 # Adapted for Koha by Ambrose Li <acli@ada.dhs.org>

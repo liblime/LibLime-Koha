@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # This file was copied from the smolder distribution and modified.
 # the copyright and license from the original distribution are

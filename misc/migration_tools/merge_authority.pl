@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # script that rebuild thesaurus from biblio table.
 
 use strict;

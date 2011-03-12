@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #written 7/3/2002 by Finlay
 #script to display reports

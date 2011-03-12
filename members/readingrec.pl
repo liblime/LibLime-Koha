@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # written 27/01/2000
 # script to display borrowers reading record

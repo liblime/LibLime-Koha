@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Routing Preview.pl script used to view a routing list after creation
 # lets one print out routing slip and create (in this instance) the heirarchy

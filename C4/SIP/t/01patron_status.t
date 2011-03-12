@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 
 # patron_status: check status of valid patron and invalid patron
 

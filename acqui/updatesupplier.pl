@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #script to show suppliers and orders
 #written by chris@katipo.co.nz 23/2/2000

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # small script that rebuilds the non-MARC DB
 
 use strict;

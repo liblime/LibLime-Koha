@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # run nightly -- remove holds that are later than waitingdate +
 # ReservesMaxPickUpDelay from the reserves table.
 #

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 #-----------------------------------
 # Description: This script generates e-mails
 # sent to subscribers of e-mail lists from

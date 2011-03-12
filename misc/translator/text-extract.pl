@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use HTML::Tree;
 use Getopt::Std;
 getopt("f:");

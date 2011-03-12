@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # This Koha test module is a stub!  
 # Add more tests here!!!

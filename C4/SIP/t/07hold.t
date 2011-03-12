@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # patron_enable: test  Patron Enable Response
 
 use strict;

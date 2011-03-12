@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Script for handling import of MARC data into Koha db
 #   and Z39.50 lookups

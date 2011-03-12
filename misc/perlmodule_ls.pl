@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use ExtUtils::Installed;
 my $instmod = ExtUtils::Installed->new();

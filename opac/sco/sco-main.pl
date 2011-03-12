@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # This code has been modified by Trendsetters (originally from opac-user.pl)
 # This code has been modified by rch

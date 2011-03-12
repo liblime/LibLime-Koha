@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #script to modify reserves/requests
 #written 2/1/00 by chris@katipo.oc.nz

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Copyright 2006 (C) LibLime
 # Joshua Ferraro <jmf@liblime.com>

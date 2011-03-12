@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # This script implements a basic benchmarking and regression testing
 # utility for Koha
 

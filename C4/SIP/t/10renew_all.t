@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # renew_all: test Renew All Response
 
 use strict;

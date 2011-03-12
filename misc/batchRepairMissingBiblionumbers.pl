@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # This script finds and fixes missing biblionumber/biblioitemnumber fields in Koha
 #  Written by TG on 01/10/2005
 #  Revised by Joshua Ferraro on 03/31/2006

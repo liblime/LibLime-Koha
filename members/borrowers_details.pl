@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # NOTE: This file uses standard 8-space tabs
 #       DO NOT SET TAB SIZE TO 4
 

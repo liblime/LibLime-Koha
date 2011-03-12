@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #written 11/1/2000 by chris@katipo.oc.nz
 #script to display borrowers account details

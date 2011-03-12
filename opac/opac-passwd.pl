@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # This script lets the users change the passwords by themselves.
 #
 # (c) 2005 Universidad ORT Uruguay.

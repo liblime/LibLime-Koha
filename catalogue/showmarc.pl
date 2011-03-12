@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # $Id: showmarc.pl,v 1.1.2.1 2007/06/18 21:57:23 rangi Exp $
 

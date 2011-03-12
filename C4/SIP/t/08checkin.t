@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # checkin: test Checkin Response
 
 use strict;

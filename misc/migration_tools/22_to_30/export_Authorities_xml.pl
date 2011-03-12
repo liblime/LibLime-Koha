@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 BEGIN {
     # find Koha's Perl modules
     # test carefully before changing this

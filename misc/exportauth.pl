@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ## This script allows you to export a rel_2_2 bibliographic db in 
 #MARC21 format from the command line.
 #

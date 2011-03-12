@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Routing.pl script used to create a routing list for a serial subscription
 # In this instance it is in fact a setting up of a list of reserves for the item

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #written by chris@katipo.co.nz
 #9/10/2000

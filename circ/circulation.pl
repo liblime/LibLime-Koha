@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # written 8/5/2002 by Finlay
 # script to execute issuing of books

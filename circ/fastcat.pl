@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the

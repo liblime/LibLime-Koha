@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # written 20/02/2002 by paul.poulain@free.fr
 # This software is placed under the gnu General Public License, v2 (http://www.gnu.org/licenses/gpl.html)

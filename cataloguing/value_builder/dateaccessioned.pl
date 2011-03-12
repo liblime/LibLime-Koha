@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # $Id: usmarc_field_952v.pl,v 1.1.2.2 2006/09/20 02:59:53 kados Exp $
 

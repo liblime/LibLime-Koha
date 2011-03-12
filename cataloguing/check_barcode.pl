@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ## This script is meant to be called via ajax, and
 ## is passed one param, 'barcode'. If the barcode

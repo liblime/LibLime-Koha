@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #script to provide virtualshelf management
 # WARNING: This file uses 4-character tabs!

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # This is a completely new Z3950 clients search using async ZOOM -TG 02/11/06
 # Copyright 2000-2002 Katipo Communications

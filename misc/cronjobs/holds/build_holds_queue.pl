@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/env perl 
 #-----------------------------------
 # Script Name: build_holds_queue.pl
 # Description: builds a holds queue in the tmp_holdsqueue table

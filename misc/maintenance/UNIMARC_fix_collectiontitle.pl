@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # This script should be used only with UNIMARC flavour
 # It is designed to report some missing information from biblio

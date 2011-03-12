@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #script to add a new item and to mark orders as received
 #written 1/3/00 by chris@katipo.co.nz

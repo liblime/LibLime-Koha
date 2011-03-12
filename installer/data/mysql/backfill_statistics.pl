@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Part of the Koha Library Software www.koha.org
 # Licensed under the GPL.

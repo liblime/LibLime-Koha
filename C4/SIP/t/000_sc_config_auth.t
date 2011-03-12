@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 
 # check if SIP terminal can Auth based on the xml config
 #

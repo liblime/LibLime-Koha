@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # $Id: barcode.pl,v 1.1.2.2 2006/09/20 02:24:42 kados Exp $
 

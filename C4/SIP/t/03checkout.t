@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # checkout: test Checkout Response
 
 use strict;

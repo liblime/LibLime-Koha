@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use XML::SAX;
 my $parser = XML::SAX::ParserFactory->parser(
 Handler => MySAXHandler->new

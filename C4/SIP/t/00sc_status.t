@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 
 # sc_status: test basic connection, login, and response
 # to the SC Status message, which has to be sent before

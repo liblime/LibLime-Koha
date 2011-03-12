@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # Copyright 2006 SAN OUEST PROVENCE et Paul POULAIN
 #

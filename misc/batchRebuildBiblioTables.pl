@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Small script that rebuilds the non-MARC DB
 # Formerly named rebuildnonmarc.pl
 

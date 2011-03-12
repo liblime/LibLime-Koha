@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # picture-upload.p. - Script for handling uploading of both single and bulk 
 # patronimages and importing them into the database.

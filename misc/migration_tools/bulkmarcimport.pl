@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Import an iso2709 file into Koha 3
 
 use strict;

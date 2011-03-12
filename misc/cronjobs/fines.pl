@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #  This script loops through each overdue item, determines the fine,
 #  and updates the total amount of fines due by each user.  It relies on

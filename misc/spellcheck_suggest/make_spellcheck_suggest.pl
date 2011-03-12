@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ## This Script creates a Koha suggest and spellcheck database
 ## for those features as visible on LibLime's opac: opac.liblime.com
 ## It also contains the needed specs for creating a table of
