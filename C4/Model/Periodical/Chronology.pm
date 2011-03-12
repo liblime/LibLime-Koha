@@ -5,8 +5,6 @@ use warnings;
 use Carp;
 use DateTime;
 
-use Data::Dumper;
-
 use base qw(DateTime::Format::Strptime);
 
 sub new {
