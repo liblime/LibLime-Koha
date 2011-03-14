@@ -327,7 +327,7 @@ sub GetItemForBibPrefill
    BRANCHITEM:
    for my $i($starti..$#branches) {
       foreach(@all) {
-         if ($$_{holdingbranch} eq $branches[$i]) {
+         if ($$_{holdingbranch} ~~ $branches[$i]) {
             $$_{found}            = $$res{found};
             $$_{borrowerbranch}   = $$res{borrowerbranch};
             $$_{borrowercategory} = $$res{categorycode};
