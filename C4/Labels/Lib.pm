@@ -442,9 +442,11 @@ sub get_table_names {
 =cut
 
 sub html_table {
-    my $headers = shift;
-    my $data = shift;
-    return undef if scalar(@$data) == 0;      # no need to generate a table if there is not data to display
+    my($headers,$data) = @_;
+    $data //= [];
+    return if ref($data) ne 'ARRAY';
+    return unless @$data;
+
     my $table = [];
     my $fields = [];
     my @headers = ();
