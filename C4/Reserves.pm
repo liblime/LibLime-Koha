@@ -308,7 +308,8 @@ sub GetItemForBibPrefill
              items.biblionumber,
              items.itemcallnumber,
              items.barcode,
-             items.holdingbranch
+             items.holdingbranch,
+             items.notforloan
         FROM items,biblio
        WHERE items.biblionumber = ? %s
          AND items.biblionumber = biblio.biblionumber",
@@ -353,7 +354,8 @@ sub GetItemForQueue
              items.biblionumber,
              items.itemcallnumber,
              items.barcode,
-             items.holdingbranch
+             items.holdingbranch,
+             items.notforloan
         FROM items,biblio
        WHERE biblio.biblionumber = items.biblionumber
          AND items.biblionumber = ?
@@ -386,6 +388,10 @@ sub _itemfillbib
    ## if the item can't be used to place a hold, it can't be used to
    ## fill a hold.
    return unless IsAvailableForItemLevelRequest($$item{itemnumber});
+
+   ## notforloan: even if you can place a hold on a notforloan item,
+   ## there's no real item avaiable to fill the hold
+   return if $$item{notforloan} != 0;
 
    ## check with issuing rules
    $sth = $dbh->prepare("

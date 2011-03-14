@@ -146,6 +146,8 @@ sub _pager
    if ($currPage-2 >2) {
       $out .= ' ... ';
    }
+
+   my $lastI = 0;
    for my $i($currPage-2..$currPage+2) {
       next if $i<2;
       if ($i==$currPage) {
@@ -154,6 +156,7 @@ sub _pager
       else {
          $out .= qq| <a href="javascript:;" onclick="pager($i)">$i</a>|;
       }
+      $lastI = $i;
       last if $i+1 >=$totalPages;
    }
    if ($currPage+3 < $totalPages) {
@@ -162,12 +165,13 @@ sub _pager
 
    if ($currPage != $totalPages) {
       my $next = $currPage +1;
-      $out .= qq| <a href="javascript:;" onclick="pager($totalPages);">$totalPages</a>
-                  <a href="javascript:;" onclick="pager($next);">&gt;</a> 
+      $out .= qq| <a href="javascript:;" onclick="pager($totalPages);">$totalPages</a>|
+      if $lastI != $totalPages;
+      $out .= qq| <a href="javascript:;" onclick="pager($next);">&gt;</a> 
                   <a href="javascript:;" onclick="pager($totalPages);">&gt;&gt;</a>|;
    }
    else {
-      $out .= " <b>$totalPages</b>";
+      $out .= " <b>$totalPages</b>" if $lastI != $totalPages;
    }
 
    return qq|<div style="font-size:10pt;">$out</div><br>|;
