@@ -106,7 +106,7 @@ sub Delete($) {
         my $ps = C4::Schema::PeriodicalSerial->new(id => $periodical_serial_id)->load;
         my $parent = $ps->periodical_id;
         foreach ($ps->subscription_serials) {
-            C4::Control::SubscriptionSerials::Delete($_->id);
+            C4::Control::SubscriptionSerial::Delete($_->id);
         }
         $ps->delete;
         return $parent;
