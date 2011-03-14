@@ -97,6 +97,9 @@ $tabsysprefs{AllowOverrideLogin}    = "Admin";
 $tabsysprefs{itembarcodelength}     = "Admin";
 $tabsysprefs{patronbarcodelength}   = "Admin";
 $tabsysprefs{UseReceiptTemplates}   = "Admin";
+$tabsysprefs{Replica_DSN}           = "Admin";
+$tabsysprefs{Replica_pass}          = "Admin";
+$tabsysprefs{Replica_user}          = "Admin";
 
 # Authorities
 $tabsysprefs{authoritysep}          = "Authorities";
@@ -130,6 +133,8 @@ $tabsysprefs{OpacSuppression}             = "Cataloging";
 $tabsysprefs{SpineLabelFormat}            = "Cataloging";
 $tabsysprefs{SpineLabelAutoPrint}         = "Cataloging";
 $tabsysprefs{UsePeriodicals}              = "Cataloging";
+$tabsysprefs{ItemLocation}                = "Cataloging";
+$tabsysprefs{EditAllLibraries}            = "Cataloging";
 
 # Circulation
 $tabsysprefs{UseGranularMaxHolds}            = "Circulation";
@@ -189,6 +194,17 @@ $tabsysprefs{LinkLostItemsToPatron}          = "Circulation";
 $tabsysprefs{RefundReturnedLostItem}         = "Circulation";
 $tabsysprefs{RefundLostReturnedAmount}       = "Circulation";
 $tabsysprefs{ApplyMaxFineWhenLostItemChargeRefunded} = "Circulation";
+$tabsysprefs{AllowCheckInDateChange}         = "Circulation";
+$tabsysprefs{AllowMultipleHoldsPerBib}       = "Circulation";
+$tabsysprefs{CourseReserves}                 = "Circulation";
+$tabsysprefs{EnableClubsAndServices}         = "Circulation";
+$tabsysprefs{ClaimsReturnedValue}            = "Circulation";
+$tabsysprefs{EnableOverdueAccruedAmount}     = "Circulation";
+$tabsysprefs{FillRequestsAtPickupLibrary}    = "Circulation";
+$tabsysprefs{FillRequestsAtPickupLibraryAge} = "Circulation";
+$tabsysprefs{HoldExpireLength}               = "Circulation";
+$tabsysprefs{HoldsTransportationReductionThreshold} = "Circulation";
+$tabsysprefs{reservesNeedConfirmationOnCheckout} = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}            = "StaffClient";
@@ -204,6 +220,15 @@ $tabsysprefs{viewLabeledMARC}             = "StaffClient";
 $tabsysprefs{viewISBD}                    = "StaffClient";
 $tabsysprefs{StaffSearchSuggestionsCount} = "StaffClient";
 $tabsysprefs{BatchItemEditor}             = "StaffClient";
+$tabsysprefs{CheckoutTimeout}             = "StaffClient";
+$tabsysprefs{BCCAllNotices}               = "StaffClient";
+$tabsysprefs{DisableHoldsIssueOverrideUnlessAuthorised} = "StaffClient";
+$tabsysprefs{XSLTDetailsDisplay}          = "StaffClient";
+$tabsysprefs{XSLTResultsDisplay}          = "StaffClient";
+$tabsysprefs{soundon}                     = "StaffClient";
+$tabsysprefs{DisplayStafficonsXSLT}       = "StaffClient";
+$tabsysprefs{ShowPatronSearchBySQL}       = "StaffClient";
+$tabsysprefs{WarnOnlyOnMaxFine}           = "StaffClient";
 
 # Patrons
 $tabsysprefs{autoMemberNum}                = "Patrons";
@@ -235,6 +260,12 @@ $tabsysprefs{NewPatronReadingHistory}      = "Patrons";
 $tabsysprefs{EnableHoldExpiredNotice}      = "Patrons";
 $tabsysprefs{EnableHoldCancelledNotice}    = "Patrons";
 $tabsysprefs{EnableHoldOnShelfNotice}      = "Patrons";
+$tabsysprefs{BatchMemberDeleteFineThreshhold} = "Patrons";
+$tabsysprefs{BatchMemberDeletePaidDebtCollections} = "Patrons";
+$tabsysprefs{OwedNotificationValue}        = "Patrons";
+$tabsysprefs{MaxShelfHoldsPerDay}          = "Patrons";
+$tabsysprefs{EnableOwedNotification}       = "Patrons";
+$tabsysprefs{UsePatronBranchForPatronInfo} = "Patrons";
 
 # I18N/L10N
 $tabsysprefs{dateformat}    = "I18N/L10N";
@@ -359,8 +390,6 @@ $tabsysprefs{AutoSelfCheckPass}               = "OPAC";
 $tabsysprefs{OPACSearchSuggestionsCount}      = "OPAC";
 $tabsysprefs{HideItypeInOPAC}                 = 'OPAC';
 $tabsysprefs{ShowOPACAvailabilityFacetSearch} = "OPAC";
-
-# OPAC
 $tabsysprefs{SearchMyLibraryFirst}               = "OPAC";
 $tabsysprefs{hidelostitems}                      = "OPAC";
 $tabsysprefs{opacbookbag}                        = "OPAC";
@@ -388,6 +417,9 @@ $tabsysprefs{OPACXSLTResultsDisplay}             = "OPAC";
 $tabsysprefs{OPACShowCheckoutName}               = "OPAC";
 $tabsysprefs{OPACXSLTResultsAvailabilityDisplay} = "OPAC";
 $tabsysprefs{DefaultOPACHoldType}                = "OPAC";
+$tabsysprefs{AllowReadingHistoryAnonymizing}     = "OPAC";
+$tabsysprefs{ResetOpacInactivityTimeout}         = "OPAC";
+$tabsysprefs{OPACDefaultItemSort}                = "OPAC";
 
 # Serials
 $tabsysprefs{OPACSerialIssueDisplayCount}  = "Serials";
