@@ -2627,7 +2627,6 @@ sub AnonymiseIssueHistory {
     ";
     $query .= " AND returndate < '$date' " if ( $date );
     $query .= " AND borrowernumber = '$borrowernumber' " if defined $borrowernumber;
-    warn "AnonymiseIssueHistory: $query";
     my $rows_affected = $dbh->do($query);
     return $rows_affected;
 }

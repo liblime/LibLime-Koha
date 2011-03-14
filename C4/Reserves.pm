@@ -523,8 +523,8 @@ sub GetHoldsQueueItems
       my $sth2 = $dbh->prepare('SELECT found FROM reserves WHERE reservenumber = ?');
       $sth2->execute($$row{reservenumber});
       $$row{found} = ($sth2->fetchrow_array)[0];
-      $$row{found_waiting}   = 1 if $$row{found} eq 'W';
-      $$row{found_intransit} = 1 if $$row{found} eq 'T';
+      $$row{found_waiting}   = 1 if $$row{found} ~~ 'W';
+      $$row{found_intransit} = 1 if $$row{found} ~~ 'T';
       $$row{reservedate}     = format_date($$row{reservedate});
       push @$items, $row;
    }

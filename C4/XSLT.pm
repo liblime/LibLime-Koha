@@ -172,7 +172,7 @@ sub buildKohaItemsNamespace {
         my $status;
 
         my ( $transfertwhen, $transfertfrom, $transfertto ) = C4::Circulation::GetTransfers($item->{itemnumber});
-        if ( $itemtypes->{ $item->{itype} }->{notforloan} == 1 || $item->{notforloan} || $item->{onloan} || $item->{wthdrawn} || $item->{itemlost} || $item->{damaged} || $item->{suppress} ||
+        if ( (defined $item->itype && $itemtypes->{ $item->{itype} }->{notforloan} == 1) || $item->{notforloan} || $item->{onloan} || $item->{wthdrawn} || $item->{itemlost} || $item->{damaged} || $item->{suppress} ||
              (defined $transfertwhen && $transfertwhen ne '') || $item->{itemnotforloan} || $item->{reserve_status} eq "Attached" || $item->{reserve_status} eq "Reserved" || $item->{reserve_status} eq "Waiting" ) {
             next if ($item->{suppress});
             if (defined $item->{reserve_status} and (
@@ -183,7 +183,7 @@ sub buildKohaItemsNamespace {
             if ( $item->{notforloan} < 0) {
                 $status = "On order";
             } 
-            if ( $item->{itemnotforloan} > 0 || $item->{notforloan} > 0 || $itemtypes->{ $item->{itype} }->{notforloan} == 1 ) {
+            if ( $item->{itemnotforloan} > 0 || $item->{notforloan} > 0 || (defined $item->{itype} && $itemtypes->{ $item->{itype} }->{notforloan} == 1) ) {
                 $status = "reference";
             }
             if ($item->{onloan}) {
