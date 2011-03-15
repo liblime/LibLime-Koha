@@ -118,9 +118,12 @@ sub plugin {
     $f710  = "" if ($f710  =~ /^\s*$/);
     $f1114 = "" if ($f1114 =~ /^\s*$/);
 
-    if ((!$f1) || ($f1 =~ m/ /)) {
-        $f1 = $dateentered;
-    }
+   #############
+   # if ((!$f1) || ($f1 =~ m/ /)) {
+   #     $f1 = $dateentered;
+   # }
+   ########### always set to now yymmdd
+   $f1 = $dateentered;
 
     $template->param(
         index       => $index,

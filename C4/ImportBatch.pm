@@ -217,6 +217,17 @@ sub AddBiblioToBatch {
     my $update_counts = @_ ? shift : 1;
     my $subfield_actions = @_ ? shift : [];
 
+   ## set 008 pos 00-05 to today yymmdd
+   my $date = C4::Dates->new();
+   my $now  = $date->output('iso');
+   my($yy,$mm,$dd) = $now =~ /^\d\d(\d\d)\-(\d\d)\-(\d\d)$/;
+   my $f = $marc_record->field('008')->data // '';
+   if ($f =~ /^(\d{6})/) {
+      my $wasnum = $1;
+      $f =~ s/^($wasnum)/$yy$mm$dd/;
+      $marc_record->field('008')->{_data} = $f;
+   }
+
     foreach my $action (@$subfield_actions) {
         my @fields = $marc_record->field($action->{'tag'});
         if ( $action->{'action'} eq 'delete' ) {
@@ -292,7 +303,7 @@ sub ModBiblioInBatch {
 
 =cut
 
-sub  BatchStageMarcRecords {
+sub BatchStageMarcRecords {
     my $marc_flavor = shift;
     my $marc_records = shift;
     my $file_name = shift;
@@ -328,6 +339,7 @@ sub  BatchStageMarcRecords {
     my $rec_num = 0;
     my ($barcode_tag, $barcode_subfield) = &GetMarcFromKohaField( "items.barcode", '' );
     my (undef, $dateaccessioned_subfield) = &GetMarcFromKohaField( "items.dateaccessioned", '' );
+
     foreach my $marc_blob (split(/\x1D/, $marc_records)) {
         $marc_blob =~ s/^\s+//g;
         $marc_blob =~ s/\s+$//g;
@@ -347,7 +359,7 @@ sub  BatchStageMarcRecords {
             if (@$added_items) {
                 foreach my $item ( @$added_items ) {
                     my $field = $item->field($barcode_tag);
-					$field->add_subfields(
+					 $field->add_subfields(
                         $dateaccessioned_subfield => C4::Dates->today()
                     ) if ( !$field->subfield( $dateaccessioned_subfield ) );
 					$marc_record->append_fields($field);
@@ -359,6 +371,7 @@ sub  BatchStageMarcRecords {
             }
         }
     }
+    
     unless ($leave_as_staging) {
         SetImportBatchStatus($batch_id, 'staged');
     }
