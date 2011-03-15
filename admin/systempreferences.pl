@@ -236,7 +236,6 @@ $tabsysprefs{checkdigit}                   = "Patrons";
 $tabsysprefs{intranetreadinghistory}       = "Patrons";
 $tabsysprefs{NotifyBorrowerDeparture}      = "Patrons";
 $tabsysprefs{memberofinstitution}          = "Patrons";
-$tabsysprefs{ReadingHistory}               = "Patrons";
 $tabsysprefs{BorrowerMandatoryField}       = "Patrons";
 $tabsysprefs{borrowerRelationship}         = "Patrons";
 $tabsysprefs{BorrowersTitles}              = "Patrons";
