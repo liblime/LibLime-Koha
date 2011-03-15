@@ -120,10 +120,9 @@ if ($run_report || $run_pass) {
 }
 else {
    $template->param(
-      branchloop  => GetBranchesLoop(C4::Context->userenv->{'branch'}),
+      branchloop => GetBranchesLoop(C4::Context->userenv->{'branch'}),
    );
 }
-
 
 # writing the template
 output_html_with_http_headers $query, $cookie, $template->output;

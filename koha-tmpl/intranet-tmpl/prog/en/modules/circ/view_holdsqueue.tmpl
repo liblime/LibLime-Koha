@@ -158,12 +158,41 @@ function Xport(barcode) {
          <option>50
          <option>100
          <option>200</select> records per page</li>
-      <li><label for="orderby">Sort by: </label>
-         <select name="orderby">
+      <li><label for="orderby1">Sort by: </label>
+         <select name="orderby1">
             <option value="tmp_holdsqueue.title">Title
-            <option value="tmp_holdsqueue.surname">Name
+            <option value="items.ccode">Collection
+            <option value="items.location">Location
+            <option value="items.itemcallnumber">Call Number
+            <option value="items.barcode">Barcode
+            <option value="tmp_holdsqueue.surname">Patron
             <option value="tmp_holdsqueue.reservedate">Date
-         </select>
+         </select><select name="orderby1how">
+            <option><option>ASC<option>DESC</select>
+      <li><label for="orderby2">then </label>
+         <select name="orderby2">
+            <option value="">
+            <option value="tmp_holdsqueue.title">Title
+            <option value="items.ccode">Collection
+            <option value="items.location">Location
+            <option value="items.itemcallnumber">Call Number
+            <option value="items.barcode">Barcode
+            <option value="tmp_holdsqueue.surname">Patron
+            <option value="tmp_holdsqueue.reservedate">Date
+         </select><select name="orderby2how">
+            <option value=""><option>ASC<option>DESC</select>
+      <li><label for="orderby3">then </label>
+         <select name="orderby3">
+            <option value="">
+            <option value="tmp_holdsqueue.title">Title
+            <option value="items.ccode">Collection
+            <option value="items.location">Location
+            <option value="items.itemcallnumber">Call Number
+            <option value="items.barcode">Barcode
+            <option value="tmp_holdsqueue.surname">Patron
+            <option value="tmp_holdsqueue.reservedate">Date
+         </select><select name="orderby3how">
+            <option value=""><option>ASC<option>DESC</select>
     </ol></fieldset>
 <!-- /TMPL_UNLESS -->
 <fieldset class="action">
@@ -177,11 +206,11 @@ function Xport(barcode) {
 <input type=hidden name="run_pass" value="1">
 <input type="hidden" name="currPage"   value="<TMPL_VAR NAME="currPage">">
 <input type=hidden name="limit" value="<TMPL_VAR NAME="limit">">
-<input type=hidden name="orderby" value="<TMPL_VAR NAME="orderby">">
 <!-- TMPL_ELSE -->
 <input type="hidden" name="run_report" value="1" />
-<input type=submit value="Submit">
+<input type=button value="Submit" onclick="getResults()">
 <!-- /TMPL_IF -->
+<input type=hidden name="orderby" value="<TMPL_VAR NAME="orderby">">
 
 </fieldset>
 </form>
@@ -203,6 +232,31 @@ function passAll() {
       sel.selectedIndex = 1;
    }
 }
+<TMPL_ELSE>
+function getResults() {
+   var d = document.f;
+   var s1 = d.orderby1.options[d.orderby1.selectedIndex].value;
+   var s2 = d.orderby2.options[d.orderby2.selectedIndex].value;
+   var s3 = d.orderby3.options[d.orderby3.selectedIndex].value;
+   var h1 = d.orderby1how.options[d.orderby1how.selectedIndex].value;
+   var h2 = d.orderby2how.options[d.orderby2how.selectedIndex].value;
+   var h3 = d.orderby3how.options[d.orderby3how.selectedIndex].value;
+   var str = '';
+   if (h1) { str = s1+' '+h1; } else { str = s1 }
+   if (s2 != '') {
+      if (str != '') { str += ',' }
+      str += s2;
+      if (h2 != '')  { str += ' '+h2 }
+   }
+   if (s3 != '') {
+      if (str != '') { str += ',' }
+      str += s3;
+      if (h3 != '')  { str += ' '+h3 }
+   }
+   d.orderby.value = str;
+   document.cookie = 'queue_orderby='+str+'; path=/';
+   d.submit();
+}
 <!-- /TMPL_IF -->
 </script>
 
@@ -212,10 +266,50 @@ function passAll() {
 
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
 <script type="application/javascript">
-
+function getCookie(cname) {
+   var i,x,y,ARRcookies = document.cookie.split(';');
+   for(i=0;i<ARRcookies.length;i++) {
+      x=ARRcookies[i].substr(0,ARRcookies[i].indexOf('='));
+      y=ARRcookies[i].substr(ARRcookies[i].indexOf('=')+1);
+      x=x.replace(/^\s+|\s+$/g,'');
+      if(x==cname) {
+         return unescape(y);
+      }
+   }
+}
 $(document).ready(function() { 
-    $("table").tablesorter(); 
-}); 
+   $("table").tablesorter();
+   <TMPL_IF EXPR="run_report ne 1">
+
+   var str = getCookie('queue_orderby');
+   if (str != '') {
+      var d = document.f;
+      var ord = str.split(',',3);
+      var sh1 = ord[0].split(' ',2);
+      var sh2 = (ord[1] || '').split(' ',2);
+      var sh3 = (ord[2] || '').split(' ',2);
+      for(var i=0;i<d.orderby2.options.length;i++) {
+         if (d.orderby1.options[i]) {
+            if (d.orderby1.options[i].value==sh1[0]) {
+               d.orderby1.options.selectedIndex = i;
+               if      (sh1[1]=='ASC') { d.orderby1how.options.selectedIndex=1 }
+               else if (sh1[1]=='DESC'){ d.orderby1how.options.selectedIndex=2 }
+            }
+         }
+         if (d.orderby2.options[i].value==sh2[0]) {
+            d.orderby2.options.selectedIndex = i;
+            if      (sh2[1]=='ASC') { d.orderby2how.options.selectedIndex=1 }
+            else if (sh2[1]=='DESC'){ d.orderby2how.options.selectedIndex=2 }
+         }
+         if (d.orderby3.options[i].value==sh3[0]) {
+            d.orderby3.options.selectedIndex = i;
+            if      (sh3[1]=='ASC') { d.orderby3how.options.selectedIndex=1 }
+            else if (sh3[1]=='DESC'){ d.orderby3how.options.selectedIndex=2 }
+         }
+      }
+   }
+   </TMPL_IF>
+});
 
 function hideColumn(n) {
   $('th:nth-child('+n+')').hide();
