@@ -565,6 +565,7 @@ WriteMakefile(
                             'Digest::SHA'                      => 5.43,
                             'Email::Date'                      => 1.103,
                             'File::Temp'                       => 0.16,
+                            'File::Slurp'                      => 9999.13,
                             'GD'                               => 2.39,    #optional
                             'GD::Barcode::UPCE'                => 1.1,
                             'Getopt::Long'                     => 2.35,

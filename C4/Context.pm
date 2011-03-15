@@ -83,7 +83,10 @@ BEGIN {
 
 use DBI;
 use ZOOM;
+use JSON;
+use Carp;
 use XML::Simple;
+use File::Slurp;
 use C4::Boolean;
 use C4::Debug;
 use POSIX ();
@@ -455,9 +458,10 @@ sub ModZebrations {
 
 Looks up the value of the given system preference in the
 systempreferences table of the Koha database, and returns it. If the
-variable is not set or does not exist, undef is returned.
+variable is not set or does not exist, it attempts to set it from the
+default if a defaults file exists.
 
-In case of an error, this may return 0.
+In case of an error, this may return undef.
 
 Note: It is impossible to tell the difference between system
 preferences which do not exist, and those whose values are set to NULL
@@ -465,27 +469,69 @@ with this method.
 
 =cut
 
-# FIXME: running this under mod_perl will require a means of
-# flushing the caching mechanism.
+my $preference_defaults_cache;
 
-my %sysprefs = ();
+sub _get_preference_defaults {
+    return $preference_defaults_cache if defined $preference_defaults_cache;
+
+    my $defaults_filename
+        = C4::Context->config('intranetdir') . '/installer/data/syspref_defaults.json';
+
+    my $json = File::Slurp::read_file($defaults_filename, err_mode => 'carp') // '{}';
+
+    return $preference_defaults_cache = from_json($json);
+}
+
+my $syspref_cache;
+
+sub _get_preferences_cache {
+    return $syspref_cache if defined $syspref_cache;
+
+    my $matrix_ref
+        = C4::Context->dbh->selectall_arrayref(
+        'SELECT variable, value FROM systempreferences',
+        {Slice => {}} );
+
+    %{$syspref_cache} = map { lc($_->{variable}) => $_->{value}} @$matrix_ref;
+    return $syspref_cache;
+}
 
 sub preference {
     my $self = shift;
-    my $var  = shift;                          # The system preference to return
+    my $var  = shift;
 
-    if (!%sysprefs) {
-        my $sql = "SELECT variable,value FROM systempreferences";
-        my $dbh = C4::Context->dbh;
-        my $sth = $dbh->prepare($sql);
-        $sth->execute();
-        my $matrix_ref = $sth->fetchall_arrayref();
-        my $rows = (!defined ($matrix_ref) ? 0 : scalar (@{$matrix_ref}));
-        for(my $i = 0; $i < $rows; $i++) {
-            $sysprefs{lc($matrix_ref->[$i][0])} = $matrix_ref->[$i][1];
-        }
+    # syspref captitalization should be normalized at some point. For now
+    # just always key against the lower case version
+    my $lcvar = lc($var);
+
+    # Seed local cache if it's uninitialized
+    my $sysprefs = $syspref_cache // _get_preferences_cache();
+
+    # Just return the variable's value if we have it
+    return $sysprefs->{$lcvar} if exists $sysprefs->{$lcvar};
+
+    # Otherwise, scan for the variable in the defaults file
+    my $defaults = _get_preference_defaults();
+    return if !defined $defaults;
+
+    # Warn if the variable isn't listed
+    my $new_var = $defaults->{$var};
+    # croak "Systempreference '$var' is not registered" if !defined $new_var;
+    if (!defined $new_var) {
+        warn "Systempreference '$var' is not registered";
+        return;
     }
-    return $sysprefs{lc($var)};
+
+    # Otherwise write the variable to the DB
+    C4::Context->dbh->do(
+        q{
+            INSERT INTO systempreferences (variable, value, options, explanation, type)
+            VALUES (?, ?, ?, ?, ?)
+        }, undef, $var, $new_var->{value}, $new_var->{options},
+        $new_var->{explanation}, $new_var->{type});
+
+    # Store it in the cache as we return it
+    return $sysprefs->{$lcvar} = $new_var->{value};
 }
 
 sub boolean_preference ($) {
@@ -508,14 +554,7 @@ sub boolean_preference ($) {
 sub clear_syspref_cache {
     my $self = shift;
 
-    if ( not @_ ) {
-        %sysprefs = ();
-        return;
-    }
-
-    foreach my $syspref (@_) {
-        delete $sysprefs{$syspref};
-    }
+    $syspref_cache = undef;
 }
 
 # AUTOLOAD
