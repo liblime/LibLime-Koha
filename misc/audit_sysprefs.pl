@@ -7,7 +7,7 @@ use feature 'say';
 use Data::Dumper;
 use C4::Context;
 
-my $defaults = C4::Context::_get_preference_defaults();
+my $defaults = C4::Context::_seed_preference_defaults_cache();
 my $sysprefs = C4::Context->dbh->selectall_hashref(
     'SELECT * FROM systempreferences', 'variable');
 

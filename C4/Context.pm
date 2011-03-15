@@ -497,6 +497,7 @@ sub _seed_preferences_cache {
 }
 
 sub _clear_syspref_cache {
+    shift; #unused
     $cache->remove('systempreferences');
 }
 
@@ -527,7 +528,7 @@ sub preference {
     }
 
     # Otherwise write the variable to the DB
-    _clear_syspref_cache();
+    $self->_clear_syspref_cache();
     C4::Context->dbh->do(
         q{
             INSERT INTO systempreferences (variable, value, options, explanation, type)
