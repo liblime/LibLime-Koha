@@ -290,6 +290,8 @@ $tabsysprefs{QueryRemoveStopwords}    = "Searching";
 $tabsysprefs{AdvancedSearchTypes}     = "Searching";
 $tabsysprefs{DisplayMultiPlaceHold}   = "Searching";
 $tabsysprefs{OPACAdvancedSearchTypes} = "Searching";
+$tabsysprefs{maxItemsinSearchResults} = "Searching";
+$tabsysprefs{OPACShowActiveBranchFirstInResults} = "Searching";
 
 # EnhancedContent
 $tabsysprefs{AmazonEnabled}          = "EnhancedContent";
@@ -419,6 +421,9 @@ $tabsysprefs{DefaultOPACHoldType}                = "OPAC";
 $tabsysprefs{AllowReadingHistoryAnonymizing}     = "OPAC";
 $tabsysprefs{ResetOpacInactivityTimeout}         = "OPAC";
 $tabsysprefs{OPACDefaultItemSort}                = "OPAC";
+$tabsysprefs{GoogleIndicTransliteration}         = "OPAC";
+$tabsysprefs{OPACAdvSearchInputCount}            = "OPAC";
+$tabsysprefs{OpacLibraryGroupSearch}             = "OPAC";
 
 # Serials
 $tabsysprefs{OPACSerialIssueDisplayCount}  = "Serials";
