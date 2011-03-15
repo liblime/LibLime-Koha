@@ -1619,7 +1619,7 @@ sub AddReturn {
             );
             $sth->execute( $item->{'itemnumber'} );
             # if we have a reservation with valid transfer, we can set it's status to 'W'
-            my ($resfound,$resrec,$rescnt) = C4::Reserves::CheckReserves($item->{'itemnumber'});
+            my ($resfound,$resrec) = C4::Reserves::CheckReserves($item->{'itemnumber'});
             C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W', $resrec->{'reservenumber'}) if ($resfound);
         } else {
             $messages->{'WrongTransfer'}     = $tobranch;

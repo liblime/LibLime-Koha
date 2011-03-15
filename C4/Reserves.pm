@@ -43,6 +43,8 @@ use C4::Dates qw( format_date_in_iso );
 use C4::Debug;
 use Date::Calc qw(Today Add_Delta_Days);
 use Time::Local;
+use DateTime;
+use DateTime::Format::DateParse;
         
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -965,7 +967,7 @@ sub GetOtherReserves {
     $debug and warn "GetOtherReserves( $itemnumber )";
     my $messages;
     my $nextreservinfo;
-    my ( $restype, $checkreserves, $count ) = CheckReserves($itemnumber);
+    my ( undef, $checkreserves ) = CheckReserves($itemnumber);
     if ($checkreserves) {
         my $iteminfo = GetItem($itemnumber);
         if ( $iteminfo->{'holdingbranch'} ne $checkreserves->{'branchcode'} ) {
@@ -1169,7 +1171,7 @@ sub GetReservesForBranch {
 
 =item CheckReserves
 
-  ($status, $reserve, $count) = &CheckReserves($itemnumber);
+  ($status, $reserve) = &CheckReserves($itemnumber);
 
 Find a book in the reserves.
 
@@ -1183,7 +1185,7 @@ Otherwise, it finds the most important item in the reserves with the
 same biblio number as this book (I'm not clear on this) and returns it
 with C<$status> set to C<Reserved>.
 
-C<&CheckReserves> returns a three-element list:
+C<&CheckReserves> returns a two-element list:
 
 C<$status> is either C<Waiting>, C<Reserved> (see above), or 0.
 
@@ -1191,159 +1193,110 @@ C<$reserve> is the reserve item that matched. It is a
 reference-to-hash whose keys are mostly the fields of the reserves
 table in the Koha database.
 
-C<$count> is the number of reserves for this item.
-
 =cut
 
 sub CheckReserves {
-    my ( $item, $barcode ) = @_;
-    my $dbh = C4::Context->dbh;
-    my $sth;
-    my $select = "
-    SELECT items.biblionumber,
-           items.biblioitemnumber,
-           itemtypes.notforloan,
-           items.notforloan AS itemnotforloan,
-           items.itemnumber,
-           items.itype,
-           items.homebranch
-    FROM   items
-    LEFT JOIN biblioitems ON items.biblioitemnumber = biblioitems.biblioitemnumber
-    LEFT JOIN itemtypes   ON biblioitems.itemtype   = itemtypes.itemtype
-    ";
+    my $itemnumber = shift;
 
-    if ($item) {
-        $sth = $dbh->prepare("$select WHERE itemnumber = ?");
-        $sth->execute($item);
-    }
-    else {
-        $sth = $dbh->prepare("$select WHERE barcode = ?");
-        $sth->execute($barcode);
-    }
-    # note: we get the itemnumber because we might have started w/ just the barcode.  Now we know for sure we have it.
-    my ( $biblio, $bibitem, $notforloan_per_itemtype, $notforloan_per_item, $itemnumber, $itemtype, $itembranch ) = $sth->fetchrow_array;
+    # Split this out to make testing a bit easier
+    return _GetNextReserve($itemnumber, _Findgroupreserve($itemnumber));
+}
 
-    return ( 0, 0, 0 ) unless $itemnumber; # bail if we got nothing.
+sub _GetNextReserve {
+    my ($itemnumber, $reserves) = @_;
 
-    # if item is not for loan it cannot be reserved either.....
-    #    execption to notforloan is where items.notforloan < 0 :  This indicates the item is holdable. 
-    return ( 0, 0, 0 ) if  ( $notforloan_per_item > 0 ) or $notforloan_per_itemtype;
+    return (0, 0) if !defined $reserves;
 
-    # Find this item in the reserves
-    my $reserves = _Findgroupreserve( $itemnumber );
+    my $item = C4::Items::GetItem($itemnumber);
 
-    # $priority and $highest are used to find the most important item
-    # in the list returned by &_Findgroupreserve. (The lower $priority,
+    # $highest is used to track the most important item
+    # in the list returned by &_Findgroupreserve. (The lower priority,
     # the more important the item.)
-    # $highest is the most important item we've seen so far.
     my $highest;
     my $exact;
-    my $local;
-    my $oldest;
-
-    my $count = scalar @$reserves;
     my $nohold = 0;
-    if (@$reserves) {
-        my $priority = 10000000;
-        foreach my $res (@$reserves) {
-            my $issuingrule = C4::Circulation::GetIssuingRule ($$res{borrowercategory},$itemtype,$itembranch);
-            unless ($issuingrule) {
-               next;
-            }
-            if (!$issuingrule->{'holdallowed'}) {
-              $nohold++;
-              next;
-            }
-            # FIXME - $item might be undefined or empty: the caller
-            # might be searching by barcode.
-            if ( ($res->{'itemnumber'}//-1) == $item && $res->{'priority'} == 0) {
-                # Found it
-                $exact = $res;
-                last;
-            }
-            else {
-                # See if this item is more important than what we've got
-                # so far.
-                $res->{'nullitem'} = 1 if (!defined($res->{'itemnumber'}));
-                if ( $res->{'priority'} != 0 && $res->{'priority'} < $priority )
-                {
-                    $priority = $res->{'priority'};
-                    $highest  = $res;
-                }
+
+    foreach my $res (@$reserves) {
+        $res->{itemnumber} = $itemnumber; # Some callers require this be set
+        my $borrower = C4::Members::GetMember($res->{borrowernumber});
+        my $branch = C4::Circulation::_GetCircControlBranch($item, $borrower);
+        my $issuingrule
+            = C4::Circulation::GetIssuingRule($res->{borrowercategory}, $item->{itype}, $branch);
+        next unless ($issuingrule);
+
+        if (!$issuingrule->{holdallowed}) {
+            $nohold++;
+            next;
+        }
+        if ($res->{priority} == 0
+            && ($res->{found} ~~ 'T' || $res->{found} ~~ 'W') ) {
+            # Found it
+            $exact = $res;
+            last;
+        }
+        if (!defined $highest || $res->{priority} < $highest->{priority}) {
+            # See if this item is more important than what we've got so far.
+            $highest = $res;
+        }
+    }
+    return ('Waiting', $exact) if $exact;
+    return (0, 0) if ($nohold == @$reserves);
+
+    # If constraints about preferring local reserves are satisfied, reassign to highest
+    if (C4::Context->preference('FillRequestsAtPickupLibrary')
+        && (@$reserves > C4::Context->preference('HoldsTransportationReductionThreshold')
+            || C4::Context->preference('HoldsTransportationReductionThreshold') == 0)
+        ) {
+        my $oldest = _OldestNonlocalReserve($reserves);
+        my $local  = _NextLocalReserve($reserves);
+
+        if ($local && $oldest) {
+            my $oldest_dt = DateTime::Format::DateParse->parse_datetime($oldest->{reservedate});
+            my $age_in_days = DateTime->now()->delta_days($oldest_dt)->delta_days;
+
+            if ($age_in_days < C4::Context->preference('FillRequestsAtPickupLibraryAge')) {
+                $highest = $local;
             }
         }
     }
-    return (0,0,0) if ($nohold==$count);
 
-    if ( 
-        ( $count > C4::Context->preference('HoldsTransportationReductionThreshold') )
-        || ( C4::Context->preference('HoldsTransportationReductionThreshold') eq '0' ) 
-    ) {
-        $local = GetReserve_NextLocalReserve( $reserves );
-        $oldest = GetReserve_OldestReserve( $reserves );
-
-        undef $oldest unless ( 
-            defined $oldest && (
-                $oldest->{age_in_days} > C4::Context->preference('FillRequestsAtPickupLibraryAge')
-                && $oldest->{priority} < (($local) ? $local->{priority} : 100000)
-            )
-        );
-    }
-
-    if ( $oldest ) {
-        $oldest->{itemnumber} = $itemnumber;
-        return( 'Reserved', $oldest, $count );
-    }
-    elsif ( $local ) {
-        $local->{itemnumber} = $itemnumber;
-        return( 'Reserved', $local, $count );
-    }
-    elsif ( $exact ) {
-        # Found an exact match, return it
-        return ( 'Waiting', $exact, $count );
-    }
-    elsif ($highest) {
-        # If we get this far, then no exact match was found.
-        # We return the most important (i.e. next) reservation.
-        $highest->{itemnumber} = $itemnumber;
-        return ( 'Reserved', $highest, $count );
-    }
-    else {
-        return ( 0, 0, 0 );
-    }
+    return ('Reserved', $highest);
 }
 
-=item GetReserve_NextLocalReserve
+=item _NextLocalReserve
 
-  my $reserve = GetReserve_NextLocalReserve( $reserves );
+  my $reserve = _NextLocalReserve( \@reserves );
   
   Returns the highest priority reserve for the given list
   (from _Findgroupreserve) whose pickup location is the logged in branch, if any.
 =cut
 
-sub GetReserve_NextLocalReserve {
-    my ( $reserves ) = @_;
+sub _NextLocalReserve {
+    my $reserves = shift;
 
     my $branchcode = (C4::Context->userenv) ? C4::Context->userenv->{branch} : '';
     my @pruned = grep {$_->{branchcode} eq $branchcode} @$reserves;
+    my @sorted = sort {$a->{priority} <=> $b->{priority}} @pruned;
 
-    return $pruned[0];
+    return $sorted[0];
 }
 
-=item GetReserve_OldestReserve
+=item _OldestReserve
 
-  my $reserve = GetReserve_OldestReserve( @$reserves );
+  my $reserve = _OldestReserve( \@reserves );
   
   Returns the oldest reserve from the given list (from _Findgroupreserve) if any.
   
 =cut
 
-sub GetReserve_OldestReserve {
-  my ( $reserves ) = @_;
+sub _OldestNonlocalReserve {
+    my $reserves = shift;
   
-  my @sorted = sort {$a->{reservedate} cmp $b->{reservedate}} @$reserves;
+    my $branchcode = (C4::Context->userenv) ? C4::Context->userenv->{branch} : '';
+    my @pruned = grep {$_->{branchcode} ne $branchcode} @$reserves;
+    my @sorted = sort {$a->{reservedate} cmp $b->{reservedate}} @pruned;
 
-  return $sorted[0];
+    return $sorted[0];
 }
 
 =item CancelReserves
@@ -2381,14 +2334,16 @@ sub _Findgroupreserve {
                reserves.timestamp AS timestamp,
                reserves.itemnumber AS itemnumber,
                borrowers.categorycode AS borrowercategory,
-               borrowers.branchcode AS borrowerbranch,
-               DATEDIFF(NOW(),reserves.reservedate) AS age_in_days
+               borrowers.branchcode AS borrowerbranch
         FROM reserves
         JOIN items ON (items.biblionumber = reserves.biblionumber)
+        JOIN itemtypes ON (items.itype = itemtypes.itemtype)
         JOIN borrowers ON (reserves.borrowernumber=borrowers.borrowernumber)
         WHERE reserves.biblionumber = items.biblionumber
           AND (found <> 'S' OR found IS NULL)
           AND (reserves.itemnumber IS NULL OR reserves.itemnumber = items.itemnumber)
+          AND itemtypes.notforloan = 0
+          AND items.notforloan <= 0
           AND reserves.reservedate <= NOW()
           AND items.itemnumber = ?
         ORDER BY priority ASC

@@ -100,7 +100,7 @@ foreach my $issue_ref (@$issues) {
 # if changing to non-holdable status
 if ($cancel_reserve) {
   my $item_count = GetItemsCount($biblionumber);
-  my ($restype,$reserves,$reserve_count) = CheckReserves($itemnumber);
+  my (undef, $reserves) = CheckReserves($itemnumber);
   if ($reserves != 0) {
     CancelReserve($reserves->{reservenumber}) if ((defined $reserves->{itemnumber}) || $item_count == 1);
   }

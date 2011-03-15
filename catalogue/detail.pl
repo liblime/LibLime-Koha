@@ -210,7 +210,7 @@ foreach my $item (@items) {
     my ($reservedate,$reservedfor,$expectedAt,$waitingdate);
     my $ItemBorrowerReserveInfo;
     my ($rescount,$res) = GetReservesFromBiblionumber($biblionumber);
-    my ($restype,$reserves,$reserve_count) = CheckReserves($item->{itemnumber});
+    my (undef, $reserves) = CheckReserves($item->{itemnumber});
     if ($reserves != 0) {
       $reservedate = $reserves->{reservedate};
       $waitingdate = $reserves->{waitingdate};
