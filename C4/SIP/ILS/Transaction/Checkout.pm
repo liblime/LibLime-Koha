@@ -18,7 +18,6 @@ use ILS::Transaction;
 use C4::Context;
 use C4::Circulation;
 use C4::Members;
-use C4::Reserves qw(ModReserveFill);
 use C4::Debug;
 
 use vars qw($VERSION @ISA $debug);
@@ -109,7 +108,7 @@ sub do_checkout {
     foreach (grep {$_->{borrowernumber} eq $self->{patron}->{borrowernumber}} @$pending) {
         $debug and warn "Filling reserve (borrowernumber,biblionumber,reservedate): "
             . sprintf("(%s,%s,%s)\n",$_->{borrowernumber},$_->{biblionumber},$_->{reservedate});
-        ModReserveFill($_);
+        C4::Reserves::ModReserveFillCheckout($_->{borrowernumber},$_->{biblionumber},$_->{itemnumber},$_);
         # TODO: adjust representation in $self->item
     }
 	# can issue

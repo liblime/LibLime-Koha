@@ -156,11 +156,15 @@ sub checkout {
 		
 			$item->{patron} = $patron_id;
 			$item->{due_date} = $circ->{due};
-			push(@{$patron->{items}}, $item_id);
+                        my @issue_items;
+                        foreach my $i (0 .. scalar @{$patron->{items}}-1) {
+                          my $issue_item = $patron->{items}[$i];
+                          push(@issue_items, $issue_item->{barcode});
+                        }
+			push(@issue_items, $item_id);
 			$circ->desensitize(!$item->magnetic_media);
-
 			syslog("LOG_DEBUG", "ILS::Checkout: patron %s has checked out %s",
-				$patron_id, join(', ', @{$patron->{items}}));
+				$patron_id, join(', ', @issue_items));
 		}
 		else {
 			syslog("LOG_ERR", "ILS::Checkout Issue failed");
