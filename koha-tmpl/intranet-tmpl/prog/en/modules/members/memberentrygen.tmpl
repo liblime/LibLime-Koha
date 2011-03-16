@@ -1133,6 +1133,8 @@
    });
 
    function checkBarcode() {
+      var docheck    = '<TMPL_VAR NAME="barcodeCheckFunc">';
+      if (docheck=='') { return }
       var barcode    = document.getElementById('cardnumber').value;
       var branchcode = document.getElementById('branchcode').value;
       var dupecheck  = 1;

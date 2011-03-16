@@ -34,6 +34,7 @@ use C4::Items;
 use C4::Circulation;
 use C4::Reserves;
 use C4::Barcodes;
+use C4::Context;
 
 my $cgi = new CGI;
 
@@ -43,7 +44,7 @@ my $btype      = $cgi->param('barcodetype');
 #my $dupecheck  = $cgi->param('dupecheck');
 my $dupecheck  = 0;
 my $itemnumber = $cgi->param('itemnumber') || 0; # scalar-or, not undef-or
-my $params;
+my $params     = {};
 
 if ($btype eq 'item') {
    my $item = GetItem('', $barcode ) // {};
@@ -79,13 +80,18 @@ if ($btype eq 'item') {
    }
 }
 
-my($ok,$errStr) = C4::Barcodes::codabar::validate(
-   $barcode,
-   $btype,
-   $branchcode,
-   $dupecheck,
-);
-$params->{error} = $errStr;
+my $sub = C4::Context->preference('barcodeValidationRoutine');
+if ($sub) {
+   no strict 'refs';
+   $sub = 'C4::Barcodes::'.$sub.'::validate';
+   my($ok,$errStr) = &$sub(
+      $barcode,
+      $btype,
+      $branchcode,
+      $dupecheck,
+    );
+   $params->{error} = $errStr;
+}
 
 my $json = to_json( $params );
 

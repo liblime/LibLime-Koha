@@ -149,6 +149,7 @@ INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('globalDueDate','','If set, allows a global static due date for all checkouts','10','free');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('ceilingDueDate','','If set, date due will not be past this date.  Enter date according to the dateformat System Preference',NULL,'free');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('itemBarcodeInputFilter','','If set, allows specification of a item barcode input filter','whitespace|T-prefix|cuecat','Choice');
+INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('barcodeValidationRoutine','','The type of barcode and routine against which barcodes will be checked for well-formed syntax.  Leave blank to allow any barcode string.','|codabar','Choice');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('singleBranchMode',0,'Operate in Single-branch mode, hide branch selection in the OPAC',NULL,'YesNo');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('URLLinkText','','Text to display as the link anchor in the OPAC',NULL,'free');
 INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES('OPACSubscriptionDisplay','economical','Specify how to display subscription information in the OPAC','economical|off|full','Choice');

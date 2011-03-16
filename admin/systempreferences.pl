@@ -96,6 +96,7 @@ $tabsysprefs{GranularPermissions}   = "Admin";
 $tabsysprefs{AllowOverrideLogin}    = "Admin";
 $tabsysprefs{itembarcodelength}     = "Admin";
 $tabsysprefs{patronbarcodelength}   = "Admin";
+$tabsysprefs{barcodeValidationRoutine}="Admin";
 $tabsysprefs{UseReceiptTemplates}   = "Admin";
 $tabsysprefs{Replica_DSN}           = "Admin";
 $tabsysprefs{Replica_pass}          = "Admin";
@@ -775,7 +776,9 @@ if ( $op eq 'add_form' ) {
         }
     }
     $sth->finish;
-    print "Content-Type: text/html\n\n<META HTTP-EQUIV=Refresh CONTENT=\"0; URL=systempreferences.pl?tab=" . $tabsysprefs{ $input->param('variable') } . "\"></html>";
+    my $tab = $input->param('variable') // '';
+    $tab = exists($tabsysprefs{$tab})? $tabsysprefs{$tab} : '';
+    print "Content-Type: text/html\n\n<META HTTP-EQUIV=Refresh CONTENT=\"0; URL=systempreferences.pl?tab=$tab\"></html>";
     exit;
 ################## DELETE_CONFIRM ##################################
     # called by default form, used to confirm deletion of data in DB

@@ -108,6 +108,7 @@ if ($op eq 'add') {
   $template->param( disable_reading_history => $disable_reading_history);
 }
 
+$template->param(barcodeCheckFunc => C4::Context->preference('barcodeValidationRoutine'));
 $template->param( AllowReadingHistoryAnonymizing => C4::Context->preference('AllowReadingHistoryAnonymizing') );
 $template->param("uppercasesurnames" => C4::Context->preference('uppercasesurnames'));
 

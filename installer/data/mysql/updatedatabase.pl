@@ -4502,6 +4502,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Drop vestigial reserve.lowestPriority column )\n";
 }
 
+$DBversion = '4.03.17.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    $dbh->do(q/INSERT INTO `systempreferences` (variable,value,explanation,options,type) 
+    VALUES('barcodeValidationRoutine','',
+      'The type of barcode and routine against which barcodes will be checked for well-formed syntax.  Leave blank to allow any barcode string.','|codabar','Choice');
+    /);
+    print "Upgrade to $DBversion done ( Added syspref barcodeValidationRoutine )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
