@@ -1247,12 +1247,12 @@ sub _GetNextReserve {
         && (@$reserves > C4::Context->preference('HoldsTransportationReductionThreshold')
             || C4::Context->preference('HoldsTransportationReductionThreshold') == 0)
         ) {
-        my $oldest = _OldestNonlocalReserve($reserves);
         my $local  = _NextLocalReserve($reserves);
 
-        if ($local && $oldest) {
-            my $oldest_dt = DateTime::Format::DateParse->parse_datetime($oldest->{reservedate});
-            my $age_in_days = DateTime->now()->delta_days($oldest_dt)->delta_days;
+        if ($local && $local->{reservenumber} != $highest->{reservenumber}) {
+            my $highest_dt = DateTime::Format::DateParse->parse_datetime($highest->{reservedate});
+            my $local_dt = DateTime::Format::DateParse->parse_datetime($local->{reservedate});
+            my $age_in_days = $highest_dt->delta_days($local_dt)->delta_days;
 
             if ($age_in_days < C4::Context->preference('FillRequestsAtPickupLibraryAge')) {
                 $highest = $local;
@@ -1277,24 +1277,6 @@ sub _NextLocalReserve {
     my $branchcode = (C4::Context->userenv) ? C4::Context->userenv->{branch} : '';
     my @pruned = grep {$_->{branchcode} eq $branchcode} @$reserves;
     my @sorted = sort {$a->{priority} <=> $b->{priority}} @pruned;
-
-    return $sorted[0];
-}
-
-=item _OldestReserve
-
-  my $reserve = _OldestReserve( \@reserves );
-  
-  Returns the oldest reserve from the given list (from _Findgroupreserve) if any.
-  
-=cut
-
-sub _OldestNonlocalReserve {
-    my $reserves = shift;
-  
-    my $branchcode = (C4::Context->userenv) ? C4::Context->userenv->{branch} : '';
-    my @pruned = grep {$_->{branchcode} ne $branchcode} @$reserves;
-    my @sorted = sort {$a->{reservedate} cmp $b->{reservedate}} @pruned;
 
     return $sorted[0];
 }
