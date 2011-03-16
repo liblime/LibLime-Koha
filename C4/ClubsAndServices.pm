@@ -135,6 +135,7 @@ sub AddClubOrServiceArchetype {
   my $dbh = C4::Context->dbh;
 
   my $sth;
+  $caseRequireEmail //= 0;
   $sth = $dbh->prepare("INSERT INTO clubsAndServicesArchetypes ( casaId, type, title, description, publicEnrollment, caseRequireEmail, branchcode, last_updated ) 
                         VALUES ( NULL, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
   $sth->execute( $type, $title, $description, $publicEnrollment, $caseRequireEmail, $branchcode ) or $success = 0;
