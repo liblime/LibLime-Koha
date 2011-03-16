@@ -203,51 +203,44 @@ sub GetLogs {
     my $iso_datefrom = C4::Dates->new($datefrom,C4::Context->preference("dateformat"))->output('iso');
     my $iso_dateto = C4::Dates->new($dateto,C4::Context->preference("dateformat"))->output('iso');
 
-    my $dbh = C4::Context->dbh;
-    my $query = "
-        SELECT *
-        FROM   action_logs
-        WHERE 1
-    ";
+    my $query = q{SELECT * FROM action_logs WHERE 1 };
 
     my @parameters;
-    $query .= " AND DATE_FORMAT(timestamp, '%Y-%m-%d') >= \"".$iso_datefrom."\" " if $iso_datefrom;   #fix me - mysql specific
-    $query .= " AND DATE_FORMAT(timestamp, '%Y-%m-%d') <= \"".$iso_dateto."\" " if $iso_dateto;
-    if($user) {
-    	$query .= " AND user LIKE ? ";
-    	push(@parameters,"%".$user."%");
+    if ($iso_datefrom) {
+        $query .= q{ AND DATE_FORMAT(timestamp, '%Y-%m-%d') >= ? };   #fix me - mysql specific
+        push @parameters, $iso_datefrom;
     }
-    if(scalar @$modules > 1 or @$modules[0] ne "") {
-	    $query .= " AND (1 = 2";  #always false but used to build the query
-	    foreach my $module (@$modules) {
-	    	next if $module eq "";
-	   	$query .= " or module = ?";
-		push(@parameters,$module);
-	    }
-	    $query .= ")";
+    if ($iso_dateto) {
+        $query .= q{ AND DATE_FORMAT(timestamp, '%Y-%m-%d') <= ? };
+        push @parameters, $iso_dateto;
+    }
+    if($user) {
+    	$query .= ' AND user = ? ';
+    	push(@parameters, $user);
+    }
+    if (@$modules && $modules->[0] ne '') {
+        $query .= sprintf ' AND (%s) ', join ' OR ', map {'module = ?'} (1..@$modules);
+        push @parameters, @$modules;
     }
     if($action) {
-    	$query .= " AND action LIKE ? ";
-	push(@parameters,"%".$action."%");
+    	$query .= ' AND action = ? ';
+	push(@parameters, $action);
     }
     if($object) {
-    	$query .= " AND object LIKE ? ";
-	push(@parameters,"%".$object."%");
+    	$query .= ' AND object = ? ';
+	push(@parameters, $object);
     }
     if($info) {
-    	$query .= " AND info LIKE ? ";
-	push(@parameters,"%".$info."%");
+    	$query .= ' AND info LIKE ? ';
+	push(@parameters, "%$info%");
     }
    
-    my $sth = $dbh->prepare($query);
-    $sth->execute(@parameters);
+    my $results = C4::Context->dbh->selectall_arrayref($query, {Slice => {}}, @parameters);
     
-    my @logs;
-    while( my $row = $sth->fetchrow_hashref ) {
-        $row->{$row->{module}} = 1;
-        push @logs , $row;
+    for (@$results) {
+        $_->{$_->{module}} = 1;
     }
-    return \@logs;
+    return $results;
 }
 
 1;
