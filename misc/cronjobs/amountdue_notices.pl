@@ -371,7 +371,7 @@ END_SQL
             C4::Letters::EnqueueLetter(
                 {   letter                 => $letter,
                     borrowernumber         => $patron->{borrowernumber},
-                    message_transport_type => 'print',
+                    message_transport_type => 'print_billing',
                     from_address           => $admin_email_address,
                     to_address             => undef
                 }
