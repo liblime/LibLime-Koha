@@ -1323,15 +1323,11 @@ sub GetItemsByBiblioitemnumber {
 
 =over 4
 
-@results = GetItemsInfo($biblionumber, $type);
+@results = GetItemsInfo($biblionumber);
 
 =back
 
 Returns information about books with the given biblionumber.
-
-C<$type> may be either C<intra> or anything else. If it is not set to
-C<intra>, then the search will exclude lost, very overdue, and
-withdrawn items.
 
 C<GetItemsInfo> returns a list of references-to-hash. Each element
 contains a number of keys. Most of them are table items from the
@@ -1370,7 +1366,7 @@ If this is set, it is set to C<One Order>.
 =cut
 
 sub GetItemsInfo {
-    my ( $biblionumber, $type ) = @_;
+    my ( $biblionumber ) = @_;
 
     my %restype;
     my $attached_count = 0;
@@ -1423,8 +1419,8 @@ sub GetItemsInfo {
         FROM   issues LEFT JOIN borrowers ON issues.borrowernumber=borrowers.borrowernumber
         WHERE  itemnumber = ?"
        );
-	my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=? "); 
-	while ( my $data = $sth->fetchrow_hashref ) {
+    my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=? "); 
+    while ( my $data = $sth->fetchrow_hashref ) {
         $itemcount++;
         my $datedue = '';
         my ($restype,$reserves,$reserve_count);
@@ -1454,17 +1450,8 @@ sub GetItemsInfo {
           }
           $reserve_status = $restype{$data->{'itemnumber'}};
         }
-        $isth->finish;
-        $ssth->finish;
-        #get branch information.....
-        my $bsth = $dbh->prepare(
-            "SELECT * FROM branches WHERE branchcode = ?
-        "
-        );
-        $bsth->execute( $data->{'holdingbranch'} );
-        if ( my $bdata = $bsth->fetchrow_hashref ) {
-            $data->{'branchname'} = $bdata->{'branchname'};
-        }
+
+        $data->{'branchname'}     = C4::Branch::GetBranchName($data->{'holdingbranch'});
         $data->{'datedue'}        = $datedue;
         $data->{'reserve_status'} = $reserve_status;
         $data->{'reserve_count'}  = $rescount + $attached_count;
@@ -1488,50 +1475,12 @@ sub GetItemsInfo {
                 ($authorised_value_row->{'opaclib'} ne ''));
         }
 
-        # get notforloan complete status if applicable
-        my $sthnflstatus = $dbh->prepare(
-            'SELECT authorised_value
-            FROM   marc_subfield_structure
-            WHERE  kohafield="items.notforloan"
-        '
-        );
+        my $nfl_authval = GetAuthorisedValue(GetAuthValCode('items.notforloan'), $data->{itemnotforloan});
+        $data->{notforloanvalue} = ($nfl_authval) ? $nfl_authval->{lib} : undef;
 
-        $sthnflstatus->execute;
-        my ($authorised_valuecode) = $sthnflstatus->fetchrow;
-        if ($authorised_valuecode) {
-            $sthnflstatus = $dbh->prepare(
-                "SELECT lib FROM authorised_values
-                 WHERE  category=?
-                 AND authorised_value=?"
-            );
-            $sthnflstatus->execute( $authorised_valuecode,
-                $data->{itemnotforloan} );
-            my ($lib) = $sthnflstatus->fetchrow;
-            $data->{notforloanvalue} = $lib;
-        }
+        my $stack_authval = GetAuthorisedValue(GetAuthValCode('items.stack'), $data->{itemnotforloan});
+        $data->{stack} = ($stack_authval) ? $stack_authval->{lib} : undef;
 
-        # my stack procedures
-        my $stackstatus = $dbh->prepare(
-            'SELECT authorised_value
-             FROM   marc_subfield_structure
-             WHERE  kohafield="items.stack"
-        '
-        );
-        $stackstatus->execute;
-
-        ($authorised_valuecode) = $stackstatus->fetchrow;
-        if ($authorised_valuecode) {
-            $stackstatus = $dbh->prepare(
-                "SELECT lib
-                 FROM   authorised_values
-                 WHERE  category=?
-                 AND    authorised_value=?
-            "
-            );
-            $stackstatus->execute( $authorised_valuecode, $data->{stack} );
-            my ($lib) = $stackstatus->fetchrow;
-            $data->{stack} = $lib;
-        }
         # Find the last 3 people who borrowed this item.
         my $sth2 = $dbh->prepare("SELECT * FROM old_issues,borrowers
                                     WHERE itemnumber = ?
@@ -1550,11 +1499,11 @@ sub GetItemsInfo {
         $results[$i] = $data;
         $i++;
     }
-	if($serial) {
-		return( sort { ($b->{'publisheddate'} || $b->{'enumchron'}) cmp ($a->{'publisheddate'} || $a->{'enumchron'}) } @results );
-	} else {
+    if($serial) {
+        return( sort { ($b->{'publisheddate'} || $b->{'enumchron'}) cmp ($a->{'publisheddate'} || $a->{'enumchron'}) } @results );
+    } else {
     	return (@results);
-	}
+    }
 }
 
 =head2 get_itemnumbers_of
