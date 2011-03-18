@@ -333,6 +333,7 @@ if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
   }                                                                                              
 } 
 
+my $no_on_shelf_holds_in_library = 0;
 my $inBranchcode = C4::Branch::GetBranchByIp();
 if ( $inBranchcode && C4::Context->preference('AllowOnShelfHolds') && !$branches->{ $inBranchcode }->{'branchonshelfholds'} ) {
   foreach my $biblionumber ( @biblionumbers ) {
@@ -340,6 +341,7 @@ if ( $inBranchcode && C4::Context->preference('AllowOnShelfHolds') && !$branches
       $noreserves = 1;
       $template->param( message => 1 );
       $template->param( no_on_shelf_holds_in_library => 1 );
+      $no_on_shelf_holds_in_library = 1;
     }
   }
 }
@@ -534,8 +536,18 @@ foreach my $biblioNum (@biblionumbers) {
 
         if (IsAvailableForItemLevelRequest($itemNum) and not $itemInfo->{noresstatus}) {
             if ($policy_holdallowed) {
+              if ($no_on_shelf_holds_in_library &&
+                  ((defined $itemLoopIter->{dateDue} &&
+                  ($borr->{'branchcode'} eq $itemInfo->{'homebranch'})) ||
+                  ($borr->{'branchcode'} ne $itemInfo->{'homebranch'}))) {
+                $template->param( message => undef);
+                $template->param( no_on_shelf_holds_in_library => undef);
                 $itemLoopIter->{available} = 1;
                 $numCopiesAvailable++;
+              } elsif (!$no_on_shelf_holds_in_library) {
+                $itemLoopIter->{available} = 1;
+                $numCopiesAvailable++;
+              }
             } else {
                 $numPolicyBlocked++;
             }
