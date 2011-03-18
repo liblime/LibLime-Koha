@@ -32,7 +32,7 @@ foreach my $res (values %{C4::Reserves::GetReservesForQueue() // {}}) {
    ## DupecheckQueue() already filters out holds on shelf (found=non-empty),
    ## priority, and reservedate.
    my $dupe = C4::Reserves::DupecheckQueue($$res{reservenumber}) // 0;
-   next HOLD if $dupe;
+   next HOLD if !!$dupe;
    
    ## handle cases:
    ## (1) trivial: item-level hold w/ an itemnumber
@@ -48,6 +48,7 @@ foreach my $res (values %{C4::Reserves::GetReservesForQueue() // {}}) {
    }
    else {   ## (2)
       $$res{item_level_request} = 0;
+      $$res{holdingbranch}      = '';
       ## (a) try to find an item
       $item = C4::Reserves::GetItemForBibPrefill($res);
       ## (b) do nothing else
@@ -59,7 +60,7 @@ foreach my $res (values %{C4::Reserves::GetReservesForQueue() // {}}) {
    ## save the hold request to the tmp_holdsqueue table
    my %new = ();
    foreach(@f) { $new{$_} = $$res{$_} }
-   $new{queue_sofar} = $$res{holdingbranch};
+   $new{queue_sofar} = $new{holdingbranch};
    C4::Reserves::SaveHoldInQueue(%new);
 }
 

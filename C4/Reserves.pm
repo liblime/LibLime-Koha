@@ -287,23 +287,25 @@ sub GetItemForBibPrefill
    my @notitems = $sth->fetchrow_array();
    $sth->finish();
 
-   my @vals     = ($$res{biblionumber});
-   my @branches = _getBranchesQueueWeight();
-   my $starti   = 0;
-   if (!!$$res{_pass}) { # force boolean context
-      my $idx = 0;
-      IDX:
-      for my $i(0..$#branches) {
-         if ($$res{holdingbranch} eq $branches[$i]) {
-            $idx = $i;
-            last IDX;
-         }
+   my @vals       = ($$res{biblionumber});
+   my @branches   = _getBranchesQueueWeight();
+   my $starti     = 0;
+   my $idx        = 0;
+   IDX:
+   for my $i(0..$#branches) {
+      if (!!$$res{_pass} && ($branches[$i] eq $$res{holdingbranch})) {
+         $idx = $i;
+         $starti = 1;
+         last IDX;
       }
-      my @lob   = splice(@branches,$idx);
-      @branches = (@lob,@branches);
-      $starti   = 1;
+      elsif ($$res{pickbranch} eq $branches[$i]) {
+         $idx = $i;
+         last IDX;
+      }
    }
-   
+   my @lob   = splice(@branches,$idx);
+   @branches = (@lob,@branches);
+  
    my $sql = sprintf("
       SELECT biblio.title,
              items.itemnumber,
@@ -1772,14 +1774,12 @@ sub ModReserveTrace
       }, undef,
    $traceAuthVal, $itemnumber);
 
-   # update the database
+   ## suspend the hold, retain its priority
    my $sql = "UPDATE reserves
-              SET    found            = NULL,
-                     priority         = 0,
+              SET    found            = 'S',
                      expirationdate   = NULL
               WHERE  reservenumber    = ?";
    $dbh->do($sql, undef, $$res{reservenumber});
-   _FixPriority( $$res{reservenumber}, $$res{priority} );
 
    # remove from queue
    $sth = $dbh->prepare("DELETE FROM tmp_holdsqueue
