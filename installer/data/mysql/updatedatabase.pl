@@ -4493,6 +4493,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update to $DBversion )\n";
 }
 
+$DBversion = '4.03.17.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{ALTER TABLE reserves DROP lowestPriority});
+    $dbh->do(q{ALTER TABLE old_reserves DROP lowestPriority});
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Drop vestigial reserve.lowestPriority column )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
