@@ -475,6 +475,12 @@ foreach my $biblioNum (@biblionumbers) {
             $itemLoopIter->{ReservedForThisBorrower}   = ( $reservedfor eq $borrowernumber );
         }
 
+        # Get additional reserve info not returned by GetReservesFromItemnumber
+        my ($count,$reserves) = GetReservesFromBiblionumber($itemInfo->{'biblionumber'});
+        foreach my $res (@$reserves) {
+          $itemLoopIter->{reserve_status} = $res->{found} if (defined $res->{found});
+        }
+
         $itemLoopIter->{notforloan} = $itemInfo->{notforloan};
         $itemLoopIter->{itemnotforloan} = $itemInfo->{itemnotforloan};
 
@@ -534,12 +540,16 @@ foreach my $biblioNum (@biblionumbers) {
             $policy_holdallowed = 0;
         }
 
+        my $iafilr = IsAvailableForItemLevelRequest($itemNum);
         if (IsAvailableForItemLevelRequest($itemNum) and not $itemInfo->{noresstatus}) {
             if ($policy_holdallowed) {
               if ($no_on_shelf_holds_in_library &&
                   ((defined $itemLoopIter->{dateDue} &&
-                  ($borr->{'branchcode'} eq $itemInfo->{'homebranch'})) ||
-                  ($borr->{'branchcode'} ne $itemInfo->{'homebranch'}))) {
+                  ($borr->{'branchcode'} eq $itemInfo->{'holdingbranch'})) ||
+                  ($borr->{'branchcode'} ne $itemInfo->{'holdingbranch'}) ||
+                  ($itemLoopIter->{reserve_status} eq 'W') ||
+                  ($itemLoopIter->{reserve_status} eq 'T') ||
+                  ($itemInfo->{'damaged'}))) {
                 $template->param( message => undef);
                 $template->param( no_on_shelf_holds_in_library => undef);
                 $itemLoopIter->{available} = 1;
