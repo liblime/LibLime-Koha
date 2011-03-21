@@ -32,7 +32,6 @@ sub methods : Test( 1 ) {
       GetPrinter
       getnbpages
       getallthemes
-      getFacets
       get_infos_of
       get_notforloan_label_of
       displayServers

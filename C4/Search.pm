@@ -16,11 +16,11 @@ package C4::Search;
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
-# use warnings; # FIXME
+use warnings;
 require Exporter;
 use C4::Context;
 use C4::Biblio;    # GetMarcFromKohaField, GetBiblioData
-use C4::Koha;      # getFacets
+use C4::Koha;
 use Lingua::Stem;
 use C4::Search::PazPar2;
 use XML::Simple;
@@ -264,6 +264,106 @@ sub SimpleSearch {
 
         return ( undef, \@results, $total_hits );
     }
+}
+
+sub getFacets {
+    my $facets;
+    if ( C4::Context->preference("marcflavour") eq "UNIMARC" ) {
+        $facets = [
+            {
+                link_value  => 'su-to',
+                label_value => 'Topics',
+                tags        =>
+                  [ '600', '601', '602', '603', '604', '605', '606', '610' ],
+                subfield => 'a',
+            },
+            {
+                link_value  => 'su-geo',
+                label_value => 'Places',
+                tags        => ['651'],
+                subfield    => 'a',
+            },
+            {
+                link_value  => 'su-ut',
+                label_value => 'Titles',
+                tags        => [ '500', '501', '502', '503', '504', ],
+                subfield    => 'a',
+            },
+            {
+                link_value  => 'au',
+                label_value => 'Authors',
+                tags        => [ '700', '701', '702', ],
+                subfield    => 'a',
+            },
+            {
+                link_value  => 'se',
+                label_value => 'Series',
+                tags        => ['225'],
+                subfield    => 'a',
+            },
+            ];
+
+            my $library_facet;
+
+            $library_facet = {
+                link_value  => 'branch',
+                label_value => 'Libraries',
+                tags        => [ '995', ],
+                subfield    => 'b',
+                expanded    => '1',
+            };
+            push @$facets, $library_facet unless C4::Context->preference("singleBranchMode");
+    }
+    else {
+        $facets = [
+            {
+                link_value  => 'su-to',
+                label_value => 'Topics',
+                tags        => ['650'],
+                subfield    => 'a',
+            },
+            {
+                link_value  => 'fixed',
+                label_value => 'Formats',
+                tags        => ['007','008'],
+                span        => ['l-format:007:0:1','ctype:008:24:27','ff8-23:008:23:23'],
+            },
+            {
+                link_value  => 'su-geo',
+                label_value => 'Places',
+                tags        => ['651'],
+                subfield    => 'a',
+            },
+            {
+                link_value  => 'su-ut',
+                label_value => 'Titles',
+                tags        => ['630'],
+                subfield    => 'a',
+            },
+            {
+                link_value  => 'au',
+                label_value => 'Authors',
+                tags        => [ '100', '110', '700', ],
+                subfield    => 'a',
+            },
+            {
+                link_value  => 'se',
+                label_value => 'Series',
+                tags        => [ '440', '490', ],
+                subfield    => 'a',
+            },
+            ];
+            my $library_facet;
+            $library_facet = {
+                link_value  => 'branch',
+                label_value => 'Libraries',
+                tags        => [ '952', ],
+                subfield    => 'b',
+                expanded    => '1',
+            };
+            push @$facets, $library_facet unless C4::Context->preference("singleBranchMode");
+    }
+    return $facets;
 }
 
 =head2 getRecords

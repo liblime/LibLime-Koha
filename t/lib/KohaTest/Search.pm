@@ -15,6 +15,7 @@ sub methods : Test( 1 ) {
     my @methods = qw(
                       FindDuplicate
                       SimpleSearch
+                      getFacets
                       getRecords
                       pazGetRecords
                       _remove_stopwords
