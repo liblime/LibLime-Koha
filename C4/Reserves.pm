@@ -789,6 +789,7 @@ sub GetOldReservesFromBorrowernumber {
         $num_days = ($user eq 'opac') ?
            C4::Context->preference('OPACShowExpiredHolds') :
            C4::Context->preference('StaffShowExpiredHolds');
+        $num_days //= 10000;
         $sth = $dbh->prepare("
             SELECT *
             FROM   old_reserves
@@ -803,6 +804,7 @@ sub GetOldReservesFromBorrowernumber {
         $num_days = ($user eq 'opac') ?
            C4::Context->preference('OPACShowCancelledHolds') :
            C4::Context->preference('StaffShowCancelledHolds');
+        $num_days //= 10000;
         $sth = $dbh->prepare("
             SELECT *
             FROM   old_reserves
@@ -816,6 +818,7 @@ sub GetOldReservesFromBorrowernumber {
         $num_days = ($user eq 'opac') ?
            C4::Context->preference('OPACShowCompletedHolds') :
            C4::Context->preference('StaffShowCompletedHolds');
+        $num_days //= 10000;
         $sth = $dbh->prepare("
             SELECT *
             FROM   old_reserves
