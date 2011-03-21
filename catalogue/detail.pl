@@ -219,7 +219,7 @@ foreach my $item (@items) {
       $ItemBorrowerReserveInfo = GetMemberDetails( $reservedfor, 0);
       undef $reservedate if ($reserves->{nullitem});
       $template->param( totalreserves => $rescount );
-      if ( defined $reserves->{itemnumber} ) {
+      if ( defined $reserves->{dbitemnumber} ) {
         $item->{reservedate} = format_date($reservedate);
         $item->{waitingdate} = format_date($waitingdate);
       }

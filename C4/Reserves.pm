@@ -1244,6 +1244,7 @@ sub _GetNextReserve {
     my $nohold = 0;
 
     foreach my $res (@$reserves) {
+        $res->{dbitemnumber} = $res->{itemnumber};
         $res->{itemnumber} = $itemnumber; # Some callers require this be set
         my $borrower = C4::Members::GetMember($res->{borrowernumber});
         my $branch = C4::Circulation::_GetCircControlBranch($item, $borrower);
