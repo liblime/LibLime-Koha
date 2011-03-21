@@ -48,7 +48,7 @@ $template->param( firstname => $borr->{'firstname'} );
 $template->param( surname => $borr->{'surname'} );
 
 # Get the filled reserve items...
-my @filledreserves  = GetOldReservesFromBorrowernumber( $borrowernumber,'fill' );
+my @filledreserves  = GetOldReservesFromBorrowernumber( $borrowernumber,'fill','opac' );
 my @filledreservesloop;
 foreach my $res (@filledreserves) {
     my %filledreserve;
@@ -68,7 +68,7 @@ $template->param( FILLEDRESERVES => \@filledreservesloop );
 $template->param( filledreserves_count => scalar @filledreservesloop );
 
 # Get the expired reserve items...
-my @expiredreserves  = GetOldReservesFromBorrowernumber( $borrowernumber,'expiration' );
+my @expiredreserves  = GetOldReservesFromBorrowernumber( $borrowernumber,'expiration','opac' );
 my @expiredreservesloop;
 foreach my $res (@expiredreserves) {
     next if (!$res->{'displayexpired'});
@@ -88,7 +88,7 @@ $template->param( expiredreserves_count => scalar @expiredreservesloop );
 
 # Get the cancelled reserved items...
 my $dbh = C4::Context->dbh;
-my @cancelledreserves  = GetOldReservesFromBorrowernumber( $borrowernumber,'cancellation' );
+my @cancelledreserves  = GetOldReservesFromBorrowernumber( $borrowernumber,'cancellation','opac' );
 my @cancelledreservesloop;
 foreach my $res (@cancelledreserves) {
     my %cancelledreserve;

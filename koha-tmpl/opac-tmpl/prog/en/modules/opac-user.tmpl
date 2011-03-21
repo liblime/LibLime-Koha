@@ -422,11 +422,15 @@ function isValidDate(theFieldName){
                     <!-- /TMPL_IF -->
                 </td>
 		<td>
+		<!-- TMPL_IF NAME="cancelwaiting" -->
 		<form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
 			<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
 		        <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
 			<input type="submit" name="submit" class="icon delete cancel" value="Cancel" onclick="return confirmDelete('Are you sure you want to cancel this hold?');" />
 		</form>
+		<!-- TMPL_ELSE -->
+			Items waiting cannot be cancelled.
+                <!-- /TMPL_IF -->
 		</td>
 		<td>
 		<!-- TMPL_IF NAME="found" -->

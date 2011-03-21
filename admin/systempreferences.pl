@@ -206,6 +206,10 @@ $tabsysprefs{FillRequestsAtPickupLibraryAge} = "Circulation";
 $tabsysprefs{HoldExpireLength}               = "Circulation";
 $tabsysprefs{HoldsTransportationReductionThreshold} = "Circulation";
 $tabsysprefs{reservesNeedConfirmationOnCheckout} = "Circulation";
+$tabsysprefs{StaffShowCompletedHolds}        = "Circulation";
+$tabsysprefs{StaffShowCancelledHolds}        = "Circulation";
+$tabsysprefs{StaffShowExpiredHolds}          = "Circulation";
+$tabsysprefs{AllowPatronsToCancelReadyHolds} = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}            = "StaffClient";
@@ -425,6 +429,9 @@ $tabsysprefs{OPACDefaultItemSort}                = "OPAC";
 $tabsysprefs{GoogleIndicTransliteration}         = "OPAC";
 $tabsysprefs{OPACAdvSearchInputCount}            = "OPAC";
 $tabsysprefs{OpacLibraryGroupSearch}             = "OPAC";
+$tabsysprefs{OPACShowCompletedHolds}             = "OPAC";
+$tabsysprefs{OPACShowCancelledHolds}             = "OPAC";
+$tabsysprefs{OPACShowExpiredHolds}               = "OPAC";
 
 # Serials
 $tabsysprefs{OPACSerialIssueDisplayCount}  = "Serials";

@@ -203,8 +203,10 @@ $template->param( branchloop => \@branch_loop );
 my @reserves  = GetReservesFromBorrowernumber( $borrowernumber );
 foreach my $res (@reserves) {
     $res->{'reservedate'} = format_date( $res->{'reservedate'} );
+    $res->{'cancelwaiting'} = 1;
     if ($res->{'found'} eq 'W') {
       $res->{'holdexpdate'} = format_date( $res->{'expirationdate'} );
+      $res->{'cancelwaiting'} = undef if (!C4::Context->preference("AllowPatronsToCancelReadyHolds"));
     }
     else {
       $res->{'holdexpdate'} = '';

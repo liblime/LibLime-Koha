@@ -67,7 +67,7 @@ $template->param(
 
 my @borroweroldreserv;
 # show the borrower's old filled reservations on Filled Holds tab
-@borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'fill');
+@borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'fill','intranet');
 my @filledreservloop;
 foreach my $num_res (@borroweroldreserv) {
   my %getreserv;
@@ -96,7 +96,7 @@ $template->param( filledreservloop => \@filledreservloop,
 );
 
 # show the borrower's old expired reservations on Expired Holds tab
-@borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'expiration');
+@borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'expiration','intranet');
 my @expiredreservloop;
 foreach my $num_res (@borroweroldreserv) {
   my %getreserv;
@@ -123,7 +123,7 @@ $template->param( expiredreservloop => \@expiredreservloop,
 # show the borrower's old cancelled reservations on Cancelled Holds tab
 my $dbh = C4::Context->dbh;
 @borroweroldreserv = ();
-@borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'cancellation');
+@borroweroldreserv = GetOldReservesFromBorrowernumber($borrowernumber,'cancellation','intranet');
 my @cancelledreservloop;
 my ($sth,$modresnumber);
 foreach my $num_res (@borroweroldreserv) {

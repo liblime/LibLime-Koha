@@ -781,34 +781,47 @@ sub GetReservesFromBorrowernumber {
 =cut
 
 sub GetOldReservesFromBorrowernumber {
-    my ( $borrowernumber, $type) = @_;
+    my ( $borrowernumber, $type, $user) = @_;
     my $dbh   = C4::Context->dbh;
     my $sth;
+    my $num_days;
     if ($type eq 'expiration') {
+        $num_days = ($user eq 'opac') ?
+           C4::Context->preference('OPACShowExpiredHolds') :
+           C4::Context->preference('StaffShowExpiredHolds');
         $sth = $dbh->prepare("
             SELECT *
             FROM   old_reserves
             WHERE  borrowernumber=?
                 AND cancellationdate IS NULL
                 AND (found IS NULL OR found <> 'F')
+                AND (DATEDIFF(CURDATE(),expirationdate) < $num_days)
             ORDER BY expirationdate DESC
         ");
         $sth->execute($borrowernumber);
     } elsif ($type eq 'cancellation') {
+        $num_days = ($user eq 'opac') ?
+           C4::Context->preference('OPACShowCancelledHolds') :
+           C4::Context->preference('StaffShowCancelledHolds');
         $sth = $dbh->prepare("
             SELECT *
             FROM   old_reserves
             WHERE  borrowernumber=?
                 AND cancellationdate IS NOT NULL
+                AND (DATEDIFF(CURDATE(),cancellationdate) < $num_days)
             ORDER BY cancellationdate DESC
         ");
         $sth->execute($borrowernumber);
     } else { # filled
+        $num_days = ($user eq 'opac') ?
+           C4::Context->preference('OPACShowCompletedHolds') :
+           C4::Context->preference('StaffShowCompletedHolds');
         $sth = $dbh->prepare("
             SELECT *
             FROM   old_reserves
             WHERE  borrowernumber=?
                 AND found = 'F'
+                AND (DATEDIFF(CURDATE(),DATE(timestamp)) < $num_days)
             ORDER BY timestamp DESC
         ");
         $sth->execute($borrowernumber);
