@@ -291,16 +291,25 @@ sub GetItemForBibPrefill
    my @branches   = _getBranchesQueueWeight();
    my $starti     = 0;
    my $idx        = 0;
-   IDX:
-   for my $i(0..$#branches) {
-      if (!!$$res{_pass} && ($branches[$i] eq $$res{holdingbranch})) {
-         $idx = $i;
-         $starti = 1;
-         last IDX;
+
+   if (!!$$res{_pass}) {
+      IDX:
+      for my $i(0..$#branches) {
+         if ($branches[$i] eq $$res{holdingbranch}) {
+            $idx = $i;
+            $starti = 1;
+            last IDX;
+         }
       }
-      elsif ($$res{pickbranch} eq $branches[$i]) {
-         $idx = $i;
-         last IDX;
+   }
+   else {
+      $idx = 0;
+      IDX:
+      for my $i(0..$#branches) {
+         if ($$res{pickbranch} eq $branches[$i]) {
+            $idx = $i;
+            last IDX;
+         }
       }
    }
    my @lob   = splice(@branches,$idx);
@@ -1747,6 +1756,7 @@ sub ModReserveTrace
    my $sth;
    
    my $itemnumber = $$res{itemnumber};
+   $$res{item_level_request} = 0;
    unless ($itemnumber) { # bib-level hold
       ## get the targeted item from tmp_holdsqueue table
       $sth = $dbh->prepare('SELECT itemnumber
@@ -1755,8 +1765,11 @@ sub ModReserveTrace
       $sth->execute($$res{reservenumber});
       $itemnumber = ($sth->fetchrow_array)[0];
    }
+   else {
+      $$res{item_level_request} = 1;
+   }
    
-   # update item's LOST status
+   ## update item's LOST status
    ## get the authorised_value of 'trace'
    $sth = $dbh->prepare("SELECT authorised_value
       FROM authorised_values
@@ -1765,27 +1778,32 @@ sub ModReserveTrace
    $sth->execute();
    my $traceAuthVal = ($sth->fetchrow_array)[0];
    die "No authorised value 'Trace' set for category 'LOST'\n" 
-   unless defined $traceAuthVal;
-   
-   $dbh->do(q{
+   unless defined $traceAuthVal;   
+   $dbh->do(q|
       UPDATE items
          SET itemlost    = ?
        WHERE itemnumber  = ?
-      }, undef,
+      |, undef,
    $traceAuthVal, $itemnumber);
 
-   ## suspend the hold, retain its priority
-   my $sql = "UPDATE reserves
+   if ($$res{item_level_request}) { ## item-level request
+      ## suspend the hold, retain its priority
+      my $sql = "UPDATE reserves
               SET    found            = 'S',
                      expirationdate   = NULL
               WHERE  reservenumber    = ?";
-   $dbh->do($sql, undef, $$res{reservenumber});
+      $dbh->do($sql, undef, $$res{reservenumber});
+   }
+   else { ## bib-level request
+      ## do nothing, just remove from tmp_holdsqueue..
+      ## this effectively starts the filling of this reserve over
+      ## at, hopefully, holdingbranch=pickupbranch upon next
+      ## run of build_holds_queue.pl
+   }
 
-   # remove from queue
    $sth = $dbh->prepare("DELETE FROM tmp_holdsqueue
        WHERE reservenumber = ?");
    $sth->execute($$res{reservenumber});
-
    return 1;
 }
 
