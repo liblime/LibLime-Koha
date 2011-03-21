@@ -94,7 +94,7 @@ while (<IN>) {
     # look for TMPL_IF, TMPL_ELSE, TMPL_UNLESS, and TMPL_LOOPs in HTML comments
     # this makes the assumption that these control statements are never
     # spread across multiple lines
-    foreach my $comment (/<!-- (.*?) -->/g) {
+    foreach my $comment (/<!-- (.*?) -->|<(\/?TMPL_[^>]*)>/g) {
 
         my $norm_comment = lc $comment;
         $norm_comment =~ s/^\s+//;
