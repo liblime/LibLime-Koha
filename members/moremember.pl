@@ -132,7 +132,7 @@ for (qw(debarred gonenoaddress lost borrowernotes exclude_from_collection)) {
 }
 
 $data->{'ethnicity'} = fixEthnicity( $data->{'ethnicity'} );
-$data->{ "sex_".$data->{'sex'}."_p" } = 1;
+$data->{ 'sex_'. ($data->{sex} // '') .'_p' } = 1;
 
 if ( $category_type eq 'C') {
 	if ($data->{'guarantorid'} ne '0' ) {
