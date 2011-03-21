@@ -1746,10 +1746,9 @@ sub AddReturn {
 
 
     }
-        if ( $borrower->{'disable_reading_history'} ) {
-          my $rowsaffected = AnonymiseIssueHistory( '', $borrower->{'borrowernumber'} );
-          warn "Rows Affected: $rowsaffected"; 
-        }
+    if ( $borrower->{'disable_reading_history'} ) {
+        AnonymiseIssueHistory( '', $borrower->{'borrowernumber'} );
+    }
     return ( $doreturn, $messages, $issue, $borrower );
 }
 
