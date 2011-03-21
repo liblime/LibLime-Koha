@@ -1029,7 +1029,7 @@ sub GetNormalizedOCLCNumber {
     if ($marcflavour eq 'MARC21') {
         @fields = $record->field('035');
         foreach my $field (@fields) {
-            $oclc = $field->subfield('a');
+            $oclc = $field->subfield('a') // '';
             if ($oclc =~ /OCoLC/) {
                 $oclc =~ s/\(OCoLC\)//;
                 return $oclc;
