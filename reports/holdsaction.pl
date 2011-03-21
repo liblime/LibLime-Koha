@@ -35,6 +35,7 @@ my $fromdate   = $cgi->param('from')          || undef;
 my $todate     = $cgi->param('to')            || undef;
 my $holdcandate= $cgi->param('holdcandate')   || undef;
 my $holdexpdate= $cgi->param('holdexpdate')   || undef;
+my $waitingdate= $cgi->param('waitingdate')   || undef;
 my $branchcode = $cgi->param('branch')        || undef;
 my $output     = $cgi->param('output');
 my $basename   = $cgi->param('basename');
@@ -63,16 +64,17 @@ unless (C4::Context->preference('ReservesMaxPickupDelay')) {
 }
 
 if ($go) {
+   my @reservenumbers = $cgi->param('lapsed');
+   C4::Reserves::UnshelfLapsed(@reservenumbers);
    my @rows = @{C4::Reports::HoldsShelf(
-      holdcandate => $holdcandate,
-      holdexpdate => $holdexpdate,
-      fromdate    => $fromdate,
-      todate      => $todate,
       branchcode  => $branchcode,
    )};
    if ($output eq "screen") {
       # Printing results to screen
-      $template->param(results => \@rows);
+      $template->param(
+         results     => \@rows,
+         branchcode  => $branchcode,
+      );
       output_html_with_http_headers $cgi, $cookie, $template->output;
       exit(1);
    }

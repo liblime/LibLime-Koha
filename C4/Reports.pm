@@ -129,7 +129,7 @@ sub AddCondition {
     }
 }
 
-# not exported.
+## not exported.
 sub HoldsShelf
 {
    my %g   = @_;
@@ -140,30 +140,14 @@ sub HoldsShelf
       $lim .= " AND <table>.branchcode = ?"; 
       push @lims, $g{branchcode}; 
    }
-   my %d = (
-      'fromdate'        => 'reservedate >='     ,
-      'todate'          => 'reservedate <='     ,
-      'holdexpdate'     => 'expirationdate >='  ,
-      'holdcandate'     => 'cancellationdate IS NOT NULL AND cancellationdate >=',
-      'waitingdate'     => 'waitingdate >='     ,
-   );
-   foreach(keys %d) {
-      next unless exists $g{$_};
-      if ($g{$_} =~ /^(\d\d)\/(\d\d)\/(\d{4})$/) {
-         $lim .= " AND <table>.$d{$_} ?";
-         push @lims, "$3-$1-$2";
-      }
-      elsif ($g{$_}) {
-         die "Malformed $_, expected mm/dd/yyyy";
-      }
-   }
+  
    my $sql = qq|
       SELECT <table>.reservenumber,
              <table>.reservedate,
              <table>.waitingdate,
              <table>.cancellationdate,
              <table>.expirationdate,
-             <table>.biblionumber,
+             <table>.biblionumber,             
              branches.branchname,
              borrowers.borrowernumber,
              borrowers.surname,
@@ -174,17 +158,17 @@ sub HoldsShelf
    LEFT JOIN biblio    ON (<table>.biblionumber   = biblio.biblionumber)
    LEFT JOIN borrowers ON (<table>.borrowernumber = borrowers.borrowernumber)
    LEFT JOIN branches  ON (<table>.branchcode     = branches.branchcode)
-       WHERE <table>.found = 'W' $lim
+       WHERE <table>.found = 'W' 
+         AND <table>.expirationdate <= NOW() $lim
    |;
    my $stm1 = my $stm2 = $sql;
    $stm1    =~ s/<table>/reserves/sg;
    $stm2    =~ s/<table>/old_reserves/sg;
    my $sth; my @all;
-   unless ($g{holdcandate}) { # don't go through reserves table for cancelled holds
-      $sth  = $dbh->prepare($stm1);
-      $sth->execute(@lims);
-      while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
-   }
+   $sth  = $dbh->prepare($stm1);
+   $sth->execute(@lims);
+   while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
+   $stm2 .= ' AND old_reserves.priority >= 0';
    $sth = $dbh->prepare($stm2);
    $sth->execute(@lims);
    while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }

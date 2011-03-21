@@ -27,13 +27,17 @@ Cannot proceed.
 <!-- TMPL_ELSE -->
 
 <!-- TMPL_IF NAME="go" -->
-    <h1>Waiting on Holds Shelf</h1>
+    <h1>Lapsed on Holds Shelf</h1>
+    <form method=post action="holdsaction.pl" name="myf" id="myf">
+    <input type=hidden name="go" value="1">
+    <input type=hidden name="output" value="screen">
+    <input type=hidden name="branch" value="<TMPL_VAR NAME="branchcode">">
 
     <!-- TMPL_IF NAME="results" -->
     <table>
         <thead>
         <tr>
-            <th>No.</th>
+            <td><input type=checkbox name="toggleCheck" onclick="toggleCh()" checked>No.</td>
             <th>Title</th>
             <th>Name</th>
             <th>Placed On</th>
@@ -45,7 +49,8 @@ Cannot proceed.
         </thead>
             <!-- TMPL_LOOP NAME="results" -->
                 <tr>
-                     <td><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->#reserves"><!-- TMPL_VAR NAME="reservenumber" --></a></td>
+                     <td><input type=checkbox name="lapsed" value="<TMPL_VAR NAME="reservenumber">" 
+                     checked><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->#reserves"><!-- TMPL_VAR NAME="reservenumber" --></a></td>
                      <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a></td>
                      <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" -->, 
                         <!-- TMPL_VAR NAME="firstname" --></a></td>
@@ -57,13 +62,24 @@ Cannot proceed.
                 </tr>
             <!-- /TMPL_LOOP -->
     </table>
+     <br>
+     <input type=submit value="Remove Selected from Holds Shelf">
+     <input type=button value="Cancel" onclick="document.location.href='holdsaction.pl';">
+     </form>
+     <script>
+      function toggleCh() {
+         for(var i=0;i<document.myf.lapsed.length;i++) {
+            document.myf.lapsed[i].checked = document.myf.toggleCheck.checked;
+         }
+      }
+     </script>
+
     <!-- TMPL_ELSE -->
       No results found.
+      <br><br><input type=button value="&lt; Back" onclick="document.location.href='holdsaction.pl';">
     <!-- /TMPL_IF -->
-     <br>
-     <input type=button value="&lt; Back" onclick="document.location.href='holdsaction.pl';">
 <!-- TMPL_ELSE -->
-    <h1>Waiting on Holds Shelf</h1>
+    <h1>Lapsed on Holds Shelf</h1>
     <form method="post" action="/cgi-bin/koha/reports/holdsaction.pl">
     <fieldset class="rows">
 		<ol>
@@ -78,61 +94,6 @@ Cannot proceed.
             <!-- /TMPL_IF -->
           <!-- /TMPL_LOOP -->
         </select></li>
-         <li><label for="waitingdate">Waiting since: </label> <input size="10" id="waitingdate" name="waitingdate" value="" type="text" />
-                           <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarWait" style="cursor: pointer;" border="0" />
-                            <script type="text/javascript">
-                                Calendar.setup(
-                                    {
-                                        inputField : "waitingdate",
-                                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-                                        button : "openCalendarWait",
-                                    }
-                                );
-                            </script></li>
-         <li><label for="from">Hold placed after: </label> <input size="10" id="from" name="from" value="" type="text" />
-                           <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarFrom" style="cursor: pointer;" border="0" />
-                            <script type="text/javascript">
-                                Calendar.setup(
-                                    {
-                                        inputField : "from",
-                                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-                                        button : "openCalendarFrom",
-                                    }
-                                );
-                            </script></li>
-         <li><label for="to">Hold placed before: </label> <input size="10" id="to" name="to" value="" type="text" />
-                           <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarTo" style="cursor: pointer;" border="0" />
-                            <script type="text/javascript">
-                                Calendar.setup(
-                                    {
-                                        inputField : "to",
-                                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-                                        button : "openCalendarTo",
-                                    }
-                                );
-                            </script></li>
-         <li><label for="holdcandate">Cancelled on or after: </label> <input size="10" id="holdcandate" name="holdcandate" value="" type="text" />
-                           <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarCan" style="cursor: pointer;" border="0" />
-                            <script type="text/javascript">
-                                Calendar.setup(
-                                    {
-                                        inputField : "holdcandate",
-                                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-                                        button : "openCalendarCan",
-                                    }
-                                );
-                            </script></li>
-	      <li><label for="holdexpdate">Expired on or after: </label> <input size="10" id="holdexpdate" name="holdexpdate" value="" type="text" />
-                        <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" id="openCalendarExp" style="cursor: pointer;" border="0" />
-                            <script type="text/javascript">
-                                Calendar.setup(
-                                    {
-                                        inputField : "holdexpdate",
-                                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-                                        button : "openCalendarExp",
-                                    }
-                                );
-                            </script></li>
 		</ol>
 	</fieldset>
 

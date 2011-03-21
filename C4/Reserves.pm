@@ -1309,6 +1309,22 @@ sub _NextLocalReserve {
     return $sorted[0];
 }
 
+## not exported.
+## flag a list of a cancelled holds as being off the holds shelf
+## by setting priority = -1
+sub UnshelfLapsed
+{
+   my @reservenumbers = @_;
+   return 0 unless @reservenumbers;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare(sprintf('UPDATE old_reserves SET priority=-1 WHERE reservenumber IN(%s)',
+         join(',', map{'?'} @reservenumbers)
+      )
+   );
+   my $fx = $sth->execute(@reservenumbers);
+   return $fx;
+}
+
 =item CancelReserves
   &CancelReserves({
     [ biblionumber => $biblionumber, ]
