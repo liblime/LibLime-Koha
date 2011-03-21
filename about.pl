@@ -168,4 +168,7 @@ foreach my $component ( sort @component_names ) {
 
 $template->param( components => \@components );
 
+my @environment = map { {variable => $_, value => $ENV{$_}} } sort keys %ENV;
+$template->param( environment => \@environment);
+
 output_html_with_http_headers $query, $cookie, $template->output;

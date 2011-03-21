@@ -25,6 +25,7 @@
     <div id="abouttabs" class="toptabs numbered">
         <ul>
         <li><a href="about.pl#about">Server Information</a></li>
+        <li><a href="about.pl#environment">Environment</a></li>
         <li><a href="about.pl#perl">Perl modules</a></li>
         <li><a href="about.pl#team">Koha Team</a></li>
         <li><a href="about.pl#licenses">Licenses</a></li>
@@ -59,6 +60,14 @@
                     <!-- TMPL_IF name="newrow" --></tr><!-- TMPL_UNLESS NAME="__last__" --><tr><!-- /TMPL_UNLESS --><!-- /TMPL_IF -->
                 <!-- /TMPL_LOOP -->
             </table>
+        </div>
+        <div id="environment">
+          <dl>
+            <TMPL_LOOP NAME="environment">
+              <dt><TMPL_VAR NAME="variable"></dt>
+              <dd><TMPL_VAR NAME="value"></dd>
+            </TMPL_LOOP>
+          </dl>
         </div>
         <div id="team">
             <h2>Special thanks to the following organizations</h2>
