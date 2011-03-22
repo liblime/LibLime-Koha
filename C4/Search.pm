@@ -327,7 +327,7 @@ sub getFacets {
                 link_value  => 'fixed',
                 label_value => 'Formats',
                 tags        => ['007','008'],
-                span        => ['l-format:007:0:1','ctype:008:24:27','ff8-23:008:23:23'],
+                span        => ['l-format:007:0:1','ctype:008:24:27','e-format:008:26:26','ff8-23:008:23:23'],
             },
             {
                 link_value  => 'su-geo',
@@ -644,7 +644,10 @@ sub getRecords {
                                    }   
                                   if ($format_tie{$facet_link_value}[0] eq 'ff8-23' && $format_tie{$facet_link_value}[2] eq $facet_link_value){
                                     $authval = GetAuthorisedValue('CTYPE', $facet_link_value);
-                                  }                                                                 
+                                  } 
+                                  if ($format_tie{$facet_link_value}[0] eq 'e-format' && $format_tie{$facet_link_value}[2] eq $facet_link_value){
+                                     $authval = GetAuthorisedValue('ETYPE', $facet_link_value) ;
+                                   }                                                                
                                   $facet_label_value = ($authval) ? $authval->{lib} : undef;
                              }
 
@@ -672,6 +675,7 @@ sub getRecords {
                         facets     => \@this_facets_array,
                         expandable => $expandable,
                         expand     => $link_value,
+                        offset     => $offset,
                     } unless ( ($facets_info->{$link_value}->{'label_value'} =~ /Libraries/) and (C4::Context->preference('singleBranchMode')) );
                 }
             }

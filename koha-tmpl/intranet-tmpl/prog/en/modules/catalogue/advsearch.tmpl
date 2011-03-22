@@ -176,9 +176,6 @@
 			<option value="aud:b">Primary</option>
 			<option value="aud:c">Pre-teen</option>
 			<option value="aud:d">Teen</option>
-			<option value="(aud:e or aud:f or aud:g)">Adult</option>
-			<!--<option value="aud:g">General</option>
-			<option value="aud:j">Juvenile</option-->
         </select>
         
             <select name="limit" class="subtype">
@@ -194,32 +191,20 @@
         
                 <select name="limit" class="subtype">
                     <option value="" selected="selected" class="menuheader">Any Format</option>
-                    <option value="ff8-23:r">Regular print books</option>
                     <option value="ff8-23:d">Large print books</option>
                     <option value="ff8-23:f">Braille books</option>
-                    <!--<option value="fic:c">Graphic novels</option>-->
                     <option value="g-format:6">Graphic novels</option>
-
                     <option value="">-----------</option>
-
-                    <!--<option value="l-format:vd">DVDs</option>-->
                     <option value="(dt-vis:v and v-format:v)">DVDs</option>
-
-                    <!--option value="(dt-vis:v and v-format:s)">Blu-ray DVDs</option-->
                     <option value="(dt-vis:v and v-format:s)">Blu-ray DVDs</option> 
-
-                    <!--<option value="l-format:vf">Videocassettes</option>-->
-                    <option value="dt-vis:v">Videocassettes</option>
-
+                    <option value="l-format:vf">Videocassettes</option>
                     <option value="">-----------</option>
                     <option value="l-format:sd">Compact discs</option>
                     <option value="l-format:sz">Digital audio players</option>
                     <option value="l-format:ss">Cassettes</option>
                     <option value="">-----------</option>
                     <option value="l-format:co">Software</option>
-                    <!--<option value="(ctype:g and (l-format:cb or l-format:cc or l-format:cd or l-format:ce or 
-                    l-format:cf or l-format:cm or l-format:co or l-format:cu or lformat:cz))">Video games</option>-->
-                    <option value="(ctype:g and dt-bks:c)">Video games</option>
+                    <option value="(dt-cf:c and e-format:g)">Video games</option>
                     <option value="l-format:cr">Websites and downloadables</option>
                     <option value="">-----------</option>
                     <option value="mus:j">Music</option>

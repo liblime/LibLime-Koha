@@ -4475,7 +4475,6 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = '4.03.16.003';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    SetVersion ($DBversion);
     $dbh->do(q/
     INSERT INTO `systempreferences`
     (variable,value,options,explanation,type)
@@ -4484,6 +4483,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     INSERT INTO `systempreferences` 
     (variable,value,options,explanation,type) 
     VALUES('OPACDefaultItemSort','itemtype','library|itemtype|location_description|itemcallnumber','Specify record holdings sort by what field in the OPAC.  Default is \'itemtype\'.','Choice')/);
+    SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Added sysprefs OPACShowActiveBranchFirstInResults and OPACDefaultItemSort )\n";
 }
 
@@ -4504,17 +4504,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = '4.03.17.002';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    SetVersion ($DBversion);
     $dbh->do(q/INSERT INTO `systempreferences` (variable,value,explanation,options,type) 
     VALUES('barcodeValidationRoutine','',
       'The type of barcode and routine against which barcodes will be checked for well-formed syntax.  Leave blank to allow any barcode string.','|codabar','Choice');
     /);
+    SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Added syspref barcodeValidationRoutine )\n";
 }
 
 $DBversion = '4.03.17.003';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    SetVersion ($DBversion);
     $dbh->do(q/INSERT INTO `systempreferences` (variable,value,explanation,type) VALUES
         ('OPACShowCompletedHolds','7','The number in days that filled holds will display in the OPAC my hold history tab.  A value of 0 will display nothing.','Integer'),
         ('OPACShowCancelledHolds','7','The number in days that cancelled holds will display in the OPAC my hold history tab.  A value of 0 will display nothing.','Integer'),
@@ -4525,6 +4524,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         ('AllowPatronsToCancelReadyHolds',0,'If ON, OPAC users will have the ability to cancel waiting holds','YesNo')
     /);
 
+    SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Added holds display sysprefs )\n";
 }
 
@@ -4536,12 +4536,35 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = '4.03.18.001';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    SetVersion ($DBversion);
     $dbh->do(q/INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES
         ('SIPItemDisplay','barcode','This sets the SIP display for the item field in the patron information response message','barcode|barcode+title','Choice')
     /);
 
+    SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Added SIPItemDisplay syspref )\n";
+}
+
+$DBversion = '4.03.18.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    $dbh->do(q{
+    INSERT INTO `authorised_values` (`category`,`authorised_value`,`prefix`,`lib`,`imageurl`,`opaclib`) VALUES
+        ('ETYPE','a',NULL,'Numeric data',NULL,NULL),
+        ('ETYPE','b',NULL,'Computer program',NULL,NULL),
+        ('ETYPE','c',NULL,'Representational',NULL,NULL),
+        ('ETYPE','d',NULL,'Document',NULL,NULL),
+        ('ETYPE','e',NULL,'Bibliographic data',NULL,NULL),
+        ('ETYPE','f',NULL,'Font',NULL,NULL),
+        ('ETYPE','g',NULL,'Video games',NULL,NULL),
+        ('ETYPE','h',NULL,'Sounds',NULL,NULL),
+        ('ETYPE','i',NULL,'Interactive multimedia',NULL,NULL),
+        ('ETYPE','j',NULL,'Online system or service',NULL,NULL),
+        ('ETYPE','m',NULL,'Combination',NULL,NULL),
+        ('ETYPE','u',NULL,'Unknown',NULL,NULL),
+        ('ETYPE','z',NULL,'Other',NULL,NULL)
+    });
+
+    print "Upgrade to $DBversion done ( Add authvals for facet searches )\n";
 }
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;

@@ -175,6 +175,8 @@ att 8822    ta
 att 8823    ff8-23
 # Usually Nature of contents 008/24-27
 att 8824    ff8-24-27
+# Usually this code indicates the type of electronic resource being described
+att 8826    ff8-26
 # Usually Content-type, also Form of item for maps 008/29
 att 8829    ff8-29
 # Usually Literary Form 008/33

@@ -165,61 +165,45 @@
             <div id="subtypes" class="container"><fieldset>
             <legend>Subtype limits</legend>
             <select name="limit" class="subtype">
-            <option value="" selected="selected" class="menuheader">Any audience</option>
-            <option value="(aud:a or aud:b or aud:c or aud:j)">Children</option>
-			<option value="aud:a">Preschool</option>
-			<option value="aud:b">Primary</option>
-			<option value="aud:c">Pre-teen</option>
-			<option value="aud:d">Teen</option>
-			<option value="aud:e or aud:f or aud:g">Adult</option>
-			<!--<option value="aud:g">General</option>
-			<option value="aud:j">Juvenile</option-->
+                  <option value="" selected="selected" class="menuheader">Any audience</option>
+                  <option value="(aud:a or aud:b or aud:c or aud:j)">Children</option>
+		    <option value="aud:a">Preschool</option>
+		    <option value="aud:b">Primary</option>
+		    <option value="aud:c">Pre-teen</option>
+		    <option value="aud:d">Teen</option>
+            </select>
+        
+            <select name="limit" class="subtype">
+                  <option value="" selected="selected" class="menuheader">Any Content</option>
+                  <option value="(rtype:a and (fic:1 or fic:c or fic:f or fic:j))">Fiction books</option>
+                  <option value="(rtype:a and (fic:0 or fic:d or fic:e or fic:h or fic:i or fic:m or fic:s))">Non-fiction books</option>
+                  <option value="(rtype:a and fic:p)">Poetry</option>
+                  <option value="rtype:a and fic:j">Short stories</option>
+                  <option value="(rtype:a and (bio:b or bio:c))">Biographies</option>
+                  <option value="(rtype:a and bio:a)">Autobiographies</option>
+            </select>
+
+            <select name="limit" class="subtype">
+                  <option value="" selected="selected" class="menuheader">Any Format</option>
+                  <option value="ff8-23:d">Large print books</option>
+                  <option value="ff8-23:f">Braille books</option>
+                  <option value="g-format:6">Graphic novels</option>
+                  <option value="">-----------</option>
+                  <option value="(dt-vis:v and v-format:v)">DVDs</option>
+                  <option value="(dt-vis:v and v-format:s)">Blu-ray DVDs</option> 
+                  <option value="l-format:vf">Videocassettes</option>
+                  <option value="">-----------</option>
+                  <option value="l-format:sd">Compact discs</option>
+                  <option value="l-format:sz">Digital audio players</option>
+                  <option value="l-format:ss">Cassettes</option>
+                  <option value="">-----------</option>
+                  <option value="l-format:co">Software</option>
+                  <option value="(dt-cf:c and e-format:g)">Video games</option>
+                  <option value="l-format:cr">Websites and downloadables</option>
+                  <option value="">-----------</option>
+                  <option value="mus:j">Music</option>
+                  <option value="mus:i">Audiobooks</option>
              </select>
-        
-              <select name="limit" class="subtype">
-                <option value="" selected="selected" class="menuheader">Any Content</option>
-                    <option value="(rtype:a and ((fic:1 or fic:c or fic:f or fic:j))">Fiction books</option>
-                    <option value="(rtype:a and ((fic:0 or fic:d or fic:e or fic:h or fic:i or fic:m or fic:s))">Non-fiction books</option>
-                    <option value="(rtype:a and fic:p)">Poetry</option>
-                    <option value="(rtype:a and fic:j)">Short stories</option>
-                    <option value="(rtype:a and (bio:b or bio:c))">Biographies</option>
-                    <option value="(rtype:a and (bio:a))">Autobiographies</option>
-                </select>
-
-        
-                <select name="limit" class="subtype">
-                    <option value="" selected="selected" class="menuheader">Any Format</option>
-                    <option value="ff8-23:r">Regular print books</option>
-                    <option value="ff8-23:d">Large print books</option>
-                    <option value="ff8-23:f">Braille books</option>
-                    <!--<option value="fic:c">Graphic novels</option>-->
-                    <option value="g-format:6">Graphic novels</option>
-
-                    <option value="">-----------</option>
-
-                    <!--<option value="l-format:vd">DVDs</option>-->
-                    <option value="(dt-vis:v and v-format:v)">DVDs</option>
-
-                    <!--option value="(dt-vis:v and v-format:s)">Blu-ray DVDs</option-->
-                    <option value="(dt-vis:v and v-format:s)">Blu-ray DVDs</option> 
-
-                    <!--<option value="l-format:vf">Videocassettes</option>-->
-                    <option value="dt-vis:v">Videocassettes</option>
-
-                    <option value="">-----------</option>
-                    <option value="l-format:sd">Compact discs</option>
-                    <option value="l-format:sz">Digital audio players</option>
-                    <option value="l-format:ss">Cassettes</option>
-                    <option value="">-----------</option>
-                    <option value="l-format:co">Software</option>
-                    <!--<option value="(ctype:g and (l-format:cb or l-format:cc or l-format:cd or l-format:ce or 
-                    l-format:cf or l-format:cm or l-format:co or l-format:cu or lformat:cz))">Video games</option>-->
-                    <option value="(ctype:g and dt-bks:c)">Video games</option>
-                    <option value="l-format:cr">Websites and downloadables</option>
-                    <option value="">-----------</option>
-                    <option value="mus:j">Music</option>
-                    <option value="mus:i">Audiobooks</option>
-                </select>
         
        <!-- <select name="limit" class="subtype">
             <option value="" >Additional content types</option>
