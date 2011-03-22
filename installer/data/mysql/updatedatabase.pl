@@ -4515,15 +4515,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 $DBversion = '4.03.17.003';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
-    $dbh->do(q/INSERT INTO `systempreferences` (variable,value,explanation,options,type) 
-    VALUES
-      ('OPACShowCompletedHolds','7','The number in days that filled holds will display in the OPAC my hold history tab.  A value of 0 will display nothing.','Integer'),
-      ('OPACShowCancelledHolds','7','The number in days that cancelled holds will display in the OPAC my hold history tab.  A value of 0 will display nothing.','Integer'),
-      ('OPACShowExpiredHolds','7','The number in days that expired holds will display in the OPAC my hold history tab.  A value of 0 will display nothing.','Integer'),
-      ('StaffShowCompletedHolds','7','The number in days that filled holds will display in the staff hold history tab.  A value of 0 will display nothing.','Integer'),
-      ('StaffShowCancelledHolds','7','The number in days that cancelled holds will display in the staff hold history tab.  A value of 0 will display nothing.','Integer'),
-('StaffShowExpiredHolds','7','The number in days that expired holds will display in the staff hold history tab.  A value of 0 will display nothing.','Integer'),
-('AllowPatronsToCancelReadyHolds',0,'If ON, OPAC users will have the ability to cancel waiting holds','YesNo')
+    $dbh->do(q/INSERT INTO `systempreferences` (variable,value,explanation,type) VALUES
+        ('OPACShowCompletedHolds','7','The number in days that filled holds will display in the OPAC my hold history tab.  A value of 0 will display nothing.','Integer'),
+        ('OPACShowCancelledHolds','7','The number in days that cancelled holds will display in the OPAC my hold history tab.  A value of 0 will display nothing.','Integer'),
+        ('OPACShowExpiredHolds','7','The number in days that expired holds will display in the OPAC my hold history tab.  A value of 0 will display nothing.','Integer'),
+        ('StaffShowCompletedHolds','7','The number in days that filled holds will display in the staff hold history tab.  A value of 0 will display nothing.','Integer'),
+        ('StaffShowCancelledHolds','7','The number in days that cancelled holds will display in the staff hold history tab.  A value of 0 will display nothing.','Integer'),
+        ('StaffShowExpiredHolds','7','The number in days that expired holds will display in the staff hold history tab.  A value of 0 will display nothing.','Integer'),
+        ('AllowPatronsToCancelReadyHolds',0,'If ON, OPAC users will have the ability to cancel waiting holds','YesNo')
     /);
 
     print "Upgrade to $DBversion done ( Added holds display sysprefs )\n";
