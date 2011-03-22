@@ -308,8 +308,11 @@ if (!!$activefirst) {
       ? GetMember($borrowernumber)->{branchcode}
       : '';
    if ($activebranch) {
-      @items = sort { ($$a{homebranch} eq $activebranch)? -1:1
-                    || $$a{$sortby}   cmp $$b{$sortby} } @items;
+      ## couldn't put parentheses around this to separate logical-or
+      #($$a{homebranch} eq $activebranch)? -1:1
+      foreach(@items) { $$_{_active}=($$_{homebranch} eq $activebranch)?1:0 }
+      @items = sort { $$b{_active} <=> $$a{_active}
+                   || $$a{$sortby} cmp $$b{$sortby} } @items;
       $sorted = 1;
    }
 }
