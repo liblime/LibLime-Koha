@@ -234,6 +234,7 @@ if ($borrowerslist) {
     {
         push @values, $borrower->{cardnumber};
 
+        no warnings qw(uninitialized);
         if (C4::Context->preference('DisplayInitials')) {
           $labels{ $borrower->{cardnumber} } = sprintf(
               '%s, %s %s ... (%s - %s) ... %s',

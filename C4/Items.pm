@@ -18,6 +18,7 @@ package C4::Items;
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+use warnings;
 
 use Carp;
 use C4::Context;
@@ -573,7 +574,7 @@ sub ModItem {
                 more_subfields_xml
                 enumchron
                 copynumber| ){
-        $reindex = 1 if( exists($item->{$_}) && $item->{$_} ne $orig_item->{$_});
+        $reindex = 1 if( exists($item->{$_}) && !($item->{$_} ~~ $orig_item->{$_}));
     }
     ModZebra($biblionumber,"specialUpdate","biblioserver") if $reindex;
 
@@ -1445,7 +1446,7 @@ sub GetItemsInfo {
           $serial = 1;
         }
         if ( $datedue eq '' ) {
-          if ($restype{$data->{'itemnumber'}} ne "Attached") {
+          if (!($restype{$data->{itemnumber}} ~~ 'Attached')) {
             $restype{$data->{'itemnumber'}} = ($itemcount <= $rescount) ? "Reserved" : '';
           }
           $reserve_status = $restype{$data->{'itemnumber'}};

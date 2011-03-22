@@ -181,7 +181,7 @@ sub GetBranchesLoop (;$$) {  # since this is what most pages want anyway
 =cut
 
 sub GetBranchName {
-    my ($branchcode) = @_;
+    my $branchcode = shift or return;
     return GetBranches()->{$branchcode}{branchname};
 }
 

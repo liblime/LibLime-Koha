@@ -621,7 +621,7 @@ my $total = C4::Accounts::MemberAllAccounts(
    total_only     => 1
 );
 
-if ( $borrower->{'category_type'} eq 'C') {
+if ( $borrower->{'category_type'} ~~ 'C') {
     my  ( $catcodes, $labels ) =  GetborCatFromCatType( 'A', 'WHERE category_type = ?' );
     my $cnt = scalar(@$catcodes);
     $template->param( 'CATCODE_MULTI' => 1) if $cnt > 1;
@@ -693,7 +693,7 @@ $template->param(
     inprocess         => $inprocess,
     memberofinstution => $member_of_institution,
     CGIorganisations  => $CGIorganisations,
-	is_child          => ($borrower->{'category_type'} eq 'C'),
+	is_child          => ($borrower->{'category_type'} ~~ 'C'),
     circview => 1,
     soundon           => C4::Context->preference("SoundOn"),
 );
