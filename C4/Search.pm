@@ -575,12 +575,10 @@ sub getRecords {
                                         }
                                     } else {
                                         for my $fixed_field (@{$facets->[$k]{'span'}} ){  
-                                            my ($link_valueF,$tagX,$first, $last) = split(/:/, $fixed_field);
-                                            my $link_valueX = $link_valueF;
-                                            my $data = substr($field->data, $first, $last-$first+1);
-                                            
+                                            my ($alt_link_value,$alt_tag,$first, $last) = split(/:/, $fixed_field);
+                                            my $data = substr($field->data, $first, $last-$first+1) unless length($field->data) < $first;
                                             $data =~ s{^\+|\s+$|\d{2,}|\|}{}g;
-                                            push @{$format_tie{$data}},$link_valueX,$tagX,$data if ($data ne undef && ! exists $format_tie{$data} );
+                                            push @{$format_tie{$data}},$alt_link_value,$alt_tag,$data if ($data ne undef && ! exists $format_tie{$data} );
                                             $facets_counter->{$facets->[$k]{'link_value'}}{$data}++ if exists $format_tie{$data};
                                         }
                                     }
