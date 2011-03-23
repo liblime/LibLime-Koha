@@ -165,9 +165,9 @@ sub HoldsShelf
    $stm1    =~ s/<table>/reserves/sg;
    $stm2    =~ s/<table>/old_reserves/sg;
    my $sth; my @all;
-   $sth  = $dbh->prepare($stm1);
-   $sth->execute(@lims);
-   while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
+   #$sth  = $dbh->prepare($stm1);
+   #$sth->execute(@lims);
+   #while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
    $stm2 .= ' AND old_reserves.priority >= 0';
    $sth = $dbh->prepare($stm2);
    $sth->execute(@lims);

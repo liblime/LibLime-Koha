@@ -244,6 +244,7 @@ sub makepayment {
 #        " );
 
     # create new line
+    $$data{description} //= '';
     my $payment = 0 - $amount;
     $sth = $dbh->prepare('INSERT INTO accountlines(
       borrowernumber,accountno,date,amount,description,itemnumber,
@@ -253,7 +254,7 @@ sub makepayment {
       $borrowernumber, 
       $nextaccntno,
       $payment,
-      "Payment for No.$accountno, Thanks (-$user)", 
+      "Payment for $$data{description} (No.$accountno), Thanks (-$user)", 
       $data->{itemnumber} || undef,
       'Pay', 
       0
@@ -342,6 +343,86 @@ sub getnextacctno ($) {
     );
     $sth->execute($borrowernumber);
     return ($sth->fetchrow || 1);
+}
+
+sub RCR2REF
+{
+   my %g = @_;
+   return unless ($g{borrowernumber} && $g{accountno});
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('SELECT * FROM accountlines
+       WHERE accountno=? AND borrowernumber=?');
+   $sth->execute($g{accountno},$g{borrowernumber});
+   my $rec = $sth->fetchrow_hashref();
+   return unless $rec;
+
+   $sth = $dbh->prepare(q|
+      UPDATE accountlines
+         SET accounttype       = 'CR',
+             amountoutstanding = 0
+       WHERE accountno         = ?
+         AND borrowernumber    = ?|);
+   $sth->execute($g{accountno},$g{borrowernumber});
+   my $newno = getnextacctno($g{borrowernumber});
+   $sth = $dbh->prepare(q|
+      INSERT INTO accountlines(
+         itemnumber,
+         accountno,
+         borrowernumber,
+         accounttype,
+         amount,
+         amountoutstanding,
+         date,
+         description)
+      VALUES(?,?,?,'REF',?,0,NOW(),?)|);
+   $sth->execute(
+      $$rec{itemnumber},
+      $newno,
+      $g{borrowernumber},
+      $$rec{amount},
+      'Refund for payment on lost item returned'
+   );
+   return 1;
+}
+
+sub refundBalance
+{
+   my %g = @_;
+   return unless $g{borrowernumber};
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare(q|
+      SELECT SUM(amountoutstanding)
+        FROM accountlines
+       WHERE borrowernumber = ?|);
+   $sth->execute($g{borrowernumber});
+   my $sum = ($sth->fetchrow_array)[0];
+   return if $sum >= 0;
+   my $newno = getnextacctno($g{borrowernumber});
+   $sth = $dbh->prepare(q|
+      INSERT INTO accountlines(
+         date,
+         accountno,
+         borrowernumber,
+         description,
+         amount,
+         amountoutstanding,
+         accounttype
+      ) VALUES (NOW(),?,?,?,?,0,?)|);
+   $sth->execute(
+      $newno,
+      $g{borrowernumber},
+      'Refund account total balance credit for payment(s) on lost item(s) returned',
+      $sum,
+      'REF'
+   );
+   $sth = $dbh->prepare(q|
+      UPDATE accountlines
+         SET amountoutstanding = 0,
+             accounttype       = 'CR'
+       WHERE accounttype       = 'RCR'
+         AND amountoutstanding < 0
+         AND borrowernumber    = ?|);
+   return $sth->execute($g{borrowernumber});
 }
 
 sub refundlostitemreturned 
@@ -585,15 +666,23 @@ sub manualinvoice
    }
    if ($g{description} && $g{user}) {
       $g{description} .= " (-$g{user})";
-      delete $g{user};
    }
-   if ($g{isCredit}) {
-      $g{description} = "(Manual credit) $g{description}";
-      delete $g{isCredit};
+   delete $g{user};
+
+   if (!!$g{notmanual}) {
+      ## do nothing, don't alter description
+      delete $g{notmanual};
    }
    else {
-      $g{description} = "(Manual invoice) $g{description}";
+      if ($g{isCredit}) {
+         $g{description} = "(Manual credit) $g{description}";
+      }
+      else {
+         $g{description} = "(Manual invoice) $g{description}";
+      }
    }
+
+   if (exists $g{isCredit}) { delete $g{isCredit} }
    $g{accountno}         = getnextacctno($g{borrowernumber});
    $g{amountoutstanding} = $g{amount};
    my $sql = sprintf("INSERT INTO  accountlines (date,%s)

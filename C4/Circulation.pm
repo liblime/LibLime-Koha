@@ -834,6 +834,7 @@ sub CanBookBeIssued {
     my $amount = C4::Accounts::MemberAllAccounts( 
       borrowernumber => $borrower->{'borrowernumber'}, 
       date           => '' && $duedate->output('iso'),
+      total_only     => 1,
     );
     my $cat = C4::Members::GetCategoryInfo($$borrower{categorycode}) // {};
     $$cat{circ_block_threshold} //= 0;
@@ -1645,7 +1646,8 @@ sub AddReturn {
         }
         DeleteLostItem($lost_item->{id});
         $messages->{'WasLost'} = 1;
-        if (C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem') && ! $exemptfine) {
+
+        if ($lostreturned_issue->{overdue} && C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem') && ! $exemptfine) {
             ## we say 'if' b/c legacy data migration sometimes does not have old issues and
             ## hence no borrower for a lost item
             if ($lostreturned_issue->{borrowernumber}) {
@@ -1656,9 +1658,10 @@ sub AddReturn {
                 C4::Accounts::manualinvoice(
                   borrowernumber => $lostreturned_issue->{borrowernumber},
                   itemnumber     => $itemnumber, 
-                  description    => 'Max overdue fine', 
+                  description    => 'Max overdue', 
                   accounttype    => 'F', 
-                  amount         => $circ_policy->{max_fine}
+                  amount         => $circ_policy->{max_fine},
+                  notmanual      => 1,
                 );
                }
             }
@@ -1675,7 +1678,7 @@ sub AddReturn {
 
     # For claims-returned items, update the fine to be as-if they returned it for normal overdue
     if ($issue->{'date_due'} && $issue->{'itemlost'} && $issue->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){
-        my $datedue = C4::Dates->new($issue->{'date_due'},'iso'); 
+        my $datedue = C4::Dates->new($issue->{'date_due'},'iso');
         my $due_str = $datedue->output();
         my $today = C4::Dates->new();
         my ($amt, $type, $daycounttotal, $daycount)
@@ -1902,74 +1905,43 @@ sub FixAccountForLostAndReturned {
     my $item_id        = @_ ? shift : $itemnumber;  # Send the barcode if you want that logged in the description
     my $dbh = C4::Context->dbh;
     # check for charge made for lost book
-    my $sth = $dbh->prepare("SELECT * FROM accountlines WHERE (itemnumber = ?) AND (accounttype='L' OR accounttype='Rep') ORDER BY date DESC");
+    my $sth = $dbh->prepare("
+      SELECT * FROM accountlines 
+       WHERE itemnumber = ? 
+         AND (accounttype='L' OR accounttype='Rep') 
+    ORDER BY date DESC");
     $sth->execute($itemnumber);
     my $data = $sth->fetchrow_hashref;
     $data or return;    # bail if there is nothing to do
-
-    # writeoff this amount
-    my $offset;
-    my $amount = $data->{'amount'};
-    my $acctno = $data->{'accountno'};
-    my $amountleft;                                             # Starts off undef/zero.
-    if ($data->{'amountoutstanding'} == $amount) {
-        $offset     = $data->{'amount'};
-        $amountleft = 0;                                        # Hey, it's zero here, too.
-    } else {
-        $offset     = $amount - $data->{'amountoutstanding'};   # Um, isn't this the same as ZERO?  We just tested those two things are ==
-        $amountleft = $data->{'amountoutstanding'} - $amount;   # Um, isn't this the same as ZERO?  We just tested those two things are ==
-    }
-    my $usth = $dbh->prepare("UPDATE accountlines SET accounttype = 'LR',amountoutstanding='0'
-        WHERE (borrowernumber = ?)
-        AND (itemnumber = ?) AND (accountno = ?) ");
-    $usth->execute($data->{'borrowernumber'},$itemnumber,$acctno);      # We might be adjusting an account for some OTHER borrowernumber now.  Not the one we passed in.  
-    #check if any credit is left if so writeoff other accounts
-    my $nextaccntno = getnextacctno($data->{'borrowernumber'});
-    $amountleft *= -1 if ($amountleft < 0);
-# Add syspref RefundLostReturnedAmount
-    if (($amountleft > 0) && (!C4::Context->preference('RefundLostReturnedAmount'))) {
-        my $msth = $dbh->prepare("SELECT * FROM accountlines WHERE (borrowernumber = ?)
-                            AND (amountoutstanding >0) ORDER BY date");     # might want to order by amountoustanding ASC (pay smallest first)
-        $msth->execute($data->{'borrowernumber'});
-        # offset transactions
-        my $newamtos;
-        my $accdata;
-        while (($accdata=$msth->fetchrow_hashref) and ($amountleft>0)){
-            if ($accdata->{'amountoutstanding'} < $amountleft) {
-                $newamtos = 0;
-                $amountleft -= $accdata->{'amountoutstanding'};
-            }  else {
-                $newamtos = $accdata->{'amountoutstanding'} - $amountleft;
-                $amountleft = 0;
-            }
-            my $thisacct = $accdata->{'accountno'};
-            # FIXME: move prepares outside while loop!
-            my $usth = $dbh->prepare("UPDATE accountlines SET amountoutstanding= ?
-                    WHERE (borrowernumber = ?)
-                    AND (accountno=?)");
-            $usth->execute($newamtos,$data->{'borrowernumber'},'$thisacct');    # FIXME: '$thisacct' is a string literal!
-            $usth = $dbh->prepare("INSERT INTO accountoffsets
-                (borrowernumber, accountno, offsetaccount,  offsetamount)
-                VALUES
-                (?,?,?,?)");
-            $usth->execute($data->{'borrowernumber'},$accdata->{'accountno'},$nextaccntno,$newamtos);
-        }
-        $msth->finish;  # $msth might actually have data left
-    }
-    $amountleft *= -1 if ($amountleft > 0);
-    my $desc = 'Lost Item Returned';
-    my $type = (C4::Context->preference('RefundLostReturnedAmount')) ? 'RCR' : 'CR';
-    $usth = $dbh->prepare("INSERT INTO accountlines
-        (borrowernumber,accountno,itemnumber,date,amount,description,accounttype,amountoutstanding)
-        VALUES (?,?,?,now(),?,?,?,?)");
-    $usth->execute($data->{'borrowernumber'},$nextaccntno,$itemnumber,0-$amount,$desc,$type,$amountleft);
-    if ($borrowernumber) {
-        # FIXME: same as query above.  use 1 sth for both
-        $usth = $dbh->prepare("INSERT INTO accountoffsets
-            (borrowernumber, accountno, offsetaccount,  offsetamount)
-            VALUES (?,?,?,?)");
-        $usth->execute($borrowernumber, $data->{'accountno'}, $nextaccntno, $offset);
-    }
+    ## Update lost item accountype so we don't go through this again
+    ## Yes, we might be fixing somebody else's account other than passed in $borrowernumber
+    $sth = $dbh->prepare(q|
+      UPDATE accountlines
+         SET accounttype = 'LR',
+             amountoutstanding = 0
+       WHERE accountno = ?
+         AND borrowernumber = ?|);
+    $sth->execute($$data{accountno},$$data{borrowernumber});
+    ## syspref RefundLostReturnedAmount here would mess things up.  We simply do the lineitem
+    ## accounting and let manual refund by librarian happen elsewhere.
+    ## credit the amount of the lost item, RCR signifies a type of credit that can be refunded if
+    ## a payment can be/was made on it.
+    my $newno = C4::Accounts::getnextacctno($$data{borrowernumber});
+    $sth = $dbh->prepare(q|
+       INSERT INTO accountlines(
+           accountno,
+           borrowernumber,
+           amount,
+           amountoutstanding,
+           description,
+           itemnumber,
+           accounttype,
+           date)
+      VALUES (?,?,?,?,?,?,?,NOW())|);
+    my $amount = $$data{amount};
+    $amount = (-1 * $$data{amount}) if $amount > 0;
+    $sth->execute($newno,$$data{borrowernumber},$amount,$amount,
+      'Lost Item Returned',$itemnumber,'RCR');
     ModItem({ paidfor => '' }, undef, $itemnumber);
     return;
 }

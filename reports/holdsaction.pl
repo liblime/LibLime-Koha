@@ -31,11 +31,6 @@ my $cgi = new CGI;
 my $fullreportname = "reports/holdsaction.tmpl";
 
 my $go         = $cgi->param('go');
-my $fromdate   = $cgi->param('from')          || undef;
-my $todate     = $cgi->param('to')            || undef;
-my $holdcandate= $cgi->param('holdcandate')   || undef;
-my $holdexpdate= $cgi->param('holdexpdate')   || undef;
-my $waitingdate= $cgi->param('waitingdate')   || undef;
 my $branchcode = $cgi->param('branch')        || undef;
 my $output     = $cgi->param('output');
 my $basename   = $cgi->param('basename');
@@ -76,7 +71,7 @@ if ($go) {
          branchcode  => $branchcode,
       );
       output_html_with_http_headers $cgi, $cookie, $template->output;
-      exit(1);
+      exit;
    }
    else {
       print $cgi->header(-type      => 'application/vnd.sun.xml.calc',

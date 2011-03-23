@@ -71,7 +71,16 @@ if ($input->param('add')){
     my ($picture, $dberror) = GetPatronImage($data->{'cardnumber'});
     $template->param( picture => 1 ) if $picture;
     
+    my $haveRefund = 0;
+    my($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
+    foreach(@$accts) {
+       if (($$_{amountoutstanding} < 0) && ($$_{accounttype} eq 'RCR')) {
+          $haveRefund = 1;
+          last;
+       }
+    }
     $template->param(
+        refundtab      => $haveRefund,
         borrowernumber => $borrowernumber,
         firstname => $data->{'firstname'},
         surname  => $data->{'surname'},

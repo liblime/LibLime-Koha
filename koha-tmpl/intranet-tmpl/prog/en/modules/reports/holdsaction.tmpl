@@ -37,7 +37,7 @@ Cannot proceed.
     <table>
         <thead>
         <tr>
-            <td><input type=checkbox name="toggleCheck" onclick="toggleCh()" checked>No.</td>
+            <td nowrap><input type=checkbox name="toggleCheck" onclick="toggleCh()" checked>No.</td>
             <th>Title</th>
             <th>Name</th>
             <th>Placed On</th>
@@ -49,9 +49,10 @@ Cannot proceed.
         </thead>
             <!-- TMPL_LOOP NAME="results" -->
                 <tr>
-                     <td><input type=checkbox name="lapsed" value="<TMPL_VAR NAME="reservenumber">" 
+                     <td nowrap><input type=checkbox name="lapsed" value="<TMPL_VAR NAME="reservenumber">" 
                      checked><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->#reserves"><!-- TMPL_VAR NAME="reservenumber" --></a></td>
-                     <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a></td>
+                     <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a><b>
+                        <a href="/cgi-bin/koha/catalogue/moredetail.pl?bilbionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a></td>
                      <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" -->, 
                         <!-- TMPL_VAR NAME="firstname" --></a></td>
                      <td nowrap><!-- TMPL_VAR NAME="reservedate" --></td>

@@ -624,7 +624,7 @@ sub checkauth {
             $session->flush;      
             $session->delete();
             C4::Context->_unset_userenv($sessionID);
-            _session_log(sprintf "%20s from %16s logged out at %30s (manually).\n", $userid,$ip,(strftime "%c",localtime));
+            _session_log(sprintf "%20s from %16s logged out at %30s (manually).\n", $userid // '',$ip // '',(strftime "%c",localtime));
             $sessionID = undef;
             $userid    = undef;
         }

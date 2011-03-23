@@ -21,16 +21,16 @@
 <ul class="ui-tabs-nav">
 	<li class="ui-tabs-selected"><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Account</a></li>
     <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
-	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay fines</a></li>
+	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay Fines</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="refundtab" -->
-	<li><a href="/cgi-bin/koha/members/refund.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Refund fines</a></li>
+	<li><a href="/cgi-bin/koha/members/refund.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Refund Charges</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_updatecharges_add_charges" -->
-	<li><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create manual invoice</a></li>
+	<li><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Invoice</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
-	<li><a href="/cgi-bin/koha/members/mancredit.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create manual credit</a></li>
+	<li><a href="/cgi-bin/koha/members/mancredit.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Credit</a></li>
     <!-- /TMPL_IF -->
 </ul>
 <div class="tabs-container">
@@ -82,8 +82,8 @@
   <!-- /TMPL_LOOP -->
   <tfoot>
   <tr>
-    <td colspan="4"><b>Total due</b></td>
-    <!-- TMPL_IF NAME="totalcredit" --><td colspan="2" class="credit" align=right style="color:green">(Credit) <!-- TMPL_ELSE --><td colspan="2" class="debit" align=right style="color:red"><!-- /TMPL_IF --><b><TMPL_VAR NAME="total"></b></td>
+    <td colspan="4"><b>Total Due</b></td>
+    <!-- TMPL_IF EXPR="total >= 0" --><td colspan="2" class="credit" align=right style="color:green">(credit) <!-- TMPL_ELSE --><td colspan="2" class="debit" align=right style="color:red"><!-- /TMPL_IF --><b><TMPL_VAR NAME="total"></b></td>
     <td>&nbsp;</td>
   </tr>
   </tfoot>

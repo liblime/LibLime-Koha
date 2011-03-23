@@ -79,7 +79,14 @@ if ($input->param('add')){
     $template->param( adultborrower => 1 ) if ( $data->{'category_type'} eq 'A' );
     my ($picture, $dberror) = GetPatronImage($data->{'cardnumber'});
     $template->param( picture => 1 ) if $picture;
-
+   my($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
+   my $haveRefund    = 0;
+   foreach(@$accts) {
+      if (($$_{amountoutstanding} <0) && ($$_{accounttype} eq 'RCR')) {
+         $haveRefund = 1;
+         last;
+      }
+   }
 	$template->param(
                 borrowernumber => $borrowernumber,
 		firstname => $data->{'firstname'},
@@ -98,6 +105,7 @@ if ($input->param('add')){
 		branchcode => $data->{'branchcode'},
 		branchname => GetBranchName($data->{'branchcode'}),
 		is_child        => ($data->{'category_type'} eq 'C'),
+      refundtab      => $haveRefund,
     );
     output_html_with_http_headers $input, $cookie, $template->output;
 }

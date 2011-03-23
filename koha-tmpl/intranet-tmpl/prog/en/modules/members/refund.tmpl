@@ -27,10 +27,10 @@ $(document).ready(function(){
 <ul class="ui-tabs-nav">
 	<li><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Account</a></li>
     <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
-	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay fines</a></li>
+	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay Fines</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="refundtab" -->
-	<li class="ui-tabs-selected"><a href="/cgi-bin/koha/members/refund.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Refund fines</a></li>
+	<li class="ui-tabs-selected"><a href="/cgi-bin/koha/members/refund.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Refund Charges</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_updatecharges_add_charges" -->
 	<li><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Invoice</a></li>
@@ -41,51 +41,54 @@ $(document).ready(function(){
 </ul>
 <div class="tabs-container">
 
-<!-- TMPL_IF NAME="CAN_user_updatecharges_refund_charges" -->
-  <form action="/cgi-bin/koha/members/refund.pl" method="post">
+<TMPL_IF NAME="showForm">
+  <form action="/cgi-bin/koha/members/refund.pl" method="post" name="myf" id="myf">
   <input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+  <input type=hidden name="accountno" value="">
+  <TMPL_IF NAME="authorized"><input type=hidden name="authorized" value="1"></TMPL_IF>
 
   <table>
     <tr>
-      <th>Charge and Refund</th>
+      <th>Charge &amp; Refund</th>
       <th>Description</th>
+      <th>Title</th>
       <th>Amount</th>
     </tr>
 
     <!-- TMPL_LOOP NAME="accounts" -->
        <tr>
-       <td> <!-- TMPL_VAR NAME="type" --> </td>
-       <td> Lost Item: <i> <!-- TMPL_VAR NAME="title" --> </i> </td>
-       <td> <!-- TMPL_VAR NAME="amount" --> </td>
+       <td><TMPL_IF NAME="refundBtn">
+           <input type=button name="refund" value="Refund" onclick="
+            document.myf.accountno.value='<TMPL_VAR NAME="accountno">';
+            document.myf.submit(); return">
+           <TMPL_ELSE>
+           Refund
+           </TMPL_IF></td>
+       <td><TMPL_VAR NAME="description"></td>
+       <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a><br>
+           <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a></td>
+       <td align=right><!-- TMPL_VAR NAME="amount" --></td>
        <input type="hidden" name="itemnumber" id="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-       <input type="hidden" name="accountno" id="accountno" value="<!-- TMPL_VAR Name="accountno" -->" />
        </tr>
     <!-- /TMPL_LOOP -->
+      <tr>
+         <td colspan=3>Subtotal</td>
+         <td align=right><TMPL_VAR NAME="refundSubtotal"></td>
+      </tr>
+      <tr>
+         <td colspan=3>Other Charges</td>
+         <td align=right><TMPL_VAR NAME="otherCharges"></td>
+      </tr>
+      <tr>
+         <td colspan=3>Account Balance</td>
+         <td align=right>(credit) <TMPL_VAR NAME="accountBalance"></td>
+      </tr>
   </table>
-  <fieldset class="action"><input type="submit" name="refund" value="Refund" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
-  </form>
-<!-- TMPL_ELSIF NAME="authorized" -->
-  <form action="/cgi-bin/koha/members/refund.pl" method="post">
-  <input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
-
-  <table>
-    <tr>
-      <th>Charge and Refund</th>
-      <th>Description</th>
-      <th>Amount</th>
-    </tr>
-
-    <!-- TMPL_LOOP NAME="accounts" -->
-       <tr>
-       <td> <!-- TMPL_VAR NAME="type" --> </td>
-       <td> Lost Item: <i> <!-- TMPL_VAR NAME="title" --> </i> </td>
-       <td> <!-- TMPL_VAR NAME="amount" --> </td>
-       <input type="hidden" name="itemnumber" id="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-       <input type="hidden" name="accountno" id="accountno" value="<!-- TMPL_VAR Name="accountno" -->" />
-       </tr>
-    <!-- /TMPL_LOOP -->
-  </table>
-  <fieldset class="action"><input type="submit" name="refund" value="Refund" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
+  <fieldset class="action">
+      <TMPL_IF NAME="refundAmount">
+      <input type="submit" name="refundBalance" value="Refund Balance (<TMPL_VAR NAME="refundAmount">)" />
+      </TMPL_IF>
+      <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a></fieldset>
   </form>
 <!-- TMPL_ELSE -->
   <form action="/cgi-bin/koha/members/refund.pl" method="post">

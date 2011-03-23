@@ -50,9 +50,16 @@ my $user = C4::Context->userenv->{id};
 my $branches = GetBranches();
 my $branch = GetBranch( $input, $branches );
 
-my $total_due = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber,total_only=>1);
-my $total_paid = $input->param('paid');
+my($total_due,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
+my $haveRefund = 0;
+foreach(@$accts) {
+   if (($$_{amountoutstanding} <0) && ($$_{accounttype} eq 'RCR')) {
+      $haveRefund = 1;
+   }
+}
+$template->param(refundtab => $haveRefund);
 
+my $total_paid = $input->param('paid');
 my $individual = $input->param('pay_individual');
 my $writeoff   = $input->param('writeoff_individual');
 my $accountno;

@@ -1,11 +1,7 @@
 #!/usr/bin/env perl
 
-#written 11/1/2000 by chris@katipo.oc.nz
-#script to display borrowers account details
-
-
-# Copyright 2000-2002 Katipo Communications
-#
+# Copyright 2011 PTFS/LibLime
+# 
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the
@@ -26,43 +22,21 @@ use warnings;
 
 use C4::Auth;
 use C4::Output;
-use CGI;
-
 use C4::Members;
 use C4::Branch;
 use C4::Accounts;
 use C4::Items;
+use C4::Context;
+use CGI;
 
-my $input=new CGI;
-
-my $borrowernumber=$input->param('borrowernumber');
-my $superlibrarian=$input->param('superlibrarian');
-
-#get borrower details
+my $input         = new CGI;
+my $borrowernumber= $input->param('borrowernumber');
+my $superlibrarian= $input->param('superlibrarian');
 my $data=GetMember($borrowernumber,'borrowernumber');
-my $refund=$input->param('refund');
+my $borrowernumber=$input->param('borrowernumber');
+my $authorized = 0;
 
-my $authorized;
-if ($superlibrarian) {
-  my $authcode = C4::Auth::checkpw( C4::Context->dbh, $input->param('auth_username'), $input->param('auth_password'), 0, my $bypass_userenv = 1 );
-  my $permissions = C4::Auth::haspermission( $input->param('auth_username'), { 'superlibrarian' => 1 } );
-  if ( $authcode && $permissions ) {
-    $authorized = 1;
-  }
-}
-
-if ($refund){
-    my $accountno=$input->param('accountno');
-    my $itemnumber=$input->param('itemnumber');
-    my $borrowernumber=$input->param('borrowernumber');
-    C4::Accounts::refundlostitemreturned(
-      borrowernumber => $borrowernumber,
-      accountno      => $accountno,
-      itemnumber     => $itemnumber,
-    );
-    print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
-} else {
-	my ($template, $loggedinuser, $cookie)
+my ($template, $loggedinuser, $cookie)
 	  = get_template_and_user({template_name => "members/refund.tmpl",
 					  query => $input,
 					  type => "intranet",
@@ -71,30 +45,64 @@ if ($refund){
 					  debug => 1,
 					  });
 
-    my ($total, $accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
-    my @accountrows;
-    for (my $i = 0; $i < @$accts; $i++) {
-      if ($accts->[$i]{'accounttype'} eq 'RCR') {
-        $accts->[$i]{'amount'}            += 0.00;
-        $accts->[$i]{'amountoutstanding'} += 0.00;
-        my %row = (
-          type           => "Refund",
-          itemnumber     => $accts->[$i]{'itemnumber'},
-          biblionumber   => $accts->[$i]{'biblionumber'},
-          borrowernumber => $borrowernumber,
-          accountno      => $accts->[$i]{'accountno'},
-          title          => $accts->[$i]{'title'},
-          amount         => sprintf('%.2f', $accts->[$i]{'amountoutstanding'}),
-        );
-        push(@accountrows, \%row);
-      }
-    }
-					  
-    if ($authorized) {
-      $template->param(authorized => 1);
-    }
-    $template->param(
+my $showForm = 0;
+if ($superlibrarian) {
+  my $authcode = C4::Auth::checkpw( C4::Context->dbh, $input->param('auth_username'), $input->param('auth_password'), 0, my $bypass_userenv = 1 );
+  my $permissions = C4::Auth::haspermission( $input->param('auth_username'), { 'superlibrarian' => 1 } );
+  if ( $authcode && $permissions ) {
+    $authorized = 1;
+  }
+}
+else {
+   $showForm = 1 if !!$template->{param_map}->{CAN_user_updatecharges_refund_charges};
+}
+$showForm ||= $authorized;
+
+if ($input->param('refundBalance')){
+   C4::Accounts::refundBalance(borrowernumber => $borrowernumber);
+   print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
+   exit;
+}
+elsif ($input->param('accountno')) {
+   C4::Accounts::RCR2REF(
+      borrowernumber=>$borrowernumber,
+      accountno     =>$input->param('accountno'),
+   );
+}
+my ($total, $accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
+if ($total >= 0) {
+   print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
+   exit;
+}
+
+my @accountrows;
+my $refundSubtotal = 0;
+my $lineitem       = C4::Context->preference('RefundLostReturnedAmount');
+foreach(@$accts) {
+   next unless $$_{amountoutstanding}<0;
+   next unless $$_{accounttype} eq 'RCR';
+   $refundSubtotal += $$_{amountoutstanding};
+   push(@accountrows, {
+      itemnumber     => $$_{'itemnumber'},
+      biblionumber   => $$_{'biblionumber'},
+      borrowernumber => $borrowernumber,
+      accountno      => $$_{'accountno'},
+      title          => $$_{'title'},
+      barcode        => $$_{barcode},
+      description    => $$_{description},
+      amount         => sprintf('%.2f', $$_{'amountoutstanding'}),
+      refundBtn      => (($$_{amountoutstanding} >= $total) && $lineitem)? 1:0,
+   });
+}
+
+$template->param(
+        showForm       => $showForm,
+        authorized     => $authorized,
         refundtab      => 1,
+        refundSubtotal => sprintf('%.2f',$refundSubtotal),
+        accountBalance => sprintf('%.2f',$total),
+        otherCharges   => sprintf('%.2f',$total - $refundSubtotal),
+        refundAmount   => ($total<0)? sprintf('%.2f',-1 *$total) : 0,
         borrowernumber => $borrowernumber,
         firstname      => $data->{'firstname'},
         surname        => $data->{'surname'},
@@ -111,6 +119,9 @@ if ($refund){
         branchcode     => $data->{'branchcode'},
         branchname     => GetBranchName($data->{'branchcode'}),
         accounts       => \@accountrows,
-    );
-    output_html_with_http_headers $input, $cookie, $template->output;
-}
+);
+output_html_with_http_headers $input, $cookie, $template->output;
+exit;
+
+__END__
+

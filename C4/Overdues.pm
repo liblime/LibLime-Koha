@@ -295,7 +295,8 @@ sub CalcFine {
 			$daystocharge = Date_to_Days(split('-',$end_date->output('iso'))) - Date_to_Days(split('-',$start_date->output('iso')));
 		}
 	}
-	# correct for grace period.
+	
+   # correct for grace period.
 	my $days_minus_grace = $daystocharge - $data->{'firstremind'};
     if ($data->{'chargeperiod'} > 0 && $days_minus_grace > 0 ) { 
         $amount = int($daystocharge / $data->{'chargeperiod'}) * $data->{'fine'};
@@ -303,7 +304,7 @@ sub CalcFine {
         # a zero (or null)  chargeperiod means no charge.
     }
         $amount = $data->{'max_fine'} if ( C4::Context->preference('UseGranularMaxFines') && ( $amount > $data->{'max_fine'} ));
-	$amount = C4::Context->preference('maxFine') if(C4::Context->preference('maxFine') && ( $amount > C4::Context->preference('maxFine')));
+	$amount = C4::Context->preference('MaxFine') if(C4::Context->preference('MaxFine') && ( $amount > C4::Context->preference('MaxFine')));
 	$debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
     return ($amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
     # FIXME: chargename is NEVER populated anywhere.

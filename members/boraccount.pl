@@ -65,7 +65,6 @@ if ( $data->{'category_type'} eq 'C') {
 
 #get account details
 my ($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
-my $totalcredit = ($total <= 0) ? 1:0;
 my @accountrows; # this is for the tmpl-loop
 
 for (my $i=0;$i<@$accts;$i++) {
@@ -92,8 +91,9 @@ for (my $i=0;$i<@$accts;$i++) {
                 'barcode'           => $$accts[$i]{barcode},
                 );
     
-    $template->param( refundtab => 1 ) if (($accts->[$i]{'accounttype'} eq 'RCR') && ($accts->[$i]{'amountoutstanding'} < 0.0));
-    
+    $template->param( refundtab => 1 ) 
+      if (($accts->[$i]{'accounttype'} eq 'RCR') 
+       && ($accts->[$i]{'amountoutstanding'} < 0.0));
     push(@accountrows, \%row);
 }
 
@@ -122,7 +122,6 @@ $template->param(
     branchcode          => $data->{'branchcode'},
 	branchname			=> GetBranchName($data->{'branchcode'}),
     total               => sprintf("%.2f",$total),
-    totalcredit         => $totalcredit,
 	is_child        => ($data->{'category_type'} eq 'C'),
     accounts            => \@accountrows ,
 

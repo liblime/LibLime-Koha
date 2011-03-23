@@ -43,8 +43,11 @@ function valForm() {
 <ul class="ui-tabs-nav">
 	<li><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Account</a></li>
     <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
-	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay fines</a></li>
+	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay Fines</a></li>
     <!-- /TMPL_IF -->
+   <TMPL_IF NAME="refundtab">
+   <li><a href="/cgi-bin/koha/members/refund.pl?borrowernumber=<TMPL_VAR NAME="borrowernumber">">Refund Charges</a></li>
+   </TMPL_IF>
     <!-- TMPL_IF NAME="CAN_user_updatecharges_add_charges" -->
 	<li class="ui-tabs-selected"><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Invoice</a></li>
     <!-- /TMPL_IF -->

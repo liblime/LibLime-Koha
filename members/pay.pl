@@ -160,6 +160,11 @@ sub add_accounts_to_template {
     my $allfile = [];
     my @notify = NumberNotifyId($borrowernumber);
     my $line_id = 0;
+
+    ## FIXME: why do we have this outer loop?  it's causing duplicates to be displayed from
+    ## the inner loop. temporary fix w/ %seen needs a more permanent fix. -hQ
+    my %seen = ();
+    my $haveRefund = 0;
     for my $n (@notify) {
         my $pay_loop = [];
         my ( $total ,$toss, $numaccts) =
@@ -168,6 +173,10 @@ sub add_accounts_to_template {
             next;
         }
         foreach my $acct (@$accts) {
+            $haveRefund ||= 1 if ($$acct{accounttype} eq 'RCR' )
+                              && ($$acct{amountoutstanding} < 0);
+            next if $seen{$$acct{accountno}};
+            $seen{$$acct{accountno}}++;
             if ( $acct->{amountoutstanding} != 0 ) {
                 $acct->{amount}            += 0.00;
                 $acct->{amountoutstanding} += 0.00;
@@ -189,7 +198,6 @@ sub add_accounts_to_template {
                 };
                 $line->{'net_balance'} =  1 if($acct->{'amountoutstanding'} > 0);
                 $line->{'net_balance'} = undef if ((C4::Context->preference("EnableOverdueAccruedAmount")) && ($acct->{'accounttype'} eq "FU"));
-
                 push @{ $pay_loop}, $line;
                 ++$line_id;
             }
@@ -241,7 +249,8 @@ sub add_accounts_to_template {
         branchcode     => $data->{'branchcode'},
         branchname     => GetBranchName($data->{'branchcode'}),
         is_child       => ($data->{'category_type'} eq 'C'),
-        total          => sprintf '%.2f', $total
+        total          => sprintf('%.2f', $total),
+        refundtab      => $haveRefund,
     );
     return;
 }
