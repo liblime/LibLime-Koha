@@ -6,7 +6,7 @@
                 <!-- TMPL_IF NAME="CAN_user_catalogue" --><li><a href="/cgi-bin/koha/catalogue/search.pl">Search</a></li><!-- /TMPL_IF -->
                 <!-- TMPL_VAR name="IntranetNav" -->
                 <li class="more">
-                    <a id="showmore" href="/cgi-bin/koha/mainpage.pl">More</a>
+                    <a id="showmore" href="/cgi-bin/koha/mainpage.pl">More</a> &nbsp;
                     <div id="moremenu">
                         <div class="bd">
                             <ul>

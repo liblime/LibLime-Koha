@@ -1550,8 +1550,9 @@ ul#toplevelmenu li {
 		
 ul#toplevelmenu li.more a {
 	background-image:url(../../img/more-arrow.gif);
-	background-position:right center;
-	background-repeat:no-repeat;
+/*	background-position:right top; */
+   background-position: 100% 0%;
+	background-repeat:no-repeat ;
 	padding-right:13px;
 }
 		
