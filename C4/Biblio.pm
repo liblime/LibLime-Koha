@@ -292,15 +292,6 @@ sub ModBiblio {
         $record->delete_field($field);
     }
 
-    ## force yymmdd today on pos 00-05 for field 008
-    my $str = $record->field('008')->data // '';
-    if ($str =~ /^(\d{6})/) {
-      my $f = $1;
-      my $date = C4::Dates->new();
-      my($yy,$mm,$dd) = $date->output('iso') =~ /^\d\d(\d\d)\-(\d\d)\-(\d\d)$/;
-      $record->field('008')->{_data} =~ s/^$f/$yy$mm$dd/;
-    }
-
     # parse each item, and, for an unknown reason, re-encode each subfield 
     # if you don't do that, the record will have encoding mixed
     # and the biblio will be re-encoded.
