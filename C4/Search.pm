@@ -624,6 +624,9 @@ sub pazGetRecords {
 }
 
 # STOPWORDS
+# If index has no attribute phrase or exact, remove stopwords from operand.
+# Operand may have boolean operator and/or/not, so do not remove them.
+
 sub _remove_stopwords {
     my ( $operand, $index ) = @_;
     my @stopwords_removed;
@@ -633,7 +636,7 @@ sub _remove_stopwords {
 
 # remove stopwords from operand : parse all stopwords & remove them (case insensitive)
 #       we use IsAlpha unicode definition, to deal correctly with diacritics.
-#       otherwise, a French word like "leçon" woudl be split into "le" "çon", "le"
+#       otherwise, a French word like "leçon" would be split into "le" "çon", "le"
 #       is a stopword, we'd get "çon" and wouldn't find anything...
 		foreach ( keys %{ C4::Context->stopwords } ) {
 			next if ( $_ =~ /(and|or|not)/ );    # don't remove operators
@@ -648,9 +651,29 @@ sub _remove_stopwords {
     return ( $operand, \@stopwords_removed );
 }
 
-# TRUNCATION
+# sub _detect_truncation 
+# INPUT: operand for a query clause and auto_truncation preference.
+#
+# PROCESSING: 
+# Examine each whitespace-separated word in the operand string and for each, 
+# interpret a prefix of * for an operand word to indicate left truncation 
+# for that word, a suffix of * to indicate  right truncation, and similarly 
+# detect both right and left truncation if both prefix and suffix have *, 
+# and if no * as operand word's prefix or suffix, then signify no truncation. 
+# Push each word, accordingly, into one of the four output arrays returned.
+#
+# OUTPUT:
+# Output four arrays to indicate type of truncation for each word.
+# optional index name and modifiers in a prefix substring)  in the output.
+# Each operand input word is copied into one of four ouput arrays of words, 
+# partitioned by truncation type for the contained words.
+#
+# Additional output of @regexpr is currently used only for experimental 
+# debug output by calling routine, not run in production. It should 
+# probably be removed.
+
 sub _detect_truncation {
-    my ( $operand, $index ) = @_;
+    my ( $operand, $auto_truncation) = @_;
     my ( @nontruncated, @righttruncated, @lefttruncated, @rightlefttruncated,
         @regexpr );
     $operand =~ s/^ //g;
@@ -662,7 +685,7 @@ sub _detect_truncation {
         elsif ( $word =~ s/^\*([^\*]+)$/$1/ ) {
             push @lefttruncated, $word;
         }
-        elsif ( $word =~ s/^([^\*]+)\*$/$1/ ) {
+        elsif ( $auto_truncation || $word =~ s/^([^\*]+)\*$/$1/ ) {
             push @righttruncated, $word;
         }
         elsif ( index( $word, "*" ) < 0 ) {
@@ -679,14 +702,18 @@ sub _detect_truncation {
 }
 
 # STEMMING
+# Call the stemmer which, if it exists, substitutes a more generic stem 
+# word for each operand word, then modify and return new operand.
+
 sub _build_stemmed_operand {
     my ($operand) = @_;
     my $stemmed_operand;
 
-    # If operand contains a digit, it is almost certainly an identifier, and should
-    # not be stemmed.  This is particularly relevant for ISBNs and ISSNs, which
-    # can contain the letter "X" - for example, _build_stemmend_operand would reduce 
-    # "014100018X" to "x ", which for a MARC21 database would bring up irrelevant
+    # If operand contains a digit, it is almost certainly an identifier, 
+    # and should not be stemmed.  This is particularly relevant for ISBNs 
+    # and ISSNs, which can contain the letter "X" - for example, 
+    # _build_stemmend_operand would reduce "014100018X" to "x ", 
+    # which for a MARC21 database would bring up irrelevant
     # results (e.g., "23 x 29 cm." from the 300$c).  Bug 2098.
     return $operand if $operand =~ /\d/;
 
@@ -714,6 +741,21 @@ sub _build_stemmed_operand {
 }
 
 # FIELD WEIGHTING
+# INPUT: User-supplied $operand, $stemmed_operand, $index from buildQuery, 
+# and also gathered from C4::Context are four query preferences.
+
+# PROCESSING:
+# Based on an operand and optional index qualifer name, generate a custom query. 
+# possibly composed (see treatment for index kw) of several boolean-joined 
+# clauses re-using the input operand and using 
+# CCL features like field  weighting and right truncation, exact and phrase 
+# matching sprinkled in with different weights. 
+# This routine was named for the CCL field weighting feature.
+# NOTE: This feature interacts with the buildQuery() clause 
+#
+# OUTPUT: return the index-specific custom query clause, 
+# via variable $weighted_query
+
 sub _build_weighted_query {
 
 # FIELD WEIGHTING - This is largely experimental stuff. What I'm committing works
@@ -722,53 +764,54 @@ sub _build_weighted_query {
     my $stemming      = C4::Context->preference("QueryStemming")     || 0;
     my $weight_fields = C4::Context->preference("QueryWeightFields") || 0;
     my $fuzzy_enabled = C4::Context->preference("QueryFuzzy")        || 0;
+    my $pref_right_truncate = C4::Context->preference("QueryAutoTruncate") || 0;
+    #User docs provide that QueryAutoTruncate means right truncation.
 
     my $weighted_query .= "(rk=(";    # Specifies that we're applying rank
 
-    # Keyword, or, no index specified
+    # Input index is Keyword, or none specified.
     if ( ( $index eq 'kw' ) || ( !$index ) ) {
         $weighted_query .=
-          "Title-cover,ext,r1=\"$operand\"";    # exact title-cover
-        $weighted_query .= " or ti,ext,r2=\"$operand\"";    # exact title
-        $weighted_query .= " or ti,phr,r3=\"$operand\"";    # phrase title
-          #$weighted_query .= " or any,ext,r4=$operand";               # exact any
-          #$weighted_query .=" or kw,wrdl,r5=\"$operand\"";            # word list any
-        $weighted_query .= " or wrdl,fuzzy,r8=\"$operand\""
-          if $fuzzy_enabled;    # add fuzzy, word list
-        $weighted_query .= " or wrdl,right-Truncation,r9=\"$stemmed_operand\""
-          if ( $stemming and $stemmed_operand )
-          ;                     # add stemming, right truncation
+          "Title-cover,ext,r1=\"$operand\"";              # exact title-cover
+        $weighted_query .= " or ti,ext,r2=\"$operand\"";  # exact title
+        $weighted_query .= " or ti,phr,r3=\"$operand\"";  # phrase title
+
+          #$weighted_query .= " or any,ext,r4=$operand";     # exact any
+          #$weighted_query .=" or kw,wrdl,r5=\"$operand\"";  # word list any
+
+        if ($fuzzy_enabled) { # add fuzzy, word list
+            $weighted_query .= " or wrdl,fuzzy,r8=\"$operand\""
+        }
+
+        if ( $stemming and $stemmed_operand ) {
+            # add stemming, right truncation
+            $weighted_query .= " or wrdl,right-Truncation,r9=\"$stemmed_operand\"" ;
+        }
+        # add a wordlist for the operand
         $weighted_query .= " or wrdl,r9=\"$operand\"";
-
-        # embedded sorting: 0 a-z; 1 z-a
-        # $weighted_query .= ") or (sort1,aut=1";
     }
-
-    # Barcode searches should skip this process
-    elsif ( $index eq 'bc' ) {
-        $weighted_query .= "bc=\"$operand\"";
-    }
-
-    # Authority-number searches should skip this process
-    elsif ( $index eq 'an' ) {
-        $weighted_query .= "an=\"$operand\"";
-    }
-
-    # If the index already has more than one qualifier, wrap the operand
-    # in quotes and pass it back (assumption is that the user knows what they
-    # are doing and won't appreciate us mucking up their query
-    elsif ( $index =~ ',' ) {
+    elsif ( $index =~ ',' && !$pref_right_truncate) {
+        # The index already has more than one qualifier and is not
+        # relying on the QueryAutoTruncate system preference, so assume 
+        # the user knows what they are doing and won't appreciate us 
+        # mucking up their query.
+        # Wrap the operand in quotes and pass it back.
         $weighted_query .= " $index=\"$operand\"";
+    } 
+    elsif ( $index eq "ln") {
+        $weighted_query = "ln,rtrn=$operand" ;
     }
-
-    #TODO: build better cases based on specific search indexes
-    else {
+    else { 
         $weighted_query .= " $index,ext,r1=\"$operand\"";    # exact index
-          #$weighted_query .= " or (title-sort-az=0 or $index,startswithnt,st-word,r3=$operand #)";
+        #$weighted_query .= " or (title-sort-az=0 or $index,startswithnt,st-word,r3=$operand #)";
         $weighted_query .= " or $index,phr,r3=\"$operand\"";    # phrase index
-        $weighted_query .=
-          " or $index,rt,wrdl,r3=\"$operand\"";    # word list index
+        $weighted_query .= " or $index,rt,wrdl";
+        if ($pref_right_truncate) {
+            $weighted_query .= ",right-Truncation";
+        } 
+        $weighted_query .= ",r3=\"$operand\"";    # word list index
     }
+    #TODO: build better cases based on specific search indexes
 
     $weighted_query .= "))";                       # close rank specification
     return $weighted_query;
@@ -776,21 +819,54 @@ sub _build_weighted_query {
 
 =head2 buildQuery
 
-( $error, $query,
-$simple_query, $query_cgi,
-$query_desc, $limit,
-$limit_cgi, $limit_desc,
-$stopwords_removed, $query_type ) = getRecords ( $operators, $operands, $indexes, $limits, $sort_by, $scan);
+( $error, $query, $simple_query, $query_cgi, $query_desc, $limit,
+$limit_cgi, $limit_desc, $stopwords_removed, $query_type ) 
+= buildQuery ( $operators, $operands, $indexes, $limits, $sort_by, $scan);
+ 
+INPUT: 
+Indexes are zebra index query qualifiers, like 'ti or title', 'au or author', etc. 
+An index can be followed by zero or multiple parameters or query modifiers, 
+separated by comma, for example "kw,right-Truncation". 
+
+In a caller's web dialog, an index for each operand may be chosen from a 
+drop down list. In some cases the index to be searched may be prepended 
+into the front of the operand string.
+
+An operand can be a single term, a phrase, or a complete ccl query.
+In the web dialog, the operand is entered in a text input field. 
+The user may optionally indicate an index qualifier name 
+(ti, su, etc) as a substring prefix  the start of the operand 
+field followed by a : or = and then by a term or terms (the operands) 
+to be queried.
+
+Operators include boolean and proximity operators and are used
+to evaluate multiple operands.
+
+PROCESSING:
 
 Build queries and limits in CCL, CGI, Human,
 handle truncation, stemming, field weighting, stopwords, fuzziness, etc.
 
-See verbose embedded documentation.
+Also see embedded documentation.
 
+OUTPUT:
+
+The output syntax expected as input here seems fairly closely represented at: 
+http://koha.org/documentation/manual/3.0/searching/guide-to-searching/common-command-language-searching
+
+For more general background, see YAZ Users Guide and Reference at 
+http://www.indexdata.com/yaz/doc/index.html, 
+especially Chapter 7 section 1.2 CCL Syntax. 
+
+EXTENAL DEPENDENCIES:
+Note the hard-coded index names checked here must correspond with the input names 
+specified in the web-interface input AND must correspond with those used by the 
+zebra server, defined in the ccl.properties zebra configuration file.
 
 =cut
 
 sub buildQuery {
+
     my ( $operators, $operands, $indexes, $limits, $sort_by, $scan ) = @_;
 
     warn "---------\nEnter buildQuery\n---------" if $DEBUG;
@@ -808,7 +884,7 @@ sub buildQuery {
     my $fuzzy_enabled    = C4::Context->preference("QueryFuzzy")           || 0;
     my $remove_stopwords = C4::Context->preference("QueryRemoveStopwords") || 0;
 
-    # no stemming/weight/fuzzy in NoZebra
+    # No stemming/weight/fuzzy features are  supported in NoZebra
     if ( C4::Context->preference("NoZebra") ) {
         $stemming      = 0;
         $weight_fields = 0;
@@ -829,8 +905,9 @@ sub buildQuery {
 
     my $stopwords_removed;    # flag to determine if stopwords have been removed
 
-# for handling ccl, cql, pqf queries in diagnostic mode, skip the rest of the steps
-# DIAGNOSTIC ONLY!!
+# {{{ Diagnostic code
+# for handling ccl, cql, pqf queries in diagnostic mode, skip the rest of 
+# the steps DIAGNOSTIC ONLY!!
     if ( $query =~ /^ccl=/ ) {
         return ( undef, $', $', "q=ccl=$'", $', '', '', '', '', 'ccl' );
     }
@@ -841,89 +918,116 @@ sub buildQuery {
         return ( undef, $', $', "q=pqf=$'", $', '', '', '', '', 'pqf' );
     }
 
-    # pass nested queries directly
-    # FIXME: need better handling of some of these variables in this case
+#}}}
     if ( $query =~ /(\(|\))/ ) {
+        # {{{ This has a parenthesis, so it is a nested query.  
+        # Pass nested queries directly.
+        # FIXME: need better handling of some of these variables in this case
         return (
             undef,              $query, $simple_query, $query_cgi,
             $query,             $limit, $limit_cgi,    $limit_desc,
             $stopwords_removed, 'ccl'
-        );
+        ); # }}} nested query
     }
-
-# Form-based queries are non-nested and fixed depth, so we can easily modify the incoming
-# query operands and indexes and add stemming, truncation, field weighting, etc.
-# Once we do so, we'll end up with a value in $query, just like if we had an
-# incoming $query from the user
     else {
-        $query = ""
-          ; # clear it out so we can populate properly with field-weighted, stemmed, etc. query
-        my $previous_operand
-          ;    # a flag used to keep track if there was a previous query
-               # if there was, we can apply the current operator
-               # for every operand
+        # {{{ generate query clauses based on form-supplied operands
+        # This input is from a form-based query.
+        # Form-based queries are non-nested and fixed depth, so we can easily 
+        # modify the incoming query operands and indexes and add stemming, 
+        # truncation, field weighting, etc.
+        # Once we do so, we'll end up with a CCL-like value in $query, just like if 
+        # we had an incoming CCL $query from the user.
+
+        # clear the query so we can populate properly with field-weighted, stemmed, etc. 
+        $query = "" ;
+
+        # previous_query is a flag that will indicate  whether there was a 
+        # previous query. If there was, we can apply the previous operator 
+        # to boolean-relate the operand to the previous operand.
+        my $previous_operand;
+
+        # COMBINE OPERANDS, INDEXES AND OPERATORS 
         for ( my $i = 0 ; $i <= @operands ; $i++ ) {
-
-            # COMBINE OPERANDS, INDEXES AND OPERATORS
+            # We have another query-subclause to process.
+            # Each clause position has an operand and an associated index 
+            # or qualifier name to query against and, 
+            # if not the first operand, a boolean operator.
+            # The index name may be specified in index[] (which derives from 
+            # a dropdown list in a form processed by the some callers),  
+            # or specified as a prefix substring of operand[]. If not specified 
+            # here, # the index will  be assigned a default. 
+            # An index may also have optional modifier words for an index-specific 
+            # query, in which case they would appear in the operand prefix substring. 
+            # See Zebra and YAZ documents for the meanings and recognized names 
+            # of such modifiers.
+            # The boolean operator applies only if there is a subsequent 
+            # query-subclause in this list, and it applies between the 
+            # current clause and the subsequent one.
+            
             if ( $operands[$i] ) {
+                # We have another query clause to process and add to our query. 
+                # The clause has an operand and possible 'drop-down-selected' 
+                # index in index[$i], or a specified index in prefix part of operand.
+                my $operand = $operands[$i];
 
-              # A flag to determine whether or not to add the index to the query
-                my $indexes_set;
-
-# If the user is sophisticated enough to specify an index, turn off field weighting, stemming, and stopword handling
-                if ( $operands[$i] =~ /(:|=)/ || $scan ) {
+                # {{{ For special indexes detect and set flags, conditions 
+                # for query generation.
+                # Detect whether the sophisticated user typed in an index name at 
+                # the front of the operand field, terminated by a : or -.
+                if ( $operand =~ /(:|=)/ || $scan ) {
+                    # Assume the user would also have specified desired index 
+                    # modifiers for this query clause, and forgone the option 
+                    # of applying some other system preferences, 
+                    # so turn off field weighting, stemming, and stopword handling.
                     $weight_fields    = 0;
                     $stemming         = 0;
                     $remove_stopwords = 0;
                 }
-                my $operand = $operands[$i];
+
+                # Process special indexes (qualifier names) 
                 my $index   = $indexes[$i];
 
-                # Add index-specific attributes
-                # Date of Publication
-                if ( $index eq 'yr' ) {
-                    $index .= ",st-numeric";
-                    $indexes_set++;
-					$stemming = $auto_truncation = $weight_fields = $fuzzy_enabled = $remove_stopwords = 0;
-                }
+                # $indexes_automod indicates we have automatically modified 
+                # the original index  with a preset index modifier which we 
+                # will use to  build the query clause for this index, so we 
+                # will not use the original index name stored in 
+                # $index_wrdl_colon (set below) to insert into query at the 
+                # bottom of the loop for this row.
+                my $indexes_automod=0;
+                my $use_prefs=1;
 
-                # Date of Acquisition
-                elsif ( $index eq 'acqdate' ) {
+                # Detect and set any exclusive index-specific modifier attributes.
+                # Most or all also cases specify to not apply certain system
+                # preferences to generate this query clause.
+                if ( $index eq 'acqdate' ) {
+                    # Date of Acquisition
                     $index .= ",st-date-normalized";
-                    $indexes_set++;
-					$stemming = $auto_truncation = $weight_fields = $fuzzy_enabled = $remove_stopwords = 0;
+                    $use_prefs = 0;
                 }
-                # ISBN,ISSN,Standard Number, don't need special treatment
-                elsif ( $index eq 'nb' || $index eq 'ns' ) {
-                    $indexes_set++;
-                    (   
-                        $stemming,      $auto_truncation,
-                        $weight_fields, $fuzzy_enabled,
-                        $remove_stopwords
-                    ) = ( 0, 0, 0, 0, 0 );
-
+                elsif ( $index eq 'an' 
+                      || $index eq 'bc' 
+                      || $index eq 'nb' 
+                      || $index eq 'ns' 
+                      ) {
+                    # an=authority-number, bc=barcode, nb=ISBN,
+                    # ns=ISSN-Standard Number,
+                    # don't need special treatment
+                    $use_prefs = 0;
                 }
-                # Set default structure attribute (word list)
-                my $struct_attr;
-                unless ( $indexes_set || !$index || $index =~ /(st-|phr|ext|wrdl)/ ) {
-                    $struct_attr = ",wrdl";
+                elsif ( $index eq 'yr' ) {
+                   # Date of Publication
+                    $index .= ",st-numeric";
+                    $use_prefs = 0;
+                }
+                if (!$use_prefs) {
+                    $stemming = $auto_truncation = $weight_fields 
+                       = $fuzzy_enabled = $remove_stopwords = 0;
+                    $indexes_automod = 1;
                 }
 
-                # Some helpful index variants
-                my $index_plus       = $index . $struct_attr . ":" if $index;
-                my $index_plus_comma = $index . $struct_attr . "," if $index;
-                if ($auto_truncation){
-#					FIXME Auto Truncation is only valid for LTR languages
-#					use C4::Output;
-#					use C4::Languages qw(regex_lang_subtags get_bidi);
-#    				$lang = $query->cookie('KohaOpacLanguage') if (defined $query && $query->cookie('KohaOpacLanguage'));
-#				    my $current_lang = regex_lang_subtags($lang);
-#				    my $bidi;
-#				    $bidi = get_bidi($current_lang->{script}) if $current_lang->{script};
-					$index_plus_comma .= "rtrn:";
-				}
+                # }}} Detect and set downstream conditions for special indexes.
+                # {{{ Remove stopwords from operand
 
-                # Remove Stopwords
                 if ($remove_stopwords) {
                     ( $operand, $stopwords_removed ) =
                       _remove_stopwords( $operand, $index );
@@ -931,116 +1035,169 @@ sub buildQuery {
                     warn "REMOVED STOPWORDS: @$stopwords_removed"
                       if ( $stopwords_removed && $DEBUG );
                 }
+         
+                # }}}
+                # {{{ convenience variables. 
 
-                # Detect Truncation
+                # If we have non-null index, and it is eligible,  and not 
+                # already set or implied, set its default structure attribute 
+                # of wrdl for wordlist, and also set 
+                # convenience variables for truncation processing.
+                my ($struct_attr, $index_wrdl_colon, $index_wrdl_comma);
+                if ( $index ) {
+                   if (   !($index =~ /(st-|phr|ext|wrdl)/ )
+                       && !($indexes_automod) 
+                       ){
+                       # refine the search as a wordlist
+                       $struct_attr = ",wrdl";
+                    }
+                $index_wrdl_colon = $index . $struct_attr . ":" ;
+                $index_wrdl_comma = $index . $struct_attr . "," ;
+                } #}}}
+                # {{{ Copy a modfied index string to the operand 
+                # and detect and apply any truncation to operand words indicated
+                # via $auto_truncate (for right truncation only) or via * symbols
+                # affixed to operand word srtings.
+
+                my $truncation_star_found;
                 my $truncated_operand;
-                my( $nontruncated, $righttruncated, $lefttruncated,
+                
+                # Allow auto_truncation in _detect_truncation() only if the
+                # QueryWeightFields preference is not set. If it is, auto_truncation
+                # is applied below in sub _build_weighted_query.
+                my $trunc_not_weighted = (!$weight_fields && $auto_truncation);
+                
+                my ($nontruncated, $righttruncated, $lefttruncated,
                     $rightlefttruncated, $regexpr
-                ) = _detect_truncation( $operand, $index );
+                ) = _detect_truncation($operand, $trunc_not_weighted);
+
                 warn
 "TRUNCATION: NON:>@$nontruncated< RIGHT:>@$righttruncated< LEFT:>@$lefttruncated< RIGHTLEFT:>@$rightlefttruncated< REGEX:>@$regexpr<"
                   if $DEBUG;
 
-                # Apply Truncation
+                # Copy index to the operand and  apply any truncation 
+                # indicated by operand prefix or suffix * symbols.
                 if (
                     scalar(@$righttruncated) + scalar(@$lefttruncated) +
                     scalar(@$rightlefttruncated) > 0 )
                 {
-
-               # Don't field weight or add the index to the query, we do it here
-                    $indexes_set = 1;
+                    $truncation_star_found = 1;
+                # Set indexes_automod to indicate to not weight the field or 
+                # add the index to the query below because we do it here by
+                # setting $operand to the entire query clause.
+                    $indexes_automod = 1;
                     undef $weight_fields;
                     my $previous_truncation_operand;
                     if (scalar @$nontruncated) {
-                        $truncated_operand .= "$index_plus @$nontruncated ";
+                        $truncated_operand .= "$index_wrdl_colon @$nontruncated ";
                         $previous_truncation_operand = 1;
                     }
                     if (scalar @$righttruncated) {
                         $truncated_operand .= "and " if $previous_truncation_operand;
-                        $truncated_operand .= $index_plus_comma . "rtrn:@$righttruncated ";
+                        $truncated_operand .= $index_wrdl_comma . "rtrn:@$righttruncated ";
                         $previous_truncation_operand = 1;
                     }
                     if (scalar @$lefttruncated) {
                         $truncated_operand .= "and " if $previous_truncation_operand;
-                        $truncated_operand .= $index_plus_comma . "ltrn:@$lefttruncated ";
+                        $truncated_operand .= $index_wrdl_comma . "ltrn:@$lefttruncated ";
                         $previous_truncation_operand = 1;
                     }
                     if (scalar @$rightlefttruncated) {
                         $truncated_operand .= "and " if $previous_truncation_operand;
-                        $truncated_operand .= $index_plus_comma . "rltrn:@$rightlefttruncated ";
+                        $truncated_operand .= $index_wrdl_comma . "rltrn:@$rightlefttruncated ";
                         $previous_truncation_operand = 1;
                     }
-                }
+                } # Truncation symbol was found
                 $operand = $truncated_operand if $truncated_operand;
                 warn "TRUNCATED OPERAND: >$truncated_operand<" if $DEBUG;
+                # }}}
+#{{{                FIXME Auto Truncation is only valid for LTR languages
+#                   FIXME Better to enforce this proposed validation in 
+#                   systempreferences settings code:
+#                   use C4::Output;
+#                   use C4::Languages qw(regex_lang_subtags get_bidi);
+#                   $lang = $query->cookie('KohaOpacLanguage') if (defined $query && $query->cookie('KohaOpacLanguage'));
+#                   my $current_lang = regex_lang_subtags($lang);
+#                   my $bidi;
+#                   $bidi = get_bidi($current_lang->{script}) if $current_lang->{script};
 
-                # Handle Stemming
+#  }}}              maintain a space here
+                # {{{ Handle Stemming
                 my $stemmed_operand;
-                $stemmed_operand = _build_stemmed_operand($operand) if $stemming;
-
+                if ($stemming) {
+                    $stemmed_operand = _build_stemmed_operand($operand);
+                }
                 warn "STEMMED OPERAND: >$stemmed_operand<" if $DEBUG;
 
-                # Handle Field Weighting
+                #}}}
+                # {{{ Handle Field Weighting
                 my $weighted_operand;
                 if ($weight_fields) {
-                    $weighted_operand = _build_weighted_query( $operand, $stemmed_operand, $index );
+                    $indexes_automod = 1;
+                    $weighted_operand 
+                      = _build_weighted_query($operand, $stemmed_operand, $index);
+                    # Note: Here $operand may include multiple query clauses, each 
+                    # including index qualifer name, attributes, and operand
                     $operand = $weighted_operand;
-                    $indexes_set = 1;
                 }
-
                 warn "FIELD WEIGHTED OPERAND: >$weighted_operand<" if $DEBUG;
 
+                #}}}
+                # {{{ Tack a clause onto the current query.
                 # If there's a previous operand, we need to add an operator
                 if ($previous_operand) {
-
                     # User-specified operator
                     if ( $operators[ $i - 1 ] ) {
                         $query     .= " $operators[$i-1] ";
-                        $query     .= " $index_plus " unless $indexes_set;
+                        $query     .= " $index_wrdl_colon " unless $indexes_automod;
                         $query     .= " $operand";
                         $query_cgi .= "&op=$operators[$i-1]";
                         $query_cgi .= "&idx=$index" if $index;
-                        $query_cgi .= "&q=$operands[$i]" if $operands[$i];
+                        if  ($operands[$i]) {
+                            $query_cgi .= "&q=$operands[$i]";
+                        }
                         $query_desc .=
-                          " $operators[$i-1] $index_plus $operands[$i]";
+                          " $operators[$i-1] $index_wrdl_colon $operands[$i]";
                     }
-
-                    # Default operator is and
                     else {
+                        # No operator supplied, use default operator of "and"
                         $query      .= " and ";
-                        $query      .= "$index_plus " unless $indexes_set;
+                        $query      .= "$index_wrdl_colon " unless $indexes_automod;
                         $query      .= "$operand";
                         $query_cgi  .= "&op=and&idx=$index" if $index;
-                        $query_cgi  .= "&q=$operands[$i]" if $operands[$i];
-                        $query_desc .= " and $index_plus $operands[$i]";
+                        if  ($operands[$i]) {
+                            $query_cgi .= "&q=$operands[$i]";
+                        }
+                        $query_desc .= " and $index_wrdl_colon $operands[$i]";
                     }
                 }
-
-                # There isn't a pervious operand, don't need an operator
                 else {
+                    # There isn't a pervious operand, don't need an operator
 
                     # Field-weighted queries already have indexes set
-                    $query .= " $index_plus " unless $indexes_set;
+                    $query .= " $index_wrdl_colon " unless $indexes_automod;
                     $query .= $operand;
-                    $query_desc .= " $index_plus $operands[$i]";
+                    $query_desc .= " $index_wrdl_colon $operands[$i]";
                     $query_cgi  .= "&idx=$index" if $index;
                     $query_cgi  .= "&q=$operands[$i]" if $operands[$i];
                     $previous_operand = 1;
                 }
-            }    #/if $operands
+            }    #}}} /if $operands
         }    # /for
-    }
+    } 
+    # }}}
+
     warn "QUERY BEFORE LIMITS: >$query<" if $DEBUG;
 
-    # add limits
+    # {{{ Compose query limit
     my $group_OR_limits;
     my $availability_limit;
     foreach my $this_limit (@limits) {
         if ( $this_limit =~ /available/ ) {
 
 # 'available' is defined as (items.onloan is NULL) and (items.itemlost = 0)
-# In English:
-# all records not indexed in the onloan register (zebra) and all records with a value of lost equal to 0
+# In English: all records not indexed in the onloan register (zebra) and 
+# all records with a value of lost equal to 0
             $availability_limit .=
 "( ( allrecords,AlwaysMatches='' not onloan,AlwaysMatches='') and (lost,st-numeric=0) )"; #or ( allrecords,AlwaysMatches='' not lost,AlwaysMatches='')) )";
             $limit_cgi  .= "&limit=available";
@@ -1084,7 +1241,8 @@ sub buildQuery {
         $limit .= "($availability_limit)";
     }
 
-    # Normalize the query and limit strings
+    #}}}
+    # {{{ Normalize the query and limit strings
     $query =~ s/:/=/g;
     $limit =~ s/:/=/g;
     for ( $query, $query_desc, $limit, $limit_desc ) {
@@ -1098,6 +1256,7 @@ sub buildQuery {
     for ($query_cgi,$simple_query) {
         s/"//g;
     }
+    #}}}
     # append the limit to the query
     $query .= " " . $limit;
 
@@ -1111,6 +1270,7 @@ sub buildQuery {
         warn "LIMIT DESC:" . $limit_desc;
         warn "---------\nLeave buildQuery\n---------";
     }
+
     return (
         undef,              $query, $simple_query, $query_cgi,
         $query_desc,        $limit, $limit_cgi,    $limit_desc,
