@@ -36,10 +36,12 @@ my $query          = new CGI;
 my $run_report     = $query->param('run_report');
 my $run_pass       = $query->param('run_pass');
 my $branchlimit    = $query->param('branchlimit')  // '';
-my $limit          = $query->param('limit')        // 20;
+#my $limit          = $query->param('limit')        // 20;
+my $limit          = 0;
 my $currPage       = $query->param('currPage')     // 1;
 my $orderby        = $query->param('orderby')      // 'tmp_holdsqueue.title';
-my $offset         = ($currPage -1)*$limit;
+#my $offset         = ($currPage -1)*$limit;
+my $offset         = 0;
 my $total          = 0;
 my $qitems         = [];
 
@@ -118,11 +120,9 @@ if ($run_report || $run_pass) {
       orderby     => $orderby,
    );
 }
-else {
-   $template->param(
-      branchloop => GetBranchesLoop(C4::Context->userenv->{'branch'}),
-   );
-}
+$template->param(
+   branchloop => GetBranchesLoop(C4::Context->userenv->{'branch'}),
+);
 
 # writing the template
 output_html_with_http_headers $query, $cookie, $template->output;
@@ -131,6 +131,7 @@ exit;
 sub _pager
 {
    my $out = '';
+   return '' unless ($limit && $total);
    my $totalPages = $total%$limit? int($total/$limit)+1 : $total/$limit;
    return $out if $totalPages == 1;
    if ($currPage==1) {

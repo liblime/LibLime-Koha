@@ -39,6 +39,7 @@ function Xport(barcode) {
 <form name="f" action="/cgi-bin/koha/circ/view_holdsqueue.pl" method="post">
 <!-- TMPL_IF NAME="run_report" -->
     <!-- TMPL_IF NAME="total" -->
+    <!--
         <div class="results">Showing <TMPL_VAR NAME="from"> to <TMPL_VAR NAME="to"> 
             of <TMPL_VAR NAME="total"> items found for 
             <TMPL_IF NAME="branchlimit">
@@ -48,6 +49,15 @@ function Xport(barcode) {
             </TMPL_IF>
         </div>
         <TMPL_VAR NAME="pager">
+    -->
+        <div class="results">Showing <TMPL_VAR NAME="total"> items found for 
+            <TMPL_IF NAME="branchlimit">
+               <TMPL_VAR NAME="branchname">
+               (<TMPL_VAR NAME="branchlimit">)
+            <TMPL_ELSE>ALL libraries
+            </TMPL_IF>
+        </div>
+
     <!-- TMPL_ELSE-->
         <div class="dialog message">No items found.</div>
     <!-- /TMPL_IF -->
@@ -152,12 +162,14 @@ function Xport(barcode) {
             </select></li>
 			-->
 
+<!--
       <li><label for="limit">View: </label>
          <select name="limit">
          <option>20
          <option>50
          <option>100
          <option>200</select> records per page</li>
+-->
       <li><label for="orderby1">Sort by: </label>
          <select name="orderby1">
             <option value="tmp_holdsqueue.title">Title
@@ -168,7 +180,7 @@ function Xport(barcode) {
             <option value="tmp_holdsqueue.surname">Patron
             <option value="tmp_holdsqueue.reservedate">Date
          </select><select name="orderby1how">
-            <option><option>ASC<option>DESC</select>
+            <option><option>ASC<option>DESC</select></li>
       <li><label for="orderby2">then </label>
          <select name="orderby2">
             <option value="">
@@ -180,7 +192,7 @@ function Xport(barcode) {
             <option value="tmp_holdsqueue.surname">Patron
             <option value="tmp_holdsqueue.reservedate">Date
          </select><select name="orderby2how">
-            <option value=""><option>ASC<option>DESC</select>
+            <option value=""><option>ASC<option>DESC</select></li>
       <li><label for="orderby3">then </label>
          <select name="orderby3">
             <option value="">
@@ -192,7 +204,7 @@ function Xport(barcode) {
             <option value="tmp_holdsqueue.surname">Patron
             <option value="tmp_holdsqueue.reservedate">Date
          </select><select name="orderby3how">
-            <option value=""><option>ASC<option>DESC</select>
+            <option value=""><option>ASC<option>DESC</select></li>
     </ol></fieldset>
 <!-- /TMPL_UNLESS -->
 <fieldset class="action">
@@ -215,24 +227,7 @@ function Xport(barcode) {
 </fieldset>
 </form>
 <script>
-<!-- TMPL_IF NAME="run_report" -->
-function pager(v) {
-   document.f.currPage.value=v;
-   document.f.submit();
-}
-function confirmSubmit() {
-   var rc = confirm('Do you want continue?');
-   if (rc) { document.f.submit() }
-   return false;
-}
-function passAll() {
-   var c = <!-- TMPL_VAR NAME="action_cnts" -->;
-   for(var i=0;i<c;i++) {
-      var sel = document.getElementById('action_'+i);
-      sel.selectedIndex = 1;
-   }
-}
-<TMPL_ELSE>
+<TMPL_UNLESS NAME="total">
 function getResults() {
    var d = document.f;
    var s1 = d.orderby1.options[d.orderby1.selectedIndex].value;
@@ -255,7 +250,31 @@ function getResults() {
    }
    d.orderby.value = str;
    document.cookie = 'queue_orderby='+str+'; path=/';
+/*   
+   document.cookie = 'queue_limit='
+      +document.f.limit.options[document.f.limit.selectedIndex].value
+      +'; path=/';
+*/
    d.submit();
+}
+</TMPL_UNLESS>
+
+<!-- TMPL_IF NAME="run_report" -->
+function pager(v) {
+   document.f.currPage.value=v;
+   document.f.submit();
+}
+function confirmSubmit() {
+   var rc = confirm('Do you want continue?');
+   if (rc) { document.f.submit() }
+   return false;
+}
+function passAll() {
+   var c = <!-- TMPL_VAR NAME="action_cnts" -->;
+   for(var i=0;i<c;i++) {
+      var sel = document.getElementById('action_'+i);
+      sel.selectedIndex = 1;
+   }
 }
 <!-- /TMPL_IF -->
 </script>
@@ -279,12 +298,14 @@ function getCookie(cname) {
 }
 $(document).ready(function() { 
    $("table").tablesorter();
-   <TMPL_IF EXPR="run_report ne 1">
-
+   <TMPL_UNLESS NAME="total">
    var str = getCookie('queue_orderby');
    if (str != '') {
       var d = document.f;
       var ord = str.split(',',3);
+      if(!ord[0]) { ord[0] = ''}
+      if(!ord[1]) { ord[1] = ''}
+      if(!ord[2]) { ord[2] = ''}
       var sh1 = ord[0].split(' ',2);
       var sh2 = (ord[1] || '').split(' ',2);
       var sh3 = (ord[2] || '').split(' ',2);
@@ -308,6 +329,21 @@ $(document).ready(function() {
          }
       }
    }
+   </TMPL_UNLESS>
+
+   <TMPL_IF EXPR="run_report ne 1">
+/* *******************
+   var lim = getCookie('queue_limit');
+   if (document.f.limit.options[document.f.limit.selectedIndex].value != lim) {
+      for(var i=0;i<document.f.limit.options.length;i++) {
+         if (document.f.limit.options[i].value == lim) {
+            document.f.limit.options.selectedIndex = i;
+            break;
+         }
+      }
+   }
+
+******** */
    </TMPL_IF>
 });
 
