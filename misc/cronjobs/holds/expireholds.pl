@@ -78,15 +78,11 @@ while (my $expref = $sth->fetchrow_hashref) {
     my $letter = C4::Letters::getletter( 'reserves', 'HOLD_EXPIRED');
     my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');
 
-    my %keys = (%$borrower, %$biblio);
-    $keys{'branchname'} = C4::Branch::GetBranchName( $branchcode );
-    my $replacefield;
-    foreach my $key (keys %keys) {
-      foreach my $table qw(biblio borrowers branches items reserves) {
-        $replacefield = "<<$table.$key>>";
-        $letter->{content} =~ s/$replacefield/$keys{$key}/g;
-      }
-    }
+    C4::Letters::parseletter( $letter, 'branches', $expref->{branchcode} );
+    C4::Letters::parseletter( $letter, 'borrowers', $expref->{borrowernumber} );
+    C4::Letters::parseletter( $letter, 'biblio', $expref->{biblionumber} );
+    C4::Letters::parseletter( $letter, 'reserves', $expref->{borrowernumber}, $expref->{biblionumber} );
+    C4::Letters::parseletter( $letter, 'items', $expref->{itemnumber} );
 
     C4::Letters::EnqueueLetter(
       { letter                 => $letter,
@@ -98,4 +94,3 @@ while (my $expref = $sth->fetchrow_hashref) {
     );
   }
 }
-$dbh->disconnect();

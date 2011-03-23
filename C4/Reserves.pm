@@ -1452,15 +1452,11 @@ sub _sendReserveCancellationLetter {
       my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
       my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');                
 
-      my %keys = (%$borrower, %$biblio);
-      $keys{'branchname'} = C4::Branch::GetBranchName( $branchcode );
-      my $replacefield;
-      foreach my $key (keys %keys) {
-        foreach my $table qw(biblio borrowers branches items reserves) {
-          $replacefield = "<<$table.$key>>";
-          $letter->{content} =~ s/$replacefield/$keys{$key}/g;
-        }
-      }
+      C4::Letters::parseletter( $letter, 'branches', $reserve->{branchcode} );
+      C4::Letters::parseletter( $letter, 'borrowers', $reserve->{borrowernumber} );
+      C4::Letters::parseletter( $letter, 'biblio', $reserve->{biblionumber} );
+      C4::Letters::parseletter( $letter, 'reserves', $reserve->{borrowernumber}, $reserve->{biblionumber} );
+      C4::Letters::parseletter( $letter, 'items', $reserve->{itemnumber} );
         
       C4::Letters::EnqueueLetter(
         { letter                 => $letter,
