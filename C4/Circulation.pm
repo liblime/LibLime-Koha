@@ -206,9 +206,11 @@ sub barcodedecode
             $prefix ||= $branchcode eq '_TEST' ? 12345 
             : GetBranchDetail($branchcode)->{'itembarcodeprefix'};
         }
-        else {
-            die "No library set and/or no branchcode passed to barcodedecode()";
-        }
+        ## relax this
+        #else {
+        #    die "No library set and/or no branchcode passed to barcodedecode()";
+        #}
+        #######
         my $padding = C4::Context->preference('itembarcodelength') - length($prefix) - length($filtered);
         $filtered = $prefix . '0' x $padding . $filtered if ($padding >= 0);
     }
@@ -234,8 +236,10 @@ sub GetItemnumbersFromBarcodeStr
       $sth = $dbh->prepare('SELECT branchcode,itembarcodeprefix FROM branches');
       $sth->execute();
       while (my $row = $sth->fetchrow_hashref()) {
-         die "No itembarcodeprefix set for branch $$row{branchcode} in table branches"
-            unless $$row{itembarcodeprefix};
+         ## relax this
+         #die "No itembarcodeprefix set for branch $$row{branchcode} in table branches"
+         #   unless $$row{itembarcodeprefix};
+         ######
          my $barcode = barcodedecode(
             barcode  => $str,
             prefix   => $$row{itembarcodeprefix},

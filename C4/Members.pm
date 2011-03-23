@@ -2890,13 +2890,18 @@ sub _prefix_cardnum_multibranch
    my $sth = $dbh->prepare('SELECT branchcode,patronbarcodeprefix FROM branches');
    $sth->execute();
    while(my $row = $sth->fetchrow_hashref()) {
-      die "No patronbarcodeprefix set for branch $$row{branchcode} in table branches"
-         unless $$row{patronbarcodeprefix};
-      push @all, _prefix_cardnum(
-         cardnumber           => $str,
-         branchcode           => $$row{branchcode},
-         patronbarcodeprefix  => $$row{patronbarcodeprefix}
-      );
+      ## relax this
+      #die "No patronbarcodeprefix set for branch $$row{branchcode} in table branches"
+      #   unless $$row{patronbarcodeprefix};
+      #####
+      unless ($$row{patrongbarcodeprefix}) { push @all, $str }
+      else {
+         push @all, _prefix_cardnum(
+            cardnumber           => $str,
+            branchcode           => $$row{branchcode},
+            patronbarcodeprefix  => $$row{patronbarcodeprefix},
+         );
+      }
    }
    return \@all // [];
 }

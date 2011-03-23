@@ -108,18 +108,30 @@ sub validate
    unless (grep /^$barcodetype$/, qw(patron item)) {
       return 0,"Acceptable barcodetype: 'patron' or 'item'";
    }
-   if (length($barcode) != 14) {
-      return 0,"Expected barcode length of 14 digits";
-   }
-   if ($barcode =~ /\D/) {
-      return 0,'Barcode must contain all digits';
-   }
-
-   my($type,$infix,$seq,$checkdigit) = $barcode =~ /^(\d)(\d{4})(\d{8})(\d)$/;
-
-   # dupecheck
+   ## get prefix from db
    my $sth;
    my $dbh = C4::Context->dbh;
+   my $dbPrefix = '';
+   $sth = $dbh->prepare("SELECT ${barcodetype}barcodeprefix FROM branches
+      WHERE branchcode = ?") || die $dbh->errstr();
+   $sth->execute($branchcode) || die $dbh->errstr();
+   $dbPrefix = ($sth->fetchrow_array())[0];
+   ## soft return: if it's not set, don't do checking
+   return 1 unless $dbPrefix;
+
+   my $len = C4::Context->preference("${barcodetype}barcodelength");
+   if (length($barcode) != $len) {
+      return 0,"Expected barcode length of $len characters";
+   }
+   if ($barcode =~ /\D/) {
+      return 0,"Barcode type of 'codabar' must contain all digits";
+   }
+   my($type,$infix,$seq,$checkdigit) = $barcode =~ /^(\d)(\d{4})(\d{8})(\d)$/;
+   if ("$type$infix" != $dbPrefix) {
+      return 0,"Invalid prefix ($type$infix), expected $dbPrefix";
+   }
+
+   # dupecheck
    if ($dupecheck) {
       my $sql;
       if ($barcodetype eq 'patron') {
@@ -132,19 +144,6 @@ sub validate
       $sth->execute($barcode) || die $dbh->errstr();
       my($dupe) = ($sth->fetchrow_array)[0];
       return 0,'Duplicate barcode' if $dupe;
-   }
-
-   # get prefix from db
-   my $dbPrefix = '';
-   $sth = $dbh->prepare("SELECT ${barcodetype}barcodeprefix FROM branches
-      WHERE branchcode = ?") || die $dbh->errstr();
-   $sth->execute($branchcode) || die $dbh->errstr();
-   ($dbPrefix) = ($sth->fetchrow_array())[0];
-   unless ($dbPrefix) {
-      return 0,"${barcodetype}barcodeprefix not set in database";
-   }
-   if ("$type$infix" != $dbPrefix) {
-      return 0,"Invalid prefix ($type$infix), expected $dbPrefix";
    }
 
    # digit 14: check digit
