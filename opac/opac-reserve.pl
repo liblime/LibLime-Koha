@@ -545,8 +545,8 @@ foreach my $biblioNum (@biblionumbers) {
             if ($policy_holdallowed) {
               if ($no_on_shelf_holds_in_library &&
                   ((defined $itemLoopIter->{dateDue} &&
-                  ($borr->{'branchcode'} eq $itemInfo->{'holdingbranch'})) ||
-                  ($borr->{'branchcode'} ne $itemInfo->{'holdingbranch'}) ||
+                  ($inBranchcode eq $itemInfo->{'holdingbranch'})) ||
+                  ($inBranchcode ne $itemInfo->{'holdingbranch'}) ||
                   ($itemLoopIter->{reserve_status} eq 'W') ||
                   ($itemLoopIter->{reserve_status} eq 'T') ||
                   ($itemInfo->{'damaged'}))) {
