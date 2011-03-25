@@ -120,6 +120,7 @@ my $userenv_branch = C4::Context->userenv->{'branch'} || '';
 my $checkin_override_date;
 if (C4::Context->preference('AllowCheckInDateChange')) {
     my $tempdate = $query->param('checkin_override_date');
+    $tempdate  ||= $query->cookie('checkin_override_date') || '';
     if ($tempdate && $tempdate =~ C4::Dates->regexp('syspref')) {
         $checkin_override_date = C4::Dates->new($tempdate);
         $template->param( checkin_override_date => $tempdate);

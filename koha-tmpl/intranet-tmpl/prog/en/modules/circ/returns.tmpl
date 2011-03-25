@@ -1,5 +1,5 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
-<title>Koha &rsaquo; Circulation &rsaquo; Check In <!-- TMPL_VAR Name="title" escape="html" --></title>
+
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <style type="text/css">
     background-color: red;
@@ -460,7 +460,7 @@ function ContinueReturns() {
     </div>
 </div>
 	<div class="yui-g">
-    <form method="post" action="/cgi-bin/koha/circ/returns.pl" >
+    <form method="post" action="/cgi-bin/koha/circ/returns.pl" name="myf" id="myf">
     <div class="yui-u first">
             <fieldset>
 	<legend>Check In</legend>
@@ -472,7 +472,8 @@ function ContinueReturns() {
 			<!-- TMPL_ELSE -->
 			<input name="barcode" id="barcode" size="14" class="focus"/>
 			<!-- /TMPL_IF -->
-            <input id="barcode_submit" type="submit" class="submit" value="Submit" />
+            <input id="barcode_submit" type="button" class="submit" value="Submit" onclick="
+            setOverrideDate();"/>
             <!-- TMPL_LOOP Name="inputloop" -->
                 <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
                 <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
@@ -534,6 +535,27 @@ function ContinueReturns() {
             </fieldset>
         </div>
     </form>
+
+   <script>
+   function getCookie(cname) {
+      var i,x,y,ARRcookies = document.cookie.split(';');
+      for(i=0;i<ARRcookies.length;i++) {
+         x=ARRcookies[i].substr(0,ARRcookies[i].indexOf('='));
+         y=ARRcookies[i].substr(ARRcookies[i].indexOf('=')+1);
+         x=x.replace(/^\s+|\s+$/g,'');
+         if(x==cname) {
+            return unescapce(y);
+         }
+      }
+   }
+   function setOverrideDate() {
+      var odate = document.myf.f_checkin_override_date.value;
+      if (odate != '') {
+         document.cookie = 'checkin_override_date='+odate+'; patch=/';
+      }
+      return document.myf.submit(); 
+   }
+   </script>
 </div>
 
 <!-- TMPL_IF Name="returned" -->
