@@ -355,6 +355,7 @@ if ($borrowernumber) {
     my (  $today_year,   $today_month,   $today_day) = Today();
     my ($warning_year, $warning_month, $warning_day) = split /-/, $borrower->{'dateexpiry'};
     my (  $enrol_year,   $enrol_month,   $enrol_day) = split /-/, $borrower->{'dateenrolled'};
+    $warning_month = sprintf("%02d",$warning_month);
     # Renew day is calculated by adding the enrolment period to today
     my ( $renew_year, $renew_month, $renew_day );
     if ($enrol_year*$enrol_month*$enrol_day>0) {
@@ -403,7 +404,6 @@ if ($barcode) {
   my ( $error, $question ) =
     CanBookBeIssued( $borrower, $barcode, $datedue , $inprocess );
   my $blocker = $invalidduedate ? 1 : 0;
-
   if ($circ_session->{'debt_confirmed'} || $circ_session->{'charges_overridden'}) {
     delete $question->{'DEBT'};
     delete $error->{'DEBT'};
@@ -445,8 +445,14 @@ if ($barcode) {
        	               getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
        	               NEEDSCONFIRMATION  => 1
        	            );
-       	            $confirm_required = 1;
                   }
+                  else {
+                     $template->param(
+                        $needsconfirmation => $$question{$needsconfirmation},
+                        NEEDSCONFIRMATION  => 1,
+                     );
+                  }
+       	         $confirm_required = 1;
        	    }
 		  }
         unless($confirm_required) {
@@ -477,6 +483,7 @@ if ($barcode) {
 }
 
 # reload the borrower info for the sake of reseting the flags.....
+my $patron_infobox;
 if ($borrowernumber) {
     $borrower = GetMemberDetails( $borrowernumber, 0, $circ_session );
 }
@@ -484,9 +491,6 @@ if ($borrowernumber) {
 ##################################################################################
 # BUILD HTML
 # show all reserves of this borrower, and the position of the reservation ....
-
-my $patron_infobox = C4::View::Member::BuildFinesholdsissuesBox($borrowernumber, $query);
-$template->param(%$patron_infobox);
 
 my @values;
 my %labels;
@@ -520,9 +524,17 @@ if ($borrowerslist) {
         -tabindex => '',
         -multiple => 0
     );
+    $template->param(
+      CGIselectborrower => $CGIselectborrower,
+    );
+   output_html_with_http_headers $query, $cookie, $template->output;
+   exit;
+
 }
 
-#title
+
+$patron_infobox = C4::View::Member::BuildFinesholdsissuesBox($borrowernumber, $query);
+$template->param(%$patron_infobox);
 my $flags = $borrower->{'flags'};
 my $allow_override_login = C4::Context->preference( 'AllowOverrideLogin' );
 
@@ -652,7 +664,6 @@ if($lib_messages_loop){ $template->param(flagged => 1 ); }
 
 my $bor_messages_loop = GetMessages( $borrowernumber, 'B', $branch );
 if($bor_messages_loop){ $template->param(flagged => 1 ); }
-
 $template->param(
     lib_messages_loop		=> $lib_messages_loop,
     bor_messages_loop		=> $bor_messages_loop,
@@ -688,7 +699,6 @@ $template->param(
     stickyduedate     => $stickyduedate,
     duedatespec       => $duedatespec,
     message           => $message,
-    CGIselectborrower => $CGIselectborrower,
     totaldue          => sprintf("%.2f", $total // 0),
     inprocess         => $inprocess,
     memberofinstution => $member_of_institution,
@@ -735,7 +745,6 @@ $template->param(
 
 # Pass off whether to display initials or not
 $template->param( showinitials => C4::Context->preference('DisplayInitials') );
-
 output_html_with_http_headers $query, $cookie, $template->output;
 
 

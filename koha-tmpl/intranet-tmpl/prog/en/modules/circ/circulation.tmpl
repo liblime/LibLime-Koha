@@ -21,7 +21,7 @@ if (backtoqueue=='1') {
    +'?run_report=1&branchlimit=<!-- TMPL_VAR NAME="queue_branchlimit" -->'
    +'&currPage=<TMPL_VAR NAME="queue_currPage">'
    +'&orderby=<TMPL_VAR NAME="queue_orderby">'
-   +'&limit=<TMPL_VAR NAEM="queue_limit">';
+   +'&limit=<TMPL_VAR NAME="queue_limit">';
    window.parent.GB_hide();
 }
 
@@ -298,28 +298,28 @@ function refocus(calendar) {
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="PATRON_CANT" -->
-    <li>This patron can't check out this item per library circulation policy</i>
+    <li>This patron can't check out this item per library circulation policy.</i>
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="NOT_FOR_LOAN_FORCING" -->
-    <li>Item is normally not for loan.  Check out anyway?</li>
+    <li>Item is normally not for loan.</li>
 <!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="NO_MORE_RENEWALS_FORCING" -->
-     <li>No more renewals normally possible. Check out anyway?</li>
+     <li>No more renewals normally possible.</li>
 <!-- /TMPL_IF -->
 
 </ul>
-
-<form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="confirm">
+Checkout anyway?<br>
+<form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="confirm" name="myf">
 <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
 <input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">
 <input type=hidden name="queue_limit" value="<TMPL_VAR NAME="queue_limit">">
-<input type=hidden name='queue_orderby" value="<TMPL_VAR NAME="queue_orderby">">
+<input type=hidden name="queue_orderby" value="<TMPL_VAR NAME="queue_orderby">">
 <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
 <input type=hidden name="qbarcode" value="<!-- TMPL_VAR NAME="qbarcode" -->">
 
-<!-- TMPL_IF NAME="RESERVE_WAITING" -->
-<!-- TMPL_IF NAME="DisableHoldsIssueOverrideUnlessAuthorised" -->
+   <!-- TMPL_IF NAME="RESERVE_WAITING" -->
+      <!-- TMPL_IF NAME="DisableHoldsIssueOverrideUnlessAuthorised" -->
     <p>
     <label><strong>Superlibrarian Authorization Required</strong></label>
     </p><p>
@@ -328,28 +328,29 @@ function refocus(calendar) {
     <label for="auth_password">Password:</label>
     <input type="password" id="auth_password" name="auth_password" />
     </p>
-<!-- /TMPL_IF -->
-<!-- /TMPL_IF -->
+      <!-- /TMPL_IF -->
+   <!-- /TMPL_IF -->
 
-<!-- TMPL_IF NAME="RESERVED" -->
+   <!-- TMPL_IF NAME="RESERVED" -->
     <p>
     <input type="checkbox" id="cancelreserve" name="cancelreserve" value="1" />
     <label for="cancelreserve">Cancel Reserve</label>
     </p>
-<!-- /TMPL_IF -->
+   <!-- /TMPL_IF -->
 
-<!-- TMPL_IF NAME="RESERVE_WAITING" -->
+   <!-- TMPL_IF NAME="RESERVE_WAITING" -->
     <p>
     <input type="checkbox" id="cancelreserve" name="cancelreserve" value="1" />
     <label for="cancelreserve">Cancel Reserve</label>
     </p>
-<!-- /TMPL_IF -->
+   <!-- /TMPL_IF -->
 
     <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME="barcode" -->" />
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
     <input type="hidden" name="issueconfirmed" value="1" />
     <!-- TMPL_IF NAME="RESERVE_WAITING" --><input type="hidden" name="reserve_confirmed" value="1" /><!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="DEBT" --><input type="hidden" name="debt_confirmed" value="1" /><!-- /TMPL_IF -->
+
     <input type="hidden" name="charges_overridden" value="<!-- TMPL_VAR NAME="charges_overridden" -->" />
     <input type="hidden" name="override_user" value="<!-- TMPL_VAR NAME="override_user" -->" />
     <input type="hidden" name="override_pass" value="<!-- TMPL_VAR NAME="override_pass" -->" />
@@ -357,6 +358,7 @@ function refocus(calendar) {
     <input type="hidden" name="stickyduedate" value="<!-- TMPL_VAR NAME="stickyduedate" -->" />
     <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->" />
     <input type="submit" class="approve" value="Yes, Check Out (Y)" accesskey="y" />
+    <script>$(document).ready(function() {document.mainform.barcode.value='<TMPL_VAR NAME="barcode">'});</script>
 </form>
 
 <form method="POST" action="/cgi-bin/koha/circ/circulation.pl" id="dont_confirm">
@@ -467,17 +469,9 @@ function refocus(calendar) {
 <p>Item Checked out</p>
 <!-- /TMPL_IF -->
 
-<!-- TMPL_IF NAME="message" -->
-<!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
-<h4>
-No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
-</h4>
-<!-- /TMPL_IF -->
-
-
 <!-- TMPL_IF NAME="CGIselectborrower" -->
-<!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
 
+<!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
 <form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="mainform" name="mainform">
 <fieldset id="circ_circulation_selectborrower" class="brief">
     <legend>Patron selection</legend>
@@ -496,15 +490,24 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 </fieldset>
 </form>
 <!-- TMPL_ELSE --> <!-- CGIselectborrower -->
-
+   <!-- TMPL_UNLESS NAME="borrowernumber">
+   <!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
+   <h4>
+   No patron matched <span class="ex"><!-- TMPL_VAR name="findborrower" --></span>
+   </h4>
+   <!-- /TMPL_IF -->
+   <TMPL_ELSE>
 <!-- BARCODE ENTRY -->
 
-<!-- TMPL_IF NAME="borrowernumber" -->
+<TMPL_IF NAME="borrowernumber">
+   <TMPL_UNLESS NAME="cardnumber">
+   No patron with borrowernumber=<TMPL_VAR NAME="borrowernumber">
+<TMPL_ELSE>
 <div class="yui-g">
 <!-- TMPL_UNLESS NAME="noissues" -->
-<!-- TMPL_IF NAME="flagged" -->
+   <!-- TMPL_IF NAME="flagged" -->
 <div class="yui-u first">
-<!-- TMPL_ELSE -->
+   <!-- TMPL_ELSE -->
 <div><!-- /TMPL_IF --><form method="post" action="/cgi-bin/koha/circ/circulation.pl" name="mainform" id="mainform">
 <fieldset id="circ_circulation_issue">
     <!-- TMPL_IF NAME="DisplayClearScreenButton" -->
@@ -760,11 +763,11 @@ No patron matched <span class="ex"><!-- TMPL_VAR name="message" --></span>
 
 </div>
 </div>
-<!-- TMPL_UNLESS NAME="CGIselectborrower" --><!-- TMPL_IF NAME="borrowernumber" --><div class="yui-b">
+<!-- TMPL_IF NAME="cardnumber" --><div class="yui-b">
 <!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
-</div><!-- /TMPL_IF --><!-- /TMPL_UNLESS -->
+</div><!-- /TMPL_IF -->
 </div>
-<!-- TMPL_IF "show_override" -->
+<!-- TMPL_IF NAME="show_override" -->
 <div id="login-overlay">
 <div id="login-area">
 

@@ -892,7 +892,7 @@ sub CanBookBeIssued {
     }
     elsif ( !$item->{'notforloan'} ){
         # we have to check itemtypes.notforloan also
-        if (C4::Context->preference('item-level_itypes')){
+        #if (C4::Context->preference('item-level_itypes')){
             # this should probably be a subroutine
             my $sth = $dbh->prepare("SELECT notforloan FROM itemtypes WHERE itemtype = ?");
             $sth->execute($item->{'itemtype'});
@@ -905,8 +905,9 @@ sub CanBookBeIssued {
                     $needsconfirmation{NOT_FOR_LOAN_FORCING} = 1;
                 }
             }
-        }
-        elsif ($biblioitem->{'notforloan'} == 1){
+        #}
+        #elsif ($biblioitem->{'notforloan'} == 1){
+        if (!$notforloan && $$biblioitem{notforloan}==1) {
             if (!C4::Context->preference("AllowNotForLoanOverride")) {
                 $issuingimpossible{NOT_FOR_LOAN} = 1;
             } else {
