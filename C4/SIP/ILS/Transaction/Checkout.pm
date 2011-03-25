@@ -59,6 +59,7 @@ sub do_checkout {
 	$debug and warn "do_checkout borrower: . " . Dumper $borrower;
 	my ($issuingimpossible,$needsconfirmation) = CanBookBeIssued( $borrower, $barcode );
 	my $noerror=1;
+        $self->screen_msg("Item was successfully checked out.");
     if (scalar keys %$issuingimpossible) {
         foreach (keys %$issuingimpossible) {
             # do something here so we pass these errors
@@ -68,7 +69,8 @@ sub do_checkout {
     } else {
         foreach my $confirmation (keys %$needsconfirmation) {
             if ($confirmation eq 'RENEW_ISSUE'){
-                $self->screen_msg("Item already checked out to you: renewing item.");
+                $self->screen_msg("Item already checked out to you.");
+                $noerror = 0;
             } elsif ($confirmation eq 'RESERVED' or $confirmation eq 'RESERVE_WAITING') {
                 my $x = $self->{item}->available($patron_barcode);
                 if ($x) {

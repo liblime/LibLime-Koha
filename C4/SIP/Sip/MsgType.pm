@@ -910,7 +910,13 @@ sub summary_info {
     syslog("LOG_DEBUG", "summary_info: list = (%s)", join(", ", @{$itemlist}));
     foreach my $i (@{$itemlist}) {
         my $bibitem = GetBiblioFromItemNumber($i->{itemnumber});
-        $resp .= add_field($fid, $bibitem->{barcode});
+        if (C4::Context->preference('SIPItemDisplay') eq "barcode\+title") {
+          my $bctitle = $bibitem->{barcode} . " " . $bibitem->{title};
+          $resp .= add_field($fid, $bctitle);
+        }
+        else {
+          $resp .= add_field($fid, $bibitem->{barcode});
+        }
     }
 
     return $resp;

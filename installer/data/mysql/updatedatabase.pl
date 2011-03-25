@@ -4534,6 +4534,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update to $DBversion )\n";
 }
 
+$DBversion = '4.03.18.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    $dbh->do(q/INSERT INTO `systempreferences` (variable,value,explanation,options,type) VALUES
+        ('SIPItemDisplay','barcode','This sets the SIP display for the item field in the patron information response message','barcode|barcode+title','Choice')
+    /);
+
+    print "Upgrade to $DBversion done ( Added SIPItemDisplay syspref )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
