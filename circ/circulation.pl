@@ -393,6 +393,10 @@ if ($borrowernumber) {
         issuecount   => $issue,
         finetotal    => $fines
     );
+    # Check if patron is in debt collect
+    if ($borrower->{'last_reported_amount'} > 0) {
+      $template->param( debtcollect  => format_date($borrower->{'last_reported_date'}), flagged => 1);
+    }
 }
 
 #

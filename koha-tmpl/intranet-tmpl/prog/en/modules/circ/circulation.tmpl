@@ -599,6 +599,10 @@ Checkout anyway?<br>
 		<h3><!-- TMPL_IF NAME="noissues" -->Cannot Check Out!<!-- TMPL_ELSE -->Attention:<!-- /TMPL_IF --></h3>
 		<ul>
 
+			<!-- TMPL_IF NAME = "debtcollect" -->
+			<li><span class="circ-hlt">Debt Collect:</span> Patron sent to collection/Last update on <!-- TMPL_VAR NAME="debtcollect" -->.
+                        </li>
+                        <!-- /TMPL_IF -->
 			<!-- TMPL_IF NAME = "warndeparture" -->
 			<li><span class="circ-hlt">Expiration:</span> Patron's card will expire soon.
 			Patron's card expires on <!-- TMPL_VAR NAME="expiry" -->
