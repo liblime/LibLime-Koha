@@ -528,7 +528,14 @@ function ContinueReturns() {
                                  singleClick    : true
                              });
                         </script>
-                        <label for="checkin_override_date">Override Check In Date</label>
+                        <label for="checkin_override_date">Override Check In Date 
+                        <script>
+                        var odate = document.myf.f_checkin_override_date.value;
+                        if (odate != '') {
+                           document.write('<input type=button value="Clear Date" onclick="clearOverrideDate()">');
+                        }
+                        </script>
+                        </label>
                     </li>
                     <!-- /TMPL_IF -->
                 </ul>
@@ -548,10 +555,14 @@ function ContinueReturns() {
          }
       }
    }
+   function clearOverrideDate() {
+      document.myf.f_checkin_override_date.value='';
+      document.cookie = 'checkin_override_date=; path=/';
+   }
    function setOverrideDate() {
       var odate = document.myf.f_checkin_override_date.value;
       if (odate != '') {
-         document.cookie = 'checkin_override_date='+odate+'; patch=/';
+         document.cookie = 'checkin_override_date='+odate+'; path=/';
       }
       return document.myf.submit(); 
    }
