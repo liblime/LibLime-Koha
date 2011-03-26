@@ -42,7 +42,7 @@ function FindAcqui(f)
    <div id="bd">
    <div class="yui-g">
 <h1><!-- TMPL_IF name="mod" --> Modify subscription for <i><!-- TMPL_VAR name="bibliotitle" escape="html" --></i><!-- TMPL_ELSE -->Add a new subscription<!-- /TMPL_IF --></h1>
-    <form method="GET" name="f" action="/cgi-bin/koha/periodicals/subscription-add.pl">
+    <form method="POST" name="f" action="/cgi-bin/koha/periodicals/subscription-add.pl">
     <input type="hidden" name="periodical_id" value="<TMPL_VAR NAME="periodical_id">"/>
 	<div class="yui-u first">
     <fieldset id="subscription_add_information" class="rows">

@@ -31,10 +31,8 @@ use C4::View::Serials qw(
     );
 use C4::Control::Subscription;
 
-my $query = new CGI;
+my $query = CGI->new();
 my $op = $query->param('op') || '';
-my $dbh = C4::Context->dbh;
-my @budgets;
 my ($template, $loggedinuser, $cookie) = 
     get_template_and_user({template_name => "periodicals/subscription-add.tmpl",
 				query => $query,
