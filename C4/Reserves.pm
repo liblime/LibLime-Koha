@@ -295,7 +295,7 @@ sub GetItemForBibPrefill
    if (!!$$res{_pass}) {
       IDX:
       for my $i(0..$#branches) {
-         if ($branches[$i] eq $$res{holdingbranch}) {
+         if ($branches[$i] ~~ $$res{holdingbranch}) {
             $idx = $i;
             $starti = 1;
             last IDX;
@@ -306,7 +306,7 @@ sub GetItemForBibPrefill
       $idx = 0;
       IDX:
       for my $i(0..$#branches) {
-         if ($$res{pickbranch} eq $branches[$i]) {
+         if ($$res{pickbranch} ~~ $branches[$i]) {
             $idx = $i;
             last IDX;
          }
@@ -540,7 +540,7 @@ sub GetHoldsQueueItems
 	my $items = [];
    my $userenv = C4::Context->userenv;
    while (my $row = $sth->fetchrow_hashref){
-      $$row{fillable} = $$userenv{branch} eq $$row{holdingbranch} ?1:0;
+      $$row{fillable} = $$userenv{branch} ~~ $$row{holdingbranch} ?1:0;
       my $sth2 = $dbh->prepare('SELECT found FROM reserves WHERE reservenumber = ?');
       $sth2->execute($$row{reservenumber});
       $$row{found}           = ($sth2->fetchrow_array)[0];
@@ -579,7 +579,7 @@ sub AddReserve {
 
     my $waitingdate;
     # If the reserv had the waiting status, we had the value of the resdate
-    if ( $found && $found eq 'W' ) {
+    if ( $found ~~ 'W' ) {
         $waitingdate = $resdate;
     }
 
@@ -739,7 +739,7 @@ sub GetReservesFromBorrowernumber {
     my ( $borrowernumber, $status ) = @_;
     my $dbh   = C4::Context->dbh;
     my $sth;
-    if ($status && $status eq 'W') {
+    if ($status ~~ 'W') {
         $sth = $dbh->prepare("
             SELECT *
             FROM   reserves
@@ -748,7 +748,7 @@ sub GetReservesFromBorrowernumber {
             ORDER BY reservedate
         ");
         $sth->execute($borrowernumber,$status);
-    } elsif ($status && $status eq 'U') {
+    } elsif ($status ~~ 'U') {
         $sth = $dbh->prepare("
             SELECT *
             FROM   reserves
@@ -785,8 +785,8 @@ sub GetOldReservesFromBorrowernumber {
     my $dbh   = C4::Context->dbh;
     my $sth;
     my $num_days;
-    if ($type eq 'expiration') {
-        $num_days = ($user eq 'opac') ?
+    if ($type ~~ 'expiration') {
+        $num_days = ($user ~~ 'opac') ?
            C4::Context->preference('OPACShowExpiredHolds') :
            C4::Context->preference('StaffShowExpiredHolds');
         $num_days //= 10000;
@@ -800,8 +800,8 @@ sub GetOldReservesFromBorrowernumber {
             ORDER BY expirationdate DESC
         ");
         $sth->execute($borrowernumber);
-    } elsif ($type eq 'cancellation') {
-        $num_days = ($user eq 'opac') ?
+    } elsif ($type ~~ 'cancellation') {
+        $num_days = ($user ~~ 'opac') ?
            C4::Context->preference('OPACShowCancelledHolds') :
            C4::Context->preference('StaffShowCancelledHolds');
         $num_days //= 10000;
@@ -815,7 +815,7 @@ sub GetOldReservesFromBorrowernumber {
         ");
         $sth->execute($borrowernumber);
     } else { # filled
-        $num_days = ($user eq 'opac') ?
+        $num_days = ($user ~~ 'opac') ?
            C4::Context->preference('OPACShowCompletedHolds') :
            C4::Context->preference('StaffShowCompletedHolds');
         $num_days //= 10000;
@@ -1080,7 +1080,7 @@ sub GetReserveFee {
         );
         $sth1->execute($biblionumber);
         while ( my $data1 = $sth1->fetchrow_hashref ) {
-            if ( $const eq "a" ) {
+            if ( $const ~~ 'a' ) {
                 push @biblioitems, $data1;
             }
             else {
@@ -1091,7 +1091,7 @@ sub GetReserveFee {
                         last;
                     }
                 }
-                if ( ($const eq 'o' && $found) || !$found ) {
+                if ( ($const ~~ 'o' && $found) || !$found ) {
                     push @biblioitems, $data1;
                 }
             }
@@ -1273,7 +1273,7 @@ sub _GetNextReserve {
     # If constraints about preferring local reserves are satisfied, reassign to highest
     if (C4::Context->preference('FillRequestsAtPickupLibrary')
         && (@$reserves > C4::Context->preference('HoldsTransportationReductionThreshold')
-            || C4::Context->preference('HoldsTransportationReductionThreshold') == 0)
+            || C4::Context->preference('HoldsTransportationReductionThreshold') ~~ 0)
         ) {
         my $local  = _NextLocalReserve($reserves);
 
@@ -1303,7 +1303,7 @@ sub _NextLocalReserve {
     my $reserves = shift;
 
     my $branchcode = (C4::Context->userenv) ? C4::Context->userenv->{branch} : '';
-    my @pruned = grep {$_->{branchcode} eq $branchcode} @$reserves;
+    my @pruned = grep {$_->{branchcode} ~~ $branchcode} @$reserves;
     my @sorted = sort {$a->{priority} <=> $b->{priority}} @pruned;
 
     return $sorted[0];
@@ -1511,10 +1511,10 @@ itemnumber and supplying itemnumber.
 sub ModReserve {
     my ($priority, $biblionumber, $borrowernumber, $branchcode, $itemnumber, $reservenumber) = @_;
 
-    return if $priority eq 'W';
-    return if $priority eq 'n';
+    return if $priority ~~ 'W';
+    return if $priority ~~ 'n';
 
-    if ( $priority eq "del" ) {
+    if ( $priority ~~ 'del' ) {
         ModReserveCancelAll($reservenumber, $itemnumber);
     }
     elsif ($priority =~ /^\d+/ and $priority > 0) {
@@ -1681,7 +1681,7 @@ sub ModReserveFillCheckout
    ## sanity check on status of hold.  It *should* be in Waiting mode and
    ## no longer in the bib's holds list priorities.  That is, it was properly 
    ## checked in (and transferred, if applicable).
-   if (($$res{found} eq 'W') && (($$res{priority} // '')==0)) {
+   if (($$res{found} ~~ 'W') && ($$res{priority} ~~ 0)) {
       ## do nothing right now.
    }
    else { ## sigh, this means Workflow wasn't followed.
@@ -1702,7 +1702,7 @@ sub ModReserveFillCheckout
       }
 
       ## Let's see... hold is still set to 'in transit'
-      if ($$res{found} eq 'T') {
+      if ($$res{found} ~~ 'T') {
          ## look for the item in the branchtransfers table.
          ## maybe they forgot to tell Koha that it has arrived?
          $sth = $dbh->prepare('
@@ -1722,7 +1722,7 @@ sub ModReserveFillCheckout
             $sth->execute($coItemnumber,$currBranch);
          }
       }
-      elsif ($$res{found} eq 'F') {
+      elsif ($$res{found} ~~ 'F') {
          ## old data from legacy ModReserveFill() or otherwise messed up workflow
          die qq|Cannot handle reserves.found='F' still in reserves table at checkout.
             Should have been moved to old_reserves (reservenumber=$$res{reservenumber})
@@ -1936,7 +1936,7 @@ sub ModReserveAffect {
     # get request - need to find out if item is already
     # waiting in order to not send duplicate hold filled notifications
     my $request = GetReserveInfo($borrowernumber, $biblionumber);
-    my $already_on_shelf = ($request && ($request->{found}//'') eq 'W') ? 1 : 0;
+    my $already_on_shelf = ($request && $request->{found} ~~ 'W') ? 1 : 0;
 
     # If we affect a reserve that has to be transfered, don't set to Waiting
     my $query;
@@ -1952,7 +1952,7 @@ sub ModReserveAffect {
     else {
     # affect the reserve to Waiting as well.
       my $holdperiod = C4::Context->preference('ReservesMaxPickUpDelay');
-      if ((!defined($holdperiod)) || ($holdperiod eq '') || ($holdperiod == 0)) {
+      if ((!defined($holdperiod)) || ($holdperiod ~~ '') || ($holdperiod == 0)) {
         $query = "
             UPDATE reserves
             SET     priority = 0,
@@ -2207,10 +2207,10 @@ sub IsAvailableForItemLevelRequest {
 sub CanHoldMultipleItems {
   my ( $itemtype, $user ) = @_;
   
-  if ($user eq 'opac') {
+  if ($user ~~ 'opac') {
     my @multi_itemtypes = split( / /, C4::Context->preference('AllowMultipleHoldsPerBib') );
     for my $mtype ( @multi_itemtypes ) {
-      if ( $itemtype eq $mtype ) {
+      if ( $itemtype ~~ $mtype ) {
         return 1;
       }
     }
@@ -2315,7 +2315,7 @@ sub _FixPriority {
     my ( $reservenumber, $rank ) = @_;
     my $dbh = C4::Context->dbh;
 
-    if ( $rank eq 'del' ) {
+    if ( $rank ~~ 'del' ) {
         CancelReserve( $reservenumber );
         return;
     }
@@ -2323,7 +2323,7 @@ sub _FixPriority {
     my $reserve = GetReserve($reservenumber)
         // croak "Unable to find reserve ($reservenumber)";
 
-    if ( $rank eq 'W' || $rank eq '0' ) {
+    if ( $rank ~~ 'W' || $rank ~~ 0 ) {
         # make sure priority for waiting or in-transit items is 0
         $dbh->do(q{
             UPDATE reserves
@@ -2470,7 +2470,7 @@ sub _koha_notify_reserve {
         return;
     }
 
-    if ( grep { $_ eq 'email' } @{$messagingprefs->{transports}} ) {
+    if ( grep { $_ ~~ 'email' } @{$messagingprefs->{transports}} ) {
         # aka, 'email' in ->{'transports'}
         C4::Letters::EnqueueLetter(
             {   letter                 => $letter,
@@ -2481,7 +2481,7 @@ sub _koha_notify_reserve {
         );
     }
 
-    if ( grep { $_ eq 'sms' } @{$messagingprefs->{transports}} ) {
+    if ( grep { $_ ~~ 'sms' } @{$messagingprefs->{transports}} ) {
         C4::Letters::EnqueueLetter(
             {   letter                 => $letter,
                 borrowernumber         => $borrowernumber,
