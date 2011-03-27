@@ -80,7 +80,9 @@ function confirm_deletion() {
         <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
 			{text: _("New Item"), url: "/cgi-bin/koha/cataloguing/additem.pl?op=addadditionalitem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="additemnumber" -->#additema" },
         <!-- /TMPL_IF -->
+        <!-- TMPL_UNLESS NAME="UsePeriodicals" -->
 			{text: _("New Subscription"), url: "/cgi-bin/koha/serials/subscription-add.pl?biblionumber_for_new_subscription=<!-- TMPL_VAR NAME="biblionumber" -->"},
+        <!-- /TMPL_UNLESS -->
 		];
 	
 	    var editmenu = [
@@ -173,7 +175,9 @@ function confirm_deletion() {
 	<!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
 	<li><a id="newitem" href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">New Item</a></li>
 	<!-- /TMPL_IF -->
+    <!-- TMPL_UNLESS NAME="UsePeriodicals" -->
 	<li><a id="newsub" href="/cgi-bin/koha/serials/subscription-add.pl?biblionumber_for_new_subscription=<!-- TMPL_VAR NAME="biblionumber" -->">New Subscription</a></li>
+    <!-- /TMPL_UNLESS -->
 	<li id="editmenuc"><a id="editbiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=<!--TMPL_VAR Name="current_framework" -->&amp;op=">Edit Record</a></li>
 	<!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
 	<li><a id="edititems" href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Edit Items</a></li>
