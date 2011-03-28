@@ -254,7 +254,7 @@ sub _getBranchesQueueWeight
       else {
          $sth = $dbh->prepare('SELECT branchcode FROM branches ORDER BY RAND()');
          $sth->execute();
-         @branches = $sth->fetchall_array;
+         while(my $row=$sth->fetchrow_hashref()) { push @branches, $$row{branchcode} }
       }
    }
    elsif (@staylibs) {
@@ -263,7 +263,7 @@ sub _getBranchesQueueWeight
    else {
       $sth = $dbh->prepare('SELECT branchcode FROM branches');
       $sth->execute();
-      @branches = $sth->fetchall_array;
+      while(my $row=$sth->fetchrow_hashref()) { push @branches, $$row{branchcode} }
    }
    return @branches;
 }
