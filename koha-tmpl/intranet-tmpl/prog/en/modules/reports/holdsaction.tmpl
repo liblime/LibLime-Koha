@@ -5,7 +5,11 @@
 <script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
 <script type="application/javascript">
 $(document).ready(function() {
-   $("table").tablesorter();
+   $('#mytab').tablesorter({
+      headers: {
+         0: { sorter: false },
+      }
+   });
 });
 </script>
 </head>
@@ -34,10 +38,10 @@ Cannot proceed.
     <input type=hidden name="branch" value="<TMPL_VAR NAME="branchcode">">
 
     <!-- TMPL_IF NAME="results" -->
-    <table>
+    <table id="mytab">
         <thead>
         <tr>
-            <td nowrap><input type=checkbox name="toggleCheck" onclick="toggleCh()" checked>No.</td>
+            <th nowrap align=left><input type=checkbox name="toggleCheck" onclick="toggleCh()" checked>No.</td>
             <th>Title</th>
             <th>Name</th>
             <th>Placed On</th>
@@ -49,7 +53,7 @@ Cannot proceed.
         </thead>
             <!-- TMPL_LOOP NAME="results" -->
                 <tr>
-                     <td nowrap><input type=checkbox name="lapsed" value="<TMPL_VAR NAME="reservenumber">" 
+                     <td nowrap align=left><input type=checkbox name="lapsed" value="<TMPL_VAR NAME="reservenumber">" 
                      checked><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->#reserves"><!-- TMPL_VAR NAME="reservenumber" --></a></td>
                      <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a><b>
                         <a href="/cgi-bin/koha/catalogue/moredetail.pl?bilbionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a></td>
