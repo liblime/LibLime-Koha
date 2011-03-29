@@ -625,6 +625,7 @@ sub daysBetween ($$$) {
 	if (Date_to_Days($yearFrom,$monthFrom,$dayFrom) > Date_to_Days($yearTo,$monthTo,$dayTo)) {
 		return 0;
 		# we don't go backwards  ( FIXME - handle this error better )
+      # viz., change to padded metric and concat yyyymmdd
 	}
     my $count = 0;
     while (1) {

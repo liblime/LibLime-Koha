@@ -275,10 +275,8 @@ sub CalcFine {
 	);
     my $dbh = C4::Context->dbh;
     my $amount = 0;
-	my $daystocharge;
-	# get issuingrules (fines part will be used)
-    $debug and warn sprintf("CalcFine calling GetIssuingRule(%s, %s, %s)", $bortype, $item->{'itemtype'}, $branchcode);
-    my $data = C4::Circulation::GetIssuingRule($bortype, $item->{'itemtype'}, $branchcode);
+	 my $daystocharge;
+    my $data = C4::Circulation::GetIssuingRule($bortype, $$item{itype} || $$item{itemtype}, $branchcode);
 	if($difference) {
 		# if $difference is supplied, the difference has already been calculated, but we still need to adjust for the calendar.
     	# use copy-pasted functions from calendar module.  (deprecated -- these functions will be removed from C4::Overdues ).
