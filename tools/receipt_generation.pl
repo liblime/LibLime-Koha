@@ -48,12 +48,10 @@ my $receipt_template =
   GetReceiptTemplate( { action => $action, branchcode => $branchcode } );
 my $content = $receipt_template->{'content'};
 
-my $branch_data = _get_branch_data($branchcode);
-$content = _replace( $content, $branch_data );
-
-## Proccess Check Out Reciepts
+## Process Check Out Reciepts
 if ( $action eq 'check_out' || $action eq 'check_out_quick' ) {
     my $today_issues_data = _get_issues_data( $borrowernumber, 'today' );
+
     $content =
       _replace_loop( $content, $today_issues_data, 'TodaysIssuesList' );
 
@@ -115,6 +113,16 @@ elsif ( $action eq 'transit_hold' ) {
 
     my $data = _get_hold_data($reservenumber);
     $content = _replace( $content, $data );
+}
+
+## Fill in branch data
+my $branch_data = _get_branch_data($branchcode);
+$content = _replace( $content, $branch_data );
+
+## Fill in non-looped data about borrower
+if ( $borrowernumber ) {
+  my $borrower_data = _get_borrower_data($borrowernumber);
+  $content = _replace( $content, $borrower_data );
 }
 
 $template->param( output => $content );
@@ -181,6 +189,19 @@ sub _get_branch_data {
         undef, $branchcode );
 
     return $branch;
+}
+
+sub _get_borrower_data {
+    my ($borrowernumber) = @_;
+
+    my $columns = MuxColumnsForSQL( GetTableColumnsFor('borrowers') );
+
+    my $dbh    = C4::Context->dbh;
+    my $borrower = $dbh->selectrow_hashref(
+        "SELECT $columns FROM borrowers WHERE borrowernumber = ?",
+        undef, $borrowernumber );
+
+    return $borrower;
 }
 
 sub _get_issues_data {
@@ -281,7 +302,7 @@ sub _get_hold_data {
     sub _is_date {
         ## Returns true if $value begins with YYYY-MM-DD
         my ($value) = @_;
-
+        return 0 unless $value;
         return ( $value =~ /^(\d{4})(\-)(\d{1,2})\2(\d{1,2})/ );
     }
 
