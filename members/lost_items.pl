@@ -36,13 +36,8 @@ use C4::LostItems;
 use Date::Calc qw(Today Date_to_Days);
 use C4::Branch qw(GetBranchName);
 
-my $query = new CGI;
+my $query = CGI->new();
 my $debug;
-
-my $op = $query->param("op");
-my $borrowernumber = $query->param("borrowernumber");
-my $lost_item_id = $query->param("lost_item_id");
-my $borrower = GetMemberDetails( $borrowernumber, 0 );
 
 my ($template, $loggedinuser, $cookie)
     = get_template_and_user(
@@ -53,6 +48,11 @@ my ($template, $loggedinuser, $cookie)
            flagsrequired => {borrowers => "borrowers_remaining_permissions"},
            debug => ($debug) ? 1 : 0,
        });
+
+my $op = $query->param("op");
+my $borrowernumber = $query->param("borrowernumber");
+my $lost_item_id = $query->param("lost_item_id");
+my $borrower = GetMemberDetails( $borrowernumber, 0 );
 
 if ($op eq 'delete') {
     C4::LostItems::DeleteLostItem($lost_item_id);

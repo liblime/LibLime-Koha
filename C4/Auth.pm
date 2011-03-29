@@ -42,7 +42,7 @@ BEGIN {
     $debug = $ENV{DEBUG} || 0 ;
     @ISA   = qw(Exporter);
     @EXPORT    = qw(&checkauth &get_template_and_user &IsIpInLibrary &GetUserGroupBranches);
-    @EXPORT_OK = qw(&check_api_auth &get_session &check_cookie_auth &checkpw &check_override_perms &get_all_subpermissions &get_user_subpermissions);
+    @EXPORT_OK = qw(&check_api_auth &get_session &check_cookie_auth &checkpw &check_override_perms &get_all_subpermissions &get_user_subpermissions &haspermission);
     %EXPORT_TAGS = (EditPermissions => [qw(get_all_subpermissions get_user_subpermissions)]);
     $ldap = C4::Context->config('useldapserver') || 0;
     if ($ldap) {
@@ -161,7 +161,7 @@ sub get_template_and_user {
         }
 
         $borrowernumber = getborrowernumber($user);
-        my ( $borr ) = GetMemberDetails( $borrowernumber );
+        my ( $borr ) = C4::Members::GetMemberDetails( $borrowernumber );
         my @bordat;
         $bordat[0] = $borr;
         $template->param( "USER_INFO" => \@bordat );
@@ -1522,17 +1522,19 @@ Returns member's flags or 0 if a permission is not met.
 sub haspermission {
     my ($userid, $flagsrequired) = @_;
 
-    my $flags = {};
-    if ( $userid eq C4::Context->config('user') ) {
-        # Super User Account from /etc/koha.conf
-        $flags->{'superlibrarian'} = 1;
+    if (! defined $userid && C4::Context->userenv) {
+        $userid = C4::Context->userenv->{id};
     }
-    elsif ( $userid eq 'demo' && C4::Context->config('demo') ) {
-        # Demo user that can do "anything" (demo=1 in /etc/koha.conf)
-        $flags->{'superlibrarian'} = 1;
-    }
-    return $flags if $flags->{superlibrarian};
 
+    if (    ($userid ~~ C4::Context->config('user'))
+         || ($userid ~~ 'demo' && C4::Context->config('demo')) )
+    {
+        # Super User Account from /etc/koha.conf
+        # or demo user that can do "anything" (demo=1 in /etc/koha.conf)
+        return { superlibrarian => 1 };
+    }
+
+    my $flags = {};
     my ($raw_flags)
         = C4::Context->dbh->selectrow_array('SELECT flags FROM borrowers WHERE userid=?', undef, $userid);
     $flags = getuserflags( $raw_flags, $userid );

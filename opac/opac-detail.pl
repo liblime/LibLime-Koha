@@ -274,23 +274,27 @@ $template->param(
     ocoins => GetCOinSBiblio($biblionumber),
 );
 
-my $reviews = getreviews( $biblionumber, 1 );
 my $loggedincommenter;
-foreach ( @$reviews ) {
-    my $borrowerData   = GetMember($_->{borrowernumber},'borrowernumber');
-    # setting some borrower info into this hash
-    $_->{title}     = $borrowerData->{'title'};
-    $_->{surname}   = $borrowerData->{'surname'};
-    $_->{firstname} = $borrowerData->{'firstname'};
-    $_->{userid}    = $borrowerData->{'userid'};
-    $_->{cardnumber}    = $borrowerData->{'cardnumber'};
-    $_->{datereviewed} = format_date($_->{datereviewed});
-    if ($borrowerData->{'borrowernumber'} eq $borrowernumber) {
-		$_->{your_comment} = 1;
-		$loggedincommenter = 1;
-	}
-}
+my $reviews;
+if (defined $borrowernumber) {
+    $reviews = getreviews( $biblionumber, 1 );
+    foreach ( @$reviews ) {
+        my $borrowerData = GetMember($_->{borrowernumber},'borrowernumber');
 
+        # setting some borrower info into this hash
+        $_->{title}        = $borrowerData->{'title'};
+        $_->{surname}      = $borrowerData->{'surname'};
+        $_->{firstname}    = $borrowerData->{'firstname'};
+        $_->{userid}       = $borrowerData->{'userid'};
+        $_->{cardnumber}   = $borrowerData->{'cardnumber'};
+        $_->{datereviewed} = format_date($_->{datereviewed});
+
+        if ($borrowerData->{'borrowernumber'} eq $borrowernumber) {
+            $_->{your_comment} = 1;
+            $loggedincommenter = 1;
+	}
+    }
+}
 
 if(C4::Context->preference("ISBD")) {
 	$template->param(ISBD => 1);

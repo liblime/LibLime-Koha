@@ -30,10 +30,19 @@ use C4::Output;
 use C4::Reserves;
 use C4::Circulation;
 use C4::Members;
+use C4::Auth;
 
-my $input = new CGI;
-#print $input->header;
+my $input = CGI->new();
 
+my ( undef, undef, undef) = get_template_and_user(
+    {
+        template_name   => "reserve/request.tmpl",
+        query           => $input,
+        type            => "intranet",
+        authnotrequired => 0,
+        flagsrequired   => { reserveforothers => '*' },
+    }
+);
 
 my @bibitems=$input->param('biblioitem');
 my $biblionumber=$input->param('biblionumber');

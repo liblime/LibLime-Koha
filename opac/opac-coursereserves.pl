@@ -38,7 +38,7 @@ use C4::Branch qw(GetBranchName GetBranchesLoop);
 use C4::Koha;
 use C4::Items;
 
-my $query = new CGI;
+my $query = CGI->new();
 my $debug;
 
 my $op = $query->param("op");

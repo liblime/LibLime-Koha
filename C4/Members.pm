@@ -19,6 +19,10 @@ package C4::Members;
 
 
 use strict;
+use warnings;
+
+use Carp qw(carp cluck croak confess);
+
 use C4::Context;
 use C4::Dates qw(format_date_in_iso);
 use Digest::MD5 qw(md5_base64);
@@ -31,6 +35,7 @@ use C4::Accounts;
 use C4::Biblio;
 use C4::Items;
 use C4::Koha qw( GetAuthValCode );
+use C4::Auth qw();
 
 our ($VERSION,@ISA,@EXPORT,@EXPORT_OK,$debug);
 
@@ -43,7 +48,6 @@ BEGIN {
 	push @EXPORT, qw(
 		&SearchMember 
 		&SearchMemberAdvanced
-		&SearchMemberField
 		&SearchMemberBySQL
 		&GetMemberDetails
 		&GetMember
@@ -146,13 +150,13 @@ This module contains routines for adding, modifying and deleting members/patrons
 
 =item SearchMember
 
-  ($count, $borrowers) = &SearchMember($searchstring, $type,$category_type,$filter,$showallbranches);
+  ($count, $borrowers) = &SearchMember($searchstring, $orderby, $type, $category_type);
 
 =back
 
 Looks up patrons (borrowers) by name.
 
-BUGFIX 499: C<$type> is now used to determine type of search.
+C<$type> is now used to determine type of search.
 if $type is "simple", search is performed on the first letter of the
 surname only.
 
@@ -163,10 +167,6 @@ C<$searchstring> is a space-separated list of search terms. Each term
 must match the beginning a borrower's surname, first name, other
 name, or initials.
 
-C<$filter> is assumed to be a list of elements to filter results on
-
-C<$showallbranches> is used in IndependantBranches Context to display all branches results.
-
 C<&SearchMember> returns a two-element list. C<$borrowers> is a
 reference-to-array; each element is a reference-to-hash, whose keys
 are the fields of the C<borrowers> table in the Koha database.
@@ -174,70 +174,84 @@ C<$count> is the number of elements in C<$borrowers>.
 
 =cut
 
-#used by member enquiries from the intranet
-#called by member.pl and circ/circulation.pl
+sub _constrain_sql_by_branchcategory {
+    my ($query, @bind) = @_;
+
+    if (   C4::Branch::CategoryTypeIsUsed('patrons')
+        && $ENV{REQUEST_METHOD} # need a nicer way to do this, but check if we're command line vs. CGI
+        && !C4::Auth::haspermission(undef, {superlibrarian => 1})
+        )
+    {
+        my $mybranch = (C4::Context->userenv) ? C4::Context->userenv->{branch} : undef;
+        confess 'Unable to determine selected branch' if not $mybranch;
+        my @sibling_branchcodes = C4::Branch::GetSiblingBranchesOfType($mybranch, 'patrons');
+        my $clause = sprintf ' borrowers.branchcode IN (%s) ', join(',', map {'?'} @sibling_branchcodes) ;
+
+        # This doesn't work if we don't have a WHERE clause
+        $query =~ s/WHERE/WHERE $clause AND /;
+        unshift @bind, @sibling_branchcodes;
+    }
+
+    return ($query, @bind);
+}
+
 sub SearchMember {
-    my ($searchstring, $orderby, $type,$category_type,$filter,$showallbranches ) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $count;
-    my @data;
-    my @bind = ();
-    my $sth;
+    my ($searchstring, $orderby, $type, $category_type) = @_;
+    $orderby ||= 'surname';
 
     # FIXME: find where in members.pl this function is being called a second time with no args
-    return (0, undef) if not defined $searchstring or $searchstring eq '';
+    return (0, []) if (!$searchstring);
+
+    my $dbh   = C4::Context->dbh;
+    my $sth;
+    my @bind;
+    my $query = q{
+        SELECT *
+        FROM borrowers
+        LEFT JOIN categories
+          ON borrowers.categorycode=categories.categorycode
+        WHERE 1
+      };
+
+    ($query, @bind) = _constrain_sql_by_branchcategory($query);
 
     # this is used by circulation everytime a new borrowers cardnumber is scanned
     # so we can check an exact match first, if that works return, otherwise do the rest
-    my $query = 'SELECT * FROM borrowers
-      LEFT JOIN categories
-             ON borrowers.categorycode=categories.categorycode ';
-
     if (($searchstring !~ /\D/) && C4::Context->preference('patronbarcodelength')) {
-      ## this handles the edge case of multiple barcodes with same right-hand 
-      ## significant digits, different branch prefixes.
-      my @in = @{_prefix_cardnum_multibranch($searchstring)};
-      $sth = $dbh->prepare(sprintf(
-            "$query WHERE cardnumber IN(%s)",
-            join(',',map{'?'}@in)
-         )
-      );
-      $sth->execute(@in);
+        ## this handles the edge case of multiple barcodes with same right-hand 
+        ## significant digits, different branch prefixes.
+        my @in = @{_prefix_cardnum_multibranch($searchstring)};
+        $sth = $dbh->prepare(
+            sprintf("$query AND cardnumber IN (%s) LIMIT 1",
+                join(',', map {'?'} @in)
+            ));
+        $sth->execute(@bind, @in);
     }
     else {
-       $sth = $dbh->prepare("$query WHERE cardnumber=?");
-       $sth->execute($searchstring);
+        $sth = $dbh->prepare("$query AND cardnumber=? LIMIT 1");
+        $sth->execute(@bind, $searchstring);
     }
     
-    my $data = $sth->fetchall_arrayref({});
-    if (@$data){
-        return ( scalar(@$data), $data );
+    my $data = $sth->fetchrow_hashref();
+    if ($data) {
+        return (1, [$data]);
     }
-    $sth->finish;
 
-    if ( $type eq "simple" )    # simple search for one letter only
-    {
-        $query .= ($category_type ? " AND category_type = ".$dbh->quote($category_type) : ""); 
-        $query .= " WHERE (surname LIKE ? OR cardnumber like ?) ";
-        if (C4::Context->preference("IndependantBranches") && !$showallbranches){
-          if (C4::Context->userenv && C4::Context->userenv->{flags} % 2 !=1 && C4::Context->userenv->{'branch'}){
-            $query.=" AND borrowers.branchcode =".$dbh->quote(C4::Context->userenv->{'branch'}) unless (C4::Context->userenv->{'branch'} eq "insecure");
-          }
-        }
-        $query.=" ORDER BY $orderby";
-        @bind = ("$searchstring%","$searchstring");
+    if ($category_type) {
+        $query .= ' AND category_type = ? ';
+        push @bind, $category_type;
     }
-    else    # advanced search looking in surname, firstname, othernames, and initials
-    {
-        @data  = split( ' ', $searchstring );
-        $count = @data;
-        $query .= " WHERE ";
-        if (C4::Context->preference("IndependantBranches") && !$showallbranches){
-          if (C4::Context->userenv && C4::Context->userenv->{flags} % 2 !=1 && C4::Context->userenv->{'branch'}){
-            $query.=" borrowers.branchcode =".$dbh->quote(C4::Context->userenv->{'branch'})." AND " unless (C4::Context->userenv->{'branch'} eq "insecure");
-          }      
-        }     
-        $query .= '(';
+
+    # simple search for one letter only
+    if ($type ~~ 'simple') {
+        $query .= ' AND (surname LIKE ? OR cardnumber LIKE ?) ';
+        push @bind, ("$searchstring%","$searchstring");
+    }
+    # advanced search looking in surname, firstname, othernames, and initials
+    else {
+        my @data  = split(' ', $searchstring);
+        my $count = @data;
+        $query .= ' AND (';
         for ( my $i = 0 ; $i < $count ; $i++ ) {
             my $term = $data[$i];
             $query .= "(surname LIKE ? OR surname LIKE ?
@@ -247,31 +261,25 @@ sub SearchMember {
             push( @bind, "$term%", "% $term%", "$term%", "% $term%", "$term%", "$term%" );
         }
         $query =~ s/ AND $/ /;
-        $query .= ' AND category_type = ' . $dbh->quote($category_type) if $category_type;
         $query .= ') ';
-        $query .= "order by $orderby" if $orderby;
     }
+    $query .= " ORDER BY $orderby";
 
-    $sth = $dbh->prepare($query);
-
-    $debug and print STDERR "Q $orderby : $query\n";
-    $sth->execute(@bind) or die "failed to execute search: ". $dbh->errstr;
-    my @results;
-    $data = $sth->fetchall_arrayref({});
-
-    $sth->finish;
+    $data = $dbh->selectall_arrayref($query, {Slice => {}}, @bind);
 
     # This assumes a lost barcode search will never match a patron's name.
     # Not necessarily an absolute guarantee, but it's worth the performance tradeoff.
     if (not scalar @$data) {
-        $query = qq/
-            SELECT borrowers.*, categories.* FROM borrowers
-            LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
-            LEFT JOIN statistics ON borrowers.borrowernumber = statistics.borrowernumber
+        $query = q/
+            SELECT borrowers.*, categories.*
+            FROM borrowers
+              LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
+              LEFT JOIN statistics ON borrowers.borrowernumber = statistics.borrowernumber
             WHERE statistics.type = 'card_replaced' AND statistics.other = ?
             /;
+        ($query, @bind) = _constrain_sql_by_branchcategory($query, $searchstring);
         $sth = $dbh->prepare( $query );
-        $sth->execute( $searchstring ) or die;
+        $sth->execute( @bind );
         my $prevcards_data = $sth->fetchall_arrayref({});
         foreach my $row ( @$prevcards_data ) {
             $row->{'PreviousCardnumber'} = 1;
@@ -282,50 +290,12 @@ sub SearchMember {
     return ( scalar(@$data), $data );
 }
 
-sub SearchMemberField {
-    my ($searchstring, $orderby, $field ) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $query = "";
-    my $count;
-    my @data;
-    my @bind = ();
-    $searchstring =~ s/\*/%/g;
-
-    return SearchMember( $searchstring, $orderby ) unless ( $field );
-
-    my $where = "WHERE $field LIKE '$searchstring'";
-    
-    if ( $field eq 'email' ) {
-      $where = "WHERE (  email LIKE '$searchstring' OR emailpro LIKE '$searchstring' )";
-    }
-    elsif ( $field eq 'phonenumber' ) {
-      $searchstring =~ s/ /%/g; ## Replaces all instances of a space with %
-      $searchstring =~ s/-/%/g; ## Replaces all instances of - with %
-      $searchstring =~ s/\(/%/g; ## Replaces all instances of ( with %
-      $searchstring =~ s/\)/%/g; ## Replaces all instances of ( with %
-      $where = "WHERE (  phone LIKE '$searchstring' OR phonepro LIKE '$searchstring' )";
-    }
-    
-    # this is used by circulation everytime a new borrowers cardnumber is scanned
-    # so we can check an exact match first, if that works return, otherwise do the rest
-    $query = "SELECT * FROM borrowers
-              LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
-              $where ORDER BY $orderby";
-    my $sth = $dbh->prepare($query);
-    $sth->execute();
-    my $data = $sth->fetchall_arrayref({});
-
-    return ( scalar(@$data), $data );
-}
-
 sub SearchMemberBySQL {
-  my ( $query ) = @_;
-  my $dbh = C4::Context->dbh;
-  my $sth = $dbh->prepare( $query );
-  $sth->execute();
-  my $data = $sth->fetchall_arrayref({});
-  $sth->finish;
-  return( scalar( @$data ), $data );
+    my ( $query ) = @_;
+    my @sql_params;
+    ($query, @sql_params) = _constrain_sql_by_branchcategory($query);
+    my $data = C4::Context->dbh->selectall_arrayref($query, {Slice=>{}}, @sql_params);
+    return (scalar @$data, $data);
 }
 
 =head2 GetMemberDetails
@@ -379,22 +349,32 @@ sub GetMemberDetails {
     my ( $borrowernumber, $cardnumber, $circ_session ) = @_;
     $circ_session ||= {};
     my $dbh = C4::Context->dbh;
-    my $query;
     my $sth;
+    my $sql = q{
+        SELECT borrowers.*, category_type, categories.description
+        FROM borrowers
+          LEFT JOIN categories ON borrowers.categorycode=categories.categorycode
+        WHERE
+        };
+    my @params;
     if ($borrowernumber) {
-        $sth = $dbh->prepare("select borrowers.*,category_type,categories.description from borrowers left join categories on borrowers.categorycode=categories.categorycode where  borrowernumber=?");
-        $sth->execute($borrowernumber);
+        $sql .= ' borrowernumber=?';
+        push @params, $borrowernumber;
     }
     elsif ($cardnumber) {
-        $sth = $dbh->prepare("select borrowers.*,category_type,categories.description from borrowers left join categories on borrowers.categorycode=categories.categorycode where cardnumber=?");
-        $sth->execute($cardnumber);
+        $sql .= ' cardnumber=?';
+        push @params, $cardnumber;
     }
     else {
-        return undef;
+        return;
     }
-    my $borrower = $sth->fetchrow_hashref;
+    ($sql, @params) = _constrain_sql_by_branchcategory($sql, @params);
+    
+    my $borrower = $dbh->selectrow_hashref($sql, undef, @params);
+    return if !$borrower;
+
     my $amount = C4::Accounts::MemberAllAccounts( 
-      borrowernumber => $borrowernumber,
+      borrowernumber => $borrower->{borrowernumber},
       total_only     => 1
     );
     $borrower->{'amountoutstanding'} = $amount;
@@ -402,7 +382,7 @@ sub GetMemberDetails {
     my $flags = patronflags( $borrower, $circ_session );
     my $accessflagshash;
 
-    $sth = $dbh->prepare("select bit,flag from userflags");
+    $sth = $dbh->prepare('SELECT bit,flag FROM userflags');
     $sth->execute;
     while ( my ( $bit, $flag ) = $sth->fetchrow ) {
         if ( $borrower->{'flags'} && $borrower->{'flags'} & 2**$bit ) {
@@ -414,9 +394,8 @@ sub GetMemberDetails {
     $borrower->{'authflags'} = $accessflagshash;
 
     # find out how long the membership lasts
-    $sth =
-      $dbh->prepare(
-        "select enrolmentperiod from categories where categorycode = ?");
+    $sth = $dbh->prepare(
+        'SELECT enrolmentperiod FROM categories WHERE categorycode = ?');
     $sth->execute( $borrower->{'categorycode'} );
     my $enrolment = $sth->fetchrow;
     $borrower->{'enrolmentperiod'} = $enrolment;
@@ -497,6 +476,7 @@ sub patronflags {
       total_only     => 1
     );
     $amount //= 0;
+    my $cat = GetCategoryInfo($$patroninformation{categorycode});
 
     if ( $amount > 0 ) {
         my %flaginfo;
@@ -568,13 +548,11 @@ sub patronflags {
 
   $borrower = &GetMember($information, $type);
 
-Looks up information about a patron (borrower) by either card number
-,firstname, or borrower number, depending on $type value.
-If C<$type> == 'cardnumber', C<&GetBorrower>
-searches by cardnumber then by firstname if not found in cardnumber; 
-otherwise, it searches by borrowernumber.
+C<$type> should be one of 'borrowernumber', 'userid', or
+'cardnumber' with C<$information> containing the appropriate value.
+If not specified, C<$type> defaults to 'borrowernumber'.
 
-C<&GetBorrower> returns a reference-to-hash whose keys are the fields of
+Returns a reference-to-hash whose keys are the fields of
 the C<borrowers> table in the Koha database.  If the borrower is a staff
 member, an additional 'worklibraries' arrayref is included in the fields.
 
@@ -583,41 +561,24 @@ member, an additional 'worklibraries' arrayref is included in the fields.
 #'
 sub GetMember {
     my ( $information, $type ) = @_;
-    my $dbh = C4::Context->dbh;
-    my $sth;
-    my $select = "
-SELECT borrowers.*, categories.category_type, categories.description
-FROM borrowers 
-LEFT JOIN categories on borrowers.categorycode=categories.categorycode 
-";
-    if (defined($type) and ( $type eq 'cardnumber' || $type eq 'firstname'|| $type eq 'userid'|| $type eq 'borrowernumber' ) ){
-        $information = uc $information;
-        $sth = $dbh->prepare("$select WHERE $type=?");
-    } else {
-        $sth = $dbh->prepare("$select WHERE borrowernumber=?");
-    }
-    $sth->execute($information);
-    my $data = $sth->fetchrow_hashref;
-    if ($$data{category_type} eq 'S') { # staff
-        $sth = $dbh->prepare("SELECT branchcode as worklibrary
-        FROM borrower_worklibrary
-        WHERE borrowernumber = ?") || die $dbh->errstr();
-        $sth->execute($$data{borrowernumber}) || die $dbh->errstr();
-        while(my $row = $sth->fetchrow_hashref()) {
-           push @{$$data{worklibraries}}, $$row{worklibrary};
-        }
+    $type //= 'borrowernumber';
+
+    my $select = qq{
+        SELECT borrowers.*, categories.category_type, categories.description
+        FROM   borrowers 
+          LEFT JOIN categories ON borrowers.categorycode=categories.categorycode 
+        WHERE  $type = ?
+        };
+    my @params = ($information);
+    ($select, @params) = _constrain_sql_by_branchcategory($select, @params);
+    my $borrower = C4::Context->dbh->selectrow_hashref($select, undef, @params);
+    return undef if !$borrower;
+
+    if ($borrower->{category_type} ~~ 'S') { # staff
+        ($borrower->{worklibraries}) = GetWorkLibraries($borrower->{borrowernumber});
     }
 
-
-    ($data) and return ($data);
-
-    if (defined($type) and ($type eq 'cardnumber' || $type eq 'firstname')) {    # otherwise, try with firstname
-        $sth = $dbh->prepare("$select WHERE firstname like ?");
-        $sth->execute($information);
-        $data = $sth->fetchrow_hashref;
-        ($data) and return ($data);
-    }
-    return undef;        
+    return $borrower;
 }
 
 =head2 GetMemberIssuesAndFines
@@ -803,21 +764,15 @@ sub ModMember {
    return $execute_success;
 }
 
-sub GetWorkLibraries
-{
+sub GetWorkLibraries {
    my $borrowernumber = shift;
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("
-      SELECT branchcode
-      FROM   borrower_worklibrary
-      WHERE  borrowernumber = ?"
-   ) || die $dbh->errstr();
-   $sth->execute($borrowernumber) || die $dbh->errstr();
-   my @all = ();
-   while(my $row = $sth->fetchrow_hashref()) {
-      push @all, $$row{branchcode};
-   }
-   return wantarray ? @all : \@all;
+   my @branches
+       = C4::Context->dbh->selectcol_arrayref(q{
+            SELECT branchcode as worklibrary
+            FROM   borrower_worklibrary
+            WHERE  borrowernumber = ?
+            }, undef, $borrowernumber);
+   return wantarray ? @branches : \@branches;
 }
 
 
@@ -2839,6 +2794,7 @@ sub SearchMemberAdvanced {
   
   my $limits = join( ' AND ', @limits );
   if ($limits) { $sql .= " WHERE $limits "; }
+  ($sql, @sql_params) = _constrain_sql_by_branchcategory($sql, @sql_params);
   my $dbh = C4::Context->dbh;
   my $sth = $dbh->prepare( $sql );
   $sth->execute( @sql_params );
@@ -2849,8 +2805,7 @@ sub SearchMemberAdvanced {
   $$params{offset} ||= 0;
   $$params{limit}  ||= 20;
   $sql .= " LIMIT $$params{offset},$$params{limit}";
-  warn "SearchMemberAdvanced::SQL = '$sql'";
-  #warn Data::Dumper::Dumper( @sql_params );
+
   $sth = $dbh->prepare($sql);
   $sth->execute(@sql_params);
   my $data = $sth->fetchall_arrayref({});
@@ -2879,26 +2834,25 @@ feel like typing.
 
 sub _prefix_cardnum_multibranch
 {
-   my $str = shift;
-   my $dbh = C4::Context->dbh;
-   my @all;
-   my $sth = $dbh->prepare('SELECT branchcode,patronbarcodeprefix FROM branches');
-   $sth->execute();
-   while(my $row = $sth->fetchrow_hashref()) {
-      ## relax this
-      #die "No patronbarcodeprefix set for branch $$row{branchcode} in table branches"
-      #   unless $$row{patronbarcodeprefix};
-      #####
-      unless ($$row{patrongbarcodeprefix}) { push @all, $str }
-      else {
-         push @all, _prefix_cardnum(
-            cardnumber           => $str,
-            branchcode           => $$row{branchcode},
-            patronbarcodeprefix  => $$row{patronbarcodeprefix},
-         );
-      }
-   }
-   return \@all // [];
+    my $str = shift;
+    my @all;
+    for my $branch (values %{C4::Branch::GetAllBranches()}) {
+        ## relax this
+        #die "No patronbarcodeprefix set for branch $branch->{branchcode} in table branches"
+        #   unless $branch->{patronbarcodeprefix};
+        #####
+        unless ($branch->{patrongbarcodeprefix}) {
+            push @all, $str;
+        }
+        else {
+            push @all, _prefix_cardnum(
+                cardnumber           => $str,
+                branchcode           => $branch->{branchcode},
+                patronbarcodeprefix  => $branch->{patronbarcodeprefix},
+                );
+        }
+    }
+    return \@all // [];
 }
 
 sub _prefix_cardnum

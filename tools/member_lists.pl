@@ -49,7 +49,7 @@ if ( $op eq 'create' ) {
     my $member = $input->param('member');
     my $list_id = $input->param('list_id');
     
-    my ($count, $borrowers) = SearchMemberField( $member, my $orderby = 'surname,firstname' );
+    my ($count, $borrowers) = SearchMember( $member, 'surname,firstname' );
     
     if ( $count == 1 ) { ## Found the borrower, add to list
         my $borrower = @$borrowers[0];

@@ -260,8 +260,9 @@
         <TMPL_IF NAME="properties">Properties</TMPL_IF>
         <TMPL_IF NAME="searchdomain">Search Domain</TMPL_IF>
         <TMPL_IF NAME="subscriptions">Subscription</TMPL_IF>
+        <TMPL_IF NAME="patrons">Patrons</TMPL_IF>
     </h3>
-	<table>
+  <table>
     <tr>
         <th>Name</th>
         <th>Code</th>
@@ -269,18 +270,20 @@
         <th>&nbsp;</th>
         <th>&nbsp;</th>
     </tr>
-<!-- TMPL_IF NAME="catloop" --><!-- TMPL_LOOP name="catloop" -->
-        <tr>
-        <td><!-- TMPL_VAR name="categoryname" --></td>
-        <td><!-- TMPL_VAR name="categorycode" --></td>
-        <td><!-- TMPL_VAR name="codedescription" --></td>
-        <td><a href="<!-- TMPL_VAR name="action" -->?op=editcategory&amp;categorycode=<!-- TMPL_VAR name="categorycode" escape="url" -->">Edit</a>
-        </td>
-        <td><a href="<!-- TMPL_VAR name="action" -->?op=delete_category&amp;categorycode=<!-- TMPL_VAR name="categorycode" escape="url" -->">Delete</a>
-        </td>
-        </tr>
-    <!-- /TMPL_LOOP --><!-- TMPL_ELSE --><tr><td colspan="5">No <!-- TMPL_IF NAME="properties" -->Properties<!-- TMPL_ELSIF NAME="searchdomain" -->Search Domain<!-- /TMPL_IF --> Defined</td></tr><!-- /TMPL_IF -->
-    </table>
+    <!-- TMPL_IF NAME="catloop" -->
+    <!-- TMPL_LOOP name="catloop" -->
+    <tr>
+      <td><!-- TMPL_VAR name="categoryname" --></td>
+      <td><!-- TMPL_VAR name="categorycode" --></td>
+      <td><!-- TMPL_VAR name="codedescription" --></td>
+      <td><a href="<!-- TMPL_VAR name="action" -->?op=editcategory&amp;categorycode=<!-- TMPL_VAR name="categorycode" escape="url" -->">Edit</a></td>
+      <td><a href="<!-- TMPL_VAR name="action" -->?op=delete_category&amp;categorycode=<!-- TMPL_VAR name="categorycode" escape="url" -->">Delete</a></td>
+    </tr>
+    <!-- /TMPL_LOOP -->
+    <!-- TMPL_ELSE -->
+    <tr><td colspan="5">No groups defined</td></tr>
+    <!-- /TMPL_IF -->
+  </table>
     <!-- /TMPL_LOOP -->
     <!-- TMPL_ELSE -->
         <p>No Groups defined.</p>

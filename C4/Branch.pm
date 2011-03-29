@@ -357,7 +357,7 @@ the categories were already here, and minimally used.
 
 	#TODO  manage category types.  rename possibly to 'agency domains' ? as borrowergroups are called categories.
 sub GetCategoryTypes() {
-	return ( 'searchdomain','properties', 'subscriptions');
+	return ( 'searchdomain','properties', 'subscriptions', 'patrons');
 }
 
 =head2 CategoryTypeIsUsed
@@ -478,7 +478,7 @@ Returns a href:  keys %$branches eq (branchcode,branchname) .
 
 =cut
 
-sub GetBranchesInCategory($) {
+sub GetBranchesInCategory {
     my ($categorycode) = @_;
 
     my $branches = GetBranches();

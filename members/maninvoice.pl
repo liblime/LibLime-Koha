@@ -36,6 +36,14 @@ my $input=new CGI;
 
 my $borrowernumber=$input->param('borrowernumber');
 
+my ($template, $loggedinuser, $cookie)
+    = get_template_and_user({template_name => "members/maninvoice.tmpl",
+        query => $input,
+        type => "intranet",
+        authnotrequired => 0,
+        flagsrequired => {borrowers => '*', updatecharges => '*'},
+        debug => 1,
+        });
 
 # get borrower details
 my $data=GetMember($borrowernumber,'borrowernumber');
@@ -50,15 +58,6 @@ if ($input->param('add')){
    print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
    exit;
 } else {
-	my ($template, $loggedinuser, $cookie)
-	= get_template_and_user({template_name => "members/maninvoice.tmpl",
-					query => $input,
-					type => "intranet",
-					authnotrequired => 0,
-					flagsrequired => {borrowers => '*', updatecharges => '*'},
-					debug => 1,
-					});
-					
   # get authorised values with type of MANUAL_INV
   my @invoice_types;
   my $dbh = C4::Context->dbh;

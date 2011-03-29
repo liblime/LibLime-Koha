@@ -82,7 +82,6 @@ $member =~ s/\s+$//;
 
 my $member_orig = $member;
 my $orderby = $input->param('orderby');
-my $searchfield = $input->param('searchfield');
 
 $orderby = "surname,firstname" unless $orderby;
 $member =~ s/,//g;   #remove any commas from search string
@@ -189,10 +188,6 @@ if ( $input->param('advanced_patron_search') ) {
   $template->param( member => $search_sql );
   ($count, $results) = SearchMemberBySQL( $search_sql );
 }
-elsif( $searchfield ) {
-    ($count, $results)=SearchMemberField( $member, $orderby, $searchfield );
-    $template->param( searchfield => $searchfield );
-}
 elsif(length($member) == 1)
 {
     ($count,$results)=SearchMember($member,$orderby,"simple");
@@ -250,7 +245,6 @@ my $base_url =
         { term => 'orderby', val => $orderby },
         { term => 'resultsperpage', val => $resultsperpage },
         { term => 'type',           val => 'intranet' },
-        { term => 'searchfield', val => $searchfield },
     )
   );
 

@@ -353,6 +353,7 @@ sub GetInstructors {
     $sth->execute($course_id);
     my @instructors;
     while (my $row = $sth->fetchrow_hashref) {
+        next if !$row->{instructor_borrowernumber};
         my $borrower = GetMember ($row->{instructor_borrowernumber}, 'borrowernumber');
         push @instructors, $borrower if $borrower;
     }

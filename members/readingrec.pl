@@ -30,8 +30,15 @@ use C4::Members;
 use C4::Branch;
 
 use C4::Dates qw/format_date/;
-my $input=new CGI;
+my $input = CGI->new();
 
+my ($template, $loggedinuser, $cookie) = get_template_and_user({template_name => "members/readingrec.tmpl",
+				query => $input,
+				type => "intranet",
+				authnotrequired => 0,
+				flagsrequired => {borrowers => '*'},
+				debug => 1,
+				});
 
 my $borrowernumber=$input->param('borrowernumber');
 #get borrower details
@@ -52,14 +59,6 @@ else {
   $limit=50;
 }
 my ($count,$issues)=GetAllIssues($borrowernumber,$order2,$limit);
-
-my ($template, $loggedinuser, $cookie) = get_template_and_user({template_name => "members/readingrec.tmpl",
-				query => $input,
-				type => "intranet",
-				authnotrequired => 0,
-				flagsrequired => {borrowers => '*'},
-				debug => 1,
-				});
 
 my @loop_reading;
 
