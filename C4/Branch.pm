@@ -51,7 +51,7 @@ BEGIN {
 		&DelBranch
 		&DelBranchCategory
 	);
-	@EXPORT_OK = qw( &onlymine &mybranch get_branch_code_from_name );
+	@EXPORT_OK = qw( &onlymine &mybranch GetBranchCodeFromName );
 }
 
 =head1 NAME
@@ -522,7 +522,7 @@ sub CheckBranchCategorycode {
     return scalar @{GetBranchesInCategory(shift)};
 }
 
-sub get_branch_code_from_name {
+sub GetBranchCodeFromName {
     my $branchname = shift;
     my @branch = grep {$_->{branchname} eq $branchname} values %{GetBranches()};
     return (@branch) ? $branch[0]->{branchcode} : '';

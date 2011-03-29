@@ -34,7 +34,7 @@ use C4::ImportBatch;
 use C4::Matcher;
 use C4::BackgroundJob;
 use C4::Labels::Batch 1.000000;
-use C4::Branch qw(get_branch_code_from_name);
+use C4::Branch qw(GetBranchCodeFromName);
 
 my $script_name = "/cgi-bin/koha/tools/manage-marc-import.pl";
 
@@ -177,7 +177,7 @@ sub redo_matching {
 sub create_labelbatch_from_importbatch {
 	my ($batch_id) = @_;
         my $err = undef;
-        my $branch_code = get_branch_code_from_name($template->param('LoginBranchname'));
+        my $branch_code = GetBranchCodeFromName($template->param('LoginBranchname'));
         my $batch = C4::Labels::Batch->new(branch_code => $branch_code);
 	my @items = GetItemNumbersFromImportBatch($batch_id);
         if (grep{$_ == 0} @items) {

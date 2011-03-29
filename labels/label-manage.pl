@@ -27,7 +27,7 @@ use Data::Dumper;
 
 use C4::Auth qw(get_template_and_user);
 use C4::Output qw(output_html_with_http_headers);
-use autouse 'C4::Branch' => qw(get_branch_code_from_name);
+use autouse 'C4::Branch' => qw(GetBranchCodeFromName);
 use C4::Labels::Lib 1.000000 qw(get_all_templates get_all_layouts get_all_profiles get_batch_summary html_table);
 use C4::Labels::Layout 1.000000;
 use C4::Labels::Template 1.000000;
@@ -77,7 +77,7 @@ my $label_element = $cgi->param('label_element') || undef;
 my $op = $cgi->param('op') || 'none';
 my $element_id = $cgi->param('element_id') || undef;
 
-my $branch_code = ($label_element eq 'batch' ? get_branch_code_from_name($template->param('LoginBranchname')) : '');
+my $branch_code = ($label_element eq 'batch' ? GetBranchCodeFromName($template->param('LoginBranchname')) : '');
 
 if ($op eq 'delete') {
     if          ($label_element eq 'layout')    {$error = C4::Labels::Layout::delete(layout_id => $element_id);}

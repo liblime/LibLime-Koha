@@ -26,7 +26,7 @@ use CGI;
 
 use C4::Auth qw(get_template_and_user);
 use C4::Output qw(output_html_with_http_headers);
-use C4::Branch qw(get_branch_code_from_name);
+use C4::Branch qw(GetBranchCodeFromName);
 use C4::Items qw(GetItemnumberFromBarcode);
 use C4::Labels::Lib 1.000000 qw(get_label_summary html_table);
 use C4::Labels::Batch 1.000000;
@@ -63,7 +63,7 @@ my @label_ids = $cgi->param('label_id') if $cgi->param('label_id');
 my @item_numbers = $cgi->param('item_number') or ();
 my $barcode = $cgi->param('barcode') if $cgi->param('barcode');
 
-my $branch_code = get_branch_code_from_name($template->param('LoginBranchname'));
+my $branch_code = GetBranchCodeFromName($template->param('LoginBranchname'));
 
 if ($op eq 'remove') {
     $batch = C4::Labels::Batch->retrieve(batch_id => $batch_id);
