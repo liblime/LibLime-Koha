@@ -83,7 +83,7 @@
   <tfoot>
   <tr>
     <td colspan="4"><b>Total Due</b></td>
-    <!-- TMPL_IF EXPR="total >= 0" --><td colspan="2" class="credit" align=right style="color:green">(credit) <!-- TMPL_ELSE --><td colspan="2" class="debit" align=right style="color:red"><!-- /TMPL_IF --><b><TMPL_VAR NAME="total"></b></td>
+    <!-- TMPL_IF EXPR="total <= 0" --><td colspan="2" class="credit" align=right style="color:green">(credit) <!-- TMPL_ELSE --><td colspan="2" class="debit" align=right style="color:red"><!-- /TMPL_IF --><b><TMPL_VAR NAME="total"></b></td>
     <td>&nbsp;</td>
   </tr>
   </tfoot>
