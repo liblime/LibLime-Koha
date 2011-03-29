@@ -283,7 +283,6 @@ function passAll() {
 </div>
 </div>
 
-<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
 <script type="application/javascript">
 function getCookie(cname) {
    var i,x,y,ARRcookies = document.cookie.split(';');
@@ -297,7 +296,6 @@ function getCookie(cname) {
    }
 }
 $(document).ready(function() { 
-   $("table").tablesorter();
    <TMPL_UNLESS NAME="total">
    var str = getCookie('queue_orderby');
    if (str != '') {
