@@ -19,7 +19,7 @@
 
 <script language="javascript">
 $(document).ready(function() {
-	$('[truncate]').truncate();
+	$('[truncate]').each( function(){ $(this).truncate(); });
 
 //        window.print();
 //        window.close();
