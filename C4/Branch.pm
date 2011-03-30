@@ -20,6 +20,7 @@ use strict;
 use warnings;
 use Carp;
 use Clone qw(clone);
+use List::MoreUtils qw(uniq);
 use Net::CIDR::Compare;
 
 require Exporter;
@@ -51,7 +52,7 @@ BEGIN {
 		&DelBranch
 		&DelBranchCategory
 	);
-	@EXPORT_OK = qw( &onlymine &mybranch GetBranchCodeFromName );
+	@EXPORT_OK = qw( &onlymine &mybranch GetBranchCodeFromName GetSiblingBranchesOfType );
 }
 
 =head1 NAME
@@ -357,6 +358,56 @@ the categories were already here, and minimally used.
 	#TODO  manage category types.  rename possibly to 'agency domains' ? as borrowergroups are called categories.
 sub GetCategoryTypes() {
 	return ( 'searchdomain','properties', 'subscriptions');
+}
+
+=head2 CategoryTypeIsUsed
+
+  if (CategoryTypeIsUsed($my_category)) {
+      ...
+  }
+
+If the specified category type has any member categories defined, this
+function returns 1. Otherwise it returns 0.
+
+=cut
+
+sub CategoryTypeIsUsed {
+    my $categorytype = shift;
+
+    return (@{GetBranchCategories(undef, $categorytype)} != 0) ? 1 : 0;
+}
+
+=head2 GetSiblingBranchesOfType
+
+  my @branchcodes = GetMyBranchesForType($branchcode, $categorytype);
+
+The "My" in this case refers to the provided $branchcode. This returns an array of
+branchcodes that are in one or more of the branchcategories which are members of
+the same category as $branchcode and of type $categorytype.
+
+It will always return a list of at least one branchcode, the one specified in
+the args. If a category type is not used, it will include *all* of the
+defined branchcodes.
+
+=cut
+
+sub GetSiblingBranchesOfType {
+    my ($branchcode, $categorytype) = @_;
+    croak 'Poorly formatted parameters' if !($branchcode && $categorytype);
+
+    my @branchcodes;
+    if (CategoryTypeIsUsed($categorytype)) {
+        @branchcodes = ($branchcode);
+        for my $cat (@{GetBranchCategories($branchcode, $categorytype)}) {
+            push @branchcodes, @{GetBranchesInCategory($cat->{categorycode})};
+        }
+        @branchcodes = uniq @branchcodes;
+    }
+    else {
+        @branchcodes = sort keys %{GetAllBranches()};
+    }
+
+    return @branchcodes;
 }
 
 =head2 GetBranch
