@@ -451,9 +451,15 @@ if ($expectedLen && ($operands[0] !~ /\D/)) {
    ## for simple earch
    if (  (length($operands[0])<$expectedLen)
       && (length($operands[0]) != 10)
-      && (length($operands[0]) != 13) ) { # exclude looks like isbn
-      $indexes[0] = 'bc';
+      && (length($operands[0]) != 13) 
+      && (!$indexes[0] || ($indexes[0] eq 'kw')) ) { # exclude looks like isbn
+      ## bcbib is a specialized internal field that guesses both expanded 
+      ## barcode and biblionumber
+      $indexes[0] = 'bcbib';                            
+      my $bc      = C4::Circulation::barcodedecode(barcode=>$operands[0]);
+      $operands[0]= "$bc|$operands[0]";
       $isBarcode  = 1;
+      $newq = $bc;
    }
 
    ## advanced search
@@ -612,13 +618,12 @@ for (my $i=0;$i<@servers;$i++) {
                   for my $i(0..$#bc) {
                      if ($newq == $bc[$i]) {
                         $itemnumber = $inums[$i];
-                        last;
+                        print $cgi->redirect('/cgi-bin/koha/catalogue/moredetail.pl'
+                        ."?biblionumber=$biblionumber"
+                        ."&bi=$biblionumber#item$itemnumber");
+                        exit;
                      }
                   }
-                  print $cgi->redirect('/cgi-bin/koha/catalogue/moredetail.pl'
-                  ."?biblionumber=$biblionumber"
-                  ."&bi=$biblionumber#item$itemnumber");
-                  exit;
                }
                print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?q="
                . $cgi->param('q') . "&biblionumber=$biblionumber&last_borrower_show_button=$last_borrower_show_button");

@@ -69,10 +69,15 @@ foreach my $thisframeworkcode ( keys %{$frameworks} ) {
 # Searching the catalog.
 if ($query) {
    ## special case for barcode suffixes: expand to use active library's prefix
+   my $expandedBarcode = '';
    if (C4::Context->preference('itembarcodelength') && $query !~ /\D/) {
-      $query = C4::Circulation::barcodedecode(barcode=>$query);
+      my $originalQ = $query;
+      $expandedBarcode = C4::Circulation::barcodedecode(barcode=>$originalQ);
+      $query = "bc=$expandedBarcode or biblionumber=$query";
+      if ((length($originalQ)==13) || (length($originalQ)==10)) {
+         $query .= " or isbn=$originalQ";
+      }
    }
-
     # find results
     my $offset = $results_per_page * ($page - 1);
     my ( $error, $marcresults, $total_hits ) = SimpleSearch($query, $offset, $results_per_page);
@@ -93,7 +98,7 @@ if ($query) {
    foreach my $result(@newresults) {
       my(@barcodes) = split(/\s*\|\s*/,$$result{barcode});
       foreach my $i(0..$#barcodes) {
-         if ($barcodes[$i] eq $query) { # exact search match on barcode
+         if ($barcodes[$i] eq $expandedBarcode) { # exact search match on barcode
             my @inums = split(/\s*\|\s*/, $$result{itemnumber});
             print $input->redirect('additem.pl?biblionumber='
             . $$result{biblionumber}.'&op=edititem&itemnumber='

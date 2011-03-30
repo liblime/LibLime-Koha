@@ -20,7 +20,7 @@
       var idxs = document.myf.idx;
       for(var i=0;i<idxs.length;i++) {
          var val = idxs[i].options[idxs[i].selectedIndex].value;
-         if (val=='sn' || val=='nb') {
+         if (val=='biblionumber' || val=='nb') {
             var q = document.myf.q[i].value;
             q = q.replace(/[^0-9]/g,'');
             document.myf.q[i].value = q;

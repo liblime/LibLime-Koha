@@ -882,6 +882,13 @@ sub _build_weighted_query {
     elsif ( $index eq 'bc' ) {
         $weighted_query .= "bc=\"$operand\"";
     }
+    elsif ($index eq 'bcbib') {
+       my($bc,$bib) = split(/\|/,$operand,2);
+       $weighted_query .= "bc=\"$bc\")) or (rk=(biblionumber=\"$bib\"";
+    }
+    elsif ($index eq 'sn') { # from advanced search only, exact biblionumber
+       $weighted_query .= "biblionumber=\"$operand\"";
+    }
 
     # Authority-number searches should skip this process
     elsif ( $index eq 'an' ) {
@@ -904,7 +911,7 @@ sub _build_weighted_query {
           " or $index,rt,wrdl,r3=\"$operand\"";    # word list index
     }
 
-    $weighted_query .= "))";                       # close rank specification
+    $weighted_query .= "))"; # close rank specification
     $weighted_query = "ln,rtrn=$operand" if ($index eq "ln");
     return $weighted_query;
 }
