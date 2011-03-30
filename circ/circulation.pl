@@ -74,7 +74,8 @@ sub FormatFinesSummary {
 
     # Since the types we care about have already been removed, all that is left is 'Other'
     $params{'other_fees_total'} = sum( values %$summary );
-    return +{ map { $params{$_} ? ( $_ => sprintf( '%0.2f', $params{$_} ) ) : undef } keys %params };
+    delete($params{other_fees_total}) unless $params{other_fees_total};
+    return +{ map { $_ => sprintf('%0.2f', $params{$_} || 0) } keys %params };
 }
 
 #
@@ -394,6 +395,7 @@ if ($borrowernumber) {
         finetotal    => $fines
     );
     # Check if patron is in debt collect
+    $$borrower{last_reported_amount} ||= 0;
     if ($borrower->{'last_reported_amount'} > 0) {
       $template->param( debtcollect  => format_date($borrower->{'last_reported_date'}), flagged => 1);
     }
@@ -536,12 +538,16 @@ if ($borrowerslist) {
 
 }
 
-
 $patron_infobox = C4::View::Member::BuildFinesholdsissuesBox($borrowernumber, $query);
+my $itemswaiting= 0;
+foreach(@{$$patron_infobox{reservloop} // []}) {
+   if ($$_{waiting}) { $itemswaiting = 1; last }
+}
+$template->param(itemswaiting => $itemswaiting);
 $template->param(%$patron_infobox);
+
 my $flags = $borrower->{'flags'};
 my $allow_override_login = C4::Context->preference( 'AllowOverrideLogin' );
-
 foreach my $flag ( sort keys %{$flags} ) {
     $template->param( flagged=> 1);
     $flags->{$flag}->{'message'} =~ s#\n#<br />#g;
@@ -707,8 +713,8 @@ $template->param(
     inprocess         => $inprocess,
     memberofinstution => $member_of_institution,
     CGIorganisations  => $CGIorganisations,
-	is_child          => ($borrower->{'category_type'} ~~ 'C'),
-    circview => 1,
+	 is_child          => ($borrower->{'category_type'} ~~ 'C'),
+    circview          => 1,
     soundon           => C4::Context->preference("SoundOn"),
 );
 

@@ -700,6 +700,22 @@ Checkout anyway?<br>
 
     <!-- /If notes --><!-- /TMPL_IF -->
 
+   <TMPL_IF NAME="itemswaiting">
+   <div id="itemswaiting" class="circmessage">
+      <h4>Holds Waiting:</h4>
+      <ul>
+         <TMPL_LOOP NAME="reservloop">
+         <TMPL_IF NAME="waiting">
+            <li><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a> 
+            <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcodereserv"></a>
+            by <TMPL_VAR NAME="author"> placed on <TMPL_VAR NAME="reservedate"> 
+            <span class="waitinghere"><strong>Waiting at <TMPL_VAR NAME="pickupbranch"></strong></span></li>
+         </TMPL_IF>
+         </TMPL_LOOP>
+      </ul>
+   </div>
+   </TMPL_IF>
+
 	<div id="messages" class="circmessage">
 		<h4>Messages:</h4>
 		<ul>
