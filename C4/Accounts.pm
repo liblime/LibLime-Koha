@@ -180,7 +180,7 @@ sub MemberAllAccounts
       $sql .= ' AND date < ? ';
       push @vals, $g{date};
    }
-   $sql .= ' ORDER BY date desc,timestamp DESC';
+   $sql .= ' ORDER BY accountno DESC';
    $sth = $dbh->prepare($sql);
    $sth->execute(@vals);
    my @all = ();
@@ -299,11 +299,11 @@ sub makepartialpayment {
     .  'description, itemnumber, accounttype, amountoutstanding) '
     . ' VALUES (?, ?, now(), ?, ?, ?, ?, 0)';
 
-    $dbh->do(  $insert, undef, $borrowernumber, $nextaccntno, $amount,
+    $dbh->do(  $insert, undef, $borrowernumber, $nextaccntno, (-1*$amount),
         "Payment for No.$accountno, Thanks (-$user)",$data->{itemnumber},'Pay');
 
-    UpdateStats( $user, 'payment', $amount, '', '', '', $borrowernumber, $accountno );
-    return;
+    UpdateStats( $user, 'payment', (-1*$amount), '', '', '', $borrowernumber, $accountno );
+    return 1;
 }
 
 # returns all relevant account lines for a given borrower and itemnumber
@@ -380,7 +380,7 @@ sub RCR2REF
       $newno,
       $g{borrowernumber},
       $$rec{amount},
-      'Refund for payment on lost item returned'
+      'Refund issued for payment on lost item returned'
    );
    return 1;
 }
@@ -407,22 +407,30 @@ sub refundBalance
          amount,
          amountoutstanding,
          accounttype
-      ) VALUES (NOW(),?,?,?,?,0,?)|);
+      ) VALUES (NOW(),?,?,?,?,?,?)|);
    $sth->execute(
       $newno,
       $g{borrowernumber},
-      'Refund account total balance credit for payment(s) on lost item(s) returned',
+      'Refund account total balance credit for payment(s)',
       $sum,
+      0,
       'REF'
    );
    $sth = $dbh->prepare(q|
       UPDATE accountlines
-         SET amountoutstanding = 0,
-             accounttype       = 'CR'
+         SET accounttype       = 'CR',
+             amountoutstanding = 0
        WHERE accounttype       = 'RCR'
          AND amountoutstanding < 0
          AND borrowernumber    = ?|);
-   return $sth->execute($g{borrowernumber});
+   $sth->execute($g{borrowernumber});
+   $sth = $dbh->prepare(q|
+      UPDATE accountlines
+         SET amountoutstanding = 0
+       WHERE amountoutstanding > 0
+         AND borrowernumber    = ?|);
+   $sth->execute($g{borrowernumber});
+   return 1;
 }
 
 sub refundlostitemreturned 

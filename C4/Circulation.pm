@@ -1905,50 +1905,108 @@ FIXME: Give a positive return value on success.  It might be the $borrowernumber
 =cut
 
 sub FixAccountForLostAndReturned {
-    my $itemnumber     = shift or return;
-    my $borrowernumber = @_ ? shift : undef;
-    my $item_id        = @_ ? shift : $itemnumber;  # Send the barcode if you want that logged in the description
-    my $dbh = C4::Context->dbh;
-    # check for charge made for lost book
-    my $sth = $dbh->prepare("
+   my $itemnumber     = shift or return;
+   my $borrowernumber = @_ ? shift : undef; # deprecated
+   my $item_id        = @_ ? shift : $itemnumber;  # Send the barcode if you want that logged in the description
+   my $dbh = C4::Context->dbh;
+   
+   ## check for charge made for lost book
+   my $sth = $dbh->prepare("
       SELECT * FROM accountlines 
        WHERE itemnumber = ? 
          AND (accounttype='L' OR accounttype='Rep') 
-    ORDER BY date DESC");
-    $sth->execute($itemnumber);
-    my $data = $sth->fetchrow_hashref;
-    $data or return;    # bail if there is nothing to do
-    ## Update lost item accountype so we don't go through this again
-    ## Yes, we might be fixing somebody else's account other than passed in $borrowernumber
-    $sth = $dbh->prepare(q|
+    ORDER BY accountno DESC");
+   $sth->execute($itemnumber);
+   my $data = $sth->fetchrow_hashref;
+   return unless $data;
+   
+   ## Update lost item accountype so we don't go through this again
+   ## Yes, we might be fixing somebody else's account other than passed in $borrowernumber
+   $sth = $dbh->prepare(q|
+    /* this is like receiving a credit or writeoff */
       UPDATE accountlines
-         SET accounttype = 'LR',
-             amountoutstanding = 0
-       WHERE accountno = ?
-         AND borrowernumber = ?|);
-    $sth->execute($$data{accountno},$$data{borrowernumber});
-    ## syspref RefundLostReturnedAmount here would mess things up.  We simply do the lineitem
-    ## accounting and let manual refund by librarian happen elsewhere.
-    ## credit the amount of the lost item, RCR signifies a type of credit that can be refunded if
-    ## a payment can be/was made on it.
-    my $newno = C4::Accounts::getnextacctno($$data{borrowernumber});
-    $sth = $dbh->prepare(q|
-       INSERT INTO accountlines(
-           accountno,
-           borrowernumber,
-           amount,
-           amountoutstanding,
-           description,
-           itemnumber,
-           accounttype,
-           date)
+         SET accounttype       = 'LR',
+             amountoutstanding = 0,
+             description       = 'Lost Item Returned'
+       WHERE accountno         = ?
+         AND borrowernumber    = ?|);
+   $sth->execute($$data{accountno},$$data{borrowernumber});
+
+   ## see what sort of payment was made for this book, if any
+   ## 1) line-item payment
+   ## 2) dispersal payment
+   ## 3) no payment
+
+   ## first, look for lineitem writeoff (not a payment, so no refund)
+   $sth = $dbh->prepare("SELECT * FROM accountlines
+      WHERE itemnumber     = ?
+        AND accounttype    = 'W'
+        AND borrowernumber = ?
+        AND LCASE(description) LIKE 'writeoff for no.$$data{accountno}%'");
+   $sth->execute($itemnumber,$$data{borrowernumber});
+   my $wo = $sth->fetchrow_hashref();
+   $$wo{amount} ||= 0;
+   return if (-1 *$$wo{amount})==$$data{amount};
+   die "Unhandled exception: writeoff amount ($$wo{amount}) in account no.$$wo{accountno} 
+      is not full amount of lost item ($$data{amount}) in account no.$$data{accountno} 
+      for borrowernumber=$$data{borrowernumber}" if $$wo{amount}
+      && (-1 *$$wo{amount} != $$data{amount});
+
+   ## look for line-item payment on this book
+   $sth = $dbh->prepare("SELECT * FROM accountlines
+      WHERE itemnumber            = ?
+        AND borrowernumber        = ?
+        AND accounttype           = 'Pay'
+        AND ( LCASE(description) LIKE 'payment for no.$$data{accountno}%'
+           OR LCASE(description) LIKE 'payment for lost item (no.$$data{accountno})%'
+        ) ORDER BY accountno DESC");
+   $sth->execute($itemnumber,$$data{borrowernumber});
+   my $paid      = $sth->fetchrow_hashref();
+   my $RCRamount = 0;
+   $$paid{amount} ||= 0;
+   if ($$paid{amount} < 0) { ## payment made...
+      ## to correctly reflect this state of affairs, we have to do 2 things,
+      ## 1) set payment amountoustanding to the amount paid, since we had previoulsy
+      ##    zero'd out amountoutstanding of lost item.  full or partial lineitem payment
+      ## 2) newline RCR only the amount paid
+      $sth = $dbh->prepare("
+         UPDATE accountlines
+            SET amountoutstanding = ?
+          WHERE accounttype       = 'Pay'
+            AND borrowernumber    = ?
+            AND accountno         = ?");
+       $sth->execute($$paid{amount},$$data{borrowernumber},$$data{accountno});
+       $RCRamount = $$paid{amount};
+   }
+   elsif ($$data{amountoutstanding} < $$data{amount}) { ## dispersal payment was made
+      $RCRamount = -1*($$data{amount} - $$data{amountoutstanding});
+   }
+
+   ## don't receive a payment for nothing paid, already received credit
+   return unless $RCRamount;
+
+   ## receive a refund on payment made
+   ## syspref RefundLostReturnedAmount here would mess things up.  We simply do the lineitem
+   ## accounting and let manual refund by librarian happen elsewhere.
+   ## credit the amount of the lost item, RCR signifies a type of credit that can be refunded if
+   ## a payment can be/was made on it.
+   my $newno = C4::Accounts::getnextacctno($$data{borrowernumber});
+   $sth = $dbh->prepare(q|
+      INSERT INTO accountlines(
+            accountno,
+            borrowernumber,
+            amount,
+            amountoutstanding,
+            description,
+            itemnumber,
+            accounttype,
+            date)
       VALUES (?,?,?,?,?,?,?,NOW())|);
-    my $amount = $$data{amount};
-    $amount = (-1 * $$data{amount}) if $amount > 0;
-    $sth->execute($newno,$$data{borrowernumber},$amount,$amount,
-      'Lost Item Returned',$itemnumber,'RCR');
-    ModItem({ paidfor => '' }, undef, $itemnumber);
-    return;
+   $sth->execute($newno,$$data{borrowernumber},$RCRamount,$RCRamount,
+   'Refund owed for payment (in part or full) on lost item returned',$itemnumber,'RCR');
+   ## FIXME: this should be in the payment process, not here at the refund process
+   ModItem({ paidfor => '' }, undef, $itemnumber);
+   return 1;
 }
 
 =head2 _GetCircControlBranch

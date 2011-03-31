@@ -323,8 +323,8 @@ sub writeoff {
     $sth->execute( $accountnum, $borrowernumber );
     $sth->finish;
     
-    $sth = $dbh->prepare("select max(accountno) from accountlines");
-    $sth->execute;
+    $sth = $dbh->prepare("select max(accountno) from accountlines where borrowernumber=?");
+    $sth->execute($borrowernumber);
     my $account = $sth->fetchrow_hashref;
     $sth->finish;
     $account->{'max(accountno)'}++;
@@ -333,9 +333,9 @@ sub writeoff {
 						values (?,?,?,now(),?,"Writeoff for No.$accountnum (-$user)",'W')
     |);
     $sth->execute( $borrowernumber, $account->{'max(accountno)'},
-        $itemnum, $amount );
+        $itemnum, (-1* $amount) );
     $sth->finish;
-    UpdateStats( $branch, 'writeoff', $amount, '', $itemnum, '', $borrowernumber, $accountnum );
+    UpdateStats( $branch, 'writeoff', (-1 *$amount), '', $itemnum, '', $borrowernumber, $accountnum );
 
     if ( $accounttype eq 'L' && $itemnum ) {
         my $bor = "$data->{'firstname'} $data->{'surname'} $data->{'cardnumber'}";
