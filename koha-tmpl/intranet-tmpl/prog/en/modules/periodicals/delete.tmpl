@@ -29,7 +29,7 @@
     Note: this will also delete <TMPL_VAR NAME="subscription_serial_count"> subscriptions-serials.
   </TMPL_IF>
   <br/>
-  <form method="GET" action="delete.pl">
+  <form method="POST" action="delete.pl">
     <input type="submit" value="Okay" />
     <input type="button" value="Cancel" onClick="history.go(-1);" />
     <input type="hidden" name="confirmed" />
