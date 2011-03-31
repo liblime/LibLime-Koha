@@ -184,8 +184,8 @@ $(document).ready(function() {
             <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
           <td><!-- TMPL_UNLESS NAME="noItemTypeImages" --> <!-- TMPL_IF NAME="itemtype_image" --><img src="<!-- TMPL_VAR NAME="itemtype_image" -->" alt="" /><!-- /TMPL_IF --><!-- /TMPL_UNLESS --><!-- TMPL_VAR NAME="itemtype_description" --></td>
           <td><!-- TMPL_VAR NAME="issuedate" --></td>
-	  <td><!-- TMPL_VAR NAME="branchcode" --></td>
-	  <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
+          <td><!-- TMPL_VAR NAME="branchcode" --></td>
+          <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
           <td><!-- TMPL_VAR NAME="charge" --></td>
           <td><!-- TMPL_VAR NAME="replacementprice" --></td>
           <!-- TMPL_IF NAME="renew_failed" -->
@@ -206,9 +206,9 @@ $(document).ready(function() {
               <!-- TMPL_IF NAME="norenew_reason_on_reserve" -->
               <a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">On Hold</a>
               <!-- /TMPL_IF -->
-	      <!-- TMPL_IF NAME="norenew_reason_too_many" -->
-	      Not Renewable
-	      <!-- /TMPL_IF -->
+	          <!-- TMPL_IF NAME="norenew_reason_too_many" -->
+	          Not Renewable
+	          <!-- /TMPL_IF -->
               <!-- TMPL_IF NAME="can_confirm" -->
             </span>
             <!-- /TMPL_IF -->
@@ -225,7 +225,7 @@ $(document).ready(function() {
           <!-- TMPL_IF NAME="dispreturn" -->
           <!-- TMPL_IF NAME="return_failed" -->
           <td class="problem">Checkin Failed</td>
-          <!--TMPL_ELSE-->
+          <!-- TMPL_ELSE -->
           <td><input type="checkbox" name="barcodes[]"  value="<!-- TMPL_VAR NAME="barcode" -->" onclick="uncheck_sibling(this);" />
             <input type="checkbox" name="all_barcodes[]" value="<!-- TMPL_VAR NAME="barcode" -->" checked="checked" style="display: none;" />
           </td>
@@ -251,8 +251,12 @@ $(document).ready(function() {
       <input type="submit" id="return_all" name="return_all" value="Return all" />
       <!-- /TMPL_IF -->
     </fieldset>
-  </form><!-- TMPL_ELSE --><p>Patron has nothing checked out.</p><!-- /TMPL_IF -->
+  </form>
+  <!-- TMPL_ELSE -->
+  <p>Patron has nothing checked out.</p>
+  <!-- /TMPL_IF -->
 </div>
+<!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
@@ -345,4 +349,4 @@ $(document).ready(function() {
   <p>Patron has nothing on hold.</p>
   <!-- /TMPL_IF -->
 </div>
-
+<!-- /TMPL_IF -->
