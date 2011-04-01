@@ -29,17 +29,21 @@ sub GetReservesLoop {
             $getreserv{$_} = 0;
         }
         $getreserv{reservedate}  = $num_res->{'reservedate'};
-        if (($num_res->{'found'} // '') eq 'W') {
-            $getreserv{holdexpdate} = format_date($num_res->{'expirationdate'});
+
+        ## if sysprefs for expirationdate applies, there are two modes of
+        ## expiration: first when the hold is placed, and then it is reset
+        ## to a different expirationdate when it is Waiting on the holds shelf
+        $getreserv{holdexpdate} = $num_res->{expirationdate}?
+           format_date($num_res->{expirationdate}) : '';
+        if ($num_res->{'found'} ~~ 'W') {
+            $getreserv{waitingdate} = format_date($num_res->{waitingdate});
         }
         else {
             $getreserv{suspended}   = (($num_res->{found} // '') eq 'S') ? 1 : 0;
-            $getreserv{waitingdate} = format_date($num_res->{waitingdate});
-            $getreserv{holdexpdate} = '';
         }
-	foreach (qw(biblionumber title author itemcallnumber itemnumber)) {
+	     foreach (qw(biblionumber title author itemcallnumber itemnumber)) {
             $getreserv{$_} = $getiteminfo->{$_};
-	}
+	     }
         $getreserv{barcodereserv}  = $getiteminfo->{'barcode'};
         $getreserv{itemtype}  = $itemtypeinfo->{'description'};
 
