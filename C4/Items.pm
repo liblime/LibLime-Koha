@@ -1651,10 +1651,8 @@ sub get_authorised_value_images {
     my $authorised_value_list = GetAuthorisedValues();
     # warn ( Data::Dumper->Dump( [ $authorised_value_list ], [ 'authorised_value_list' ] ) );
     foreach my $this_authorised_value ( @$authorised_value_list ) {
-        if ( exists $authorised_values->{ $this_authorised_value->{'category'} }
-             && $authorised_values->{ $this_authorised_value->{'category'} } eq $this_authorised_value->{'authorised_value'} ) {
-            # warn ( Data::Dumper->Dump( [ $this_authorised_value ], [ 'this_authorised_value' ] ) );
-            if ( defined $this_authorised_value->{'imageurl'} ) {
+        if ($authorised_values->{ $this_authorised_value->{category} } ~~ $this_authorised_value->{authorised_value}) {
+            if (defined $this_authorised_value->{imageurl}) {
                 push @imagelist, { imageurl => C4::Koha::getitemtypeimagelocation( 'intranet', $this_authorised_value->{'imageurl'} ),
                                    label    => $this_authorised_value->{'lib'},
                                    category => $this_authorised_value->{'category'},
@@ -1663,7 +1661,6 @@ sub get_authorised_value_images {
         }
     }
 
-    # warn ( Data::Dumper->Dump( [ \@imagelist ], [ 'imagelist' ] ) );
     return \@imagelist;
 
 }
