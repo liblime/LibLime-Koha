@@ -50,21 +50,23 @@ $template->param(
    barcode     => $barcode || '',
    layout_id   => $query->param('layout_id')  || 0,
    profile_id  => $query->param('profile_id') || 0,
-   layouts     => _sel('layout_id',get_all_layouts()),
-   profiles    => _sel('profile_id',get_all_profiles()),
+   layouts     => _sel('layout_id',get_all_layouts(),%in),
+   profiles    => _sel('profile_id',get_all_profiles(),%in),
    prefixes    => _sel('prefix',[
       { prefix=>'_none' ,name=>'None'              },
       { prefix=>'LOC'   ,name=>'Shelving Location' },
       { prefix=>'CCODE' ,name=>'Collection Code'   },
-   ]),
+   ],%in),
 );
 output_html_with_http_headers $query, $cookie, $template->output;
 
+no warnings qw(redefine);
+
 sub _sel
 {
-   my($f,$a) = @_;
+   my($f,$a,%in) = @_;
    foreach(@$a) {
-      if ($$_{$f} eq $in{$f}) {
+      if ($$_{$f} ~~ $in{$f}) {
          $$_{_sel} = 'selected';
       }
       else {

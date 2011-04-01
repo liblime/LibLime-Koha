@@ -18,6 +18,7 @@
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+use warnings;
 
 # standard or CPAN modules used
 use IO::File;
@@ -45,7 +46,7 @@ if ($auth_status ne "ok") {
     exit 0;
 }
 
-my $uploaded_file = C4::UploadedFile->new($sessionID);
+our $uploaded_file = C4::UploadedFile->new($sessionID);
 unless (defined $uploaded_file) {
     # FIXME - failed to create file for some reason
     send_reply('failed', '');
@@ -53,7 +54,7 @@ unless (defined $uploaded_file) {
 }
 $uploaded_file->max_size($ENV{'CONTENT_LENGTH'}); # may not be the file size, exactly
 
-my $first_chunk = 1;
+our $first_chunk = 1;
 
 my $query;
 $query = new CGI \&upload_hook;

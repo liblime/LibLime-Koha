@@ -70,18 +70,18 @@ my $nextop="";
 my @errors; # store errors found while checking data BEFORE saving item.
 my $items_display_hashref;
 my $frameworkcode="";
-my $tagslib = &GetMarcStructure(1,$frameworkcode);
+our $tagslib = &GetMarcStructure(1,$frameworkcode);
 
 my $deleted_items = 0;     # Numbers of deleted items
 my $not_deleted_items = 0; # Numbers of items that could not be deleted
 my @not_deleted;           # List of the itemnumbers that could not be deleted
 
 my %cookies = parse CGI::Cookie($cookie);
-my $sessionID = $cookies{'CGISESSID'}->value;
+our $sessionID = $cookies{'CGISESSID'}->value;
 
 
 #--- ----------------------------------------------------------------------------
-if ($op eq "action") {
+if ($op ~~ 'action') {
 #-------------------------------------------------------------------------------
     my @tags      = $input->param('tag');
     my @subfields = $input->param('subfield');
@@ -158,7 +158,7 @@ if ($op eq "action") {
 # build screen with existing items. and "new" one
 #-------------------------------------------------------------------------------
 
-if ($op eq "show"){
+if ($op ~~ 'show'){
     my $filefh = $input->upload('uploadfile');
     my $filecontent = $input->param('filecontent');
     my @notfoundbarcodes;
@@ -249,21 +249,11 @@ foreach my $tag (sort keys %{$tagslib}) {
 	$subfield_data{marc_lib}   ="<span id=\"error$i\" title=\"".$tagslib->{$tag}->{$subfield}->{lib}."\">".$tagslib->{$tag}->{$subfield}->{lib}."</span>";
 	$subfield_data{mandatory}  = $tagslib->{$tag}->{$subfield}->{mandatory};
 	$subfield_data{repeatable} = $tagslib->{$tag}->{$subfield}->{repeatable};
-	my ($x,$value);
-	$value =~ s/"/&quot;/g;
-	unless ($value) {
-	    $value = $tagslib->{$tag}->{$subfield}->{defaultvalue};
-	    # get today date & replace YYYY, MM, DD if provided in the default value
-	    my ( $year, $month, $day ) = split ',', $today_iso;     # FIXME: iso dates don't have commas!
-	    $value =~ s/YYYY/$year/g;
-	    $value =~ s/MM/$month/g;
-	    $value =~ s/DD/$day/g;
-	}
 	$subfield_data{visibility} = "display:none;" if (($tagslib->{$tag}->{$subfield}->{hidden} > 4) || ($tagslib->{$tag}->{$subfield}->{hidden} < -4));
 	# testing branch value if IndependantBranches.
 
 	my $attributes_no_value = qq(tabindex="1" id="$subfield_data{id}" name="field_value" class="input_marceditor" size="67" maxlength="255" );
-	my $attributes          = qq($attributes_no_value value="$value" );
+	my $attributes          = qq($attributes_no_value value="" );
 
 	if ( $tagslib->{$tag}->{$subfield}->{authorised_value} ) {
 	my @authorised_values;
@@ -275,7 +265,6 @@ foreach my $tag (sort keys %{$tagslib}) {
 		push @authorised_values, $thisbranch->{value};
 		$authorised_lib{$thisbranch->{value}} = $thisbranch->{branchname};
 	    }
-        $value = "";
 	}
    elsif ($tagslib->{$tag}->{$subfield}->{authorised_value} eq 'otherstatus') {
       push @authorised_values, '';
@@ -286,7 +275,6 @@ foreach my $tag (sort keys %{$tagslib}) {
          push @authorised_values, $sc;
          $authorised_lib{$sc} = $desc;
       }
-      $value = '';
    }
 	elsif ( $tagslib->{$tag}->{$subfield}->{authorised_value} eq "itemtypes" ) {
 	    push @authorised_values, "";
@@ -296,7 +284,6 @@ foreach my $tag (sort keys %{$tagslib}) {
 		push @authorised_values, $itemtype;
 		$authorised_lib{$itemtype} = $description;
 	    }
-        $value = "";
 
           #---- class_sources
       }
@@ -308,12 +295,10 @@ foreach my $tag (sort keys %{$tagslib}) {
           
           foreach my $class_source (sort keys %$class_sources) {
               next unless $class_sources->{$class_source}->{'used'} or
-                          ($value and $class_source eq $value)      or
                           ($class_source eq $default_source);
               push @authorised_values, $class_source;
               $authorised_lib{$class_source} = $class_sources->{$class_source}->{'description'};
           }
-		  $value = '';
 
           #---- "true" authorised value
       }
@@ -328,7 +313,6 @@ foreach my $tag (sort keys %{$tagslib}) {
       $subfield_data{marc_value} =CGI::scrolling_list(      # FIXME: factor out scrolling_list
           -name     => "field_value",
           -values   => \@authorised_values,
-          -default  => $value,
           -labels   => \%authorised_lib,
           -override => 1,
           -size     => 1,
@@ -368,15 +352,6 @@ foreach my $tag (sort keys %{$tagslib}) {
     }
     elsif ( $tagslib->{$tag}->{$subfield}->{'hidden'} ) {   # FIXME: shouldn't input type be "hidden" ?
         $subfield_data{marc_value} = qq(<input type="text" $attributes />);
-    }
-    elsif ( length($value) > 100
-            or (C4::Context->preference("marcflavour") eq "UNIMARC" and
-                  300 <= $tag && $tag < 400 && $subfield eq 'a' )
-            or (C4::Context->preference("marcflavour") eq "MARC21"  and
-                  500 <= $tag && $tag < 600                     )
-          ) {
-        # oversize field (textarea)
-        $subfield_data{marc_value} = "<textarea $attributes_no_value>$value</textarea>\n";
     } else {
         # it's a standard field
          $subfield_data{marc_value} = "<input $attributes />";
@@ -403,7 +378,7 @@ $template->param(
     $op => 1,
 );
 
-if ($op eq "action") {
+if ($op ~~ 'action') {
 
     #my @not_deleted_loop = map{{itemnumber=>$_}}@not_deleted;
 
@@ -418,10 +393,16 @@ foreach my $error (@errors) {
     $template->param($error => 1);
 }
 output_html_with_http_headers $input, $cookie, $template->output;
+
+$sessionID = undef;
+$tagslib = undef;
+
 exit;
 
 
 # ---------------- Functions
+
+no warnings qw(redefine);
 
 sub BuildItemsData{
 	my @itemnumbers=@_;
@@ -566,7 +547,7 @@ sub put_in_background {
         # prevent parent exiting from
         # destroying the kid's database handle
         # FIXME: according to DBI doc, this may not work for Oracle
-        $dbh->{InactiveDestroy}  = 1;
+        C4::Context->dbh->{InactiveDestroy}  = 1;
 
         my $reply = CGI->new("");
         print $reply->header(-type => 'text/html');

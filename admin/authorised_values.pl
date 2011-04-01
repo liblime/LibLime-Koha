@@ -167,7 +167,7 @@ if ($op eq 'add_form') {
         $template->param(duplicate_category => $new_category,
                          duplicate_value =>  $new_authorised_value,
                          else => 1);
-        default_form();
+        default_form($searchfield, $offset, $pagesize, $script_name, $template);
      }           
 	
 ################## DELETE_CONFIRM ##################################
@@ -196,14 +196,16 @@ if ($op eq 'add_form') {
 													# END $OP eq DELETE_CONFIRMED
 ################## DEFAULT ##################################
 } else { # DEFAULT
-    default_form();
+    default_form($searchfield, $offset, $pagesize, $script_name, $template);
 } #---- END $OP eq DEFAULT
 output_html_with_http_headers $input, $cookie, $template->output;
 
 exit 0;
 
 sub default_form {
+        my ($searchfield, $offset, $pagesize, $script_name, $template) = @_;
 	# build categories list
+        my $dbh = C4::Context->dbh;
 	my $sth = $dbh->prepare("select distinct category from authorised_values");
 	$sth->execute;
 	my @category_list;

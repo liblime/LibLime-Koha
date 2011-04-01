@@ -462,7 +462,7 @@ $tabsysprefs{'OAI-PMH:Subset'}    = "OAI-PMH";
 # ILS-DI variables
 $tabsysprefs{'ILS-DI'} = "ILS-DI";
 sub StringSearch {
-    my ( $searchstring, $type ) = @_;
+    my ( $searchstring, $type, $tabsysprefs ) = @_;
     my $dbh = C4::Context->dbh;
     $searchstring =~ s/\'/\\\'/g;
     my @data = split( ' ', $searchstring );
@@ -473,8 +473,8 @@ sub StringSearch {
 
     # used for doing a plain-old sys-pref search
     if ( $type && $type ne 'all' ) {
-        foreach my $syspref ( sort { lc $a cmp lc $b } keys %tabsysprefs ) {
-            if ( $tabsysprefs{$syspref} eq $type ) {
+        foreach my $syspref ( sort { lc $a cmp lc $b } keys %$tabsysprefs ) {
+            if ( $tabsysprefs->{$syspref} eq $type ) {
                 my $sth = $dbh->prepare("Select variable,value,explanation,type,options from systempreferences where (variable like ?) order by variable");
                 $sth->execute($syspref);
                 while ( my $data = $sth->fetchrow_hashref ) {
@@ -497,7 +497,7 @@ sub StringSearch {
             $sth->execute( "%$searchstring%", "%$searchstring%" );
         } else {
             my $strsth = "Select variable,value,explanation,type,options from systempreferences where variable not in (";
-            foreach my $syspref ( keys %tabsysprefs ) {
+            foreach my $syspref ( keys %$tabsysprefs ) {
                 $strsth .= $dbh->quote($syspref) . ",";
             }
             $strsth =~ s/,$/) /;
@@ -812,7 +812,7 @@ if ( $op eq 'add_form' ) {
             #Adding tab management for system preferences
     my $tab = $input->param('tab');
     $template->param( $tab => 1 );
-    my ( $count, $results ) = StringSearch( $searchfield, $tab );
+    my ( $count, $results ) = StringSearch( $searchfield, $tab, \%tabsysprefs );
     my @loop_data = ();
     for ( my $i = $offset ; $i < ( $offset + $pagesize < $count ? $offset + $pagesize : $count ) ; $i++ ) {
         my $row_data = $results->[$i];

@@ -322,7 +322,7 @@ if (!!$activefirst) {
       $sorted = 1;
    }
 }
-@items = sort{ $$a{$sortby} cmp $$b{$sortby} } @items unless $sorted;
+@items = sort{ ($$a{$sortby}//'') cmp ($$b{$sortby}//'') } @items unless $sorted;
 
 $template->param(
     ITEM_RESULTS        => \@items,
@@ -641,6 +641,9 @@ if (my $search_for_title = C4::Context->preference('OPACSearchForTitleIn')){
 
 output_html_with_http_headers $query, $cookie, $template->output;
 
+# Running under Plack, this complains as a redefinition.
+# I don't know why. This shuts up the warning, though.
+no warnings qw(redefine);
 sub _locname
 {
    my($branches,$bcode) = @_;

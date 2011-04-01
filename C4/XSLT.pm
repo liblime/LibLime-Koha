@@ -115,7 +115,7 @@ sub getAuthorisedValues4MARCSubfields {
     return $authval_per_framework{ $frameworkcode };
 }
 
-my $stylesheet;
+my $stylesheet = {};
 
 sub XSLTParse4Display {
     my ( $biblionumber, $orig_record, $xsl_suffix, $interface ) = @_;
@@ -140,7 +140,7 @@ sub XSLTParse4Display {
     # don't die when you find &, >, etc
     $parser->recover_silently(1);
     my $source = $parser->parse_string($xmlrecord);
-    unless ( $stylesheet ) {
+    unless ( $stylesheet->{$interface} ) {
         my $xslt = XML::LibXSLT->new();
         my $xslfile;
         if ($interface eq 'intranet') {
@@ -155,10 +155,10 @@ sub XSLTParse4Display {
                       "slim2OPAC$xsl_suffix.xsl";
         }
         my $style_doc = $parser->parse_file($xslfile);
-        $stylesheet = $xslt->parse_stylesheet($style_doc);
+        $stylesheet->{$interface} = $xslt->parse_stylesheet($style_doc);
     }
-    my $results = $stylesheet->transform($source);
-    my $newxmlrecord = $stylesheet->output_string($results);
+    my $results = $stylesheet->{$interface}->transform($source);
+    my $newxmlrecord = $stylesheet->{$interface}->output_string($results);
     return $newxmlrecord;
 }
 

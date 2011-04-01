@@ -23,7 +23,41 @@ my $DisplayMultiPlaceHold = C4::Context->preference("DisplayMultiPlaceHold");
 # create a new CGI object
 # FIXME: no_undef_params needs to be tested
 use CGI qw('-no_undef_params');
-my $cgi = new CGI;
+my $cgi = CGI->new();
+
+use CHI;
+use Digest::SHA1;
+use Storable;
+use vars qw($cache $MRXorig);
+
+# This is not intended to be a long-term cache, but one that persists for
+# only the duration one might expect to page around some search results.
+# The max_size may need to be increased for very busy sites.
+$cache = CHI->new(driver => 'Memory', global => 1, max_size => 3_000_000, expires_in => 120);
+$MRXorig = \&MARC::Record::new_from_xml;
+local *MARC::Record::new_from_xml = \&MRXcached;
+
+sub MRXcached {
+    my $xml = shift;
+    if ($xml eq 'MARC::Record') {
+        $xml = shift;
+    }
+    my $matchme = substr($xml, 0, 1024);
+    my $key = Digest::SHA1::sha1($matchme);
+
+    my $frozen = $cache->get($key);
+    my $record;
+    if (!defined $frozen) {
+        $record = $MRXorig->($xml, @_);
+        $frozen = Storable::freeze($record);
+        $cache->set($key, $frozen);
+    }
+    else {
+        $record = Storable::thaw($frozen);
+    }
+
+    return $record;
+};
 
 BEGIN {
 	if (C4::Context->preference('BakerTaylorEnabled')) {

@@ -857,8 +857,9 @@ sub GetAllAuthorisedValues {
 
 sub GetAuthorisedValue {
     my ($category, $authorised_value) = @_;
-    $authval_cache || _populate_authval_cache();
-    return Clone::clone($authval_cache->{$category}{$authorised_value});
+    return undef if (!defined $category || !defined $authorised_value);
+    my $authvals = GetAuthorisedValuesTree();
+    return $authvals->{$category}{$authorised_value};
 }
 
 =head2 GetAuthorisedValues

@@ -98,21 +98,21 @@ $template->param(
 );
 
 if ($op eq 'add_form') {
-    add_form($module, $code);
+    add_form($module, $code, $template );
 }
 elsif ( $op eq 'add_validate' ) {
-    add_validate();
+    add_validate($input);
     $op = q{}; # next operation is to return to default screen
 }
 elsif ( $op eq 'delete_confirm' ) {
-    delete_confirm($module, $code);
+    delete_confirm($module, $code, $template);
 }
 elsif ( $op eq 'delete_confirmed' ) {
     delete_confirmed($module, $code);
     $op = q{}; # next operation is to return to default screen
 }
 else {
-    default_display($searchfield);
+    default_display($searchfield, $template);
 }
 
 # Do this last as delete_confirmed resets
@@ -129,8 +129,9 @@ if (C4::Context->preference('TalkingTechEnabled')) {
 output_html_with_http_headers $input, $cookie, $template->output;
 
 sub add_form {
-    my ($module, $code ) = @_;
+    my ($module, $code, $template ) = @_;
 
+    my $dbh = C4::Context->dbh();
     my $letter;
     # if code has been passed we can identify letter and its an update action
     if ($code) {
@@ -209,6 +210,7 @@ sub add_form {
 }
 
 sub add_validate {
+    my ($input) = @_;
     my $dbh     = C4::Context->dbh;
     my $module  = $input->param('module');
     my $code    = $input->param('code');
@@ -254,7 +256,7 @@ sub add_validate {
 }
 
 sub delete_confirm {
-    my ($module, $code) = @_;
+    my ($module, $code, $template) = @_;
     my $dbh = C4::Context->dbh;
     my $letter = $dbh->selectrow_hashref(q|SELECT  name FROM letter WHERE module = ? AND code = ?|,
         { Slice => {} },
@@ -292,6 +294,7 @@ sub retrieve_letters {
 
 sub default_display {
     my $searchfield = shift;
+    my $template = shift;
     my $results;
     if ( $searchfield  ) {
         $template->param( search      => 1 );

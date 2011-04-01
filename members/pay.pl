@@ -41,9 +41,9 @@ use C4::Dates;
 use C4::Items qw( ModItem );
 use C4::ReceiptTemplates;
 
-my $input = new CGI;
+our $input = CGI->new();
 
-my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
+our ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
         template_name   => 'members/pay.tmpl',
         query           => $input,
@@ -60,14 +60,14 @@ $template->param(
     );
 
 my @nam = $input->param;
-my $borrowernumber = $input->param('borrowernumber');
+our $borrowernumber = $input->param('borrowernumber');
 if ( !$borrowernumber  ) {
     $borrowernumber = $input->param('borrowernumber0');
 }
 
 # get borrower details
 our $data = GetMember( $borrowernumber,'borrowernumber' );
-my $user = $input->remote_user;
+our $user = $input->remote_user;
 $user ||= q{};
 
 my $paycollect = $input->param('paycollect');
@@ -162,12 +162,14 @@ if ( $check == 0 ) {  # fetch and display accounts
         my $itemno         = $input->param("itemnumber$value");
         my $amount         = $input->param("amount$value");
         my $accountno      = $input->param("accountno$value");
-        writeoff( $borrowernumber, $accountno, $itemno, $accounttype, $amount );
+        writeoff( $borrowernumber, $accountno, $itemno, $accounttype, $amount, C4::Context->userenv->{'branch'});
     }
     my $borrowernumber = $input->param('borrowernumber');
     print $input->redirect(
         "/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
 }
+
+no warnings qw(redefine);
 
 sub add_accounts_to_template {
     my $borrowernumber = shift;

@@ -193,7 +193,7 @@ sub get_authorised_values {
     my $sql_query =
 q{SELECT lib, authorised_value FROM authorised_values WHERE category = ? ORDER BY lib};
     my @tuples =
-      @{ $dbh->selectall_arrayref( $sql_query, { Slice => {} }, $cat ) };
+      @{ C4::Context->dbh->selectall_arrayref( $sql_query, { Slice => {} }, $cat ) };
     for my $t (@tuples) {
         push @{$loop},
           { value       => $t->{authorised_value},
@@ -209,7 +209,7 @@ sub get_branches {
 
     my $sql_query =
       q{SELECT branchcode, branchname FROM branches ORDER BY branchname};
-    my @tuples = @{ $dbh->selectall_arrayref( $sql_query, { Slice => {} } ) };
+    my @tuples = @{ C4::Context->dbh->selectall_arrayref( $sql_query, { Slice => {} } ) };
     for my $t (@tuples) {
         push @{$loop},
           { value       => $t->{branchcode},
@@ -253,7 +253,7 @@ sub get_itypes {
 
     my $sql_query =
       'SELECT itemtype, description FROM itemtypes ORDER BY description';
-    my @types = @{ $dbh->selectall_arrayref( $sql_query, { Slice => {} } ) };
+    my @types = @{ C4::Context->dbh->selectall_arrayref( $sql_query, { Slice => {} } ) };
     for my $it (@types) {
         push @{$loop},
           { value       => $it->{itemtype},

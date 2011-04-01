@@ -46,7 +46,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 my $op = $cgi->param('op') || $ARGV[0] || '';
 my $layout_id = $cgi->param('layout_id') || $cgi->param('element_id') || $ARGV[1] || '';
 my $layout_choice = $cgi->param('layout_choice') || '';
-my $layout;
+our $layout;
 
 sub _set_selected {
     my ($type_list, $object, $data_type) = @_;
@@ -197,3 +197,5 @@ $template->param(
         ch_custom       => $ch{custom},
 );
 output_html_with_http_headers $cgi, $cookie, $template->output;
+
+$layout = undef;

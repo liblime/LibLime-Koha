@@ -62,21 +62,21 @@ $template->param(
 );
 
 if ( $op eq 'add_form' ) {
-    add_form( $module, $code );
+    add_form( $module, $code, $template );
 }
 elsif ( $op eq 'add_validate' ) {
-    add_validate();
+    add_validate($input);
     $op = q{};    # next operation is to return to default screen
 }
 elsif ( $op eq 'delete_confirm' ) {
-    delete_confirm( $module, $code );
+    delete_confirm( $module, $code, $template );
 }
 elsif ( $op eq 'delete_confirmed' ) {
     delete_confirmed( $module, $code );
     $op = q{};    # next operation is to return to default screen
 }
 else {
-    default_display($searchfield);
+    default_display($template);
 }
 
 # Do this last as delete_confirmed resets
@@ -90,7 +90,7 @@ else {
 output_html_with_http_headers $input, $cookie, $template->output;
 
 sub add_form {
-    my ( $module, $code ) = @_;
+    my ( $module, $code, $template ) = @_;
 
     my $reciept_template;
 
@@ -205,6 +205,7 @@ sub add_form {
 }
 
 sub add_validate {
+    my $input = shift;
     my $module  = $input->param('module');
     my $code    = $input->param('code');
     my $name    = $input->param('name');
@@ -221,12 +222,12 @@ sub add_validate {
     );
 
     # set up default display
-    default_display();
+    default_display($template);
     return;
 }
 
 sub delete_confirm {
-    my ( $module, $code ) = @_;
+    my ( $module, $code, $template ) = @_;
 
     my $reciept_template = GetReceiptTemplate(
         {
@@ -254,11 +255,12 @@ sub delete_confirmed {
     );
 
     # setup default display for screen
-    default_display();
+    default_display($template);
     return;
 }
 
 sub default_display {
+    my $template = shift;
     $template->param(
         receipts_loop => GetReceiptTemplates(
             { branchcode => C4::Context->userenv->{'branch'} }

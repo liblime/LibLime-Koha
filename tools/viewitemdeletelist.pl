@@ -63,17 +63,18 @@ if ($list_id) {
     } else {
         if ($idl) {
             $template->param( list_id => $list_id );
-            view_list($idl);
+            view_list($idl, $template);
         } else {
-            get_list_of_lists();
+            get_list_of_lists($template);
         }
     }
 } else {    # get a list of available lists
-    get_list_of_lists();
+    get_list_of_lists($template);
 }
 output_html_with_http_headers $query, $cookie, $template->output;
 
 sub get_list_of_lists {
+    my $template = shift;
     my $dbh     = C4::Context::dbh;
     my $id_list = $dbh->selectall_arrayref(
         'SELECT DISTINCT list_id FROM itemdeletelist ORDER BY list_id',
@@ -85,6 +86,7 @@ sub get_list_of_lists {
 
 sub view_list {
     my $idl = shift;
+    my $template = shift;
     my $items;
     if ($idl) {
         $items = $idl->get_list_array();

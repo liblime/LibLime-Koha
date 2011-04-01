@@ -19,6 +19,7 @@
 
 use strict;
 use warnings;
+no warnings qw(redefine);
 
 # standard or CPAN modules used
 use CGI;
@@ -63,7 +64,7 @@ my $dbh = C4::Context->dbh;
 
 if ($op eq "create_labels") {
 	#create a batch of labels, then lose $op & $import_batch_id so we get back to import batch list.
-	my $label_batch_id = create_labelbatch_from_importbatch($import_batch_id);
+	my $label_batch_id = create_labelbatch_from_importbatch($template, $import_batch_id);
         if ($label_batch_id == -1) {
             $template->param(   label_batch_msg => "Error attempting to create label batch. Please ask your system administrator to check the log for more details.",
                                 message_type    => 'alert',
@@ -92,16 +93,16 @@ if ($op eq "") {
     }
 } elsif ($op eq "commit-batch") {
     if ($completedJobID) {
-        add_saved_job_results_to_template($template, $completedJobID);
+        add_saved_job_results_to_template($template, $completedJobID, $sessionID);
     } else {
-        commit_batch($template, $import_batch_id);
+        commit_batch($template, $import_batch_id, $runinbackground, $sessionID);
     }
     import_biblios_list($template, $import_batch_id, $offset, $results_per_page);
 } elsif ($op eq "revert-batch") {
     if ($completedJobID) {
-        add_saved_job_results_to_template($template, $completedJobID);
+        add_saved_job_results_to_template($template, $completedJobID, $sessionID);
     } else {
-        revert_batch($template, $import_batch_id);
+        revert_batch($template, $import_batch_id, $runinbackground, $sessionID);
     }
     import_biblios_list($template, $import_batch_id, $offset, $results_per_page);
 } elsif ($op eq "clean-batch") {
@@ -175,7 +176,7 @@ sub redo_matching {
 }
 
 sub create_labelbatch_from_importbatch {
-	my ($batch_id) = @_;
+	my ($template, $batch_id) = @_;
         my $err = undef;
         my $branch_code = GetBranchCodeFromName($template->param('LoginBranchname'));
         my $batch = C4::Labels::Batch->new(branch_code => $branch_code);
@@ -222,13 +223,14 @@ sub import_batches_list {
 }
 
 sub commit_batch {
-    my ($template, $import_batch_id) = @_;
+    my ($template, $import_batch_id, $runinbackground, $sessionID) = @_;
 
     my $job = undef;
+    my $dbh = C4::Context->dbh;
     $dbh->{AutoCommit} = 0;
     my $callback = sub {};
     if ($runinbackground) {
-        $job = put_in_background($import_batch_id);
+        $job = put_in_background($import_batch_id, $sessionID);
         $callback = progress_callback($job, $dbh);
     }
     my ($num_added, $num_updated, $num_items_added, $num_items_errored, $num_ignored) = 
@@ -251,13 +253,14 @@ sub commit_batch {
 }
 
 sub revert_batch {
-    my ($template, $import_batch_id) = @_;
+    my ($template, $import_batch_id, $runinbackground, $sessionID) = @_;
 
+    my $dbh = C4::Context->dbh;
     $dbh->{AutoCommit} = 0;
     my $job = undef;
     my $callback = sub {};
     if ($runinbackground) {
-        $job = put_in_background($import_batch_id);
+        $job = put_in_background($import_batch_id, $sessionID);
         $callback = progress_callback($job, $dbh);
     }
     my ($num_deleted, $num_errors, $num_reverted, $num_items_deleted, $num_ignored) = 
@@ -281,7 +284,9 @@ sub revert_batch {
 
 sub put_in_background {
     my $import_batch_id = shift;
+    my $sessionID = shift;
 
+    my $dbh = C4::Context->dbh;
     my $batch = GetImportBatch($import_batch_id);
     my $job = C4::BackgroundJob->new($sessionID, $batch->{'file_name'}, $ENV{'SCRIPT_NAME'}, $batch->{'num_biblios'});
     my $jobID = $job->id();
@@ -333,6 +338,7 @@ sub add_results_to_template {
 sub add_saved_job_results_to_template {
     my $template = shift;
     my $completedJobID = shift;
+    my $sessionID = shift;
     my $job = C4::BackgroundJob->fetch($sessionID, $completedJobID);
     my $results = $job->results();
     add_results_to_template($template, $results);
@@ -421,10 +427,11 @@ sub batch_info {
             $template->param('current_matcher_description' => $matcher->description());
         }
     }
-    add_matcher_list($batch->{'matcher_id'});
+    add_matcher_list($template, $batch->{'matcher_id'});
 }
 
 sub add_matcher_list {
+    my $template = shift;
     my $current_matcher_id = shift;
     my @matchers = C4::Matcher::GetMatcherList();
     if (defined $current_matcher_id) {
