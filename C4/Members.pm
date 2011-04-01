@@ -491,16 +491,17 @@ sub patronflags {
     my %flags;
     my ( $patroninformation, $circ_session ) = @_;
     $circ_session ||= {};
-    my $dbh=C4::Context->dbh;
+
     my $amount = C4::Accounts::MemberAllAccounts( 
       borrowernumber => $patroninformation->{'borrowernumber'},
       total_only     => 1
     );
-    my $cat = GetCategoryInfo($$patroninformation{categorycode});
+    $amount //= 0;
 
     if ( $amount > 0 ) {
         my %flaginfo;
-        my $blockamount = ($$cat{circ_block_threshold} > 0)? $$cat{circ_block_threshold} : 5;
+        my $cat = GetCategoryInfo($$patroninformation{categorycode});
+        my $blockamount = (($$cat{circ_block_threshold}//0) > 0)? $$cat{circ_block_threshold} : 5;
         $flaginfo{'message'} = sprintf "Patron owes \$%.02f", $amount;
         $flaginfo{'amount'}  = sprintf "%.02f",$amount;
         
@@ -515,31 +516,25 @@ sub patronflags {
         $flaginfo{'amount'}  = sprintf "%.02f", $amount;
         $flags{'CREDITS'} = \%flaginfo;
     }
-    if (   $patroninformation->{'gonenoaddress'}
-        && $patroninformation->{'gonenoaddress'} == 1 )
-    {
+    if ($patroninformation->{'gonenoaddress'} ~~ 1) {
         my %flaginfo;
         $flaginfo{'message'}  = 'Borrower has no valid address.';
         $flaginfo{'noissues'} = 1;
         $flags{'GNA'}         = \%flaginfo;
     }
-    if ( $patroninformation->{'lost'} && $patroninformation->{'lost'} == 1 ) {
+    if ($patroninformation->{'lost'} ~~ 1 ) {
         my %flaginfo;
         $flaginfo{'message'}  = 'Borrower\'s card reported lost.';
         $flaginfo{'noissues'} = 1;
         $flags{'LOST'}        = \%flaginfo;
     }
-    if (   $patroninformation->{'debarred'}
-        && $patroninformation->{'debarred'} == 1 )
-    {
+    if ($patroninformation->{'debarred'} ~~ 1) {
         my %flaginfo;
         $flaginfo{'message'}  = 'Borrower is Debarred.';
         $flaginfo{'noissues'} = 1;
         $flags{'DBARRED'}     = \%flaginfo;
     }
-    if (   $patroninformation->{'borrowernotes'}
-        && $patroninformation->{'borrowernotes'} )
-    {
+    if ($patroninformation->{'borrowernotes'}) {
         my %flaginfo;
         $flaginfo{'message'} = $patroninformation->{'borrowernotes'};
         $flags{'NOTES'}      = \%flaginfo;
