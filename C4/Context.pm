@@ -18,11 +18,15 @@ package C4::Context;
 
 use strict;
 use warnings;
-use vars qw($VERSION $AUTOLOAD $context @context_stack);
+use vars qw($VERSION $AUTOLOAD $context @context_stack $cache);
+
+use CHI;
+our $cache;
 
 BEGIN {
+    $cache = CHI->new( driver => 'RawMemory', global => 1);
 	if ($ENV{'HTTP_USER_AGENT'})	{
-		require CGI::Carp;
+ 		require CGI::Carp;
         # FIXME for future reference, CGI::Carp doc says
         #  "Note that fatalsToBrowser does not work with mod_perl version 2.0 and higher."
 		import CGI::Carp qw(fatalsToBrowser);
@@ -469,31 +473,31 @@ with this method.
 
 =cut
 
-my $preference_defaults_cache;
-
-sub _get_preference_defaults {
-    return $preference_defaults_cache if defined $preference_defaults_cache;
-
+sub _seed_preference_defaults_cache {
     my $defaults_filename
         = C4::Context->config('intranetdir') . '/installer/data/syspref_defaults.json';
 
     my $json = File::Slurp::read_file($defaults_filename, err_mode => 'carp') // '{}';
 
-    return $preference_defaults_cache = from_json($json);
+    return from_json($json);
 }
 
-my $syspref_cache;
+sub preference_defaults {
+    return $cache->compute('systempreferences_defaults', '1h', \&_seed_preference_defaults_cache);
+}
 
-sub _get_preferences_cache {
-    return $syspref_cache if defined $syspref_cache;
-
+sub _seed_preferences_cache {
     my $matrix_ref
         = C4::Context->dbh->selectall_arrayref(
         'SELECT variable, value FROM systempreferences',
         {Slice => {}} );
 
-    %{$syspref_cache} = map { lc($_->{variable}) => $_->{value}} @$matrix_ref;
-    return $syspref_cache;
+    my %syspref_cache = map { lc($_->{variable}) => $_->{value}} @$matrix_ref;
+    return \%syspref_cache;
+}
+
+sub _clear_syspref_cache {
+    $cache->remove('systempreferences');
 }
 
 sub preference {
@@ -504,25 +508,26 @@ sub preference {
     # just always key against the lower case version
     my $lcvar = lc($var);
 
-    # Seed local cache if it's uninitialized
-    my $sysprefs = $syspref_cache // _get_preferences_cache();
+    my $sysprefs = $cache->compute('systempreferences', '1m', \&_seed_preferences_cache);
 
     # Just return the variable's value if we have it
     return $sysprefs->{$lcvar} if exists $sysprefs->{$lcvar};
 
     # Otherwise, scan for the variable in the defaults file
-    my $defaults = _get_preference_defaults();
+    my $defaults = preference_defaults();
+    # croak 'Cannot find syspref defaults' if !defined $defaults;
     return if !defined $defaults;
 
     # Warn if the variable isn't listed
     my $new_var = $defaults->{$var};
     # croak "Systempreference '$var' is not registered" if !defined $new_var;
     if (!defined $new_var) {
-        warn "Systempreference '$var' is not registered";
+        carp "Systempreference '$var' is not registered";
         return;
     }
 
     # Otherwise write the variable to the DB
+    _clear_syspref_cache();
     C4::Context->dbh->do(
         q{
             INSERT INTO systempreferences (variable, value, options, explanation, type)
@@ -530,8 +535,7 @@ sub preference {
         }, undef, $var, $new_var->{value}, $new_var->{options},
         $new_var->{explanation}, $new_var->{type});
 
-    # Store it in the cache as we return it
-    return $sysprefs->{$lcvar} = $new_var->{value};
+    return $new_var->{value};
 }
 
 sub boolean_preference ($) {
@@ -539,22 +543,6 @@ sub boolean_preference ($) {
     my $var = shift;        # The system preference to return
     my $it = preference($self, $var);
     return defined($it)? C4::Boolean::true_p($it): undef;
-}
-
-=item clear_syspref_cache
-
-  C4::Context->clear_syspref_cache();
-
-  cleans the internal cache of sysprefs. Please call this method if
-  you update the systempreferences table. Otherwise, your new changes
-  will not be seen by this process.
-
-=cut
-
-sub clear_syspref_cache {
-    my $self = shift;
-
-    $syspref_cache = undef;
 }
 
 # AUTOLOAD

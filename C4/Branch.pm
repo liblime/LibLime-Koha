@@ -19,9 +19,9 @@ package C4::Branch;
 use strict;
 use warnings;
 use Carp;
-use Storable;
 use List::MoreUtils qw(uniq);
 use Net::CIDR::Compare;
+use CHI;
 
 require Exporter;
 
@@ -29,6 +29,8 @@ use C4::Context;
 use C4::Koha;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+
+my $cache;
 
 BEGIN {
 	# set the version for version checking
@@ -53,6 +55,8 @@ BEGIN {
 		&DelBranchCategory
 	);
 	@EXPORT_OK = qw( &onlymine &mybranch GetBranchCodeFromName GetSiblingBranchesOfType );
+
+        $cache = CHI->new(driver => 'Memory', global => 1);
 }
 
 =head1 NAME
@@ -104,16 +108,14 @@ The functions in this module deal with branches.
 
 =cut
 
-my $branches_cache;
-
 sub _clear_branches_cache {
-    $branches_cache = undef;
+    $cache->remove('branches');
 }
 
 sub _seed_branches_cache {
     my $dbh = C4::Context->dbh;
 
-    my $branches = $dbh->selectall_hashref(
+    my $branches_cache = $dbh->selectall_hashref(
         'SELECT * FROM branches ORDER BY branchname',
         'branchcode');
 
@@ -121,18 +123,16 @@ sub _seed_branches_cache {
         'SELECT branchcode, categorycode FROM branchrelations',
         ['branchcode', 'categorycode']);
 
-    for my $branch (values %$branches) {
+    for my $branch (values %$branches_cache) {
         my @branchcategories = keys %{$groups->{$branch->{branchcode}}};
         $branch->{category} = {map {$_=>1} @branchcategories};
     }
 
-    return $branches_cache = Storable::freeze($branches);
+    return $branches_cache;
 }
 
 sub GetAllBranches {
-    # return a copy of the cache hash so mutations from the caller
-    # don't generate side-effects
-    return Storable::thaw($branches_cache //= _seed_branches_cache());
+    return $cache->compute('branches', '5m', \&_seed_branches_cache);
 }
 
 sub GetBranchcodes {
@@ -292,21 +292,17 @@ C<$results> is an ref to an array.
 
 =cut
 
-my $bcat_cache;
-
 sub _clear_bcat_cache {
-    $bcat_cache = undef;
+    $cache->remove('branchcategories');
 }
 
 sub _seed_bcat_cache {
-    my $bcats = C4::Context->dbh->selectall_hashref(
+    return C4::Context->dbh->selectall_hashref(
         'SELECT * FROM branchcategories', 'categorycode');
-    return $bcat_cache = Storable::freeze($bcats);
 }
 
 sub GetAllBranchCategories {
-    # return a copy of the cache hash to protect against mutation
-    return Storable::thaw($bcat_cache //= _seed_bcat_cache());
+    return $cache->compute('branchecategories', '1h', \&_seed_bcat_cache);
 }
 
 sub GetBranchCategory {

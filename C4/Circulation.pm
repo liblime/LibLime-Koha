@@ -49,8 +49,11 @@ use Date::Calc qw(
 use POSIX qw(strftime);
 use C4::Branch; # GetBranches
 use C4::Log; # logaction
-
 use Data::Dumper;
+
+use CHI;
+my $cache;
+my %cache_store;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -100,7 +103,9 @@ BEGIN {
                 &IsBranchTransferAllowed
                 &CreateBranchTransferLimit
                 &DeleteBranchTransferLimits
-    );
+	);
+
+        $cache = CHI->new(driver => 'RawMemory', datastore => \%cache_store);
 }
 
 =head1 NAME
@@ -1235,36 +1240,31 @@ my $irule = &GetIssuingRule($categorycode, $itemtype, $branchcode)
 
 =cut
 
-our $irule_cache = undef;
-
-sub _populate_irule_cache() {
-    $irule_cache = C4::Context->dbh->selectall_hashref(
+sub _seed_irule_cache {
+    return C4::Context->dbh->selectall_hashref(
         'SELECT * FROM issuingrules WHERE issuelength IS NOT NULL',
-        ['categorycode', 'itemtype', 'branchcode']) or
-        die sprintf "Cannot get issuingrules: %s\n", $!;
-
-    return $irule_cache;
+        ['categorycode', 'itemtype', 'branchcode']);
 }
 
 sub _clear_irule_cache {
-    return $irule_cache = undef;
+    $cache->remove('irules');
 }
 
-sub GetIssuingRule($$$) {
+sub GetIssuingRule {
     my ($categorycode, $itemtype, $branchcode) = @_;
     $categorycode //= '*';
     $itemtype //= '*';
     $branchcode //= '*';
 
-    $irule_cache //= _populate_irule_cache();
-    my $irule = $irule_cache->{$categorycode}{$itemtype}{$branchcode} //
-        $irule_cache->{$categorycode}{'*'}{$branchcode} //
-        $irule_cache->{'*'}{$itemtype}{$branchcode} //
-        $irule_cache->{'*'}{'*'}{$branchcode} //
-        $irule_cache->{$categorycode}{$itemtype}{'*'} //
-        $irule_cache->{$categorycode}{'*'}{'*'} //
-        $irule_cache->{'*'}{$itemtype}{'*'} //
-        $irule_cache->{'*'}{'*'}{'*'} //
+    my $irules = $cache->compute('irules', '5m', \&_seed_irule_cache);
+    my $irule = $irules->{$categorycode}{$itemtype}{$branchcode} //
+        $irules->{$categorycode}{'*'}{$branchcode} //
+        $irules->{'*'}{$itemtype}{$branchcode} //
+        $irules->{'*'}{'*'}{$branchcode} //
+        $irules->{$categorycode}{$itemtype}{'*'} //
+        $irules->{$categorycode}{'*'}{'*'} //
+        $irules->{'*'}{$itemtype}{'*'} //
+        $irules->{'*'}{'*'}{'*'} //
         undef;
 
     return $irule;

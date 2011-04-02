@@ -26,8 +26,11 @@ use Clone;
 use URI::Split qw(uri_split);
 use List::Util qw(first);
 use Business::ISBN;
+use CHI;
 
 use vars qw($VERSION @ISA @EXPORT $DEBUG);
+
+my $cache;
 
 BEGIN {
 	$VERSION = 3.01;
@@ -66,6 +69,8 @@ BEGIN {
 		$DEBUG
 	);
 	$DEBUG = 0;
+
+        $cache = CHI->new(driver => 'Memory', global => 1);
 }
 
 =head1 NAME
@@ -836,23 +841,12 @@ sub GetAuthValCode {
 
 =cut
 
-# Use a frozen copy of the cache for quickly returning the entire list
-# and a live one for cloning small portions
-my $frozen_authval_cache = undef;
-my $authval_cache = undef;
-
-sub _populate_authval_cache {
-    $authval_cache = C4::Context->dbh->selectall_hashref('SELECT * FROM authorised_values', ['category', 'authorised_value']);
-    return $frozen_authval_cache = Storable::freeze($authval_cache);
+sub _seed_authvals_cache {
+    return C4::Context->dbh->selectall_hashref('SELECT * FROM authorised_values', ['category', 'authorised_value']);
 }
 
-sub _clear_authval_cache {
-    $authval_cache = $frozen_authval_cache = undef;
-}
-
-sub GetAllAuthorisedValues {
-    $authval_cache || _populate_authval_cache();
-    return Storable::thaw($frozen_authval_cache);
+sub GetAuthorisedValuesTree {
+    return $cache->compute('authvalstree', '5m', \&_seed_authvals_cache);
 }
 
 sub GetAuthorisedValue {
@@ -874,10 +868,10 @@ C<$category> returns authorised values for just one category (optional).
 
 sub GetAuthorisedValues {
     my ($category, $selected) = @_;
-    my $authvals = GetAllAuthorisedValues();
+    my $authvals = GetAuthorisedValuesTree();
     my @vals
         = (defined $category)
-        ? values %{$authvals->{$category}}
+        ? map {$_} values %{$authvals->{$category}}
         : map {values %{$_}} map {$_} values %{$authvals};
 
     return \@vals if !defined $selected;
