@@ -31,8 +31,7 @@ foreach my $res (values %{C4::Reserves::GetReservesForQueue() // {}}) {
    ## dupecheck on reservenumber
    ## DupecheckQueue() already filters out holds on shelf (found=non-empty),
    ## priority, and reservedate.
-   my $dupe = C4::Reserves::DupecheckQueue($$res{reservenumber}) // 0;
-   next HOLD if !!$dupe;
+   next HOLD if C4::Reserves::DupecheckQueue($$res{reservenumber});
    
    ## handle cases:
    ## (1) trivial: item-level hold w/ an itemnumber

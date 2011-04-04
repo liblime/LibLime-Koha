@@ -4573,6 +4573,23 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Micro version update to $DBversion )\n";
 }
 
+$DBversion = '4.03.19.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    my $sth = $dbh->prepare('SHOW INDEXES IN tmp_holdsqueue');
+    $sth->execute();
+    my %seen = ();
+    while(my $row = $sth->fetchrow_hashref()) {
+       next if $seen{$$row{Key_name}};
+       $seen{$$row{Key_name}}++;
+       next unless $$row{Key_name} =~ /^biblionumber/;       
+       $dbh->do("ALTER TABLE tmp_holdsqueue DROP KEY $$row{Key_name}");
+    }
+    $dbh->do("ALTER TABLE tmp_holdsqueue ADD CONSTRAINT UNIQUE KEY `biblionumber`
+      (biblionumber,itemnumber,borrowernumber)");
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Normalize tmp_holdsqueue )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

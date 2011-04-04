@@ -2768,7 +2768,8 @@ CREATE TABLE `tmp_holdsqueue` (
    `pickbranch` varchar(10) default NULL,
    `notes` text,
    `item_level_request` tinyint(1) NOT NULL DEFAULT 0,
-   `queue_sofar` text NOT NULL
+   `queue_sofar` text NOT NULL,
+   UNIQUE KEY `biblionumber` (biblionumber,itemnumber,borrowernumber)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `export_format`;

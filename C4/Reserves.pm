@@ -229,7 +229,7 @@ sub DupecheckQueue
         FROM tmp_holdsqueue
        WHERE reservenumber = ?");
    $sth->execute($reservenumber);
-   return ($sth->fetchrow_array)[0];
+   return ($sth->fetchrow_array)[0] // 0;
 }
 
 sub _getBranchesQueueWeight
