@@ -18,6 +18,7 @@ package C4::LostItems;
 use strict;
 use warnings;
 use C4::Context;
+use C4::Items;
 
 our ($VERSION,@ISA,@EXPORT,@EXPORT_OK,$debug);
 
@@ -79,47 +80,6 @@ sub isClaimsReturned
    ");
    $sth->execute($itemnumber,$borrowernumber);
    return ($sth->fetchrow_array)[0];
-}
-
-sub ForgiveFineForClaimsReturned
-{
-   my $li = shift; # lost_items hash for a single lost item-borrower pair
-   my $user_borrowernumber = shift;
-   my $dbh = C4::Context->dbh;
-   my $sth;
-
-   use C4::Accounts;
-   my $totalAmt = 0;
-   my $acctLns  = C4::Accounts::getAllAccountsByBorrowerItem(
-      $$li{borrowernumber},
-      $$li{itemnumber}
-   );
-   ## look for lost/replacement fee, which *should* be accessed only once.
-   ## ignore late fees.
-   ACCOUNT:
-   foreach(@$acctLns) {
-      if ($$_{accounttype} eq 'L') {
-         my $newno = C4::Accounts::refundlostitemreturned(
-            borrowernumber => $$li{borrowernumber},
-            accountno      => $$_{accountno},
-            itemnumber     => $$_{itemnumber},
-            description    => $$_{description},
-         );
-         ## change the description to something meaningful
-         $sth = $dbh->prepare('UPDATE accountlines 
-            SET description = ?,
-                accounttype = ?
-          WHERE accountno   = ?');
-         $sth->execute(
-            'Claims Returned',
-            'FOR',
-            $newno
-         );
-         last ACCOUNT;
-      }
-   }
-
-   return 1;
 }
 
 sub CreateLostItem {
@@ -228,21 +188,5 @@ sub GetLostItemById
    return $sth->fetchrow_hashref();
 }
 
-## this function is not exported.  Please use SUPER::PACK::func() syntax.
-##
-## $lost_item_id is lost_items.id column
-## $claims_returned is bool, set to zero to undo, set to 1 to make claim
-sub MakeClaimsReturned
-{
-   my($lost_item_id,$claims_returned) = @_;
-   $claims_returned ||= 0;
-   $claims_returned   = 1 if $claims_returned;
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare('UPDATE lost_items 
-        SET claims_returned = ?
-      WHERE id              = ?');
-   my $fx = $sth->execute($claims_returned,$lost_item_id);
-   return $fx;
-}
 
 1;

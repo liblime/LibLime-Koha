@@ -23,6 +23,7 @@ use C4::Context;
 use C4::Stats;
 use C4::Members;
 use C4::Items;
+use C4::LostItems;
 use C4::Circulation qw(MarkIssueReturned);
 
 use vars qw($VERSION @ISA @EXPORT);
@@ -433,46 +434,113 @@ sub refundBalance
    return 1;
 }
 
-sub refundlostitemreturned 
+sub makeClaimsReturned
 {
-   my %g = @_;
-   die "requires accountno of lost item: $!" unless $g{accountno};
-   die "requires borrowernumber: $!" unless $g{borrowernumber};
-   die "requires itemnumber of lost item" unless $g{itemnumber};
-   my $dbh = C4::Context->dbh;
-   my $sth;
-
-   unless ($g{amount}) {
-      $sth = $dbh->prepare('SELECT amountoutstanding FROM accountlines
-         WHERE accountno = ?
-           AND borrowernumber = ?
-           AND itemnumber = ?');
-      $sth->execute($g{accountno},$g{borrowernumber},$g{itemnumber});
-      $g{amount} = ($sth->fetchrow_array)[0];
+   die "No ClaimsReturnedValue set in syspref" 
+   unless C4::Context->preference('ClaimsReturnedValue');
+   my($lost_item_id,$claims_returned) = @_;
+   $claims_returned ||= 0;
+   $claims_returned   = 1 if $claims_returned;
+   my $li = C4::LostItems::GetLostItemById($lost_item_id);
+   C4::LostItems::ModLostItem(id=>$lost_item_id,claims_returned=>$claims_returned);
+   if ($claims_returned) {
+      C4::Items::ModItemLost(
+         $$li{biblionumber},
+         $$li{itemnumber},
+         C4::Context->preference('ClaimsReturnedValue')
+      );
+      return unless C4::Context->preference('RefundReturnedLostItem');
+   }
+   else {
+      my $lostAuthVal = C4::LostItems::AuthValForSimplyLost();
+      C4::Items::ModItemLost($$li{biblionumber},$$li{itemnumber},$lostAuthVal);
+      ## possibly recharge a lost fee.  it will be recharged if it was previoulsy
+      ## forgiven
+      rechargeClaimsReturnedUndo($li);
+      return;
    }
 
-   my $newno = getnextacctno($g{borrowernumber});
-   $sth = $dbh->prepare("
-      INSERT INTO accountlines(
-         date,
-         accountno,
-         borrowernumber,
-         itemnumber,
-         description,
-         amount,
-         amountoutstanding,
-         accounttype
-      ) VALUES (NOW(),?,?,?,?,?,?,?)");
-   $sth->execute(
-      $newno,
-      $g{borrowernumber},
-      $g{itemnumber},
-      'Refund lost item returned',
-      $g{amount},
-      0,
-      'REF'
-   );
-   return $newno;
+   ## RefundReturnedLostItem is ON and we have claims_returned true
+   ## get the lost item in accountlines
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT * FROM accountlines
+      WHERE borrowernumber = ?
+        AND itemnumber     = ?
+        AND accounttype    = 'L'
+   ORDER BY accountno DESC");
+   $sth->execute($$li{borrowernumber},$$li{itemnumber});
+   my $data = $sth->fetchrow_hashref();
+   return unless $$data{accountno};
+   ## for now, ignore case of never lost then suddently set to Claims Returned
+
+   ## see what else has been done regarding this lost item
+   my $sth = $dbh->prepare('SELECT * FROM accountlines
+      WHERE borrowernumber = ?
+        AND itemnumber     = ?
+        AND accountno      > ?');
+   $sth->execute($$li{borrowernumber},$$li{itemnumber},$$data{accountno});
+
+   ## theoretically, you can't Writeoff, Pay, Lost Return, or Claims Returned
+   ## on an item twice that's lost once.  This is for most recent lost
+   my %c = ();
+   while(my $row = $sth->fetchrow_hashref()) {
+      $c{$$row{accounttype}} = $row;
+   }
+
+   my $cr_accountno = $c{FOR}{accountno} || 0;
+   if (!$c{FOR}{amount}) {
+      $dbh->do("UPDATE accountlines
+         SET amountoutstanding = 0
+       WHERE borrowernumber    = ?
+         AND itemnumber        = ?
+         AND accountno         = ?", undef,
+         $$li{borrowernumber},
+         $$li{itemnumber},
+         $$data{accountno}); # doesn't go to LR, remains L
+      $cr_accountno = getnextacctno($$li{borrowernumber}); 
+      $dbh->do("INSERT INTO accountlines (
+            date,
+            accountno,
+            borrowernumber,
+            itemnumber,
+            accounttype,
+            amount,
+            amountoutstanding,
+            description) VALUES(
+         NOW(),?,?,?,'FOR',?,0,'Claims Returned')",undef,
+         $cr_accountno,
+         $$li{borrowernumber},
+         $$li{itemnumber},
+         (-1 *$$data{amount}),
+      );
+   }
+   return if $c{RCR};
+
+   if ($$data{amountoustanding} < $$data{amount}) {
+      return if $c{W};  ## amountoustanding is zero because of writeoff
+      my $rcrAmount = -1 *($$data{amount} - $$data{amountoutstanding});
+      return unless $rcrAmount;
+      my $pay_accountno = getnextacctno($$li{borrowernumber});
+      $dbh->do("INSERT INTO accountlines (
+            date,
+            accountno,
+            accounttype,
+            borrowernumber,
+            itemnumber,
+            description,
+            amount,
+            amountoutstanding
+            ) VALUES ( NOW(),?,'RCR',?,?,?,?,? )", undef,
+         $pay_accountno,
+         $$li{borrowernumber},
+         $$li{itemnumber},
+         'Refund owed for payment on lost item Claims Returned',
+         $rcrAmount,
+         $rcrAmount,
+      );
+   }
+
+   return;
 }
 
 =head2 fixaccounts (removed)
@@ -630,7 +698,7 @@ sub chargelostitem{
         # FIXME: Log this ?
         }
         #FIXME : Should probably have a way to distinguish this from an item that really was returned.
-        warn " $issues->{'borrowernumber'}  /  $itemnumber ";
+        #warn " $issues->{'borrowernumber'}  /  $itemnumber ";
         C4::Circulation::MarkIssueReturned($issues->{borrowernumber},$itemnumber) if ( C4::Context->preference( 'MarkLostItemsReturned' ) );
 	#  Shouldn't MarkIssueReturned do this?
         C4::Items::ModItem({ onloan => undef }, undef, $itemnumber);

@@ -839,7 +839,7 @@ sub CanBookBeIssued {
       borrowernumber => $borrower->{'borrowernumber'}, 
       date           => '' && $duedate->output('iso'),
       total_only     => 1,
-    );
+    ) || 0;
     my $cat = C4::Members::GetCategoryInfo($$borrower{categorycode}) // {};
     $$cat{circ_block_threshold} //= 0;
     if ( C4::Context->preference("IssuingInProcess") ) {
@@ -1495,7 +1495,7 @@ patron who last borrowed the book.
 =cut
 
 sub AddReturn {
-    my ( $barcode, $branch, $exemptfine, $dropbox, $returndate ) = @_;
+    my ( $barcode, $branch, $exemptfine, $dropbox, $returndate) = @_;
     if ($branch and not GetBranchDetail($branch)) {
         warn "AddReturn error: branch '$branch' not found.  Reverting to " . C4::Context->userenv->{'branch'};
         undef $branch;
@@ -1536,9 +1536,9 @@ sub AddReturn {
         # full item data, but no borrowernumber or checkout info (no issue)
         # we know GetItem should work because GetItemnumberFromBarcode worked
     my $hbr = $item->{C4::Context->preference("HomeOrHoldingBranch")} || '';
-        # item must be from items table -- issues table has branchcode and issuingbranch, not homebranch nor holdingbranch
+        # item must be from items table -- issues table has branchcode and issuingbranch, 
+        # not homebranch nor holdingbranch
 
-    my $itemlost = $$item{itemlost};
 
     my $borrowernumber = $borrower->{'borrowernumber'} || undef;    # we don't know if we had a borrower or not
 
@@ -1555,13 +1555,13 @@ sub AddReturn {
             Wrongbranch => $branch,
             Rightbranch => $hbr,
         };
-        $doreturn = 0 unless $itemlost;
+        $doreturn = 0 unless $$item{itemlost};
         # bailing out here - in this case, current desired behavior
         # is to act as if no return ever happened at all.
         # FIXME - even in an indy branches situation, there should
         # still be an option for the library to accept the item
         # and transfer it to its owning library.
-        return ( $doreturn, $messages, $issue, $borrower ) unless $itemlost;
+        return ( $doreturn, $messages, $issue, $borrower ) unless $$item{itemlost};
     }
 
     if ( $item->{'wthdrawn'} ) { # book has been cancelled
@@ -1575,12 +1575,11 @@ sub AddReturn {
     # Set items.otherstatus back to NULL on check in regardless of whether the
     # item was actually checked out.
     ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
-    ModItem({ onloan => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
-
+    ModItem({ onloan      => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
 
     # case of a return of document (deal with issues and holdingbranch)
     if ($doreturn) {
-        $borrower or warn "AddReturn without current borrower";
+        # $borrower or warn "AddReturn without current borrower";
         my $circControlBranch;
         if ($dropbox) {
             # define circControlBranch only if dropbox mode is set
@@ -1590,20 +1589,14 @@ sub AddReturn {
         }
 
         if ($borrowernumber) {
-            if ($returndate ) { # over ride in effect
+            # over ride in effect if $returndate
                 MarkIssueReturned(
                     $borrower->{'borrowernumber'},
                     $issue->{'itemnumber'},
                     $circControlBranch,
                     $returndate);
-            } else {
-                MarkIssueReturned(
-                    $borrower->{'borrowernumber'},
-                    $issue->{'itemnumber'},
-                    $circControlBranch);
-            }
-            $messages->{'WasReturned'} = 1;    # FIXME is the "= 1" right?  This could be the borrower hash.
-        }
+            $messages->{'WasReturned'} = $borrower || 1;        
+         }
     }
 
     # the holdingbranch is updated if the document is returned to another location.
@@ -1633,14 +1626,18 @@ sub AddReturn {
         }
         $validTransfert = 1;
     }
+    
+    ## Treat row in lostitems separate from items.itemlost.
+    ## This is because librarian can choose not to not unlink lost item from 
+    ## patron's account, so we have items.itemlost now 0 but lost_items defined.
+    my $lostitem = GetLostItem($$item{itemnumber});
 
-    # fix up the accounts.....
-    if ($item->{'itemlost'} || $itemlost) {
-        if (C4::Context->preference('RefundReturnedLostItem')) {
-            FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $barcode);    # can tolerate undef $borrowernumber
-        }
-        ModItem({itemlost => 0}, $item->{'biblionumber'}, $item->{'itemnumber'});
-        my $lost_item = GetLostItem($item->{'itemnumber'});
+    if ($item->{'itemlost'} || $$lostitem{id}) {
+        ## Fixing patron's account is done elsewhere, not here in AddReturn
+        #if (C4::Context->preference('RefundReturnedLostItem') && !$noremove) {
+        #   FixAccountForLostAndReturned($item->{'itemnumber'}, $borrowernumber, $barcode);    # can tolerate undef $borrowernumber
+        #}
+
         my $issues = GetItemIssues($itemnumber, 1);
         my $lostreturned_issue;
         foreach my $issue_ref (@$issues) {
@@ -1649,15 +1646,22 @@ sub AddReturn {
                 last;
             }
         }
-        DeleteLostItem($lost_item->{id});
-        $messages->{'WasLost'} = 1;
+        #DeleteLostItem($lost_item->{id});
+        $messages->{'WasLost'} = {
+            itemnumber          => $$item{itemnumber},
+            lostborrowernumber  => $$lostitem{borrowernumber},
+            issueborrowernumber => $$lostreturned_issue{borrowernumber},
+            biblionumber        => $$lostitem{biblionumber},
+            barcode             => $barcode,
+            lost_item_id        => $$lostitem{id},
+        };
 
-        if ($lostreturned_issue->{overdue} && C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem') && ! $exemptfine) {
-            ## we say 'if' b/c legacy data migration sometimes does not have old issues and
-            ## hence no borrower for a lost item
+        if ($lostreturned_issue->{overdue} && C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem') && !$exemptfine) {
+            ## we say 'if' below b/c legacy data migration sometimes does not have 
+            ## old issues and hence no borrower for a lost item
             if ($lostreturned_issue->{borrowernumber}) {
                my $gmborrower = C4::Members::GetMember($lostreturned_issue->{borrowernumber},'borrowernumber');
-               my ($circ_policy) = C4::Circulation::GetIssuingRule($gmborrower->{categorycode},$lost_item->{itemtype},$lostreturned_issue->{branchcode});
+               my ($circ_policy) = C4::Circulation::GetIssuingRule($gmborrower->{categorycode},$lostitem->{itemtype},$lostreturned_issue->{branchcode});
                if ($circ_policy->{max_fine}) {
                 ## don't invoice legacy data with no old issues and hence no borrower
                 C4::Accounts::manualinvoice(
@@ -1682,7 +1686,7 @@ sub AddReturn {
     }
 
     # For claims-returned items, update the fine to be as-if they returned it for normal overdue
-    if ($issue->{'date_due'} && $issue->{'itemlost'} && $issue->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){
+    if ($issue->{'date_due'} && $issue->{'itemlost'} && ($issue->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')) ){
         my $datedue = C4::Dates->new($issue->{'date_due'},'iso');
         my $due_str = $datedue->output();
         my $today = C4::Dates->new();
@@ -1929,8 +1933,18 @@ sub FixAccountForLostAndReturned {
              amountoutstanding = 0,
              description       = 'Lost Item Returned'
        WHERE accountno         = ?
-         AND borrowernumber    = ?|);
-   $sth->execute($$data{accountno},$$data{borrowernumber});
+         AND borrowernumber    = ?
+         AND itemnumber        = ?|);
+   $sth->execute($$data{accountno},$$data{borrowernumber},$itemnumber);
+
+   ## see if we already receive a refund owed (RCR), eg from payment before Claims Returned
+   $sth = $dbh->prepare("SELECT * FROM accountlines
+      WHERE borrowernumber = ?
+        AND itemnumber     = ?
+        AND accounttype    = 'RCR'
+        AND accountno      > ?");
+   $sth->execute($$data{borrowernumber},$itemnumber,$$data{accountno});
+   return if $sth->fetchrow_hashref();
 
    ## see what sort of payment was made for this book, if any
    ## 1) line-item payment
@@ -1978,7 +1992,15 @@ sub FixAccountForLostAndReturned {
        $sth->execute($$paid{amount},$$data{borrowernumber},$$data{accountno});
        $RCRamount = $$paid{amount};
    }
-   elsif ($$data{amountoutstanding} < $$data{amount}) { ## dispersal payment was made
+   elsif ($$data{amountoutstanding} < $$data{amount}) { ## dispersal payment was made?
+      $sth = $dbh->prepare("SELECT * FROM accountlines
+         WHERE borrowernumber = ?
+           AND itemnumber     = ?
+           AND accountno      > ?
+           AND accounttype    = 'FOR'"); # claims returned
+      $sth->execute($$data{borrowernumber},$$data{itemnumber},$$data{accountno});
+      my $cr = $sth->fetchrow_hashref();
+      return if $$cr{amount}; # claims returned already credited
       $RCRamount = -1*($$data{amount} - $$data{amountoutstanding});
    }
 

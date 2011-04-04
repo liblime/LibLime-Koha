@@ -375,9 +375,9 @@ Checkout anyway?<br>
 <!-- /TMPL_IF --> <!-- NEEDSCONFIRMATION -->
 
         <!-- TMPL_IF NAME="IMPOSSIBLE" -->
-        <!-- TMPL_IF NAME="soundon" -->
+           <!-- TMPL_IF NAME="soundon" -->
         <audio src="/intranet-tmpl/prog/sound/critical.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
-        <!-- /TMPL_IF -->        
+           <!-- /TMPL_IF -->        
 
 <div class="yui-g">
 <div id="circ_impossible" class="dialog alert">
@@ -460,18 +460,17 @@ Checkout anyway?<br>
 
 </div></div>
     <!-- TMPL_ELSE -->
-    <!-- TMPL_IF NAME="soundon" -->
+      <!-- TMPL_IF NAME="soundon" -->
     <audio src="/intranet-tmpl/prog/sound/beep.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
-    <!-- /TMPL_IF -->
-    <!--/TMPL_IF --> <!-- /impossible -->
+      <!-- /TMPL_IF -->
+   <!--/TMPL_IF --> <!-- /impossible -->
 
 <!-- TMPL_IF NAME="issued" -->
 <p>Item Checked out</p>
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="CGIselectborrower" -->
-
-<!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
+   <!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
 <form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="mainform" name="mainform">
 <fieldset id="circ_circulation_selectborrower" class="brief">
     <legend>Patron selection</legend>
@@ -491,12 +490,13 @@ Checkout anyway?<br>
 </form>
 <!-- TMPL_ELSE --> <!-- CGIselectborrower -->
    <!-- TMPL_UNLESS NAME="borrowernumber">
-   <!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
-   <h4>
-   No patron matched <span class="ex"><!-- TMPL_VAR name="findborrower" --></span>
-   </h4>
-   <!-- /TMPL_IF -->
-   <TMPL_ELSE>
+      <!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
+      <h4>
+      No patron matched <span class="ex"><!-- TMPL_VAR name="findborrower" --></span>
+      </h4>
+   </TMPL_IF>
+<!-- /TMPL_IF -->
+
 <!-- BARCODE ENTRY -->
 
 <TMPL_IF NAME="borrowernumber">

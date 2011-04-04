@@ -120,19 +120,10 @@ if($issue && $itemlost){
 
     ## Claims Returned
     if ($itemlost==C4::Context->preference('ClaimsReturnedValue')) {
-       C4::LostItems::ModLostItem(
-         id              => $id,
-         claims_returned => 1,
-       );
-       ## remove fine for this item for this borrower
-       my $li = C4::LostItems::GetLostItemById($id);
-       C4::LostItems::ForgiveFineForClaimsReturned($li,$loggedinuser);
+       C4::Accounts::makeClaimsReturned($id,1);
     }
     else {
-       C4::LostItems::ModLostItem(
-         id              => $id,
-         claims_returned => 0,
-       );
+       C4::Accounts::makeClaimsReturned($id,0);
     }
 }
 # If the item is being marked found, refund the patron the lost item charge,

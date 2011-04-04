@@ -454,6 +454,7 @@ if ($barcode) {
                   else {
                      $template->param(
                         $needsconfirmation => $$question{$needsconfirmation},
+                        getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
                         NEEDSCONFIRMATION  => 1,
                      );
                   }

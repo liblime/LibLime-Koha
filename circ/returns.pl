@@ -233,13 +233,16 @@ if ($dotransfer){
 	ModItemTransfer($transferitem, $userenv_branch, $tobranch); 
 }
 
-my $lost_item_returned = $query->param('lost_item_returned');
-if (C4::Context->preference('LinkLostItemsToPatron')) {
-  if ($lost_item_returned) {
-    my $itemnumber = GetItemnumberFromBarcode($barcode);
-    my $lost_item = C4::LostItems::GetLostItem($itemnumber);
-    C4::LostItems::DeleteLostItem($lost_item->{id});
-  }
+if (C4::Context->preference('LinkLostItemsToPatron') 
+&& $query->param('lost_item_id') 
+&& $query->param('unlinkFromAccount')) {
+   C4::LostItems::DeleteLostItem($query->param('lost_item_id'));
+   C4::Circulation::FixAccountForLostAndReturned(
+      $query->param('itemnumber'),
+      $query->param('lostborrowernumber'),
+      $query->param('lostbarcode')
+   );
+   $barcode = $query->param('lostbarcode');
 }
 
 
@@ -474,61 +477,73 @@ if ( $messages->{'ResFound'}) {
 # Error Messages
 my @errmsgloop;
 foreach my $code ( keys %$messages ) {
-    my %err;
-    my $exit_required_p = 0;
-    if ( $code eq 'BadBarcode' ) {
+   my %err;
+   my $exit_required_p = 0;
+   if ( $code eq 'BadBarcode' ) {
         $err{badbarcode} = 1;
         $err{msg}        = $messages->{'BadBarcode'};
-    }
-    elsif ( $code eq 'NotIssued' ) {
+   }
+   elsif ( $code eq 'NotIssued' ) {
         $err{notissued} = 1;
         $err{msg} = $branches->{ $messages->{'IsPermanent'} }->{'branchname'};
-    }
-    elsif ( $code eq 'WasLost' ) {
-        $err{waslost} = 1;
-        if (C4::Context->preference('LinkLostItemsToPatron')) {
-          $template->param(lostreturned => 1);
-        }
-    }
-    elsif ( $code eq 'ResFound' ) {
+   }
+   elsif ( $code eq 'WasLost' ) {
+      $err{waslost} = 1;
+      if (C4::Context->preference('LinkLostItemsToPatron')) {
+         my $lostbor = {};
+         if ($$messages{$code}{lostborrowernumber}) {
+            $lostbor = C4::Members::GetMember($$messages{$code}{lostborrowernumber});
+         }
+         $template->param(
+            lostreturned       => 1,
+            itemnumber         => $$messages{$code}{itemnumber},
+            lostborrowernumber => $$messages{$code}{lostborrowernumber},
+            lostbor_surname    => $$lostbor{surname},
+            lostbor_firstname  => $$lostbor{firstname},
+            lostbor_cardnumber => $$lostbor{cardnumber},
+            lost_item_id       => $$messages{$code}{lost_item_id},
+         );
+      }
+   }
+   elsif ( $code eq 'ResFound' ) {
         ;    # FIXME... anything to do here?
-    }
-    elsif ( $code eq 'WasReturned' ) {
+   }
+   elsif ( $code eq 'WasReturned' ) {
         ;    # FIXME... anything to do here?
-    }
-    elsif ( $code eq 'WasTransfered' ) {
+   }
+   elsif ( $code eq 'WasTransfered' ) {
         ;    # FIXME... anything to do here?
-    }
-    elsif ( $code eq 'wthdrawn' ) {
+   }
+   elsif ( $code eq 'wthdrawn' ) {
         $err{withdrawn} = 1;
         $exit_required_p = 1;
-    }
-    elsif ( ( $code eq 'IsPermanent' ) && ( not $messages->{'ResFound'} ) ) {
+   }
+   elsif ( ( $code eq 'IsPermanent' ) && ( not $messages->{'ResFound'} ) ) {
         if ( $messages->{'IsPermanent'} ne $userenv_branch ) {
             $err{ispermanent} = 1;
             $err{msg}         =
               $branches->{ $messages->{'IsPermanent'} }->{'branchname'};
         }
-    }
-    elsif ( $code eq 'WrongTransfer' ) {
+   }
+   elsif ( $code eq 'WrongTransfer' ) {
         ;    # FIXME... anything to do here?
-    }
-    elsif ( $code eq 'WrongTransferItem' ) {
+   }
+   elsif ( $code eq 'WrongTransferItem' ) {
         ;    # FIXME... anything to do here?
-    }
-    elsif ( $code eq 'NeedsTransfer' ) {
-    }
-    elsif ( $code eq 'Wrongbranch' ) {
-    }
+   }
+   elsif ( $code eq 'NeedsTransfer' ) {
+   }
+   elsif ( $code eq 'Wrongbranch' ) {
+   }
 		
-    else {
+   else {
         die "Unknown error code $code";    # note we need all the (empty) elsif's above, or we die.
         # This forces the issue of staying in sync w/ Circulation.pm
-    }
-    if (%err) {
+   }
+   if (%err) {
         push( @errmsgloop, \%err );
-    }
-    last if $exit_required_p;
+   }
+   last if $exit_required_p;
 }
 $template->param( errmsgloop => \@errmsgloop );
 

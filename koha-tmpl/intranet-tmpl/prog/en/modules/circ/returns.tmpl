@@ -105,27 +105,31 @@ function ContinueReturns() {
                     <!-- TMPL_IF NAME="waslost" -->
 			<script type="text/javascript">$(document).ready(function() {HaltReturns();});</script>
                         <p class="problem"><font style="color:red"><h3>Item was lost, now found.</h3></font></p>
-                        <!-- TMPL_IF Name="lostreturned" -->
-                          <p>
-                          <h5> Remove from patron's lost items? </h5>
-                          <form action="returns.pl" method="post">
-                             <input type=hidden name="reloadFromItemLost" value="<!-- TMPL_VAR NAME="reloadFromItemLost" -->">
-                             <input type="hidden" name="lost_item_returned" value="1" />
-                             <input type="hidden" name="barcode" value="<!-- TMPL_VAR Name="itembarcode" -->" />
-                             <input type="submit" value="Yes" />
-                          </form>
-                          <form action="returns.pl" method="post">
-                             <input type="hidden" name="lost_item_returned" value="0" />
-                             <input type="submit" value="No" />
-                          </form>
-					<!-- TMPL_IF NAME="UseReceiptTemplates_ClaimsReturnedFound" -->
-				                <input type="submit" value="Print Receipt" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=claims_returned_found&amp;barcode=<!-- TMPL_VAR Name="itembarcode" -->');" />
-					<!-- /TMPL_IF -->
-
-                        <!-- TMPL_ELSE -->
-			<p><button id="continue_button" onclick="ContinueReturns();">Continue</button></p>
-                        <!-- /TMPL_IF -->
-                    <!-- /TMPL_IF -->
+                        <TMPL_IF NAME="lostborrowernumber">
+                           Remove from <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<TMPL_VAR NAME="lostborrowernumber">"><TMPL_VAR NAME="lostbor_firstname"> 
+                              <TMPL_VAR NAME="lostbor_surname"></a>'s 
+                             (<TMPL_VAR NAME="lostbor_cardnumber">) lost items?
+                           <form action="returns.pl" method="post" name="lostf">
+                              <TMPL_LOOP NAME="inputloop">
+                              <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
+                              <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
+                              <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+                              </TMPL_LOOP>
+                              <input type=hidden name="unlinkFromAccount" value="1">
+                              <input type=hidden name="lostbarcode" value="<!-- TMPL_VAR Name="itembarcode" -->" />
+                              <input type=hidden name="lost_item_id"   value="<TMPL_VAR NAME="lost_item_id">">
+                              <input type=hidden name="itemnumber"     value="<TMPL_VAR NAME="itemnumber">">
+                              <input type=hidden name="borrowernumber" value="<TMPL_VAR NAME="borrowernumber">">
+                              <input type="submit" value="Yes" />
+                              <input type=button value="No" onclick="document.lostf.unlinkFromAccount.value=0;document.lostf.submit();" />
+					               <TMPL_IF NAME="UseReceiptTemplates_ClaimsReturnedFound">
+				                  <input type="submit" value="Print Receipt" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=claims_returned_found&amp;barcode=<!-- TMPL_VAR Name="itembarcode" -->');" />
+					               </TMPL_IF>
+                           </form>
+                        <TMPL_ELSE>
+			               <p><button id="continue_button" onclick="ContinueReturns();">Continue</button></p>
+                        </TMPL_IF><!-- lostborrowernumber -->
+                     </TMPL_IF><!-- waslost -->
                     <!-- TMPL_IF Name="withdrawn" -->
                         <p class="problem">Item is withdrawn.</p>
                     <!-- /TMPL_IF -->
