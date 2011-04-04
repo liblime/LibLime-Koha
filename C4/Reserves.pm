@@ -870,6 +870,10 @@ sub CheckReserves {
               $nohold++;
               next;
             }
+            my $borrowerinfo = C4::Members::GetMemberDetails($res->{'borrowernumber'});
+            my $iteminfo = C4::Items::GetItem($itemnumber);
+            my $branch = C4::Circulation::_GetCircControlBranch($iteminfo,$borrowerinfo);
+            next if (($issuingrule->{'holdallowed'} == 1) && ($branch ne $borrowerinfo->{'branchcode'}));
             # FIXME - $item might be undefined or empty: the caller
             # might be searching by barcode.
             if ( ($res->{itemnumber} // -1) == $item && $res->{priority} == 0) {
