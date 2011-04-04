@@ -4590,6 +4590,12 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Normalize tmp_holdsqueue )\n";
 }
 
+$DBversion = '4.04.00.000';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Minor version update to $DBversion )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
