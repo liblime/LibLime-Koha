@@ -307,7 +307,9 @@ my $sortby      = C4::Context->preference('OPACDefaultItemSort') || 'itemtype';
 my @f           = qw(library itemtype location_description itemcallnumber);
 my $sorted      = 0;
 if (!!$activefirst) {
-   my $activebranch = $ENV{KOHA_ACTIVE_BRANCH};
+   my $opacconf
+       = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
+   my $activebranch = $opacconf->{activebranch} || $ENV{KOHA_ACTIVE_BRANCH};
    $activebranch  ||= ($borrowernumber)
       ? GetMember($borrowernumber)->{branchcode}
       : '';

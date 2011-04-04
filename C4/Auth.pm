@@ -339,30 +339,32 @@ sub get_template_and_user {
         my $LibraryNameTitle = C4::Context->preference("LibraryName");
         $LibraryNameTitle =~ s/<(?:\/?)(?:br|p)\s*(?:\/?)>/ /sgi;
         $LibraryNameTitle =~ s/<(?:[^<>'"]|'(?:[^']*)'|"(?:[^"]*)")*>//sg;
+
         # variables passed from CGI: opac_css_override and opac_search_limits.
-        my $opac_search_limit = $ENV{'OPAC_SEARCH_LIMIT'};
-        my $opac_limit_override = $ENV{'OPAC_LIMIT_OVERRIDE'};
+        my $opacconf
+            = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
+
+        my $opac_search_limit = $opacconf->{default_search_limit}{content} || $ENV{'OPAC_SEARCH_LIMIT'};
+        my $opac_limit_override = $opacconf->{default_search_limit}{override} || $ENV{'OPAC_LIMIT_OVERRIDE'};
         my $mylibraryfirst = C4::Context->preference("SearchMyLibraryFirst");
         my $opac_name;
         if($opac_limit_override && ($opac_search_limit =~ /branch:(\w+)/) ){
              $opac_name = C4::Branch::GetBranchName($1)   # opac_search_limit is a branch, so we use it.
-        } elsif($mylibraryfirst){
+        }
+        elsif($mylibraryfirst) {
             $opac_name = C4::Branch::GetBranchName($mylibraryfirst);
         }
 	my $checkstyle = C4::Context->preference("opaccolorstylesheet");
-	if ($checkstyle =~ /http/)
-	{
-            	$template->param( opacexternalsheet => $checkstyle);
-	} else
-	{
-		my $opaccolorstylesheet = C4::Context->preference("opaccolorstylesheet");  
+	if ($checkstyle =~ /^http/) {
+            $template->param( opacexternalsheet => $checkstyle);
+	}
+        else {
+            my $opaccolorstylesheet = C4::Context->preference("opaccolorstylesheet");  
             $template->param( opaccolorstylesheet => $opaccolorstylesheet);
 	}
-    if ($ENV{'OPAC_CSS_EXTERNAL'}){
-        $template->param(
-            opacexternalsheet         => $ENV{'OPAC_CSS_EXTERNAL'}
-        );
-    }
+        if (my $sheet = ($opacconf->{stylesheet} || $ENV{'OPAC_CSS_EXTERNAL'})) {
+            $template->param(opacexternalsheet => $sheet);
+        }
 
         $template->param(
             AnonSuggestions           => "" . C4::Context->preference("AnonSuggestions"),

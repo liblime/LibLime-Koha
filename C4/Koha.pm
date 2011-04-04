@@ -22,6 +22,7 @@ use strict;
 use C4::Context;
 use C4::Output;
 use URI::Split qw(uri_split);
+use List::Util qw(first);
 
 use vars qw($VERSION @ISA @EXPORT $DEBUG);
 
@@ -1154,6 +1155,31 @@ sub _isbn_cleanup ($) {
         return $1;
     }
     return undef;
+}
+
+sub CgiOrPlackHostnameFinder {
+    return $ENV{SERVER_NAME} # CGI mode
+    || (split qr{,}, $ENV{HTTP_X_FORWARDED_HOST})[0] # Plack proxy mode
+}
+
+sub GetOpacConfigByHostname {
+    my $coderef = shift;
+    my $opacconfs = C4::Context->opachosts('opac');
+    return {} if !defined $opacconfs;
+
+    my $hostname = ($coderef) ? $coderef->() : '*';
+    my $opacconf;
+    while ($hostname) {
+        $opacconf = first {$_->{hostname} ~~ $hostname} @{$opacconfs};
+        last if $opacconf or $hostname eq '*';
+
+        $hostname =~ s/^\*\.//;
+        my @nameparts = split qr{\.}, $hostname;
+        shift @nameparts;
+        $hostname = join '.', ('*', @nameparts);
+    }
+
+    return $opacconf // {};
 }
 
 1;

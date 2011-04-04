@@ -434,6 +434,11 @@ sub _common_config ($$) {
     return $context->{$term}->{$var};
 }
 
+sub opachosts {
+	my $opachosts = _common_config($_[1], 'opachosts');
+    return (ref($opachosts) eq 'ARRAY') ? $opachosts : [$opachosts];
+}
+
 sub config {
 	return _common_config($_[1],'config');
 }
