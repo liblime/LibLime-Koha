@@ -447,8 +447,8 @@ $template->param(available => $available);
 my $isBarcode   = 0;
 my $newq        = '';
 my $expectedLen = C4::Context->preference('itembarcodelength');
-if ($expectedLen && ($operands[0] !~ /\D/)) {
-   ## for simple earch
+if ($expectedLen && $operands[0] && ($operands[0] !~ /\D/)) {
+   ## for simple search
    if (  (length($operands[0])<$expectedLen)
       && (length($operands[0]) != 10)
       && (length($operands[0]) != 13) 
@@ -464,6 +464,7 @@ if ($expectedLen && ($operands[0] !~ /\D/)) {
 
    ## advanced search
    for my $i(0..$#indexes) {
+      next unless $operands[$i];
       next unless $indexes[$i] eq 'bc';
       $isBarcode = 1;
       if (length($operands[$i]) < $expectedLen) {
