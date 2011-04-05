@@ -68,12 +68,13 @@ if ($run_pass) {
       orderby  => $orderby,
    );
    my $c = 0;
+   my @qbranches = C4::Reserves::getBranchesQueueWeight();
    foreach my $item(@$qitems) {
       my $action = $query->param("action_$c") // '';
       my @actions = qw(pass trace);
       if ($action ~~ @actions) {
          my $res = C4::Reserves::GetReserve($$item{reservenumber});
-         if    ($action eq 'pass')  { C4::Reserves::ModReservePass($res) }
+         if    ($action eq 'pass')  { C4::Reserves::ModReservePass($res,@qbranches) }
          elsif ($action eq 'trace') { C4::Reserves::ModReserveTrace($res)}
       }
       $c++;

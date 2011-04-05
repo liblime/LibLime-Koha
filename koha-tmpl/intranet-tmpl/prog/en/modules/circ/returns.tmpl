@@ -433,7 +433,7 @@ function ContinueReturns() {
         	<!-- /TMPL_IF -->
             <!-- /TMPL_IF -->
 		<!-- TMPL_IF name="HoldButtonIgnore" -->
-                <input type="submit" class="deny" value="Ignore" onclick="$('.dialog:visible').hide('slow'); $('#barcode').focus(); return false;" />
+                <input type="submit" class="deny" value="Ignore" onclick="$('.dialog:visible').hide('slow'); $('#barcode').focus(); <TMPL_IF NAME="queue_branchlimit">parent.parent.GB_hide();</TMPL_IF>return false;" />
             	<!-- /TMPL_IF -->
             <!-- TMPL_LOOP Name="inputloop" -->
 	<input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />

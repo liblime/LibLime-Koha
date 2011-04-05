@@ -135,6 +135,13 @@ sub GetAllBranches {
     return clone($branches_cache //= _seed_branches_cache());
 }
 
+sub GetBranchcodes {
+    my $sorter = shift // sub { $a->{branchcode} cmp $b->{branchcode}};
+    
+    my @branchcodes = map {$_->{branchcode}} sort $sorter values %{GetAllBranches()};
+    return wantarray ? @branchcodes : \@branchcodes;
+}
+
 sub GetBranches {
     my ($onlymine, $branchcode) = @_;
 

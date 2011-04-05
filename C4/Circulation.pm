@@ -191,6 +191,12 @@ sub barcodedecode
     };
     my $filtered = ($g{filter} && exists($filter_dispatch->{$g{filter}})) 
     ? $filter_dispatch->{$g{filter}}() : $g{barcode};
+
+    ## handle negative numbers
+    my $testnum = sprintf("%d",$filtered);
+    if (($testnum == $filtered) && $filtered <0) {
+       return $filtered;
+    }
     
     ## pull it out for running on commandline, esp. *.t
     my %userenv    = %{C4::Context->userenv || {}};

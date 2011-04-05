@@ -22,6 +22,7 @@ use C4::Reserves;
 my @f = qw(reservenumber biblionumber itemnumber barcode surname firstname phone 
 borrowernumber cardnumber reservedate title itemcallnumber holdingbranch pickbranch 
 notes item_level_request queue_sofar);
+my @branches = C4::Reserves::getBranchesQueueWeight();
 
 C4::Reserves::UnorphanCancelledHolds();
 C4::Reserves::CleanupQueue();
@@ -49,7 +50,7 @@ foreach my $res (values %{C4::Reserves::GetReservesForQueue() // {}}) {
       $$res{item_level_request} = 0;
       $$res{holdingbranch}      = '';
       ## (a) try to find an item
-      $item = C4::Reserves::GetItemForBibPrefill($res);
+      $item = C4::Reserves::GetItemForBibPrefill($res,@branches);
       ## (b) do nothing else
    }
    next HOLD unless $item;

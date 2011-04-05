@@ -232,7 +232,11 @@ sub DupecheckQueue
    return ($sth->fetchrow_array)[0] // 0;
 }
 
-sub _getBranchesQueueWeight
+sub _random_sorter {
+    return ((rand 2) > 1);
+}
+
+sub getBranchesQueueWeight
 {
    my $dbh = C4::Context->dbh;
    my $sth;
@@ -252,25 +256,21 @@ sub _getBranchesQueueWeight
          @branches = shuffle(@staylibs);
       }
       else {
-         $sth = $dbh->prepare('SELECT branchcode FROM branches ORDER BY RAND()');
-         $sth->execute();
-         while(my $row=$sth->fetchrow_hashref()) { push @branches, $$row{branchcode} }
+         @branches = C4::Branch::GetBranchcodes(\&_random_sorter);
       }
    }
    elsif (@staylibs) {
-      @branches = @staylibs;
+      @branches = @staylibs; undef @staylibs;
    }
    else {
-      $sth = $dbh->prepare('SELECT branchcode FROM branches');
-      $sth->execute();
-      while(my $row=$sth->fetchrow_hashref()) { push @branches, $$row{branchcode} }
+      @branches = C4::Branch::GetBranchcodes();
    }
-   return @branches;
+   return wantarray? @branches : \@branches;
 }
 
 sub GetItemForBibPrefill
 {
-   my $res = shift;
+   my($res,@branches) = @_;
    my $dbh = C4::Context->dbh;
 
    ## other item-level requests upon this bib are excluded from 
@@ -279,16 +279,18 @@ sub GetItemForBibPrefill
       FROM reserves
      WHERE biblionumber = ?
        AND priority > 0  /* is in the queue */
-       AND found IS NULL /* has not been filled/waiting/in transit */
-       AND reservedate <= NOW()
-       AND reservenumber != ?
+       AND found IS NULL /* has not been filled/waiting/in transit/suspended */
+       AND reservedate   <= NOW()
        AND itemnumber IS NOT NULL") || die $dbh->errstr();
-   $sth->execute($$res{biblionumber},$$res{reservenumber});
+   $sth->execute($$res{biblionumber});
    my @notitems = $sth->fetchrow_array();
-   $sth->finish();
+   $sth = $dbh->prepare("SELECT itemnumber FROM tmp_holdsqueue
+      WHERE biblionumber = ?");
+   $sth->execute($$res{biblionumber});
+   my @more = $sth->fetchrow_array();
+   push @notitems, @more if @more;
 
    my @vals       = ($$res{biblionumber});
-   my @branches   = _getBranchesQueueWeight();
    my $starti     = 0;
    my $idx        = 0;
 
@@ -371,9 +373,13 @@ sub GetItemForQueue
              items.notforloan
         FROM items,biblio
        WHERE biblio.biblionumber = items.biblionumber
-         AND items.biblionumber = ?
-         AND items.itemnumber   = ?") || die $dbh->errstr();
-   $sth->execute($$res{biblionumber},$$res{itemnumber});
+         AND items.biblionumber  = ?
+         AND items.itemnumber    = ?
+         AND items.itemnumber NOT IN (
+            SELECT itemnumber FROM tmp_holdsqueue
+            WHERE  biblionumber = ?)
+   ") || die $dbh->errstr();
+   $sth->execute($$res{biblionumber},$$res{itemnumber},$$res{biblionumber});
    my $item = $sth->fetchrow_hashref();
    return unless $item;
    $$item{found}            = $$res{found};
@@ -1533,7 +1539,7 @@ sub ModReserve {
 
 sub ModReservePass
 {
-   my $res = shift;
+   my($res,@branches) = @_;
    my $dbh = C4::Context->dbh;
    my $sth;
 
@@ -1577,7 +1583,7 @@ sub ModReservePass
    ## for a bib-level request, pass it to the next library with an 
    ## available item.
    $$res{_pass} = 1;
-   my $item = GetItemForBibPrefill($res);
+   my $item = GetItemForBibPrefill($res,@branches);
    if ($$item{_wraparound}) {
       $$res{queue_sofar} .= ",$$res{holdingbranch}";
       $sth = $dbh->prepare('
