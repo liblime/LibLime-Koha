@@ -1,4 +1,5 @@
 # Copyright 2007 MJ Ray
+# Copyright 2011 LibLime, a Division of PTFS, Inc.
 #
 # This file is part of Koha.
 #
@@ -27,7 +28,7 @@ use File::Spec;
 use Getopt::Long;
 
 my $DEBUG = 0;
-die "perl 5.6.1 or later required" unless ($] >= 5.006001);
+die "perl 5.10.0 or later required" unless ($] >= 5.010000);
 
 # Hash up directory structure & files beginning with the directory we were called from (should be the base of koha)...
 
@@ -1387,7 +1388,7 @@ sub display_configuration {
     print "\n\nTo change any configuration setting, please run\n";
     print "perl Makefile.PL again.  To override one of the target\n";
     print "directories, you can do so on the command line like this:\n";
-    print "\nperl Makefile.PL PERL_MODULE_DIR=/usr/share/perl/5.8\n\n";
+    print "\nperl Makefile.PL PERL_MODULE_DIR=/usr/share/perl/5.10\n\n";
     print "You can also set different default values for parameters\n";
     print "or override directory locations by using environment variables.\n";
     print "\nFor example:\n\n";
