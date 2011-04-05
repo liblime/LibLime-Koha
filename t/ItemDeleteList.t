@@ -9,7 +9,7 @@ BEGIN {
     use_ok('C4::ItemDeleteList');
 }
 
-can_ok('C4::ItemDeleteList',qw(new append list_id item_barcodes remove_list rowcount remove_item));
+can_ok('C4::ItemDeleteList',qw(new append list_id item_barcodes remove_all rowcount remove));
 
 my $idl = C4::ItemDeleteList->new;
 ok( defined $idl );
@@ -20,7 +20,7 @@ cmp_ok($idl2->list_id(), '!=', $idl->list_id(), 'list ids are unique');
 is($idl->rowcount(), 0, 'Empty list returns correct length');
 $idl->append({itemnumber => 1, biblionumber => 2});
 is($idl->rowcount(), 1, 'List size grows after append');
-$idl->remove_item( 1 );
+$idl->remove( 1 );
 is($idl->rowcount(), 0, 'remove_item removes row');
 
 
