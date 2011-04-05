@@ -64,6 +64,7 @@ if ($btype eq 'item') {
          $params->{'subtitle'} = $biblio->{'subtitle'} || '';
          $params->{'item_level_reserves'} = $item_level_reserves;
          $params->{'bib_level_reserves'} = $bib_level_reserves;
+         $params->{'biblionumber'} = $item->{'biblionumber'};
   
          my $record = GetMarcBiblio( $item->{'biblionumber'} );
          my $field_245 = $record->field('245');

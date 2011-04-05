@@ -31,13 +31,19 @@ function active(numlayer)
         }
     }
 }
+function closeValErr(rmBarcode) {
+   var el = document.getElementById('valErr');
+   el.innerHTML = '';
+   el.style.display = 'none';
+   if (rmBarcode==1) { document.f.<TMPL_VAR NAME="barcode_id">.value ='' }
+   $('#<TMPL_VAR NAME="barcode_id">').focus();
+}
 function Check(f) {
-
-    var total_errors=0;
+   var total_errors = 0;
 //	alert(f.field_value.length);
-    for (i=0 ; i<f.field_value.length ; i++) {
-//	alert (f.field_value[i].value);
-        if (f.field_value[i].value.length==0 && f.mandatory[i].value==1) {
+    for (i=0; i<f.field_value_0.length ; i++) {
+//	alert (f.field_value_0[i].value);
+        if (f.field_value_0[i].value.length==0 && f.mandatory_0[i].value==1) {
             document.getElementById("error"+i).style.backgroundColor="#FF0000";
             total_errors++;
         } else {
@@ -46,21 +52,106 @@ function Check(f) {
     }
     var alertString2;
     if (total_errors==0) {
-        return true;
-    } else {
-        alertString2  = _("Form not submitted because of the following problem(s)");
+      // do nothing
+    }
+    else {
+        alertString2  = "Form not submitted because of the following problem(s)";
         alertString2 += "\n------------------------------------------------------------------------------------\n";
         alertString2 += "\n- "+ total_errors+_(" mandatory fields empty (see bold subfields)");
         alert(alertString2);
         return false;
     }
+
+   var el = document.getElementById('valErr');
+   if ( $('#<!-- TMPL_VAR NAME="barcode_id" -->').val() ) {
+      var perm = document.getElementById('<TMPL_VAR NAME="branchcode_tag_id">');
+      var branchcode = perm.options[perm.selectedIndex].value;
+      var dupecheck = 1;
+      var itemnumber = '<!-- TMPL_VAR NAME="itemnumber" -->';
+      var id = '<!-- TMPL_VAR NAME="itemnumber" -->';
+      // dupecheck if adding
+      if (id == '') { dupecheck = 1; }
+      $.getJSON('check_barcode.pl', {'barcode':$('#<!-- TMPL_VAR NAME="barcode_id" -->').val(),'barcodetype':'item','branchcode':branchcode,'dupecheck':dupecheck,'itemnumber':itemnumber},function(data) {
+         if (data.error) {
+            el.innerHTML = 'Invalid barcode: <span class="error"><b>'
+            +data.error + '</b></span><br><br>'
+            +'Cannot save record.<br><br>'
+            +'Click OK to go back to the record and re-enter barcode.<br>'
+            +'Otherwise, click to override and save with current barcode.<br><br>'
+            +'<input type=button value="Override and Save" onclick="document.f.submit()"> '
+            +'<input type=button value="OK" onclick="closeValErr();">';
+            el.style.display = 'block';
+            document.getElementById('aboveValErr').scrollIntoView();
+            total_errors++;
+         }
+			else if ( data.itemnumber ) {
+				var itemData = '<table border=0 cellspacing=0 cellpadding=2>';
+				itemData += '<tr><td>Title: </td><td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber='
+            +data.biblionumber + '">' + data.title + ' ' + data.subtitle + "</a></td></tr>";
+
+				if ( data.medium ) {
+					itemData += "<tr><td>Medium: </td><td>" + data.medium + "</td></tr>";
+				}
+				if ( data.field245n || data.field245p ) {
+					itemData += "<tr><td>Part/Section: </td><td>" + data.field245n + ' ' + data.field245p + "</td></tr>";
+				}
+				itemData += "<tr><td>Holding Location: </td><td>" + data.holdingbranch + "</td></tr>";
+				itemData += "<tr><td>Home Location: </td><td>" + data.homebranch + "</td></tr>";
+				if ( data.date_due ) {
+					itemData += "<tr><td colspan=2>Currently checked out.<br>";
+					itemData += "Due back on " + data.date_due + "</td></tr>";
+				}
+				if ( data.bib_level_reserves ) {
+					itemData += "<tr><td colspan=2><span class=error><b>";
+					itemData += "This item has bibliographic-level holds.</b></span></td></tr>";
+				}
+				if ( data.item_level_reserves ) {
+					itemData += "<tr><td colspan=2><span class=error><b>"
+               + "This item has item-level holds.</b></span></td></tr>";
+				}
+            itemData += '</table>';
+      
+				<TMPL_IF NAME="CAN_user_editcatalogue_relink_items">
+            var url = 'additem.pl?op=edititem&mv=1&biblionumber=<TMPL_VAR NAME="biblionumber">'
+            +'&itemnumber='+data.itemnumber;
+            el.innerHTML = '<span class="error"><b>This barcode is currently being used by '
+            +'the following item:</b></span><br><br>'
+            +itemData
+            +'Do you want to move this item from its current bibliographic record to this one?<br><br>'
+            +'&lt;OK&gt; will load the data from the existing item.<br>'
+            +'&lt;Cancel&gt; will retain any data you have entered except the barcode.<br>'
+            +"After the item's data loads, you can review and edit the data and then choose<br>"
+            +'&lt;Save Changes&gt; to commit changes.<br><br>'
+            +'<input type=button value="OK" onclick="window.location=\''+url+'\'"> '
+            +'<input type=button value="Cancel" onclick="closeValErr(1)">';
+				<TMPL_ELSE>
+            el.innerHTML = '<span class=error><b>This barcode is currently being used by the following item:'
+            +'</b></span><br><br>'
+            +itemData
+            +'<br>Please use a different barcode.<br><br>'
+            +'<input type=button value="OK" onclick="closeValErr(1)">';
+				</TMPL_IF>
+            el.style.display = 'block';
+            document.getElementById('aboveValErr').scrollIntoView();
+			}
+         else {
+            document.f.submit();
+         }
+		});
+   }
+   else { 
+      el.innerHTML = 'Barcode is required.<br><br>'
+      +'<input type=button value="OK" onclick="closeValErr()">';
+      el.style.display = 'block';
+      document.getElementById('aboveValErr').scrollIntoView();
+   }
 }
 function CheckMultipleAdd(f) {
-
     if (!f || isNaN(f) || !parseInt(f) == f || f <= 0) { 
-	alert(_("Please enter a number of items to create.")); 
+	alert("Please enter a number of items to create."); 
 	return false;	
     }
+   return true;
 }
 function Dopop(link,i) {
     defaultvalue=document.forms[0].field_value[i].value;
@@ -300,6 +391,8 @@ function checkForDuplicateDefaultsName() {
     <!-- /TMPL_IF -->
 </div>
 
+<div id="aboveValErr"></div>
+<div id="valErr" class="dialog message" style="display:none;background:#ffffcc"></div>
 <div id="cataloguing_additem_newitem">
     <form method="post" action="/cgi-bin/koha/cataloguing/additem.pl" name="f">
     <input type="hidden" name="op" value="<!-- TMPL_VAR NAME="op" -->" />
@@ -352,13 +445,18 @@ function checkForDuplicateDefaultsName() {
     -->
 
     <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_items" -->
-    <input type="submit" name="add_submit" value="Add item" onclick="return Check(this.form)" />
-    <input type="submit" name="add_duplicate_submit" value="Add &amp; Duplicate" onclick="return Check(this.form)" />
-    <input type="submit" name="add_multiple_copies" value="Add Multiple Copies" onclick="javascript:this.nextSibling.style.visibility='visible';document.f.number_of_copies.focus(); return false;" /><span id="add_multiple_copies_span" style="visibility:hidden">
+    <input type=hidden name="add_submit" value="0">
+    <input type=hidden name="add_duplicate_submit" value="0">
+    <input type=hidden name="add_multiple_copies" value="0">
+    <input type="button" value="Add Item" onclick="this.form.add_submit.value=1;Check(this.form)" />
+    <input type="button" value="Add &amp; Duplicate" onclick="this.form.add_duplicate_submit.value=1;
+      Check(this.form)" />
+    <input type="button" value="Add Multiple Copies" onclick="javascript:this.form.add_multiple_copies.value=1;this.nextSibling.style.visibility='visible';document.f.number_of_copies.focus(); return false;" /><span id="add_multiple_copies_span" style="visibility:hidden">
     <!-- /TMPL_IF -->
 	<label for="number_of_copies">Number of copies to add : </label>
 	<input type="text" id="number_of_copies" name="number_of_copies" value="" size="2" />
-	<input type="submit" id="add_multiple_copies_submit" name="add_multiple_copies_submit" value="Add" onclick="javascript:return Check(this.form) &amp;&amp; CheckMultipleAdd(this.form.number_of_copies.value);" />
+   <input type=hidden name="add_multiple_copies_submit" value="0">
+	<input type="button" value="Add" onclick="this.form.add_multiple_copies_submit.value=1;if(CheckMultipleAdd(this.form.number_of_copies.value)){Check(this.form)}" />
     </span>
 
     <br/><br/>
@@ -414,7 +512,7 @@ function checkForDuplicateDefaultsName() {
     <input type="hidden" name="subfield_0" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
     <input type="hidden" name="field_value_0" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
          <!-- TMPL_UNLESS NAME="notmyitem" -->
-    <input type="submit" value="Save Changes" onclick="return Check(this.form)" /> 
+    <input type="button" value="Save Changes" onclick="Check(this.form)" /> 
          <!-- /TMPL_UNLESS -->
       <!-- /TMPL_IF -->
     <!-- /TMPL_IF --></fieldset>
@@ -427,113 +525,5 @@ function checkForDuplicateDefaultsName() {
 <!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
 </div>
 </div>
-
-<div id="ajax_spinner" style="display: none;">
-	<p>CHECKING BARCODE</p>
-</div>
-
-	<script>
-		$('#<!-- TMPL_VAR NAME="barcode_id" -->').blur(function() {
-			checkBarcode();
-		});
-
-		$('#<!-- TMPL_VAR NAME="barcode_id" -->').keypress(function(event) {
-			if (event.keyCode == '13') {
-				checkBarcode();
-			}
-		});
-
-		// show the spinner for AJAX requests
-		$("#ajax_spinner").ajaxStart(function(){
-			$(this).show();
-		});
-
-		$("#ajax_spinner").ajaxStop(function(){
-			$(this).hide();
-		});
-
-		function checkBarcode() {
-			if ( $('#<!-- TMPL_VAR NAME="barcode_id" -->').val() ) {
-            var perm = document.getElementById('<TMPL_VAR NAME="branchcode_tag_id">');
-            var branchcode = perm.options[perm.selectedIndex].value;
-            var dupecheck = 0;
-            var itemnumber = '<!-- TMPL_VAR NAME="itemnumber" -->';
-            var id = '<!-- TMPL_VAR NAME="itemnumber" -->';
-            // dupecheck if adding
-            if (id == '') { dupecheck = 1; }
-				$.getJSON( 'check_barcode.pl', { 'barcode' : $('#<!-- TMPL_VAR NAME="barcode_id" -->').val(),'barcodetype':'item','branchcode':branchcode,'dupecheck':dupecheck,'itemnumber':itemnumber }, processCheckBarcode );
-			}
-		}
-
-		function processCheckBarcode( data ) {
-         if (data.error) {
-            alert('Invalid barcode: '
-            +data.error + '\n'
-            +'Cannot save record.\n'
-            +'Click OK to go back to the record and re-enter barcode.');
-            return false;
-         }
-			else if ( data.itemnumber ) {
-				var itemData = '';
-				itemData += "Title: " + data.title + ' ' + data.subtitle + "\n";
-
-				if ( data.medium ) {
-					itemData += "Medium: " + data.medium + "\n";
-				}
-
-				if ( data.field245n || data.field245p ) {
-					itemData += "Part/Section: " + data.field245n + data.field245p + "\n";
-				}
-
-				itemData += "Holding Location: " + data.holdingbranch + "\n";
-				itemData += "Home Location: " + data.homebranch + "\n";
-
-				if ( data.date_due ) {
-					itemData += "\n";
-					itemData += "Currently checked out.\n";
-					itemData += "Due back on " + data.date_due + "\n\n";
-				}
-
-				if ( data.bib_level_reserves ) {
-					itemData += "\n";
-					itemData += "This item has bibliographic-level holds.\n";
-				}
-
-				if ( data.item_level_reserves ) {
-					itemData += "This item has item-level holds.\n";
-				}
-
-				var answer = false;
-				<!-- TMPL_IF NAME="CAN_user_editcatalogue_relink_items" -->
-					answer = confirm(
-"This barcode is currently being used by the following item: \n\
-\n" +
-itemData
-+ "\n\
-Do you want to move this item from its current bibliographic record to this one?\n\
-\n\
-'OK' will load the data from the existing item, 'Cancel' will retain any data you may have entered except for this barcode.\n\
-\n\
-After the item's data has been loaded, you may review and edit the data, then choose 'Save' to commit the changes.\
-					");
-				<!-- TMPL_ELSE -->
-					alert(
-"This barcode is currently being used by the following item: \n\
-\n" +
-itemData
-+ "\n\
-Please use a different barcode.\
-                                	");
-				<!-- /TMPL_IF -->
-
-				if (answer) {
-					window.location="additem.pl?op=edititem&mv=1&biblionumber=<!--TMPL_VAR NAME="biblionumber"-->&itemnumber=" + data.itemnumber;
-				} else {
-					$('#<!-- TMPL_VAR NAME="barcode_id" -->').attr('value','');
-					$('#<!-- TMPL_VAR NAME="barcode_id" -->').focus();
-				}
-			}
-		}
-	</script>
 
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
