@@ -157,8 +157,10 @@ sub barcodedecode {
 		                    return $barcode;
                         },
 	    'T-prefix'  =>  sub {
-                            if ($barcode =~ /^[Tt]\s*(\d+)/) {
-                                return sprintf("T%07d", $1 );
+                            if ($barcode =~ /^[Tt]\D*(\d+)/) {
+                                my $t = $1;
+                                ($t) = $t =~ /(\d)$/ if length($t) < 7;
+                                return sprintf("T%07d", $t);
                             } else {
                                 return $barcode;
                             }
