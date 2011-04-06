@@ -1,4 +1,16 @@
 {
+   "AuthorisedValueImages" : {
+      "explanation" : "Use authorised values to define images (expensive)",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
+   "GoogleIndicTransliteration" : {
+      "explanation" : "Load Google Translate javascript",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
    "StaffShowExpiredHolds" : {
       "explanation" : "The number in days that expired holds will display in the staff hold history tab.  A value of 0 will display nothing.",
       "options" : null,
