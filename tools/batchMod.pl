@@ -277,6 +277,17 @@ foreach my $tag (sort keys %{$tagslib}) {
 	    }
         $value = "";
 	}
+   elsif ($tagslib->{$tag}->{$subfield}->{authorised_value} eq 'otherstatus') {
+      push @authorised_values, '';
+      my $sth = $dbh->prepare('SELECT statuscode,description FROM itemstatus 
+         ORDER BY description');
+      $sth->execute();
+      while(my($sc,$desc) = $sth->fetchrow_array()) {
+         push @authorised_values, $sc;
+         $authorised_lib{$sc} = $desc;
+      }
+      $value = '';
+   }
 	elsif ( $tagslib->{$tag}->{$subfield}->{authorised_value} eq "itemtypes" ) {
 	    push @authorised_values, "";
 	    my $sth = $dbh->prepare("select itemtype,description from itemtypes order by description");
