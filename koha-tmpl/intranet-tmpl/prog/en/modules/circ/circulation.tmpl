@@ -400,7 +400,7 @@ Checkout anyway?<br>
              <!-- TMPL_IF NAME="CAN_user_circulate_fast_add" -->
                 <form method="post" class="confirm" action="/cgi-bin/koha/circ/fastcat.pl">
                 <input type=hidden name="barcode" value="<!-- TMPL_VAR NAME="barcode" -->">
-                <input type=hidden name="borrowerernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->">
+                <input type=hidden name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->">
                 <input type=hidden name="branch" value="<!-- TMPL_VAR NAME="branch" -->">
                 <input type="submit" name="fastadd1" value="Fast Bib Add">
                 <!--TMPL_IF NAME="duedatespec" -->
