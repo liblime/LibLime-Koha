@@ -343,6 +343,7 @@ $(document).ready(function() {
 	</tr>
 	<!-- /TMPL_LOOP --></tbody>
     </table>
+    <input type=hidden name="opentab_holds" value="1">
     <fieldset class="action"><input type="submit" class="cancel" name="submit" value="Update Holds" /></fieldset>
   </form>
   <!-- TMPL_ELSE -->

@@ -35,12 +35,13 @@ sub GetReservesLoop {
         ## to a different expirationdate when it is Waiting on the holds shelf
         $getreserv{holdexpdate} = $num_res->{expirationdate}?
            format_date($num_res->{expirationdate}) : '';
-        if ($num_res->{'found'} ~~ 'W') {
-            $getreserv{waitingdate} = format_date($num_res->{waitingdate});
-        }
-        else {
-            $getreserv{suspended}   = (($num_res->{found} // '') eq 'S') ? 1 : 0;
-        }
+        ## waitingdate is used for both an item waiting and suspended
+        ## if suspended, it's the resumedate
+        $getreserv{waitingdate} = $num_res->{waitingdate}?
+           format_date($num_res->{waitingdate}) : '';
+        $getreserv{suspended}   = (($num_res->{found} // '') eq 'S') ? 1 : 0;
+        $getreserv{resumedate}  = ($getreserv{waitingdate} && $getreserv{suspended})?
+           $getreserv{waitingdate} : '';
 	     foreach (qw(biblionumber title author itemcallnumber itemnumber)) {
             $getreserv{$_} = $getiteminfo->{$_};
 	     }
