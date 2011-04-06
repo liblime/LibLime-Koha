@@ -1,4 +1,46 @@
 {
+   "OPACGroupResults" : {
+      "explanation" : "Display search results in groups",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
+   "serialsadditems" : {
+      "explanation" : "Create item records for received serials",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
+   "OPACAdvSearchInputCount" : {
+      "explanation" : "Number of search boxes to display",
+      "options" : null,
+      "value" : "3",
+      "type" : "Integer"
+   },
+   "marcflavour" : {
+      "explanation" : "Define global MARC flavor (MARC21 or UNIMARC) used for character encoding",
+      "options" : "MARC21|UNIMARC",
+      "value" : "MARC21",
+      "type" : "Choice"
+   },
+   "LooseBudgets" : {
+      "explanation" : "Allow budget adjusting",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
+   "AuthDisplayHierarchy" : {
+      "explanation" : "Display authorities as a hierarchy",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
+   "maxItemsinSearchResults" : {
+      "explanation" : "How many items to show in OPAC search results list?",
+      "options" : null,
+      "value" : "1",
+      "type" : "Integer"
+   },
    "AuthorisedValueImages" : {
       "explanation" : "Use authorised values to define images (expensive)",
       "options" : null,

@@ -71,6 +71,7 @@ $tabsysprefs{acquisitions}              = "Acquisitions";
 $tabsysprefs{gist}                      = "Acquisitions";
 $tabsysprefs{emailPurchaseSuggestions}  = "Acquisitions";
 $tabsysprefs{GetItAcquisitions}         = "Acquisitions";
+$tabsysprefs{LooseBudgets}              = "Acquisitions";
 
 # Admin
 $tabsysprefs{singleBranchMode}      = "Admin";
@@ -210,6 +211,7 @@ $tabsysprefs{StaffShowCompletedHolds}        = "Circulation";
 $tabsysprefs{StaffShowCancelledHolds}        = "Circulation";
 $tabsysprefs{StaffShowExpiredHolds}          = "Circulation";
 $tabsysprefs{AllowPatronsToCancelReadyHolds} = "Circulation";
+$tabsysprefs{SIPItemDisplay}                 = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}            = "StaffClient";
@@ -428,7 +430,6 @@ $tabsysprefs{ResetOpacInactivityTimeout}         = "OPAC";
 $tabsysprefs{OPACDefaultItemSort}                = "OPAC";
 $tabsysprefs{GoogleIndicTransliteration}         = "OPAC";
 $tabsysprefs{OPACAdvSearchInputCount}            = "OPAC";
-$tabsysprefs{OpacLibraryGroupSearch}             = "OPAC";
 $tabsysprefs{OPACShowCompletedHolds}             = "OPAC";
 $tabsysprefs{OPACShowCancelledHolds}             = "OPAC";
 $tabsysprefs{OPACShowExpiredHolds}               = "OPAC";
@@ -440,6 +441,7 @@ $tabsysprefs{OPACDisplayExtendedSubInfo}   = "Serials";
 $tabsysprefs{OPACSubscriptionDisplay}      = "Serials";
 $tabsysprefs{RenewSerialAddsSuggestion}    = "Serials";
 $tabsysprefs{SubscriptionHistory}          = "Serials";
+$tabsysprefs{serialsadditems}              = "Serials";
 
 # LOGFeatures
 $tabsysprefs{CataloguingLog}  = "Logs";

@@ -679,23 +679,6 @@ sub _new_Zconn {
         }
 
     };
-#     if ($@) {
-#         # Koha manages the Zebra server -- this doesn't work currently for me because of permissions issues
-#         # Also, I'm skeptical about whether it's the best approach
-#         warn "problem with Zebra";
-#         if ( C4::Context->preference("ManageZebra") ) {
-#             if ($@->code==10000 && $tried==0) { ##No connection try restarting Zebra
-#                 $tried=1;
-#                 warn "trying to restart Zebra";
-#                 my $res=system("zebrasrv -f $ENV{'KOHA_CONF'} >/koha/log/zebra-error.log");
-#                 goto "retry";
-#             } else {
-#                 warn "Error ", $@->code(), ": ", $@->message(), "\n";
-#                 $Zconn="error";
-#                 return $Zconn;
-#             }
-#         }
-#     }
     return $Zconn;
 }
 
