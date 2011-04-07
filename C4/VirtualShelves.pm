@@ -475,7 +475,7 @@ sub ShelfPossibleAction {
     my $sth = $dbh->prepare($query);
     $sth->execute($shelfnumber);
     my ( $owner, $category ) = $sth->fetchrow;
-	my $borrower = GetMemberDetails($user);
+	my $borrower = C4::Members::GetMemberDetails($user);
 	return 1 if ( $category >= 3);							# open list
     return 1 if (($category >= 2) and
 				defined($action) and $action eq 'view');	# public list, anybody can view
