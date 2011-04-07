@@ -228,7 +228,8 @@ if ($noreport) {
     $bornamefilter =~s/\?/\_/g;
 
     my $strsth="SELECT date_due,
-        concat(surname,' ', firstname) as borrower, 
+        borrowers.firstname,
+        borrowers.surname,
         borrowers.phone,
         borrowers.email,
         issues.itemnumber,
@@ -258,11 +259,11 @@ if ($noreport) {
     $strsth =~ s/WHERE 1=1/WHERE 1=1 AND borrowers.borrowernumber IN ($bnlist)/ if $bnlist;
     $strsth =~ s/WHERE 1=1/WHERE 0=1/ if $have_pattr_filter_data  && !$bnlist;  # no match if no borrowers matched patron attrs
     $strsth.=" ORDER BY " . (
-        ($order eq "borrower" or $order eq "borrower desc") ? "$order, date_due"                 : 
-        ($order eq "title"    or $order eq    "title desc") ? "$order, date_due, borrower"       :
-        ($order eq "barcode"  or $order eq  "barcode desc") ? "items.$order, date_due, borrower" :
-                                ($order eq "date_due desc") ? "date_due DESC, borrower"          :
-                                                            "date_due, borrower"  # default sort order
+        ($order eq "borrower" or $order eq "borrower desc") ? "surname, date_due"               : 
+        ($order eq "title"    or $order eq    "title desc") ? "$order, date_due, surname"       :
+        ($order eq "barcode"  or $order eq  "barcode desc") ? "items.$order, date_due, surname" :
+                                ($order eq "date_due desc") ? "date_due DESC, surname"          :
+                                                            "date_due, surname"  # default sort order
     );
     $template->param(sql=>$strsth);
     my $sth=$dbh->prepare($strsth);
@@ -289,7 +290,8 @@ if ($noreport) {
             borrowernumber         => $data->{borrowernumber},
             barcode                => $data->{barcode},
             itemnum                => $data->{itemnumber},
-            name                   => $data->{borrower},
+            firstname              => $data->{firstname},
+            surname                => $data->{surname},
             phone                  => $data->{phone},
             email                  => $data->{email},
             biblionumber           => $data->{biblionumber},
