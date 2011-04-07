@@ -270,7 +270,17 @@ my $biblionumbers = $input->param('biblionumbers');
 if ($multihold) {
     @biblionumbers = split '/', $biblionumbers;
 } else {
-    push @biblionumbers, $input->param('biblionumber');
+    if ($input->param('biblionumber') =~ /\s*\|\s*/) {
+      my $biblionumbers = $input->param('biblionumber');
+      my @biblionums = split /\s*\|\s*/, $biblionumbers;
+      my %seen = ();
+      foreach my $bibnum (@biblionums) {
+        push (@biblionumbers, $bibnum) unless $seen{$bibnum}++;
+      }
+    }
+    else {
+      push @biblionumbers, $input->param('biblionumber');
+    }
 }
 
 my @biblioloop = ();

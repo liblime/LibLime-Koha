@@ -84,7 +84,17 @@ if ((! $biblionumbers) && (! $query->param('place_reserve'))) {
 $template->param( biblionumbers => $biblionumbers );
 
 # Each biblio number is suffixed with '/', e.g. "1/2/3/"
-my @biblionumbers = split /\//, $biblionumbers;
+my @biblionumbers;
+if ($biblionumbers =~ /\s*\|\s*/) {
+  my @biblionums = split /\s*\|\s*/, $biblionumbers;
+  my %seen = ();
+  foreach my $bibnum (@biblionums) {
+    push (@biblionumbers, $bibnum) unless $seen{$bibnum}++;
+  }
+}
+else {
+  @biblionumbers = split /\//, $biblionumbers;
+}
 if (($#biblionumbers < 0) && (! $query->param('place_reserve'))) {
     # TODO: New message?
     $template->param(message=>1, no_biblionumber=>1);
@@ -478,7 +488,7 @@ foreach my $biblioNum (@biblionumbers) {
         # Get additional reserve info not returned by GetReservesFromItemnumber
         my ($count,$reserves) = GetReservesFromBiblionumber($itemInfo->{'biblionumber'});
         foreach my $res (@$reserves) {
-          $itemLoopIter->{reserve_status} = $res->{found} if (defined $res->{found});
+          $itemLoopIter->{reserve_status} = $res->{found} if ((defined $res->{found}) && ($res->{itemnumber} eq $itemLoopIter->{itemnumber})); 
         }
 
         $itemLoopIter->{notforloan} = $itemInfo->{notforloan};
@@ -540,7 +550,6 @@ foreach my $biblioNum (@biblionumbers) {
             $policy_holdallowed = 0;
         }
 
-        my $iafilr = IsAvailableForItemLevelRequest($itemNum);
         if (IsAvailableForItemLevelRequest($itemNum) and not $itemInfo->{noresstatus}) {
             if ($policy_holdallowed) {
               if ($no_on_shelf_holds_in_library &&
@@ -549,7 +558,8 @@ foreach my $biblioNum (@biblionumbers) {
                   ($inBranchcode ne $itemInfo->{'holdingbranch'}) ||
                   ($itemLoopIter->{reserve_status} eq 'W') ||
                   ($itemLoopIter->{reserve_status} eq 'T') ||
-                  ($itemInfo->{'damaged'}))) {
+                  ($itemInfo->{'damaged'}) ||
+                  ($itemLoopIter->{nocancel}))) {
                 $template->param( message => undef);
                 $template->param( no_on_shelf_holds_in_library => undef);
                 $itemLoopIter->{available} = 1;
