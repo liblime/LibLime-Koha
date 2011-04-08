@@ -56,7 +56,7 @@ my $branchcode  = $input->param('branch') || undef;
 
 my $branches = &GetBranchesLoop();
 
-my $endstatement = " ORDER BY borrowers.surname, old_reserves.reservedate";
+my $endstatement = " ORDER BY old_reserves.cancellationdate DESC, borrowers.surname";
 my $fullstatement = $initstatement;
 my $whereclause = 0;
 if (defined($patron)) {

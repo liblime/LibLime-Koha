@@ -56,7 +56,7 @@ my $branchcode  = $input->param('branch') || undef;
 
 my $branches = &GetBranchesLoop();
 
-my $endstatement = " ORDER BY borrowers.surname, old_reserves.reservedate";
+my $endstatement = " ORDER BY old_reserves.expirationdate DESC, borrowers.surname";
 my $fullstatement = $initstatement;
 my $whereclause = 0;
 if (defined($patron)) {
@@ -121,7 +121,9 @@ if (($whereclause) && (!defined($holdexpdate))) {
   $fullstatement .= " AND (old_reserves.expirationdate IS NOT NULL)";
 }
 else {
-  $fullstatement .= " WHERE (old_reserves.expirationdate IS NOT NULL)";
+  if (!defined($holdexpdate)) {
+    $fullstatement .= " WHERE (old_reserves.expirationdate IS NOT NULL)";
+  }
 }
 $fullstatement .= $endstatement;
 warn "SQL: $fullstatement\n";
