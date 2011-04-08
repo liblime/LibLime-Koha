@@ -29,8 +29,6 @@ require Exporter;
 
 use C4::Context;
 
-use DBI;
-
 use vars qw($VERSION @ISA @EXPORT);
 
 # set the version for version checking

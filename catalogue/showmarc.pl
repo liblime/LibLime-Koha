@@ -28,7 +28,6 @@ use strict;
 
 # standard or CPAN modules used
 use CGI qw(:standard);
-use DBI;
 
 # Koha modules used
 use C4::Context;

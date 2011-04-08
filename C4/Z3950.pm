@@ -26,9 +26,6 @@ package C4::Z3950;
 
 use strict;
 
-# standard or CPAN modules used
-use DBI;
-
 # Koha modules used
 use C4::Input;
 use C4::Biblio;

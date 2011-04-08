@@ -20,7 +20,6 @@ package C4::ItemDeleteList;
 use strict;
 use warnings;
 
-use DBI;
 use Carp;
 use C4::Context;
 use C4::Items;
