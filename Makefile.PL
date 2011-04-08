@@ -592,6 +592,7 @@ WriteMakefile(
                             'MIME::QuotedPrint'                => 3.07,
                             'Mail::Sendmail'                   => 0.79,
                             'Memoize::Memcached'               => 0.03, # optional
+                            'Modern::Perl'                     => 1.03,
                             'Net::CIDR::Compare'               => 0.03,
                             'Net::LDAP'                        => 0.33, # optional
                             'Net::LDAP::Filter'                => 0.14, # optional

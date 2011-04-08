@@ -32,6 +32,7 @@ use C4::Koha;
 use C4::Debug;
 use C4::Branch; # GetBranches
 use C4::VirtualShelves;
+use C4::View::Util;
 use POSIX qw/strftime/;
 
 # use utf8;
@@ -422,6 +423,7 @@ sub get_template_and_user {
             ResetOpacInactivityTimeout => C4::Context->preference("ResetOpacInactivityTimeout"),
             GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),
             BibliosCataloging => C4::Context->preference("BibliosCataloging"),
+            searchdomainoptions       => C4::View::Util::BuildSearchDomainList($in->{query}->param('multibranchlimit')),
         );
     }
     return ( $template, $borrowernumber, $cookie, $flags);
