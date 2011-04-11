@@ -1351,7 +1351,7 @@ sub AddImportProfile {
               INTO import_profiles(description, matcher_id, template_id, overlay_action, nomatch_action, parse_items, item_action)
               VALUES(?, ?, ?, ?, ?, ?, ?)
         ");
-
+        unless($matcher_id) { $matcher_id = undef }
         $sth->execute($description, $matcher_id, $template_id, $overlay_action, $nomatch_action, $parse_items, $item_action);
         $profile_id = $dbh->{mysql_insertid};
     }
@@ -1373,6 +1373,7 @@ sub AddImportProfile {
     ");
 
     foreach my $action (@$subfield_actions) {
+        next unless $action->{tag};
         $sth->execute($profile_id, $action->{'tag'}, $action->{'subfield'}, $action->{'action'}, $action->{'contents'});
     }
 }
@@ -1392,33 +1393,28 @@ sub GetImportProfile {
 
 sub GetImportProfileLoop {
     my $dbh = C4::Context->dbh;
-
-    my $results = $dbh->selectall_arrayref( "
+    my $sth = $dbh->prepare("
         SELECT
-          import_profiles.profile_id, description, matcher_id, template_id, overlay_action, nomatch_action, parse_items, item_action, COUNT( marcxml ) AS added_items, ip_actions.tag, ip_actions.subfield
+          import_profiles.profile_id, description, matcher_id, template_id, overlay_action, nomatch_action, parse_items, item_action, COUNT( marcxml ) AS added_items
           FROM import_profiles
             LEFT JOIN import_profile_added_items AS ip_items ON ( import_profiles.profile_id = ip_items.profile_id )
-            LEFT JOIN import_profile_subfield_actions AS ip_actions ON ( import_profiles.profile_id = ip_actions.profile_id )
-          GROUP BY import_profiles.profile_id, ip_actions.tag, ip_actions.subfield
-    ", { Slice => {} } );
-    return $results // [];
-
-    my @profiles;
-    my $current_profile;
-
-    foreach my $result ( @$results ) {
-        if ( $current_profile && $current_profile->{'profile_id'} == $result->{'profile_id'} ) {
-            push @{ $current_profile->{'modified_subfields'} }, { tag => $result->{'tag'}, subfield => $result->{'subfield'} } 
-        } else {
-            push @profiles, $result;
-            $current_profile = $result;
-            $current_profile->{'modified_subfields'} = $result->{'tag'} ? [ { tag => $result->{'tag'}, subfield => $result->{'subfield'} } ] : [];
-        }
-        delete $result->{'tag'};
-        delete $result->{'subfield'};
+          GROUP BY import_profiles.profile_id
+    ");
+    $sth->execute();
+    my @all = ();
+    while(my $row = $sth->fetchrow_hashref()) {
+       my $sth2 = $dbh->prepare('SELECT tag,subfield,action,contents
+         FROM import_profile_subfield_actions
+        WHERE profile_id = ?');
+       $sth2->execute($$row{profile_id});
+       $$row{modified_subfields} = [];
+       while(my $ms = $sth2->fetchrow_hashref()) { push @{$$row{modified_subfields}}, $ms }
+       if (@{$$row{modified_subfields}}) {
+          $$row{modified_subfields}[-1]{'__last__'} = 1;
+       }
+       push @all, $row;
     }
-
-    return \@profiles;
+    return \@all;
 }
 
 sub GetImportProfileItems {

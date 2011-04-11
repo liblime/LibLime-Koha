@@ -2694,7 +2694,8 @@ CREATE TABLE `import_profiles` (
         parse_items tinyint(1) DEFAULT 1,
         item_action enum('always_add','add_only_for_matches','add_only_for_new','ignore') NOT NULL DEFAULT 'always_add',
         PRIMARY KEY (profile_id),
-        KEY (description)
+        KEY (description),
+        FOREIGN KEY (matcher_id) REFERENCES marc_matchers(matcher_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `import_profile_added_items`;

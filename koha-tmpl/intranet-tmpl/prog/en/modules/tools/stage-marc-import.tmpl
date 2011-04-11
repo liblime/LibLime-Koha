@@ -45,7 +45,7 @@ var available_profiles = {
     parse_items: "<!-- TMPL_VAR NAME="parse_items" -->",
     item_action: "<!-- TMPL_VAR NAME="item_action" -->",
     added_items: <!-- TMPL_VAR NAME="added_items" -->,
-    modified_subfields: [ <!-- TMPL_LOOP NAME="modified_subfields" -->[ "<!-- TMPL_VAR NAME="tag" -->", "<!-- TMPL_VAR NAME="subfield" -->" ]<!-- TMPL_UNLESS NAME="__last__" -->, <!-- /TMPL_UNLESS--><!-- /TMPL_LOOP --> ]
+    modified_subfields: [ <!-- TMPL_LOOP NAME="modified_subfields" -->[ "<!-- TMPL_VAR NAME="tag" -->", "<!-- TMPL_VAR NAME="subfield" -->", "<TMPL_VAR NAME="contents">", "<TMPL_VAR NAME="action">" ]<!-- TMPL_UNLESS NAME="__last__" -->, <!-- /TMPL_UNLESS--><!-- /TMPL_LOOP --> ]
   }<!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
   <!-- /TMPL_LOOP -->
 };
@@ -54,14 +54,18 @@ $( document ).ready( function( ){
   $( '#profile' ).change( function( ){
     var profile = $( this ).val( );
 
-    if ( !profile ) return;
+    if ( !profile ) {
+      document.processfile.reset();
+      $( '#profile-items-info:visible' ).hide();
+      return; 
+    }
 
     profile = available_profiles[profile];
 
     $( '#matcher' ).val( profile.matcher_id );
     $( '#overlay_action' ).val( profile.overlay_action );
     $( '#nomatch_action' ).val( profile.nomatch_action );
-    $( '#parse_items' + ( profile.parse_items ? 'yes' : 'no' ) ).val( ['parse_items'] );
+    $( '#parse_items' + ( profile.parse_items==1 ? 'yes' : 'no' ) ).val( ['parse_items'] );
     $( '#item_action' ).val( profile.item_action );
     if ( profile.added_items ) {
       $( '#profile-items-num-added' ).text( profile.added_items );
@@ -78,7 +82,8 @@ $( document ).ready( function( ){
       console.log( modified_subfields );
       $( '#profile-actions-subfields' ).text( modified_subfields.join( ', ' ) );
       $( '#profile-actions-info' ).show();
-        $( '#modify-subfields input[name=include_actions_from_profile]' ).val( 1 );
+      $( '#modify-subfields input[name=include_actions_from_profile]' ).val( 1 );
+      $('#profile-actions-modify').click();
     } else {
       $( '#profile-actions-info:visible' ).hide();
     }
@@ -107,12 +112,18 @@ function verify_tag() {
     $( this ).addClass( 'alert' );
   }
 }
-
 function verify_subfield() {
   if ( /^[0-9a-z]$/.test( this.value ) ) {
     $( this ).removeClass( 'alert' );
   } else {
     $( this ).addClass( 'alert' );
+  }
+}
+function verify_contents() {
+  if (/\S/.test(this.value)) {
+    $( this ).removeClass('alert');
+  } else {
+    $( this ).addClass('alert');
   }
 }
 
@@ -122,7 +133,6 @@ function remove_action() {
 
 function new_action() {
   var new_row = $( this ).parent().clone();
-
   bind_subfield_actions( new_row );
   $( new_row )
     .find( 'input[type=text]' ).val( '' ).end()
@@ -136,6 +146,7 @@ function bind_subfield_actions( selector ) {
     .find( 'select' ).change( change_type ).end()
     .find( 'input[name=action_tag]' ).keyup( verify_tag ).end()
     .find( 'input[name=action_subfield]' ).keyup( verify_subfield ).end()
+    .find( 'input[name=action_contents]' ).keyup( verify_contents ).end()
     .find( '.remove-action' ).click( remove_action ).end()
     .find( '.new-action' ).click( new_action ).end();
 }
@@ -187,9 +198,8 @@ $( document ).ready( function () {
       dataType: 'html',
       data: { profile: $( '#profile' ).val(), retrieve: 'profile-items' },
       success: function ( data ) {
-        $( data )
-          .find( '.remove-item' ).click( remove_item ).end()
-          .insertBefore( '#item-0' );
+         // on one line for Firefox
+        $( data ).find( '.remove-item' ).click( remove_item ).end().insertBefore( '#item-0' );
         $( '#profile-items-info' ).hide();
         $( '#modify-subfields input[name=include_items_from_profile]' ).val( 0 );
       }
@@ -209,6 +219,27 @@ $( document ).ready( function () {
           .find( 'select' ).change().end();
         $( '#profile-actions-info' ).hide();
         $( '#modify-subfields input[name=include_actions_from_profile]' ).val( 0 );
+
+         var profile = document.processfile.profile.options[
+            document.processfile.profile.selectedIndex].value;
+         if ( !profile ) {
+            document.processfile.reset();
+            $( '#profile-items-info:visible' ).hide();
+            return; 
+         }
+         profile = available_profiles[profile];
+         for(var i=0;i<document.processfile.action_type.length;i++) {
+           if (document.processfile.action_contents) {
+              if (document.processfile.action_contents[i]) {
+                if (profile.modified_subfields[i-1]) {
+                   if (profile.modified_subfields[i-1][2]) {
+                    document.processfile.action_contents[i].value = 
+                    profile.modified_subfields[i-1][2];
+                   }
+                }
+              }
+           }
+        }
       }
     } );
     return false;
@@ -273,7 +304,7 @@ function set_to_today(id, force) {
 	  <li>New label batch created: # <!-- TMPL_VAR name="label_batch" --> </li>
     <!-- /TMPL_IF -->
 	<li><a href="/cgi-bin/koha/tools/manage-marc-import.pl?import_batch_id=<!-- TMPL_VAR name="import_batch_id" -->">Manage staged records</a></li>
-	<li><a href="/cgi-bin/koha/tools/tools-home.pl">Back</a></li>
+	<li><a href="stage-marc-import.pl">Back</a></li>
 </ul>
 <!-- TMPL_ELSE -->
 <ul>
@@ -297,7 +328,7 @@ function set_to_today(id, force) {
         <div id="fileuploadfailed"></div></div>
 </form>
 
-    <form method="post" id="processfile" action="<!-- TMPL_VAR name="SCRIPT_NAME" -->" enctype="multipart/form-data">
+    <form method="post" id="processfile" name="processfile" action="<!-- TMPL_VAR name="SCRIPT_NAME" -->" enctype="multipart/form-data">
 <fieldset class="rows">
         <input type="hidden" name="uploadedfileid" id="uploadedfileid" value="" />
         <input type="hidden" name="completedJobID" id="completedJobID" value="" />
@@ -377,9 +408,8 @@ function set_to_today(id, force) {
   </fieldset>
   <fieldset class="rows" id="add-items">
     <legend>Add more items to each record?</legend>
-    <ol style>
-    <input type="hidden" name="include_items_from_profile" value="1" />
-      <li><b>NOTE:  if you select to add new items here, any item records in the incoming bibliographic record will also be unavoidably added!<br/></b></li></ol>
+      <input type="hidden" name="include_items_from_profile" value="1" />
+      <b>NOTE:  if you select to add new items here, any item records in the incoming bibliographic record will also be unavoidably added!</b><br>
     <ol style="display: none" id="profile-items-info">
       <li>Adding <span id="profile-items-num-added"></span> more item(s), from import profile. <a href="#" id="profile-items-modify">Modify</a></li>
     </ol>
@@ -390,7 +420,6 @@ function set_to_today(id, force) {
     <ol id="add-item-actions">
       <li><input type="button" id="new-item" value="New item" /></li>
       <li><b>If you make changes to this form, and want to save them, be sure to save the profile!</b></li>
-
     </ol>
   </fieldset>
   <fieldset class="rows" id="modify-subfields">
