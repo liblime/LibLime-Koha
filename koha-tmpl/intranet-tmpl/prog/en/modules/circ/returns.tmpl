@@ -478,6 +478,14 @@ function ContinueReturns() {
 			<!-- /TMPL_IF -->
             <input id="barcode_submit" type="button" class="submit" value="Submit" onclick="
             setOverrideDate();"/>
+            <script>
+            $('barcode').keypress(function(e) {
+               // if the key pressed is the enter key
+               if (e.which == 13) {
+                  setOverrideDate();
+               }
+            });
+            </script>
             <!-- TMPL_LOOP Name="inputloop" -->
                 <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
                 <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />

@@ -277,7 +277,7 @@ function checkMultiHold() {
         <!-- TMPL_ELSE -->
             <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
             <input type="hidden" name="title" value="<!-- TMPL_VAR NAME="title" -->" />
-            <input type="hidden" name="rank-request" value="<!-- TMPL_VAR NAME="fixedRank" -->" />
+            <input type="hidden" name="rank_request" value="<!-- TMPL_VAR NAME="fixedRank" -->" />
         <!-- /TMPL_IF -->
 
        <ol> <li><span class="label">Patron:</span>
@@ -593,7 +593,21 @@ function checkMultiHold() {
           <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
           <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
     <!-- TMPL_IF NAME="CAN_user_reserveforothers_edit_holds" -->
-          <select name="rank-request">
+          <select name="rank_request" onchange="
+            if(this.options[this.selectedIndex].value=='del') {
+               if(confirm('This is currently on the hold shelf.\nAre you sure you want to cancel this hold?')) {
+                  // do nothing
+               }
+               else {
+                  for(var i=0;i<this.options.length;i++) {
+                     if (this.options[i].value=='W') {
+                        this.selectedIndex = i;
+                        break;
+                     }
+                  }
+               }
+            }
+          ">
     <!-- TMPL_IF Name="wait" -->
         <!-- TMPL_IF NAME="intransit" -->
             <option value="T" selected="selected">In transit</option>

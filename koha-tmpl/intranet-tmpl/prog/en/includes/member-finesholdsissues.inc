@@ -60,6 +60,18 @@ $(document).ready(function() {
   );
 
  });
+
+function confirmCancelWaiting(that) {
+   if (that.selectedIndex==0) { return; }
+   var ans = confirm('This is currently on the hold shelf.\n'
+   +'Are you sure you want to cancel this hold?');
+   if (ans==true) {
+      // do nothing
+   }
+   else {
+      that.selectedIndex = 0;
+   }
+}
 </script>
 
 <div id="finesholdsissues" class="toptabs">
@@ -306,16 +318,16 @@ $(document).ready(function() {
 	    <!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
           <!-- TMPL_IF NAME="waiting" -->
           <!-- TMPL_IF NAME="CAN_user_reserveforothers_delete_waiting_holds" -->
-          <td><select name="rank-request">
+          <td><select name="rank_request" onchange="confirmCancelWaiting(this)">
               <option value="n">No</option>
               <option value="del">Yes</option>
             </select>
             <!-- TMPL_ELSE -->
           <td>No
-            <input type="hidden" name="rank-request" value="n" />
+            <input type="hidden" name="rank_request" value="n" />
             <!-- /TMPL_IF -->
             <!-- TMPL_ELSE -->
-	  <td><select name="rank-request">
+	  <td><select name="rank_request">
 	      <option value="n">No</option>
 	      <option value="del">Yes</option>
 	    </select>

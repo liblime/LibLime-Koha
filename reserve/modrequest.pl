@@ -42,7 +42,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
-my @rank=$query->param('rank-request');
+my @rank=$query->param('rank_request');
 my @reservenumber=$query->param('reservenumber');
 my @biblionumber=$query->param('biblionumber');
 my @borrower=$query->param('borrowernumber');
