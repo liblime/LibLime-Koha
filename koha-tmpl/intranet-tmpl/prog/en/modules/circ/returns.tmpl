@@ -108,7 +108,7 @@ function ContinueReturns() {
                         <TMPL_IF NAME="lostborrowernumber">
                            Remove from <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<TMPL_VAR NAME="lostborrowernumber">"><TMPL_VAR NAME="lostbor_firstname"> 
                               <TMPL_VAR NAME="lostbor_surname"></a>'s 
-                             (<TMPL_VAR NAME="lostbor_cardnumber">) lost items?
+                             (<TMPL_VAR NAME="lostbor_cardnumber">) lost items?<br>
                            <form action="returns.pl" method="post" name="lostf">
                               <TMPL_LOOP NAME="inputloop">
                               <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />

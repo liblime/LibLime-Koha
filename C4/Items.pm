@@ -616,6 +616,10 @@ sub MoveItemToAnotherBiblio {
   
   ModZebra($old_bib->{'biblionumber'},"specialUpdate","biblioserver");
   ModZebra($new_bib->{'biblionumber'},"specialUpdate","biblioserver");
+  logaction('CATALOGUING','MODIFY',$$new_bib{biblionumber}, 
+  "moved itemnumber=$itemnumber, barcode=$$item{barcode}, oldbib=$$old_bib{biblionumber}, "
+ ."newbib=$$new_bib{biblionumber}") if C4::Context->preference("CataloguingLog");
+  return 1;
 }
 
 =head2 ModItemTransfer
