@@ -22,6 +22,7 @@ use warnings;
 
 use MARC::Charset qw/marc8_to_utf8/;
 use Text::Iconv;
+use Unicode::Normalize;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -1072,6 +1073,43 @@ sub char_decode5426 {
 #   map{printf "%x",$_} @characters;  
 #   printf "\n"; 
   return $result;
+}
+
+=head2 NormalizeString
+
+    my $normalized_string=NormalizeString($string,$nfd,$transform);
+
+Given a string
+nfd : If you want to set NFD and not NFC
+transform : If you expect all the signs to be removed
+
+Sets the PERL UTF8 Flag on your initial data if need be
+and applies cleaning if required
+
+Returns a utf8 NFC normalized string
+
+Sample code :
+   my $string=NormalizeString ("l'ornithoptère");
+   #results into ornithoptère in NFC form and sets UTF8 Flag
+
+=cut
+
+sub NormalizeString{
+        my ($string,$nfd,$transform)=@_;
+        utf8::decode($string) unless (utf8::is_utf8($string));
+        if ($nfd){
+                $string= NFD($string);
+        }
+        else {
+                $string=NFC($string);
+        }
+        if ($transform){
+    $string=~s/\<|\>|\^|\;|\.|\?|,|\-|\(|\)|\[|\]|\{|\}|\$|\%|\!|\*|\:|\\|\/|\&|\"|\'/ /g;
+        #removing one letter words "d'" "l'"  was changed into "d " "l " 
+    $string=~s/\b\S\b//g;
+    $string=~s/\s+$//g;
+        }
+    return $string; 
 }
 
 1;

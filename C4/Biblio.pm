@@ -31,6 +31,7 @@ use C4::Dates qw/format_date/;
 use C4::Log; # logaction
 use C4::ClassSource;
 use C4::Charset;
+use Encode;
 require C4::Heading;
 require C4::Serials;
 
@@ -281,7 +282,7 @@ sub ModBiblio {
     
     $frameworkcode = "" unless $frameworkcode;
 
-    # get the items before and append them to the biblio before updating the record, atm we just have the biblio
+    # get the items before the record modifications and append them to the biblio before updating the record, atm we just have the biblio
     my ( $itemtag, $itemsubfield ) = GetMarcFromKohaField("items.itemnumber",$frameworkcode);
     my $oldRecord = GetMarcBiblio( $biblionumber );
 
@@ -292,7 +293,7 @@ sub ModBiblio {
         $record->delete_field($field);
     }
 
-    # parse each item, and, for an unknown reason, re-encode each subfield 
+    # Parse each oldRecord item, and, for an unknown reason, re-encode each subfield 
     # if you don't do that, the record will have encoding mixed
     # and the biblio will be re-encoded.
     # strange, I (Paul P.) searched more than 1 day to understand what happends
@@ -1989,6 +1990,12 @@ sub TransformMarcToKoha {
                 my $code = $sf->[0];
                 next MARCSUBFIELD unless exists $inverted_field_map->{$frameworkcode}->{$tag}->{sfs}->{$code};
                 my $value = $sf->[1];
+
+                # Must NormalizeString for value and Encode if already in utf8, else 
+                # diacritics are not stored by mysql in form that zebra can index properly.
+                $value = C4::Charset::NormalizeString($value);
+                $value = Encode::is_utf8($value) ? Encode::encode_utf8($value): $value;
+
                 SFENTRY: foreach my $entry (@{ $inverted_field_map->{$frameworkcode}->{$tag}->{sfs}->{$code} }) {
                     my ($table, $column) = @{ $entry };
                     next SFENTRY unless exists $tables{$table};
@@ -3395,11 +3402,27 @@ sub ModBiblioMarc {
     $sth =
       $dbh->prepare(
         "UPDATE biblioitems SET marc=?,marcxml=? WHERE biblionumber=?");
-    $sth->execute( $record->as_usmarc(), $record->as_xml_record($encoding),
-        $biblionumber );
-    $sth->finish;
-    ModZebra($biblionumber,"specialUpdate","biblioserver",$oldRecord,$record);
-    return $biblionumber;
+
+    my ($marc,$marcxml);
+    eval { $marc = $record->as_usmarc() };
+        if($@){ warn "as_usmarc() failed."; };
+
+    eval { $marcxml = $record->as_xml() };
+        if($@){ warn "as_xml() failed."; };
+
+    $marcxml = C4::Charset::NormalizeString($marcxml);
+    $marcxml = Encode::is_utf8($marcxml) ? Encode::encode_utf8($marcxml): $marcxml;
+
+    # As long as we've got valid MARCXML, we're good. Malformed MARC-21 just
+    # gets stored as NULL in the DB
+    if($marcxml){
+        $sth->execute( $marc, $marcxml, $biblionumber );
+        ModZebra($biblionumber,"specialUpdate","biblioserver",$oldRecord,$record);
+        return $biblionumber;
+    } else {
+        warn "WARNING: CORRUPT BIB: $biblionumber";
+        return undef;
+    }
 }
 
 =head2 z3950_extended_services
