@@ -83,7 +83,7 @@ function confirmCancelWaiting(that) {
     <li><a href="#finesandcharges">Fines &amp; Charges</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
-    <li><a href="#onhold" id="onholdlink">On Hold</a></li>
+    <li><a href="#onhold" id="onholdlink">On Hold (<TMPL_VAR NAME="countreserv">)</a></li>
     <!-- /TMPL_IF -->
     <li><a href="#revisionhistory">Revision History</a></li>
   </ul>

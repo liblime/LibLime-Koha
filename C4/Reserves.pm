@@ -1648,10 +1648,14 @@ sub ModReserveFillCheckout
    ## for whatever reason, this is the wrong bib.
    ## hold harmless and do nothing.
    return 1 if $coBiblionumber != $$res{biblionumber};
+   
+   ## this item is no longer available to fill hold requests
+   $sth = $dbh->prepare('DELETE FROM tmp_holdsqueue WHERE itemnumber=?');
+   $sth->execute($coItemnumber);
 
    ## patron who is checking out is not the one who placed the hold.
-   ## ignore, do nothing.  If we get here, overrides were performed.
-   return 1 if $coBorrowernumber != $$res{borrowernumber};
+   ## If we get here, overrides were performed.
+   return 1 if ($coBorrowernumber != $$res{borrowernumber});
 
    ## item-level hold
    if ($$res{itemnumber}) {
@@ -1739,16 +1743,7 @@ sub ModReserveFillCheckout
              priority      = 0
        WHERE reservenumber = ?|);
    $sth->execute($$res{reservenumber});
-
    _moveToOldReserves($$res{reservenumber});
-
-   ## force removal from Holds Queue Report
-   $sth = $dbh->prepare('
-      DELETE FROM tmp_holdsqueue
-       WHERE reservenumber = ?');
-   $sth->execute($$res{reservenumber});
-   
-   ## fix other holds' priorities.
    _NormalizePriorities($$res{biblionumber});
 
    return 1;
