@@ -39,10 +39,16 @@ function closeValErr(rmBarcode) {
    $('#<TMPL_VAR NAME="barcode_id">').focus();
 }
 function Check(f) {
+   // strip leading and trailing spaces
+   for(var i=0;i<f.field_value_0.length;i++) {
+      if (f.field_value_0[i].type=='text') {
+         var str = f.field_value_0[i].value;
+         str = str.replace(/^\s+|\s+$/g,'');
+         f.field_value_0[i].value = str;
+      }
+   }
    var total_errors = 0;
-//	alert(f.field_value.length);
     for (i=0; i<f.field_value_0.length ; i++) {
-//	alert (f.field_value_0[i].value);
         if (f.field_value_0[i].value.length==0 && f.mandatory_0[i].value==1) {
             document.getElementById("error"+i).style.backgroundColor="#FF0000";
             total_errors++;
