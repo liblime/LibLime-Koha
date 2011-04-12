@@ -862,8 +862,8 @@ sub GetAuthorisedValues {
     my $authvals = clone($authval_cache //= _populate_authval_cache());
     my @vals
         = (defined $category)
-        ? map {$_} values %{$authval_cache->{$category}}
-        : map {values %{$_}} map {$_} values %{$authval_cache};
+        ? map {$_} values %{$authvals->{$category}}
+        : map {values %{$_}} map {$_} values %{$authvals};
 
     return \@vals if !defined $selected;
 
