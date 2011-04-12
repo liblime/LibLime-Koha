@@ -888,15 +888,21 @@ sub checkauth {
     my $template_name = ( $type eq 'opac' ) ? 'opac-auth.tmpl' : 'auth.tmpl';
     my $template = gettemplate( $template_name, $type, $query );
     $template->param(branchloop => \@branch_loop,);
+
+    my $opacconf
+        = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
     my $checkstyle = C4::Context->preference("opaccolorstylesheet");
-    if ($checkstyle =~ /\//)
-	{
-            	$template->param( opacexternalsheet => $checkstyle);
-	} else
-	{
-		my $opaccolorstylesheet = C4::Context->preference("opaccolorstylesheet");  
-            $template->param( opaccolorstylesheet => $opaccolorstylesheet);
-	}
+    if ($checkstyle =~ /^http/) {
+        $template->param( opacexternalsheet => $checkstyle);
+    }
+    else {
+        my $opaccolorstylesheet = C4::Context->preference("opaccolorstylesheet");  
+        $template->param( opaccolorstylesheet => $opaccolorstylesheet);
+    }
+    if (my $sheet = ($opacconf->{stylesheet} || $ENV{'OPAC_CSS_EXTERNAL'})) {
+        $template->param(opacexternalsheet => $sheet);
+    }
+
     $template->param(
     login        => 1,
         INPUTS               => \@inputs,
