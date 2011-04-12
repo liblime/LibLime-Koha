@@ -1,4 +1,10 @@
 {
+   "ShowSupressStatus" : {
+      "explanation" : "Enable display of suppressed items in staff catalogue bib detail view",
+      "options" : null,
+      "value" : "1",
+      "type" : "YesNo"
+   },
    "OPACGroupResults" : {
       "explanation" : "Display search results in groups",
       "options" : null,
