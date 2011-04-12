@@ -24,6 +24,7 @@ use C4::Output;
 use Clone qw(clone);
 use URI::Split qw(uri_split);
 use List::Util qw(first);
+use Business::ISBN;
 
 use vars qw($VERSION @ISA @EXPORT $DEBUG);
 
@@ -1142,20 +1143,15 @@ sub _normalize_match_point {
     return $normalized_match_point;
 }
 
-sub _isbn_cleanup ($) {
-    my $normalized_isbn = shift;
-    $normalized_isbn =~ s/-//g;
-    $normalized_isbn =~/([0-9x]{1,})/i;
-    $normalized_isbn = $1;
-    if (
-        $normalized_isbn =~ /\b(\d{13})\b/ or
-        $normalized_isbn =~ /\b(\d{12})\b/i or
-        $normalized_isbn =~ /\b(\d{10})\b/ or
-        $normalized_isbn =~ /\b(\d{9}X)\b/i
-    ) { 
-        return $1;
+sub _isbn_cleanup {
+    my $isbn = Business::ISBN->new($_[0]);
+    if ($isbn) {
+        $isbn = $isbn->as_isbn10 if $isbn->type ~~ 'ISBN13';
+        if (defined $isbn) {
+            return $isbn->as_string([]);
+        }
     }
-    return undef;
+    return;
 }
 
 sub CgiOrPlackHostnameFinder {
