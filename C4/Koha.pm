@@ -21,6 +21,7 @@ use warnings;
 use strict;
 use C4::Context;
 use C4::Output;
+use Clone qw(clone);
 use URI::Split qw(uri_split);
 use List::Util qw(first);
 
@@ -843,7 +844,7 @@ sub _populate_authval_cache() {
 sub GetAuthorisedValue {
     my ($category, $authorised_value) = @_;
     $authval_cache //= _populate_authval_cache();
-    return $authval_cache->{$category}{$authorised_value};
+    return clone($authval_cache->{$category}{$authorised_value});
 }
 
 =head2 GetAuthorisedValues
@@ -858,7 +859,7 @@ C<$category> returns authorised values for just one category (optional).
 
 sub GetAuthorisedValues {
     my ($category, $selected) = @_;
-    $authval_cache //= _populate_authval_cache();
+    my $authvals = clone($authval_cache //= _populate_authval_cache());
     my @vals
         = (defined $category)
         ? map {$_} values %{$authval_cache->{$category}}
