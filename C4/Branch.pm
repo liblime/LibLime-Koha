@@ -208,8 +208,10 @@ problem here.
 
 sub ModBranch {
     my ($data) = @_;
-    my @columns = qw/branchname branchaddress1 branchaddress2 branchaddress3 branchphone branchfax
-                     branchemail branchip branchonshelfholds branchprinter itembarcodeprefix patronbarcodeprefix/;
+    my @columns = qw/branchname branchaddress1 branchaddress2 branchaddress3
+                     branchzip branchcity branchcountry branchphone branchfax
+                     branchemail issuing branchip branchprinter branchnotes
+                     branchonshelfholds itembarcodeprefix patronbarcodeprefix/;
     
     my $dbh    = C4::Context->dbh;
     my (@qterms, @bind, $sth);
