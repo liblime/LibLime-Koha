@@ -47,7 +47,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 <div id="header_search">
 	<div id="patron_search" class="residentsearch">
 		<p class="tip">Enter first and/or last name or card number for standard search. <br/>For email or phone, you may enter partial text with a * for truncation (e.g., myemail* or *111-2222).</p>
-		<form action="/cgi-bin/koha/members/member.pl" method="post">
+		<form action="/cgi-bin/koha/members/member.pl" method="GET">
     			<input id="searchmember" class="focus" name="member" type="text" />
 			<label for="searchfield">Search Fields:</label>
 			<select name="searchfield" id="searchfield">

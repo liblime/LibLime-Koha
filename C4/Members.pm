@@ -196,8 +196,9 @@ sub _constrain_sql_by_branchcategory {
 }
 
 sub SearchMember {
-    my ($searchstring, $orderby, $type, $category_type) = @_;
+    my ($searchstring, $orderby, $type, $category_type, $limits) = @_;
     $orderby ||= 'surname';
+    $limits //= {offset => 0, limit => 100};
 
     # FIXME: find where in members.pl this function is being called a second time with no args
     return (0, []) if (!$searchstring);
@@ -237,6 +238,8 @@ sub SearchMember {
         return (1, [$data]);
     }
 
+    $query =~ s/\*/COUNT(borrowernumber)/xms;
+
     if ($category_type) {
         $query .= ' AND category_type = ? ';
         push @bind, $category_type;
@@ -263,7 +266,13 @@ sub SearchMember {
         $query =~ s/ AND $/ /;
         $query .= ') ';
     }
-    $query .= " ORDER BY $orderby";
+
+    $data = $dbh->selectrow_arrayref($query, undef, @bind);
+    my $row_count = $data->[0];
+
+    $query =~ s/COUNT\(borrowernumber\)/*/xms;
+    $query .= " ORDER BY $orderby ";
+    $query .= sprintf ' LIMIT %d,%d', $limits->{offset}//0, $limits->{limit}//100;
 
     $data = $dbh->selectall_arrayref($query, {Slice => {}}, @bind);
 
@@ -287,7 +296,7 @@ sub SearchMember {
         $data = [ @$prevcards_data, @$data ];
     }
 
-    return ( scalar(@$data), $data );
+    return ( $row_count, $data );
 }
 
 sub SearchMemberBySQL {

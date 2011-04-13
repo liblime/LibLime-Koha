@@ -181,22 +181,25 @@ if ( $input->param('advanced_patron_search') ) {
     }
   }
 } elsif ( $input->param('sqlsearch') ) {
-  $resultsperpage = '1000';
+  $resultsperpage = '100';
   $search_sql = 'SELECT * FROM borrowers LEFT JOIN categories ON borrowers.categorycode = categories.categorycode WHERE ';
   my @parts = split( /;/, $input->param('sqlsearch') );
   $search_sql .= $parts[0];
   $template->param( member => $search_sql );
   ($count, $results) = SearchMemberBySQL( $search_sql );
 }
-elsif(length($member) == 1)
-{
-    ($count,$results)=SearchMember($member,$orderby,"simple");
+else {
+    my $type = (length($member) == 1) ? 'simple' : 'advanced';
+    my $limits
+        = {
+            offset => ($input->param('startfrom')-1) * $input->param('resultsperpage'),
+            limit  => $input->param('resultsperpage'),
+          };
+    ($count, $results) = SearchMember($member, $orderby, $type, undef, $limits);
+    # we prepend a bunch of empty elements into the array so that the PATRON loop
+    # below can start out with $i at the offset.
+    unshift @$results, map {undef} (1..$limits->{offset});
 }
-else
-{
-    ($count,$results)=SearchMember($member,$orderby,"advanced");
-}
-
 
 my @resultsdata;
 $to ||=($count>($startfrom*$resultsperpage)?$startfrom*$resultsperpage:$count);
