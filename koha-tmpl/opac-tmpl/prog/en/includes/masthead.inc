@@ -56,12 +56,14 @@
 		<!-- /TMPL_IF --></select>
 
     <!-- TMPL_IF NAME="searchdomainoptions" -->
-    <select name="multibranchlimit" class="left">
-      <option value="">All categories</option>
-      <!-- TMPL_LOOP NAME="searchdomainoptions" -->
-      <option value="<TMPL_VAR NAME="categorycode">" <TMPL_IF NAME="selected">selected="selected"</TMPL_IF>><TMPL_VAR NAME="categoryname"></option>
-      <!-- /TMPL_LOOP -->
-    </select>
+    <div id="searchcategories_masthead">
+      <select name="multibranchlimit" class="left">
+        <option value="">All categories</option>
+        <!-- TMPL_LOOP NAME="searchdomainoptions" -->
+        <option value="<TMPL_VAR NAME="categorycode">" <TMPL_IF NAME="selected">selected="selected"</TMPL_IF>><TMPL_VAR NAME="categoryname"></option>
+        <!-- /TMPL_LOOP -->
+      </select>
+    </div>
     <!-- /TMPL_IF --> <!-- NAME="searchdomainoptions" -->
 
 <!-- TMPL_IF NAME="ms_value" -->

@@ -260,12 +260,14 @@
         </select>
 
         <!--TMPL_IF NAME="searchdomainoptions" -->
-        <select name="multibranchlimit">
-          <option value="">No category</option>
-          <!-- TMPL_LOOP NAME="searchdomainoptions" -->
-          <option value="<TMPL_VAR NAME="categorycode">" <TMPL_IF NAME="selected">selected="selected"</TMPL_IF>><TMPL_VAR NAME="categoryname"></option>
-          <!-- /TMPL_LOOP -->
-        </select>
+        <div id="searchcategories">
+          <select name="multibranchlimit">
+            <option value="">All categories</option>
+            <!-- TMPL_LOOP NAME="searchdomainoptions" -->
+            <option value="<TMPL_VAR NAME="categorycode">" <TMPL_IF NAME="selected">selected="selected"</TMPL_IF>><TMPL_VAR NAME="categoryname"></option>
+            <!-- /TMPL_LOOP -->
+          </select>
+        </div>
         <!-- /TMPL_IF -->
         
         <div style="margin-top:.4em"><label for="available-items"><input type="checkbox" id="available-items" name="limit" value="available" /> Only items currently available for loan or reference</label></div>
