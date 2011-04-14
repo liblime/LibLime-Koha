@@ -1283,11 +1283,11 @@ sub _GetNextReserve {
         my $branch = C4::Circulation::_GetCircControlBranch($item, $borrower);
         my $issuingrule
             = C4::Circulation::GetIssuingRule($res->{borrowercategory}, $item->{itype}, $branch);
-        next unless ($issuingrule);
-
-        if (!$issuingrule->{holdallowed}) {
-            $nohold++;
-            next;
+        if ($issuingrule) {
+           if (!$issuingrule->{holdallowed}) {
+               $nohold++;
+               next;
+           }
         }
         if ($res->{priority} == 0
             && ($res->{found} ~~ 'T' || $res->{found} ~~ 'W') ) {
@@ -1320,7 +1320,7 @@ sub _GetNextReserve {
             }
         }
     }
-
+    die "Bad logic: reserve found but no reserverec as highest after algo" unless $highest;
     return ('Reserved', $highest);
 }
 
