@@ -299,6 +299,14 @@ if ($op eq 'set_session_defaults') {
     if ($input->param('mv')) {
        C4::Reserves::fixPrioritiesOnItemMove($biblionumber);
     }
+    if ($input->param('nukeHolds')) {
+       my %p = ('itemnumber',$itemnumber);
+       if ($input->param('onlyiteminbib')) { 
+         $p{biblionumber} = $biblionumber;
+         delete($p{itemnumber});
+       }
+       C4::Reserves::CancelReserves(\%p);
+    }
     
     # rebuild
     my ( $itemtosave, $barcode_not_unique ) = C4::Form::AddItem::get_item_record( $input, $frameworkcode, 0, $itemnumber );
@@ -470,12 +478,24 @@ my $t = $tmp[0];
 my $barcode_id = $t->{id};
 unshift( @$item, $t );
 ## pass DOM id of permanent location 952$a to template so
-## that ajax call for barcode validation knows the branchcode
+## that ajax call for barcode validation knows the branchcode.
+## also pass for damaged status
+my $i = 0;
 foreach(@$item) {
-   if (($$_{tag} eq '952') && ($$_{subfield} eq 'a')) {
-      $template->param(branchcode_tag_id => $$_{id});
-      last;
+   if ($$_{tag} eq '952') {
+      if ($$_{subfield} eq 'a') {
+         $template->param(branchcode_tag_id => $$_{id});
+      }
+      elsif ($$_{subfield} eq '4') {
+         $template->param(damaged_tag_id => $$_{id});
+         $template->param(AllowHoldsOnDamagedItems =>
+            C4::Context->preference('AllowHoldsOnDamagedItems')
+         );
+      }
    }
+   ## reset subfield's marc_lib
+   $$_{marc_lib} =~ s/^(<span id\=\"error)(\d+)/$1$i/;
+   $i++;
 }
 
 # what's the next op ? it's what we are not in : an add if we're editing, otherwise, and edit.

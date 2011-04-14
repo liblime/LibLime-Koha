@@ -160,7 +160,8 @@ $template->param(itemnumber => $itemnumber);
 $template->param(additemnumber => $additemnumber);
 $template->param(ONLY_ONE => 1) if ( $itemnumber && $count != @items );
 $template->param(z3950_search_params => C4::Search::z3950_search_args(GetBiblioData($biblionumber)));
-$template->param( ShowSupressStatus => C4::Context->preference('ShowSupressStatus') );
+$template->param(ShowSupressStatus => C4::Context->preference('ShowSupressStatus'));
+$template->param(AllowHoldsOnDamagedItems => C4::Context->preference('AllowHoldsOnDamagedItems'));
 output_html_with_http_headers $query, $cookie, $template->output;
 
 sub _borrower

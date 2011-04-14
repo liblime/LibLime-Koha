@@ -96,11 +96,11 @@
             </li>
             <li><span class="label">Damaged Status:</span>
                 <!-- TMPL_IF NAME="CAN_user_circulate" -->
-                    <form action="updateitem.pl" method="post">
+                    <form action="updateitem.pl" method="post" name="f_<TMPL_VAR NAME="itemnumber">">
                     <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
                     <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" />
                     <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-                    <select name="damaged" >
+                    <select name="damaged" onchange="damagedHasHolds(this.form,<TMPL_VAR NAME="biblionumber">,<TMPL_VAR NAME="itemnumber">)">
             <!-- TMPL_LOOP NAME="itemdamagedloop" -->
                 <!-- TMPL_IF NAME="selected" -->
                     <option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option>
@@ -109,11 +109,16 @@
                 <!-- /TMPL_IF -->
             <!-- /TMPL_LOOP -->
                     </select>
+                    <input type=hidden name="onlyiteminbib" value=0>
+                    <input type=hidden name="nukeHolds" value=0>
                     <input type="hidden" name="wthdrawn" value="<!-- TMPL_VAR NAME="wthdrawn" -->" />
                     <input type="hidden" name="itemlost" value="<!-- TMPL_VAR NAME="itemlost" -->" />
                     <input type="hidden" name="otherstatus" value="<!-- TMPL_VAR NAME="otherstatus" -->" />
                     <input type="hidden" name="suppress" value="<!-- TMPL_VAR NAME="suppress" -->" />
-                    <input type="submit" name="submit" class="submit" value="Set Status" /></form>
+                    <input type="submit" name="submit" class="submit" value="Set Status" 
+                    id="submitdamaged" style="display:none">
+                <div id="damagedmsg_<TMPL_VAR NAME="itemnumber">"></div>
+                </form>
                 <!-- TMPL_ELSE -->
                     <!-- TMPL_LOOP NAME="itemdamagedloop" -->
                         <!-- TMPL_IF NAME="selected" -->
@@ -242,7 +247,43 @@
             </div>
 </div>
 <!-- /TMPL_LOOP -->
-
+<script>
+function damagedHasHolds(f,biblionumber,itemnumber) {
+   var p  = '<TMPL_VAR NAME="AllowHoldsOnDamagedItems">';
+   if (p == '1') { return }
+   var v  = f.damaged.options[f.damaged.selectedIndex].value;
+   var el = document.getElementById('damagedmsg_'+itemnumber);
+   if (v != 1) { 
+      f.submitdamaged.readonly      = false;
+      f.submitdamaged.disabled      = false;
+      f.submitdamaged.style.display = '';
+      f.submitdamaged.value         = 'Set Status';
+      el.innerHTML = '';
+      return; 
+   }
+   f.submitdamaged.readonly = true;
+   f.submitdamaged.disabled = true;
+   f.submitdamaged.style.display = 'none';
+   $.getJSON('itemholds.pl',{'biblionumber':biblionumber,'itemnumber':itemnumber},function(data) {
+      if(data.hasholds) {
+         f.submitdamaged.value = 'Cancel Hold(s) and Set Status';
+         f.nukeHolds.value     = 1;
+         el.style.background   = '#ffffcc';
+         el.innerHTML = '<strong class=error>This item has holds.</strong> '
+         +'Setting this item to <strong>Damaged</strong> cancels current item-level holds.';
+         if (data.onlyiteminbib) {
+            f.onlyiteminbib.value = 1;
+            el.innerHTML += '<strong class=error>This is the only item in this '
+            +'bibliographic record.</strong>  Setting this item to '
+            +'<strong>Damaged</strong> also cancels all title-level holds.';
+         }
+      }
+   });
+   f.submitdamaged.readonly      = false;
+   f.submitdamaged.disabled      = false;
+   f.submitdamaged.style.display = '';
+}
+</script>
 </div>
 
 </div>

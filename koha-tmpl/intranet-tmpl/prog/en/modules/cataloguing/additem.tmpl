@@ -5,7 +5,7 @@
 //<![CDATA[
 $(document).ready(function(){
 		$("fieldset.rows input").keydown(function(e){ return checkEnter(e); });
-		$("#ajax_spinner").center();
+//		$("#ajax_spinner").center();
 });
 
 jQuery.fn.center = function () {
@@ -38,7 +38,10 @@ function closeValErr(rmBarcode) {
    if (rmBarcode==1) { document.f.<TMPL_VAR NAME="barcode_id">.value ='' }
    $('#<TMPL_VAR NAME="barcode_id">').focus();
 }
+
 function Check(f) {
+   var el = document.getElementById('valErr');
+   el.innerHTML = '';
    // strip leading and trailing spaces
    for(var i=0;i<f.field_value_0.length;i++) {
       if (f.field_value_0[i].type=='text') {
@@ -47,29 +50,76 @@ function Check(f) {
          f.field_value_0[i].value = str;
       }
    }
+ 
    var total_errors = 0;
-    for (i=0; i<f.field_value_0.length ; i++) {
-        if (f.field_value_0[i].value.length==0 && f.mandatory_0[i].value==1) {
-            document.getElementById("error"+i).style.backgroundColor="#FF0000";
+   for (i=0; i<f.field_value_0.length; i++) {
+      if (f.mandatory_0[i]) {
+         if (f.mandatory_0[i].value==1 && f.field_value_0[i].value.length==0) {
+            document.getElementById('error'+i).style.backgroundColor='#ff0000';
+            document.getElementById('error'+i).style.color='#ffffff';
             total_errors++;
-        } else {
-//			document.getElementById("error"+i).style.backgroundColor="#FFFFFF";
-        }
-    }
-    var alertString2;
-    if (total_errors==0) {
+         }
+         else {
+	         document.getElementById('error'+i).style.backgroundColor='#ffffff';
+         }
+      }
+   }
+   var alertString2;
+   if (total_errors==0) {
       // do nothing
-    }
-    else {
-        alertString2  = "Form not submitted because of the following problem(s)";
-        alertString2 += "\n------------------------------------------------------------------------------------\n";
-        alertString2 += "\n- "+ total_errors+_(" mandatory fields empty (see bold subfields)");
-        alert(alertString2);
-        return false;
-    }
+   }
+   else {
+      alertString2  = 'Form not submitted because of the following problem(s)\n'
+      +'-----------------------------------------------\n- '
+      +total_errors +' mandatory fields empty (see bold subfields)';
+      alert(alertString2);
+      return false;
+   }
 
+         <TMPL_IF NAME="itemnumber">
+         if(f.nukeHolds.value != 1) {
+            // prompt regarding cancelling holds of damaged item
+            if ('<TMPL_VAR NAME="AllowHoldsOnDamagedItems">' == '1') {
+               _checkbarcode();
+            }
+            else if ($('#<TMPL_VAR NAME="damaged_tag_id">').val()=='1') {
+               $.getJSON('../catalogue/itemholds.pl',{'biblionumber':<TMPL_VAR NAME="biblionumber">,'itemnumber':<TMPL_VAR NAME="itemnumber">},function(data1) {
+                  if(data1.hasholds==1) {
+                     el.innerHTML = '<strong class=error>This item has holds.</strong> '
+                     +'Setting this item to <strong>Damaged</strong> cancels current item-level holds.';
+                     if (data1.onlyiteminbib==1) {
+                        document.f.onlyiteminbib.value = 1;
+                        el.innerHTML += '<strong class=error>This is the only item in this bibliographic '
+                        +'record.</strong> Setting this item to <strong>Damaged</strong> also cancels any '
+                        +'title-level holds. ';
+                     }
+                     el.innerHTML += '<br><br><input type=button value="OK" onclick="'
+                     +'document.f.nukeHolds.value=1;'
+                     +'closeValErr();'
+                     +'Check(document.f)"> '
+                     +'<input type=button value="Cancel" onclick="closeValErr()">';
+                     el.style.display = 'block';
+                     document.getElementById('aboveValErr').scrollIntoView();
+                  }
+                  else {
+                     _checkbarcode();
+                  }
+               });
+            }
+            else {
+               _checkbarcode();
+            }
+         }
+         else {
+            _checkbarcode();
+         }
+         <TMPL_ELSE>
+         _checkbarcode();
+         </TMPL_IF>
+}
+function _checkbarcode() {
    var el = document.getElementById('valErr');
-   if ( $('#<!-- TMPL_VAR NAME="barcode_id" -->').val() ) {
+   if ($('#<!-- TMPL_VAR NAME="barcode_id" -->').val()) {
       var perm = document.getElementById('<TMPL_VAR NAME="branchcode_tag_id">');
       var branchcode = perm.options[perm.selectedIndex].value;
       var dupecheck = 1;
@@ -78,7 +128,7 @@ function Check(f) {
       // dupecheck if adding
       if (id == '') { dupecheck = 1; }
       $.getJSON('check_barcode.pl', {'barcode':$('#<!-- TMPL_VAR NAME="barcode_id" -->').val(),'barcodetype':'item','branchcode':branchcode,'dupecheck':dupecheck,'itemnumber':itemnumber},function(data) {
-			if ( data.itemnumber ) {
+         if (data.itemnumber) {
 				var itemData = '<table border=0 cellspacing=0 cellpadding=2>';
 				itemData += '<tr><td>Title: </td><td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber='
             +data.biblionumber + '">' + data.title + ' ' + data.subtitle + "</a></td></tr>";
@@ -138,18 +188,11 @@ function Check(f) {
             +'<input type=button value="OK" onclick="closeValErr();">';
             el.style.display = 'block';
             document.getElementById('aboveValErr').scrollIntoView();
-            total_errors++;
          }
          else {
-            document.f.submit();
+            f.submit();
          }
 		});
-   }
-   else { 
-      el.innerHTML = 'Barcode is required.<br><br>'
-      +'<input type=button value="OK" onclick="closeValErr()">';
-      el.style.display = 'block';
-      document.getElementById('aboveValErr').scrollIntoView();
    }
 }
 function CheckMultipleAdd(f) {
@@ -401,6 +444,8 @@ function checkForDuplicateDefaultsName() {
 <div id="valErr" class="dialog message" style="display:none;background:#ffffcc"></div>
 <div id="cataloguing_additem_newitem">
     <form method="post" action="/cgi-bin/koha/cataloguing/additem.pl" name="f">
+    <input type="hidden" name="nukeHolds" value=0>    
+    <input type="hidden" name="onlyiteminbib" value=0>
     <input type="hidden" name="op" value="<!-- TMPL_VAR NAME="op" -->" />
     <input type="hidden" name="mv" value="<!-- TMPL_VAR NAME="mv" -->" />
     <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
@@ -518,7 +563,7 @@ function checkForDuplicateDefaultsName() {
     <input type="hidden" name="subfield_0" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
     <input type="hidden" name="field_value_0" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
          <!-- TMPL_UNLESS NAME="notmyitem" -->
-    <input type="button" value="Save Changes" onclick="Check(this.form)" /> 
+    <input type="button" value="Save Changes" onclick="Check(this.form)" style="cursor:pointer" />
          <!-- /TMPL_UNLESS -->
       <!-- /TMPL_IF -->
     <!-- /TMPL_IF --></fieldset>

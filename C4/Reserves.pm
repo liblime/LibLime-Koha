@@ -708,6 +708,33 @@ sub GetSuspendedReservesFromBiblionumber {
     return (scalar @$reserves, $reserves);
 }
 
+sub ItemReservesAndOthers
+{
+   my $itemnumber = shift;
+   my %out = (
+      hasholds      => 0,
+      onlyiteminbib => 0,
+      itemholds     => []
+   );
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare(
+      'SELECT * FROM reserves WHERE itemnumber=?');
+   $sth->execute($itemnumber);
+   my $biblionumber = 0;
+   while(my $row=$sth->fetchrow_hashref()) {
+      push @{$out{itemholds}}, $row;
+      $out{hasholds}  = 1;
+      $biblionumber ||= $$row{biblionumber};
+   }
+   $sth = $dbh->prepare('SELECT 1 FROM items
+      WHERE biblionumber = ?
+        AND itemnumber IS NOT NULL
+        AND itemnumber <> ?');
+   $sth->execute($biblionumber,$itemnumber);
+   $out{onlyiteminbib} = ($sth->fetchrow_array)[0]? 0:1;
+   return \%out;
+}
+
 =item GetReservesFromItemnumber
 
  ( $reservenumber, $reservedate, $borrowernumber, $branchcode ) = GetReservesFromItemnumber($itemnumber);
@@ -1363,12 +1390,11 @@ sub CancelReserves {
       $sql .= " biblionumber = ?";
       push( @sql_params, $biblionumber );
     }
-    
     my $sth = $dbh->prepare( $sql );
     $sth->execute( @sql_params );
     
     while ( my $reserve = $sth->fetchrow_hashref() ) {
-      CancelReserve( $reserve->{'reservenumber'}, $reserve->{'biblionumber'} );
+      CancelReserve( $reserve->{'reservenumber'} );
     }
 }
 
