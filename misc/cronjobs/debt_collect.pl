@@ -147,7 +147,7 @@ GetOptions(
     'max-wait=i' => \$max_wait,
     'ignore' => \@ignored,
     'min' => \$minimum,
-    'subject' => \$subject,
+    'subject=s' => \$subject,
     'o|once' => \$once,
 ) or pod2usage( 2 );
 pod2usage( 1 ) if ( $usage );
