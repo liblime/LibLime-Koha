@@ -1970,8 +1970,8 @@ sub FixAccountForLostAndReturned {
    return if (-1 *$$wo{amount})==$$data{amount};
    die "Unhandled exception: writeoff amount ($$wo{amount}) in account no.$$wo{accountno} 
       is not full amount of lost item ($$data{amount}) in account no.$$data{accountno} 
-      for borrowernumber=$$data{borrowernumber}" if $$wo{amount}
-      && (-1 *$$wo{amount} != $$data{amount});
+      for borrowernumber=$$data{borrowernumber}.  NOte that writeoff amount should be negative" 
+      if $$wo{amount} && (-1 *$$wo{amount} != $$data{amount});
 
    ## look for line-item payment on this book
    $sth = $dbh->prepare("SELECT * FROM accountlines

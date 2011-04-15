@@ -64,24 +64,34 @@ our $data = GetMember( $borrowernumber,'borrowernumber' );
 my $user = $input->remote_user;
 $user ||= q{};
 
-# get account details
-my $branches = GetBranches();
-my $branch   = GetBranch( $input, $branches );
-
-my $co_wr = $input->param('confirm_writeoff');
 my $paycollect = $input->param('paycollect');
 if ($paycollect) {
     print $input->redirect("/cgi-bin/koha/members/paycollect.pl?borrowernumber=$borrowernumber" );
 }
-my $wo_all = $input->param('woall'); # writeoff all fines
-if ($wo_all) {
-    writeoff_all();
-} elsif ($co_wr) {
+if ($input->param('woall')) {
+   C4::Accounts::writeoff(
+      writeoff_all   => 1,
+      borrowernumber =>$borrowernumber,
+      user           => C4::Context->userenv->{'id'},
+      branch         => C4::Context->userenv->{'branch'},
+   );
+   print $input->redirect(
+        "/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
+   exit;
+} elsif ($input->param('confirm_writeoff')) {
     my $accountno = $input->param('accountno');
     my $itemno = $input->param('itemnumber');
     my $account_type =  $input->param('accounttype');
     my $amount = $input->param('amount');
-    writeoff($borrowernumber, $accountno, $itemno, $account_type, $amount);
+    C4::Accounts::writeoff(
+      branch         => C4::Context->userenv->{'branch'},
+      user           => C4::Context->userenv->{'id'},
+      amount         => $input->param('amount'),
+      accountno      => $input->param('accountno'),
+      borrowernumber => $borrowernumber,
+      itemnumber     => $input->param('itemnumber'),
+      accounttype    => $input->param('accounttype')
+    );
 }
 
 my @names = $input->param;
@@ -98,7 +108,8 @@ for ( my $i = 0 ; $i < @names ; $i++ ) {
         my $amount         = $input->param( $names[ $i + 4 ] );
         my $borrowernumber = $input->param( $names[ $i + 5 ] );
         my $accountno      = $input->param( $names[ $i + 6 ] );
-        makepayment( $borrowernumber, $accountno, $amount, $user, $branch );
+        makepayment( $borrowernumber, $accountno, $amount, $user, 
+        C4::Context->userenv->{'branch'});
 
         if ( $accounttype eq 'L' && $itemnumber ) {
             my $bor = "$data->{'firstname'} $data->{'surname'} $data->{'cardnumber'}";
@@ -290,55 +301,4 @@ sub redirect_to_paycollect {
     $redirect .= '&remote_user=';
     $redirect .= $user;
     return print $input->redirect( $redirect );
-}
-sub writeoff_all {
-    my @wo_lines;
-    my @name = $input->param;
-    for (@name) {
-        if (/^line_id_\d+$/) {
-            push @wo_lines, $input->param($_);
-        }
-    }
-    for my $value (@wo_lines) {
-        my $accounttype    = $input->param("accounttype$value");
-        my $borrowernumber = $input->param("borrowernumber$value");
-        my $itemno         = $input->param("itemnumber$value");
-        my $amount         = $input->param("amount$value");
-        my $accountno      = $input->param("accountno$value");
-        writeoff( $borrowernumber, $accountno, $itemno, $accounttype, $amount );
-    }
-    $borrowernumber = $input->param('borrowernumber');
-    print $input->redirect(
-        "/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
-}
-
-sub writeoff {
-    my ( $borrowernumber, $accountnum, $itemnum, $accounttype, $amount ) = @_;
-    my $dbh  = C4::Context->dbh;
-    undef $itemnum unless $itemnum; # if no item is attached to fine, make sure to store it as a NULL
-    my $sth =
-      $dbh->prepare(
-"Update accountlines set amountoutstanding=0 where accountno=? and borrowernumber=?"
-      );
-    $sth->execute( $accountnum, $borrowernumber );
-    $sth->finish;
-    
-    $sth = $dbh->prepare("select max(accountno) from accountlines where borrowernumber=?");
-    $sth->execute($borrowernumber);
-    my $account = $sth->fetchrow_hashref;
-    $sth->finish;
-    $account->{'max(accountno)'}++;
-    my $user = C4::Context->userenv->{'id'};
-    $sth = $dbh->prepare(qq|insert into accountlines (borrowernumber,accountno,itemnumber,date,amount,description,accounttype)
-						values (?,?,?,now(),?,"Writeoff for No.$accountnum (-$user)",'W')
-    |);
-    $sth->execute( $borrowernumber, $account->{'max(accountno)'},
-        $itemnum, (-1* $amount) );
-    $sth->finish;
-    UpdateStats( $branch, 'writeoff', (-1 *$amount), '', $itemnum, '', $borrowernumber, $accountnum );
-
-    if ( $accounttype eq 'L' && $itemnum ) {
-        my $bor = "$data->{'firstname'} $data->{'surname'} $data->{'cardnumber'}";
-        ModItem( { paidfor =>  "Paid for by $bor " . C4::Dates->today() }, undef, $itemnum );
-    }
 }

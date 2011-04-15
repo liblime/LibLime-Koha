@@ -192,6 +192,94 @@ sub MemberAllAccounts
    return $total, \@all;
 }
 
+sub writeoff
+{
+   my %g   = @_;
+   die "No branch passed to writeoff()" unless $g{branch};
+   $g{itemnumber} ||= undef; # store as null if not there
+   if ($g{writeoff_all}) {
+      my $dbh = C4::Context->dbh;
+      my $sth = $dbh->prepare('SELECT amount,accountno
+         FROM accountlines
+        WHERE amountoutstanding >0
+          AND borrowernumber = ?');
+      $sth->execute($g{borrowernumber});
+      while(my $row = $sth->fetchrow_hashref()) {
+         $g{accountno} = $$row{accountno};
+         $g{amount}    = $$row{amount};
+         _writeoff_each(%g);
+      }
+      return 1;
+   }
+   return _writeoff_each(%g);
+}
+
+sub _writeoff_each
+{
+   my %g   = @_;
+   my $dbh = C4::Context->dbh;
+   my $sth;
+   return unless ($g{accountno} && $g{borrowernumber});
+   $g{itemnumber} ||= undef;
+   unless ($g{amount}) {
+      $sth = $dbh->prepare('SELECT amount FROM accountlines
+         WHERE borrowernumber = ?
+           AND accountno      = ?');
+      $sth->execute($g{borrowernumber},$g{accountno});
+      ($g{amount}) = $sth->fetchrow_array;
+      return unless $g{amount};
+   }
+   die "Amount of accountno.$g{accountno} must be positive" if ($g{amount} <0);
+   $sth = $dbh->prepare('UPDATE accountlines 
+      SET amountoutstanding = 0
+    WHERE accountno         = ?
+      AND borrowernumber    = ?');
+   $sth->execute($g{accountno},$g{borrowernumber});
+   my $newno = getnextacctno($g{borrowernumber});
+   $g{user} ||= '';
+   $sth = $dbh->prepare("INSERT INTO accountlines (
+         borrowernumber,
+         accountno,
+         itemnumber,
+         date,
+         amount,
+         amountoutstanding,
+         description,
+         accounttype) VALUES(
+         ?,?,?,NOW(),?,0,?,'W')");
+   $sth->execute(
+      $g{borrowernumber},
+      $newno,
+      $g{itemnumber},
+      (-1 *$g{amount}),
+      "Writeoff for No.$g{accountno} (-$g{user})"
+   );
+   C4::Stats::UpdateStats($g{branch},'writeoff',(-1 *$g{amount}),'',$g{itemnumber},'',
+      $g{borrowernumber},$newno);
+   if ($g{moditem_paidfor} && ($g{accounttype} ~~ 'L')) {
+      if ($g{borrower}) {}
+      else {
+         $sth = $dbh->prepare('SELECT firstname,surname,cardnumber
+            FROM borrowers
+           WHERE borrowernumber = ?');
+         $sth->execute();
+         $g{borrower} = $sth->fetchrow_hashref();
+      }
+      foreach(qw(firstname surname cardnumber)) {
+         $g{borrower}{$_} //= '';
+      }
+      my $bor = join(' ', 
+         $g{borrower}{firstname},
+         $g{borrower}{lastname},
+         $g{borrower}{cardnumber}
+      );
+      C4::Items::ModItem({paidfor=>"Paid for by $bor " . C4::Dates->today()},
+         undef, $g{itemnumber}
+      );
+   }
+   return $newno;
+}
+
 =head2 makepayment
 
   &makepayment($borrowernumber, $acctnumber, $amount, $branchcode);
