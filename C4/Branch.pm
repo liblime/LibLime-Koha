@@ -430,7 +430,11 @@ sub GetBranch ($$) {
     my $branch = $query->param('branch');
     my %cookie = $query->cookie('userenv');
     $branch ||= $cookie{'branchname'};
-    ( $branches->{$branch} ) || ( $branch = ( keys %$branches )[0] );
+
+    if(!$branch || ($branch && !$branches->{$branch})) {
+        $branch = (keys %$branches)[0];
+    }
+
     return $branch;
 }
 

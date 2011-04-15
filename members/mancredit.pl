@@ -74,6 +74,7 @@ if ($input->param('add')){
     my $haveRefund = 0;
     my($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
     foreach(@$accts) {
+       $$_{amountoutstanding} ||= 0;
        if (($$_{amountoutstanding} < 0) && ($$_{accounttype} eq 'RCR')) {
           $haveRefund = 1;
           last;

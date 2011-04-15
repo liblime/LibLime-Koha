@@ -184,6 +184,7 @@ sub add_accounts_to_template {
             next;
         }
         foreach my $acct (@$accts) {
+            $$acct{amountoutstanding} ||= 0;
             $haveRefund ||= 1 if ($$acct{accounttype} eq 'RCR' )
                               && ($$acct{amountoutstanding} < 0);
             next if $seen{$$acct{accountno}};
