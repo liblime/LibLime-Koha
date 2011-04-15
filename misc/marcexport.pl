@@ -6,8 +6,10 @@ use C4::Context;
 use C4::Biblio;  # GetMarcBiblio GetXmlBiblio
 use Getopt::Long;
 
-my ($counter,$filename,$homebranchfield,$homebranchsubfield,$branch,$strip_nonlocal_items,$start,$end);
-my ($table,$want_help,$marcfile,$todate,$fromdate,$deleted,$onlyitems,$fromlast);
+
+
+my($counter,$filename,$homebranchfield,$homebranchsubfield,$branch,$strip_nonlocal_items,$start,$end);
+my ($table,$want_help,$marcfile,$todate,$fromdate,$deleted,$onlyitems,$fromlast,$biblioonly);
 my $itemtag="952";
 
 GetOptions(
@@ -21,6 +23,7 @@ GetOptions(
 "todate:s" => \$todate,
 "deleted" => \$deleted,
 "last:s" => \$fromlast,
+"biblio" => \$biblioonly,
 );
 
 
@@ -132,7 +135,7 @@ sub get_updates{
 	$query = "SELECT biblioitems.biblionumber from biblioitems where biblioitems.biblionumber not in (select biblionumber from items where biblionumber =biblioitems.biblionumber)"; 
 	
 	if ($table){
-		$query = "SELECT biblioitems.biblionumber from biblioitems,$table t where biblioitems.bibionumber=t.biblionumber and biblioitems.biblionumber not in (select biblionumber from items where biblionumber =biblioitems.biblionumber)"; 
+		$query = "SELECT biblioitems.biblionumber from biblioitems,$table t where biblioitems.biblionumber=t.biblionumber and biblioitems.biblionumber not in (select biblionumber from items where biblionumber =biblioitems.biblionumber)"; 
 	}
 	
     if($start){
@@ -157,7 +160,7 @@ sub get_updates{
 	$query = "select deleteditems.biblionumber from deleteditems,biblioitems where deleteditems.biblionumber=biblioitems.biblionumber"; 
 	
 	if ($table){
-		$query = "select deleteditems.biblionumber from deleteditems,biblioitems,$table t where deleteditems.biblionumber=t.bibionumber and deleteditems.biblionumber=biblioitems.biblionumber"; 
+		$query = "select deleteditems.biblionumber from deleteditems,biblioitems,$table t where deleteditems.biblionumber=t.biblionumber and deleteditems.biblionumber=biblioitems.biblionumber"; 
 	}
 	
     if($start){
@@ -269,35 +272,37 @@ sub process_bib{
 			$new_record1 = $new_record->clone; 
 			my $item_sth = $dbh->prepare("SELECT itemnumber,homebranch FROM items WHERE biblionumber = ?");
    			$item_sth->execute($biblionumber);
-    		while (my ($itemnumber,$homebranch) = $item_sth->fetchrow_array) {
-    			if (defined $branch ){
-    				my $found=0;
-    				for (my $i=0;$i<@branch_arr;$i++){
-    					if (defined $homebranch && $homebranch eq $branch_arr[$i]){$found=1}
+   			if (not $biblioonly){
+   	 			while (my ($itemnumber,$homebranch) = $item_sth->fetchrow_array) {
+    				if (defined $branch ){
+    					my $found=0;
+    					for (my $i=0;$i<@branch_arr;$i++){
+    						if (defined $homebranch && $homebranch eq $branch_arr[$i]){$found=1}
+   	 					}
+    					if (not($found)){next}
     				}
-    				if (not($found)){next}
-    			}
-        		my $marc_item = C4::Items::GetMarcItem($biblionumber, $itemnumber);
-        		foreach my $item_field ($marc_item->field($itemtag)) {
-            		$new_record1->insert_fields_ordered($item_field);
-					$cnt ++;
-					$item_cnt++;
-					$total_cnt++;
-					my $tmp_record = $new_record1->as_usmarc();
-					my $new_leader = $new_record1->leader();
-					if (substr($new_leader,0,5) > "85000"){
-						print (OUT $new_record1->as_usmarc());
-						$new_record1 = ();
-						$new_record1 = $new_record->clone; 
-						$cnt=0;
-						$split_cnt++;
-						$marc_cnt++;
-					}
-        		}
+        			my $marc_item = C4::Items::GetMarcItem($biblionumber, $itemnumber);
+   	    	 		foreach my $item_field ($marc_item->field($itemtag)) {
+    	        		$new_record1->insert_fields_ordered($item_field);
+						$cnt ++;
+						$item_cnt++;
+						$total_cnt++;
+						my $tmp_record = $new_record1->as_usmarc();
+						my $new_leader = $new_record1->leader();
+						if (substr($new_leader,0,5) > "85000"){
+							print (OUT $new_record1->as_usmarc());
+							$new_record1 = ();
+							$new_record1 = $new_record->clone; 
+							$cnt=0;
+							$split_cnt++;
+							$marc_cnt++;
+						}
+       		 		}
     					
-			}
+				}
+   			}
 			
-			if (($total_cnt>0 && $onlyitems) or (not $onlyitems)){
+			if (($total_cnt>0 && $onlyitems) or (not $onlyitems) or $biblioonly){
 				print (OUT $new_record1->as_usmarc());
 				$marc_cnt++;
 			}
@@ -320,6 +325,7 @@ sub usage{
 	$usage .= "\tfromdate\t-from date yyyymmddd\n";
 	$usage .= "\ttodate\t\t-to date yyyymmddd\n";
 	$usage .= "\tdelete\t\t-Deleted biblio only\n";
+	$usage .= "\tbiblioonly\t\t-Bibs only \n";
 	$usage .= "\tlast\t\t-fromdate is today-last and todate is today\n";
 	$usage .= "\nperl marcexport.pl -out out_file -all\n";
 	print $usage;
@@ -333,7 +339,8 @@ sub report_header{
 	printf ("All record modification from %s\n",$fromdate) if ($fromdate);
 	printf ("All record modification to %s\n",$todate) if ($todate);
 	printf ("Only deleted bibs \n") if ($deleted);
-	printf ("Only bibs with items with the items attached %\n") if ($onlyitems);
+	printf ("Only bibs with items with the items attached \n") if ($onlyitems);
+	printf ("Bibs only (no items)  \n") if ($biblioonly);
 	
 }
 ################################################################################
