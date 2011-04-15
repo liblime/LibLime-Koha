@@ -211,6 +211,7 @@ sub barcodedecode
         elsif ($branchcode) {
             $prefix ||= $branchcode eq '_TEST' ? 12345 
             : GetBranchDetail($branchcode)->{'itembarcodeprefix'};
+            $prefix ||= '';
         }
         ## relax this
         #else {

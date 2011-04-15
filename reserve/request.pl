@@ -585,7 +585,6 @@ foreach my $biblionumber (@biblionumbers) {
     # existingreserves building
     my @reserveloop;
     my $populate_option_loop = $template->param('CAN_user_reserveforothers_reorder_holds');
-    ( $count, $reserves ) = GetReservesFromBiblionumber($biblionumber);
     # pretend all non-T/non-W reserves have an 'S' for sorting purposes
     foreach my $res ( sort { ($a->{found} // 'S') cmp ($b->{found} // 'S') } @$reserves ) {
         my %reserve;
