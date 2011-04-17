@@ -1900,7 +1900,8 @@ CREATE TABLE `statistics` (
   `borrowernumber` int(11) default NULL,
   `associatedborrower` int(11) default NULL,
   KEY `timeidx` (`datetime`),
-  KEY `s_lostcard` (`borrowernumber`,`type`)
+  KEY `s_lostcard` (`borrowernumber`,`type`),
+  KEY `typeindex` (`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
