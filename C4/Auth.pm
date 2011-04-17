@@ -345,7 +345,7 @@ sub get_template_and_user {
         my $opacconf
             = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
 
-        my $opac_search_limit = $opacconf->{default_search_limit}{content} || $ENV{'OPAC_SEARCH_LIMIT'};
+        my $opac_search_limit = $opacconf->{default_search_limit}{content} || $ENV{'OPAC_SEARCH_LIMIT'} // '';
         my $opac_limit_override = $opacconf->{default_search_limit}{override} || $ENV{'OPAC_LIMIT_OVERRIDE'};
         my $mylibraryfirst = C4::Context->preference("SearchMyLibraryFirst");
         my $opac_name;
@@ -1215,8 +1215,7 @@ sub check_cookie_auth {
     my $flagsrequired = shift;
 
     my $dbh     = C4::Context->dbh;
-    my $timeout = C4::Context->preference('timeout');
-    $timeout = 600 unless $timeout;
+    my $timeout = C4::Context->preference('timeout') // 600;
 
     unless (C4::Context->preference('Version')) {
         # database has not been installed yet

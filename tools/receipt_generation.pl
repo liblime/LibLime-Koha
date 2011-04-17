@@ -154,8 +154,9 @@ sub _replace_loop {
 
     my $new_content_loop;
     foreach my $d (@$data) {
-        my $c = $content_loop;
+        my $c = $content_loop // '';
         while ( my ( $key, $value ) = each %$d ) {
+            $value //= '';
             if ( _is_date($value) )
             { ## If the key looks like a date ( starts with YYY-MM-DD ), convert it to MM/DD/YYYY
                 $value = C4::Dates::format_date($value);

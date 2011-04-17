@@ -2527,10 +2527,7 @@ sub GetIssuingCharges {
         my $sth2 = $dbh->prepare($q2);
         $sth2->execute( $borrowernumber, $item_type );
         if ( my $data2 = $sth2->fetchrow_hashref ) {
-            my $discount = $data2->{'rentaldiscount'};
-            if ( $discount eq 'NULL' ) {
-                $discount = 0;
-            }
+            my $discount = $data2->{rentaldiscount} // 0;
             $charge = ( $charge * ( 100 - $discount ) ) / 100;
         }
         $sth2->finish;

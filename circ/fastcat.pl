@@ -268,7 +268,7 @@ sub get_branch_list {
           {
             value       => $t->{branchcode},
             description => $t->{branchname},
-            selected    => $t->{branchcode} eq $default ? 1 : undef
+            selected    => ($t->{branchcode} ~~ $default) ? 1 : undef
           };
     }
     return $loop;

@@ -488,7 +488,8 @@ foreach my $biblioNum (@biblionumbers) {
         # Get additional reserve info not returned by GetReservesFromItemnumber
         my ($count,$reserves) = GetReservesFromBiblionumber($itemInfo->{'biblionumber'});
         foreach my $res (@$reserves) {
-          $itemLoopIter->{reserve_status} = $res->{found} if ((defined $res->{found}) && ($res->{itemnumber} eq $itemLoopIter->{itemnumber})); 
+            no warnings qw(uninitialized);
+            $itemLoopIter->{reserve_status} = $res->{found} if ((defined $res->{found}) && ($res->{itemnumber} eq $itemLoopIter->{itemnumber})); 
         }
 
         $itemLoopIter->{notforloan} = $itemInfo->{notforloan};
