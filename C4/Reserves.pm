@@ -281,7 +281,7 @@ sub GetItemForBibPrefill
        AND priority > 0  /* is in the queue */
        AND found IS NULL /* has not been filled/waiting/in transit/suspended */
        AND reservedate   <= NOW()
-       AND itemnumber IS NOT NULL") || die $dbh->errstr();
+       AND itemnumber IS NOT NULL");
    $sth->execute($$res{biblionumber});
    my @notitems = $sth->fetchrow_array();
    $sth = $dbh->prepare("SELECT itemnumber FROM tmp_holdsqueue
@@ -289,6 +289,16 @@ sub GetItemForBibPrefill
    $sth->execute($$res{biblionumber});
    my @more = $sth->fetchrow_array();
    push @notitems, @more if @more;
+
+   my $stillmore = $dbh->selectcol_arrayref(q{
+      SELECT issues.itemnumber
+      FROM   issues
+        JOIN items, biblio
+      WHERE  items.biblionumber = biblio.biblionumber
+         AND issues.itemnumber = items.itemnumber
+         AND biblio.biblionumber = ?
+   }, undef, $res->{biblionumber});
+   push @notitems, @$stillmore;
 
    my @vals       = ($$res{biblionumber});
    my $starti     = 0;
@@ -378,8 +388,11 @@ sub GetItemForQueue
          AND items.itemnumber NOT IN (
             SELECT itemnumber FROM tmp_holdsqueue
             WHERE  biblionumber = ?)
-   ") || die $dbh->errstr();
-   $sth->execute($$res{biblionumber},$$res{itemnumber},$$res{biblionumber});
+         AND items.itemnumber NOT IN (
+            SELECT itemnumber FROM issues
+            WHERE  itemnumber = ?)
+   ");
+   $sth->execute($$res{biblionumber},$$res{itemnumber},$$res{biblionumber},$$res{itemnumber});
    my $item = $sth->fetchrow_hashref();
    return unless $item;
    $$item{found}            = $$res{found};
