@@ -43,7 +43,7 @@ my ($template, $loggedinuser, $cookie) =
 my $subscription_id = $query->param('subscription_id');
 if (C4::Control::Subscription::UserCanViewSubscription($subscription_id)) {
     my $periodical_id = $query->param('periodical_id') //
-        C4::Schema::Subscription->new(id => $subscription_id)->load->periodical_id;
+        Koha::Schema::Subscription->new(id => $subscription_id)->load->periodical_id;
 
     SeedTemplateWithPeriodicalData($template, $periodical_id);
     SeedTemplateWithSubscriptionData($template, $subscription_id);

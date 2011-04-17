@@ -36,14 +36,14 @@ use CGI;
 use Rose::DB::Object::Helpers qw(column_value_pairs);
 use Try::Tiny;
 
-use C4::Schema::Periodical;
-use C4::Schema::Periodical::Manager;
-use C4::Schema::PeriodicalSerial;
-use C4::Schema::PeriodicalSerial::Manager;
-use C4::Schema::Subscription;
-use C4::Schema::Subscription::Manager;
-use C4::Schema::SubscriptionSerial;
-use C4::Schema::SubscriptionSerial::Manager;
+use Koha::Schema::Periodical;
+use Koha::Schema::Periodical::Manager;
+use Koha::Schema::PeriodicalSerial;
+use Koha::Schema::PeriodicalSerial::Manager;
+use Koha::Schema::Subscription;
+use Koha::Schema::Subscription::Manager;
+use Koha::Schema::SubscriptionSerial;
+use Koha::Schema::SubscriptionSerial::Manager;
 use C4::Model::Periodical::Chronology;
 use C4::Control::PeriodicalSerial;
 use C4::Control::Periodical;
@@ -96,7 +96,7 @@ sub _get_periodical_subscriptions_details($) {
 
     my @branches = C4::Auth::GetUserGroupBranches('subscriptions');
 
-    my @subs = map {scalar column_value_pairs($_)} @{C4::Schema::Subscription::Manager->get_subscriptions(
+    my @subs = map {scalar column_value_pairs($_)} @{Koha::Schema::Subscription::Manager->get_subscriptions(
         query => [ periodical_id => $p->id, branchcode => \@branches ], sort_by => 'branchcode')};
     _set_datetime_format(\@subs, 'expiration_date');
     return \@subs;
@@ -105,7 +105,7 @@ sub _get_periodical_subscriptions_details($) {
 sub SeedTemplateWithPeriodicalData($$) {
     my ($template, $periodical_id) = @_;
     try {
-        my $periodical = C4::Schema::Periodical->new(id => $periodical_id)->load;
+        my $periodical = Koha::Schema::Periodical->new(id => $periodical_id)->load;
         my (undef, @biblios) = GetBiblio($periodical->biblionumber);
         $template->param(
             biblionumber => $periodical->biblionumber,
@@ -126,20 +126,20 @@ sub SeedTemplateWithPeriodicalData($$) {
                     $periodical->chronology_format, DateTime->now),
             );
         }
-        my @periodical_serials = map {scalar column_value_pairs($_)} @{C4::Schema::PeriodicalSerial::Manager->get_periodical_serials(
+        my @periodical_serials = map {scalar column_value_pairs($_)} @{Koha::Schema::PeriodicalSerial::Manager->get_periodical_serials(
             query => [ periodical_id => $periodical_id ], sort_by => 'publication_date')};
         _set_datetime_format(\@periodical_serials, $_) for qw(publication_date);
         foreach (@periodical_serials) {
-            $_->{expected} = C4::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
+            $_->{expected} = Koha::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
                 query => [periodical_serial_id => $_->{id}, status => 1]);
-            $_->{arrived} = C4::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
+            $_->{arrived} = Koha::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
                 query => [periodical_serial_id => $_->{id}, status => 2]);
         }
 
         $template->param(periodical_serials_loop => \@periodical_serials);
         $template->param(subscriptions_loop => _get_periodical_subscriptions_details($periodical));
         $template->param(subscription_count =>
-                         C4::Schema::Subscription::Manager->get_subscriptions_count(
+                         Koha::Schema::Subscription::Manager->get_subscriptions_count(
                              query => [periodical_id => $periodical_id]
                          ));
         $template;
@@ -154,12 +154,12 @@ sub SeedTemplateWithPeriodicalData($$) {
 sub SeedTemplateWithPeriodicalSerialData($$) {
     my ($template, $periodical_serial_id) = @_;
     try {
-        my $ps_flat = column_value_pairs(C4::Schema::PeriodicalSerial->new(id => $periodical_serial_id)->load);
+        my $ps_flat = column_value_pairs(Koha::Schema::PeriodicalSerial->new(id => $periodical_serial_id)->load);
         _set_datetime_format(undef, $ps_flat->{publication_date});
         $template->param(periodical_serials_loop => [$ps_flat]);
         $template->param(periodical_id => $ps_flat->{periodical_id});
         $template->param(subscription_serial_count =>
-                         C4::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
+                         Koha::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
                              query => [periodical_serial_id => $periodical_serial_id]
                          ));
         $template;
@@ -174,7 +174,7 @@ sub SeedTemplateWithPeriodicalSerialData($$) {
 sub SeedTemplateWithSubscriptionSerialData($$) {
     my ($template, $subscription_serial_id) = @_;
     try {
-        my $ss = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;
+        my $ss = Koha::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;
         my $ss_flat = column_value_pairs($ss);
         $ss_flat->{sequence} = $ss->periodical_serial->sequence;
         $ss_flat->{vintage} = $ss->periodical_serial->vintage;
@@ -200,7 +200,7 @@ sub SeedTemplateWithSubscriptionDefaults($;$) {
 
 sub SeedTemplateWithSubscriptionData($$) {
     my ($template, $subscription_id) = @_;
-    my $subscription = C4::Schema::Subscription->new(id => $subscription_id)->load;
+    my $subscription = Koha::Schema::Subscription->new(id => $subscription_id)->load;
 
     try {
         $template->param(
@@ -215,7 +215,7 @@ sub SeedTemplateWithSubscriptionData($$) {
             );
 
         SeedTemplateWithSubscriptionDefaults($template, $subscription_id);
-        my $ss_list = C4::Schema::SubscriptionSerial::Manager->get_subscription_serials(query => [ subscription_id => $subscription_id ]);
+        my $ss_list = Koha::Schema::SubscriptionSerial::Manager->get_subscription_serials(query => [ subscription_id => $subscription_id ]);
         my @ss_flats;
         foreach my $ss (@$ss_list) {
             my $ss_flat = {
@@ -232,7 +232,7 @@ sub SeedTemplateWithSubscriptionData($$) {
         }
         $template->param(subscription_serials_loop => \@ss_flats);
         $template->param(subscription_serial_count =>
-                         C4::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
+                         Koha::Schema::SubscriptionSerial::Manager->get_subscription_serials_count(
                              query => [subscription_id => $subscription_id]
                          ));
         if (!C4::Control::Subscription::HasSerialsAssociated($subscription_id)) {
@@ -255,7 +255,7 @@ sub SeedTemplateWithPeriodicalSearch($$$) {
     foreach my $p (@periodicals) {
         my (undef, @biblios) = GetBiblio($p->{biblionumber});
         $p->{bibliotitle} = $biblios[0]->{title};
-        $p->{subscription_count} = C4::Schema::Subscription::Manager->get_subscriptions_count(query => [periodical_id => $p->{id}]);
+        $p->{subscription_count} = Koha::Schema::Subscription::Manager->get_subscriptions_count(query => [periodical_id => $p->{id}]);
     }
     $template->param('searchresults_loop' => \@periodicals);
     $template;

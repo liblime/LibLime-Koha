@@ -43,15 +43,15 @@ my ($template, $loggedinuser, $cookie) =
                 debug => 1,
                 });
 
-my $subscription_serial = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;
+my $subscription_serial = Koha::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;
 if ($subscription_serial and C4::Control::Subscription::UserCanViewSubscription($subscription_serial->subscription_id)) {
     if ($op eq 'save') {
         $subscription_serial_id = C4::Control::SubscriptionSerial::Update($query);
         my $periodical_id
-            = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load->subscription->periodical_id;
+            = Koha::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load->subscription->periodical_id;
         C4::Control::Periodical::UpdateBiblioSummary($periodical_id);
 
-        my $subscription_serial = C4::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;
+        my $subscription_serial = Koha::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;
         my $redirect_url;
         if ($query->param('status') == 2 && defined $subscription_serial->itemnumber) {
             $redirect_url

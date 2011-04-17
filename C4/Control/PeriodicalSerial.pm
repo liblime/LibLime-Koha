@@ -7,9 +7,9 @@ use Carp;
 use Try::Tiny;
 use DateTime;
 
-use C4::Schema::Periodical;
-use C4::Schema::PeriodicalSerial;
-use C4::Schema::PeriodicalSerial::Manager;
+use Koha::Schema::Periodical;
+use Koha::Schema::PeriodicalSerial;
+use Koha::Schema::PeriodicalSerial::Manager;
 use C4::Control::SubscriptionSerial;
 
 use C4::Control::PeriodicalSerialFormats
@@ -23,10 +23,10 @@ use C4::Control::PeriodicalSerialFormats
 sub GenerateNextInSeries($) {
     my $p = shift or croak;
 
-    $p = C4::Schema::Periodical->new(id => $p)->load if not ref $p;
-    my $new_ps = C4::Schema::PeriodicalSerial->new(periodical_id => $p->id);
+    $p = Koha::Schema::Periodical->new(id => $p)->load if not ref $p;
+    my $new_ps = Koha::Schema::PeriodicalSerial->new(periodical_id => $p->id);
 
-    my $pslist = C4::Schema::PeriodicalSerial::Manager->get_periodical_serials(
+    my $pslist = Koha::Schema::PeriodicalSerial::Manager->get_periodical_serials(
         query => [
             periodical_id => $p->id,
             '!sequence' => undef,
@@ -58,21 +58,21 @@ sub GenerateNextInSeries($) {
 sub FormatSequenceOfSerial($) {
     my $ps = shift or croak;
 
-    $ps = C4::Schema::PeriodicalSerial->new(id => $ps)->load if not ref $ps;
+    $ps = Koha::Schema::PeriodicalSerial->new(id => $ps)->load if not ref $ps;
     return FormatSequence($ps->periodical->sequence_format, $ps->sequence, $ps->publication_date(format => '%Y'));
 }
 
 sub FormatChronologyOfSerial($) {
     my $ps = shift or croak;
 
-    $ps = C4::Schema::PeriodicalSerial->new(id => $ps)->load if not ref $ps;
+    $ps = Koha::Schema::PeriodicalSerial->new(id => $ps)->load if not ref $ps;
     return FormatChronology($ps->periodical->chronology_format, $ps->publication_date);
 }
 
 sub FormatVintageOfSerial($) {
     my $ps = shift or croak;
 
-    $ps = C4::Schema::PeriodicalSerial->new(id => $ps)->load if not ref $ps;
+    $ps = Koha::Schema::PeriodicalSerial->new(id => $ps)->load if not ref $ps;
     return FormatVintage(FormatSequenceOfSerial($ps), FormatChronologyOfSerial($ps));
 }
 
@@ -81,7 +81,7 @@ sub Update($) {
     my $periodical_serial_id = $query->param('periodical_serial_id') // croak;
 
     $periodical_serial_id = try {
-        my $periodical_serial = C4::Schema::PeriodicalSerial->new(id => $periodical_serial_id)->load;;
+        my $periodical_serial = Koha::Schema::PeriodicalSerial->new(id => $periodical_serial_id)->load;;
         $periodical_serial->sequence($query->param('sequence'));
         $periodical_serial->vintage($query->param('vintage'));
         $periodical_serial->publication_date($query->param('publication_date'));
@@ -103,7 +103,7 @@ sub Delete($) {
     croak 'Unable to determine periodical_serial_id' if not defined $periodical_serial_id;
 
     my $retval = try {
-        my $ps = C4::Schema::PeriodicalSerial->new(id => $periodical_serial_id)->load;
+        my $ps = Koha::Schema::PeriodicalSerial->new(id => $periodical_serial_id)->load;
         my $parent = $ps->periodical_id;
         foreach ($ps->subscription_serials) {
             C4::Control::SubscriptionSerial::Delete($_->id);
@@ -126,7 +126,7 @@ sub CombineSequences($$;$) {
     my $count = shift or croak;
     my $options = shift // {};
 
-    $ps = C4::Schema::PeriodicalSerial->new(id => $ps)->load if not ref $ps;
+    $ps = Koha::Schema::PeriodicalSerial->new(id => $ps)->load if not ref $ps;
 
     # Create new format with least significant sequence element set to +$count.
     my $format = $ps->periodical->sequence_format;

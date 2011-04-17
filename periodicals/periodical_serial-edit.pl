@@ -54,7 +54,7 @@ if ($op eq 'save') {
     } else {
         $periodical_serial_id = C4::Control::PeriodicalSerial::Update($query);
     }
-    C4::Control::Periodical::UpdateBiblioSummary(C4::Schema::PeriodicalSerial->new(id => $periodical_serial_id)->load->periodical_id);
+    C4::Control::Periodical::UpdateBiblioSummary(Koha::Schema::PeriodicalSerial->new(id => $periodical_serial_id)->load->periodical_id);
     print $query->redirect("periodicals-detail.pl?periodical_id=".$query->param('periodical_id'));
 }
 
