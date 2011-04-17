@@ -1266,13 +1266,6 @@ sub check_cookie_auth {
             $userid    = undef;
             $sessionID = undef;
             return ("expired", undef);
-        } elsif ( $ip ne $ENV{'REMOTE_ADDR'} ) {
-            # IP address changed
-            $session->delete();
-            C4::Context->_unset_userenv($sessionID);
-            $userid    = undef;
-            $sessionID = undef;
-            return ("expired", undef);
         } else {
             $session->param('lasttime',time());
             my $flags = haspermission($userid, $flagsrequired);
