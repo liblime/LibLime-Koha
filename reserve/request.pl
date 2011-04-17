@@ -445,7 +445,7 @@ foreach my $biblionumber (@biblionumbers) {
             # checking reserve
             my ($reservenumber,$reservedate,$reservedfor,$expectedAt) = GetReservesFromItemnumber($itemnumber);
             $$item{reservenumber} = $reservenumber;
-            my $ItemBorrowerReserveInfo = GetMemberDetails( $reservedfor, 0);
+            my $ItemBorrowerReserveInfo = GetMember($reservedfor);
             
             if ( defined $reservedate ) {
                 $item->{backgroundcolor} = 'reserved';
@@ -556,13 +556,12 @@ foreach my $biblionumber (@biblionumbers) {
             # If none of the conditions hold true, then neither override nor available is set and the item cannot be checked
             
             # FIXME: move this to a pm
-            my $sth2 = $dbh->prepare("SELECT * FROM reserves WHERE borrowernumber=? AND itemnumber=? AND found='W'");
-            $sth2->execute($item->{ReservedForBorrowernumber},$item->{itemnumber});
-            while (my $wait_hashref = $sth2->fetchrow_hashref) {
-                $item->{waitingdate} = format_date($wait_hashref->{waitingdate});
-            }
-            
-            if ( BorrowerHasReserve( $borrowerinfo->{'borrowernumber'}, '', $itemnumber ) ) {
+            my ($wdate) = $dbh->selectrow_array(q{
+                SELECT waitingdate FROM reserves WHERE borrowernumber=? AND itemnumber=? AND found='W'
+                }, undef, $item->{ReservedForBorrowernumber}, $item->{itemnumber});
+            $item->{waitingdate} = format_date($wdate);
+
+            if ( BorrowerHasReserve( $borrowerinfo->{'borrowernumber'}, $itemnumber ) ) {
               $item->{available} = 0;
               $item->{override} = 0;
             }
@@ -632,7 +631,7 @@ foreach my $biblionumber (@biblionumbers) {
         }
         
         #     get borrowers reserve info
-        my $reserveborrowerinfo = GetMemberDetails( $res->{'borrowernumber'}, 0);
+        my $reserveborrowerinfo = GetMember( $res->{'borrowernumber'});
         if (C4::Context->preference('HidePatronName')){
 	    $reserve{'hidename'} = 1;
 	    $reserve{'cardnumber'} = $reserveborrowerinfo->{'cardnumber'};

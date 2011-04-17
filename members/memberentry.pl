@@ -607,7 +607,7 @@ foreach(keys %$branches) {
    push @$CGIbranch, {
       branchcode => $_,
       branchname => $$branches{$_}{branchname},
-      _sel       => $default eq $_ ? 'selected':'',
+      _sel       => ($default ~~ $_) ? 'selected':'',
    };
 }
 

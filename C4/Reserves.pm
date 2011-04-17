@@ -931,34 +931,12 @@ sub GetReservesByBorrowernumberAndItemtypeOf {
 
 #-------------------------------------------------------------------------------------
 sub BorrowerHasReserve {
-    my ( $borrowernumber, $biblionumber, $itemnumber ) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $sth;
-    
-    if ( $biblionumber ) {
-      $sth = $dbh->prepare("
-            SELECT COUNT(*) AS hasReserve
-            FROM   reserves
-            WHERE  borrowernumber = ?
-            AND    biblionumber = ?
-            ORDER BY reservedate
-        ");
-      $sth->execute( $borrowernumber, $biblionumber );
-    } elsif ( $itemnumber ) {
-      $sth = $dbh->prepare("
-            SELECT COUNT(*) AS hasReserve
-            FROM   reserves
-            WHERE  borrowernumber = ?
-            AND    itemnumber = ?
-            ORDER BY reservedate
-        ");
-      $sth->execute( $borrowernumber, $itemnumber );
-    } else {
-      return -1;
-    }
-
-    my $data = $sth->fetchrow_hashref();
-    return $data->{'hasReserve'};
+    my ($borrowernumber, $itemnumber) = @_;
+    my $dbh = C4::Context->dbh;
+    my $result = $dbh->selectrow_arrayref(q{
+        SELECT reservenumber FROM reserves WHERE borrowernumber = ? AND itemnumber = ?
+        }, undef, $borrowernumber, $itemnumber);
+    return ($result) ? 1 : 0;
 }
 
 =item GetReservesFromBorrowernumber
