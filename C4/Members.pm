@@ -2458,33 +2458,21 @@ Returns all messages for the given borrowernumber
 
 sub GetMessages {
     my ( $borrowernumber, $type, $branchcode ) = @_;
-
-    if ( ! $type ) {
-      $type = '%';
-    }
-
-    my $dbh  = C4::Context->dbh;
+    $type //= '%';
 
     my $query = "SELECT
                   branches.branchname,
                   messages.*,
                   DATE_FORMAT( message_date, '%m/%d/%Y' ) AS message_date_formatted,
-                  messages.branchcode LIKE '$branchcode' AS can_delete
+                  messages.branchcode = ? AS can_delete
                   FROM messages, branches
                   WHERE borrowernumber = ?
                   AND message_type LIKE ?
                   AND messages.branchcode = branches.branchcode
                   AND checkout_display = 1
                   ORDER BY message_date DESC";
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $borrowernumber, $type ) ;
-    my @results;
-
-    while ( my $data = $sth->fetchrow_hashref ) {
-        push @results, $data;
-    }
-    return \@results;
-
+    return C4::Context->dbh->selectall_arrayref(
+        $query, {Slice=>{}}, $branchcode, $borrowernumber, $type);
 }
 
 =head2 GetMessages

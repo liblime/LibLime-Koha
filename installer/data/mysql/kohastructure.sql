@@ -1247,6 +1247,7 @@ CREATE TABLE `items` (
   KEY `itembibnoidx` (`biblionumber`),
   KEY `homebranch` (`homebranch`),
   KEY `holdingbranch` (`holdingbranch`),
+  KEY `cn_sortindex` (`cn_sort`),
   CONSTRAINT `items_ibfk_1` FOREIGN KEY (`biblioitemnumber`) REFERENCES `biblioitems` (`biblioitemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `items_ibfk_2` FOREIGN KEY (`homebranch`) REFERENCES `branches` (`branchcode`) ON UPDATE CASCADE,
   CONSTRAINT `items_ibfk_3` FOREIGN KEY (`holdingbranch`) REFERENCES `branches` (`branchcode`) ON UPDATE CASCADE
@@ -2434,7 +2435,8 @@ CREATE TABLE `messages` (
   `checkout_display` tinyint(1) NOT NULL default 1,
   `auth_value` varchar(80) default NULL,
   `staffnumber` int(11) NOT NULL,
-  PRIMARY KEY (`message_id`)
+  PRIMARY KEY (`message_id`),
+  KEY `borrowerindex` (`borrowernumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `borrower_edits`;

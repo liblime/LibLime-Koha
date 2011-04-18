@@ -4626,6 +4626,19 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add column index for statistics.type )\n";
 }
 
+$DBversion = '4.05.01.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+        CREATE INDEX `borrowerindex` ON messages (`borrowernumber`)
+    });
+    $dbh->do(q{
+        CREATE INDEX `cn_sortindex` ON items (`cn_sort`)
+    });
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add column index for messages.borrowernumber and items.cn_sort )\n";
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
