@@ -61,7 +61,6 @@ my $sessionID = $cookies{'CGISESSID'}->value;
 our $dbh = C4::Context->dbh();
 our @output = (); ## For storing messages to be displayed to the user
 
-
 if ($completedJobID) {
     my $job = C4::BackgroundJob->fetch($sessionID, $completedJobID);
     my $results = $job->results();
@@ -236,7 +235,7 @@ sub arguments_for_command {
 
 sub kocIssueItem {
   my $circ = shift;
-
+  my %out = ();
   $circ->{ 'barcode' } = barcodedecode(barcode=>$circ->{'barcode'}) if( $circ->{'barcode'} && ( C4::Context->preference('itemBarcodeInputFilter') || C4::Context->preference('itembarcodelength')));
   my $branchcode = C4::Context->userenv->{branch};
   my $borrower = GetMember( $circ->{ 'cardnumber' }, 'cardnumber' );
@@ -264,18 +263,7 @@ sub kocIssueItem {
         $date_due_object,              # datedue
         $circ->{'date'},               # issuedate
     ) unless ($DEBUG);
-
-      push( @output, { renew => 1,
-    title => $item->{ 'title' },
-    biblionumber => $item->{'biblionumber'},
-    barcode => $item->{ 'barcode' },
-    firstname => $borrower->{ 'firstname' },
-    surname => $borrower->{ 'surname' },
-    borrowernumber => $borrower->{'borrowernumber'},
-    cardnumber => $borrower->{'cardnumber'},
-    datetime => $circ->{ 'datetime' }
-    } );
-
+    $out{renew} = 1;
     } else {
 #warn "Item issued to a different member.";
 #warn "Date of previous issue: $issue->{'issuedate'}";
@@ -284,19 +272,12 @@ sub kocIssueItem {
       my ( $c_y, $c_m, $c_d ) = split( /-/, $circ->{'date'} );
       
       if ( Date_to_Days( $i_y, $i_m, $i_d ) < Date_to_Days( $c_y, $c_m, $c_d ) ) { ## Current issue to a different persion is older than this issue, return and issue.
-        my $date_due_object = C4::Dates->new($date_due ,'iso');
-        C4::Circulation::AddIssue( $borrower, $circ->{'barcode'}, $date_due_object, 0, undef, 0 ) unless ( DEBUG );
-        push( @output, { issue => 1,
-    title => $item->{ 'title' },
-    biblionumber => $item->{'biblionumber'},
-    barcode => $item->{ 'barcode' },
-    firstname => $borrower->{ 'firstname' },
-    surname => $borrower->{ 'surname' },
-    borrowernumber => $borrower->{'borrowernumber'},
-    cardnumber => $borrower->{'cardnumber'},
-    datetime => $circ->{ 'datetime' }
-    } );
-
+          my $date_due_object = C4::Dates->new($date_due ,'iso');
+          my $ok = 0;
+          eval{ local $SIG{'__DIE__'}; $ok = C4::Circulation::AddIssue( $borrower, $circ->{'barcode'}, $date_due_object, 0, undef, 0 )};
+          if ($@) { $out{err} = $@ }
+          elsif (!$ok) { $out{skip} = 1 }
+          else { $out{issue} = 1; }
       } else { ## Current issue is *newer* than this issue, write a 'returned' issue, as the item is most likely in the hands of someone else now.
 #warn "Current issue to another member is newer. Doing nothing";
         ## This situation should only happen of the Offline Circ data is *really* old.
@@ -306,18 +287,20 @@ sub kocIssueItem {
     }
   } else { ## Item is not checked out to anyone at the moment, go ahead and issue it
       my $date_due_object = C4::Dates->new($date_due ,'iso');
-      C4::Circulation::AddIssue( $borrower, $circ->{'barcode'}, $date_due_object, 0, undef, 0 ) unless ( DEBUG );
-    push( @output, { issue => 1,
-    title => $item->{ 'title' },
-    biblionumber => $item->{'biblionumber'},
-    barcode => $item->{ 'barcode' },
-    firstname => $borrower->{ 'firstname' },
-    surname => $borrower->{ 'surname' },
-    borrowernumber => $borrower->{'borrowernumber'},
-    cardnumber => $borrower->{'cardnumber'},
-    datetime =>$circ->{ 'datetime' }
-    } );
-	 }  
+      my $ok = 0;
+      eval{local $SIG{'__DIE__'}; $ok = C4::Circulation::AddIssue( $borrower, $circ->{'barcode'}, $date_due_object, 0, undef, 0 )};
+      if ($@) { $out{err} = $@; }
+      elsif (!$ok) { $out{skip} = 1 }
+      else { $out{issue} = 1 }
+  }  
+	 $out{title}        = $$item{title};
+ 	 $out{biblionumber} = $$item{biblionumber};
+    $out{barcode}      = $$item{barcode};
+    $out{firstname}    = $$borrower{firstname} || '';
+    $out{surname}      = $$borrower{surname};
+    $out{cardnumber}   = $$borrower{cardnumber};
+    $out{datetime}     = $$circ{datetime};
+	 push(@output,\%out);
 }
 
 sub kocReturnItem {

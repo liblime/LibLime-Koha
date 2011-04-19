@@ -1652,10 +1652,10 @@ Returns true on success.
 # $co* prefix is checkout
 sub ModReserveFillCheckout
 {
-   my($coBorrowernumber,$coBiblionumber,$coItemnumber,$res) = @_; # the reserves hash should be complete
+   ## the reserves ($res) hash should be complete, from CheckReserves()
+   my($coBorrowernumber,$coBiblionumber,$coItemnumber,$res) = @_;
    my $dbh = C4::Context->dbh;
    my $sth;
-   my $proceed = 0;
    my $currBranch = C4::Context->userenv->{branch};
    $res //= {};
    
@@ -1673,21 +1673,6 @@ sub ModReserveFillCheckout
    ## patron who is checking out is not the one who placed the hold.
    ## If we get here, overrides were performed.
    return 1 if ($coBorrowernumber != $$res{borrowernumber});
-
-   ## item-level hold
-   if ($$res{itemnumber}) {
-      ## edge case
-      if ($$res{itemnumber} != $coItemnumber) {
-         die qq|Unexpected workflow: not the right item (checkout itemnumber=$coItemnumber)
-            for item-level hold requested by this patron (reserve itemnumber=$$res{itemnumber})
-         |;
-         ## it is possible for patron to check out a different item of the same bib
-         ## (see behavior of CheckReserves(\$itemnumber) called in Circulation::AddIssue(),
-         ## in which case the above if() would never occur.
-      }
-      ## else patron is checking out item-level hold
-   }
-   ## else patron is checking out item for correct bib-level hold
 
    ## first of all, make sure we are checking out item at pickup branch
    if ($currBranch ne $$res{branchcode}) {
@@ -1711,19 +1696,6 @@ sub ModReserveFillCheckout
       ## If we get here, the patron is checking out an item that fills the
       ## hold, whether it was bib-level or item-level.
       
-      ## for whatever reason, the item is still in the bib's holds queue
-      ## with a priority number and was never pulled to the holds shelf.
-      if ($$res{priority} != 0) {
-         ## do nothing
-      }
-      elsif ($$res{priority} != 1) {
-         die qq|Unexpected workflow: reserve priority is not at the top of bib's 
-            queue (priority=1).  Cannot checkout to borrower 
-            (borrowernumber=$coBorrowernumber) lower in precedence in queue 
-            (priority=$$res{priority}) without override
-         |;
-      }
-
       ## Let's see... hold is still set to 'in transit'
       if ($$res{found} ~~ 'T') {
          ## look for the item in the branchtransfers table.

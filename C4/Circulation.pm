@@ -1088,7 +1088,7 @@ sub AddIssue {
 				if ( $resbor eq $borrower->{'borrowernumber'} ) {
 					# The item is reserved by the current patron.
                # For now, ignore the fact the item is in any Waiting or Transfer status
-					C4::Reserves::ModReserveFillCheckout(
+				    return unless C4::Reserves::ModReserveFillCheckout(
                   $$borrower{borrowernumber},
                   $$item{biblionumber},
                   $$item{itemnumber},
@@ -1204,8 +1204,10 @@ sub AddIssue {
 
     logaction("CIRCULATION", "ISSUE", $borrower->{'borrowernumber'}, $biblio->{'biblionumber'})
         if C4::Context->preference("IssueLog");
+
+    return $datedue;	# not necessarily the same as when it came in!
   }
-  return $datedue;	# not necessarily the same as when it came in!
+  return;
 }
 
 

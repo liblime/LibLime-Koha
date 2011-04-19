@@ -54,9 +54,11 @@ function CheckForm(f) {
 	</div>
 	<!-- /TMPL_IF -->
 	<!-- TMPL_IF NAME="ERROR_no_borrower_from_item" --><p>Warning: Unable to determine patron from item barcode (<!-- TMPL_VAR NAME="badbarcode" -->). Cannot check in.</p><!-- /TMPL_IF -->
-	<!-- TMPL_IF NAME="issue" --><p>Checked out <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a> (<!-- TMPL_VAR NAME="barcode" -->) to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->): <!-- TMPL_VAR NAME="datetime" --></p><!-- /TMPL_IF -->
-	<!-- TMPL_IF NAME="renew" --><p>Renewed <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a>  (<!-- TMPL_VAR NAME="barcode" -->) for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->): <!-- TMPL_VAR NAME="datetime" --></p><!-- /TMPL_IF -->
-	<!-- TMPL_IF NAME="return" --><p>Checked in <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a> (<!-- TMPL_VAR NAME="barcode" -->) from <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->): <!-- TMPL_VAR NAME="datetime" --></p><!-- /TMPL_IF -->
+	<!-- TMPL_IF NAME="issue" --><p>Checked out 
+        <!-- TMPL_ELSIF NAME="renew" --><p>Renewed 
+        <!-- TMPL_ELSIF NAME="skip" --><p><span class=error>Skipped </span>
+        <!-- TMPL_ELSIF NAME="err" --><p><pre class=error>Error: <TMPL_VAR NAME="err"></pre> 
+	</TMPL_IF><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a> (<!-- TMPL_VAR NAME="barcode" -->) to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->): <!-- TMPL_VAR NAME="datetime" --></p>
 	<!-- TMPL_IF NAME="payment" --><p>Accepted payment (<!-- TMPL_VAR NAME="amount" -->) from <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->): <!-- TMPL_VAR NAME="datetime" --></p><!-- /TMPL_IF -->
   <!-- /TMPL_LOOP -->
 <!-- TMPL_ELSE -->
@@ -76,7 +78,11 @@ function CheckForm(f) {
      <input type="hidden" name="uploadedfileid" id="uploadedfileid" value="" />
      <input type="hidden" name="runinbackground" id="runinbackground" value="" />
      <input type="hidden" name="completedJobID" id="completedJobID" value="" />
-     <input type="submit" value="Process offline circulation file" onclick="return CheckForm(this.form);" id="mainformsubmit" />
+<!--     <input type="submit" value="Process offline circulation file" onclick="return CheckForm(this.form);" id="mainformsubmit" />
+-->
+     <input type="submit" value="Process offline circulation file" id="mainformsubmit" />
+
+ 
      <div id="jobstatus" style="display:none">Job progress: <div id="jobprogress"></div> <span id="jobprogresspercent">0</span>%</div>
      <div id="jobfailed" style="display:none"></div>
    </form>
