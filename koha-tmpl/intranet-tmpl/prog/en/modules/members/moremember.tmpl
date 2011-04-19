@@ -498,8 +498,10 @@ function isValidDate(theField){
 		<li><a href="#onhold">On Hold</a></li>
 <!-- /TMPL_IF -->
 		<li><a href="#revisionhistory">Revision History</a></li>
+<!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
 		<li><a href="#expiredholds">Expired Holds</a></li>
 		<li><a href="#cancelledholds">Cancelled Holds</a></li>
+<!-- /TMPL_IF -->
 	</ul>
 </div>
 	
@@ -752,7 +754,7 @@ function isValidDate(theField){
 	</form>
 	<!-- TMPL_ELSE -->
 	<p>Patron has nothing on hold.</p>
-<!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
 </div>
 
 <div id="expiredholds">
@@ -783,7 +785,7 @@ function isValidDate(theField){
                  <!-- /TMPL_LOOP -->
                  </tbody>
         </table>
-	<!-- TMPL_ELSE -->
+<!-- TMPL_ELSE -->
 	<p>Patron has no expired holds.</p>
 <!-- /TMPL_IF -->
 </div>
@@ -819,13 +821,13 @@ function isValidDate(theField){
                  <!-- /TMPL_LOOP -->
                  </tbody>
         </table>
-	<!-- TMPL_ELSE -->
+<!-- TMPL_ELSE -->
 	<p>Patron has no cancelled holds.</p>
 <!-- /TMPL_IF -->
 </div>
 
-<div>
 <!-- TMPL_IF NAME="suspended_reserves_loop" -->
+<div>
 <h2>Patron suspended holds</h2>
 	<table id="holdst">
 		<thead><tr>
@@ -873,13 +875,9 @@ function isValidDate(theField){
 			</tr>
 		<!-- /TMPL_LOOP --></tbody>
 	</table>
-	<!-- /TMPL_IF -->
-	<!-- TMPL_ELSE -->
-	<p>Patron has no suspended holds.</p>
-	<!-- /TMPL_IF -->
 </div>
 <!-- /TMPL_IF -->
-
+<!-- /TMPL_IF -->
 
 </div>
 </div>
