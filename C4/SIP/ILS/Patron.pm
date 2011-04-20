@@ -21,6 +21,7 @@ use C4::Context;
 use C4::Koha;
 use C4::Members;
 use C4::Reserves;
+use C4::Items qw(GetItemsInfo);
 use C4::Branch qw(GetBranchName);
 use Digest::MD5 qw(md5_base64);
 
@@ -109,11 +110,15 @@ sub new {
 	}
 
     # FIXME: populate fine_items recall_items
-#   $ilspatron{hold_items}    = (GetReservesFromBorrowernumber($kp->{borrowernumber},'F'));
-	$ilspatron{unavail_holds} = [(GetReservesFromBorrowernumber($kp->{borrowernumber},'U'))];
-	$ilspatron{items} = GetPendingIssues($kp->{borrowernumber});
-	$self = \%ilspatron;
-	$debug and warn Dumper($self);
+    my @unavail_holds = GetReservesFromBorrowernumber($kp->{borrowernumber},'U');
+    foreach my $uh (@unavail_holds) {
+      my @items = GetItemsInfo($uh->{biblionumber});
+      $uh->{itemnumber} = $items[0]->{itemnumber} if (!defined($uh->{itemnumber}));
+      push @{ $ilspatron{unavail_holds} }, $uh;
+    }
+    $ilspatron{items} = GetPendingIssues($kp->{borrowernumber});
+    $self = \%ilspatron;
+    $debug and warn Dumper($self);
     syslog("LOG_DEBUG", "new ILS::Patron(%s): found patron '%s'", $patron_id,$self->{id});
     bless $self, $type;
     return $self;
