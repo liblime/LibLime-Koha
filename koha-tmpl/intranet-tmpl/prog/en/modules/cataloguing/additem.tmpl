@@ -194,6 +194,9 @@ function _checkbarcode() {
          }
 		});
    }
+   else { // allow no barcode
+      document.f.submit();
+   }
 }
 function CheckMultipleAdd(f) {
     if (!f || isNaN(f) || !parseInt(f) == f || f <= 0) { 
