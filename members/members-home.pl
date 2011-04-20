@@ -62,10 +62,14 @@ if (C4::Context->preference("AddPatronLists")=~/code/){
 
 ## Advanced Patron Search
 my @attributes = C4::Members::AttributeTypes::GetAttributeTypes() if ( C4::Context->preference('ExtendedPatronAttributes') );
+
+my $branchesloop = GetBranchesLoop();
+map {delete $_->{selected}} @{$branchesloop};
+
 $template->param(
-  CategoriesLoop => GetBorrowercategoryList(),
-  BranchesLoop => GetBranchesLoop(),
-  AttributesLoop => \@attributes,   
+    CategoriesLoop => GetBorrowercategoryList(),
+    BranchesLoop => $branchesloop,
+    AttributesLoop => \@attributes,   
 );
 
 $template->param( 

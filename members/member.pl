@@ -313,10 +313,16 @@ foreach(@$cat) {
       last;
    }
 }
+
+my $branchesloop = GetBranchesLoop($input->param('branchcode'));
+if (!$input->param('branchcode')) {
+    map {delete $_->{selected}} @{$branchesloop};
+}
+
 $template->param(
-  CategoriesLoop => $cat,
-  BranchesLoop => GetBranchesLoop($input->param('branchcode')),
-  AttributesLoop => \@attributes,
+    CategoriesLoop => $cat,
+    BranchesLoop => $branchesloop,
+    AttributesLoop => \@attributes,
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;
