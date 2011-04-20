@@ -406,7 +406,6 @@ my %br = (); # reverse branch hash
 foreach(keys %$branches) {
    $br{$$branches{$_}{branchname}} = $_;
 }
-
 for my $row ( @big_array ) {
     my %row_data;
     my @item_fields = map +{ field => $_ || '' }, @$row{ sort keys(%witness) };
@@ -415,7 +414,7 @@ for my $row ( @big_array ) {
     $row_data{holds} = ( GetReservesFromItemnumber( $row->{itemnumber} ) );
     #reporting this_row values
     if ($restrict) { # cmp permanent location w/ worklibraries
-        if (grep /^$br{$$row{a}}$/, @worklibs) {
+        if ($br{$$row{a}} ~~ @worklibs) {
             $$row{nomod} = 0;
         }
         else {
@@ -447,15 +446,15 @@ my $item = C4::Form::AddItem::get_form_values( $tagslib, 0, {
                                                 worklibs => \@worklibs,
                                               });
 
-if (@worklibs) { # item ownership
+if (@worklibs && $itemnumber) { # item ownership
    my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("SELECT holdingbranch FROM items
+   my $sth = $dbh->prepare("SELECT homebranch FROM items
    WHERE itemnumber = ?");
    $sth->execute($itemnumber);
-   my($holdingbranch) = ($sth->fetchrow_array)[0];
+   my($homebranch) = ($sth->fetchrow_array)[0];
    %br = ();
    foreach(@worklibs) { $br{$_} = 1 };
-   if ($br{$holdingbranch}) {
+   if ($br{$homebranch}) {
       # do nothing
    }
    else {
