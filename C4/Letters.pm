@@ -30,6 +30,7 @@ use C4::Dates qw/format_date/;
 use Date::Calc qw( Add_Delta_Days );
 use Encode;
 use Carp;
+use File::Temp qw/tempfile/;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -792,6 +793,7 @@ sub CreateTALKINGtechMESSAGE {
 
   $notelevel = 0 if ($code eq "FINE");
   my $due_date;
+  my ($tmpfh,$tmpname) = tempfile( DIR => "/tmp/itivamsg" );
 # Append additional info into file that will be sent to i-tiva server
   my $filename = C4::Context->preference('TalkingTechFileName');
   open(MSG,">>$filename") or warn "Can't open $filename";
@@ -815,8 +817,15 @@ sub CreateTALKINGtechMESSAGE {
     $borrower->{firstname},$borrower->{surname},$borrower->{phone},
     $borrower->{email},$item->{holdingbranch},$branch->{branchname},
     $item->{barcode},$due_date,$item->{title};
+    printf $tmpfh "\"V\",\"EN\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"\",\"%s\",\"%12.12s\",\"%s\",\"%s\",\"%s\",\"\"\r\n",
+    $code,$notelevel,$borrower->{cardnumber},$borrower->{title},
+    $borrower->{firstname},$borrower->{surname},$borrower->{phone},
+    $borrower->{email},$item->{holdingbranch},$branch->{branchname},
+    $item->{barcode},$due_date,$item->{title};
   }
   close(MSG);
+  chmod(0666,$tmpfh);
+  close($tmpfh);
 
   return 1;
 }

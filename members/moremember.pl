@@ -170,7 +170,7 @@ if ( $category_type eq 'A' ) {
 }
 else {
     if ($data->{'guarantorid'}){
-	    my ($guarantor) = GetMember( $data->{'guarantorid'},'biblionumber');
+	    my ($guarantor) = GetMember( $data->{'guarantorid'},'borrowernumber');
 		$template->param(guarantor => 1);
 		foreach (qw(borrowernumber cardnumber firstname surname)) {        
 			  $template->param("guarantor$_" => $guarantor->{$_});
