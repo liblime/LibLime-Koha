@@ -158,7 +158,7 @@ sub themelanguage {
     my $dbh = C4::Context->dbh;
     my @themes;
     if ( $interface eq "intranet" ) {
-        @themes    = split " ", C4::Context->preference("template");
+        @themes    = split(' ', C4::Context->preference("template") // '');
     }
     else {
       # we are in the opac here, what im trying to do is let the individual user

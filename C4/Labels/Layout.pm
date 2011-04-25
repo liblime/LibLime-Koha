@@ -34,7 +34,7 @@ sub _check_params {
         'guidebox',
         'font',
         'font_size',
-        #'callnum_split',
+        'callnum_split',
         'break_rule_string',
         'text_justify',
         'format_string',
@@ -70,8 +70,8 @@ sub new {
         guidebox        =>      0,
         font            =>      'TR',
         font_size       =>      3,
-        #callnum_split   =>      0,
-        break_rule_string =>      '1:*0s',
+        callnum_split   =>      0,
+        break_rule_string =>    '',
         text_justify    =>      'L',
         format_string   =>      'title, author, isbn, issn, itemtype, barcode, itemcallnumber',
         @_,
@@ -91,7 +91,8 @@ sub retrieve {
         warn sprintf('Database returned the following error: %s', $sth->errstr);
         return -1;
     }
-    my $self = $sth->fetchrow_hashref;
+    my $self = $sth->fetchrow_hashref // {};
+    $$self{_errs} //= [];
     bless ($self, $type);
     return $self;
 }
@@ -163,7 +164,8 @@ sub _validateBreakRuleStr
 sub save {
     my $self = shift;
     $$self{_errs} = [];
-    $self->_validateBreakRuleStr() || return;
+    $self->_validateBreakRuleStr();
+    return if @{$$self{_errs}};
     if ($self->{'layout_id'}) {        # if we have an id, the record exists and needs UPDATE
         my @params;
         my $query = "UPDATE labels_layouts SET ";
@@ -182,25 +184,24 @@ sub save {
         return $self->{'layout_id'};
     }
     else {                      # otherwise create a new record
-        my @params;
-        my $query = "INSERT INTO labels_layouts (";
+        my @f = my @vals = ();
         foreach my $key (keys %{$self}) {
-            push (@params, $self->{$key});
-            $query .= "$key, ";
+            next if $key eq '_errs';
+            push @f, $key;
+            push @vals, $$self{$key};
         }
-        $query = substr($query, 0, (length($query)-2));
-        $query .= ") VALUES (";
-        for (my $i=1; $i<=(scalar keys %$self); $i++) {
-            $query .= "?,";
-        }
-        $query = substr($query, 0, (length($query)-1));
-        $query .= ");";
-        my $sth = C4::Context->dbh->prepare($query);
-        $sth->execute(@params) || die C4::Context->dbh->errstr();
+        my $sth = C4::Context->dbh->prepare(
+            sprintf("INSERT INTO labels_layouts(%s) VALUES(%s)",
+               join(',',@f),
+               join(',',map{'?'}@f),
+            )
+        );
+        $sth->execute(@vals) || die C4::Context->dbh->errstr();
         my $sth1 = C4::Context->dbh->prepare("SELECT MAX(layout_id) FROM labels_layouts;");
         $sth1->execute();
-        my $id = $sth1->fetchrow_array;
-        return $id;
+        $$self{layout_id} = $sth1->fetchrow_array;
+        $$self{_errs} //= [];
+        return $$self{layout_id};
     }
 }
 

@@ -573,19 +573,16 @@ sub csv_data {
     return \@csv_data;
 }
 
-1;
-__END__
 sub _split_lccn {
     my ($lccn) = @_;
     $_ = $lccn;
     # lccn examples: 'HE8700.7 .P6T44 1983', 'BS2545.E8 H39 1996';
-    my (@parts) = m/
+    my(@parts) = m/
         ^([a-zA-Z]+)      # HE          # BS
         (\d+(?:\.\d)*)    # 8700.7      # 2545
         \s*
         (\.*\D+\d*)       # .P6         # .E8
         \s*
-      push @pr, "\$p=$p";
         (.*)              # T44 1983    # H39 1996   # everything else (except any bracketing spaces)
         \s*
         /x;
@@ -643,8 +640,8 @@ sub _split_ccn {
     return @parts;
 }
 
-
-
+1;
+__END__
 
 =head1 NAME
 

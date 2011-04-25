@@ -1270,7 +1270,8 @@ sub get_session {
     my $dbh = C4::Context->dbh;
     my $session;
     if ($storage_method eq 'mysql'){
-        $session = new CGI::Session("driver:MySQL;serializer:yaml;id:md5", $sessionID, {Handle=>$dbh});
+        $session = CGI::Session->new("driver:mysql;serializer:yaml;id:md5", $sessionID || undef, {Handle=>$dbh});
+#      $session = CGI::Session->new('driver:mysql;serializer:yaml;',$sessionID,{Handle=>$dbh});
     }
     elsif ($storage_method eq 'Pg') {
         $session = new CGI::Session("driver:PostgreSQL;serializer:yaml;id:md5", $sessionID, {Handle=>$dbh});

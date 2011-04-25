@@ -21,21 +21,21 @@ use warnings;
 use vars qw($VERSION $AUTOLOAD $context @context_stack);
 
 BEGIN {
-	if ($ENV{'HTTP_USER_AGENT'})	{
-		require CGI::Carp;
+   if ($ENV{'HTTP_USER_AGENT'})  {
+      require CGI::Carp;
         # FIXME for future reference, CGI::Carp doc says
         #  "Note that fatalsToBrowser does not work with mod_perl version 2.0 and higher."
-		import CGI::Carp qw(fatalsToBrowser);
-			sub handle_errors {
-			    my $msg = shift;
-			    my $debug_level;
-			    eval {C4::Context->dbh();};
-			    if ($@){
-				$debug_level = 1;
-			    } 
-			    else {
-				$debug_level =  C4::Context->preference("DebugLevel");
-			    }
+      import CGI::Carp qw(fatalsToBrowser);
+         sub handle_errors {
+             my $msg = shift;
+             my $debug_level;
+             eval {C4::Context->dbh();};
+             if ($@){
+            $debug_level = 1;
+             } 
+             else {
+            $debug_level =  C4::Context->preference("DebugLevel");
+             }
 
                 print q(<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
                             "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -43,42 +43,45 @@ BEGIN {
                        <head><title>Koha Error</title></head>
                        <body>
                 );
-				if ($debug_level eq "2"){
-					# debug 2 , print extra info too.
-					my %versions = get_versions();
+            if ($debug_level eq "2"){
+               # debug 2 , print extra info too.
+               my %versions = get_versions();
+               foreach(qw(apache koha kohaDb mysql os perl)) {
+                  $versions{"{$_}Version"} //= '';
+               }
 
-		# a little example table with various version info";
-					print "
-						<h1>Koha error</h1>
-						<p>The following fatal error has occurred:</p> 
+      # a little example table with various version info";
+               print "
+                  <h1>Koha error</h1>
+                  <p>The following fatal error has occurred:</p> 
                         <pre><code>$msg</code></pre>
-						<table>
-						<tr><th>Apache</th><td>  $versions{apacheVersion}</td></tr>
-						<tr><th>Koha</th><td>    $versions{kohaVersion}</td></tr>
-						<tr><th>Koha DB</th><td> $versions{kohaDbVersion}</td></tr>
-						<tr><th>MySQL</th><td>   $versions{mysqlVersion}</td></tr>
-						<tr><th>OS</th><td>      $versions{osVersion}</td></tr>
-						<tr><th>Perl</th><td>    $versions{perlVersion}</td></tr>
-						</table>";
+                  <table>
+                  <tr><th>Apache</th><td>  $versions{apacheVersion}</td></tr>
+                  <tr><th>Koha</th><td>    $versions{kohaVersion}</td></tr>
+                  <tr><th>Koha DB</th><td> $versions{kohaDbVersion}</td></tr>
+                  <tr><th>MySQL</th><td>   $versions{mysqlVersion}</td></tr>
+                  <tr><th>OS</th><td>      $versions{osVersion}</td></tr>
+                  <tr><th>Perl</th><td>    $versions{perlVersion}</td></tr>
+                  </table>";
 
-				} elsif ($debug_level eq "1"){
-					print "
-						<h1>Koha error</h1>
-						<p>The following fatal error has occurred:</p> 
+            } elsif ($debug_level eq "1"){
+               print "
+                  <h1>Koha error</h1>
+                  <p>The following fatal error has occurred:</p> 
                         <pre><code>$msg</code></pre>";
-				} else {
-					print "<p>production mode - trapped fatal error</p>";
-				}       
+            } else {
+               print "<p>production mode - trapped fatal error</p>";
+            }       
                 print "</body></html>";
-			}
-		CGI::Carp::set_message(\&handle_errors);
-		## give a stack backtrace if KOHA_BACKTRACES is set
-		## can't rely on DebugLevel for this, as we're not yet connected
-		if ($ENV{KOHA_BACKTRACES}) {
-			$main::SIG{__DIE__} = \&CGI::Carp::confess;
-		}
-    }  	# else there is no browser to send fatals to!
-	$VERSION = '4.02.00.006';
+         }
+      CGI::Carp::set_message(\&handle_errors);
+      ## give a stack backtrace if KOHA_BACKTRACES is set
+      ## can't rely on DebugLevel for this, as we're not yet connected
+      if ($ENV{KOHA_BACKTRACES}) {
+         $main::SIG{__DIE__} = \&CGI::Carp::confess;
+      }
+    }    # else there is no browser to send fatals to!
+   $VERSION = '4.02.00.006';
 }
 
 use DBI;
@@ -193,7 +196,7 @@ $context = undef;        # Initially, no context is set
 
 sub KOHAVERSION {
     my $cgidir = C4::Context->intranetdir;
-
+    
     # Apparently the GIT code does not run out of a CGI-BIN subdirectory
     # but distribution code does?  (Stan, 1jan08)
     if(-d $cgidir . "/cgi-bin"){
@@ -232,9 +235,9 @@ Returns undef in case of error.
 
 =cut
 
-sub read_config_file {		# Pass argument naming config file to read
+sub read_config_file {     # Pass argument naming config file to read
     my $koha = XMLin(shift, keyattr => ['id'], forcearray => ['listen', 'server', 'serverinfo'], suppressempty => '');
-    return $koha;			# Return value: ref-to-hash holding the configuration
+    return $koha;       # Return value: ref-to-hash holding the configuration
 }
 
 # db_scheme2dbi
@@ -422,8 +425,8 @@ C<C4::Config-E<gt>new> will not return it.
 =cut
 
 sub _common_config ($$) {
-	my $var = shift;
-	my $term = shift;
+   my $var = shift;
+   my $term = shift;
     return undef if !defined($context->{$term});
        # Presumably $self->{$term} might be
        # undefined if the config file given to &new
@@ -435,13 +438,13 @@ sub _common_config ($$) {
 }
 
 sub config {
-	return _common_config($_[1],'config');
+   return _common_config($_[1],'config');
 }
 sub zebraconfig {
-	return _common_config($_[1],'server');
+   return _common_config($_[1],'server');
 }
 sub ModZebrations {
-	return _common_config($_[1],'serverinfo');
+   return _common_config($_[1],'serverinfo');
 }
 
 =item preference
@@ -677,8 +680,8 @@ sub _new_dbh
     my $db_passwd = $context->config("pass");
     # MJR added or die here, as we can't work without dbh
     my $dbh= DBI->connect("DBI:$db_driver:dbname=$db_name;host=$db_host;port=$db_port",
-	$db_user, $db_passwd) or die $DBI::errstr;
-	my $tz = $ENV{TZ};
+   $db_user, $db_passwd) or die $DBI::errstr;
+   my $tz = $ENV{TZ};
     if ( $db_driver eq 'mysql' ) { 
         # Koha 3.0 is utf-8, so force utf8 communication between mySQL and koha, whatever the mysql default config.
         # this is better than modifying my.cnf (and forcing all communications to be in utf8)
@@ -687,7 +690,7 @@ sub _new_dbh
         ($tz) and $dbh->do(qq(SET time_zone = "$tz"));
     }
     elsif ( $db_driver eq 'Pg' ) {
-	    $dbh->do( "set client_encoding = 'UTF8';" );
+       $dbh->do( "set client_encoding = 'UTF8';" );
         ($tz) and $dbh->do(qq(SET TIME ZONE = "$tz"));
     }
     return $dbh;
@@ -1049,23 +1052,23 @@ sub set_userenv {
 }
 
 sub set_shelves_userenv ($$) {
-	my ($type, $shelves) = @_ or return undef;
-	my $activeuser = $context->{activeuser} or return undef;
-	$context->{userenv}->{$activeuser}->{barshelves} = $shelves if $type eq 'bar';
-	$context->{userenv}->{$activeuser}->{pubshelves} = $shelves if $type eq 'pub';
-	$context->{userenv}->{$activeuser}->{totshelves} = $shelves if $type eq 'tot';
+   my ($type, $shelves) = @_ or return undef;
+   my $activeuser = $context->{activeuser} or return undef;
+   $context->{userenv}->{$activeuser}->{barshelves} = $shelves if $type eq 'bar';
+   $context->{userenv}->{$activeuser}->{pubshelves} = $shelves if $type eq 'pub';
+   $context->{userenv}->{$activeuser}->{totshelves} = $shelves if $type eq 'tot';
 }
 
 sub get_shelves_userenv () {
-	my $active;
-	unless ($active = $context->{userenv}->{$context->{activeuser}}) {
-		$debug and warn "get_shelves_userenv cannot retrieve context->{userenv}->{context->{activeuser}}";
-		return undef;
-	}
-	my $totshelves = $active->{totshelves} or undef;
-	my $pubshelves = $active->{pubshelves} or undef;
-	my $barshelves = $active->{barshelves} or undef;
-	return ($totshelves, $pubshelves, $barshelves);
+   my $active;
+   unless ($active = $context->{userenv}->{$context->{activeuser}}) {
+      $debug and warn "get_shelves_userenv cannot retrieve context->{userenv}->{context->{activeuser}}";
+      return undef;
+   }
+   my $totshelves = $active->{totshelves} or undef;
+   my $pubshelves = $active->{pubshelves} or undef;
+   my $barshelves = $active->{barshelves} or undef;
+   return ($totshelves, $pubshelves, $barshelves);
 }
 
 =item _new_userenv

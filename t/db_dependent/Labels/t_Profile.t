@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 25;
+use Test::More tests => 26;
 use C4::Context;
 use Data::Dumper;
 
@@ -60,6 +60,7 @@ my $new_attr = {
     creep_horz      => 0.156,
     creep_vert      => 0.67,
     units           => 'INCH',
+    _errs           => [],
 };
 
 foreach my $key (keys %{$new_attr}) {
@@ -67,13 +68,15 @@ foreach my $key (keys %{$new_attr}) {
     ok(($new_attr->{$key} eq $profile->get_attr($key)) && ($err lt 1)) || diag "Profile->set_attr() FAILED on attribute $key.";
 }
 
-diag "Testing Profile->save() method with a new object.";
+diag "Testing Profile::get_template_code().";
+$$new_attr{template_code} = C4::Labels::Profile::get_template_code($$new_attr{template_id});
 
+diag "Testing Profile->save() method with a new object.";
 my $sav_results = $profile->save();
-ok($sav_results ne -1) || diag "Profile->save() FAILED.";
+ok(!($sav_results ~~ -1)) || diag "Profile->save() FAILED.";
 
 my $saved_profile;
-if ($sav_results ne -1) {
+if (!($sav_results ~~ -1)) {
     diag "Testing Profile->retrieve() method.";
     $new_attr->{'profile_id'} = $sav_results;
     ok($saved_profile = C4::Labels::Profile->retrieve(profile_id => $sav_results)) || diag "Profile->retrieve() FAILED.";
@@ -85,11 +88,11 @@ diag "Testing Profile->save() method with an updated object.";
 $err = 0; # Reset error code
 $err = $saved_profile->set_attr(units => 'CM');
 my $upd_results = $saved_profile->save();
-ok(($upd_results ne -1) && ($err lt 1)) || diag "Profile->save() FAILED.";
+ok(!(($upd_results ~~ -1)) && ($err lt 1)) || diag "Profile->save() FAILED.";
 my $updated_profile = C4::Labels::Profile->retrieve(profile_id => $sav_results);
 is_deeply($updated_profile, $saved_profile) || diag "Updated layout object FAILED to verify.";
 
-diag "Testing Profile->delete() method.";
+diag "Testing Profile->nuke() method.";
 
-my $del_results = $updated_profile->delete();
-ok($del_results ne -1) || diag "Profile->delete() FAILED.";
+my $del_results = $updated_profile->nuke();
+ok(!($del_results ~~ -1)) || diag "Profile->nuke() FAILED.";

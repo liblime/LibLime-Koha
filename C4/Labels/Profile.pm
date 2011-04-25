@@ -23,6 +23,7 @@ sub _check_params {
         'creep_horz',
         'creep_vert',
         'units',
+        '_errs',
     );
     if (scalar(@_) >1) {
         $given_params = {@_};
@@ -77,19 +78,21 @@ sub retrieve {
     my $invocant = shift;
     my %opts = @_;
     my $type = ref($invocant) || $invocant;
-    my $query = "SELECT * FROM printers_profile WHERE profile_id = ?";
+    my $query = "SELECT pp.*,tm.template_code 
+      FROM printers_profile pp,
+           labels_templates tm
+      WHERE pp.profile_id = ?
+        AND pp.template_id = tm.template_id";
     my $sth = C4::Context->dbh->prepare($query);
     $sth->execute($opts{profile_id});
     if ($sth->err) {
         warn sprintf('Database returned the following error: %s', $sth->errstr);
         return -1;
     }
-    my $self = $sth->fetchrow_hashref;
+    my $self = $sth->fetchrow_hashref // {};
     $self = _conv_points($self) if ($opts{convert} && $opts{convert} == 1);
+    $$self{_errs} //= [];
     bless ($self, $type);
-    if ($$self{template_id}) {
-       $$self{template_code} = get_template_code($$self{template_id});
-    }
     return $self;
 }
 
@@ -157,20 +160,21 @@ sub save {
     push @{$$self{_errs}},{msg=>'Paper Bin is required'}
        unless $$self{paper_bin};
     return if @{$$self{_errs}};
-
+    my $dbh = C4::Context->dbh;
     if ($self->{'profile_id'}) {        # if we have an profile_id, the record exists and needs UPDATE
         my @params;
         my $query = "UPDATE printers_profile SET ";
         foreach my $key (keys %{$self}) {
             next if $key eq 'profile_id';
             next if $key eq '_errs';
+            next if $key eq 'template_code';
             push (@params, $self->{$key});
             $query .= "$key=?, ";
         }
         $query = substr($query, 0, (length($query)-2));
         push (@params, $self->{'profile_id'});
         $query .= " WHERE profile_id=?;";
-        my $sth = C4::Context->dbh->prepare($query);
+        my $sth = $dbh->prepare($query);
 #        $sth->{'TraceLevel'} = 3;
         $sth->execute(@params);
         if ($sth->err) {
@@ -182,17 +186,18 @@ sub save {
     else {                      # otherwise create a new record
       # dupecheck
       my $sql = qq|
-       SELECT 1 FROM printers_profile
+       SELECT profile_id FROM printers_profile
         WHERE LCASE(printer_name) = LCASE(?)
           AND LCASE(paper_bin)    = LCASE(?)|;
-      my $sth = C4::Context->dbh->prepare($sql);
+      my $sth = $dbh->prepare($sql);
       unless($sth->execute($$self{printer_name},$$self{paper_bin})) {
          push @{$$self{_errs}}, {msg=>'Database error: '
-         . C4::Context->dbh->errstr()};
+         . $dbh->errstr()};
       }
-      my($dupe) = $sth->fetchrow_array;
-      push @{$$self{_errs}},{msg=>'Duplicate printer/bin'} if $dupe;
-      return if @{$$self{_errs}};
+      if ($$self{profile_id} = $sth->fetchrow_array) {
+         $sth = $dbh->prepare('DELETE FROM printers_profile WHERE profile_id=?');
+         $sth->execute($$self{profile_id});
+      }
 
       $$self{template_id} ||= 0;
       my @keys = my @params = ();
@@ -208,22 +213,22 @@ sub save {
          join(',',@keys),
          join(',',map{'?'}@keys)
       );
-      my $sth = C4::Context->dbh->prepare($query);
+      $sth = $dbh->prepare($query);
       unless ($sth->execute(@params)) {
          push @{$$self{_errs}},{msg=>"Database error: SQL=$query--\n"
-         . C4::Context->dbh->errstr()};
+         . $dbh->errstr()};
          return;
       }
-      $sth = C4::Context->dbh->prepare("SELECT MAX(profile_id) FROM printers_profile;");
+      $sth = $dbh->prepare("SELECT MAX(profile_id) FROM printers_profile;");
       $sth->execute();
       $$self{profile_id} = ($sth->fetchrow_array);
    }
 
    if ($$self{template_id}) {
-      my $sth = C4::Context->dbh->prepare("UPDATE labels_templates
+      my $sth = $dbh->prepare("UPDATE labels_templates
       SET template_id = ? WHERE profile_id = ?");
       $sth->execute($$self{template_id},$$self{profile_id});
-      $sth = C4::Context->dbh->prepare("UPDATE labels_templates
+      $sth = $dbh->prepare("UPDATE labels_templates
       SET profile_id = ? WHERE template_id = ?");
       $sth->execute($$self{profile_id},$$self{template_id});
    }

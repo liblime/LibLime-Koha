@@ -738,7 +738,6 @@ sub _passes_required_checks {
     my ($source_record, $target_blob, $matchchecks) = @_;
     my $target_record;
     # FIXME -- need to avoid parsing record twice
-    my $target_record;
     eval{ $target_record = MARC::Record->new_from_xml($target_blob); };
     if($@){ warn $@; }
 

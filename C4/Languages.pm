@@ -126,7 +126,7 @@ sub getTranslatedLanguages {
     my $all_languages = getAllLanguages();
     my @languages;
     my @enabled_languages;
- 
+
     if ($interface && $interface eq 'opac' ) {
         @enabled_languages = split ",", C4::Context->preference('opaclanguages');
         $htdocs = C4::Context->config('opachtdocs');
@@ -239,7 +239,7 @@ sub _get_themes {
     else {
         $htdocs = C4::Context->config('opachtdocs');
     }
-    opendir D, "$htdocs";
+    opendir(D, "$htdocs") || die "Can't opendir $htdocs: $!\n";
     my @dirlist = readdir D;
     foreach my $directory (@dirlist) {
         # if there's an en dir, it's a valid theme
@@ -284,6 +284,7 @@ sub _build_languages_arrayref {
         my @translated_languages = @$translated_languages;
         my @languages_loop; # the final reference to an array of hashrefs
         my @enabled_languages = @$enabled_languages;
+        $current_language ||= 'en';
         # how many languages are enabled, if one, take note, some contexts won't need to display it
         my %seen_languages; # the language tags we've seen
         my %found_languages;
@@ -363,7 +364,7 @@ for ( language, script, region, variant, extension, privateuse )
 
 sub regex_lang_subtags {
     my $string = shift;
-
+    $string  ||= '';
     # Regex for recognizing RFC 4646 well-formed tags
     # http://www.rfc-editor.org/rfc/rfc4646.txt
 

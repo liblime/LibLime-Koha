@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 28;
+use Test::More tests => 30;
 use C4::Context;
 use Data::Dumper;
 
@@ -36,8 +36,9 @@ my $default_layout = {
         font            =>      'TR',
         font_size       =>      3,
         callnum_split   =>      0,
+        break_rule_string =>    '',
         text_justify    =>      'L',
-        format_string   =>      'title, author, isbn, issn, itemtype, barcode, callnumber',
+        format_string   =>      'title, author, isbn, issn, itemtype, barcode, itemcallnumber',
     };
 
 my $layout;
@@ -60,8 +61,9 @@ my $new_attr = {
         font            =>      'TR',
         font_size       =>      10,
         callnum_split   =>      1,
+        break_rule_string =>    '',
         text_justify    =>      'L',
-        format_string   =>      'callnumber, title, author, barcode',
+        format_string   =>      'itemcallnumber, title, author, barcode',
     };
 
 foreach my $key (keys %{$new_attr}) {
@@ -72,12 +74,13 @@ foreach my $key (keys %{$new_attr}) {
 diag "Testing Layout->save() method with a new object.";
 
 my $sav_results = $layout->save();
-ok($sav_results ne -1) || diag "Layout->save() FAILED";
+ok($sav_results) || diag "Layout->save() FAILED: ", Dumper $$layout{_errs};
 
 my $saved_layout;
-if ($sav_results ne -1) {
+if ($sav_results) {
     diag "Testing Layout->retrieve() method.";
     $new_attr->{'layout_id'} = $sav_results;
+    $$new_attr{_errs} = [];
     ok($saved_layout = C4::Labels::Layout->retrieve(layout_id => $sav_results)) || diag "Layout->retrieve() FAILED";
     is_deeply($saved_layout, $new_attr) || diag "Retrieved layout object FAILED to verify.";
 }
@@ -86,7 +89,7 @@ diag "Testing Layout->save() method with an updated object.";
 
 $saved_layout->set_attr(font => 'C');
 my $upd_results = $saved_layout->save();
-ok($upd_results ne -1) || diag "Layout->save() FAILED";
+ok(!($upd_results ~~ -1)) || diag "Layout->save() FAILED";
 my $updated_layout = C4::Labels::Layout->retrieve(layout_id => $sav_results);
 is_deeply($updated_layout, $saved_layout) || diag "Updated layout object FAILED to verify.";
 

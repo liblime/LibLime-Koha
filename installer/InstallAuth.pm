@@ -274,6 +274,7 @@ sub checkauth {
     unless ($userid) {
         my $session =
           new CGI::Session( "driver:File;serializer:yaml", undef, { Directory => '/tmp' } );
+		  return unless $session;
         $sessionID = $session->id;
         $userid    = $query->param('userid');
         C4::Context->_new_userenv($sessionID);

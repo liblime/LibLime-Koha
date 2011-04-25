@@ -19,6 +19,7 @@
 use strict;
 
 use CGI;
+use C4::Context;
 use C4::Output;
 use C4::Auth;
 use C4::AuthoritiesMarc;
@@ -39,7 +40,6 @@ foreach my $thisauthtype (
     );
     push @authtypesloop, \%row;
 }
-
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
         template_name   => "intranet-main.tmpl",
@@ -51,7 +51,6 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         },
     }
 );
-
 my $marc_p = C4::Context->boolean_preference("marc");
 
 $template->param(
