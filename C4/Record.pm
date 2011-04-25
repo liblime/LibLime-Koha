@@ -3,6 +3,8 @@ package C4::Record;
 # Copyright 2006 (C) LibLime
 # Joshua Ferraro <jmf@liblime.com>
 #
+# Copyright 2011 LibLime, a Division of PTFS, Inc.
+#
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the

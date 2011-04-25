@@ -2,6 +2,8 @@ package C4::Members::Import;
 
 # Copyright 2010 PTFS, Inc.
 #
+# Copyright 2011 LibLime, a Division of PTFS, Inc.
+#
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the

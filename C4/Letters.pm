@@ -2,6 +2,8 @@ package C4::Letters;
 
 # Copyright 2000-2002 Katipo Communications
 #
+# Copyright 2011 LibLime, a Division of PTFS, Inc.
+#
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the

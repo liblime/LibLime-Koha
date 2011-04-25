@@ -8,6 +8,8 @@ package C4::ClubsAndServices;
 
 # Copyright 2007 Kyle Hall
 #
+# Copyright 2011 LibLime, a Division of PTFS, Inc.
+#
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the

@@ -2,6 +2,8 @@ package C4::XSLT;
 # Copyright (C) 2006 LibLime
 # <jmf at liblime dot com>
 #
+# Copyright 2011 LibLime, a Division of PTFS, Inc.
+#
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the

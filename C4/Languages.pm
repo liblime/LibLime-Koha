@@ -3,6 +3,8 @@ package C4::Languages;
 # Copyright 2006 (C) LibLime
 # Joshua Ferraro <jmf@liblime.com>
 # Portions Copyright 2009 Chris Cormack and the Koha Dev Team
+# Copyright 2011 LibLime, a Division of PTFS, Inc.
+#
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the

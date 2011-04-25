@@ -4,6 +4,8 @@ package C4::Reserves;
 #           2006 SAN Ouest Provence
 #           2007 BibLibre Paul POULAIN
 #
+# Copyright 2011 LibLime, a Division of PTFS, Inc.
+#
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the
