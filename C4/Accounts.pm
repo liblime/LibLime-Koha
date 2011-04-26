@@ -562,7 +562,7 @@ sub makeClaimsReturned
    ## for now, ignore case of never lost then suddently set to Claims Returned
 
    ## see what else has been done regarding this lost item
-   my $sth = $dbh->prepare('SELECT * FROM accountlines
+   $sth = $dbh->prepare('SELECT * FROM accountlines
       WHERE borrowernumber = ?
         AND itemnumber     = ?
         AND accountno      > ?');
