@@ -300,6 +300,15 @@ sub GetItemForBibPrefill
    }, undef, $res->{biblionumber});
    push @notitems, @$stillmore;
 
+   $stillmore = $dbh->selectcol_arrayref(q{
+       SELECT items.itemnumber
+       FROM   branchtransfers
+         JOIN items ON (items.itemnumber = branchtransfers.itemnumber)
+       WHERE  items.biblionumber = ?
+          AND datearrived IS NULL
+   }, undef, $res->{biblionumber});
+   push @notitems, @$stillmore;
+
    my @vals       = ($$res{biblionumber});
    my $starti     = 0;
    my $idx        = 0;
