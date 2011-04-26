@@ -705,7 +705,7 @@ sub rechargeClaimsReturnedUndo
       if (($replacementprice == 0) || !$replacementprice) {
          ## get the replacement price by itemtype
          $sth = $dbh->prepare('
-         SELECT itemtypes.replacementprice 
+         SELECT itemtypes.replacement_price 
            FROM itemtypes,biblioitems
           WHERE itemtypes.itemtype = biblioitems.itemtype
             AND biblioitems.biblioitemnumber = ?');
