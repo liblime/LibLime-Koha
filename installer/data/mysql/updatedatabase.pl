@@ -4639,6 +4639,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add column index for messages.borrowernumber and items.cn_sort )\n";
 }
 
+$DBversion = '4.05.01.003';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+        INSERT INTO message_transport_types (message_transport_type) VALUES ('print_billing')
+    });
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add 'print_billing' message type )\n";
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
