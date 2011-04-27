@@ -284,11 +284,6 @@ sub GetItemForBibPrefill
        AND itemnumber IS NOT NULL");
    $sth->execute($$res{biblionumber});
    my @notitems = $sth->fetchrow_array();
-   $sth = $dbh->prepare("SELECT itemnumber FROM tmp_holdsqueue
-      WHERE biblionumber = ?");
-   $sth->execute($$res{biblionumber});
-   my @more = $sth->fetchrow_array();
-   push @notitems, @more if @more;
 
    my $stillmore = $dbh->selectcol_arrayref(q{
       SELECT issues.itemnumber
@@ -297,16 +292,25 @@ sub GetItemForBibPrefill
       WHERE  items.biblionumber = biblio.biblionumber
          AND issues.itemnumber = items.itemnumber
          AND biblio.biblionumber = ?
-   }, undef, $res->{biblionumber});
-   push @notitems, @$stillmore;
-
-   $stillmore = $dbh->selectcol_arrayref(q{
-       SELECT items.itemnumber
-       FROM   branchtransfers
-         JOIN items ON (items.itemnumber = branchtransfers.itemnumber)
-       WHERE  items.biblionumber = ?
-          AND datearrived IS NULL
-   }, undef, $res->{biblionumber});
+      UNION (
+        SELECT items.itemnumber
+        FROM   branchtransfers
+          JOIN items ON (items.itemnumber = branchtransfers.itemnumber)
+        WHERE  items.biblionumber = ?
+           AND datearrived IS NULL
+      )
+      UNION (
+        SELECT itemnumber
+        FROM   reserves
+        WHERE  found IN ('T', 'W')
+           AND biblionumber = ?
+      )
+      UNION (
+        SELECT itemnumber
+        FROM   tmp_holdsqueue
+        WHERE  biblionumber = ?
+      )
+   }, undef, $res->{biblionumber}, $res->{biblionumber}, $res->{biblionumber}, $res->{biblionumber});
    push @notitems, @$stillmore;
 
    my @vals       = ($$res{biblionumber});
