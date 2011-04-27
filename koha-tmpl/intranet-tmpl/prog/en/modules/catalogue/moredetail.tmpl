@@ -250,7 +250,11 @@
 <script>
 function damagedHasHolds(f,biblionumber,itemnumber) {
    var p  = '<TMPL_VAR NAME="AllowHoldsOnDamagedItems">';
-   if (p == '1') { return }
+   if (p == '1') { 
+      f.submitdamaged.readonly      = false;
+      f.submitdamaged.disabled      = false;
+      f.submitdamaged.style.display = '';
+   }
    var v  = f.damaged.options[f.damaged.selectedIndex].value;
    var el = document.getElementById('damagedmsg_'+itemnumber);
    if (v != 1) { 

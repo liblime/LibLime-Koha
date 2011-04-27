@@ -31,7 +31,7 @@ use C4::Reserves;
 use C4::LostItems;
 use C4::Members;
 
-my $cgi= new CGI;
+my $cgi= CGI->new();
 
 my ($loggedinuser, $cookie, $sessionID) = checkauth($cgi, 0, {circulate => '*'}, 'intranet');
 
@@ -42,7 +42,7 @@ my $itemlost=$cgi->param('itemlost');
 my $itemnotes=$cgi->param('itemnotes');
 my $wthdrawn=$cgi->param('wthdrawn');
 my $damaged=$cgi->param('damaged');
-my $otherstatus=$cgi->param('otherstatus');
+my $otherstatus=$cgi->param('otherstatus') // '';
 my $suppress=$cgi->param('suppress');
 
 my $confirm=$cgi->param('confirm');
@@ -53,7 +53,7 @@ my $item_data_hashref = GetItem($itemnumber, undef);
 
 # make sure item statuses are set to 0 if empty or NULL
 for ($damaged,$itemlost,$wthdrawn,$suppress) {
-    if (!$_ or $_ eq "") {
+    if (!$_ or ($_ eq "")) {
         $_ = 0;
     }
 }
@@ -72,7 +72,7 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
 } elsif ($damaged ne $item_data_hashref->{'damaged'}) {
     $item_changes->{'damaged'} = $damaged;
     $cancel_reserves = 1 if (!C4::Context->preference('AllowHoldsOnDamagedItems'));
-} elsif ($otherstatus ne $item_data_hashref->{'otherstatus'}) {
+} elsif ($otherstatus ne ($item_data_hashref->{'otherstatus'} // '')) {
     $item_changes->{'otherstatus'} = $otherstatus;
     undef($item_changes->{'otherstatus'}) if ($otherstatus eq '');
 } elsif ($suppress ne $item_data_hashref->{'suppress'}) {
@@ -105,26 +105,30 @@ if ($cancel_reserves) {
    }
    C4::Reserves::CancelReserves(\%p);
 }
-
 # If the item is being made lost, charge the patron the lost item charge and
 # create a lost item record
 if($issue && $itemlost){
-   ## FIXME: move this business logic to a single subroutine in a *.pm -hQ
-    ModItemLost( $biblionumber, $itemnumber, $itemlost );
-    C4::Accounts::chargelostitem($itemnumber) if ($itemlost==1); # check item in and charge the lost item fee if itemlost == 1
+    ## FIXME: move this business logic to a single subroutine in a *.pm -hQ
+    ## check item in and charge the lost item fee for most any lost status
+    C4::Accounts::chargelostitem($itemnumber) 
+      if $itemlost != C4::Context->preference('ClaimsReturnedValue');
     ## dupecheck is performed in the function
     my $id = C4::LostItems::CreateLostItem(
       $item_data_hashref->{itemnumber},
       $issue->{borrowernumber}
     );
 
-    ## Claims Returned
-    if ($itemlost==C4::Context->preference('ClaimsReturnedValue')) {
-       C4::Accounts::makeClaimsReturned($id,1);
-    }
-    else {
-       C4::Accounts::makeClaimsReturned($id,0);
-    }
+   ## Claims Returned
+   if ($itemlost==C4::Context->preference('ClaimsReturnedValue')) {
+      C4::Accounts::makeClaimsReturned($id,1);
+   }
+   elsif (($$item_data_hashref{itemlost}==C4::Context->preference('ClaimsReturnedValue') )
+       && ($itemlost != $$item_data_hashref{itemlost})) { # changing from claims returned to something else
+      C4::Accounts::makeClaimsReturned($id,0,1);
+   }
+
+   C4::Circulation::MarkIssueReturned($$issue{borrowernumber},$itemnumber)
+      if C4::Context->preference('MarkLostItemsReturned');
 }
 # If the item is being marked found, refund the patron the lost item charge,
 # apply the maxfine charge, and delete the lost item record

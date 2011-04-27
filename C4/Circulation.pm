@@ -1932,6 +1932,7 @@ sub FixAccountForLostAndReturned {
    $sth->execute($itemnumber);
    my $data = $sth->fetchrow_hashref;
    return unless $data;
+   return unless $$data{amount};
    
    ## Update lost item accountype so we don't go through this again
    ## Yes, we might be fixing somebody else's account other than passed in $borrowernumber

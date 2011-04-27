@@ -675,7 +675,7 @@ sub ModDateLastSeen {
 
 =over 4
 
-ModItemLost( $biblionumber, $itemnumber, $lostvalue );
+ModItemLost( $biblionumber, $itemnumber, $lostvalue, $nomoditem );
 
 =back
 
@@ -683,12 +683,15 @@ Changes itemlost for a given item. If $lostvalue > 0, then a log entry is made
 for that item.  Note that nothing is done for Claims Returned, which is handled 
 elsewhere.
 
+Set $nomoditem to true if you've been here before and don't want to change the
+items.itemlost value.
+
 =cut
 
 sub ModItemLost {
-    my ( $biblionumber, $itemnumber, $lostvalue ) = @_;
+    my ( $biblionumber, $itemnumber, $lostvalue, $nomoditem ) = @_;
     my $dbh = C4::Context->dbh;
-    ModItem( { itemlost => $lostvalue }, $biblionumber, $itemnumber );
+    ModItem( { itemlost => $lostvalue }, $biblionumber, $itemnumber ) unless $nomoditem;
     my $data = $dbh->selectrow_hashref( "
         SELECT
           items.replacementprice, issues.borrowernumber, items.itype
@@ -696,7 +699,7 @@ sub ModItemLost {
           WHERE items.itemnumber = ?
     ", {}, $itemnumber );
     return unless ( $data->{'borrowernumber'} );
-    C4::Stats::UpdateStats( '', 'itemlost', $data->{'replacementprice'} || 0, $lostvalue, $itemnumber, $data->{'itype'}, $data->{'borrowernumber'}, 0 ) if ( $lostvalue > 0 );
+    C4::Stats::UpdateStats( '', 'itemlost', $data->{'replacementprice'} || 0, $lostvalue, $itemnumber, $data->{'itype'}, $data->{'borrowernumber'}, 0 ) if $lostvalue;
 }
 
 =head2 DelItem

@@ -100,13 +100,18 @@ $results[0]=$data;
 my $itemcount=0;
 my $additemnumber;
 my @tmpitems;
+my %avc = (
+   itemlost => GetAuthValCode('items.itemlost',$fw),
+   damaged  => GetAuthValCode('items.damaged' ,$fw),
+   suppress => GetAuthValCode('items.suppress',$fw),
+);
 foreach my $item (@items){
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
     $itemcount++;
-    $item->{itemlostloop}= GetAuthorisedValues(GetAuthValCode('items.itemlost',$fw),$item->{itemlost}) if GetAuthValCode('items.itemlost',$fw);
-    $item->{itemdamagedloop}= GetAuthorisedValues(GetAuthValCode('items.damaged',$fw),$item->{damaged}) if GetAuthValCode('items.damaged',$fw);
+    $item->{itemlostloop}    = GetAuthorisedValues($avc{itemlost},$item->{itemlost}) if $avc{itemlost};
+    $item->{itemdamagedloop} = GetAuthorisedValues($avc{damaged}, $item->{damaged})  if $avc{damaged};
+    $item->{itemsuppressloop}= GetAuthorisedValues($avc{suppress},$item->{suppress}) if $avc{suppress};
     $item->{itemstatusloop} = GetOtherItemStatus($item->{'otherstatus'});
-    $item->{itemsuppressloop}= GetAuthorisedValues(GetAuthValCode('items.suppress',$fw),$item->{suppress}) if GetAuthValCode('items.suppress',$fw);
     $item->{'collection'} = $ccodes->{$item->{ccode}};
     $item->{'itype'} = $itemtypes->{$item->{'itype'}}->{'description'}; 
     $item->{'replacementprice'}=sprintf("%.2f", $item->{'replacementprice'});

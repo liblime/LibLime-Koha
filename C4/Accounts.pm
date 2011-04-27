@@ -526,7 +526,7 @@ sub makeClaimsReturned
 {
    die "No ClaimsReturnedValue set in syspref" 
    unless C4::Context->preference('ClaimsReturnedValue');
-   my($lost_item_id,$claims_returned) = @_;
+   my($lost_item_id,$claims_returned,$nomoditem) = @_;
    $claims_returned ||= 0;
    $claims_returned   = 1 if $claims_returned;
    my $li = C4::LostItems::GetLostItemById($lost_item_id);
@@ -540,8 +540,10 @@ sub makeClaimsReturned
       return unless C4::Context->preference('RefundReturnedLostItem');
    }
    else {
-      my $lostAuthVal = C4::LostItems::AuthValForSimplyLost();
-      C4::Items::ModItemLost($$li{biblionumber},$$li{itemnumber},$lostAuthVal);
+      if(!$nomoditem) {
+         my $lostAuthVal = C4::LostItems::AuthValForSimplyLost();
+         C4::Items::ModItemLost($$li{biblionumber},$$li{itemnumber},$lostAuthVal);
+      }
       ## possibly recharge a lost fee.  it will be recharged if it was previoulsy
       ## forgiven
       rechargeClaimsReturnedUndo($li);
