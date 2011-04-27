@@ -69,7 +69,7 @@ if ($completedJobID) {
 } elsif ($fileID) {
     my $uploaded_file = C4::UploadedFile->fetch($sessionID, $fileID);
     my $fh = $uploaded_file->fh();
-    my @input_lines = <$fh>;
+    my(@input_lines) = <$fh>;
   
     my $filename = $uploaded_file->name(); 
     my $job = undef;
@@ -124,10 +124,10 @@ if ($completedJobID) {
     
     my $i = 0;
     foreach  my $line (@input_lines)  {
-    
+        ## apparently, chomp isn't working?
+        $line =~ s/\s*$//;
         $i++;
         my $command_line = parse_command_line($line);
-        
         # map command names in the file to subroutine names
         my %dispatch_table = (
             issue     => \&kocIssueItem,
