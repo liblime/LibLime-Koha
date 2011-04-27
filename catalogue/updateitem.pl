@@ -110,8 +110,8 @@ if ($cancel_reserves) {
 if($issue && $itemlost){
     ## FIXME: move this business logic to a single subroutine in a *.pm -hQ
     ## check item in and charge the lost item fee for most any lost status
-    C4::Accounts::chargelostitem($itemnumber) 
-      if $itemlost != C4::Context->preference('ClaimsReturnedValue');
+    C4::Accounts::chargelostitem($itemnumber) if $itemlost == 1;
+
     ## dupecheck is performed in the function
     my $id = C4::LostItems::CreateLostItem(
       $item_data_hashref->{itemnumber},
