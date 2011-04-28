@@ -2,7 +2,6 @@
 <title>Koha &rsaquo; Patrons &rsaquo; Collect Fine Payment for  <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type= "text/javascript">
-//<![CDATA[
 function validatePayment(f) {
    var amo = 0;
    if (f.total) {
@@ -12,7 +11,9 @@ function validatePayment(f) {
       amo = f.amountoutstanding.value;
    }
    if (f.paid) {
-      if (f.paid.value > amo) {
+      var pd = Number(f.paid.value);
+      amo    = Number(amo);
+      if (pd > amo) {
          alert('Amount paid cannot be greater than total amount');
          return false;
       }
@@ -68,7 +69,6 @@ function moneyFormat(textObj) {
 
     textObj.value = dolAmount + "." + decAmount;
 }
-//]]>
 </script>
 </head>
 <body>
