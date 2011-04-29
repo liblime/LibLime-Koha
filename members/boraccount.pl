@@ -127,7 +127,6 @@ $template->param(
 
     UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
     UseReceiptTemplates_PaymentReceived => GetAssignedReceiptTemplate({ action => 'payment_received', branchcode => C4::Context->userenv->{'branch'} }),
-            
     );
 
 output_html_with_http_headers $input, $cookie, $template->output;

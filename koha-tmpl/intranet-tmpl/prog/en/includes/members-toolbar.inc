@@ -44,17 +44,28 @@ function update_child() {
 
 	// YUI Toolbar Functions
 	function printx_window(print_type) {
-		window.open("/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=" + print_type, "printwindow");
-		return false;
+		<!-- TMPL_IF NAME="UseReceiptTemplates" -->
+			window.open("/cgi-bin/koha/tools/receipt_generation.pl?action=" + print_type + "&borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->", "printwindow");
+			return false;
+		<!-- TMPL_ELSE -->
+			window.open("/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=" + print_type, "printwindow");
+			return false;
+		<!-- /TMPL_IF -->
 	}
 
 	function yuiToolbar() {
-	    var printmenu = [
-	        { text: _("Print Page"), onclick: {fn: function(){printx_window("page")}} },
-	        { text: _("Print Slip"), onclick: {fn: function(){printx_window("slip")}} },
-	        { text: _("Quick Slip"), onclick: {fn: function(){printx_window("qslip")}} }
-	    ];
-	
+		<!-- TMPL_IF NAME="UseReceiptTemplates" -->
+		    var printmenu = [
+		        { text: _("Print Account Reciept"), onclick: {fn: function(){printx_window("payment_received")}} },
+		    ];
+		<!-- TMPL_ELSE -->
+		    var printmenu = [
+		        { text: _("Print Page"), onclick: {fn: function(){printx_window("page")}} },
+		        { text: _("Print Slip"), onclick: {fn: function(){printx_window("slip")}} },
+		        { text: _("Quick Slip"), onclick: {fn: function(){printx_window("qslip")}} }
+		    ];
+		<!-- /TMPL_IF -->
+
 		var moremenu = [
             <!-- TMPL_IF NAME="CAN_user_borrowers_edit_borrowers" -->
 			{ text: _("Renew Patron"),  onclick: { fn: confirm_reregistration } },

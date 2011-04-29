@@ -39,6 +39,7 @@ use C4::Overdues;
 use C4::Branch; # GetBranches
 use C4::Dates;
 use C4::Items qw( ModItem );
+use C4::ReceiptTemplates;
 
 my $input = new CGI;
 
@@ -52,6 +53,11 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         debug           => 1,
     }
 );
+
+$template->param(
+    UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
+    UseReceiptTemplates_PaymentReceived => GetAssignedReceiptTemplate({ action => 'payment_received', branchcode => C4::Context->userenv->{'branch'} }),
+    );
 
 my @nam = $input->param;
 my $borrowernumber = $input->param('borrowernumber');

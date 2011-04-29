@@ -34,13 +34,6 @@
     <!-- /TMPL_IF -->
 </ul>
 <div class="tabs-container">
-<p>
-<!-- TMPL_IF NAME="UseReceiptTemplates" -->
-	<!-- TMPL_IF NAME="UseReceiptTemplates_PaymentReceived" -->
-		<input type="submit" value="Print Receipt" class="print" onclick='window.open("/cgi-bin/koha/tools/receipt_generation.pl?action=payment_received&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->", "printwindow");' />
-	<!-- /TMPL_IF -->
-<!-- /TMPL_IF -->
-</p>
 <!-- The table with the account items -->
 <table><thead>
   <tr>
