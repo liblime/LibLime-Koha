@@ -1429,10 +1429,6 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
         my $item_reserve_count    = 0;
         my $can_place_holds       = 0;
         my $items_count           = scalar(@fields);
-        my $maxitems =
-          ( C4::Context->preference('maxItemsinSearchResults') )
-          ? C4::Context->preference('maxItemsinSearchResults') - 1
-          : 1;
         my $other_otherstatus = '';
         my $other_otherstatus_count = 0;
 
@@ -1598,21 +1594,18 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                 }
             }
         }    # notforloan, item level and biblioitem level
-        my ( $availableitemscount, $onloanitemscount, $otheritemscount );
-        $maxitems =
-          ( C4::Context->preference('maxItemsinSearchResults') )
-          ? C4::Context->preference('maxItemsinSearchResults') - 1
-          : 1;
+        my ($availableitemscount, $onloanitemscount, $otheritemscount) = (0, 0, 0);
+        my $maxitems = C4::Context->preference('maxItemsinSearchResults') // 1;
         for my $key ( sort keys %$onloan_items ) {
-            (++$onloanitemscount > $maxitems) and last;
+            ($onloanitemscount++ > $maxitems) and last;
             push @onloan_items_loop, $onloan_items->{$key};
         }
         for my $key ( sort keys %$other_items ) {
-            (++$otheritemscount > $maxitems) and last;
+            ($otheritemscount++ > $maxitems) and last;
             push @other_items_loop, $other_items->{$key};
         }
         for my $key ( sort keys %$available_items ) {
-            (++$availableitemscount > $maxitems) and last;
+            ($availableitemscount++ > $maxitems) and last;
             push @available_items_loop, $available_items->{$key}
         }
 
