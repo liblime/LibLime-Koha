@@ -242,7 +242,6 @@ if (C4::Context->preference('LinkLostItemsToPatron')
       $query->param('lostborrowernumber'),
       $query->param('lostbarcode')
    );
-   $barcode = $query->param('lostbarcode');
 }
 
 
