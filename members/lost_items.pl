@@ -45,7 +45,7 @@ my ($template, $loggedinuser, $cookie)
            query => $query,
            type => "intranet",
            authnotrequired => 0,
-           flagsrequired => {borrowers => "borrowers_remaining_permissions"},
+           flagsrequired => {borrowers => 'edit_borrowers'},
            debug => ($debug) ? 1 : 0,
        });
 
