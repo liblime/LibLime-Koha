@@ -4,7 +4,7 @@ use strict;
 use warnings;
 # use Exporter;
 use Sys::Syslog qw(syslog);
-use Net::Server::PreFork;
+use Net::Server::Fork;
 use IO::Socket::INET;
 use Socket qw(:DEFAULT :crlf);
 use Data::Dumper;		# For debugging
@@ -22,7 +22,7 @@ use vars qw(@ISA $VERSION);
 
 BEGIN {
 	$VERSION = 1.02;
-	@ISA = qw(Net::Server::PreFork);
+	@ISA = qw(Net::Server::Fork);
 }
 
 #
@@ -71,7 +71,7 @@ push @parms,
     "syslog_facility=" . LOG_SIP;
 
 #
-# Server Management: set parameters for the Net::Server::PreFork
+# Server Management: set parameters for the Net::Server
 # module.  The module silently ignores parameters that it doesn't
 # recognize, and complains about invalid values for parameters
 # that it does.
@@ -83,7 +83,7 @@ if (defined($config->{'server-params'})) {
 }
 
 print scalar(localtime),  " -- startup -- procid:$$\n";
-print "Params for Net::Server::PreFork : \n" . Dumper(\@parms);
+print "Params for Net::Server : \n" . Dumper(\@parms);
 
 #
 # This is the main event.
@@ -225,8 +225,8 @@ sub telnet_transport {
 		$pwd = get_clean_string ($pwd);
 		syslog("LOG_DEBUG", "telnet_transport 2: uid length %s, pwd length %s", length($uid), length($pwd));
 
-	    if (exists ($config->{accounts}->{$uid})
-		&& ($pwd eq $config->{accounts}->{$uid}->password())) {
+	    if (   exists ($config->{accounts}->{$uid})
+                && ($pwd eq $config->{accounts}->{$uid}->password())) {
 			$account = $config->{accounts}->{$uid};
 			Sip::MsgType::login_core($self,$uid,$pwd) and last;
 	    }
@@ -257,14 +257,14 @@ sub telnet_transport {
 # telnet transport.  From that point on, both the raw and the telnet
 # processes are the same:
 sub sip_protocol_loop {
-	my $self = shift;
-	my $service = $self->{service};
-	my $config  = $self->{config};
-	my $input;
+    my $self = shift;
+    my $service = $self->{service};
+    my $config  = $self->{config};
+    my $input;
 
     # The spec says the first message will be:
-	# 	SIP v1: SC_STATUS
-	# 	SIP v2: LOGIN (or SC_STATUS via telnet?)
+    # 	SIP v1: SC_STATUS
+    # 	SIP v2: LOGIN (or SC_STATUS via telnet?)
     # But it might be SC_REQUEST_RESEND.  As long as we get
     # SC_REQUEST_RESEND, we keep waiting.
 
@@ -272,41 +272,57 @@ sub sip_protocol_loop {
     # constraint, so we'll relax about it too.
     # Using the SIP "raw" login process, rather than telnet,
     # requires the LOGIN message and forces SIP 2.00.  In that
-	# case, the LOGIN message has already been processed (above).
-	# 
-	# In short, we'll take any valid message here.
-	#my $expect = SC_STATUS;
+    # case, the LOGIN message has already been processed (above).
+    # 
+    # In short, we'll take any valid message here.
+    #my $expect = SC_STATUS;
     my $expect = '';
     my $strikes = 3;
-    while ($input = Sip::read_SIP_packet(*STDIN)) {
-		# begin input hacks ...  a cheap stand in for better Telnet layer
-		$input =~ s/^[^A-z0-9]+//s;	# Kill leading bad characters... like Telnet handshakers
-		$input =~ s/[^A-z0-9]+$//s;	# Same on the end, should get DOSsy ^M line-endings too.
-		while (chomp($input)) {warn "Extra line ending on input";}
-		unless ($input) {
-			if ($strikes--) {
-				syslog("LOG_ERR", "sip_protocol_loop: empty input skipped");
-				next;
-			} else {
-				syslog("LOG_ERR", "sip_protocol_loop: quitting after too many errors");
-				die "sip_protocol_loop: quitting after too many errors";
-			}
-		}
-		# end cheap input hacks
-		my $status = Sip::MsgType::handle($input, $self, $expect);
-		if (!$status) {
-			syslog("LOG_ERR", "sip_protocol_loop: failed to handle %s",substr($input,0,2));
-			die "sip_protocol_loop: failed Sip::MsgType::handle('$input', $self, '$expect')";
-		}
-		next if $status eq REQUEST_ACS_RESEND;
-		if ($expect && ($status ne $expect)) {
-			# We received a non-"RESEND" that wasn't what we were expecting.
-		    syslog("LOG_ERR", "sip_protocol_loop: expected %s, received %s, exiting", $expect, $input);
-			die "sip_protocol_loop: exiting: expected '$expect', received '$status'";
-		}
-		# We successfully received and processed what we were expecting
-		$expect = '';
-	}
+        
+    my $timeout = $self->{service}->{timeout};
+    my $read_timeout_handler = sub { die "sip_protocol_loop timed out waiting for input\n"; };
+    my $write_timeout_handler = sub { die "sip_protocol_loop timed out waiting for output\n"; };
+
+    eval {
+        local $SIG{ALRM} = $read_timeout_handler;
+        alarm $timeout;
+
+        while (local $SIG{ALRM} = $read_timeout_handler && alarm $timeout && ($input = Sip::read_SIP_packet(*STDIN))) {
+            local $SIG{ALRM} = $write_timeout_handler;
+            alarm $timeout;
+
+            # begin input hacks ...  a cheap stand in for better Telnet layer
+            $input =~ s/^[^A-z0-9]+//s;	# Kill leading bad characters... like Telnet handshakers
+            $input =~ s/[^A-z0-9]+$//s;	# Same on the end, should get DOSsy ^M line-endings too.
+            while (chomp($input)) {warn "Extra line ending on input";}
+
+            unless ($input) {
+                if ($strikes--) {
+                    syslog("LOG_ERR", "sip_protocol_loop: empty input skipped");
+                    next;
+                }
+                else {
+                    syslog("LOG_ERR", "sip_protocol_loop: quitting after too many errors");
+                    die "sip_protocol_loop: quitting after too many errors";
+                }
+            }
+            # end cheap input hacks
+
+            my $status = Sip::MsgType::handle($input, $self, $expect);
+            if (!$status) {
+                syslog("LOG_ERR", "sip_protocol_loop: failed to handle %s",substr($input,0,2));
+                die "sip_protocol_loop: failed Sip::MsgType::handle('$input', $self, '$expect')";
+            }
+            next if ($status eq REQUEST_ACS_RESEND);
+            if ($expect && ($status ne $expect)) {
+                # We received a non-"RESEND" that wasn't what we were expecting.
+                syslog("LOG_ERR", "sip_protocol_loop: expected %s, received %s, exiting", $expect, $input);
+                die "sip_protocol_loop: exiting: expected '$expect', received '$status'";
+            }
+            # We successfully received and processed what we were expecting
+            $expect = '';
+        }
+    }
 }
 
 1;
