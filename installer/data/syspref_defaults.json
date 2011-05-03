@@ -1,4 +1,10 @@
 {
+   "SoundOn" : {
+      "explanation" : "Emit sounds for circulation actions",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
    "advancedMARCEditor" : {
       "explanation" : "Use the advanced MARC editor",
       "options" : null,
