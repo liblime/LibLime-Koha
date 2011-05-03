@@ -1,4 +1,10 @@
 {
+   "advancedMARCEditor" : {
+      "explanation" : "Use the advanced MARC editor",
+      "options" : null,
+      "value" : "1",
+      "type" : "YesNo"
+   },
    "ShowSupressStatus" : {
       "explanation" : "Enable display of suppressed items in staff catalogue bib detail view",
       "options" : null,
