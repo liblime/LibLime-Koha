@@ -54,7 +54,7 @@ sub _check_params {
         'guidebox',
         'font',
         'font_size',
-        #'callnum_split',
+        'callnum_split',
         'break_rule_string',
         'justify',
         'format_string',
@@ -331,7 +331,7 @@ sub new {
         guidebox                => $params{'guidebox'},
         font                    => $params{'font'},
         font_size               => $params{'font_size'},
-        #callnum_split           => $params{'callnum_split'},
+        callnum_split           => $params{'callnum_split'},
         break_rule_string       => $params{'break_rule_string'},
         justify                 => $params{'justify'},
         format_string           => $params{'format_string'},
@@ -655,7 +655,7 @@ sub _split_ddcn {
         \s*
         /x;
     unless (scalar @parts)  {
-        warn sprintf('regexp failed to match string: %s', $_);
+        #warn sprintf('regexp failed to match string: %s', $_);
         push @parts, $_;     # if no match, just push the whole string.
     }
 
@@ -665,7 +665,7 @@ sub _split_ddcn {
     }
 
     push @parts, split /\s+/, pop @parts;   # split the last piece into an arbitrary number of pieces at spaces
-    $debug and print STDERR "split_ddcn array: ", join(" | ", @parts), "\n";
+    #$debug and print STDERR "split_ddcn array: ", join(" | ", @parts), "\n";
     return @parts;
 }
 

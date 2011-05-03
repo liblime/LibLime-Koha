@@ -24,9 +24,9 @@ my @item_numbers  = $cgi->param('item_number') if $cgi->param('item_number');
 my $items = undef;
 
 my $pdf_file = (@label_ids || @item_numbers ? "label_single_" . scalar(@label_ids || @item_numbers) : "label_batch_$batch_id");
-print $cgi->header( -type       => 'application/pdf',
+print $cgi->header( -type       => 'application/pdf', #'text/plain',
                     -encoding   => 'utf-8',
-                    -attachment => "$pdf_file.pdf",
+                    -attachment => "$pdf_file.pdf",   #"$pdf_file.txt",
                   );
 
 my $pdf = C4::Labels::PDF->new(InitVars => 0);
@@ -104,7 +104,7 @@ foreach my $item (@{$items}) {
                                         guidebox            => $layout->get_attr('guidebox'),
                                         font                => $layout->get_attr('font'),
                                         font_size           => $layout->get_attr('font_size'),
-                                        #callnum_split       => $layout->get_attr('callnum_split'),
+                                        callnum_split       => $layout->get_attr('callnum_split'),
                                         break_rule_string   => $layout->get_attr('break_rule_string'),
                                         justify             => $layout->get_attr('text_justify'),
                                         format_string       => $fs,
@@ -128,7 +128,7 @@ foreach my $item (@{$items}) {
                                         guidebox            => $layout->get_attr('guidebox'),
                                         font                => $layout->get_attr('font'),
                                         font_size           => $layout->get_attr('font_size'),
-                                        #callnum_split       => $layout->get_attr('callnum_split'),
+                                        callnum_split       => $layout->get_attr('callnum_split'),
                                         break_rule_string   => $layout->get_attr('break_rule_string'),
                                         justify             => $layout->get_attr('text_justify'),
                                         format_string       => $layout->get_attr('format_string'),
@@ -155,7 +155,7 @@ foreach my $item (@{$items}) {
                                         guidebox            => $layout->get_attr('guidebox'),
                                         font                => $layout->get_attr('font'),
                                         font_size           => $layout->get_attr('font_size'),
-                                        #callnum_split       => $layout->get_attr('callnum_split'),
+                                        callnum_split       => $layout->get_attr('callnum_split'),
                                         break_rule_string   => $layout->get_attr('break_rule_string'),
                                         justify             => $layout->get_attr('text_justify'),
                                         format_string       => $layout->get_attr('format_string'),
