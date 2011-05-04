@@ -1,7 +1,13 @@
-    <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
     <title>Koha &rsaquo; Tools &rsaquo; Labels &rsaquo; Manage Label Batches</title>
     <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
     <!-- TMPL_INCLUDE NAME="greybox.inc" -->
+    <script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+       $('#mytab').tablesorter();
+    });
+    </script>
     <script type="text/javascript">//<!CDATA[
         function doFocus() { // named function req'd for body onload
                              // event by some FF and IE7 security models
@@ -16,6 +22,21 @@
             else {
                return true; // ok
             }
+        }
+        function toggleCheck() {
+           var onoff = document.items.selAll.checked;
+           if (document.items.action.length>0) {
+              if (onoff) {
+                 for(var i=0;i<document.items.action.length;i++) {
+                    document.items.action[i].checked = true;
+                 }
+              }
+              else {
+                 for(var i=0;i<document.items.action.length;i++) {
+                    document.items.action[i].checked = false;
+                 }
+              }
+           }
         }
     //]]>
     </script>
@@ -60,14 +81,20 @@
 
                                 <!-- TMPL_IF NAME="table_loop" -->
                                                                     <h2>Items in batch number <!-- TMPL_VAR NAME="batch_id" --></h2>
-                                    <table>
+                                    <table id="mytab">
+                                    <thead>
                                         <!-- TMPL_LOOP NAME="table_loop" -->
                                         <!-- TMPL_IF NAME="header_fields" -->
                                         <tr>
                                         <!-- TMPL_LOOP NAME="header_fields" -->
+                                          <TMPL_IF NAME="jsort">
                                             <th><!-- TMPL_VAR NAME="field_label" --></th>
+                                          <TMPL_ELSE>
+                                            <td align=center><b><TMPL_VAR NAME="field_label"></b></td>
+                                          </TMPL_IF>
                                         <!-- /TMPL_LOOP -->
                                         </tr>
+                                    </thead>
                                         <!-- TMPL_ELSE -->
                                         <tr>
                                         <!-- TMPL_LOOP NAME="text_fields" -->

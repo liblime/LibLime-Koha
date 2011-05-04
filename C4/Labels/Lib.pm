@@ -286,7 +286,7 @@ sub get_label_summary {
     my %params = @_;
     my $label_number = 0;
     my @label_summaries = ();
-    my $query = "SELECT b.title, b.author, bi.itemtype, i.itemcallnumber, i.barcode, i.biblionumber FROM biblio AS b, biblioitems AS bi ,items AS i, labels_batches AS l WHERE itemnumber=? AND l.item_number=i.itemnumber AND i.biblioitemnumber=bi.biblioitemnumber AND bi.biblionumber=b.biblionumber AND l.batch_id=?;";
+    my $query = "SELECT b.title, b.author, i.itype, i.itemcallnumber, i.barcode, i.biblionumber FROM biblio AS b, biblioitems AS bi ,items AS i, labels_batches AS l WHERE itemnumber=? AND l.item_number=i.itemnumber AND i.biblioitemnumber=bi.biblioitemnumber AND bi.biblionumber=b.biblionumber AND l.batch_id=?;";
     my $sth = C4::Context->dbh->prepare($query);
     foreach my $item (@{$params{'items'}}) {
         $label_number++;
@@ -302,11 +302,12 @@ sub get_label_summary {
         $record->{'title'} =~ s/\W*$//;  # strip off ugly trailing chars
         # FIXME contructing staff interface URLs should be done *much* higher up the stack - for the most part, C4 module code
         # should not know that it's part of a web app
+        $record->{'barcode'} //= '';
         $record->{'title'} = '<a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=' . $record->{'biblionumber'} . '"> ' . $record->{'title'} . '</a>';
         $label_summary->{'_summary'} = $record->{'title'} . " | " . ($record->{'author'} ? $record->{'author'} : 'N/A');
         $label_summary->{'_cnum'} = $record->{'itemcallnumber'};
-        $label_summary->{'_item_type'} = $record->{'itemtype'};
-        $label_summary->{'_barcode'} = $record->{'barcode'};
+        $label_summary->{'_itype'} = $record->{'itype'} // '';
+        $label_summary->{'_barcode'} = qq|<a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=$$record{biblionumber}&itemnumber=$$item{item_number}#item$$item{item_number}">$record->{'barcode'}</a>|;
         $label_summary->{'_item_number'} = $item->{'item_number'};
         $label_summary->{'_label_id'} = $item->{'label_id'};
         push (@label_summaries, $label_summary);
@@ -472,7 +473,13 @@ sub html_table {
             # do special formatting stuff....
             $link_field->{$key[0]} = ($header->{$key[0]}{'link_field'} == 1 ? 1 : 0);
             push (@table_columns, $key[0]);
-            $$fields[$col_index] = {hidden => 0, select_field => 0, field_name => ($key[0]), field_label => $header->{$key[0]}{'label'}};
+            $$fields[$col_index] = {
+               hidden       => 0, 
+               select_field => 0, 
+               field_name   => ($key[0]), 
+               field_label  => $header->{$key[0]}{'label'}, 
+               jsort        => $header->{$key[0]}{'jsort'}
+            };
         }
         $field_count++;
         $col_index++;
