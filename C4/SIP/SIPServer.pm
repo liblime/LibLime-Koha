@@ -3,7 +3,7 @@ package SIPServer;
 use strict;
 use warnings;
 # use Exporter;
-use Sys::Syslog qw(syslog);
+use Sys::Syslog qw(openlog syslog);
 use Net::Server::Fork;
 use IO::Socket::INET;
 use Socket qw(:DEFAULT :crlf);
@@ -69,6 +69,8 @@ push @parms,
     "log_file=Sys::Syslog",
     "syslog_ident=$syslog_ident",
     "syslog_facility=" . LOG_SIP;
+
+openlog($syslog_ident, "ndelay,pid", "local6");
 
 #
 # Server Management: set parameters for the Net::Server
