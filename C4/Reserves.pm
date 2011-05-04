@@ -2145,12 +2145,12 @@ sub IsAvailableForItemLevelRequest {
     return 0 if $$item{wthdrawn};
     return 0 if $$item{suppress};
     if ($$item{otherstatus}) {
-       $sth = $dbh->prepare('SELECT holdsallowed,holdsfilled
+       $sth = $dbh->prepare('SELECT holdsallowed
           FROM itemstatus
          WHERE statuscode = ?');
        $sth->execute($$item{otherstatus});
-       my($holdsallowed,$holdsfilled) = $sth->fetchrow_array();
-       return 0 unless ($holdsallowed && $holdsfilled);
+       my ($holdsallowed) = $sth->fetchrow_array();
+       return 0 unless $holdsallowed;
     }
 
     ## check in transit .. deprecated
