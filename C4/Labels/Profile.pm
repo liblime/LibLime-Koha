@@ -157,13 +157,12 @@ sub save {
     push @{$$self{_errs}},{msg=>'Paper Bin is required'}
        unless $$self{paper_bin};
     return if @{$$self{_errs}};
-
+    my @skip = qw(profile_id _errs template_code);
     if ($self->{'profile_id'}) {        # if we have an profile_id, the record exists and needs UPDATE
         my @params;
         my $query = "UPDATE printers_profile SET ";
         foreach my $key (keys %{$self}) {
-            next if $key eq 'profile_id';
-            next if $key eq '_errs';
+            next if $key ~~ @skip;
             push (@params, $self->{$key});
             $query .= "$key=?, ";
         }
@@ -197,8 +196,7 @@ sub save {
       $$self{template_id} ||= 0;
       my @keys = my @params = ();
       foreach(keys %$self) {
-         next if $_ eq '_errs';
-         next if $_ eq 'profile_id';
+         next if $_ ~~ @skip;
          push @keys, $_;
          push @params, $$self{$_};
       }

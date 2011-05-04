@@ -77,23 +77,21 @@
                                         <ol>
                                             <li><label for="profile_id">Profile ID:</label>
                                             <!-- TMPL_IF name="profile_id" -->
-                                            <!-- TMPL_VAR NAME="profile_id" -->
+                                               <!-- TMPL_VAR NAME="profile_id" -->
                                             <!-- TMPL_ELSE -->
-                                            New Profile Unassigned
+                                               New Profile Unassigned
                                             <!-- /TMPL_IF -->
                                             <li>
                                                 <label for="printer_name">Printer name:</label>
                                                 <input type="text"  size="20" 
                                                 name="printer_name" id="printer_name"
                                                 value="<!-- TMPL_VAR NAME="printer_name" -->" />
-                                                <!-- /TMPL_IF -->
                                             </li>
                                             <li>
                                                 <label for="paper_bin">Paper bin:</label>
                                                 <input type="text"  size="20" 
                                                 name="paper_bin" id="paper_bin"
                                                 value="<!-- TMPL_VAR NAME="paper_bin" -->" />
-                                                <!-- /TMPL_IF -->
                                             </li>
                                             <li>
                                                 <!-- TMPL_IF NAME="template_code" -->
@@ -106,11 +104,7 @@
                                                 <label for="profile_units">Units: </label>
                                                 <select id="profile_units" name="profile_units">
                                                     <!-- TMPL_LOOP NAME="profile_units" -->
-                                                    <!-- TMPL_IF NAME="selected" -->
-                                                    <option value="<!-- TMPL_VAR NAME="type" -->" selected="selected">
-                                                    <!-- TMPL_ELSE -->
-                                                    <option value="<!-- TMPL_VAR NAME="type" -->">
-                                                    <!-- /TMPL_IF -->
+                                                    <option value="<!-- TMPL_VAR NAME="type" -->" <TMPL_IF NAME="selected">selected="selected"</TMPL_IF>>
                                                     <!-- TMPL_VAR NAME="desc" -->
                                                     </option>
                                                     <!-- /TMPL_LOOP -->

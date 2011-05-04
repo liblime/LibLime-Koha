@@ -41,7 +41,6 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 
 my $op = $cgi->param('op');
-warn "operation = $op\n";
 my $template_id = $cgi->param('template_id') || $cgi->param('element_id');
 my $label_template = undef;
 my $profile_list = undef;
@@ -112,6 +111,7 @@ elsif ($op eq 'save') {
 }
 else {  # if we get here, this is a new layout
     $label_template = C4::Labels::Template->new();
+    $profile_list = get_all_profiles(field_list => 'profile_id,printer_name,paper_bin');
 }
 if ($template_id) {
     foreach my $profile (@$profile_list) {
