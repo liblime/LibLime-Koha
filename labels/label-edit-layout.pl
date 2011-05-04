@@ -163,7 +163,7 @@ my $label_types = _set_selected(get_label_types(), $layout, 'printing_type');
 my $font_types = _set_selected(get_font_types(), $layout, 'font');
 my $text_justification_types = _set_selected(get_text_justification_types(), $layout, 'text_justify');
 my $select_text_fields = _select_format_string($layout->get_attr('format_string'));
-
+my $id = $layout->get_attr('layout_id') || '';
 $template->param(
         errs            => $errs,
         barcode_types   => $barcode_types,
@@ -171,7 +171,7 @@ $template->param(
         font_types      => $font_types,
         text_justification_types    => $text_justification_types,
         field_table     => $select_text_fields,
-        layout_id       => $layout->get_attr('layout_id') > -1 ? $layout->get_attr('layout_id') : '',
+        layout_id       => $id,
         layout_name     => $layout->get_attr('layout_name'),
         guidebox        => $layout->get_attr('guidebox'),
         break_rule_string => $layout->get_attr('break_rule_string'),
