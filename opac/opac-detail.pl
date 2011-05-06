@@ -538,6 +538,7 @@ if (C4::Context->preference("OPACShelfBrowser")) {
       $sth_shelfbrowse_next = $dbh->prepare("
         SELECT *
         FROM items
+            USE INDEX (cn_sortindex)
         WHERE
             ((cn_sort = ? AND itemnumber >= ?) OR cn_sort > ?) AND
             homebranch = ? AND location = ?
@@ -548,6 +549,7 @@ if (C4::Context->preference("OPACShelfBrowser")) {
       $sth_shelfbrowse_next = $dbh->prepare("
         SELECT *
         FROM items
+            USE INDEX (cn_sortindex)
         WHERE
             ((cn_sort = ? AND itemnumber >= ?) OR cn_sort > ?) AND
             homebranch = ?
