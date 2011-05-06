@@ -499,20 +499,22 @@ if (C4::Context->preference("OPACShelfBrowser")) {
       $sth_shelfbrowse_previous = $dbh->prepare("
         SELECT *
         FROM items
+            USE INDEX (cn_sortindex)
         WHERE
             ((cn_sort = ? AND itemnumber < ?) OR cn_sort < ?) AND
             homebranch = ? AND location = ?
-        ORDER BY cn_sort DESC, itemnumber LIMIT 3
+        ORDER BY cn_sort DESC, itemnumber DESC LIMIT 3
         ");
       $sth_shelfbrowse_previous->execute($starting_cn_sort, $starting_itemnumber, $starting_cn_sort, $starting_homebranch->{code}, $starting_location->{code});
     } else {
       $sth_shelfbrowse_previous = $dbh->prepare("
         SELECT *
         FROM items
+            USE INDEX (cn_sortindex)
         WHERE
             ((cn_sort = ? AND itemnumber < ?) OR cn_sort < ?) AND
             homebranch = ?
-        ORDER BY cn_sort DESC, itemnumber LIMIT 3
+        ORDER BY cn_sort DESC, itemnumber DESC LIMIT 3
         ");
       $sth_shelfbrowse_previous->execute($starting_cn_sort, $starting_itemnumber, $starting_cn_sort, $starting_homebranch->{code});
     }
