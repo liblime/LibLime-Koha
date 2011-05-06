@@ -474,7 +474,7 @@ if ( C4::Context->preference("Babeltheque") ) {
 }
 
 # Shelf Browser Stuff
-if (C4::Context->preference("OPACShelfBrowser")) {
+if (C4::Context->preference("OPACShelfBrowser") && $query->param('shelfbrowse_itemnumber')) {
     # pick the first itemnumber unless one was selected by the user
     my $starting_itemnumber = $query->param('shelfbrowse_itemnumber'); # || $items[0]->{itemnumber};
     $template->param( OpenOPACShelfBrowser => 1) if $starting_itemnumber;
