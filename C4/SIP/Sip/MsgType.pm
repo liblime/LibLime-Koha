@@ -476,7 +476,6 @@ sub build_patron_status {
 
 sub handle_patron_status {
 	my ($self, $server) = @_;
-	warn "handle_patron_status server: " . Dumper(\$server);  
 	my $ils = $server->{ils};
 	my $patron;
 	my $resp = (PATRON_STATUS_RESP);

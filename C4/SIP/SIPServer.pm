@@ -4,7 +4,6 @@ use strict;
 use warnings;
 # use Exporter;
 use Sys::Syslog qw(openlog syslog);
-use Net::Server::Fork;
 use IO::Socket::INET;
 use Socket qw(:DEFAULT :crlf);
 use Data::Dumper;		# For debugging
@@ -21,8 +20,11 @@ use constant LOG_SIP => "local6"; # Local alias for the logging facility
 use vars qw(@ISA $VERSION);
 
 BEGIN {
-	$VERSION = 1.02;
-	@ISA = qw(Net::Server::Fork);
+    $VERSION = 1.02;
+        
+    my $server_type = $ENV{KOHA_SIP2_SERVER_TYPE} // 'Net::Server::Fork';
+    eval "require $server_type";
+    @ISA = $server_type;
 }
 
 #
