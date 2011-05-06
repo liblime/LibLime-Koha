@@ -584,7 +584,7 @@ sub GetMember {
     return undef if !$borrower;
 
     if ($borrower->{category_type} ~~ 'S') { # staff
-        ($borrower->{worklibraries}) = GetWorkLibraries($borrower->{borrowernumber});
+        $borrower->{worklibraries} = GetWorkLibraries($borrower->{borrowernumber});
     }
 
     return $borrower;
@@ -775,13 +775,13 @@ sub ModMember {
 
 sub GetWorkLibraries {
    my $borrowernumber = shift;
-   my @branches
+   my $branches
        = C4::Context->dbh->selectcol_arrayref(q{
             SELECT branchcode as worklibrary
             FROM   borrower_worklibrary
             WHERE  borrowernumber = ?
             }, undef, $borrowernumber);
-   return wantarray ? @branches : \@branches;
+   return wantarray ? @{$branches} : $branches;
 }
 
 

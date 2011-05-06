@@ -393,7 +393,7 @@ if ($restrict) {
    my $borrowernumber = C4::Members::GetBorrowerFromUser(
       C4::Context->userenv->{id}
    );
-   @worklibs = @{C4::Members::GetWorkLibraries($borrowernumber) || []};
+   @worklibs = C4::Members::GetWorkLibraries($borrowernumber);
 }
 $template->param(restrict=>$restrict);
 
