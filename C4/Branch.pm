@@ -448,9 +448,11 @@ hashref for the corresponding row in the branches table.
 =cut
 
 sub GetBranchDetail {
-    my ($branchcode) = shift or return;
+    my ($branchcode) = shift || return;
 
-    my %branch = %{GetBranches(undef, $branchcode)->{$branchcode}};
+    my $branch = GetBranches(undef, $branchcode);
+    return if not defined $branch->{$branchcode};
+    my %branch = %{$branch->{$branchcode}};
     delete $branch{category}; # Not sure if keeping this will break callers
     return \%branch;
 }
