@@ -2,7 +2,7 @@ package SIPServer;
 
 use strict;
 use warnings;
-# use Exporter;
+use Try::Tiny;
 use Sys::Syslog qw(openlog syslog);
 use IO::Socket::INET;
 use Socket qw(:DEFAULT :crlf);
@@ -44,7 +44,7 @@ my %transports = (
 # Read configuration
 #
 my $config = new Sip::Configuration $ARGV[0];
-print STDERR "SIPServer config: \n" . Dumper($config) . "\nEND SIPServer config.\n";
+#print STDERR "SIPServer config: \n" . Dumper($config) . "\nEND SIPServer config.\n";
 my @parms;
 
 #
@@ -87,7 +87,7 @@ if (defined($config->{'server-params'})) {
 }
 
 print scalar(localtime),  " -- startup -- procid:$$\n";
-print "Params for Net::Server : \n" . Dumper(\@parms);
+#print "Params for Net::Server : \n" . Dumper(\@parms);
 
 #
 # This is the main event.
@@ -288,7 +288,7 @@ sub sip_protocol_loop {
     my $read_timeout_handler = sub { die "sip_protocol_loop timed out waiting for input\n"; };
     my $write_timeout_handler = sub { die "sip_protocol_loop timed out waiting for output\n"; };
 
-    eval {
+    try {
         local $SIG{ALRM} = $read_timeout_handler;
         alarm $timeout;
 
@@ -328,6 +328,9 @@ sub sip_protocol_loop {
             $expect = '';
         }
     }
+    catch {
+        warn "error exit of sip_protocol_loop: '$_'";
+    };
 }
 
 1;
