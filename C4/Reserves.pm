@@ -2422,6 +2422,7 @@ sub _koha_notify_reserve {
     ");
     $sth->execute( $reservenumber );
     my $reserve = $sth->fetchrow_hashref;
+    return unless $$reserve{found} ~~ 'W';
     if (C4::Context->preference('TalkingTechEnabled') && (!$borrower->{'email'})) {
       my $biblio = &GetBiblioData($biblionumber);
       my $item = &GetItem($itemnumber);
