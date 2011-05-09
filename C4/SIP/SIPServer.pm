@@ -289,18 +289,8 @@ sub sip_protocol_loop {
     my $expect = '';
     my $strikes = 3;
         
-    my $timeout = $self->{service}->{timeout};
-    my $read_timeout_handler = sub { die "sip_protocol_loop timed out waiting for input\n"; };
-    my $write_timeout_handler = sub { die "sip_protocol_loop timed out waiting for output\n"; };
-
     try {
-        local $SIG{ALRM} = $read_timeout_handler;
-        alarm $timeout;
-
-        while (local $SIG{ALRM} = $read_timeout_handler && alarm $timeout && ($input = Sip::read_SIP_packet(*STDIN))) {
-            local $SIG{ALRM} = $write_timeout_handler;
-            alarm $timeout;
-
+        while ($input = Sip::read_SIP_packet(*STDIN)) {
             # begin input hacks ...  a cheap stand in for better Telnet layer
             $input =~ s/^[^A-z0-9]+//s;	# Kill leading bad characters... like Telnet handshakers
             $input =~ s/[^A-z0-9]+$//s;	# Same on the end, should get DOSsy ^M line-endings too.
