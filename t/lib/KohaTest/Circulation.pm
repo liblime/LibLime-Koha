@@ -102,13 +102,10 @@ sub checkout_first_item {
     my ( $issuingimpossible, $needsconfirmation ) = C4::Circulation::CanBookBeIssued( $borrower, $barcode );
 
     my $datedue = C4::Circulation::AddIssue(
-        $borrower,    # borrower
-        $barcode,     # barcode
-        undef,        # datedue
-        undef,        # cancelreserve
-        $issuedate    # issuedate
+      borrower  => $borrower,
+      barcode   => $barcode,
+      issuedate => $issuedate,
     );
-
     my $issues = C4::Circulation::GetItemIssue( $self->{'items'}[0]{'itemnumber'} );
 
     return $issues->{'date_due'};

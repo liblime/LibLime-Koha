@@ -104,8 +104,8 @@ if ($printer){
     $session->param('branchprinter', $printer);
 }
 
-if (!C4::Context->userenv && !$branch){
-    if ($session->param('branch') eq 'NO_LIBRARY_SET'){
+if (!C4::Context->userenv || !$branch) {
+    if ($session->param('branch') eq 'NO_LIBRARY_SET') {
         # no branch set we can't issue
         print $query->redirect("/cgi-bin/koha/circ/selectbranchprinter.pl");
         exit;
@@ -121,7 +121,6 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user (
         flagsrequired   => { circulate => '*' },
     }
 );
-
 my $branches = GetBranches();
 
 my @failedrenews = $query->param('failedrenew');    # expected to be itemnumbers 
@@ -157,14 +156,14 @@ if (C4::Context->preference("DisplayClearScreenButton")) {
     $template->param(DisplayClearScreenButton => 1);
 }
 
-my $barcode        = $query->param('barcode') || '';
+my $barcode = $query->param('barcode') || '';
 $barcode =~  s/^\s*|\s*$//g; # remove leading/trailing whitespace
 
 $barcode = C4::Circulation::barcodedecode(barcode=>$barcode) if( $barcode && (C4::Context->preference('itemBarcodeInputFilter') || C4::Context->preference('itembarcodelength')));
 my $stickyduedate  = $query->param('stickyduedate') || $session->param('stickyduedate');
 my $duedatespec    = $query->param('duedatespec')   || $session->param('stickyduedate');
 my $issueconfirmed = $query->param('issueconfirmed');
-my $cancelreserve  = $query->param('cancelreserve');
+my $howReserve     = $query->param('howhandleReserve');
 my $organisation   = $query->param('organisations');
 my $print          = $query->param('print');
 my $newexpiry      = $query->param('dateexpiry');
@@ -190,12 +189,19 @@ if ( $barcode ) {
     }
 }
 
-if (C4::Context->preference("DisableHoldsIssueOverrideUnlessAuthorised") && $query->param('reserve_confirmed')) {
-  my $authcode = C4::Auth::checkpw( C4::Context->dbh, $query->param('auth_username'), $query->param('auth_password'), 0, my $bypass_userenv = 1 );
-  my $permissions = C4::Auth::haspermission( $query->param('auth_username'), { 'superlibrarian' => 1 } );
-  unless ( $authcode && $permissions ) {
-    $issueconfirmed = 0;
-  }
+if ($query->param('reserve_confirmed')) {
+   my $perm = C4::Auth::haspermission(C4::Context->userenv->{id}, {superlibrarian => 1});
+   if ($$perm{superlibrarian}) {
+      $issueconfirmed = 1;   
+   }
+   elsif (C4::Context->preference('DisableHoldsIssueOverrideUnlessAuthorised')) {
+      my $authcode = C4::Auth::checkpw( C4::Context->dbh, $query->param('auth_username'), $query->param('auth_password'), 0, my $bypass_userenv = 1 );
+      $perm = C4::Auth::haspermission( $query->param('auth_username'), { 'superlibrarian' => 1 } );
+      unless ( $authcode && $perm ) {
+         $issueconfirmed = 0;
+         $template->param(badauth=>1);
+      }
+   }
 }
 #set up cookie.....
 # my $branchcookie;
@@ -206,10 +212,10 @@ if (C4::Context->preference("DisableHoldsIssueOverrideUnlessAuthorised") && $que
 # }
 #
 
-my ($datedue,$invalidduedate,$globalduedate);
+my ($datedueObj,$invalidduedate,$globalduedate);
 
 if(C4::Context->preference('globalDueDate') && (C4::Context->preference('globalDueDate') =~ C4::Dates->regexp('syspref'))){
-        $globalduedate = C4::Dates->new(C4::Context->preference('globalDueDate'));
+   $globalduedate = C4::Dates->new(C4::Context->preference('globalDueDate'));
 }
 my $duedatespec_allow = C4::Context->preference('SpecifyDueDate');
 my $testduedate_allow = C4::Context->preference('AllowDueDateInPast');
@@ -219,10 +225,10 @@ if($duedatespec_allow){
             my $tempdate = C4::Dates->new($duedatespec);
             if ($tempdate and $tempdate->output('iso') gt C4::Dates->new()->output('iso')) {
                 # i.e., it has to be later than today/now
-                $datedue = $tempdate;
+                $datedueObj = $tempdate;
             } else {
                  if ($testduedate_allow) {
-                     $datedue = $tempdate;
+                     $datedueObj = $tempdate;
                  }
                  else {
                      $invalidduedate = 1;
@@ -242,7 +248,7 @@ if($duedatespec_allow){
         }
     }
 } else {
-    $datedue = $globalduedate if ($globalduedate);
+    $datedueObj = $globalduedate if ($globalduedate);
 }
 
 my $todaysdate = C4::Dates->new->output('iso');
@@ -342,7 +348,7 @@ if ($borrowernumber) {
       borrowernumber       => $borrowernumber,
       formatdate           => 1,
       only_claimsreturned  => 0,
-    );
+    ) // [];
     my $numlostitems = scalar @$li;
     @$li = splice(@$li,0,5);
     $template->param( 
@@ -390,7 +396,7 @@ if ($borrowernumber) {
     $template->param(
         overduecount => $od,
         issuecount   => $issue,
-        finetotal    => $fines
+        finetotal    => $fines,
     );
     # Check if patron is in debt collect
     $$borrower{last_reported_amount} ||= 0;
@@ -406,7 +412,7 @@ if ($borrowernumber) {
 if ($barcode) {
   # always check for blockers on issuing
   my ( $error, $question ) =
-    CanBookBeIssued( $borrower, $barcode, $datedue , $inprocess );
+    CanBookBeIssued( $borrower, $barcode, $datedueObj , $inprocess );
   my $blocker = $invalidduedate ? 1 : 0;
   if ($circ_session->{'debt_confirmed'} || $circ_session->{'charges_overridden'}) {
     delete $question->{'DEBT'};
@@ -423,14 +429,15 @@ if ($barcode) {
             );
             $blocker = 1;
         }
+
     if( !$blocker ){
         my $confirm_required = 0;
     	  unless($issueconfirmed) {
             #  Get the item title for more information
             my $getmessageiteminfo  = GetBiblioFromItemNumber(undef,$barcode);
 		      $template->param( itemhomebranch => $getmessageiteminfo->{'homebranch'} );
-
-		      # pass needsconfirmation to template if issuing is possible and user hasn't yet confirmed.
+		      
+            # pass needsconfirmation to template if issuing is possible and user hasn't yet confirmed.
        	   foreach my $needsconfirmation ( keys %$question ) {
                  ## PTFS PT 7310367 don't display confirmation for holds
                  # next if $needsconfirmation eq 'RESERVED';
@@ -442,32 +449,25 @@ if ($barcode) {
                  ## catching the case of an item-level hold.
                  ## FIXME: outstanding question is for a bib-level hold and no other
                  ## item is available to fill the hold. -hQ
-                 if (C4::Context->preference('reservesNeedConfirmationOnCheckout')
-                  && $needsconfirmation eq 'RESERVED') {
+                 if (C4::Context->preference('reservesNeedConfirmationOnCheckout')) {
        	            $template->param(
        	               $needsconfirmation => $$question{$needsconfirmation},
        	               getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
        	               NEEDSCONFIRMATION  => 1
        	            );
+       	            $confirm_required = 1;
                   }
-                  else {
-                     $template->param(
-                        $needsconfirmation => $$question{$needsconfirmation},
-                        getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
-                        NEEDSCONFIRMATION  => 1,
-                     );
-                  }
-       	         $confirm_required = 1;
        	    }
 		  }
-        unless($confirm_required) {
+        if ($confirm_required) {
+            $template->param(howhandleReserve=>$howReserve || 'requeue');
+        }
+        else {
             C4::Circulation::AddIssue( 
-               $borrower, 
-               $barcode, 
-               $datedue, 
-               $cancelreserve, 
-               undef, 
-               0 
+               borrower       => $borrower,
+               barcode        => $barcode,
+               datedueObj     => $datedueObj,
+               howReserve     => $howReserve,
             );
             
 			   $inprocess = 1;
@@ -475,7 +475,7 @@ if ($barcode) {
                 $duedatespec = $globalduedate->output();
                 $stickyduedate = 1;
             }
-		}
+		  }
     }
     
     # FIXME If the issue is confirmed, we launch another time GetMemberIssuesAndFines, now display the issue count after issue 

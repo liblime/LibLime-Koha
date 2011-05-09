@@ -134,7 +134,7 @@ elsif ( $op eq "checkout" ) {
     } else {
         if ( $confirmed || $issuenoconfirm ) {    # we'll want to call getpatroninfo again to get updated issues.
             # warn "issuing book?";
-            AddIssue( $borrower, $barcode, undef, 0, undef, 0 );
+            AddIssue( borrower => $borrower, barcode =>  $barcode );
             # ($borrower, $flags) = getpatroninformation(undef,undef, $patronid);
             # $template->param(
             #   patronid => $patronid,

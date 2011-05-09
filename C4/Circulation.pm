@@ -780,8 +780,8 @@ sub CanBookBeIssued {
     my %issuingimpossible;    # filled with problems that causes the issue to be IMPOSSIBLE
     my $item = GetItem(GetItemnumberFromBarcode( $barcode ));
     my $issue = GetItemIssue($item->{itemnumber});
-	my $biblioitem = GetBiblioItemData($item->{biblioitemnumber});
-	$item->{'itemtype'}=$item->{'itype'}; 
+	 my $biblioitem = GetBiblioItemData($item->{biblioitemnumber});
+	 $item->{'itemtype'}=$item->{'itype'}; 
     my $dbh             = C4::Context->dbh;
 
     # MANDATORY CHECKS - unless item exists, nothing else matters
@@ -944,8 +944,7 @@ sub CanBookBeIssued {
     #
     if ( $issue->{borrowernumber} && $issue->{borrowernumber} eq $borrower->{'borrowernumber'} )
     {
-
-        # Already issued to current borrower. Ask whether the loan should
+        #Already issued to current borrower. Ask whether the loan should
         # be renewed.
         my ($CanBookBeRenewed,$renewerror) = CanBookBeRenewed(
             $borrower->{'borrowernumber'},
@@ -995,7 +994,7 @@ sub CanBookBeIssued {
 
 Issue a book. Does no check, they are done in CanBookBeIssued. If we reach this sub, it means the user confirmed if needed.
 
-&AddIssue($borrower, $barcode, [$datedue], [$cancelreserve], [$issuedate])
+&AddIssue(\%args)
 
 =over 4
 
@@ -1003,10 +1002,17 @@ Issue a book. Does no check, they are done in CanBookBeIssued. If we reach this 
 
 =item C<$barcode> is the barcode of the item being issued.
 
-=item C<$datedue> is a C4::Dates object for the max date of return, i.e. the date due (optional).
+=item C<$datedueObj> is a C4::Dates object for the max date of return, i.e. the date due (optional).
 Calculated if empty.
 
-=item C<$cancelreserve> is 1 to override and cancel any pending reserves for the item (optional).
+=item C<$howReserve> is either 'cancel' or 'requeue' (optional) for reconciling a reserve that belongs
+to another patron other than the checkout patron.
+
+=item C<$cancelReserve> is 1 to override and cancel any pending reserves for the item (optional); used
+if you don't want to set $howReserve.
+
+=item C<$requeueReserve> is 1 to send reserve back to priority 1 in the bib's existing holds (optional); used
+if you don't want to set $howReserve.
 
 =item C<$issuedate> is the date to issue the item in iso (YYYY-MM-DD) format (optional).
 Defaults to today.  Unlike C<$datedue>, NOT a C4::Dates object, unfortunately.
@@ -1030,184 +1036,214 @@ AddIssue does the following things :
 =cut
 
 sub AddIssue {
-   my ($borrower,$barcode,$datedue,$cancelreserve,$issuedate,$sipmode) = @_;
+   my %g = @_;
+   my $isRenewal     = 0;
+   my $borrower      = $g{borrower}       // {};
+   my $barcode       = $g{barcode}        // '';
+   my $datedueObj    = $g{datedueObj};
+   my $cancelReserve = $g{cancelReserve}  || 0;
+   my $requeueReserve= $g{requeueReserve} || 0;
+   my $howReserve    = $g{howReserve}     || '';
+   my $issuedate     = $g{issuedate}      // '';
+   my $sipmode       = $g{sipmode}        || 0;
+   $datedueObj       = undef unless ref($datedueObj);
+   unless($howReserve) {
+      if    ($cancelReserve)  { $howReserve = 'cancel' }
+      elsif ($requeueReserve) { $howReserve = 'requeue'}
+      ## else ignore reserves
+   }
+   
+   my $sth;
    my $dbh = C4::Context->dbh;
 	my $barcodecheck=CheckValidBarcode($barcode);
-   my $item;
    
-   # $issuedate defaults to today.
-   if ( ! defined $issuedate ) {
+   return unless ($borrower and $barcode and $barcodecheck);
+		
+   # find which item we issue
+	my $item = GetItem('', $barcode) or return;	# if we don't get an Item, abort.
+   my $biblio = GetBiblioFromItemNumber($item->{itemnumber}) or return;
+
+   # get actual issuing if there is one
+   my $actualissue = GetItemIssue( $item->{itemnumber});
+
+   my $branch = _GetCircControlBranch($item,$borrower);		
+   unless ($issuedate) { # $issuedate defaults to today.
       $issuedate = strftime( "%Y-%m-%d", localtime );
       # TODO: for hourly circ, this will need to be a C4::Dates object
       # and all calls to AddIssue including issuedate will need to pass a Dates object.
    }
+	unless ($datedueObj) {
+      my $itype = ( C4::Context->preference('item-level_itypes') ) ? $biblio->{'itype'} : $biblio->{'itemtype'};
+      my $loanlength = GetLoanLength( $borrower->{'categorycode'}, $itype, $branch );
+      $datedueObj = CalcDateDue( C4::Dates->new( $issuedate, 'iso' ), $loanlength, $branch, $borrower );
+   }
 	
-   if ($borrower and $barcode and $barcodecheck ne '0'){
-		# find which item we issue
-		$item = GetItem('', $barcode) or return undef;	# if we don't get an Item, abort.
-		my $branch = _GetCircControlBranch($item,$borrower);
-		
-		# get actual issuing if there is one
-		my $actualissue = GetItemIssue( $item->{itemnumber});
-		
-		# get biblioinformation for this item
-		my $biblio = GetBiblioFromItemNumber($item->{itemnumber});
-		
-		#
-		# check if we just renew the issue.
-		#
-		if (($actualissue->{borrowernumber} // '') eq $borrower->{'borrowernumber'}) {
-         ## we can afford to ignore holds.
-			$datedue = AddRenewal(
-				$borrower->{'borrowernumber'},
-				$item->{'itemnumber'},
-				$branch,
-				$datedue,
-                $issuedate, # here interpreted as the renewal date
+   ## check if we just renew the issue.
+   ## if we get here, overrides were set and we do the renewal.
+   if (($actualissue->{borrowernumber} // '') eq $borrower->{'borrowernumber'}) {
+      $isRenewal  = 1;
+      $datedueObj = AddRenewal(
+		   $borrower->{'borrowernumber'},
+			$item->{'itemnumber'},
+			$branch,
+			$datedueObj,
+         $issuedate, # here interpreted as the renewal date
+      );
+   }
+	else { # it's NOT a renewal
+	   if ( $actualissue->{borrowernumber}) {
+	      # This book is currently on loan, but not to the person
+			# who wants to borrow it now. mark it returned before issuing to the new borrower
+			AddReturn(
+			   $item->{'barcode'},
+				C4::Context->userenv->{'branch'}
 			);
 		}
-		else {
-        # it's NOT a renewal
-			if ( $actualissue->{borrowernumber}) {
-				# This book is currently on loan, but not to the person
-				# who wants to borrow it now. mark it returned before issuing to the new borrower
-				AddReturn(
-					$item->{'barcode'},
-					C4::Context->userenv->{'branch'}
-				);
-			}
+   }
 
-			my($restype,$res) = C4::Reserves::CheckReserves($item->{'itemnumber'});
-         ## value(s) of $restype:
-         ##    'Reserved'
-         ##    'Waiting'
-         ##    empty or undef or otherwise false (zero, I believe)
-			
-         if ($restype) {
-				my $resbor = $res->{'borrowernumber'};
-				if ( $resbor eq $borrower->{'borrowernumber'} ) {
-					# The item is reserved by the current patron.
-               # For now, ignore the fact the item is in any Waiting or Transfer status
-				    return unless C4::Reserves::ModReserveFillCheckout(
-                  $$borrower{borrowernumber},
-                  $$item{biblionumber},
-                  $$item{itemnumber},
-                  $res
-               );
-				}
-				elsif ( $restype eq "Waiting" ) {
-					# The item is on reserve and waiting, but has been
-					# reserved by some other patron.
-                    ModReserve(1,$res->{'biblionumber'},
-                                 $res->{'borrowernumber'},
-                                 $res->{'branchcode'},
-                                 $res->{'itemnumber'},
-                                 $res->{'reservenumber'});
-				}
-				elsif ( $restype eq "Reserved" ) {
-					# warn "Reserved";
-					# The item is reserved by someone else.
-					if ($cancelreserve) { # cancel reserves on this item
-						C4::Reserves::CancelReserve($res->{'reservenumber'});
-					}
-				}
-			}
-			
-         ## Starting process for transfer job (checking transfert 
-         ## and validate it if we have one)
-            my ($datesent) = GetTransfers($item->{'itemnumber'});
-            if ($datesent) {
-        # 	updating line of branchtranfert to finish it, and changing the to branch value, implement a comment for visibility of this case (maybe for stats ....)
-                my $sth =
-                    $dbh->prepare(
+   ## now handle reserves
+   ## value(s) of $restype:
+   ##    'Reserved'
+   ##    'Waiting'
+   ##    empty or undef or otherwise false (zero, I believe)
+	my($restype,$res) = C4::Reserves::CheckReserves($item->{'itemnumber'});
+   RESERVE: {
+      last RESERVE unless $restype;
+		my $resbor = $res->{'borrowernumber'};
+		if ($resbor eq $borrower->{'borrowernumber'}) {
+         # The item is reserved by the current patron.
+         # For now, ignore the fact the item is in any Waiting or Transfer status
+         ## Fixme: MRFC should be performed regardless who's the reservist -hQ
+         return unless C4::Reserves::ModReserveFillCheckout(
+            $$borrower{borrowernumber},
+            $$item{biblionumber},
+            $$item{itemnumber},
+            $res
+         );
+      }
+
+      ## if the syspref reservesNeedConfirm.. is off, requeue the reserve from Waiting 
+      ## back to priority 1 as a bib-level request, as item can't be Waiting and checked
+      ## out at the same time regardless of the syspref.
+      ## also, stated explicitly via requeueReserve
+      ## FIXME: retain request type: bib- or item-level request. -hQ
+	   # elsif ($restype eq 'Waiting') {
+      elsif ( ($howReserve ~~ 'requeue')
+           || ($restype eq 'Waiting' 
+               && !C4::Context->preference('reservesNeedConfirmationOnCheckout')) ) {
+		   # The item is on reserve and waiting, but has been
+			# reserved by some other patron: re-enqueue as bib-level hold
+         ModReserve(1,$res->{'biblionumber'},
+                      $res->{'borrowernumber'},
+                      $res->{'branchcode'},
+                      undef,           #$res->{'itemnumber'},
+                      $res->{'reservenumber'}
+         );
+	   }
+      ## if reservesNeedConfirmationOnCheckout is off, we don't cancel.
+      ## we only cancel if it's explicitly passed in
+		#elsif ( $restype eq "Reserved" ) {
+      elsif ($howReserve ~~ 'cancel') {
+		   # The item is reserved by someone else.
+         C4::Reserves::CancelReserve($res->{'reservenumber'});
+      }
+
+      ## sanity check: blindly remove from tmp_holdsqueue
+      $sth = $dbh->prepare('DELETE FROM tmp_holdsqueue WHERE itemnumber=?');
+      $sth->execute($$item{itemnumber});
+
+      ; # C-style fallthrough to last RESERVE
+   }
+
+   ISSUE: {
+      last ISSUE if $isRenewal;
+      ## Starting process for transfer job (checking transfert 
+      ## and validate it if we have one)
+      my ($datesent) = GetTransfers($item->{'itemnumber'});
+      if ($datesent) {
+         # updating line of branchtranfert to finish it, and changing the to branch value, implement a comment for visibility of this case (maybe for stats ....)
+         $sth = $dbh->prepare(
                     "UPDATE branchtransfers 
                         SET datearrived = now(),
                         tobranch = ?,
                         comments = 'Forced branchtransfer'
                     WHERE itemnumber= ? AND datearrived IS NULL"
-                    );
-                $sth->execute(C4::Context->userenv->{'branch'},$item->{'itemnumber'});
-            }
+         );
+         $sth->execute(C4::Context->userenv->{'branch'},$item->{'itemnumber'});
+      }
 
-        # Record in the database the fact that the book was issued.
-        my $sth =
-          $dbh->prepare(
+      # Record in the database the fact that the book was issued.
+      $sth = $dbh->prepare(
                 "INSERT INTO issues 
                     (borrowernumber, itemnumber,issuedate, date_due, branchcode)
                 VALUES (?,?,?,?,?)"
-          );
-        unless ($datedue) {
-            my $itype = ( C4::Context->preference('item-level_itypes') ) ? $biblio->{'itype'} : $biblio->{'itemtype'};
-            my $loanlength = GetLoanLength( $borrower->{'categorycode'}, $itype, $branch );
-            $datedue = CalcDateDue( C4::Dates->new( $issuedate, 'iso' ), $loanlength, $branch, $borrower );
+      );
+      $sth->execute(
+         $borrower->{'borrowernumber'},      # borrowernumber
+         $item->{'itemnumber'},              # itemnumber
+         $issuedate,                         # issuedate
+         $datedueObj->output('iso'),         # date_due
+         C4::Context->userenv->{'branch'}    # branchcode
+      );
+      $sth->finish;
+      if ( C4::Context->preference('ReturnToShelvingCart') ) { ## ReturnToShelvingCart is on, anything issued should be taken off the cart.
+         CartToShelf( $item->{'itemnumber'} );
+      }
+      $item->{'issues'}++;
+      ModItem({ issues           => $item->{'issues'},
+                holdingbranch    => C4::Context->userenv->{'branch'},
+                itemlost         => 0,
+                paidfor          => '',
+                datelastborrowed => C4::Dates->new()->output('iso'),
+                onloan           => $datedueObj->output('iso'),
+         }, $item->{'biblionumber'}, $item->{'itemnumber'}
+      );
 
-        }
-        $sth->execute(
-            $borrower->{'borrowernumber'},      # borrowernumber
-            $item->{'itemnumber'},              # itemnumber
-            $issuedate,                         # issuedate
-            $datedue->output('iso'),            # date_due
-            C4::Context->userenv->{'branch'}    # branchcode
-        );
-        $sth->finish;
-        if ( C4::Context->preference('ReturnToShelvingCart') ) { ## ReturnToShelvingCart is on, anything issued should be taken off the cart.
-          CartToShelf( $item->{'itemnumber'} );
-        }
-        $item->{'issues'}++;
-        ModItem({ issues           => $item->{'issues'},
-                  holdingbranch    => C4::Context->userenv->{'branch'},
-                  itemlost         => 0,
-                  paidfor          => '',
-                  datelastborrowed => C4::Dates->new()->output('iso'),
-                  onloan           => $datedue->output('iso'),
-                }, $item->{'biblionumber'}, $item->{'itemnumber'});
-        ModDateLastSeen( $item->{'itemnumber'} );
-
-        # If it costs to borrow this book, charge it to the patron's account.
-        my ( $charge, $itemtype ) = GetIssuingCharges(
+      ## If it costs to borrow this book, charge it to the patron's account.
+      ## FIXME: might also be true of renewals -hQ
+      my ( $charge, $itemtype ) = GetIssuingCharges(
+         $item->{'itemnumber'},
+         $borrower->{'borrowernumber'}
+      );
+      if ( $charge > 0 ) {
+         AddIssuingCharge(
             $item->{'itemnumber'},
-            $borrower->{'borrowernumber'}
-        );
-        if ( $charge > 0 ) {
-            AddIssuingCharge(
-                $item->{'itemnumber'},
-                $borrower->{'borrowernumber'}, $charge
-            );
-            $item->{'charge'} = $charge;
-        }
+            $borrower->{'borrowernumber'}, $charge
+         );
+         $item->{'charge'} = $charge;
+      }
+      # Record the fact that this book was issued
+      &UpdateStats(
+         C4::Context->userenv->{'branch'},
+         'issue', $charge,
+         ($sipmode ? "SIP-$sipmode" : ''), $item->{'itemnumber'},
+         $item->{'itype'}, $borrower->{'borrowernumber'}
+      );
+      ; # last ISSUE
+   }
+ 
+   # Send a checkout slip.
+   my $circulation_alert = 'C4::ItemCirculationAlertPreference';
+   my %conditions = (
+      branchcode   => $branch,
+      categorycode => $borrower->{categorycode},
+      item_type    => $item->{itype},
+      notification => 'CHECKOUT',
+   );
+   if ($circulation_alert->is_enabled_for(\%conditions)) {
+      SendCirculationAlert({
+         type     => 'CHECKOUT',
+         item     => $item,
+         borrower => $borrower,
+         branch   => $branch,
+      });
+   }
 
-        # Record the fact that this book was issued.
-        &UpdateStats(
-            C4::Context->userenv->{'branch'},
-            'issue', $charge,
-            ($sipmode ? "SIP-$sipmode" : ''), $item->{'itemnumber'},
-            $item->{'itype'}, $borrower->{'borrowernumber'}
-        );
+   ModDateLastSeen( $item->{'itemnumber'} );
+   logaction("CIRCULATION", "ISSUE", $borrower->{'borrowernumber'}, $biblio->{'biblionumber'})
+      if C4::Context->preference("IssueLog");
 
-        # Send a checkout slip.
-        my $circulation_alert = 'C4::ItemCirculationAlertPreference';
-        my %conditions = (
-            branchcode   => $branch,
-            categorycode => $borrower->{categorycode},
-            item_type    => $item->{itype},
-            notification => 'CHECKOUT',
-        );
-        if ($circulation_alert->is_enabled_for(\%conditions)) {
-            SendCirculationAlert({
-                type     => 'CHECKOUT',
-                item     => $item,
-                borrower => $borrower,
-                branch   => $branch,
-            });
-        }
-    }
-
-    logaction("CIRCULATION", "ISSUE", $borrower->{'borrowernumber'}, $biblio->{'biblionumber'})
-        if C4::Context->preference("IssueLog");
-
-    return $datedue;	# not necessarily the same as when it came in!
-  }
-  return;
+   return $datedueObj;	# not necessarily the same as when it came in!
 }
 
 
@@ -2068,10 +2104,10 @@ sub _GetCircControlBranch {
         $branch=$borrower->{branchcode};
     } else {
         my $branchfield = C4::Context->preference('HomeOrHoldingBranch') || 'homebranch';
-        $branch = $item->{$branchfield};
+        $branch = $item->{$branchfield} // '';
         # default to item home branch if holdingbranch is used
         # and is not defined
-        if (!defined($branch) && $branchfield eq 'holdingbranch') {
+        if (!$branch && $branchfield eq 'holdingbranch') {
             $branch = $item->{homebranch};
         }
     }

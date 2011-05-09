@@ -68,7 +68,11 @@ sub set_overdue_item_lost : Test( 13 ) {
     is( keys %$issuingimpossible, 0, 'issuing is not impossible' );
     is( keys %$needsconfirmation, 0, 'issuing needs no confirmation' );
 
-    my $issue_due_date = C4::Circulation::AddIssue( $borrower, $item->{'barcode'}, $duedate );
+    my $issue_due_date = C4::Circulation::AddIssue(
+      borrower   => $borrower, 
+      barcode    => $item->{'barcode'}, 
+      datedueObj => $duedate 
+    );
     ok( $issue_due_date, 'due date' );
     is( $issue_due_date, $duedate, 'AddIssue returned the same date we passed to it' );
     

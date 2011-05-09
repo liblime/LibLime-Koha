@@ -244,7 +244,7 @@ function refocus(calendar) {
                 <select name="type" id="type" onchange="this.form.borrower_message.value=this.options[this.selectedIndex].value;">
                     <option value="">Select Note</option>
                     <!-- TMPL_LOOP NAME="canned_bor_notes_loop" -->
-                    <option value="<!-- TMPL_VAR NAME="lib" -->"><!--TMPL_VAR NAME="lib" --></option>
+                    <option value="<!-- TMPL_VAR NAME="lib" -->"><!-- TMPL_VAR NAME="lib" --></option>
                     <!-- /TMPL_LOOP -->
                 </select>
         </li>
@@ -278,7 +278,6 @@ function refocus(calendar) {
 <!-- TMPL_IF NAME="RENEW_ISSUE" -->
     <li>Item is currently checked out to this patron.  Renew?</li>
 <!-- /TMPL_IF -->
-
 <!-- TMPL_IF NAME="RESERVE_WAITING" -->
     <li>Item is consigned for <!-- TMPL_VAR NAME="RESERVE_WAITING" --></li>
 <!-- /TMPL_IF -->
@@ -318,37 +317,37 @@ Checkout anyway?<br>
 <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
 <input type=hidden name="qbarcode" value="<!-- TMPL_VAR NAME="qbarcode" -->">
 
-   <!-- TMPL_IF NAME="RESERVE_WAITING" -->
+   <!-- TMPL_IF EXPR="RESERVED or RESERVE_WAITING" -->
       <!-- TMPL_IF NAME="DisableHoldsIssueOverrideUnlessAuthorised" -->
+      <TMPL_UNLESS NAME="CAN_user_superlibrarian">
     <p>
     <label><strong>Superlibrarian Authorization Required</strong></label>
+    <TMPL_IF NAME="badauth"><br><span class=error>Invalid authorization username/password. Try again.</span></TMPL_IF>
     </p><p>
-    <label for="auth_username">Username:</label>
-    <input type="text" id="auth_username" name="auth_username" />
-    <label for="auth_password">Password:</label>
-    <input type="password" id="auth_password" name="auth_password" />
+    <label for="auth_username">Username:
+    <input type="text" id="auth_username" name="auth_username" /><br></label>
+    <label for="auth_password">Password:
+    <input type="password" id="auth_password" name="auth_password" /></label>
     </p>
+      </TMPL_UNLESS>
       <!-- /TMPL_IF -->
    <!-- /TMPL_IF -->
 
-   <!-- TMPL_IF NAME="RESERVED" -->
-    <p>
-    <input type="checkbox" id="cancelreserve" name="cancelreserve" value="1" />
-    <label for="cancelreserve">Cancel Reserve</label>
-    </p>
-   <!-- /TMPL_IF -->
-
-   <!-- TMPL_IF NAME="RESERVE_WAITING" -->
-    <p>
-    <input type="checkbox" id="cancelreserve" name="cancelreserve" value="1" />
-    <label for="cancelreserve">Cancel Reserve</label>
-    </p>
+   <!-- TMPL_IF EXPR="RESERVED or RESERVE_WAITING" -->
+    <table border=0 cellspacing=0 cellpadding=4>
+    <tr><td><input type="radio" id="howhandleReserve" name="howhandleReserve" value="requeue" 
+      <TMPL_IF EXPR="howhandleReserve eq 'requeue'">checked</TMPL_IF> /><b>Requeue</b>: Send reserve back to top
+     of title's <a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<TMPL_VAR NAME="biblionumber">">Existing Holds</a> list</td></tr>
+    <tr><td><input type="radio" id="howhandleReserve" name="howhandleReserve" value="cancel" 
+      <TMPL_IF EXPR="howhandleReserve ne 'requeue'">checked</TMPL_IF> /><b>Cancel</b> Reserve
+    </td></tr>
+    </table>
    <!-- /TMPL_IF -->
 
     <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME="barcode" -->" />
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
     <input type="hidden" name="issueconfirmed" value="1" />
-    <!-- TMPL_IF NAME="RESERVE_WAITING" --><input type="hidden" name="reserve_confirmed" value="1" /><!-- /TMPL_IF -->
+    <!-- TMPL_IF EXPR="RESERVED or RESERVE_WAITING" --><input type="hidden" name="reserve_confirmed" value="1" /><!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="DEBT" --><input type="hidden" name="debt_confirmed" value="1" /><!-- /TMPL_IF -->
 
     <input type="hidden" name="charges_overridden" value="<!-- TMPL_VAR NAME="charges_overridden" -->" />
@@ -376,7 +375,7 @@ Checkout anyway?<br>
 
         <!-- TMPL_IF NAME="IMPOSSIBLE" -->
            <!-- TMPL_IF NAME="soundon" -->
-        <audio src="/intranet-tmpl/prog/sound/critical.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
+            <audio src="/intranet-tmpl/prog/sound/critical.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
            <!-- /TMPL_IF -->        
 
 <div class="yui-g">
@@ -403,7 +402,7 @@ Checkout anyway?<br>
                 <input type=hidden name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->">
                 <input type=hidden name="branch" value="<!-- TMPL_VAR NAME="branch" -->">
                 <input type="submit" name="fastadd1" value="Fast Bib Add">
-                <!--TMPL_IF NAME="duedatespec" -->
+                <!-- TMPL_IF NAME="duedatespec" -->
                 <input type=hidden name="stickyduedate" value="<!-- TMPL_VAR NAME="stickyduedate" -->">
                 <!-- /TMPL_IF -->
                 </form>
@@ -463,7 +462,7 @@ Checkout anyway?<br>
       <!-- TMPL_IF NAME="soundon" -->
     <audio src="/intranet-tmpl/prog/sound/beep.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
       <!-- /TMPL_IF -->
-   <!--/TMPL_IF --> <!-- /impossible -->
+<!-- eof impossible --><!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="issued" -->
 <p>Item Checked out</p>
@@ -489,12 +488,12 @@ Checkout anyway?<br>
 </fieldset>
 </form>
 <!-- TMPL_ELSE --> <!-- CGIselectborrower -->
-   <!-- TMPL_UNLESS NAME="borrowernumber">
+   <TMPL_UNLESS NAME="borrowernumber">
       <!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
       <h4>
       No patron matched <span class="ex"><!-- TMPL_VAR name="findborrower" --></span>
       </h4>
-   </TMPL_IF>
+   </TMPL_UNLESS>
 <!-- /TMPL_IF -->
 
 <!-- BARCODE ENTRY -->
@@ -502,7 +501,7 @@ Checkout anyway?<br>
 <TMPL_IF NAME="borrowernumber">
    <TMPL_UNLESS NAME="cardnumber">
    No patron with borrowernumber=<TMPL_VAR NAME="borrowernumber">
-<TMPL_ELSE>
+   <TMPL_ELSE>
 <div class="yui-g">
 <!-- TMPL_UNLESS NAME="noissues" -->
    <!-- TMPL_IF NAME="flagged" -->
@@ -719,24 +718,24 @@ Checkout anyway?<br>
 	<div id="messages" class="circmessage">
 		<h4>Messages:</h4>
 		<ul>
-			<!--TMPL_LOOP NAME="lib_messages_loop" -->
+			<!-- TMPL_LOOP NAME="lib_messages_loop" -->
 				<li>
 					<span class="circ-hlt">
-						<!--TMPL_VAR NAME="message_date_formatted"-->
-						<!--TMPL_VAR NAME="branchcode"-->
-						<i>"<!--TMPL_VAR NAME="message"-->"</i>
+						<!-- TMPL_VAR NAME="message_date_formatted" -->
+						<!-- TMPL_VAR NAME="branchcode" -->
+						<i>"<!-- TMPL_VAR NAME="message" -->"</i>
 					</span>
 					<!-- TMPL_IF NAME="can_delete" -->
-						<a href="/cgi-bin/koha/circ/del_message.pl?message_id=<!--TMPL_VAR NAME="message_id" -->&amp;borrowernumber=<!--TMPL_VAR NAME="borrowernumber" -->">[Delete]</a>
+						<a href="/cgi-bin/koha/circ/del_message.pl?message_id=<!-- TMPL_VAR NAME="message_id" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">[Delete]</a>
 					<!-- TMPL_ELSE -->
 						<!-- TMPL_IF NAME="all_messages_del" -->
-							<a href="/cgi-bin/koha/circ/del_message.pl?message_id=<!--TMPL_VAR NAME="message_id" -->&amp;borrowernumber=<!--TMPL_VAR NAME="borrowernumber" -->">[Delete]</a>
+							<a href="/cgi-bin/koha/circ/del_message.pl?message_id=<!-- TMPL_VAR NAME="message_id" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">[Delete]</a>
 						<!-- /TMPL_IF -->
 					<!-- /TMPL_IF -->
 				</li>
 			<!-- /TMPL_LOOP -->
-			<!--TMPL_LOOP NAME="bor_messages_loop" -->
-				<li><span class=""><!--TMPL_VAR NAME="message_date_formatted"--> <!--TMPL_VAR NAME="branchcode"--> <i>"<!--TMPL_VAR NAME="message"-->"</i></span> <!-- TMPL_IF NAME="can_delete" --><a href="/cgi-bin/koha/circ/del_message.pl?message_id=<!--TMPL_VAR NAME="message_id" -->&amp;borrowernumber=<!--TMPL_VAR NAME="borrowernumber" -->">[Delete]</a><!-- /TMPL_IF --></li>
+			<!-- TMPL_LOOP NAME="bor_messages_loop" -->
+				<li><span class=""><!-- TMPL_VAR NAME="message_date_formatted" --> <!-- TMPL_VAR NAME="branchcode" --> <i>"<!-- TMPL_VAR NAME="message" -->"</i></span> <!-- TMPL_IF NAME="can_delete" --><a href="/cgi-bin/koha/circ/del_message.pl?message_id=<!-- TMPL_VAR NAME="message_id" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">[Delete]</a><!-- /TMPL_IF --></li>
 			<!-- /TMPL_LOOP -->
 
 		</ul>
@@ -747,10 +746,12 @@ Checkout anyway?<br>
    <TMPL_IF NAME="lostitems">
    <div id="lostitems" class="circlostitems">
       <h4><span class="circ-hlt">Lost Items:</span> 
-      <TMPL_IF EXPR="numlostitems > 5">
-      <span style="font-size:10pt;font-weight:normal;"><a 
-      href="/cgi-bin/koha/members/lost_items.pl?borrowernumber=<TMPL_VAR NAME="borrowernumber">">View all 
-      <TMPL_VAR NAME="numlostitems"> lost items</a></span>
+      <TMPL_IF NAME="numlostitems">
+         <TMPL_IF EXPR="numlostitems gt 5">
+         <span style="font-size:10pt;font-weight:normal;"><a 
+         href="/cgi-bin/koha/members/lost_items.pl?borrowernumber=<TMPL_VAR NAME="borrowernumber">">View all 
+         <TMPL_VAR NAME="numlostitems"> lost items</a></span>
+         </TMPL_IF>
       </TMPL_IF>
       </h4>
       <table border=0 cellspacing=0 cellpadding=0>
@@ -783,6 +784,8 @@ Checkout anyway?<br>
 
 </div>
 </div>
+<!-- eof cardnumber --></TMPL_UNLESS>
+<!-- eof borrowernumber --></TMPL_IF>
 <!-- TMPL_IF NAME="cardnumber" --><div class="yui-b">
 <!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
 </div><!-- /TMPL_IF -->

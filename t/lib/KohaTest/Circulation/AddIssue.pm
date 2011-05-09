@@ -58,7 +58,7 @@ sub basic_usage : Test( 13 ) {
     $dbh->do("UPDATE systempreferences SET value = ? WHERE variable = 'IssuingInProcess'", {}, $orig_issuing_in_process);
     C4::Context->clear_syspref_cache(); # FIXME not needed after a syspref mutator is written
 
-    my $datedue = C4::Circulation::AddIssue( $borrower, $barcode );
+    my $datedue = C4::Circulation::AddIssue( borrower=>$borrower, barcode=>$barcode );
     ok( $datedue, "the item has been issued and it is due: $datedue" );
     
     my $after_issues = C4::Circulation::GetItemIssue( $self->{'items'}[0]{'itemnumber'} );
