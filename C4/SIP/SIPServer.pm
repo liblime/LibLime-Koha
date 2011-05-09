@@ -112,7 +112,12 @@ sub process_request {
     ($port, $sockaddr) = sockaddr_in($sockname);
     $sockaddr = inet_ntoa($sockaddr);
     $proto = $self->{server}->{client}->NS_proto();
-    $ENV{REMOTE_ADDR} = $sockaddr; # to satisfy C4::Auth::IsIpInLibrary()
+
+    my $peer_sockname = getpeername(STDIN);
+    my ($peer_port, $peer_sockaddr) = sockaddr_in($peer_sockname);
+    $peer_sockaddr = inet_ntoa($peer_sockaddr);
+    $ENV{REMOTE_ADDR} = $peer_sockaddr; # to satisfy C4::Auth::IsIpInLibrary()
+    syslog('LOG_DEBUG', 'process_request: connection from: %s:%s:%s', $proto, $peer_sockaddr, $peer_port);
 
     $self->{service} = $config->find_service($sockaddr, $port, $proto);
 
