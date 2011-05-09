@@ -112,9 +112,11 @@ sub new {
     # FIXME: populate fine_items recall_items
     my @unavail_holds = GetReservesFromBorrowernumber($kp->{borrowernumber},'U');
     foreach my $uh (@unavail_holds) {
-      my @items = GetItemsInfo($uh->{biblionumber});
-      $uh->{itemnumber} = $items[0]->{itemnumber} if (!defined($uh->{itemnumber}));
-      push @{ $ilspatron{unavail_holds} }, $uh;
+        if (!defined $uh->{itemnumber}) {
+            my $itemnumbers = C4::Items::get_itemnumbers_of($uh->{biblionumber});
+            $uh->{itemnumber} = $itemnumbers->{$uh->{biblionumber}}[0];
+        }
+        push @{ $ilspatron{unavail_holds} }, $uh;
     }
     $ilspatron{items} = GetPendingIssues($kp->{borrowernumber});
     $self = \%ilspatron;
