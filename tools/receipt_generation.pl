@@ -140,7 +140,7 @@ sub _replace {
             $value = C4::Dates::format_date($value);
         }
 
-        $content =~ s/<<$key>>/$value/;
+        $content =~ s/<<$key>>/$value/g;
     }
 
     return $content;
@@ -162,7 +162,7 @@ sub _replace_loop {
                 $value = C4::Dates::format_date($value);
             }
 
-            $c =~ s/<<$key>>/$value/;
+            $c =~ s/<<$key>>/$value/g;
         }
         $new_content_loop .= $c;
     }
