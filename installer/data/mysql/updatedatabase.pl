@@ -4661,6 +4661,12 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Minor version update to $DBversion )\n";
 }
 
+$DBversion = '4.07.00.000';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Minor version update to $DBversion )\n";
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
