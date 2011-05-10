@@ -11,6 +11,7 @@ use C4::Items;
 use C4::AuthoritiesMarc;
 use Business::ISBN;
 use Unicode::Normalize;
+use Try::Tiny;
 
 # 
 # script that checks zebradir structure & create directories & mandatory files if needed
@@ -313,11 +314,13 @@ EXPORT_RECORD:
             # even if the MARC::Record object was successfully created, so we add an eval.
             if($as_xml){
                 my $marcxml;
-                eval { $marcxml = $marc->as_xml_record(); };
-                if ($@) {
-                    warn "Failure in MARC::File::XML.  Skipping record";
-                    next EXPORT_RECORD;
+                try {
+                    $marcxml = $marc->as_xml_record();
                 }
+                catch {
+                    warn "Failure in MARC::File::XML. Skipping record $record_number: $_";
+                    next EXPORT_RECORD;
+                };
                 print OUT NFC($marc->as_xml_record());
             } else {
                 print OUT $marc->as_usmarc();
@@ -349,8 +352,13 @@ sub export_marc_records_from_list {
             # strung together with no single root element.  zebraidx doesn't seem
             # to care, though, at least if you're using the GRS-1 filter.  It does
             # care if you're using the DOM filter, which requires valid XML file(s).
-            print OUT ($as_xml) ? $marc->as_xml_record() : $marc->as_usmarc();
-            $num_exported++;
+            try {
+                print OUT ($as_xml) ? $marc->as_xml_record() : $marc->as_usmarc();
+                $num_exported++;
+            }
+            catch {
+                warn "Unable to output record $record_number: $_";
+            };
         }
     }
     print "\nRecords exported: $num_exported\n" if ( $verbose_logging );
@@ -427,21 +435,22 @@ sub get_raw_marc_record {
                         # trying to process a record update
             }
         } else {
-            eval { $marc = GetMarcWithItems($record_number); };
-            if ($@) {
-                # here we do warn since catching an exception
-                # means that the bib was found but failed
-                # to be parsed
+            try {
+                $marc = GetMarcWithItems($record_number);
+            }
+            catch {
                 warn "error retrieving biblio $record_number : $@";
                 return;
-            }
+            };
         }
     } else {
-        eval { $marc = GetAuthority($record_number); };
-        if ($@) {
-            warn "error retrieving authority $record_number";
-            return;
+        try {
+            $marc = GetAuthority($record_number);
         }
+        catch {
+            warn "error retrieving authority $record_number: $_";
+            return;
+        };
     }
     return $marc;
 }
