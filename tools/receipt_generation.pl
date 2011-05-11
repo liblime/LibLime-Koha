@@ -120,9 +120,9 @@ my $branch_data = _get_branch_data($branchcode);
 $content = _replace( $content, $branch_data );
 
 ## Fill in non-looped data about borrower
-if ( $borrowernumber ) {
-  my $borrower_data = _get_borrower_data($borrowernumber);
-  $content = _replace( $content, $borrower_data );
+if ($borrowernumber) {
+    my $borrower_data = _get_borrower_data($borrowernumber);
+    $content = _replace( $content, $borrower_data );
 }
 
 $template->param( output => $content );
@@ -197,7 +197,7 @@ sub _get_borrower_data {
 
     my $columns = MuxColumnsForSQL( GetTableColumnsFor('borrowers') );
 
-    my $dbh    = C4::Context->dbh;
+    my $dbh      = C4::Context->dbh;
     my $borrower = $dbh->selectrow_hashref(
         "SELECT $columns FROM borrowers WHERE borrowernumber = ?",
         undef, $borrowernumber );
@@ -272,15 +272,16 @@ sub _get_hold_data {
     ";
 
     return C4::Context->dbh->selectrow_hashref( $sql, undef, $reservenumber );
+}
 
-    sub _get_fines_data {
-        my ( $borrowernumber, $when ) = @_;
+sub _get_fines_data {
+    my ( $borrowernumber, $when ) = @_;
 
-        my @tables =
-          ( 'biblio', 'biblioitems', 'items', 'borrowers', 'accountlines' );
-        my $columns = MuxColumnsForSQL( GetTableColumnsFor(@tables) );
+    my @tables =
+      ( 'biblio', 'biblioitems', 'items', 'borrowers', 'accountlines' );
+    my $columns = MuxColumnsForSQL( GetTableColumnsFor(@tables) );
 
-        my $sql = "
+    my $sql = "
         SELECT $columns FROM accountlines
         LEFT JOIN borrowers ON borrowers.borrowernumber = accountlines.borrowernumber
         LEFT JOIN items ON items.itemnumber = accountlines.itemnumber
@@ -289,23 +290,31 @@ sub _get_hold_data {
         WHERE accountlines.borrowernumber = ?
     ";
 
-        $sql .= " AND DATE(accountlines.timestamp) = CURDATE()"
-          if ( $when eq 'today' );
-        $sql .= " AND DATE(accountlines.timestamp) < CURDATE()"
-          if ( $when eq 'previous' );
+    $sql .= " AND DATE(accountlines.timestamp) = CURDATE()"
+      if ( $when eq 'today' );
+    $sql .= " AND DATE(accountlines.timestamp) < CURDATE()"
+      if ( $when eq 'previous' );
 
-        $sql .= "ORDER BY accountlines.timestamp DESC";
+    $sql .= "ORDER BY accountlines.timestamp DESC";
 
-        return C4::Context->dbh->selectall_arrayref( $sql, { Slice => {} },
-            $borrowernumber );
+    my $data = C4::Context->dbh->selectall_arrayref( $sql, { Slice => {} },
+        $borrowernumber );
+
+    foreach my $d (@$data) {
+        ## Format Currency Fields
+        $d->{'accountlines.amount'} =
+          sprintf( "%.2f", $d->{'accountlines.amount'} );
+        $d->{'accountlines.amountoutstanding'} =
+          sprintf( "%.2f", $d->{'accountlines.amountoutstanding'} );
     }
 
-    sub _is_date {
-        ## Returns true if $value begins with YYYY-MM-DD
-        my ($value) = @_;
-        return 0 unless $value;
-        return ( $value =~ /^(\d{4})(\-)(\d{1,2})\2(\d{1,2})/ );
-    }
+    return $data;
+}
 
+sub _is_date {
+    ## Returns true if $value begins with YYYY-MM-DD
+    my ($value) = @_;
+    return 0 unless $value;
+    return ( $value =~ /^(\d{4})(\-)(\d{1,2})\2(\d{1,2})/ );
 }
 
