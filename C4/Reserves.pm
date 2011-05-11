@@ -560,6 +560,8 @@ sub GetHoldsQueueItems
    my $total = ($sth->fetchrow_array)[0];
 
    my @bind_params = ();
+   ## FIXME: schema needs to change.  tmp_holdsqueue should use foreign keys
+   ## here, use items.itemcallnumber instead of tmp_holdsqueue.itemcallnumber
 	my $query = q|SELECT 
          tmp_holdsqueue.*,
          reserves.found, 
@@ -569,6 +571,7 @@ sub GetHoldsQueueItems
          items.enumchron, 
          items.cn_sort, 
          items.copynumber,
+         items.itemcallnumber as icallnumber,
          biblioitems.publishercode,
          biblio.copyrightdate,
          biblioitems.publicationyear,
@@ -587,6 +590,7 @@ sub GetHoldsQueueItems
       push @bind_params, $g{branch};
    }
    $g{orderby} ||= 'tmp_holdsqueue.reservedate';
+   $g{orderby} =~ s/items\.itemcallnumber/icallnumber/;
    $query .= " ORDER BY $g{orderby}";
    if ($g{limit}) {
       $g{offset} ||= 0;
