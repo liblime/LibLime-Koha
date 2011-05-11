@@ -798,6 +798,14 @@ sub CreateTALKINGtechMESSAGE {
   my $filename = C4::Context->preference('TalkingTechFileName');
   open(MSG,">>$filename") or warn "Can't open $filename";
   foreach my $item (@$items) {
+    my $branch = C4::Branch::GetBranchDetail($item->{holdingbranch});
+    my $temppath = C4::Context->preference('TalkingTechMessagePath')
+                   // $ENV{TTMESSAGE}
+                   // "/tmp";
+    $temppath .= "/";
+    my ($tmpfh,$tmpname);
+    eval { ($tmpfh,$tmpname) = tempfile( DIR => $temppath, SUFFIX => '-' . $branch->{branchcode} . '.ttech' ) };
+    if ($@) { warn "Error trying to create TalkingTech temp file : $@"; }
     # Reformat due date field for i-tiva, if applicable
     if (defined($item->{onloan})) {
       my ($yyyy,$mm,$dd) = split(/-/,$item->{onloan});
@@ -817,11 +825,15 @@ sub CreateTALKINGtechMESSAGE {
     $borrower->{firstname},$borrower->{surname},$borrower->{phone},
     $borrower->{email},$item->{holdingbranch},$branch->{branchname},
     $item->{barcode},$due_date,$item->{title};
-    printf $tmpfh "\"V\",\"EN\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"\",\"%s\",\"%12.12s\",\"%s\",\"%s\",\"%s\",\"\"\r\n",
-    $code,$notelevel,$borrower->{cardnumber},$borrower->{title},
-    $borrower->{firstname},$borrower->{surname},$borrower->{phone},
-    $borrower->{email},$item->{holdingbranch},$branch->{branchname},
-    $item->{barcode},$due_date,$item->{title};
+    if (defined $tmpfh) {
+      printf $tmpfh "\"V\",\"EN\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"\",\"%s\",\"%12.12s\",\"%s\",\"%s\",\"%s\",\"\"\r\n",
+      $code,$notelevel,$borrower->{cardnumber},$borrower->{title},
+      $borrower->{firstname},$borrower->{surname},$borrower->{phone},
+      $borrower->{email},$item->{holdingbranch},$branch->{branchname},
+      $item->{barcode},$due_date,$item->{title};
+      chmod(0644,$tmpfh);
+      close($tmpfh);
+    }
   }
   close(MSG);
   chmod(0666,$tmpfh);
