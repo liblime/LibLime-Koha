@@ -1,5 +1,5 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
-<title>Koha &rsaquo; Reports &rsaquo; Holds Shelf Action</title>
+<title>Koha &rsaquo; <TMPL_IF NAME="CAN_user_reports">Reports<TMPL_ELSE>Circulation</TMPL_IF> &rsaquo; Holds Shelf Action</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
 <script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
@@ -17,7 +17,12 @@ $(document).ready(function() {
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="cat-search.inc" -->
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; <a href="/cgi-bin/koha/reports/holdsaction.pl">Holds Shelf Action</a></div>
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; 
+<TMPL_IF NAME="CAN_user_reports">
+<a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a>
+<TMPL_ELSE>
+<a href="/cgi-bin/koha/circ/circulation-home.pl">Circuation</a>
+</TMPL_IF> &rsaquo; <a href="/cgi-bin/koha/reports/holdsaction.pl">Holds Shelf Action</a></div>
 
 <div id="doc3" class="yui-t2">
 
@@ -121,8 +126,10 @@ Cannot proceed.
 
 </div>
 </div>
+<TMPL_IF NAME="CAN_user_reports">
 <div class="yui-b">
 <!-- TMPL_INCLUDE NAME="reports-menu.inc" -->
 </div>
+</TMPL_IF>
 </div>
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

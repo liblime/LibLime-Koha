@@ -42,7 +42,7 @@ my ($template, $borrowernumber, $cookie) = get_template_and_user(
           query => $cgi,
           type => "intranet",
           authnotrequired => 0,
-          flagsrequired => {circulate => 1},
+          flagsrequired => {reserveforothers => 1},
           debug => 1,
         });
 $template->param(

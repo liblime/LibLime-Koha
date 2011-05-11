@@ -38,7 +38,9 @@
 	<li>    <a href="/cgi-bin/koha/circ/waitingreserves.pl" title="holds waiting for patron pickup">Holds awaiting pickup</a></li>
 	<li>    <a href="/cgi-bin/koha/circ/reserveratios.pl">Hold ratios</a></li>
 	<li>    <a href="/cgi-bin/koha/circ/transferstoreceive.pl" title="transfers to receive at your library">Transfers to receive</a></li>
+   <TMPL_IF EXPR="CAN_user_reserveforothers or CAN_user_reports">
     <li>    <a href="/cgi-bin/koha/reports/holdsaction.pl" title="holds shelf action">Holds shelf action</a></li>
+    </TMPL_IF>
     <li>    <a href="/cgi-bin/koha/reports/cancelledholds.pl" title="cancelled holds">Cancelled holds</a></li>
     <li>    <a href="/cgi-bin/koha/reports/expiredholds.pl" title="expired holds">Expired holds</a></li>
 	<li>    <a href="/cgi-bin/koha/circ/overdue.pl">Overdues</a>
