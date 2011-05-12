@@ -4290,7 +4290,7 @@ $DBversion = '4.03.12.001';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     use C4::Reserves;
 
-    foreach my $reservenumber (@{$dbh->selectcol_arrayref('SELECT reservenumber FROM reserves_suspended')}) {
+    foreach my $reservenumber (@{$dbh->selectcol_arrayref('SELECT reservenumber FROM reserves_suspended') // []}) {
         my $sth;
         my $query;
 
