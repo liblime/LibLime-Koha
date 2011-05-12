@@ -893,8 +893,9 @@
     </xsl:if>
 
     <xsl:if test="$OPACXSLTResultsAvailabilityDisplay='1'">
+        <xsl:if test="marc:datafield[@tag=856]">
         <span class="results_summary">
-			   <span class="label">Availability: </span>
+			   <span class="label">Online Access: </span>
 			        <xsl:choose>
                         <xsl:when test="marc:datafield[@tag=856]">
                             <xsl:for-each select="marc:datafield[@tag=856]">
@@ -946,7 +947,14 @@
                                     </xsl:choose>
                             </xsl:for-each>
                         </xsl:when>
+                                    </xsl:choose>
+        </span>
+        </xsl:if>
 
+
+        <span class="results_summary">
+			   <span class="label">Availability: </span>
+			        <xsl:choose>
 
 				   <xsl:when test="count(key('item-by-status', 'available'))=0 and count(key('item-by-status', 'reference'))=0">No copies available
 				   </xsl:when>
