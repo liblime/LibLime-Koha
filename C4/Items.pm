@@ -740,6 +740,7 @@ sub DelItem {
 #        }
 #    }
 #    &ModBiblioMarc( $record, $biblionumber, $frameworkcode );
+    ModZebra($biblionumber,"specialUpdate","biblioserver");
     logaction("CATALOGUING", "DELETE", $itemnumber, "item") if C4::Context->preference("CataloguingLog");
 }
 
