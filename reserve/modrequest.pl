@@ -1,11 +1,8 @@
 #!/usr/bin/env perl
 
-#script to modify reserves/requests
-#written 2/1/00 by chris@katipo.oc.nz
-#last update 27/1/2000 by chris@katipo.co.nz
-
-
-# Copyright 2000-2002 Katipo Communications
+# script to modify reserves/holds
+#
+# Copyright 2011 PTFS/LibLime
 #
 # This file is part of Koha.
 #
@@ -30,7 +27,7 @@ use C4::Output;
 use C4::Reserves;
 use C4::Auth;
 
-my $query = new CGI;
+my $query = CGI->new();
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {   
         template_name   => "about.tmpl",
@@ -44,7 +41,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 
 my @rank=$query->param('rank_request');
 my @reservenumber=$query->param('reservenumber');
-my @biblionumber=$query->param('biblionumber');
+my $biblionumber=$query->param('biblionumber');
 my @borrower=$query->param('borrowernumber');
 my @branch=$query->param('pickup');
 my @itemnumber=$query->param('itemnumber');
@@ -53,36 +50,25 @@ my $multi_hold = $query->param('multi_hold');
 my $biblionumbers = $query->param('biblionumbers');
 my $count=@rank;
 
-my $CancelBiblioNumber=$query->param('CancelBiblioNumber');
-my $CancelBorrowerNumber=$query->param('CancelBorrowerNumber');
-my $CancelItemnumber=$query->param('CancelItemnumber');
-my $CancelReservenumber=$query->param('CancelReservenumber');
-
-# 2 possibilitys : cancel an item reservation, or modify or cancel the queued list
-
-# 1) cancel an item reservation by function ModReserveCancelAll (in reserves.pm)
-if ($CancelBorrowerNumber) {
-    ModReserveCancelAll($CancelReservenumber, $CancelItemnumber);
-    $biblionumber[0] = $CancelBiblioNumber;
-}
-
-# 2) Cancel or modify the queue list of reserves (without item linked)
-else {
-    for (my $i=0;$i<$count;$i++){
-        undef $itemnumber[$i] unless ($itemnumber[$i]//'') ne '';
-        ModReserve($rank[$i],$biblionumber[$i],$borrower[$i],$branch[$i],$itemnumber[$i],$reservenumber[$i]);
-
-        if ( $rank[$i] ne 'del' && $query->param('suspend_' . $reservenumber[$i] ) ) {
-            my $format = DateTime::Format::Strptime->new(pattern => C4::Dates->DHTMLcalendar());
-            my $resumedate = $format->parse_datetime($query->param('resumedate_' . $reservenumber[$i] ));
-            SuspendReserve( $reservenumber[$i], $resumedate );
-        }
-        elsif ( $rank[$i] ne 'del' ) {
-            ResumeReserve( $reservenumber[$i] );
-        }
-    }
+for (my $i=0;$i<$count;$i++){
+   undef $itemnumber[$i] unless ($itemnumber[$i]//'') ne '';
+   if ($rank[$i] eq 'del') {
+      CancelReserve($reservenumber[$i]);
+   }
+   else {
+      ModReserve($rank[$i],$biblionumber,$borrower[$i],$branch[$i],$itemnumber[$i],$reservenumber[$i]);
+      if ($query->param('suspend_' . $reservenumber[$i])) {
+         my $format = DateTime::Format::Strptime->new(pattern => C4::Dates->DHTMLcalendar());
+         my $resumedate = $format->parse_datetime($query->param('resumedate_' . $reservenumber[$i] ));
+         SuspendReserve( $reservenumber[$i], $resumedate );
+      }
+      else {
+         ResumeReserve( $reservenumber[$i] );
+      }
+   }
 }
 my $from=$query->param('from');
+my $biblionumbers = $query->param('biblionumbers');
 $from ||= q{};
 if ( $from eq 'borrower'){
     print $query->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrower[0]");
@@ -91,9 +77,9 @@ if ( $from eq 'borrower'){
 } else {
      my $url = "/cgi-bin/koha/reserve/request.pl?";
      if ($multi_hold) {
-         $url .= "multi_hold=1&biblionumbers=$biblionumbers";
+         $url .= "multi_hold=1&biblionumber=$biblionumber&biblionumbers=$biblionumbers";
      } else {
-         $url .= "biblionumber=$biblionumber[0]";
+         $url .= "biblionumber=$biblionumber";
      }
      print $query->redirect($url);
 }

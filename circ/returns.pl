@@ -46,7 +46,7 @@ use C4::Branch; # GetBranches GetBranchName
 use C4::Koha;   # FIXME : is it still useful ?
 use C4::ReceiptTemplates;
 
-my $query = new CGI;
+my $query = CGI->new();
 
 if (!C4::Context->userenv){
 	my $sessionID = $query->cookie("CGISESSID");
@@ -227,6 +227,7 @@ my $calendar    = C4::Calendar->new( branchcode => $userenv_branch );
 my $today       = C4::Dates->new();
 my $today_iso   = $today->output('iso');
 my $dropboxdate = $calendar->addDate($today, -1);
+$barcode =~ s/^\s*|\s+//g;
 if ($dotransfer){
 	# An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
 	my $transferitem = $query->param('transferitem');

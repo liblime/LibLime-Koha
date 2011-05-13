@@ -1996,7 +1996,7 @@ sub ModReserveAffect {
         # Grab branch for calendar purposes
         $sth = $dbh->prepare("SELECT branchcode FROM reserves WHERE reservenumber=?");
         $sth->execute($reservenumber);
-        my ($branch) = $sth->fetchrow;
+        my ($branch) = $sth->fetchrow_array;
 
         # Check to see if hold expiration date falls on a closed library day.
         # Note the useDaysMode syspref will need to be set to Calendar for
