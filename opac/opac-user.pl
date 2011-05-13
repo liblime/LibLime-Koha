@@ -200,7 +200,7 @@ for my $branch_hash (sort keys %$branches ) {
 $template->param( branchloop => \@branch_loop );
 
 # now the reserved items....
-my @reserves  = GetReservesFromBorrowernumber( $borrowernumber );
+my @reserves  = GetReservesFromBorrowernumber( $borrowernumber, 'S' );
 foreach my $res (@reserves) {
     $res->{'reservedate'} = format_date( $res->{'reservedate'} );
     $res->{'cancelwaiting'} = 1;

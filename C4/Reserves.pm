@@ -816,6 +816,15 @@ sub GetReservesFromBorrowernumber {
             ORDER BY reservedate
         ");
         $sth->execute($borrowernumber);
+    } elsif ($status ~~ 'S') {
+        $sth = $dbh->prepare("
+            SELECT *
+            FROM   reserves
+            WHERE  borrowernumber=?
+                AND (found <> 'S' OR found IS NULL)
+            ORDER BY reservedate
+        ");
+        $sth->execute($borrowernumber);
     } else {
         $sth = $dbh->prepare("
             SELECT *
