@@ -3584,7 +3584,8 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
       UPDATE letter SET code='HOLD_CANCELLED',name='Hold Cancelled',title='Hold Cancelled' WHERE code='HOLD_CANCELED';
     /);
     $dbh->do(qq/
-      INSERT INTO letter (module,code,name,title,content) VALUES ('reserves','HOLD_EXPIRED','Hold Expired','Hold Expired','The hold on the following item has expired.\r\n\r\n<<biblio.title>>\r\n\r\n');
+      INSERT INTO letter (module,code,name,title,content) VALUES ('reserves','HOLD_EXPIRED','Hold Expired','Hold Expired','The hold on the following item has expired.\r\n\r\n<<biblio.title>>\r\n\r\n'),
+                         ('reserves', 'HOLD_PRINT', 'Hold Available for Pickup (print notice)', 'Hold Available for Pickup at <<branches.branchname>>', '<<branches.branchname>>\n<<branches.branchaddress1>>\n<<branches.branchaddress2>>\n\n\nChange Service Requested\n\n\n\n\n\n\n\n<<borrowers.firstname>> <<borrowers.surname>>\n<<borrowers.address>>\n<<borrowers.city>> <<borrowers.zipcode>>\n\n\n\n\n\n\n\n\n\n\n<<borrowers.firstname>> <<borrowers.surname>>\n<<borrowers.cardnumber>>\n\nYou have a hold available for pickup as of <<reserves.waitingdate>>:\r\n\r\nTitle: <<biblio.title>>\r\nAuthor: <<biblio.author>>\r\nCopy: <<items.copynumber>>\r\n')
     /);
    print "Upate to $DBversion done ( Inserted new message transports and attributes )\n";
    SetVersion ($DBversion);
