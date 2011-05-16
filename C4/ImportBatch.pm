@@ -221,7 +221,8 @@ sub AddBiblioToBatch {
    my $date = C4::Dates->new();
    my $now  = $date->output('iso');
    my($yy,$mm,$dd) = $now =~ /^\d\d(\d\d)\-(\d\d)\-(\d\d)$/;
-   my $f = $marc_record->field('008')->data // '';
+   my $f = '';
+   eval{$f = $marc_record->field('008')->data // ''};
    if ($f =~ /^(\d{6})/) {
       my $wasnum = $1;
       $f =~ s/^($wasnum)/$yy$mm$dd/;
