@@ -1240,6 +1240,7 @@ sub AddIssue {
    }
 
    ModDateLastSeen( $item->{'itemnumber'} );
+   C4::Reserves::RmFromHoldsQueue(itemnumber => $$item{itemnumber});
    logaction("CIRCULATION", "ISSUE", $borrower->{'borrowernumber'}, $biblio->{'biblionumber'})
       if C4::Context->preference("IssueLog");
 

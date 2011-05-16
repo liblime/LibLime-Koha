@@ -153,9 +153,29 @@ sub CleanupQueue
 {
    my $dbh = C4::Context->dbh;
 
+   ## remove cancelled holds
+   my $sth = $dbh->prepare("
+      SELECT tmp_holdsqueue.reservenumber FROM reserves
+      RIGHT JOIN tmp_holdsqueue ON reserves.reservenumber = tmp_holdsqueue.reservenumber
+      WHERE reserves.reservenumber IS NULL
+   ");
+   $sth->execute();
+   while(my($resnum) = $sth->fetchrow_array()) {
+      RmFromHoldsQueue(reservenumber => $resnum);
+   }
+
+   ## remove suspended holds
+   $dbh->do("DELETE FROM tmp_holdsqueue WHERE reservenumber IN(
+      SELECT reservenumber FROM reserves
+      WHERE  found = 'S')");
+
+   ## remove issued items currently checked out
+   $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber IN(
+      SELECT itemnumber FROM issues)');
+   
    ## if reserve has been checked in at holdingbranch,
    ## remove it from tmp_holdsqueue.
-   my $sth = $dbh->prepare("
+   $sth = $dbh->prepare("
          SELECT tmp_holdsqueue.reservenumber
            FROM reserves,tmp_holdsqueue
           WHERE reserves.found IS NOT NULL
@@ -165,10 +185,7 @@ sub CleanupQueue
    ");
    $sth->execute();
    while(my $row = $sth->fetchrow_hashref()) {
-      my $sth2 = $dbh->prepare("
-         DELETE FROM tmp_holdsqueue
-          WHERE reservenumber = ?");
-      $sth2->execute($$row{reservenumber});
+      RmFromHoldsQueue(reservenumber => $$row{reservenumber});
    }
 
    ## race condition: pickup branch changed after previous run of
@@ -218,6 +235,28 @@ sub SaveHoldInQueue
    ) || die $dbh->errstr();
    $sth->execute(values %new) || die $dbh->errstr();
    return 1;
+}
+
+sub RmFromHoldsQueue
+{
+   my %g    = @_;
+   my $sql  = 'DELETE FROM tmp_holdsqueue WHERE ';
+   my @vals = ();
+   if ($g{reservenumber}) {
+      $sql .= 'reservenumber = ?';
+      @vals = ($g{reservenumber});
+   }
+   elsif ($g{itemnumber}) {
+      $sql .= 'itemnumber = ?';
+      @vals = ($g{itemnumber});
+   }
+   elsif (exists $g{reservenumbers} && (ref($g{reservenumbers}) eq 'ARRAY')) {
+      $sql .= sprintf('reservenumber IN(%s)',join(',',map{'?'}@{$g{reservenumbers}}));
+      @vals = @{$g{reservenumbers}};
+   }
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare($sql);
+   return $sth->execute(@vals);
 }
 
 sub DupecheckQueue
@@ -469,20 +508,6 @@ sub _itemfillbib
    return if ($sth->fetchrow_array)[0];
 
    return $item;
-}
-
-# this deletes cancelled holds from the Holds Queue
-sub UnorphanCancelledHolds
-{
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("SELECT tmp_holdsqueue.reservenumber FROM reserves
-      RIGHT JOIN tmp_holdsqueue ON reserves.reservenumber = tmp_holdsqueue.reservenumber
-      WHERE reserves.reservenumber IS NULL");
-   $sth->execute();
-   while(my $row = $sth->fetchrow_hashref()) {
-      my $sth2 = $dbh->prepare("DELETE FROM tmp_holdsqueue WHERE reservenumber = ?");
-      $sth2->execute($$row{reservenumber});
-   }
 }
 
 sub GetReservesForQueue 
@@ -1461,8 +1486,7 @@ sub CancelReserve {
 
     _moveToOldReserves($reservenumber);
     _NormalizePriorities($reserve->{biblionumber});
-
-    $dbh->do('DELETE FROM tmp_holdsqueue WHERE reservenumber = ?', undef, $reservenumber);
+    RmFromHoldsQueue(reservenumber => $reservenumber);
 
     my $moduser    = C4::Context->userenv->{number};
     my $branchcode = C4::Context->userenv->{branch};
@@ -1689,8 +1713,7 @@ sub ModReserveFillCheckout
    return 1 if $coBiblionumber != $$res{biblionumber};
    
    ## this item is no longer available to fill hold requests
-   $sth = $dbh->prepare('DELETE FROM tmp_holdsqueue WHERE itemnumber=?');
-   $sth->execute($coItemnumber);
+   RmFromHoldsQueue(itemnumber => $coItemnumber);
 
    ## patron who is checking out is not the one who placed the hold.
    ## If we get here, overrides were performed.
@@ -1783,9 +1806,7 @@ sub ModReserveFillCheckin
    $sth->execute($$res{reservenumber});
 
    ## delete from Holds Queue
-   $sth = $dbh->prepare('DELETE FROM tmp_holdsqueue
-      WHERE reservenumber = ?');
-   $sth->execute($$res{reservenumber});
+   RmFromHoldsQueue(reservenumber => $$res{reservenumber});
   
    return 1; # return true on success
 }
@@ -1842,9 +1863,7 @@ sub ModReserveTrace
       ## run of build_holds_queue.pl
    }
 
-   $sth = $dbh->prepare("DELETE FROM tmp_holdsqueue
-       WHERE reservenumber = ?");
-   $sth->execute($$res{reservenumber});
+   RmFromHoldsQueue(reservenumber => $$res{reservenumber});
    return 1;
 }
 
@@ -2567,7 +2586,7 @@ sub SuspendReserve {
             WHERE reservenumber = ?
             }, undef, $resumedate, $reservenumber
         );
-
+    RmFromHoldsQueue(reservenumber => $reservenumber);
     _FixPriority( $reservenumber, $reserve->{priority} );
     return;
 }

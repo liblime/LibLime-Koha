@@ -24,7 +24,6 @@ borrowernumber cardnumber reservedate title itemcallnumber holdingbranch pickbra
 notes item_level_request queue_sofar);
 my @branches = C4::Reserves::getBranchesQueueWeight();
 
-C4::Reserves::UnorphanCancelledHolds();
 C4::Reserves::CleanupQueue();
 
 HOLD:
