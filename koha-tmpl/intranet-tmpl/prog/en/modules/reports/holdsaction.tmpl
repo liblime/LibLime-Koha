@@ -46,29 +46,31 @@ Cannot proceed.
     <table id="mytab">
         <thead>
         <tr>
-            <th nowrap align=left><input type=checkbox name="toggleCheck" onclick="toggleCh()" checked>No.</td>
+            <th nowrap align=center><span style="font-size:90%">Remove<br></span><input type=checkbox name="toggleCheck" onclick="toggleCh()" checked><br></td>
             <th>Title</th>
+            <th>Collection Code<br>Call Number</th>
             <th>Name</th>
-            <th>Placed On</th>
-            <th>Waiting Since</th>
             <th>Cancelled</th>
             <th>Expires</th>
-            <th>Library</th>
         </tr>
         </thead>
             <!-- TMPL_LOOP NAME="results" -->
                 <tr>
-                     <td nowrap align=left><input type=checkbox name="lapsed" value="<TMPL_VAR NAME="reservenumber">" 
-                     checked><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->#reserves"><!-- TMPL_VAR NAME="reservenumber" --></a></td>
-                     <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a><b>
+                     <td nowrap align=center><input type=checkbox name="lapsed" value="<TMPL_VAR NAME="reservenumber">" 
+                     checked></td>
+                     <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" --></a> 
+                        <TMPL_IF NAME="marc_245_b"><TMPL_VAR NAME="marc_245_b"></TMPL_IF> 
+                        <TMPL_IF EXPR="marc_245_h or marc_245_n or marc_245_p">
+                           (<TMPL_IF NAME="marc_245_h"><TMPL_VAR NAME="marc_245_h">, </TMPL_IF>
+                            <TMPL_IF NAME="marc_245_n"><TMPL_VAR NAME="marc_245_n">, </TMPL_IF>
+                           <TMPL_VAR NAME="marc_245_p">)
+                        </TMPL_IF><br>
                         <a href="/cgi-bin/koha/catalogue/moredetail.pl?bilbionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a></td>
+                     <td nowrap><TMPL_VAR NAME="ccode"><br><TMPL_VAR NAME="itemcallnumber"></td>
                      <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" -->, 
                         <!-- TMPL_VAR NAME="firstname" --></a></td>
-                     <td nowrap><!-- TMPL_VAR NAME="reservedate" --></td>
-                     <td nowrap><!-- TMPL_VAR NAME="waitingdate" --></td>
                      <td nowrap><!-- TMPL_VAR NAME="cancellationdate" --></td>
                      <td nowrap><!-- TMPL_VAR NAME="expirationdate" --></td>
-                     <td><!-- TMPL_VAR NAME="branchname" --></td>
                 </tr>
             <!-- /TMPL_LOOP -->
     </table>

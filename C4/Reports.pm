@@ -137,42 +137,46 @@ sub HoldsShelf
    my $lim = '';
    my @lims;
    if ($g{branchcode}) { 
-      $lim .= " AND <table>.branchcode = ?"; 
+      $lim .= " AND old_reserves.branchcode = ?"; 
       push @lims, $g{branchcode}; 
    }
   
    my $sql = qq|
-      SELECT <table>.reservenumber,
-             <table>.reservedate,
-             <table>.waitingdate,
-             <table>.cancellationdate,
-             <table>.expirationdate,
-             <table>.biblionumber,             
-             branches.branchname,
+      SELECT old_reserves.reservenumber,
+             old_reserves.reservedate,
+             old_reserves.waitingdate,
+             old_reserves.cancellationdate,
+             old_reserves.expirationdate,
+             old_reserves.biblionumber,
+             old_reserves.itemnumber,
+             items.barcode,
+             items.ccode,
+             items.itemcallnumber,
              borrowers.borrowernumber,
              borrowers.surname,
              borrowers.firstname,
              borrowers.cardnumber,
              biblio.title
-        FROM <table>
-   LEFT JOIN biblio    ON (<table>.biblionumber   = biblio.biblionumber)
-   LEFT JOIN borrowers ON (<table>.borrowernumber = borrowers.borrowernumber)
-   LEFT JOIN branches  ON (<table>.branchcode     = branches.branchcode)
-       WHERE <table>.found = 'W' 
-         AND <table>.expirationdate <= NOW() $lim
+        FROM old_reserves
+   LEFT JOIN biblio    ON (old_reserves.biblionumber   = biblio.biblionumber)
+   LEFT JOIN borrowers ON (old_reserves.borrowernumber = borrowers.borrowernumber)
+   LEFT JOIN items     ON (old_reserves.itemnumber     = items.itemnumber)
+       WHERE old_reserves.found = 'W' 
+         AND old_reserves.expirationdate <= NOW() $lim
+         AND old_reserves.priority >= 0
    |;
-   my $stm1 = my $stm2 = $sql;
-   $stm1    =~ s/<table>/reserves/sg;
-   $stm2    =~ s/<table>/old_reserves/sg;
-   my $sth; my @all;
-   #$sth  = $dbh->prepare($stm1);
-   #$sth->execute(@lims);
-   #while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
-   $stm2 .= ' AND old_reserves.priority >= 0';
-   $sth = $dbh->prepare($stm2);
+   my $sth = $dbh->prepare($sql);
    $sth->execute(@lims);
-   while(my $row = $sth->fetchrow_hashref()) { push @all, $row; }
-   return \@all // [];
+   my @all = ();
+   while(my $row = $sth->fetchrow_hashref()) {
+      if (my $marc = C4::Biblio::GetMarcBiblio($$row{biblionumber})) {
+         foreach(qw(b h n p)) {
+            $$row{"marc_245_$_"} = $marc->subfield('245',$_) // '';
+         }
+      }
+      push @all, $row; 
+   }
+   return wantarray ? @all : \@all;
 }
 
 sub _prepSqlHolds
