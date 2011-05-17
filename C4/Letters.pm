@@ -818,7 +818,6 @@ sub CreateTALKINGtechMESSAGE {
     else {
       $due_date = '';
     }
-    my $branch = C4::Branch::GetBranchDetail($item->{holdingbranch});
     $branch->{branchname} =~ s/Public Library/PL/;
     printf MSG "\"V\",\"EN\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"\",\"%s\",\"%12.12s\",\"%s\",\"%s\",\"%s\",\"\"\r\n",
     $code,$notelevel,$borrower->{cardnumber},$borrower->{title},
