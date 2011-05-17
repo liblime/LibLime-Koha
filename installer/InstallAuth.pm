@@ -264,11 +264,6 @@ sub checkauth {
             C4::Context->_unset_userenv($sessionID);
             $sessionID = undef;
             $userid    = undef;
-            open L, ">>/tmp/sessionlog";
-            my $time = localtime( time() );
-            printf L "%20s from %16s logged out at %30s (manually).\n", $userid,
-              $ip, $time;
-            close L;
         }
     }
     unless ($userid) {
@@ -283,11 +278,6 @@ sub checkauth {
         my ( $return, $cardnumber ) = checkpw( $userid, $password );
         if ($return) {
             $loggedin = 1;
-            open L, ">>/tmp/sessionlog";
-            my $time = localtime( time() );
-            printf L "%20s from %16s logged in  at %30s.\n", $userid,
-              $ENV{'REMOTE_ADDR'}, $time;
-            close L;
             $cookie = $query->cookie( CGISESSID => $sessionID );
             if ( $return == 2 ) {
 
