@@ -301,10 +301,17 @@ sub CalcFine {
     } else {
         # a zero (or null)  chargeperiod means no charge.
     }
-        $amount = $data->{'max_fine'} if ( C4::Context->preference('UseGranularMaxFines') && ( $amount > $data->{'max_fine'} ));
-	$amount = C4::Context->preference('MaxFine') if(C4::Context->preference('MaxFine') && ( $amount > C4::Context->preference('MaxFine')));
+    my $ismax   = 0;
+    my $MaxFine = C4::Context->preference('MaxFine') || 0;
+    my $max_fine= C4::Context->preference('UseGranularMaxFines')? $$data{max_fine} : 0;
+    my $max_amount = $max_fine? $max_fine : $MaxFine;
+    if ($amount >= $max_amount) {
+        $amount = $max_amount;
+        $ismax = 1;
+    }
+
 	$debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
-    return ($amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
+    return ($amount, $data->{'chargename'}, $days_minus_grace, $daystocharge, $ismax);
     # FIXME: chargename is NEVER populated anywhere.
 }
 
@@ -459,7 +466,7 @@ sub GetIssuesIteminfo {
 
 =head2 UpdateFine
 
-  &UpdateFine($itemnumber, $borrowernumber, $amount, $type, $description);
+  &UpdateFine($itemnumber, $borrowernumber, $amount, $type, $description, $ismax);
 
 (Note: the following is mostly conjecture and guesswork.)
 
@@ -477,6 +484,8 @@ C<$type> will be used in the description of the fine.
 C<$description> is a string that must be present in the description of
 the fine. I think this is expected to be a date in DD/MM/YYYY format.
 
+C<$ismax> bool, from C<&CalcFine>, whether the C<$amount> is max overdue.
+
 C<&UpdateFine> looks up the amount currently owed on the given item
 and sets it to C<$amount>, creating, if necessary, a new entry in the
 accountlines table of the Koha database.
@@ -492,7 +501,7 @@ accountlines table of the Koha database.
 # Possible Answer: You might update a fine for a damaged item, *after* it is returned.
 #
 sub UpdateFine {
-    my ( $itemnum, $borrowernumber, $amount, $type, $due ) = @_;
+    my ( $itemnum, $borrowernumber, $amount, $type, $due, $ismax ) = @_;
 	$debug and warn "UpdateFine($itemnum, $borrowernumber, $amount, " . ($type||'""') . ", $due) called";
     my $dbh = C4::Context->dbh;
     # FIXME - What exactly is this query supposed to do? It looks up an
@@ -518,20 +527,24 @@ sub UpdateFine {
 		AND   description like ? "
     );
     $sth->execute( $itemnum, $borrowernumber, "%$due%" );
-
+    my $retnum = 0;
     if ( my $data = $sth->fetchrow_hashref ) {
 
 		# we're updating an existing fine.  Only modify if we're adding to the charge.
         # Note that in the current implementation, you cannot pay against an accruing fine
         # (i.e. , of accounttype 'FU').  Doing so will break accrual.
+        if ($$data{description} =~ /max overdue/i && !$ismax) {
+            $$data{description} =~ s/\, max overdue//i;
+        }
     	if ( $data->{'amount'} != $amount ) {
+            $retnum = $$data{accountno};
             my $diff = $amount - $data->{'amount'};
             $diff = 0 if ( $data->{amount} > $amount);
             my $out  = $data->{'amountoutstanding'} + $diff;
             my $query = "
                 UPDATE accountlines
 				SET date=now(), amount=?, amountoutstanding=?,
-					lastincrement=?, accounttype='FU'
+					lastincrement=?, accounttype='FU', description=?
 	  			WHERE borrowernumber=?
 				AND   itemnumber=?
 				AND   accounttype IN ('FU','O')
@@ -546,7 +559,7 @@ sub UpdateFine {
 			# FIXME: Why only 2 account types here?
 			$debug and print STDERR "UpdateFine query: $query\n" .
 				"w/ args: $amount, $out, $diff, $data->{'borrowernumber'}, $data->{'itemnumber'}, \"\%$due\%\"\n";
-            $sth2->execute($amount, $out, $diff, $data->{'borrowernumber'}, $data->{'itemnumber'}, "%$due%");
+            $sth2->execute($amount, $out, $diff, $$data{description},$data->{'borrowernumber'}, $data->{'itemnumber'}, "%$due%");
             UpdateStats( my $branch = '', my $stattype = "fine_update", $amount, my $other = '', $data->{'itemnumber'}, my $itemtype = '', $data->{'borrowernumber'}, my $proccode = '' );
         } else {
             #      print "no update needed $data->{'amount'}"
@@ -568,7 +581,8 @@ sub UpdateFine {
 #         $accountno[0]++;
 # begin transaction
 		my $nextaccntno = C4::Accounts::getnextacctno($borrowernumber);
-		my $desc = ($type ? "$type " : '') . "$title $due";	# FIXEDME, avoid whitespace prefix on empty $type
+        $retnum   = $nextaccntno;
+		my $desc  = "$title due on $due";
 		my $query = "INSERT INTO accountlines
 		    (borrowernumber,itemnumber,date,amount,description,accounttype,amountoutstanding,lastincrement,accountno)
 			    VALUES (?,?,now(),?,?,'FU',?,?,?)";
@@ -577,6 +591,14 @@ sub UpdateFine {
         $sth2->execute($borrowernumber, $itemnum, $amount, $desc, $amount, $amount, $nextaccntno);
     }
     # logging action
+
+    if ($retnum && $ismax) {
+        $dbh->do("UPDATE accountlines
+            SET description    = CONCAT(description, ', Max overdue')
+          WHERE borrowernumber = $borrowernumber
+            AND accountno      = $retnum
+        ");
+    }
     &logaction(
         "FINES",
         $type,
@@ -584,7 +606,7 @@ sub UpdateFine {
         "due=".$due."  amount=".$amount." itemnumber=".$itemnum
         ) if C4::Context->preference("FinesLog");
     UpdateStats( my $branch = '', my $stattype = "fine_new", $amount, my $other = '', $itemnum, my $itemtype = '', $borrowernumber, my $proccode = '' );
-
+    return $retnum;
 }
 
 =head2 BorType

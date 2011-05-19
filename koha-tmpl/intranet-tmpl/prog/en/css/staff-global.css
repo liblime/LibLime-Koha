@@ -231,7 +231,7 @@ table {
 	border-right : 1px solid #BCBCBC;
 }
 
-table.borderless {
+.borderless {
     border-collapse : separate;
     border: 0 none;
 }

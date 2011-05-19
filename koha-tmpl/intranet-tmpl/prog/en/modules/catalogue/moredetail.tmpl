@@ -66,6 +66,12 @@
             <li><span class="label">Current Location:</span> <!-- TMPL_VAR NAME="holdingbranchname" -->&nbsp;</li>
             <li><span class="label">Checkout Status:</span> <!-- TMPL_IF NAME="issue" -->Checked out to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="cardnumber" --></a>, Due back on <!-- TMPL_VAR NAME="datedue" --><!-- TMPL_ELSE -->Not Checked out <!-- /TMPL_IF --></li>
             <li><span class="label">Lost Status:</span>
+                <table border=0 cellspacing=0 cellpadding=0 class="borderless">
+                <TMPL_IF NAME="updatefail_nocr"><tr class=borderless><td class=borderless><div class="dialog alert">Update <span class=problem>failed</span>.
+                    You must charge the item as lost to a patron before you can set it to Claims Returned.</div></td></tr>
+                </TMPL_IF>
+                <TMPL_IF NAME="lostby_borrowernumber"><tr class=borderless><td class=borderless>Lost <TMPL_VAR NAME="lostby_date"> by <a href="/cgi-bin/koha/members/lost_items.pl?borrowernumber=<TMPL_VAR NAME="lostby_borrowernumber">"><TMPL_VAR NAME="lostby_name"></a> (<TMPL_VAR NAME="lostby_cardnumber">)</td></tr></TMPL_IF>
+                <tr class=borderless><td class=borderless>
                 <!-- TMPL_IF NAME="CAN_user_circulate_change_lost_status" -->
                     <form action="updateitem.pl" method="post">
                     <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
@@ -93,6 +99,7 @@
                     <!-- /TMPL_LOOP -->
                     &nbsp;
                 <!-- /TMPL_IF -->
+                </td></tr></table>
             </li>
             <li><span class="label">Damaged Status:</span>
                 <!-- TMPL_IF NAME="CAN_user_circulate" -->

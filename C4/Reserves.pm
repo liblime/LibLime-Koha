@@ -1590,12 +1590,11 @@ sub ModReserve {
 
     return if $priority ~~ 'W';
     return if $priority ~~ 'n';
-
     if ( $priority ~~ 'del' ) {
         ModReserveCancelAll($reservenumber, $itemnumber);
     }
-    elsif ($priority =~ /^\d+/ and $priority > 0) {
-        my $query = q{
+    elsif ($priority !~ /\D/ and $priority > 0) {
+        my $sth = C4::Context->dbh->prepare("
         UPDATE reserves
         SET    priority = ?,
                branchcode = ?,
@@ -1603,12 +1602,13 @@ sub ModReserve {
                found = NULL,
                waitingdate = NULL,
                expirationdate = NULL
-        WHERE  reservenumber = ?
-        };
-        C4::Context->dbh->do(
-            $query, undef, $priority, $branchcode, $itemnumber, $reservenumber);
-        _FixPriority($reservenumber, $priority);
+        WHERE  reservenumber = ?");
+        $sth->execute($priority, $branchcode, $itemnumber, $reservenumber);
     }
+    else {
+        die "Unknown priority '$priority': $!";
+    }
+    _NormalizePriorities($biblionumber);
     return;
 }
 
@@ -2307,7 +2307,8 @@ sub fixPrioritiesOnItemMove
 }
 
 sub _NormalizePriorities {
-    my $biblionumber = shift or croak 'Must supply biblionumber';
+    my $biblionumber = shift;
+    croak 'Must supply biblionumber' unless $biblionumber;
     my $dbh = C4::Context->dbh;
 
     # Important part is to order by priority *and* timestamp.
@@ -2332,8 +2333,10 @@ sub _NormalizePriorities {
         SET    priority = ?
         WHERE  reservenumber = ?
     };
-    my $sth = $dbh->prepare_cached($query);
+    ## this is failing for list of one item, priority already 1
+    #my $sth = $dbh->prepare_cached($query);
     for ( my $j = 0 ; $j < @{$reserves_list} ; $j++ ) {
+        my $sth = $dbh->prepare($query);
         $sth->execute( $j+1, $reserves_list->[$j] );
     }
     return;

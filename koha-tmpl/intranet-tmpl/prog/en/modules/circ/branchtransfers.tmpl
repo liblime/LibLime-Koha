@@ -158,9 +158,13 @@
                     <!-- TMPL_IF Name="errnotallowed" -->
                         <li>You cannot transfer items of <!--TMPL_VAR Name="codeType" --> <b><!-- TMPL_VAR Name="code" --></b> to <b><!-- TMPL_VAR Name="tbr" --></b></li>
                     <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="errdesteqholding" -->
+                    <TMPL_IF NAME="errdesteqcurr">
+                        <li>Destination library cannot be current library.</li>
+                    <TMPL_ELSE>
+                        <TMPL_IF NAME="errdesteqholding">
                         <li>Item is already at destination library.</li>
-                    <!-- /TMPL_IF -->
+                        </TMPL_IF>
+                    </TMPL_IF>
                     <!-- TMPL_IF Name="errwasreturned" -->
                         <li>Item was on loan to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->">
 <!-- TMPL_VAR Name="firstname" --> <!-- TMPL_VAR NAME="surname" -->
@@ -168,9 +172,10 @@
                     <!-- /TMPL_IF -->
                     <!-- TMPL_IF NAME="errpending" -->
                         <li>Cannot transfer twice, another transfer already pending:
-                        <br>From: <!-- TMPL_VAR NAME="frombranch" -->
-                        <br>To: <!-- TMPL_VAR NAME="tobranch" -->
+                        <br>From: <!-- TMPL_VAR NAME="frombranchname" -->
+                        <br>To: <!-- TMPL_VAR NAME="tobranchname" -->
                         <br>Sent: <!-- TMPL_VAR NAME="datesent" -->
+                        <br><a href="branchtransfers.pl?itemnumber=<TMPL_VAR NAME="itemnumber">&request=CancelTransfer">Cancel</a>, keep here
                      <!-- /TMPL_IF -->
                 <!-- /TMPL_LOOP -->
         </ul>

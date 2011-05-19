@@ -620,8 +620,8 @@ sub daysBetween ($$$) {
     my $self      = shift or return undef;
     my $startdate = shift or return undef;
     my $enddate   = shift or return undef;
-	my ($yearFrom,$monthFrom,$dayFrom) = split("-",$startdate->output('iso'));
-	my ($yearTo,  $monthTo,  $dayTo  ) = split("-",  $enddate->output('iso'));
+	my ($yearFrom,$monthFrom,$dayFrom) = split("-",$startdate->output('iso'),3);
+	my ($yearTo,  $monthTo,  $dayTo  ) = split("-",  $enddate->output('iso'),3);
 	if (Date_to_Days($yearFrom,$monthFrom,$dayFrom) > Date_to_Days($yearTo,$monthTo,$dayTo)) {
 		return 0;
 		# we don't go backwards  ( FIXME - handle this error better )

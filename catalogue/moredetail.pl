@@ -53,6 +53,7 @@ my $biblionumber=$query->param('biblionumber');
 my $title=$query->param('title');
 my $itemnumber=$query->param('itemnumber');
 my $bi=$query->param('bi');
+my $updatefail = $query->param('updatefail');
 # $bi = $biblionumber unless $bi;
 my $data=GetBiblioData($biblionumber);
 my $dewey = $data->{'dewey'};
@@ -108,6 +109,19 @@ my %avc = (
 foreach my $item (@items){
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
     $itemcount++;
+    if ($$item{itemlost}) {
+        if (my $lostitem = C4::LostItems::GetLostItem($$item{itemnumber})) {
+            my $lostbor = C4::Members::GetMember($$lostitem{borrowernumber});
+            $item->{lostby_date} = C4::Dates->new($$lostitem{date_lost},'iso')->output;
+            $item->{lostby_name} = "$$lostbor{firstname} $$lostbor{surname}";
+            $item->{lostby_borrowernumber} = $$lostitem{borrowernumber};
+            $item->{lostby_cardnumber} = $$lostbor{cardnumber};
+        }
+    }
+    if ($updatefail && ($$item{itemnumber} ~~ $itemnumber)) {
+        $item->{"updatefail_$updatefail"} = 1;
+    }
+
     $item->{itemlostloop}    = GetAuthorisedValues($avc{itemlost},$item->{itemlost}) if $avc{itemlost};
     $item->{itemdamagedloop} = GetAuthorisedValues($avc{damaged}, $item->{damaged})  if $avc{damaged};
     $item->{itemsuppressloop}= GetAuthorisedValues($avc{suppress},$item->{suppress}) if $avc{suppress};
