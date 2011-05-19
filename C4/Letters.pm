@@ -192,6 +192,9 @@ sub getalert (;$$$) {
         push @bind, $externalid;
     }
     $query =~ s/ AND $//;
+
+    return [] if $query =~ /WHERE$/;
+
     my $sth = $dbh->prepare($query);
     $sth->execute(@bind);
     return $sth->fetchall_arrayref({});
