@@ -291,6 +291,7 @@ $template->param(
     "dateformat_" . (C4::Context->preference("dateformat") || '') => 1,
     samebranch     => $samebranch,
     quickslip		  => $quickslip,
+    UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
 );
 
 $template->param("showinitials" => C4::Context->preference('DisplayInitials'));

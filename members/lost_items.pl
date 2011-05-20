@@ -102,5 +102,6 @@ $template->param(   cardnumber      => $borrower->{'cardnumber'},
                     branchcode      => $borrower->{'branchcode'},
                     is_child        => ($borrower->{'category_type'} eq 'C'),
                     branchname      => GetBranchName($borrower->{'branchcode'}),
+                    UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
                     );
 output_html_with_http_headers $query, $cookie, $template->output;

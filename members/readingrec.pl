@@ -96,6 +96,7 @@ my ($picture, $dberror) = GetPatronImage($data->{'cardnumber'});
 $template->param( picture => 1 ) if $picture;
 
 $template->param(
+UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
 						readingrecordview => 1,
 						biblionumber => $data->{'biblionumber'},
 						title => $data->{'title'},

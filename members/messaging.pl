@@ -89,6 +89,7 @@ $template->param( messagingview               => 1,
                   dateformat                  => C4::Context->preference("dateformat"),
                   categoryname                => $borrower->{'description'},
                   $borrower->{'categorycode'} => 1,
+                  UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
 );
 
 #$messaging_preferences->{'SMSnumber'}{'value'} = defined $borrower->{'smsalertnumber'}

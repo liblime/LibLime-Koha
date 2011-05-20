@@ -62,6 +62,7 @@ $template->param(
    email          => $data->{'email'},
    branchcode     => $data->{'branchcode'},
    branchname     => GetBranchName($data->{'branchcode'}),
+   UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
 );
 
 
