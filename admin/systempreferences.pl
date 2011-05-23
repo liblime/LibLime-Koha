@@ -483,7 +483,6 @@ sub StringSearch {
                     push( @results, $data );
                     $cnt++;
                 }
-                $sth->finish;
             }
         }
     } else {
@@ -514,7 +513,6 @@ sub StringSearch {
             $cnt++;
         }
 
-        $sth->finish;
     }
     return ( $cnt, \@results );
 }
@@ -704,18 +702,17 @@ if ( $op eq 'update_and_reedit' ) {
         unless ( C4::Context->config('demo') ) {
             my $sth = $dbh->prepare("update systempreferences set value=?,explanation=?,type=?,options=? where variable=?");
             $sth->execute( $value, $input->param('explanation'), $input->param('variable'), $input->param('preftype'), $input->param('prefoptions') );
-            $sth->finish;
+            C4::Context::_clear_syspref_cache();
             logaction( 'SYSTEMPREFERENCE', 'MODIFY', undef, $input->param('variable') . " | " . $value );
         }
     } else {
         unless ( C4::Context->config('demo') ) {
             my $sth = $dbh->prepare("insert into systempreferences (variable,value,explanation) values (?,?,?,?,?)");
             $sth->execute( $input->param('variable'), $input->param('value'), $input->param('explanation'), $input->param('preftype'), $input->param('prefoptions') );
-            $sth->finish;
+            C4::Context::_clear_syspref_cache();
             logaction( 'SYSTEMPREFERENCE', 'ADD', undef, $input->param('variable') . " | " . $input->param('value') );
         }
     }
-    $sth->finish;
 
 }
 
@@ -731,7 +728,6 @@ if ( $op eq 'add_form' ) {
         my $sth = $dbh->prepare("select variable,value,explanation,type,options from systempreferences where variable=?");
         $sth->execute($searchfield);
         $data = $sth->fetchrow_hashref;
-        $sth->finish;
         $template->param( modify => 1 );
 
         # save tab to return to if user cancels edit
@@ -773,18 +769,16 @@ if ( $op eq 'add_form' ) {
         unless ( C4::Context->config('demo') ) {
             my $sth = $dbh->prepare("update systempreferences set value=?,explanation=?,type=?,options=? where variable=?");
             $sth->execute( $value, $input->param('explanation'), $input->param('preftype'), $input->param('prefoptions'), $input->param('variable') );
-            $sth->finish;
+            C4::Context::_clear_syspref_cache();
             logaction( 'SYSTEMPREFERENCE', 'MODIFY', undef, $input->param('variable') . " | " . $value );
         }
     } else {
         unless ( C4::Context->config('demo') ) {
             my $sth = $dbh->prepare("insert into systempreferences (variable,value,explanation,type,options) values (?,?,?,?,?)");
             $sth->execute( $input->param('variable'), $value, $input->param('explanation'), $input->param('preftype'), $input->param('prefoptions') );
-            $sth->finish;
             logaction( 'SYSTEMPREFERENCE', 'ADD', undef, $input->param('variable') . " | " . $value );
         }
     }
-    $sth->finish;
     my $tab = $input->param('variable') // '';
     $tab = exists($tabsysprefs{$tab})? $tabsysprefs{$tab} : '';
     print "Content-Type: text/html\n\n<META HTTP-EQUIV=Refresh CONTENT=\"0; URL=systempreferences.pl?tab=$tab\"></html>";
@@ -796,7 +790,6 @@ if ( $op eq 'add_form' ) {
     my $sth = $dbh->prepare("select variable,value,explanation,type,options from systempreferences where variable=?");
     $sth->execute($searchfield);
     my $data = $sth->fetchrow_hashref;
-    $sth->finish;
     $template->param(
         searchfield => $searchfield,
         Tvalue      => $data->{'value'},
@@ -809,9 +802,9 @@ if ( $op eq 'add_form' ) {
     my $dbh = C4::Context->dbh;
     my $sth = $dbh->prepare("delete from systempreferences where variable=?");
     $sth->execute($searchfield);
+    C4::Context::_clear_syspref_cache();
     my $logstring = $searchfield . " | " . $Tvalue;
     logaction( 'SYSTEMPREFERENCE', 'DELETE', undef, $logstring );
-    $sth->finish;
 
     # END $OP eq DELETE_CONFIRMED
 ################## DEFAULT ##################################
