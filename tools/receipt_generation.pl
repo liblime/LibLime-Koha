@@ -38,6 +38,8 @@ my ( $template, $loggedin_borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
+$template->param( delay_load => 0 );
+
 my $action         = $cgi->param('action');
 my $borrowernumber = $cgi->param('borrowernumber');
 my $itemnumber     = $cgi->param('itemnumber');
@@ -102,6 +104,8 @@ elsif ( $action eq 'hold_found' ) {
     my $biblionumber   = $cgi->param('biblionumber');
     my $reservenumber  = $cgi->param('reservenumber');
 
+    $template->param( delay_load => 1 );
+
     my $data = _get_hold_data($reservenumber);
     $content = _replace( $content, $data );
 }
@@ -110,6 +114,8 @@ elsif ( $action eq 'transit_hold' ) {
     my $borrowernumber = $cgi->param('borrowernumber');
     my $biblionumber   = $cgi->param('biblionumber');
     my $reservenumber  = $cgi->param('reservenumber');
+
+    $template->param( delay_load => 1 );
 
     my $data = _get_hold_data($reservenumber);
     $content = _replace( $content, $data );

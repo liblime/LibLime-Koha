@@ -17,14 +17,49 @@
 })( jQuery );
 </script>
 
+<script>
+$(function(){
+   
+    // Create overlay and append to body:
+    $('<div id="overlay"/>').css({
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: $(window).height() + 'px',
+        background: 'white url(/intranet-tmpl/prog/img/loading.gif) no-repeat center'
+    }).hide().appendTo('body');
+   
+});
+</script>
+
 <script language="javascript">
 $(document).ready(function() {
 	$('[truncate]').each( function(){ $(this).truncate(); });
 
-        window.print();
-        window.close();
+	if ( <!-- TMPL_VAR NAME="delay_load" --> ) {
+		if (location.href.indexOf('reloaded')==-1) {
+			$('#overlay').show();
+			window.setTimeout( 'reload_page()', 5000 );
+		} else {
+			print_receipt();
+		}
+	} else {
+		print_receipt();
+	}
 
 });
+</script>
+
+<script>
+function reload_page(){
+	location.replace( location.href + '&reloaded=1' );
+} 
+
+function print_receipt(){
+        window.print();
+        window.close();
+}
 </script>
 
 </head>
