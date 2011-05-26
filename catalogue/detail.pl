@@ -209,7 +209,6 @@ foreach my $item (@items) {
     # checking for holds
     my ($reservedate,$reservedfor,$expectedAt,$waitingdate);
     my $ItemBorrowerReserveInfo;
-    my ($rescount,$res) = GetReservesFromBiblionumber($biblionumber);
     my $reserves = C4::Reserves::GetPendingReserveOnItem($item->{itemnumber});
     if ($reserves != 0) {
       $reservedate = $reserves->{reservedate};
