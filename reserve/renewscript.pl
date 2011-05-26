@@ -85,7 +85,13 @@ foreach my $itemno (@data) {
     # check status before renewing issue
 	my ($renewokay,$error) = CanBookBeRenewed($borrowernumber,$itemno,$override_limit);
     if ($renewokay){
-        AddRenewal($borrowernumber,$itemno,$branch,$datedue);
+        AddRenewal(
+           borrowernumber => $borrowernumber,
+           itemnumber     => $itemno,
+           branch         => $branch,
+           datedue        => $datedue,
+           exemptfine     => $exemptfine,
+        );
     }
 	else {
 		$failedrenews.="&failedrenew=$itemno";        
@@ -102,7 +108,8 @@ foreach my $barcode (@barcodes) {
 #
 # redirection to the referrer page
 #
-if ($input->param('destination') eq "circ"){
+if (($input->param('destination') eq "circ")
+ || ($ENV{HTTP_REFERER} =~ /circulation\.pl/)) {
     $cardnumber = uri_escape($cardnumber);
     print $input->redirect(
         "/cgi-bin/koha/circ/circulation.pl?override_user=$override_user&override_pass=$override_pass&charges_overridden=$charges_overridden&findborrower=$cardnumber".$failedrenews.$failedreturn

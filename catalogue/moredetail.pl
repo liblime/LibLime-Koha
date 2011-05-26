@@ -101,11 +101,20 @@ $results[0]=$data;
 my $itemcount=0;
 my $additemnumber;
 my @tmpitems;
+my $crval = C4::Context->preference('ClaimsReturnedValue');
 my %avc = (
    itemlost => GetAuthValCode('items.itemlost',$fw),
    damaged  => GetAuthValCode('items.damaged' ,$fw),
    suppress => GetAuthValCode('items.suppress',$fw),
 );
+foreach(@{GetAuthorisedValues($avc{itemlost})}) {
+   if ($$_{authorised_value} ~~ 1) {
+      $template->param(charge_authval => $$_{lib});
+   }
+   elsif ($$_{authorised_value} ~~ $crval) {
+      $template->param(claimsreturned_authval => $$_{lib});
+   }
+}
 foreach my $item (@items){
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
     $itemcount++;
@@ -120,6 +129,19 @@ foreach my $item (@items){
     }
     if ($updatefail && ($$item{itemnumber} ~~ $itemnumber)) {
         $item->{"updatefail_$updatefail"} = 1;
+        if ($updatefail ~~ 'nocr_charged') {
+            my $acc = C4::Accounts::GetLine($query->param('oiborrowernumber'),$query->param('accountno'));
+print "Content-type: text/plain\n\n";
+use Data::Dumper;
+print Dumper $acc;
+exit;
+            my $accbor = C4::Members::GetMember($$acc{borrowernumber});
+            $$item{"cr_oi_name"} = "$$accbor{firstname} $$accbor{surname}";
+            $$item{"cr_oi_cardnumber"} = $$accbor{cardnumber};
+            foreach(keys %$acc) {
+               $$item{"cr_oi_$_"} = $$acc{$_};
+            }
+        }
     }
 
     $item->{itemlostloop}    = GetAuthorisedValues($avc{itemlost},$item->{itemlost}) if $avc{itemlost};

@@ -24,7 +24,7 @@ use C4::Stats;
 use C4::Members;
 use C4::Items;
 use C4::LostItems;
-use C4::Circulation qw(MarkIssueReturned);
+use C4::Circulation;
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -72,6 +72,20 @@ Account types (accounttype):
    Res   ??
 
 =head1 FUNCTIONS
+
+=cut
+
+sub GetLine
+{
+   my($borrowernumber,$accountno) = @_;
+   return {} unless ($borrowernumber && $accountno);
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('SELECT * FROM accountlines
+      WHERE borrowernumber = ?
+        AND accountno      = ?');
+   $sth->execute($borrowernumber,$accountno);
+   return $sth->fetchrow_hashref() // {};
+}
 
 =head2 recordpayment
 

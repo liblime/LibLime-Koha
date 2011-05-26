@@ -90,6 +90,7 @@ if ($cancel_reserves) {
 
 # If the item is being made lost, charge the patron the lost item charge and
 # create a lost item record.  also, if cron is not running, calculate overdues
+my $crval = C4::Context->preference('ClaimsReturnedValue');
 if (($issue || $lostitem) && $itemlost) {  
    ## dupecheck is performed in the function
    my $id = $$lostitem{id} || C4::LostItems::CreateLostItem(
@@ -100,7 +101,6 @@ if (($issue || $lostitem) && $itemlost) {
    C4::Accounts::chargelostitem($itemnumber) if $itemlost == 1;
 
    ## Claims Returned
-   my $crval = C4::Context->preference('ClaimsReturnedValue');
    if ($crval) {
       if ($itemlost==$crval) {
          unless(C4::Accounts::makeClaimsReturned($id,1)) {
@@ -129,6 +129,23 @@ if (($issue || $lostitem) && $itemlost) {
       );
       ## is checked in
       $item_changes->{onloan} = undef;
+   }
+}
+elsif ($itemlost == $crval) { # not charged lost to patron, want make claims returned on overdue
+   my($oi,$acc) = C4::LostItems::tryClaimsReturned($item_data_hashref);
+   if ($oi && $acc) {
+      print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_charged"
+         . "&oiborrowernumber=$$oi{borrowernumber}&accountno=$$acc{accountno}#item$itemnumber");
+      exit;
+   }
+   elsif ($oi) {
+       print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_notcharged"
+         . "&oiborrowernumber=$$oi{borrowernumber}#item$itemnumber");
+      exit;    
+   }
+   else {
+      print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_nooi#item$itemnumber");
+      exit;
    }
 }
 elsif ($lostitem && $itemlost==0) {

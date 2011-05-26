@@ -31,7 +31,6 @@ use C4::Items;
 use C4::Members;
 use C4::Dates;
 use C4::Calendar;
-use C4::Accounts;
 use C4::ItemCirculationAlertPreference;
 use C4::LostItems;
 use C4::Message;
@@ -88,8 +87,7 @@ BEGIN {
     # subs to deal with returns
     push @EXPORT, qw(
         &AddReturn
-                &MarkIssueReturned
-                &FixAccountForLostAndReturned
+        &FixAccountForLostAndReturned
     );
 
     # subs to deal with transfers
@@ -794,8 +792,7 @@ sub CanBookBeIssued {
     # DUE DATE is OK ? -- should already have checked.
     #
     unless ( $duedate ) {
-        my $issuedate = strftime( "%Y-%m-%d", localtime );
-
+        my $issuedate = C4::Dates->new()->output('iso');
         my $branch = _GetCircControlBranch($item,$borrower);
         my $itype = ( C4::Context->preference('item-level_itypes') ) ? $item->{'itype'} : $biblioitem->{'itemtype'};
         my $loanlength = GetLoanLength( $borrower->{'categorycode'}, $itype, $branch );
@@ -1074,11 +1071,13 @@ sub AddIssue {
         
    if (($actualissue->{borrowernumber} // '') eq $borrower->{'borrowernumber'}) {
             $datedue = AddRenewal(
-                $borrower->{'borrowernumber'},
-                $item->{'itemnumber'},
-                $branch,
-                $datedue,
-                $issuedate, # here interpreted as the renewal date
+               borrower       => $borrower,
+               item           => $item,
+               issue          => $actualissue,
+               branch         => $branch,
+               datedue        => $datedue,
+               issuedate      => $issuedate,# renewal date
+               exemptfine     => $exemptfine,
             );
       return $datedue;
    }
@@ -1217,7 +1216,7 @@ sub AddIssue {
       });
    }
 
-    ## handle previously lost by a different patron
+    ## handle previously lost
     if (my $lostitem = GetLostItem($$item{itemnumber})) {
         ## whoever last lost this item will get credit that it was found
         _FixAccountNowFound($$borrower{borrowernumber},$lostitem,C4::Dates->new(),0,1);
@@ -1641,7 +1640,7 @@ sub AddReturn {
 
         if ($borrowernumber) {
             # over ride in effect if $returndate
-                MarkIssueReturned(
+                _MarkIssueReturned(
                     $borrower->{'borrowernumber'},
                     $issue->{'itemnumber'},
                     $circControlBranch,
@@ -1684,7 +1683,7 @@ sub AddReturn {
     my $lostitem = GetLostItem($$item{itemnumber}) // {};
 
     if ($item->{'itemlost'} || $$lostitem{id}) {
-        ## requires confirmation from WasLost
+        ## requires confirmation from WasLost; also messes up $tolost
         #DeleteLostItem($lost_item->{id});
         $messages->{'WasLost'} = {
             itemnumber          => $$item{itemnumber},
@@ -1764,20 +1763,16 @@ sub AddReturn {
     #adding message if holdingbranch is non equal a userenv branch to return the document to homebranch
     #we check, if we don't have reserv or transfert for this document, if not, return it to homebranch .
 
-    if (($branch ne $issue->{'homebranch'}) and not $messages->{'WrongTransfer'} and ($validTransfert ne 1) and not $resfound ){
+    if (!$tolost && ($branch ne $item->{'homebranch'}) and not $messages->{'WrongTransfer'} and ($validTransfert ne 1) and not $resfound ){
         if ( C4::Context->preference("AutomaticItemReturn"    ) or
             (C4::Context->preference("UseBranchTransferLimits") and
              ! IsBranchTransferAllowed($branch, $hbr, $item->{C4::Context->preference("BranchTransferLimitsType")} )
            )) {
-            $debug and warn sprintf "about to call ModItemTransfer(%s, %s, %s)", $item->{'itemnumber'},$branch, $issue->{'homebranch'};
-            $debug and warn "item: " . Dumper($item);
-            ModItemTransfer($item->{'itemnumber'}, $branch, $issue->{'homebranch'});
+            ModItemTransfer($item->{'itemnumber'}, $branch, $item->{'homebranch'});
             $messages->{'WasTransfered'} = 1;
         } else {
             $messages->{'NeedsTransfer'} = 1;   # TODO: instead of 1, specify branchcode that the transfer SHOULD go to, $item->{homebranch}
         }
-
-
     }
     if ( $borrower->{'disable_reading_history'} ) {
         AnonymiseIssueHistory( '', $borrower->{'borrowernumber'} );
@@ -1785,11 +1780,11 @@ sub AddReturn {
     return ( $doreturn, $messages, $issue, $borrower );
 }
 
-=head2 MarkIssueReturned
+=head2 _MarkIssueReturned
 
 =over 4
 
-MarkIssueReturned($borrowernumber, $itemnumber, $dropbox_branch, $returndate);
+_MarkIssueReturned($borrowernumber, $itemnumber, $dropbox_branch, $returndate);
 
 =back
 
@@ -1809,7 +1804,7 @@ routine in C<C4::Accounts>.
 
 =cut
 
-sub MarkIssueReturned {
+sub _MarkIssueReturned {
     my ( $borrowernumber, $itemnumber, $dropbox_branch, $returndate ) = @_;
     my $dbh   = C4::Context->dbh;
     my $query = "UPDATE issues SET returndate=";
@@ -1865,7 +1860,7 @@ sub _FixAccountOverdues {
     return unless $issue;
 
     $$flags{datedueObj} //= C4::Dates->new($$issue{date_due},'iso');
-    if (ref($$flags{returndateObj}) ~~ 'C4::Dates') {
+    if (ref($$flags{returndateObj}) =~ /C4\:\:Dates/) {
         if (@{$$flags{returndateObj}{dmy_arrayref}}<=1) {
             $$flags{returndateObj} = C4::Dates->new();
         }
@@ -1881,42 +1876,31 @@ sub _FixAccountOverdues {
 
     my $dbh = C4::Context->dbh;
     my $sth;
-    if (!$$issue{title} && $$issue{biblionumber}) {
+    if (!$$issue{title}) {
+        unless ($$issue{biblionumber}) { 
+            my $item = GetItem($$issue{itemnumber});
+            $$issue{biblionumber} = $$item{biblionumber};
+        }
         $sth = $dbh->prepare('SELECT title FROM biblio WHERE biblionumber=?');
         $sth->execute($$issue{biblionumber});
         ($$issue{title}) = $sth->fetchrow_array() // '';
     }
     my $checkindate = $$flags{returndateObj}->output; # us
     my $duedate_us  = $$flags{datedueObj}->output('us');
-    my $olddesc     = "$$issue{title} $duedate_us";
-    my $accountline = $dbh->selectrow_hashref(qq|
+    my $row = $dbh->selectrow_hashref(qq|
         SELECT *
          FROM accountlines
         WHERE borrowernumber = ?
           AND itemnumber     = ?
-          AND ( description LIKE '%due on $duedate_us%'
-            /* backwards compatible */
-             OR description = ? )
+          AND description LIKE '%due on $duedate_us%'
           AND accounttype IN ('FU','F','O')
      ORDER BY accountno DESC
-    |, undef, $issue->{borrowernumber}, $issue->{itemnumber},$olddesc);
-    return if !$accountline && !$$issue{overdue}; ## not overdue, never charged
+    |, undef, $$issue{borrowernumber}, $$issue{itemnumber});
+    return if !$row && !$$issue{overdue}; ## not overdue, never charged
 
-    if ($$accountline{description} eq $olddesc) { # backwards compatible
-        $dbh->do('UPDATE accountlines
-            SET description    = ?
-          WHERE borrowernumber = ?
-            AND accountno      = ?',undef,
-            "$$issue{title} due on $duedate_us",
-            $$issue{borrowernumber},
-            $$accountline{accountno}
-        );
-    }
-    
-    my $start_date = C4::Dates->new($issue->{date_due}, 'iso');
-    
+    my $start_date = C4::Dates->new($issue->{date_due}, 'iso');    
     ## fines.pl cron isn't running?
-    if(!$accountline && $$issue{overdue}) {
+    if(!$row && $$issue{overdue}) { ## is overdue, not yet charged
         my($amount,$type,$daycounttotal,$daycount,$ismax) = C4::Overdues::CalcFine(
             $issue,
             $$flags{borcatcode},
@@ -1927,8 +1911,8 @@ sub _FixAccountOverdues {
         );
         if ($amount) { ## first, charge ...
             my $accountno = C4::Overdues::UpdateFine(
-                $issue->{itemnumber}, 
-                $issue->{borrowernumber}, 
+                $$issue{itemnumber}, 
+                $$issue{borrowernumber}, 
                 $amount, 
                 undef, 
                 $start_date->output('us'),
@@ -1944,11 +1928,10 @@ sub _FixAccountOverdues {
     }
 
     ## hereafter, we have accountline
-
     if ($$flags{exemptfine}) {
-        _checkinDescFine($$issue{borrowernumber},$$accountline{accountno},$checkindate,$$flags{tolost}) if $$flags{atreturn};
-        _exemptFine($$issue{borrowernumber},$$accountline{accountno});
-        _rcrFine($issue,$accountline,0);
+        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost}) if $$flags{atreturn};
+        _exemptFine($$issue{borrowernumber},$$row{accountno});
+        _rcrFine($issue,$row,0);
         _logFine($$issue{borrowernumber},"exempt fee item $$issue{itemnumber}",1);
         return;
     }
@@ -1959,18 +1942,18 @@ sub _FixAccountOverdues {
                 amountoutstanding = 0,
                 accounttype       = 'F'
           WHERE borrowernumber    = $$issue{borrowernumber}
-            AND accountno         = $$accountline{accountno}
+            AND accountno         = $$row{accountno}
         ");
         $msg .= ", returned $checkindate" if $$flags{atreturn};
-        _rcrFine($issue,$accountline,0);
+        _rcrFine($issue,$row,0);
         _logFine($$issue{borrowernumber},$msg,1);
         return;
     }
 
     ## else... still overdue
-    my $item     = C4::Items::GetItem($issue->{itemnumber});
-    my $borrower = C4::Members::GetMember($issue->{borrowernumber});
-    my ($accounttype, $amount, $msg, $ismax) = ('F', $accountline->{amount}, undef, 0);
+    my $item     = C4::Items::GetItem($$issue{itemnumber});
+    my $borrower = C4::Members::GetMember($$issue{borrowernumber});
+    my ($accounttype, $amount, $msg, $ismax) = ('F', $$row{amount}, undef, 0);
     if ($flags->{dropbox} || $flags->{returndate}) {
         my $branchcode = _GetCircControlBranch($item, $borrower);
         my $cal        = C4::Calendar->new(branchcode => $branchcode);
@@ -1989,16 +1972,16 @@ sub _FixAccountOverdues {
         $msg = "adjusted backdate returned item $$issue{itemnumber} $checkindate";
     }
 
-    if ($amount && ($amount != $$accountline{amount})) {
-        if ($amount < $$accountline{amount}) {
+    if ($amount && ($amount != $$row{amount})) {
+        if ($amount < $$row{amount}) {
             ## lower both the amount and the amountoutstanding by diff cmp to new amount
-            my $diff = $$accountline{amount} - $amount;
-            my $newout = $$accountline{amountoutstanding} - $diff;
-            if ($$accountline{description} =~ /max overdue/i) {
-                $$accountline{description} =~ s/\, max overdue//i;
+            my $diff = $$row{amount} - $amount;
+            my $newout = $$row{amountoutstanding} - $diff;
+            if ($$row{description} =~ /max overdue/i) {
+                $$row{description} =~ s/\, max overdue//i;
             }
-            my $desc = $$flags{atreturn}? sprintf("$$accountline{description}, %s $checkindate", $$flags{tolost}? 'checkin as lost' : 'returned')
-                                        : $$accountline{description};
+            my $desc = $$flags{atreturn}? sprintf("$$row{description}, %s $checkindate", $$flags{tolost}? 'checkin as lost' : 'returned')
+                                        : $$row{description};
             $dbh->do("UPDATE accountlines 
                 SET accounttype       = 'F',
                     amount            = ?,
@@ -2010,20 +1993,20 @@ sub _FixAccountOverdues {
                 $newout,
                 $desc,
                 $$issue{borrowernumber},
-                $$accountline{accountno}
+                $$row{accountno}
             );
-            _rcrFine($issue,$accountline,$newout);
+            _rcrFine($issue,$row,$newout);
         }
         else { # new amount is greater than previous
             C4::Overdues::UpdateFine(
                 $issue->{itemnumber}, $issue->{borrowernumber}, $amount, undef, $start_date->output('us'),$ismax
             );
-            _checkinDescFine($$issue{borrowernumber},$$accountline{accountno},$checkindate,$$flags{tolost});
+            _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost});
         }
         _logFine($$issue{borrowernumber},$msg || "returned item $$issue{itemnumber} $checkindate",1);
     }
-    elsif ($$accountline{accountno} !~ /returned $checkindate/) {
-        _checkinDescFine($$issue{borrowernumber},$$accountline{accountno},$checkindate,$$flags{tolost});
+    elsif ($$row{accountno} !~ /returned $checkindate/) {
+        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost});
     }
 
     ## bogus
@@ -2063,12 +2046,17 @@ sub _FixAccountNowFound
     ## update lost item accountline description
     ## tolost:   checkin as lost [date] by [librarian]                  ,tocredit=0
     ## checkout: found at checkout [date] by [patron|other]             ,tocredit=1
+    ## renewal:  found at renewal [date] by this patron                 ,tocredit=1
     ## default:  found and returned [date] by [patron|other|librarian]  ,tocredit=1
     my $desc = '';
     my $by   = 'by ';
     my $tocredit = 0;
     if ($tolost) { 
         $desc = 'checkin as lost';
+    }
+    elsif ($co ~~ 'renewal') {
+        $desc = 'found at renewal';
+        $tocredit = 1;
     }
     elsif ($co) { 
         $desc = 'found at checkout';
@@ -2087,7 +2075,9 @@ sub _FixAccountNowFound
     elsif ($tolost) {
         $by .= sprintf('staff (-%s)',C4::Context->userenv->{id});
     }
-    elsif ($issuebor && ($issuebor == $$lost{borrowernumber})) {
+    elsif ( ($co ~~ 'renewal') || 
+            ($issuebor && ($issuebor == $$lost{borrowernumber}))
+          ) {
         $by .= 'this patron';
     }
     else {
@@ -2152,10 +2142,8 @@ sub _FixAccountNowFound
     my $rcr = $sth->fetchrow_hashref();
     return if $rcr;
     
-    $sth = $dbh->prepare('SELECT MAX(accountno)+1 FROM accountlines
-        WHERE borrowernumber = ?');
     $sth->execute($$lostitem{borrowernumber});
-    my($nextno) = $sth->fetchrow_array;
+    my($nextno) = _getnextaccountno($$lostitem{borrowernumber});
     my $rcramount = -1 *($paid);
     $dbh->do("INSERT INTO accountlines (
             borrowernumber,
@@ -2175,6 +2163,16 @@ sub _FixAccountNowFound
         $rcramount
     );                        
     return;  
+}
+
+sub _getnextaccountno
+{
+   my $borrowernumber = shift;
+   my $sth = C4::Context->dbh->prepare('SELECT MAX(accountno)+1 FROM accountlines
+        WHERE borrowernumber = ?');
+   $sth->execute($borrowernumber);
+   my($accountno) = $sth->fetchrow_array() || 1;
+   return $accountno;
 }
 
 # RCR refund owed (not yet issued) for prior payment on overdue charges
@@ -2222,10 +2220,7 @@ sub _rcrFine
     
     ## else typical case: insert new RCR for refund owed
     ## avoid circular dependency by doing this here instead of in Accounts.pm
-    $sth = $dbh->prepare('SELECT MAX(accountno)+1 FROM accountlines
-        WHERE borrowernumber = ?');
-    $sth->execute($$iss{borrowernumber});
-    my($nextnum) = $sth->fetchrow_array() || 1;
+    my($nextnum) = _getnextaccountno($$iss{borrowernumber});
     $dbh->do("INSERT INTO accountlines (
             date,
             accountno,
@@ -2357,7 +2352,7 @@ sub FixAccountForLostAndReturned {
    ## accounting and let manual refund by librarian happen elsewhere.
    ## credit the amount of the lost item, RCR signifies a type of credit that can be refunded if
    ## a payment can be/was made on it.
-   my $newno = C4::Accounts::getnextacctno($$data{borrowernumber});
+   my $newno = _getnextaccountno($$data{borrowernumber});
    $sth = $dbh->prepare(q|
       INSERT INTO accountlines(
             accountno,
@@ -2428,14 +2423,22 @@ C<$issue> is a hashref of the row from the issues table.
 =cut
 
 sub GetItemIssue {
-    my ($itemnumber) = @_;
+    my($itemnumber,$borrowernumber) = @_;
     return unless $itemnumber;
+    my @vals = ($itemnumber);
+    my $and = '';
+    if ($borrowernumber) {
+      $and = 'AND s.borrowernumber=?';
+      push @vals, $borrowernumber;
+    }
+    
     my $sth = C4::Context->dbh->prepare(
-        "SELECT *
-        FROM issues 
-        LEFT JOIN items ON issues.itemnumber=items.itemnumber
-        WHERE issues.itemnumber=?");
-    $sth->execute($itemnumber);
+        "SELECT s.*,i.biblionumber,b.title
+        FROM issues s, items i, biblio b
+        WHERE s.itemnumber=? $and 
+        AND s.itemnumber = i.itemnumber
+        AND i.biblionumber = b.biblionumber");
+    $sth->execute(@vals);
     my $data = $sth->fetchrow_hashref;
     return unless $data;
     $data->{'overdue'} = ($data->{'date_due'} lt C4::Dates->today('iso')) ? 1 : 0;
@@ -2667,7 +2670,7 @@ sub CanBookBeRenewed {
 
 =head2 AddRenewal
 
-&AddRenewal($borrowernumber, $itemnumber, $branch, [$datedue], [$lastreneweddate]);
+&AddRenewal(%args);
 
 Renews a loan.
 
@@ -2690,33 +2693,30 @@ from the book's item type.
 =cut
 
 sub AddRenewal {
-    my $borrowernumber = shift or return undef;
-    my     $itemnumber = shift or return undef;
+   my %g = @_;
+   my $issue           = $g{issue};
+   my $itemnumber      = $g{itemnumber}      || $$issue{itemnumber}                     || return;
+   my $item            = $g{item}            || GetItem($itemnumber)                    || return;
+   my $biblio          = $g{biblio}          || GetBiblioFromItemNumber($itemnumber)    || return;
+   my $branch          = $g{branch}          || $$item{homebranch}; # opac-renew doesn't send branch
+   my $lastreneweddate = $g{lastreneweddate} || C4::Dates->new()->output('iso');
+   my $source          = $g{source}          || ''; #FIMXE: what is the default?
+   my $borrowernumber  = $g{borrowernumber}  || $$issue{borrowernumber}                 || return;
+   my $borrower        = $g{borrower}        || C4::Members::GetMember($borrowernumber) || return;
+   my $datedue         = $g{datedueObj}      || $g{datedue} || '';
+   my $issuedate       = $g{issuedate}       || C4::Dates->new()->output('iso');
+   $issue            ||= GetItemIssue($itemnumber,$borrowernumber);
+   $itemnumber       ||= $$issue{itemnumber};
+   $borrowernumber   ||= $$issue{borrowernumber};
+   my $lostitem        = $g{lostitem} || GetLostItem($itemnumber);
+   if (ref($datedue) !~ /C4\:\:Dates/) { # not an object
+      if    ($datedue =~ /^\d\d\/\d\d\/\d{4}$/) { $datedue = C4::Dates->new($datedue,'us' ) }
+      elsif ($datedue =~ /^\d{4}\-\d\d\-\d\d$/) { $datedue = C4::Dates->new($datedue,'iso') }
+   }
 
-    my $item   = GetItem($itemnumber) or return undef;
-    my $biblio = GetBiblioFromItemNumber($itemnumber) or die;
-    my $branch  = (@_) ? shift : $item->{homebranch};   # opac-renew doesn't send branch
-    my $datedue = shift;
-    my $lastreneweddate = shift;
-    my $source = shift;
-    my $dbh = C4::Context->dbh;
-    # Find the issues record for this book
-    my $sth =
-      $dbh->prepare("SELECT * FROM issues
-                        WHERE borrowernumber=? 
-                        AND itemnumber=?"
-      );
-    $sth->execute( $borrowernumber, $itemnumber );
-    my $issuedata = $sth->fetchrow_hashref;
-    $sth->finish;
-
-    # If the due date wasn't specified, calculate it by adding the
-    # book's loan length to today's date using the CircControl branch
     unless ($datedue && $datedue->output('iso')) {
-
-        my $borrower = C4::Members::GetMember( $borrowernumber ) or die "Unable to find member '$borrowernumber'";
         if ( C4::Context->preference('CircControl') eq 'PickupLibrary' ) {
-            $branch = $issuedata->{'branchcode'};
+            $branch = $issue->{'branchcode'};
         } elsif ( C4::Context->preference('CircControl') eq 'PatronLibrary' ) {
             $branch = $borrower->{'categorycode'};
         } else {
@@ -2728,24 +2728,19 @@ sub AddRenewal {
              (C4::Context->preference('item-level_itypes')) ? $biblio->{'itype'} : $biblio->{'itemtype'} ,
             $branch
         );
+        ## FIXME: why go through this trouble if datedue later uses today?
         $datedue = (C4::Context->preference('RenewalPeriodBase') eq 'date_due') ?
-                                        C4::Dates->new($issuedata->{date_due}, 'iso') :
-                                        C4::Dates->new();
+                                        C4::Dates->new($issue->{date_due}, 'iso') :
+                                        C4::Dates->new(); # FIXME: datedue=today?
         $datedue =  CalcDateDue(C4::Dates->new(),$loanlength,$branch,$borrower);
     }
-
-    # $lastreneweddate defaults to today.
-    unless (defined $lastreneweddate) {
-        $lastreneweddate = strftime( "%Y-%m-%d", localtime );
-    }
-
-    if($datedue && ! $datedue->output('iso')){
-        die "Invalid date passed to AddRenewal.";
-    }
+    die "Invalid date passed to AddRenewal." if ($datedue && ! $datedue->output('iso'));
+    die "Date due can't be prior to today"   if ($datedue->output('iso') lt C4::Dates->new()->output('iso'));
 
     # Update the issues record to have the new due date, and a new count
     # of how many times it has been renewed.
-    my $renews = ($issuedata->{'renewals'} // 0) + 1;
+    my $dbh = C4::Context->dbh; my $sth;
+    my $renews = ($issue->{'renewals'} // 0) + 1;
     $sth = $dbh->prepare("UPDATE issues SET date_due = ?, renewals = ?, lastreneweddate = ?
                             WHERE borrowernumber=? 
                             AND itemnumber=?"
@@ -2760,7 +2755,7 @@ sub AddRenewal {
     # Charge a new rental fee, if applicable?
     my ( $charge, $type ) = GetIssuingCharges( $itemnumber, $borrowernumber );
     if ( $charge > 0 ) {
-        my $accountno = getnextacctno( $borrowernumber );
+        my $accountno = _getnextaccountno( $borrowernumber );
         my $item = GetBiblioFromItemNumber($itemnumber);
         $sth = $dbh->prepare(
                 "INSERT INTO accountlines
@@ -2775,14 +2770,28 @@ sub AddRenewal {
             "Renewal of Rental Item",
             'Rent', $charge, $itemnumber );
         $sth->finish;
-    }
+   }
 
-    # was item lost?  Clear that.
-    ModItem({itemlost => 0}, $item->{'biblionumber'}, $item->{'itemnumber'}) if $$item{itemlost};
+   # use previous issuing, not current renewed issuing
+   _FixAccountOverdues(
+      $issue, {
+         exemptfine    => $g{exemptfine},
+         branch        => $branch,
+         borcatcode    => $$borrower{categorycode},
+         atreturn      => 0, # at renewal
+         tolost        => 0, # no!
+      },
+   );
 
-    # Log the renewal
-    UpdateStats( $branch, 'renew', $charge, $source, $itemnumber, $item->{itype}, $borrowernumber);
-    return $datedue;
+
+   # was item lost?  Clear that.
+   ModItem({itemlost => 0}, $item->{'biblionumber'}, $item->{'itemnumber'}) if $$item{itemlost};
+   _FixAccountNowFound($$borrower{borrowernumber},$lostitem,C4::Dates->new(),0,'renewal');
+   C4::LostItems::DeleteLostItemByItemnumber($itemnumber);
+
+   # Log the renewal
+   UpdateStats( $branch, 'renew', $charge, $source, $itemnumber, $item->{itype}, $borrowernumber);
+   return $datedue;
 }
 
 sub GetRenewCount {
@@ -2882,7 +2891,7 @@ sub GetIssuingCharges {
 sub AddIssuingCharge {
     my ( $itemnumber, $borrowernumber, $charge ) = @_;
     my $dbh = C4::Context->dbh;
-    my $nextaccntno = getnextacctno( $borrowernumber );
+    my $nextaccntno = _getnextaccountno( $borrowernumber );
     my $query ="
         INSERT INTO accountlines
             (borrowernumber, itemnumber, accountno,

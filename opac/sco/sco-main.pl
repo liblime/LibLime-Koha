@@ -112,7 +112,7 @@ elsif ( $op eq "checkout" ) {
     } elsif ( $needconfirm->{RENEW_ISSUE} ) {
         if ($confirmed) {
             #warn "renewing";
-            AddRenewal( $borrower, $item->{itemnumber} );
+            AddRenewal(borrower=> $borrower, item=>$item );
         } else {
             #warn "renew confirmation";
             $template->param(

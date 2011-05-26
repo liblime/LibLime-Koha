@@ -558,7 +558,14 @@ sub RenewLoan {
 
     # Add renewal if possible
     my @renewal = CanBookBeRenewed( $borrowernumber, $itemnumber );
-    if ( $renewal[0] ) { AddRenewal( $borrowernumber, $itemnumber ); }
+    if ( $renewal[0] ) {
+       AddRenewal(
+          borrowernumber=> $borrowernumber,
+          itemnumber    => $itemnumber,
+          item          => $item,
+          borrower      => $borrower,
+       ); 
+    }
 
     my $issue = GetItemIssue($itemnumber);
 
