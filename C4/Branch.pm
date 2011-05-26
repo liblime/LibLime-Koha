@@ -19,7 +19,7 @@ package C4::Branch;
 use strict;
 use warnings;
 use Carp;
-use Clone qw(clone);
+use Storable;
 use List::MoreUtils qw(uniq);
 use Net::CIDR::Compare;
 
@@ -113,7 +113,7 @@ sub _clear_branches_cache {
 sub _seed_branches_cache {
     my $dbh = C4::Context->dbh;
 
-    my $branches_cache = $dbh->selectall_hashref(
+    my $branches = $dbh->selectall_hashref(
         'SELECT * FROM branches ORDER BY branchname',
         'branchcode');
 
@@ -121,18 +121,18 @@ sub _seed_branches_cache {
         'SELECT branchcode, categorycode FROM branchrelations',
         ['branchcode', 'categorycode']);
 
-    for my $branch (values %$branches_cache) {
+    for my $branch (values %$branches) {
         my @branchcategories = keys %{$groups->{$branch->{branchcode}}};
         $branch->{category} = {map {$_=>1} @branchcategories};
     }
 
-    return $branches_cache;
+    return $branches_cache = Storable::freeze($branches);
 }
 
 sub GetAllBranches {
     # return a copy of the cache hash so mutations from the caller
     # don't generate side-effects
-    return clone($branches_cache //= _seed_branches_cache());
+    return Storable::thaw($branches_cache //= _seed_branches_cache());
 }
 
 sub GetBranchcodes {
@@ -299,13 +299,14 @@ sub _clear_bcat_cache {
 }
 
 sub _seed_bcat_cache {
-    return $bcat_cache = C4::Context->dbh->selectall_hashref(
+    my $bcats = C4::Context->dbh->selectall_hashref(
         'SELECT * FROM branchcategories', 'categorycode');
+    return $bcat_cache = Storable::freeze($bcats);
 }
 
 sub GetAllBranchCategories {
     # return a copy of the cache hash to protect against mutation
-    return clone($bcat_cache //= _seed_bcat_cache());
+    return Storable::thaw($bcat_cache //= _seed_bcat_cache());
 }
 
 sub GetBranchCategory {
