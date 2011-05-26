@@ -21,7 +21,8 @@ use warnings;
 use strict;
 use C4::Context;
 use C4::Output;
-use Clone qw(clone);
+use Storable;
+use Clone;
 use URI::Split qw(uri_split);
 use List::Util qw(first);
 use Business::ISBN;
@@ -835,17 +836,29 @@ sub GetAuthValCode {
 
 =cut
 
+# Use a frozen copy of the cache for quickly returning the entire list
+# and a live one for cloning small portions
+my $frozen_authval_cache = undef;
 my $authval_cache = undef;
 
-sub _populate_authval_cache() {
+sub _populate_authval_cache {
     $authval_cache = C4::Context->dbh->selectall_hashref('SELECT * FROM authorised_values', ['category', 'authorised_value']);
-    return $authval_cache;
+    return $frozen_authval_cache = Storable::freeze($authval_cache);
+}
+
+sub _clear_authval_cache {
+    $authval_cache = $frozen_authval_cache = undef;
+}
+
+sub GetAllAuthorisedValues {
+    $authval_cache || _populate_authval_cache();
+    return Storable::thaw($frozen_authval_cache);
 }
 
 sub GetAuthorisedValue {
     my ($category, $authorised_value) = @_;
-    $authval_cache //= _populate_authval_cache();
-    return clone($authval_cache->{$category}{$authorised_value});
+    $authval_cache || _populate_authval_cache();
+    return Clone::clone($authval_cache->{$category}{$authorised_value});
 }
 
 =head2 GetAuthorisedValues
@@ -860,7 +873,7 @@ C<$category> returns authorised values for just one category (optional).
 
 sub GetAuthorisedValues {
     my ($category, $selected) = @_;
-    my $authvals = clone($authval_cache //= _populate_authval_cache());
+    my $authvals = GetAllAuthorisedValues();
     my @vals
         = (defined $category)
         ? values %{$authvals->{$category}}
