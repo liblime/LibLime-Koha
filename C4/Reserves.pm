@@ -790,11 +790,9 @@ sub GetPendingReserveOnItem {
 
     my $reserve = C4::Context->dbh->selectrow_hashref(q{
         SELECT *
-        FROM reserves
-          JOIN items ON (items.biblionumber = reserves.biblionumber)
-        WHERE items.itemnumber = ?
-          AND (found <> 'S' OR found IS NULL)
-        ORDER BY found DESC, priority ASC
+        FROM   reserves
+        WHERE  itemnumber = ?
+        ORDER BY priority ASC
         }, undef, $itemnumber);
     return $reserve;
 }

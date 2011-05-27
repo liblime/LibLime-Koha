@@ -182,7 +182,7 @@ foreach my $item (@items) {
     my $ItemBorrowerReserveInfo;
     my ($rescount,$res) = GetReservesFromBiblionumber($biblionumber);
     my $reserves = C4::Reserves::GetPendingReserveOnItem($item->{itemnumber});
-    if ($reserves != 0) {
+    if ($reserves) {
       $reservedate = $reserves->{reservedate};
       $waitingdate = $reserves->{waitingdate};
       $reservedfor = $reserves->{borrowernumber};
