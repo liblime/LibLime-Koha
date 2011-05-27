@@ -210,7 +210,7 @@ foreach my $item (@items) {
     my ($reservedate,$reservedfor,$expectedAt,$waitingdate);
     my $ItemBorrowerReserveInfo;
     my $reserves = C4::Reserves::GetPendingReserveOnItem($item->{itemnumber});
-    if ($reserves != 0) {
+    if ($reserves) {
       $reservedate = $reserves->{reservedate};
       $waitingdate = $reserves->{waitingdate};
       $reservedfor = $reserves->{borrowernumber};
@@ -218,7 +218,7 @@ foreach my $item (@items) {
       $ItemBorrowerReserveInfo = GetMember($reservedfor);
       undef $reservedate if ($reserves->{nullitem});
       $template->param( totalreserves => $rescount );
-      if ( defined $reserves->{dbitemnumber} ) {
+      if ( defined $reserves->{itemnumber} ) {
         $item->{reservedate} = format_date($reservedate);
         $item->{waitingdate} = format_date($waitingdate);
       }
