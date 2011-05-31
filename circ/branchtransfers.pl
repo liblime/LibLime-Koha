@@ -33,6 +33,7 @@ use C4::Auth qw/:DEFAULT get_session/;
 use C4::Branch; # GetBranches
 use C4::Koha;
 use C4::Members;
+use C4::Dates;
 
 ###############################################
 #  Getting state
@@ -235,13 +236,11 @@ foreach my $code ( keys %$messages ) {
         $err{msg} = $branches->{ $messages->{'IsPermanent'} }->{'branchname'};
     }
     elsif ( $code eq 'WasReturned' ) {
-        $err{errwasreturned} = 1;
-		$err{borrowernumber} = $messages->{'WasReturned'};
-		my $borrower = GetMember($messages->{'WasReturned'},'borrowernumber');
-		$err{title}      = $borrower->{'title'};
-		$err{firstname}  = $borrower->{'firstname'};
-		$err{surname}    = $borrower->{'surname'};
-		$err{cardnumber} = $borrower->{'cardnumber'};
+      $err{errwasreturned} = 1;
+      foreach(qw(borrowernumber title firstname surname cardnumber overdue)) {
+         $err{$_} = $messages->{$code}->{$_};
+      }
+      $err{duedate} = C4::Dates->new($$messages{$code}{date_due},'iso')->output;
     }
     elsif ($code eq 'PendingTransfer') {
        $err{errpending}     = 1;

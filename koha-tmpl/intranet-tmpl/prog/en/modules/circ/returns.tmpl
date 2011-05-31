@@ -133,12 +133,23 @@ function ContinueReturns() {
                                     $('#errmsg').hide('slow'); 
                                     return false;
                                 }
+                                else if (document.transferf) {
+                                    document.transferf.lost_item_id.value       = '<TMPL_VAR NAME="lost_item_id">';
+                                    document.transferf.lostbarcode.value        = '<TMPL_VAR NAME="itembarcode">';
+                                    document.transferf.lostborrowernumber.value = '<TMPL_VAR NAME="lostborrowernumber">';
+                                    document.transferf.unlinkFromAccount.value  = 1;
+                                    $('#errmsg').hide('slow'); 
+                                    return false;
+                                }
                                 else {
                                     document.lostf.submit();
                                 }
                               " />
                               <input type=button value="No" onclick="
                                 if(document.foundf) {
+                                    $('#errmsg').hide('slow');
+                                }
+                                else if (document.transferf) {
                                     $('#errmsg').hide('slow');
                                 }
                                 else {
@@ -157,7 +168,7 @@ function ContinueReturns() {
                     <!-- TMPL_IF Name="withdrawn" -->
                         <p class="problem">Item is withdrawn.</p>
                     <!-- /TMPL_IF -->
-                    <TMPL_IF NAME="reserve">
+                    <TMPL_IF NAME="res_reservenumber">
                         <TMPL_UNLESS NAME="found">
                         Hold found expected at <b><TMPL_VAR NAME="pickbranchname"></b>
                         </TMPL_UNLESS>
@@ -202,7 +213,7 @@ function ContinueReturns() {
             <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
             </TMPL_LOOP>
             <input type=submit value="OK" class=approve>
-            <input type=button value="Cancel Transfer, Keep Here" class=deny onclick="
+            <input type=button value="Cancel transfer, Keep here" class=deny onclick="
                 document.alreadytransf.cancelTransfer.value = 1;
                 this.form.submit();
             " />
@@ -262,8 +273,8 @@ function ContinueReturns() {
                 <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
                 <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
                 </TMPL_LOOP>
-            <input type=submit value="Confirm Transfer" class="approve">
-            <input type=button value="Cancel Transfer and Keep Here" class="deny" onclick="
+            <input type=submit value="Confirm transfer" class="approve">
+            <input type=button value="Cancel transfer and Keep here" class="deny" onclick="
                 document.intransitf.cancelTransfer.value=1;
                 this.form.submit();
             " />
@@ -274,7 +285,7 @@ function ContinueReturns() {
 
 <!-- TMPL_IF Name="found" -->
     <!-- case of a reservation found, and display info -->
-    <!-- TMPL_IF Name="waiting" -->
+    <!-- TMPL_IF EXPR="waiting" -->
         <!-- TMPL_IF NAME="soundon" -->
         <audio src="/intranet-tmpl/prog/sound/ending.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
         <!-- /TMPL_IF -->      
@@ -335,7 +346,7 @@ function ContinueReturns() {
                 </form>
 	        </div>
         <TMPL_ELSE>
-            <TMPL_IF EXPR="currentbranch ne destbranchname">
+            <TMPL_IF EXPR="currentbranch ne destbranchname and foundwait">
             <div class="dialog message">
             <span class="error">Unexpected check in.</span>
             <h3>Hold found marked as <span class=error>Waiting</span>:</h3>
@@ -363,7 +374,7 @@ function ContinueReturns() {
             <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
             <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
             <!-- /TMPL_LOOP -->
-            <input type=button value="Confirm and Transfer" class="approve">
+            <input type=button value="Confirm and transfer" class="approve">
             <input type=button value="Ignore, Requeue hold and Keep Here" class="deny" onclick="
                 document.transwaitf.requeue.value = 1;
                 this.form.submit();
@@ -437,6 +448,10 @@ function ContinueReturns() {
 	  <h3>Please return <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" DEFAULT="item" --></a> 
         <br>to <TMPL_VAR NAME="homebranchname"></h3>
     <form method=post action="returns.pl" name="transferf">
+        <input type=hidden name="lost_item_id" value="">
+        <input type=hidden name="lostbarcode"  value="">
+        <input type=hidden name="lostborrowernumber" value="">
+        <input type=hidden name="unlinkFromAccount" value="0">
         <input type=hidden name="cancelTransfer" value="0">
         <input type=hidden name="itemnumber" value="<TMPL_VAR NAME="itemnumber">">
 	    <!-- TMPL_LOOP Name="inputloop" -->     
@@ -445,8 +460,8 @@ function ContinueReturns() {
 	    <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" /> 
 	    <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" /> 
 	    <!-- /TMPL_LOOP -->                            
-        <input type=submit value="Confirm Transfer" class="approve">
-        <input type=button value="Keep Here" class="deny" onclick="
+        <input type=submit value="Confirm transfer" class="approve">
+        <input type=button value="Keep here" class="deny" onclick="
             document.transferf.cancelTransfer.value=1;
             this.form.submit();"
         />
@@ -583,7 +598,7 @@ function ContinueReturns() {
             <!-- /TMPL_IF -->
 		<!-- TMPL_IF name="HoldButtonIgnore" -->
                 <input type=hidden name="cancelTransfer" value="0">
-                <input type="button" class="deny" value="Ignore<TMPL_IF NAME="WrongTransfer">, Cancel Transfer</TMPL_IF>, Keep Here" onclick=" 
+                <input type="button" class="deny" value="Ignore<TMPL_IF NAME="WrongTransfer">, Cancel transfer, Keep here<TMPL_ELSIF NAME="transfertodo">, Keep here</TMPL_IF>" onclick=" 
                     <TMPL_IF NAME="queue_branchlimit">parent.parent.GB_hide();
                     </TMPL_IF>
                     // don't autoset reserve to Waiting, leave alone
@@ -614,6 +629,10 @@ function ContinueReturns() {
         </form>
 	</div>
     <!-- /TMPL_IF -->
+<TMPL_ELSIF NAME="found"><!-- do nothing more -->
+<TMPL_ELSIF NAME="WasLost"><!-- do nothing more -->
+<TMPL_ELSIF NAME="WrongTransfer"><!-- do nothing more -->
+<TMPL_ELSIF NAME="reroute"><!-- do nothing more -->
 <TMPL_ELSE>
 
     <div id="exemptfines" class="dialog message" style="display:none;">

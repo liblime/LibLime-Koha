@@ -454,8 +454,9 @@ if ( $messages->{'ResFound'}) {
           );
         } elsif ( $reserve->{'ResFound'} eq "Waiting" ) {
             $template->param(
-                waiting => ($userenv_branch eq $reserve->{'branchcode'})? 1:0,
-                pull    => ($reserve->{found} ~~ 'T')                   ? 1:0,
+                foundwait => ($reserve->{found} ~~ 'W')? 1:0,
+                waiting   => ($userenv_branch eq $reserve->{'branchcode'})? 1:0,
+                pull      => ($reserve->{found} ~~ 'T')                   ? 1:0,
             );
         } elsif ( $reserve->{'ResFound'} eq "Reserved" ) {
             $template->param(
@@ -512,6 +513,7 @@ foreach my $code ( keys %$messages ) {
    elsif ( $code eq 'WasLost' ) {
       $err{waslost} = 1;
       $template->param(
+         WasLost            => 1,
          itemnumber         => $$messages{$code}{itemnumber},
          lostborrowernumber => $$messages{$code}{lostborrowernumber},
          lost_item_id       => $$messages{$code}{lost_item_id},
@@ -530,7 +532,7 @@ foreach my $code ( keys %$messages ) {
       }
    }
    elsif ( $code eq 'ResFound' ) {
-      $err{reserve} = 1;
+      # $err{reserve} = 1;
       foreach(keys %{$$messages{$code}}) { $template->param("res_$_"=>$$messages{$code}{$_}) }
       $template->param(
          currBranch => C4::Context->userenv->{branch},
@@ -550,8 +552,7 @@ foreach my $code ( keys %$messages ) {
    elsif ( ( $code eq 'IsPermanent' ) && ( not $messages->{'ResFound'} ) ) {
         if ( $messages->{'IsPermanent'} ne $userenv_branch ) {
             $err{ispermanent} = 1;
-            $err{msg}         =
-              $branches->{ $messages->{'IsPermanent'} }->{'branchname'};
+            $err{msg}         = $branches->{ $messages->{'IsPermanent'} }->{'branchname'};
         }
    }
    elsif ( $code eq 'WrongTransfer' ) {
@@ -582,7 +583,7 @@ foreach my $code ( keys %$messages ) {
    }
    last if $exit_required_p;
 }
-$template->param( errmsgloop => \@errmsgloop );
+$template->param( errmsgloop => \@errmsgloop ) unless ((@errmsgloop==1) && $errmsgloop[0]{reserve});
 
 # patrontable ....
 if ($borrower) {

@@ -73,8 +73,14 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
     print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber#item$itemnumber");
     exit;
 }
+if ($cgi->param('force_lostcharge_borrowernumber')) {
+   C4::LostItems::CreateLostItem(
+      $item_data_hashref->{itemnumber},
+      $cgi->param('force_lostcharge_borrowernumber'),
+   );
+}
 
-my $issue       = GetItemIssue($itemnumber);
+my $issue      = GetItemIssue($itemnumber);
 my $lostitem   = C4::LostItems::GetLostItem($itemnumber);
 
 # Cancel item specific reserves if changing to non-holdable status
@@ -98,12 +104,15 @@ if (($issue || $lostitem) && $itemlost) {
       $$issue{borrowernumber}
    );
    ## charge the lost item fee for LOST value 1 BEFORE checking in item
-   C4::Accounts::chargelostitem($itemnumber) if $itemlost == 1;
-
-   ## Claims Returned
-   if ($crval) {
+   if ($itemlost==1) {
+      C4::Accounts::chargelostitem($itemnumber);
+   }
+   elsif ($crval) { ## Claims Returned
       if ($itemlost==$crval) {
-         unless(C4::Accounts::makeClaimsReturned($id,1)) {
+         if (C4::Accounts::makeClaimsReturned($id,1)) {
+            ## do nothing
+         }
+         else {
             C4::LostItems::DeleteLostItem($id);
             print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr#item$itemnumber");
             exit;
@@ -115,7 +124,7 @@ if (($issue || $lostitem) && $itemlost) {
       }
    }
 
-   if (C4::Context->preference('MarkLostItemsReturned')) {
+   if (C4::Context->preference('MarkLostItemsReturned') && $issue) {
       #C4::Circulation::MarkIssueReturned($$issue{borrowernumber},$itemnumber)
       ## update: AddIssue() will figure out the overdue fine, using today as returndate, 
       ## temporarily setting items.itemlost to nada
@@ -147,6 +156,10 @@ elsif ($itemlost == $crval) { # not charged lost to patron, want make claims ret
       print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_nooi#item$itemnumber");
       exit;
    }
+}
+elsif ($itemlost && !$lostitem && !$issue && ($itemlost==1)) {
+   print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nolc_noco#item$itemnumber");
+   exit;    
 }
 elsif ($lostitem && $itemlost==0) {
 ## If the item is being marked found, refund the patron the lost item charge,

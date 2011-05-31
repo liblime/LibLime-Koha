@@ -115,6 +115,7 @@ foreach(@{GetAuthorisedValues($avc{itemlost})}) {
       $template->param(claimsreturned_authval => $$_{lib});
    }
 }
+my @fail = qw(nocr nocr_notcharged nolc_noco);
 foreach my $item (@items){
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
     $itemcount++;
@@ -130,16 +131,29 @@ foreach my $item (@items){
     if ($updatefail && ($$item{itemnumber} ~~ $itemnumber)) {
         $item->{"updatefail_$updatefail"} = 1;
         if ($updatefail ~~ 'nocr_charged') {
-            my $acc = C4::Accounts::GetLine($query->param('oiborrowernumber'),$query->param('accountno'));
-print "Content-type: text/plain\n\n";
-use Data::Dumper;
-print Dumper $acc;
-exit;
+            my $oldiss = C4::Circulation::GetOldIssue($itemnumber);
+            my $acc    = C4::Accounts::GetLine($query->param('oiborrowernumber'),$query->param('accountno'));
             my $accbor = C4::Members::GetMember($$acc{borrowernumber});
             $$item{"cr_oi_name"} = "$$accbor{firstname} $$accbor{surname}";
             $$item{"cr_oi_cardnumber"} = $$accbor{cardnumber};
+            foreach(qw(returndate issuedate date_due)) {
+               $$item{"cr_oi_$_"} = C4::Dates->new($$oldiss{$_},'iso')->output;
+            }
             foreach(keys %$acc) {
                $$item{"cr_oi_$_"} = $$acc{$_};
+            }
+            foreach(qw(amount amountoutstanding)) {
+               $$item{"cr_oi_$_"} = sprintf('%.02f',$$item{"cr_oi_$_"});
+            }
+        }
+        if ($updatefail ~~ @fail) {
+            my $oldiss = C4::Circulation::GetOldIssue($itemnumber) // {};
+            if ($$oldiss{borrowernumber}) { # may be anonymised
+               my $lastbor = C4::Members::GetMember($$oldiss{borrowernumber});
+               $$item{lastbor_name} = "$$lastbor{firstname} $$lastbor{surname}";
+               $$item{lastbor_returndate} = C4::Dates->new($$oldiss{returndate},'iso')->output;
+               $$item{lastbor_borrowernumber} = $$oldiss{borrowernumber};
+               $$item{lastbor_cardnumber}     = $$lastbor{cardnumber};
             }
         }
     }

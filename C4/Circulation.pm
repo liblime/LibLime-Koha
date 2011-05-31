@@ -416,7 +416,7 @@ sub transferbook {
     # check if it is still issued to someone, return it...
     if ($issue->{borrowernumber}) {
         AddReturn( $barcode, $fbr );
-        $messages->{'WasReturned'} = $issue->{borrowernumber};
+        $messages->{'WasReturned'} = $issue;
     }
 
     # find reserves.....
@@ -2045,6 +2045,7 @@ sub _FixAccountNowFound
 
     ## update lost item accountline description
     ## tolost:   checkin as lost [date] by [librarian]                  ,tocredit=0
+    ##   claimsreturned:                                                ,tocredit=1
     ## checkout: found at checkout [date] by [patron|other]             ,tocredit=1
     ## renewal:  found at renewal [date] by this patron                 ,tocredit=1
     ## default:  found and returned [date] by [patron|other|librarian]  ,tocredit=1
@@ -2331,7 +2332,15 @@ sub FixAccountForLostAndReturned {
    $sth->execute($$data{accountno},$$data{borrowernumber},$itemnumber);
 
    return if $$data{description} =~ /writeoff at no\.\d+/i;
-
+   if ($$data{description} =~ /claims returned at no\.(\d+)/) {
+      my $desc = sprintf(", NO LONGER LOST %s (-%s)",C4::Dates->new()->output(),C4::Context->userenv->{id});
+      $dbh->do("UPDATE accountlines
+         SET  description = CONCAT(description,?)
+        WHERE description NOT RLIKE 'NO LONGER LOST'
+          AND borrowernumber = ?
+          AND accountno      = ?",undef,
+         $desc,$$data{borrowernumber},$1);
+   }
    if ($$data{description} =~ /paid at no\./) {
       ## see if we already receive a refund owed (RCR), eg from payment before Claims Returned
       $sth = $dbh->prepare("SELECT * FROM accountlines
@@ -2432,12 +2441,14 @@ sub GetItemIssue {
       push @vals, $borrowernumber;
     }
     
-    my $sth = C4::Context->dbh->prepare(
-        "SELECT s.*,i.biblionumber,b.title
-        FROM issues s, items i, biblio b
-        WHERE s.itemnumber=? $and 
-        AND s.itemnumber = i.itemnumber
-        AND i.biblionumber = b.biblionumber");
+    my $sth = C4::Context->dbh->prepare("
+      SELECT s.*,i.biblionumber,b.title,p.firstname,p.surname,p.cardnumber,p.categorycode
+        FROM issues s, items i, biblio b, borrowers p
+       WHERE s.itemnumber     = ? $and 
+         AND s.itemnumber     = i.itemnumber
+         AND i.biblionumber   = b.biblionumber
+         AND p.borrowernumber = s.borrowernumber
+    ");
     $sth->execute(@vals);
     my $data = $sth->fetchrow_hashref;
     return unless $data;
@@ -2480,6 +2491,18 @@ and true if you want issues history from old_issues also.
 Returns reference to an array of hashes
 
 =cut
+
+sub GetOldIssue
+{
+   my $itemnumber = shift;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare('SELECT * FROM old_issues
+      WHERE itemnumber = ?
+   ORDER BY returndate DESC
+      LIMIT 1');
+   $sth->execute($itemnumber);
+   return $sth->fetchrow_hashref();
+}
 
 sub GetItemIssues {
     my ( $itemnumber, $history ) = @_;

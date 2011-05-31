@@ -1590,6 +1590,7 @@ sub ModReserve {
 
     return if $priority ~~ 'W';
     return if $priority ~~ 'n';
+    return if $priority ~~ 'T';
     if ( $priority ~~ 'del' ) {
         ModReserveCancelAll($reservenumber, $itemnumber);
     }

@@ -628,6 +628,7 @@ sub rechargeClaimsReturnedUndo
    my $li = shift; # lost_items hash for the lost item
    my $dbh = C4::Context->dbh;
    my $sth;
+   my $newnum = 0;
 
    # first make sure the borrower hasn't already been charged for 
    # this item
@@ -635,8 +636,7 @@ sub rechargeClaimsReturnedUndo
       WHERE borrowernumber = ?
         AND itemnumber     = ?
         AND accounttype    = 'L'
-   ORDER BY timestamp DESC /* get only the latest */
-      LIMIT 1");
+   ORDER BY accountno DESC LIMIT 1");
    $sth->execute($$li{borrowernumber},$$li{itemnumber});
    my $acct = $sth->fetchrow_hashref();
 
@@ -662,7 +662,7 @@ sub rechargeClaimsReturnedUndo
       }
 
       ## recharge the lost fee as a NEW line in the borrower's account
-      my $accountno = getnextacctno($$li{borrowernumber});
+      my $newnum = getnextacctno($$li{borrowernumber});
       $sth = $dbh->prepare('INSERT INTO accountlines (
          accountno,
          itemnumber,
@@ -674,7 +674,7 @@ sub rechargeClaimsReturnedUndo
          borrowernumber)
          VALUES(?,?,?,NOW(),?,?,?,?)');
       $sth->execute(
-         $accountno,
+         $newnum,
          $$li{itemnumber},
          $replacementprice,
          'Lost Item',
@@ -682,10 +682,29 @@ sub rechargeClaimsReturnedUndo
          $replacementprice,
          $$li{borrowernumber}
       );
+
+      ## find previous claims returned
+      $sth = $dbh->prepare("SELECT accountno FROM accountlines
+         WHERE itemnumber     = ?
+           AND borrowernumber = ?
+           AND accounttype    = 'FOR'
+           AND description LIKE 'Claims returned at no.$$acct{accountno}%'
+           AND description NOT RLIKE 'recharged at no.'");
+      $sth->execute($$li{itemnumber},$$li{borrowernumber});
+      if (my($prevnum) = $sth->fetchrow_array) {
+         my $chargedate = C4::Dates->new()->output;
+         my $user       = C4::Context->userenv->{id};
+         $dbh->do("UPDATE accountlines
+            SET description    = CONCAT(description, ', recharged at no.$newnum $chargedate (-$user)')
+          WHERE accountno      = ?
+            AND borrowernumber = ?",undef,
+            $prevnum,$$li{borrowernumber}
+         );
+      }
    }
 
    # else do nothing: borrower's already been charged for this item
-   return 1;
+   return $newnum;
 }
 
 sub chargelostitem{

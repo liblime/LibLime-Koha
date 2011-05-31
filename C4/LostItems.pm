@@ -72,6 +72,7 @@ sub tryClaimsReturned
         AND borrowernumber = ?
         AND itemnumber     = ?
         AND description RLIKE 'due on $due'
+        AND description NOT RLIKE 'NO LONGER LOST'
         AND amountoutstanding > 0
    ORDER BY accountno DESC");
    $sth->execute($$oi{borrowernumber},$$oi{itemnumber});
