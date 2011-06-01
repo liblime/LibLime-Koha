@@ -1077,7 +1077,7 @@ sub AddIssue {
                branch         => $branch,
                datedue        => $datedue,
                issuedate      => $issuedate,# renewal date
-               exemptfine     => $exemptfine,
+               exemptfine     => $g{exemptfine},
             );
       return $datedue;
    }
