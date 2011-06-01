@@ -124,19 +124,27 @@ elsif ($op and $op eq 'delete_course_reserve') {
 }
 elsif ($op and ( $op eq 'view_course_reserves' or $op eq 'create_course_reserve' ) ) {
     if ($submit) {
-        my $barcode = $query->param("barcode");
-        my $itemnumber = GetItemnumberFromBarcode($barcode);
-        my $course_reserve = {
-            course_id => $course_id,
-            itemnumber => $itemnumber,
-            itemtype => $query->param("itemtype"),
-            location => $query->param("location"),
-            branchcode => $query->param("branchcode"),
-            ccode => $query->param("ccode"),
-            public_note => $query->param("public_note"),
-            staff_note => $query->param("staff_note"),
-        };
-        CreateCourseReserve($course_reserve);
+        my @barcodes = split(/\n/, $query->param('barcodes'));
+        for my $barcode (@barcodes) {
+            $barcode =~ s/\n|\r//g;
+            my $itemnumber = GetItemnumberFromBarcode($barcode);
+            if (!defined $itemnumber) {
+                warn "Unable to find item for barcode '$barcode'";
+                next;
+            }
+
+            my $course_reserve = {
+                course_id => $course_id,
+                itemnumber => $itemnumber,
+                itemtype => $query->param('itemtype'),
+                location => $query->param('location'),
+                branchcode => $query->param('branchcode'),
+                ccode => $query->param('ccode'),
+                public_note => $query->param('public_note'),
+                staff_note => $query->param('staff_note'),
+            };
+            CreateCourseReserve($course_reserve);
+        }
         print $query->redirect("/cgi-bin/koha/circ/courses.pl?op=view_course_reserves&course_id=$course_id");
     }
     else {
