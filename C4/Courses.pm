@@ -314,7 +314,7 @@ sub CreateCourseReserve {
         $course_reserve->{ccode} = $item->{ccode} if $course_reserve->{ccode} eq 'NOCHANGE';
         $course_reserve->{location} = $item->{location} if $course_reserve->{location} eq 'NOCHANGE';
         $course_reserve->{branchcode} = $item->{homebranch} if $course_reserve->{branchcode} eq 'NOCHANGE';
-        $course_reserve->{itemtype} = $item->{itemtype} if $course_reserve->{itemtype} eq 'NOCHANGE';
+        $course_reserve->{itemtype} = $item->{itype} if $course_reserve->{itemtype} eq 'NOCHANGE';
         my $sth2 = $dbh->prepare("INSERT INTO course_reserves (course_id,itemnumber,staff_note,public_note,itemtype,ccode,location,branchcode,original_itemtype,original_ccode,original_location,original_branchcode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
         $sth2->execute($course_reserve->{course_id},$course_reserve->{itemnumber},$course_reserve->{staff_note},$course_reserve->{public_note},$course_reserve->{itemtype},$course_reserve->{ccode},$course_reserve->{location},$course_reserve->{branchcode},$item->{itype},$item->{ccode},$item->{location},$item->{homebranch});
         $sth2->finish;
