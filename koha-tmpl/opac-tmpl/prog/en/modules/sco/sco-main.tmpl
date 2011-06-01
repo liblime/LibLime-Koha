@@ -209,7 +209,7 @@ Sorry, This Self-Checkout Station has lost authentication.  Please contact the a
     <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME="barcode" -->" />
     <input type="hidden" name="confirmed" value=""  />
         <!-- TMPL_IF NAME="norenew" -->
-        <input type="button" value="Return Item" name="confirm" class="return" onclick="this.form.op.value='returnbook';this.form.submit();"  />
+        <input type="button" value="Unavailable" disabled="1" name="confirm" class="unavailable" />
         <!-- TMPL_ELSE  -->
         <input type="button" value="Renew Item" <!-- TMPL_UNLESS NAME="renew" --> name="confirm"<!-- /TMPL_UNLESS --> class="renew" onclick="this.form.confirmed.value='1';this.form.submit();" />
         <!-- /TMPL_IF -->
