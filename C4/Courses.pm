@@ -210,7 +210,8 @@ sub GetCourseReserves {
         my $on_reserve_count = GetCountOnReserveForItem($row->{itemnumber});
         my $item = GetItem($row->{'itemnumber'});
         if(!$item) {
-            warn "Course $course_id has missing item $row->{itemnumber}\n";
+            warn "Course $course_id has missing item $row->{itemnumber}. Deleting stale entry.\n";
+            DeleteCourseReserve($row->{course_reserve_id});
             next;
         }
         $on_reserve_count -= 1 if $on_reserve_count and $on_reserve_count>0;
@@ -334,18 +335,19 @@ sub DeleteCourseReserve {
     my $course_reserve = GetCourseReserve($course_reserve_id);
     my $biblio = GetBiblioFromItemNumber($course_reserve->{itemnumber});
     my $item = GetItem($course_reserve->{itemnumber});
-    if ($item->{'onloan'}){
-        return "ErrorItemCheckedOut";
-    }
-    elsif ($item->{'itemlost'}){
-        return "ErrorItemLost";
+    if (defined $item) { # item may have been deleted
+        if ($item->{'onloan'}){
+            return "ErrorItemCheckedOut";
+        }
+        elsif ($item->{'itemlost'}){
+            return "ErrorItemLost";
+        }
+        ModItem({itype => $course_reserve->{original_itemtype}, ccode => $course_reserve->{original_ccode},location => $course_reserve->{original_location}, holdingbranch => $course_reserve->{original_branchcode}, homebranch => $course_reserve->{original_branchcode} },$biblio->{biblionumber},$course_reserve->{itemnumber});
     }
 
-    ModItem({itype => $course_reserve->{original_itemtype}, ccode => $course_reserve->{original_ccode},location => $course_reserve->{original_location}, holdingbranch => $course_reserve->{original_branchcode}, homebranch => $course_reserve->{original_branchcode} },$biblio->{biblionumber},$course_reserve->{itemnumber});
-
-    my $sth = $dbh->prepare("DELETE FROM course_reserves WHERE course_reserve_id=?");
-    $sth->execute($course_reserve_id);
-    $sth->finish;
+    my $sth = $dbh->do(q{
+        DELETE FROM course_reserves WHERE course_reserve_id=?
+        }, undef, $course_reserve_id);
 }
 
 sub GetInstructors {
