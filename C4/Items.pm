@@ -145,6 +145,8 @@ sub GetItem {
         $sth->execute($barcode);		
         $data = $sth->fetchrow_hashref;
     }
+    return if (!$data);
+
     if ( $serial) {      
     my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=?");
         $ssth->execute($data->{'itemnumber'}) ;
