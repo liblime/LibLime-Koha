@@ -78,6 +78,14 @@ input[type=submit]:active, input[type=button], input[type=reset] {
 	border: 1px inset #666666;
 	float : none;
 }
+
+input[type=button].unavailable {
+	background : #aaa;
+	color : #111;
+	font-weight : normal;
+        font-style : italic;
+}
+
 .dialog {
   border: 1px solid #bcbcbc;
 	padding : .5em;
