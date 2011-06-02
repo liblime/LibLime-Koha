@@ -32,6 +32,7 @@ use List::Util qw( sum );
 use C4::Branch; # GetBranches
 use C4::Koha;   # GetPrinter
 use C4::Circulation;
+use C4::Items qw();
 use C4::Members;
 use C4::Accounts;
 use C4::Biblio;
@@ -393,11 +394,6 @@ if ($borrowernumber) {
             $template->param("returnbeforeexpiry" => 1);
         }
     }
-    $template->param(
-        overduecount => $od,
-        issuecount   => $issue,
-        finetotal    => $fines,
-    );
     # Check if patron is in debt collect
     $$borrower{last_reported_amount} ||= 0;
     if ($borrower->{'last_reported_amount'} > 0) {
@@ -409,6 +405,9 @@ if ($borrowernumber) {
 # STEP 3 : ISSUING
 #
 #
+
+my %last_issue;
+
 if ($barcode) {
   # always check for blockers on issuing
   my ( $error, $question ) =
@@ -463,34 +462,39 @@ if ($barcode) {
             $template->param(howhandleReserve=>$howReserve || 'requeue');
         }
         else {
-            C4::Circulation::AddIssue( 
+            $datedueObj = C4::Circulation::AddIssue( 
                borrower       => $borrower,
                barcode        => $barcode,
                datedueObj     => $datedueObj,
                howReserve     => $howReserve,
             );
+            my $item = C4::Items::GetItem(undef, $barcode) // {};
+            my $biblio = GetBiblioData($item->{biblionumber}) // {};
+            $last_issue{title} = $biblio->{title};
+            $last_issue{barcode} = $barcode;
+            $last_issue{duedate} = $datedueObj->output();
             
-			   $inprocess = 1;
+            $inprocess = 1;
             if($globalduedate && ! $stickyduedate && $duedatespec_allow ){
                 $duedatespec = $globalduedate->output();
                 $stickyduedate = 1;
             }
-		  }
+        }
     }
     
-    # FIXME If the issue is confirmed, we launch another time GetMemberIssuesAndFines, now display the issue count after issue 
-    my ( $od, $issue, $fines ) = GetMemberIssuesAndFines( $borrowernumber );
-    $template->param( issuecount   => $issue );
-
     if ($query->param('fromqueue')) {
        $template->param(backtoqueue=>1);
     }
 }
 
 # reload the borrower info for the sake of reseting the flags.....
-my $patron_infobox;
 if ($borrowernumber) {
     $borrower = GetMemberDetails( $borrowernumber, 0, $circ_session );
+
+    # Get waiting reserves
+    if (my $waiting_loop = C4::View::Member::GetWaitingReservesLoop($borrowernumber)) {
+        $template->param(itemswaiting => 1, reservloop => $waiting_loop );
+    }
 }
 
 ##################################################################################
@@ -536,14 +540,6 @@ if ($borrowerslist) {
    exit;
 
 }
-
-$patron_infobox = C4::View::Member::BuildFinesholdsissuesBox($borrowernumber, $query);
-my $itemswaiting= 0;
-foreach(@{$$patron_infobox{reservloop} // []}) {
-   if ($$_{waiting}) { $itemswaiting = 1; last }
-}
-$template->param(itemswaiting => $itemswaiting);
-$template->param(%$patron_infobox);
 
 my $flags = $borrower->{'flags'};
 my $allow_override_login = C4::Context->preference( 'AllowOverrideLogin' );
@@ -750,6 +746,7 @@ $template->param(
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
     AllowDueDateInPast        => C4::Context->preference('AllowDueDateInPast'),
     UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
+    last_issue                => ($last_issue{barcode}) ? [ \%last_issue ] : undef,
 );
 
 # Pass off whether to display initials or not

@@ -778,9 +778,19 @@ Checkout anyway?<br>
 </div>
 </div>
 
-<div>
-<TMPL_INCLUDE NAME="member-finesholdsissues.inc">
-</div>
+<TMPL_IF NAME="last_issue">
+  <TMPL_LOOP NAME="last_issue">
+    <div id="last_issue">
+      <dl>
+        <dt>Just checked out:</dt>
+        <dd>
+          <span class="booktitle"><TMPL_VAR NAME="title"/></span>
+          <span class="itembarcode">(<TMPL_VAR NAME="barcode"/>)</span>,
+          Due: <span class="duedate"><TMPL_VAR NAME="duedate"/></span>
+        </dd>
+    </div>
+  </TMPL_LOOP>
+</TMPL_IF>
 
 </div>
 </div>

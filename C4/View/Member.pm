@@ -103,6 +103,26 @@ sub GetReservesLoop {
     return \@reserveloop;
 }
 
+sub GetWaitingReservesLoop {
+    my $borrowernumber = shift or return;
+    my @reserves = GetReservesFromBorrowernumber($borrowernumber );
+
+    @reserves = grep {$_->{found} ~~ 'W'} @reserves;
+    return undef if (scalar @reserves == 0);
+
+    foreach my $r (@reserves) {
+        $r->{waiting} = 1;
+        $r->{pickupbranch} = GetBranchName($r->{branchcode});
+        my $biblio = C4::Biblio::GetBiblioData($r->{biblionumber});
+        $r->{title} = $biblio->{title};
+        $r->{author} = $biblio->{author};
+        my $item = C4::Items::GetItem($r->{itemnumber});
+        $r->{barcodereserv} = $item->{barcode};
+    }
+
+    return \@reserves;
+}
+
 sub GetRevisionsLoop {
     my $borrowernumber = shift;
 
