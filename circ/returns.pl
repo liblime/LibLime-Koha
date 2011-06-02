@@ -217,9 +217,6 @@ if ( $query->param('resbarcode') ) {
             diffbranch     => 1,
         );
     }
-
-    my $res = C4::Reserves::GetReserve($reservenumber);
-    C4::Reserves::ModReserveFillCheckin($res);
     if ($query->param('fromqueue')) {
        $template->param(
          closeGB     => 1,

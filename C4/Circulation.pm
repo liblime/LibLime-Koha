@@ -1128,8 +1128,7 @@ sub AddIssue {
    }
    
    ## remove from tmp_holdsqueue
-   $sth = $dbh->prepare('DELETE FROM tmp_holdsqueue WHERE itemnumber=?');
-   $sth->execute($$item{itemnumber});
+   C4::Reserves::RmFromHoldsQueue(itemnumber=>$$item{itemnumber});
             
    ## Starting process for transfer job (checking transfert 
    ## and validate it if we have one)
@@ -1185,10 +1184,7 @@ sub AddIssue {
    ModDateLastSeen( $item->{'itemnumber'} );
 
    # If it costs to borrow this book, charge it to the patron's account.
-   ( $charge, $itemtype ) = GetIssuingCharges(
-            $item->{'itemnumber'},
-            $borrower->{'borrowernumber'}
-   );
+   ($charge,$itemtype) = _chargeToAccount($$item{itemnumber},$$borrower{borrowernumber},$issuedate);
    $item->{'charge'} = $charge;
    
    # Record the fact that this book was issued
@@ -1855,6 +1851,37 @@ Returns nothing.
 
 =cut
 
+sub _chargeToAccount
+{                                 # iso
+   my($itemnumber,$borrowernumber,$issuedate,$isrenewal) = @_;
+   return unless ($itemnumber && $borrowernumber && $issuedate);
+   my($charge,$itemtype ) = GetIssuingCharges($itemnumber,$borrowernumber);
+   $charge ||= 0;
+   return ($charge,$itemtype) unless $charge > 0;
+   my $text         = $isrenewal? 'renewed' : 'issued';
+   my $issuedate_us = C4::Dates->new($issuedate,'iso')->output;
+   my $dbh = C4::Context->dbh;
+   my $sth = $dbh->prepare("SELECT 1 FROM accountlines
+      WHERE accounttype    = 'Rent'
+        AND itemnumber     = ?
+        AND borrowernumber = ?
+        AND description LIKE 'Rental fee, % $issuedate_us%'");
+   $sth->execute($itemnumber,$borrowernumber);
+   return ($charge, $itemtype) if $sth->fetchrow_array;
+   $dbh->do("INSERT INTO accountlines (
+         borrowernumber,
+         accountno,
+         itemnumber,
+         description,
+         `date`,
+         amount,
+         amountoutstanding,
+         accounttype) VALUES (?,?,?,?,NOW(),?,?,'Rent')",undef,
+      $borrowernumber,_getnextaccountno($borrowernumber),$itemnumber,
+      "Rental fee, $text $issuedate_us",$charge,$charge);
+   return $charge,$itemtype;
+}
+
 sub _FixAccountOverdues {
     my ($issue, $flags) = @_;
     return unless $issue;
@@ -2170,7 +2197,8 @@ sub _getnextaccountno
 {
    my $borrowernumber = shift;
    my $sth = C4::Context->dbh->prepare('SELECT MAX(accountno)+1 FROM accountlines
-        WHERE borrowernumber = ?');
+        WHERE borrowernumber = ?
+          AND borrowernumber IS NOT NULL');
    $sth->execute($borrowernumber);
    my($accountno) = $sth->fetchrow_array() || 1;
    return $accountno;
@@ -2770,33 +2798,15 @@ sub AddRenewal {
     );
     $sth->execute( $datedue->output('iso'), $renews, $lastreneweddate, $borrowernumber, $itemnumber );
     $sth->finish;
+    my %mod = ( 
+       renewals => ($$biblio{renewals} // 0)+1,
+       onloan   => $datedue->output('iso'),
+       itemlost => 0,
+    );
+    my($charge) = _chargeToAccount($$item{itemnumber},$$borrower{borrowernumber},$issuedate,1);
 
-    # Update the renewal count on the item, and tell zebra to reindex
-    $renews = ($biblio->{'renewals'} // 0) + 1;
-    ModItem({ renewals => $renews, onloan => $datedue->output('iso') }, $biblio->{'biblionumber'}, $itemnumber);
-
-    # Charge a new rental fee, if applicable?
-    my ( $charge, $type ) = GetIssuingCharges( $itemnumber, $borrowernumber );
-    if ( $charge > 0 ) {
-        my $accountno = _getnextaccountno( $borrowernumber );
-        my $item = GetBiblioFromItemNumber($itemnumber);
-        $sth = $dbh->prepare(
-                "INSERT INTO accountlines
-                    (date,
-                    borrowernumber, accountno, amount,
-                    description,
-                    accounttype, amountoutstanding, itemnumber
-                    )
-                    VALUES (now(),?,?,?,?,?,?,?)"
-        );
-        $sth->execute( $borrowernumber, $accountno, $charge,
-            "Renewal of Rental Item",
-            'Rent', $charge, $itemnumber );
-        $sth->finish;
-   }
-
-   # use previous issuing, not current renewed issuing
-   _FixAccountOverdues(
+    ModItem(\%mod, $biblio->{'biblionumber'}, $itemnumber);
+    _FixAccountOverdues(
       $issue, {
          exemptfine    => $g{exemptfine},
          branch        => $branch,
@@ -2804,13 +2814,14 @@ sub AddRenewal {
          atreturn      => 0, # at renewal
          tolost        => 0, # no!
       },
-   );
+    );
 
-
-   # was item lost?  Clear that.
-   ModItem({itemlost => 0}, $item->{'biblionumber'}, $item->{'itemnumber'}) if $$item{itemlost};
    _FixAccountNowFound($$borrower{borrowernumber},$lostitem,C4::Dates->new(),0,'renewal');
    C4::LostItems::DeleteLostItemByItemnumber($itemnumber);
+
+   ## sanity checks: remove from transfers and holdsqueue
+   C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber);
+   DeleteTransfer($itemnumber);
 
    # Log the renewal
    UpdateStats( $branch, 'renew', $charge, $source, $itemnumber, $item->{itype}, $borrowernumber);

@@ -1796,34 +1796,6 @@ sub ModReserveFillCheckout
    return 1;
 }
 
-sub ModReserveFillCheckin
-{
-   my $res = shift; # the reserves hash should be complete
-   
-   ## how many days it's going to sit on the hold shelf awaiting pickup
-   my $delay = C4::Context->preference('ReservesMaxPickupDelay');
-   my $expirationdate = '';
-   if ($delay) {
-      $expirationdate = ",expirationdate=DATE_ADD(NOW(),INTERVAL $delay DAY)";
-   }
-   else {
-      $expirationdate = ",expirationdate=NULL";
-   }
-   my $dbh = C4::Context->dbh;
-   my $query = "UPDATE reserves
-                   SET priority         = 0
-                       $expirationdate ,
-                       waitingdate      = NOW()
-                 WHERE reservenumber    = ?";
-   my $sth = $dbh->prepare($query);
-   $sth->execute($$res{reservenumber});
-
-   ## delete from Holds Queue
-   RmFromHoldsQueue(reservenumber => $$res{reservenumber});
-  
-   return 1; # return true on success
-}
-
 sub ModReserveTrace
 {
    my $res = shift;
@@ -2030,6 +2002,7 @@ sub ModReserveAffect {
     }
     $sth = $dbh->prepare($query);
     $sth->execute( $itemnumber, $reservenumber );
+    RmFromHoldsQueue(itemnumber=>$itemnumber);
     _NormalizePriorities( $biblionumber );
     _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber, $reservenumber ) if ( !$transferToDo && !$already_on_shelf && C4::Context->preference('EnableHoldOnShelfNotice'));
 
