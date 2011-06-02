@@ -941,10 +941,10 @@
       "value" : "0",
       "type" : "YesNo"
    },
-   "TalkingTechFileName" : {
+   "TalkingTechMessagePath" : {
       "explanation" : "Set the file system path for the Talking Tech MESSAGE file",
       "options" : "",
-      "value" : "/tmp/TtMESSAGE.csv",
+      "value" : "/tmp",
       "type" : "free"
    },
    "DisplayStafficonsXSLT" : {
@@ -2056,5 +2056,11 @@
       "options" : null,
       "value" : "1",
       "type" : "YesNo"
+   },
+   "PrintNoticesMaxLines" : {
+      "explanation" : "If greater than 0, sets the maximum number of lines an overdue notice will print. If the number of items is greater than this number, the notice will end with a warning asking the borrower to check their online account for a full list of overdue items.",
+      "options" : "",
+      "value" : "0",
+      "type" : "Integer"
    }
 }

@@ -796,10 +796,6 @@ sub CreateTALKINGtechMESSAGE {
 
   $notelevel = 0 if ($code eq "FINE");
   my $due_date;
-  my ($tmpfh,$tmpname) = tempfile( DIR => "/tmp/itivamsg" );
-# Append additional info into file that will be sent to i-tiva server
-  my $filename = C4::Context->preference('TalkingTechFileName');
-  open(MSG,">>$filename") or warn "Can't open $filename";
   foreach my $item (@$items) {
     my $branch = C4::Branch::GetBranchDetail($item->{holdingbranch});
     my $temppath = C4::Context->preference('TalkingTechMessagePath')
@@ -822,11 +818,6 @@ sub CreateTALKINGtechMESSAGE {
       $due_date = '';
     }
     $branch->{branchname} =~ s/Public Library/PL/;
-    printf MSG "\"V\",\"EN\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"\",\"%s\",\"%12.12s\",\"%s\",\"%s\",\"%s\",\"\"\r\n",
-    $code,$notelevel,$borrower->{cardnumber},$borrower->{title},
-    $borrower->{firstname},$borrower->{surname},$borrower->{phone},
-    $borrower->{email},$item->{holdingbranch},$branch->{branchname},
-    $item->{barcode},$due_date,$item->{title};
     if (defined $tmpfh) {
       printf $tmpfh "\"V\",\"EN\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"\",\"%s\",\"%12.12s\",\"%s\",\"%s\",\"%s\",\"\"\r\n",
       $code,$notelevel,$borrower->{cardnumber},$borrower->{title},
@@ -837,9 +828,6 @@ sub CreateTALKINGtechMESSAGE {
       close($tmpfh);
     }
   }
-  close(MSG);
-  chmod(0666,$tmpfh);
-  close($tmpfh);
 
   return 1;
 }
