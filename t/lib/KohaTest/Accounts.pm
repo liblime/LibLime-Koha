@@ -14,14 +14,14 @@ sub methods : Test( 1 ) {
     my $self = shift;
     my @methods = qw( recordpayment
                       makepayment
+                      makepartialpayment
                       getnextacctno
-                      returnlost
                       fixcredit
                       refund
                       getcharges
                       getcredits
                       getrefunds
-                );	# removed fixaccounts (unused by codebase)
+                );
     
     can_ok( $self->testing_class, @methods );    
 }

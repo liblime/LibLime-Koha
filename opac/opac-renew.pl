@@ -10,6 +10,7 @@ use warnings;
 use CGI;
 use C4::Circulation;
 use C4::Auth;
+use C4::Members;
 
 my $query = new CGI;
 
@@ -23,14 +24,14 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 		  debug           => 1,
 	}
 ); 
-my @items          = $query->param('item');
+my @items       = $query->param('item');
 $borrowernumber = $query->param('borrowernumber') || $query->param('bornum');
-my $opacrenew = C4::Context->preference("OpacRenewalAllowed");
-
+my $opacrenew   = C4::Context->preference("OpacRenewalAllowed");
+my $borrower    = GetMember($borrowernumber);
 for my $itemnumber ( @items ) {
     my ($status,$error) = CanBookBeRenewed( $borrowernumber, $itemnumber );
     if ( $status == 1 && $opacrenew == 1 ) {
-        AddRenewal( $borrowernumber, $itemnumber, undef, undef, undef, 'opac' );
+        AddRenewal(borrowernumber=>$borrowernumber,itemnumber=>$itemnumber,borrower=>$borrower);
     }
 }
 # FIXME: else return ERROR to user!!

@@ -87,7 +87,7 @@ function ContinueReturns() {
 <div class="yui-g">
 <!-- error messages go before any form -->
 <!-- TMPL_IF NAME="errmsgloop" -->
-    <div class="dialog message">
+    <div class="dialog message" id="errmsg">
         <!-- TMPL_LOOP NAME="errmsgloop" -->
                     <!-- TMPL_IF Name="badbarcode" -->
                         <p class="problem">No Item with barcode: <!-- TMPL_VAR Name="msg" -->
@@ -97,13 +97,16 @@ function ContinueReturns() {
 			</p>
                     <!-- /TMPL_IF -->
                     <!-- TMPL_IF Name="ispermanent" -->
-                        <p class="problem">Please return to  <!-- TMPL_VAR Name="msg" --></p>
+                        <p class="problem">Permanent Collection: Please return to  <!-- TMPL_VAR Name="msg" --></p>
                     <!-- /TMPL_IF -->
                     <!-- TMPL_IF Name="notissued" -->
                         <p class="problem">Not checked out.</p>
                     <!-- /TMPL_IF -->
+                    <TMPL_IF NAME="returndateLTissuedate">
+                        <p class="problem"><TMPL_VAR NAME="msg"></p>
+                    </TMPL_IF>
                     <!-- TMPL_IF NAME="waslost" -->
-			<script type="text/javascript">$(document).ready(function() {HaltReturns();});</script>
+			            <script type="text/javascript">$(document).ready(function() {HaltReturns();});</script>
                         <p class="problem"><font style="color:red"><h3>Item was lost, now found.</h3></font></p>
                         <TMPL_IF NAME="lostborrowernumber">
                            Remove from <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<TMPL_VAR NAME="lostborrowernumber">"><TMPL_VAR NAME="lostbor_firstname"> 
@@ -111,6 +114,7 @@ function ContinueReturns() {
                              (<TMPL_VAR NAME="lostbor_cardnumber">) lost items?<br>
                            <form action="returns.pl" method="post" name="lostf">
                               <TMPL_LOOP NAME="inputloop">
+                              <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
                               <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
                               <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
                               <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
@@ -120,11 +124,42 @@ function ContinueReturns() {
                               <input type=hidden name="lost_item_id"   value="<TMPL_VAR NAME="lost_item_id">">
                               <input type=hidden name="itemnumber"     value="<TMPL_VAR NAME="itemnumber">">
                               <input type=hidden name="borrowernumber" value="<TMPL_VAR NAME="borrowernumber">">
-                              <input type="submit" value="Yes" />
-                              <input type=button value="No" onclick="document.lostf.unlinkFromAccount.value=0;document.lostf.submit();" />
-					               <TMPL_IF NAME="UseReceiptTemplates_ClaimsReturnedFound">
-				                  <input type="submit" value="Print Receipt" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=claims_returned_found&amp;barcode=<!-- TMPL_VAR Name="itembarcode" -->');" />
-					               </TMPL_IF>
+                              <input type="button" value="Yes" onclick="
+                                if(document.foundf) {
+                                    document.foundf.lost_item_id.value       = '<TMPL_VAR NAME="lost_item_id">';
+                                    document.foundf.lostbarcode.value        = '<TMPL_VAR NAME="itembarcode">';
+                                    document.foundf.lostborrowernumber.value = '<TMPL_VAR NAME="lostborrowernumber">';
+                                    document.foundf.unlinkFromAccount.value  = 1;
+                                    $('#errmsg').hide('slow'); 
+                                    return false;
+                                }
+                                else if (document.transferf) {
+                                    document.transferf.lost_item_id.value       = '<TMPL_VAR NAME="lost_item_id">';
+                                    document.transferf.lostbarcode.value        = '<TMPL_VAR NAME="itembarcode">';
+                                    document.transferf.lostborrowernumber.value = '<TMPL_VAR NAME="lostborrowernumber">';
+                                    document.transferf.unlinkFromAccount.value  = 1;
+                                    $('#errmsg').hide('slow'); 
+                                    return false;
+                                }
+                                else {
+                                    document.lostf.submit();
+                                }
+                              " />
+                              <input type=button value="No" onclick="
+                                if(document.foundf) {
+                                    $('#errmsg').hide('slow');
+                                }
+                                else if (document.transferf) {
+                                    $('#errmsg').hide('slow');
+                                }
+                                else {
+                                    document.lostf.unlinkFromAccount.value=0;
+                                    document.lostf.submit();
+                                }
+                              " />
+					          <TMPL_IF NAME="UseReceiptTemplates_ClaimsReturnedFound">
+				              <input type="submit" value="Print Receipt" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=claims_returned_found&amp;barcode=<!-- TMPL_VAR Name="itembarcode" -->');" />
+					          </TMPL_IF>
                            </form>
                         <TMPL_ELSE>
 			               <p><button id="continue_button" onclick="ContinueReturns();">Continue</button></p>
@@ -133,6 +168,11 @@ function ContinueReturns() {
                     <!-- TMPL_IF Name="withdrawn" -->
                         <p class="problem">Item is withdrawn.</p>
                     <!-- /TMPL_IF -->
+                    <TMPL_IF NAME="res_reservenumber">
+                        <TMPL_UNLESS NAME="found">
+                        Hold found expected at <b><TMPL_VAR NAME="pickbranchname"></b>
+                        </TMPL_UNLESS>
+                    </TMPL_IF>
             <!-- /TMPL_LOOP -->
             <!-- TMPL_IF NAME="soundon" -->
                 <audio src="/intranet-tmpl/prog/sound/critical.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
@@ -146,25 +186,53 @@ function ContinueReturns() {
 <!-- /TMPL_IF -->
 
 
-
-
 <!-- TMPL_IF NAME="wrongbranch" -->
 <div class="dialog alert"><h3>Cannot Check In</h3><p>This item must be checked in at its home library (<!-- TMPL_VAR NAME="rightbranch" -->). <strong>NOT CHECKED IN</strong></p>
 </div>
 <!-- /TMPL_IF -->
+
 <!-- case of a mistake in transfer loop -->
-<!-- TMPL_IF Name="WrongTransfer" --><div class="dialog message"><!-- WrongTransfer --><h3>Please return <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a> to <!-- TMPL_VAR Name="TransferWaitingAt" --></h3>
-<!-- TMPL_IF Name="wborcnum"--><h5>Hold for:</h5> 
-        <ul><li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">
+<TMPL_IF Name="WrongTransfer">
+    <div class="dialog message">
+    <p class="error">Already scheduled to be in transit
+    <TMPL_IF NAME="TransferWaitingAtBranchname">to <TMPL_VAR NAME="TransferWaitingAtBranchname">
+    <TMPL_ELSE><!-- do nothing here -->
+    </TMPL_IF>
+    </p>
+    <TMPL_UNLESS NAME="reserved">
+        <h3>Please send <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a> to 
+        <TMPL_IF NAME="wborcnum"><br><TMPL_VAR NAME="wpickbranchname"></h3>
+        <TMPL_ELSE><br><TMPL_VAR NAME="TransferWaitingAtBranchname"></h3>
+            <form method=post action="returns.pl" name="alreadytransf">
+            <input type=hidden name="cancelTransfer" value="0">
+            <input type=hidden name="itemnumber"     value="<TMPL_VAR NAME="itemnumber">">
+            <TMPL_LOOP NAME="inputloop">
+            <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
+            <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
+            <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
+            <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+            </TMPL_LOOP>
+            <input type=submit value="OK" class=approve>
+            <input type=button value="Cancel transfer, Keep here" class=deny onclick="
+                document.alreadytransf.cancelTransfer.value = 1;
+                this.form.submit();
+            " />
+            </form>
+        </TMPL_IF>
+        <!-- TMPL_IF Name="wborcnum" --><h5>Hold pickup there for:</h5> 
+        <ul>
+            <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">
             <!-- TMPL_VAR Name="borsurname" -->, <!-- TMPL_VAR Name="borfirstname" --></a> (<!-- TMPL_VAR Name="borcnum" -->)</li>
-        <li><!-- TMPL_VAR Name="wboraddress" --><!-- TMPL_IF NAME="wboraddress2" --><br />
-		<!-- TMPL_VAR NAME="wboraddress2" --><br /><!-- /TMPL_IF -->
-        <!-- TMPL_VAR Name="wborcity" -->  <!-- TMPL_VAR NAME="wborzip" --></li>
-        <!-- TMPL_IF NAME="wborphone" --><li><!-- TMPL_VAR Name="wborphone" --></li><!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="wboremail" --><li><a id="boremail" href="mailto:<!-- TMPL_VAR NAME="wboremail" -->"><!-- TMPL_VAR NAME="wboremail" --></a></li><!-- /TMPL_IF -->
-        </ul>
-  
-    <form method="post" action="returns.pl" class="confirm">
+            <li><!-- TMPL_VAR Name="wboraddress" --><!-- TMPL_IF NAME="wboraddress2" --><br />
+		        <!-- TMPL_VAR NAME="wboraddress2" --><br /><!-- /TMPL_IF -->
+                <!-- TMPL_VAR Name="wborcity" -->  <!-- TMPL_VAR NAME="wborzip" --></li>
+                <!-- TMPL_IF NAME="wborphone" --><li><!-- TMPL_VAR Name="wborphone" --></li><!-- /TMPL_IF -->
+		        <!-- TMPL_IF NAME="wboremail" --><li><a id="boremail" href="mailto:<!-- TMPL_VAR NAME="wboremail" -->"><!-- TMPL_VAR NAME="wboremail" --></a></li><!-- /TMPL_IF -->
+        </ul> 
+        <form method="post" action="returns.pl" class="confirm">
+            <input type=hidden name="dotransfer" value="1">
+            <input type=hidden name="transferitem" value="<TMPL_VAR NAME="WrongTransferItem">">
+            <input type=hidden name="tobranch" value="<TMPL_VAR NAME="wpickbranch">">
             <input type="hidden" name="WT-itemNumber" value="<!-- TMPL_VAR Name="WrongTransferItem" -->" />
             <input type="hidden" name="WT-waitingAt" value="<!-- TMPL_VAR Name="TransferWaitingAt" -->" />
             <input type="hidden" name="WT-From" value="<!-- TMPL_VAR Name="wtransfertFrom" -->" />
@@ -173,68 +241,95 @@ function ContinueReturns() {
             <input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">
             <input type=hidden name="queue_limit"    value="<TMPL_VAR NAME="queue_limit">">
             <input type=hidden name="queue_orderby"  value="<TMPL_VAR NAME="queue_orderby">">
-		<!-- TMPL_IF name="HoldButtonConfirm" -->
-        <input type="submit" class="approve" value="Confirm" />
+            <TMPL_LOOP NAME="inputloop">
+            <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
+            <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
+            <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
+            <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+            </TMPL_LOOP>
+
+		    <!-- TMPL_IF name="HoldButtonConfirm" -->
+            <input type="submit" class="approve" value="Confirm hold and <TMPL_IF EXPR="reroute">reroute </TMPL_IF>Transfer" />
+            <!-- /TMPL_IF -->
+		    <!-- TMPL_IF name="HoldButtonPrintConfirm" -->
+			    <!-- TMPL_IF NAME="UseReceiptTemplates" -->
+				    <!-- TMPL_IF NAME="UseReceiptTemplates_HoldFound" -->
+			        <input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=hold_found&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->'); this.form.submit();" />
+				    <!-- /TMPL_IF -->
+			    <!-- TMPL_ELSE -->
+			    <input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
+			    <!-- /TMPL_IF -->
         	<!-- /TMPL_IF -->
-		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
-			<!-- TMPL_IF NAME="UseReceiptTemplates" -->
-				<!-- TMPL_IF NAME="UseReceiptTemplates_HoldFound" -->
-			                <input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=hold_found&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->'); this.form.submit();" />
-				<!-- /TMPL_IF -->
-			<!-- TMPL_ELSE -->
-				<input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
-			<!-- /TMPL_IF -->
-        	<!-- /TMPL_IF -->
-    </form>
+        </form>
+        </TMPL_UNLESS>
+        <TMPL_ELSE><!-- no holds pending? -->
+            <TMPL_UNLESS NAME="reserved">
+            <form method=post action="returns.pl" name="intransitf">
+            <input type=hidden name="cancelTransfer" value="0">
+            <input type=hidden name="itemnumber" value="<TMPL_VAR NAME="itemnumber">">
+                <TMPL_LOOP NAME="inputloop">
+                <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
+                <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
+                <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
+                <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+                </TMPL_LOOP>
+            <input type=submit value="Confirm transfer" class="approve">
+            <input type=button value="Cancel transfer and Keep here" class="deny" onclick="
+                document.intransitf.cancelTransfer.value=1;
+                this.form.submit();
+            " />
+            </form>
+            </TMPL_UNLESS>
     <!-- /TMPL_IF --></div>
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF Name="found" -->
-<!-- found -->
-<!-- case of a reservation found, and display info -->
-    <!-- TMPL_IF Name="waiting" -->
-	<!-- waiting -->
+    <!-- case of a reservation found, and display info -->
+    <!-- TMPL_IF EXPR="waiting" -->
+        <!-- TMPL_IF NAME="soundon" -->
+        <audio src="/intranet-tmpl/prog/sound/ending.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
+        <!-- /TMPL_IF -->      
 
-<!-- TMPL_IF NAME="soundon" -->
-<audio src="/intranet-tmpl/prog/sound/ending.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
-<!-- /TMPL_IF -->      
-
-<div class="dialog message">
-        <h3>Hold Found (item is already waiting):  <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a></h3>
+        <div class="dialog message">
+        <form method="post" action="returns.pl" class="confirm" name="foundf">
+        <input type=hidden name="lost_item_id" value="">
+        <input type=hidden name="lostbarcode"  value="">
+        <input type=hidden name="lostborrowernumber" value="">
+        <input type=hidden name="unlinkFromAccount" value="0">
+        <h3>Hold Found<TMPL_IF NAME="pull"> (please pull)<TMPL_ELSE> (item is already waiting)</TMPL_IF>:<br><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a></h3>
         <!-- TMPL_IF NAME="reservenotes" --><h4>Notes: <!-- TMPL_VAR Name="reservenotes" --></h4><!-- /TMPL_IF -->
-        <h4>Hold for:</h4>
+        <br><h4>Hold for:</h4>
 			<ul>
             <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR Name="borsurname" -->, <!-- TMPL_VAR Name="borfirstname" --></a> (<!-- TMPL_VAR Name="borcnum" -->)</li>
             <li><!-- TMPL_VAR Name="boraddress" --><br />
 			<!-- TMPL_IF NAME="boraddress2" --><!-- TMPL_VAR NAME="boraddress2" --><br /><!-- /TMPL_IF -->
             <!-- TMPL_VAR Name="borcity" --> <!-- TMPL_VAR NAME="borzip" --></li>
-           <!-- TMPL_IF NAME="borphone" --><li> <!-- TMPL_VAR Name="borphone" --></li><!-- /TMPL_IF -->
-		   <!-- TMPL_IF NAME="boremail" --><li><a id="boremail" href="mailto:<!-- TMPL_VAR NAME="boremail" -->"><!-- TMPL_VAR NAME="boremail" --></a></li><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="debarred" --><li class="error">Patron is RESTRICTED</li><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="gonenoaddress" --><li class="error">Patron's address is in doubt</li><!-- /TMPL_IF --></ul>
-		<!-- TMPL_IF name="transfertodo" -->
+            <!-- TMPL_IF NAME="borphone" --><li> <!-- TMPL_VAR Name="borphone" --></li><!-- /TMPL_IF -->
+		    <!-- TMPL_IF NAME="boremail" --><li><a id="boremail" href="mailto:<!-- TMPL_VAR NAME="boremail" -->"><!-- TMPL_VAR NAME="boremail" --></a></li><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="debarred" --><li class="error">Patron is RESTRICTED</li><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="gonenoaddress" --><li class="error">Patron's address is in doubt</li><!-- /TMPL_IF --></ul>
+		    <!-- TMPL_IF name="transfertodo" -->
             <h4><strong>Transfer to:</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
-		<!-- TMPL_ELSE -->
-		<h4><strong>Hold at</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
-        <!-- /TMPL_IF -->
-        <form method="post" action="returns.pl" class="confirm">
-		<!-- TMPL_IF name="HoldButtonConfirm" -->
-            <input type="submit" class="approve" value="Confirm" />
+		    <!-- TMPL_ELSE -->
+		        <h4><strong>Hold at</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
+            <!-- /TMPL_IF -->
+		    <!-- TMPL_IF name="HoldButtonConfirm" -->
+                <input type="submit" class="approve" value="Confirm" />
         	<!-- /TMPL_IF -->
-		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
-			<!-- TMPL_IF NAME="UseReceiptTemplates" -->
-				<!-- TMPL_IF NAME="UseReceiptTemplates_HoldFound" -->
-			                <input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=hold_found&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->'); this.form.submit();" />
-				<!-- /TMPL_IF -->
-			<!-- TMPL_ELSE -->
-				<input type="submit" value="Print and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
-			<!-- /TMPL_IF -->
-
-            <!-- TMPL_LOOP Name="inputloop" -->
+		    <!-- TMPL_IF name="HoldButtonPrintConfirm" -->
+			    <!-- TMPL_IF NAME="UseReceiptTemplates" -->
+				    <!-- TMPL_IF NAME="UseReceiptTemplates_HoldFound" -->
+			            <input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=hold_found&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->'); this.form.submit();" />
+				    <!-- /TMPL_IF -->
+			    <!-- TMPL_ELSE -->
+				    <input type="submit" value="Print and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
+			    <!-- /TMPL_IF -->
+                <!-- TMPL_LOOP Name="inputloop" -->
+                <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
                 <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
                 <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
                 <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
-            <!-- /TMPL_LOOP -->
+                <!-- /TMPL_LOOP -->
                 <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR Name="reservenumber" -->" />
                 <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
                 <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
@@ -247,14 +342,55 @@ function ContinueReturns() {
                 <input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">
                 <input type=hidden name="queue_limit"    value="<TMPL_VAR NAME="queue_limit">">
                 <input type=hidden name="queue_orderby"  value="<TMPL_VAR NAME="queue_orderby">">
-        	<!-- /TMPL_IF -->
+        	<!-- /TMPL_IF --><!-- holdbuttonprintconfirm -->
                 </form>
-	</div>
-    <!-- /TMPL_IF -->
-
-    <!-- TMPL_IF Name="diffbranch" -->
-		<!-- diffbranch -->
+	        </div>
+        <TMPL_ELSE>
+            <TMPL_IF EXPR="currentbranch ne destbranchname and foundwait">
+            <div class="dialog message">
+            <span class="error">Unexpected check in.</span>
+            <h3>Hold found marked as <span class=error>Waiting</span>:</h3>
+            <h4><a href="/cgi-bin/koha/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a><br>
+            at <TMPL_VAR NAME="pickbranchname"> for</h4>
+            <ul>
+                <li><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<TMPL_VAR NAME="borrowernumber">&opentab_holds=1#onhold"><TMPL_VAR NAME="name"></a>
+                    (<TMPL_VAR NAME="borcnum">)</li>
+                <li><TMPL_VAR NAME="boraddress"><TMPL_IF NAME="boraddress2"><br><TMPL_VAR NAME="boraddress2"></TMPL_IF><br>
+                    <TMPL_VAR NAME="borcity"> <TMPL_VAR NAME="borzip"></li>
+            </ul><br>
+            <form method=post action="returns.pl" name="transwaitf">
+            <input type=hidden name="requeue"       value="0">
+            <input type=hidden name="reservenumber" value="<TMPL_VAR NAME="reservenumber">">
+            <input type=hidden name="biblionumber"  value="<TMPL_VAR NAME="biblionumber">">
+            <input type=hidden name="itemnumber"    value="<TMPL_VAR NAME="itemnumber">">
+            <input type=hidden name="resbarcode"    value="<TMPL_VAR NAME="barcode">">
+            <input type=hidden name="diffBranch"    value="<TMPL_VAR NAME="destbranch">">
+            <input type=hidden name="pickbranch"    value="<TMPL_VAR NAME="destbranch">">
+            <input type=hidden name="exemptfine"    value="<TMPL_VAR NAME="exemptfine">">
+            <input type=hidden name="dropboxmode"   value="<TMPL_VAR NAME="dropboxmode">">
+            <!-- TMPL_LOOP Name="inputloop" -->
+            <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
+            <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
+            <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
+            <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+            <!-- /TMPL_LOOP -->
+            <input type=button value="Confirm and transfer" class="approve">
+            <input type=button value="Ignore, Requeue hold and Keep Here" class="deny" onclick="
+                document.transwaitf.requeue.value = 1;
+                this.form.submit();
+            ">
+            </form>
+            </div>
+            </TMPL_IF>
+        <!-- /TMPL_IF --><!-- waiting -->
+        <!-- TMPL_IF NAME="diffbranch" -->
         <div class="dialog message">
+        <form method="post" action="returns.pl" class="confirm" name="foundf">
+        <input type=hidden name="lost_item_id" value="">
+        <input type=hidden name="lostbarcode"  value="">
+        <input type=hidden name="lostborrowernumber" value="">
+        <input type=hidden name="unlinkFromAccount" value="0">
+
 		<h3>Hold needing transfer found: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a></h3>
                 <h4>Hold for: </h4>
                     <ul>
@@ -264,8 +400,8 @@ function ContinueReturns() {
 						<!-- TMPL_VAR Name="borcity" -->  <!-- TMPL_VAR NAME="borzip" --></li>
                         <!-- TMPL_IF NAME="borphone" --><li><!-- TMPL_VAR Name="borphone" --></li><!-- /TMPL_IF -->
                         <!-- TMPL_IF NAME="boremail" --><li><!-- TMPL_IF name="transfertodo" --><!-- TMPL_VAR NAME="boremail" --><!-- TMPL_ELSE --><a id="boremail" href="mailto:<!-- TMPL_VAR NAME="boremail" -->"><!-- TMPL_VAR NAME="boremail" --></a><!-- /TMPL_IF --></li><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="debarred" --><li class="error">Patron is RESTRICTED</li><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="gonenoaddress" --><li class="error">Patron's address is in doubt</li><!-- /TMPL_IF -->
+                        <!-- TMPL_IF NAME="debarred" --><li class="error">Patron is RESTRICTED</li><!-- /TMPL_IF -->
+                        <!-- TMPL_IF NAME="gonenoaddress" --><li class="error">Patron's address is in doubt</li><!-- /TMPL_IF -->
                     </ul>
 		<!-- TMPL_IF name="transfertodo" -->
             <h4><strong>Transfer to:</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
@@ -273,7 +409,6 @@ function ContinueReturns() {
 		<h4><strong>Hold at</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
         <!-- /TMPL_IF -->
 
-        <form method="post" action="returns.pl" class="confirm">
 		<!-- TMPL_IF name="HoldButtonConfirm" -->
             <input type="submit" class="approve" value="Confirm" />
         	<!-- /TMPL_IF -->
@@ -287,6 +422,7 @@ function ContinueReturns() {
 			<!-- /TMPL_IF -->
 
             <!-- TMPL_LOOP Name="inputloop" -->
+                <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
                 <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
                 <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
                 <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
@@ -308,11 +444,33 @@ function ContinueReturns() {
     <!-- TMPL_IF Name="transfer" -->
     <!-- transfer: item with no reservation, must be returned to its homebranch -->
 	<div class="dialog message">
-	  <h3>Please return <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" DEFAULT="item" --></a> to <!-- TMPL_VAR NAME="homebranch" DEFAULT="homebranch" --></h3></div><!-- /TMPL_IF -->
-    
+      <p class=error>No holds pending; item needs to be returned to its homebranch.</p>
+	  <h3>Please return <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" DEFAULT="item" --></a> 
+        <br>to <TMPL_VAR NAME="homebranchname"></h3>
+    <form method=post action="returns.pl" name="transferf">
+        <input type=hidden name="lost_item_id" value="">
+        <input type=hidden name="lostbarcode"  value="">
+        <input type=hidden name="lostborrowernumber" value="">
+        <input type=hidden name="unlinkFromAccount" value="0">
+        <input type=hidden name="cancelTransfer" value="0">
+        <input type=hidden name="itemnumber" value="<TMPL_VAR NAME="itemnumber">">
+	    <!-- TMPL_LOOP Name="inputloop" -->     
+        <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
+	    <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" /> 
+	    <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" /> 
+	    <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" /> 
+	    <!-- /TMPL_LOOP -->                            
+        <input type=submit value="Confirm transfer" class="approve">
+        <input type=button value="Keep here" class="deny" onclick="
+            document.transferf.cancelTransfer.value=1;
+            this.form.submit();"
+        />
+    </form>
+    </div>
+    <!-- /TMPL_IF -->
+
     <!-- TMPL_UNLESS NAME="lostreturned" -->
     <!-- TMPL_IF Name="needstransfer" -->
-	<!-- needstransfer -->
 	<div class="dialog message"><h3> This item needs to be transfered to <!-- TMPL_VAR Name="homebranch" --></h3>
 	Transfer Now?<br />
     <form method="post" action="returns.pl" name="mainform" id="mainform">              
@@ -322,11 +480,12 @@ function ContinueReturns() {
 	<input type="hidden" name="transferitem" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
         <input type="hidden" name="exemptfine" value="<!-- TMPL_VAR Name="exemptfine" -->" />
         <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
-	<!-- TMPL_LOOP Name="inputloop" -->     
-	<input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" /> 
-	<input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" /> 
-	<input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" /> 
-	<!-- /TMPL_LOOP -->                            
+    	<!-- TMPL_LOOP Name="inputloop" -->     
+        <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
+	    <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" /> 
+    	<input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" /> 
+	    <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" /> 
+    	<!-- /TMPL_LOOP -->                            
 	<input type="hidden" name="barcode" value="0" />    
 	</form>   </div>
 	<!-- /TMPL_IF -->
@@ -345,6 +504,7 @@ function ContinueReturns() {
         <form method="post" action="returns.pl"><input type="submit" value="OK" />
             <!-- TMPL_LOOP Name="inputloop" -->
                 <!-- TMPL_UNLESS Name="first" -->
+                    <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
                     <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
                     <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
                     <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
@@ -383,6 +543,11 @@ function ContinueReturns() {
     <!-- /TMPL_IF -->
 
 	<div class="dialog message">
+    <form method="post" action="returns.pl" class="confirm" name="foundf">
+    <input type=hidden name="lost_item_id" value="">
+    <input type=hidden name="lostbarcode"  value="">
+    <input type=hidden name="lostborrowernumber" value="">
+    <input type=hidden name="unlinkFromAccount" value="0">
 	  <h3>Hold Found: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a></h3>
         <!-- TMPL_IF NAME="reservenotes" --><h4>Notes: <!-- TMPL_VAR Name="reservenotes" --></h4><!-- /TMPL_IF -->
         <h5>Hold for:</h5>
@@ -403,10 +568,9 @@ function ContinueReturns() {
 		<!-- TMPL_ELSE -->
 		<h4><strong>Hold at</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
         <!-- /TMPL_IF -->
-        <form method="post" action="returns.pl" class="confirm">
             <!-- TMPL_IF name="transfertodo" -->
 		<!-- TMPL_IF name="HoldButtonConfirm" -->
-                <input type="submit" class="approve" value="Confirm hold and Transfer" />
+                <input type="submit" class="approve" value="Confirm hold and <TMPL_IF NAME="reroute">reroute </TMPL_IF>Transfer" />
         	<!-- /TMPL_IF -->
 		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
 			<!-- TMPL_IF NAME="UseReceiptTemplates" -->
@@ -433,12 +597,23 @@ function ContinueReturns() {
         	<!-- /TMPL_IF -->
             <!-- /TMPL_IF -->
 		<!-- TMPL_IF name="HoldButtonIgnore" -->
-                <input type="submit" class="deny" value="Ignore" onclick="$('.dialog:visible').hide('slow'); $('#barcode').focus(); <TMPL_IF NAME="queue_branchlimit">parent.parent.GB_hide();</TMPL_IF>return false;" />
+                <input type=hidden name="cancelTransfer" value="0">
+                <input type="button" class="deny" value="Ignore<TMPL_IF NAME="WrongTransfer">, Cancel transfer, Keep here<TMPL_ELSIF NAME="transfertodo">, Keep here</TMPL_IF>" onclick=" 
+                    <TMPL_IF NAME="queue_branchlimit">parent.parent.GB_hide();
+                    </TMPL_IF>
+                    // don't autoset reserve to Waiting, leave alone
+                    document.foundf.reservenumber.value = 0;
+                    document.foundf.resbarcode.value    = '';
+                    document.foundf.cancelTransfer.value= 1;
+                    this.form.submit();
+                " />
             	<!-- /TMPL_IF -->
             <!-- TMPL_LOOP Name="inputloop" -->
+    <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
 	<input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
 	<input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
-	<input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" /><!-- /TMPL_LOOP -->
+	<input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+            <!-- /TMPL_LOOP -->
             <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR Name="reservenumber" -->" />
             <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
             <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
@@ -454,6 +629,10 @@ function ContinueReturns() {
         </form>
 	</div>
     <!-- /TMPL_IF -->
+<TMPL_ELSIF NAME="found"><!-- do nothing more -->
+<TMPL_ELSIF NAME="WasLost"><!-- do nothing more -->
+<TMPL_ELSIF NAME="WrongTransfer"><!-- do nothing more -->
+<TMPL_ELSIF NAME="reroute"><!-- do nothing more -->
 <TMPL_ELSE>
 
     <div id="exemptfines" class="dialog message" style="display:none;">
@@ -471,7 +650,7 @@ function ContinueReturns() {
             <label for="barcode">Enter item barcode: </label>
 			<!-- TMPL_IF NAME="exemptfine" -->
 			<input name="barcode" id="barcode" size="14" class="focus alert"/>
-			<!-- TMPL_ELSIF NAME="dropboxmode"-->
+			<!-- TMPL_ELSIF NAME="dropboxmode" -->
 			<input name="barcode" id="barcode" size="14" class="focus alert"/>
 			<!-- TMPL_ELSE -->
 			<input name="barcode" id="barcode" size="14" class="focus"/>
@@ -487,6 +666,7 @@ function ContinueReturns() {
             });
             </script>
             <!-- TMPL_LOOP Name="inputloop" -->
+                <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
                 <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
                 <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
                 <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
@@ -602,7 +782,7 @@ function ContinueReturns() {
 <!-- TMPL_IF Name="riloop" -->
     <h2>Checked-In items 
 	<!-- TMPL_IF NAME="UseReceiptTemplates_CheckIn" -->
-		<button onclick='window.open("/cgi-bin/koha/tools/receipt_generation.pl?action=check_in<!-- TMPL_LOOP NAME="riloop"-->&amp;barcode=<!-- TMPL_VAR NAME="barcode" --><!-- /TMPL_LOOP -->", "printwindow");'>Print Receipt</button> 
+		<button onclick='window.open("/cgi-bin/koha/tools/receipt_generation.pl?action=check_in<!-- TMPL_LOOP NAME="riloop" -->&amp;barcode=<!-- TMPL_VAR NAME="barcode" --><!-- /TMPL_LOOP -->", "printwindow");'>Print Receipt</button> 
 	<!-- /TMPL_IF -->
     </h2>
     <table>
@@ -611,7 +791,7 @@ function ContinueReturns() {
         <!-- TMPL_LOOP Name="riloop" -->
             <tr>
             <td><!-- TMPL_IF Name="duedate" -->
-                    <!-- TMPL_IF Name="return_overdue" -->
+                    <TMPL_IF NAME="overdue">
                         <span class="overdue"><!-- TMPL_VAR NAME="duedate" --> (overdue)</span>
                     <!-- TMPL_ELSE --><!-- TMPL_VAR NAME="duedate" -->
                     <!-- /TMPL_IF -->

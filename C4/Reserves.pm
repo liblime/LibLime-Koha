@@ -1590,12 +1590,12 @@ sub ModReserve {
 
     return if $priority ~~ 'W';
     return if $priority ~~ 'n';
-
+    return if $priority ~~ 'T';
     if ( $priority ~~ 'del' ) {
         ModReserveCancelAll($reservenumber, $itemnumber);
     }
-    elsif ($priority =~ /^\d+/ and $priority > 0) {
-        my $query = q{
+    elsif ($priority !~ /\D/ and $priority > 0) {
+        my $sth = C4::Context->dbh->prepare("
         UPDATE reserves
         SET    priority = ?,
                branchcode = ?,
@@ -1603,12 +1603,13 @@ sub ModReserve {
                found = NULL,
                waitingdate = NULL,
                expirationdate = NULL
-        WHERE  reservenumber = ?
-        };
-        C4::Context->dbh->do(
-            $query, undef, $priority, $branchcode, $itemnumber, $reservenumber);
-        _FixPriority($reservenumber, $priority);
+        WHERE  reservenumber = ?");
+        $sth->execute($priority, $branchcode, $itemnumber, $reservenumber);
     }
+    else {
+        die "Unknown priority '$priority': $!";
+    }
+    _NormalizePriorities($biblionumber);
     return;
 }
 
@@ -1793,34 +1794,6 @@ sub ModReserveFillCheckout
    _NormalizePriorities($$res{biblionumber});
 
    return 1;
-}
-
-sub ModReserveFillCheckin
-{
-   my $res = shift; # the reserves hash should be complete
-   
-   ## how many days it's going to sit on the hold shelf awaiting pickup
-   my $delay = C4::Context->preference('ReservesMaxPickupDelay');
-   my $expirationdate = '';
-   if ($delay) {
-      $expirationdate = ",expirationdate=DATE_ADD(NOW(),INTERVAL $delay DAY)";
-   }
-   else {
-      $expirationdate = ",expirationdate=NULL";
-   }
-   my $dbh = C4::Context->dbh;
-   my $query = "UPDATE reserves
-                   SET priority         = 0
-                       $expirationdate ,
-                       waitingdate      = NOW()
-                 WHERE reservenumber    = ?";
-   my $sth = $dbh->prepare($query);
-   $sth->execute($$res{reservenumber});
-
-   ## delete from Holds Queue
-   RmFromHoldsQueue(reservenumber => $$res{reservenumber});
-  
-   return 1; # return true on success
 }
 
 sub ModReserveTrace
@@ -2029,6 +2002,7 @@ sub ModReserveAffect {
     }
     $sth = $dbh->prepare($query);
     $sth->execute( $itemnumber, $reservenumber );
+    RmFromHoldsQueue(itemnumber=>$itemnumber);
     _NormalizePriorities( $biblionumber );
     _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber, $reservenumber ) if ( !$transferToDo && !$already_on_shelf && C4::Context->preference('EnableHoldOnShelfNotice'));
 
@@ -2307,7 +2281,8 @@ sub fixPrioritiesOnItemMove
 }
 
 sub _NormalizePriorities {
-    my $biblionumber = shift or croak 'Must supply biblionumber';
+    my $biblionumber = shift;
+    croak 'Must supply biblionumber' unless $biblionumber;
     my $dbh = C4::Context->dbh;
 
     # Important part is to order by priority *and* timestamp.
@@ -2332,8 +2307,10 @@ sub _NormalizePriorities {
         SET    priority = ?
         WHERE  reservenumber = ?
     };
-    my $sth = $dbh->prepare_cached($query);
+    ## this is failing for list of one item, priority already 1
+    #my $sth = $dbh->prepare_cached($query);
     for ( my $j = 0 ; $j < @{$reserves_list} ; $j++ ) {
+        my $sth = $dbh->prepare($query);
         $sth->execute( $j+1, $reserves_list->[$j] );
     }
     return;

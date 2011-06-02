@@ -46,13 +46,15 @@ use C4::Biblio;
 use C4::Debug;  # supplying $debug and $cgi_debug
 use Getopt::Long;
 
+my $spoof  = '';
 my $help = 0;
 my $verbose = 0;
 my $output_dir;
 
-GetOptions( 'h|help'    => \$help,
-            'v|verbose' => \$verbose,
-            'o|out:s'   => \$output_dir,
+GetOptions( 'h|help'        => \$help,
+            'v|verbose'     => \$verbose,
+            'o|out:s'       => \$output_dir,
+            'd|spoof:s'     => \$spoof,
        );
 my $usage = << 'ENDUSAGE';
 
@@ -66,6 +68,7 @@ This script has the following parameters :
     -h --help: this message
     -o --out:  ouput directory for logs (defaults to env or /tmp if !exist)
     -v --verbose
+    -d --date: spoof a date other than today, ISO format YYYY-MM-DD
 
 ENDUSAGE
 
@@ -99,8 +102,12 @@ my $data = Getoverdues();
 my $overdueItemsCounted = 0;
 my %calendars = ();
 $today = C4::Dates->new();
+if ($spoof =~ /^\d{4}-\d\d-\d\d$/) {
+    $today = C4::Dates->new($spoof,'iso');
+}
 $today_iso = $today->output('iso');
 $today_days = Date_to_Days(split(/-/,$today_iso));
+
 if($output_dir){
     $fldir = $output_dir if( -d $output_dir );
 } else {
@@ -146,14 +153,15 @@ for (my $i=0; $i<scalar(@$data); $i++) {
     
 
     $overdueItemsCounted++;
-    my ($amount,$type,$daycounttotal,$daycount)=
+    my ($amount,$type,$daycounttotal,$daycount,$ismax)=
   		CalcFine($data->[$i], $borrower->{'categorycode'}, $branchcode,undef,undef, $datedue, $today);
         # FIXME: $type NEVER gets populated by anything.
     (defined $type) or $type = '';
 	# Don't update the fine if today is a holiday.  
   	# This ensures that dropbox mode will remove the correct amount of fine.
 	if ($mode eq 'production' and  ! $isHoliday  and ! $claimret_item) {
-		UpdateFine($data->[$i]->{'itemnumber'},$data->[$i]->{'borrowernumber'},$amount,$type,$due_str) if( $amount > 0 ) ;
+		UpdateFine($data->[$i]->{'itemnumber'},$data->[$i]->{'borrowernumber'},$amount,$type,$due_str,$ismax) 
+        if( $amount > 0 ) ;
  	}
     my @cells = ();
     push @cells, map {$borrower->{$_}} @borrower_fields;

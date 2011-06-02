@@ -49,19 +49,35 @@ C4::LostItems
 
 =cut
 
-# not exported.
-# this gets the authorised value for the simplest 'Lost' item status
-# for category LOST.  Note: customer must set this correctly via 
-# the Authorised Values administration widget in the UI.
-sub AuthValForSimplyLost
+
+sub tryClaimsReturned
 {
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("SELECT authorised_value
-      FROM authorised_values
-     WHERE LCASE(lib) = 'lost'
-       AND category   = 'LOST'");
-   $sth->execute();
-   return ($sth->fetchrow_array)[0];
+   my $item = shift;
+   return unless $item;
+   ## if we get here, no need to look for current checkouts.
+   ## find latest returned issue
+   my $dbh = C4::Context->dbh();
+   my $sth = $dbh->prepare('SELECT * FROM old_issues
+      WHERE itemnumber = ?
+        AND date_due   < ?
+        AND borrowernumber IS NOT NULL
+   ORDER BY returndate DESC
+      LIMIT 1');
+   $sth->execute($$item{itemnumber},C4::Dates->new(undef,'iso'));
+   my $oi = $sth->fetchrow_hashref();
+   return unless $oi;
+   my $due = C4::Dates->new($$oi{date_due},'iso')->output;
+   $sth = $dbh->prepare("SELECT * FROM accountlines
+      WHERE accounttype IN ('F','FU','O')
+        AND borrowernumber = ?
+        AND itemnumber     = ?
+        AND description RLIKE 'due on $due'
+        AND description NOT RLIKE 'NO LONGER LOST'
+        AND amountoutstanding > 0
+   ORDER BY accountno DESC");
+   $sth->execute($$oi{borrowernumber},$$oi{itemnumber});
+   my $acc = $sth->fetchrow_hashref();
+   return $oi, $acc;
 }
 
 # not exported.
@@ -146,6 +162,12 @@ sub ModLostItem
       )
    );
    return $sth->execute(values %g,$id);
+}
+
+sub DeleteLostItemByItemnumber
+{
+   my $itemnumber = shift;
+   C4::Context->dbh->do('DELETE FROM lost_items WHERE itemnumber=?',undef,$itemnumber);
 }
 
 sub DeleteLostItem {

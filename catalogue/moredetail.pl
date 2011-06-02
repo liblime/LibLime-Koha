@@ -53,6 +53,7 @@ my $biblionumber=$query->param('biblionumber');
 my $title=$query->param('title');
 my $itemnumber=$query->param('itemnumber');
 my $bi=$query->param('bi');
+my $updatefail = $query->param('updatefail');
 # $bi = $biblionumber unless $bi;
 my $data=GetBiblioData($biblionumber);
 my $dewey = $data->{'dewey'};
@@ -100,14 +101,63 @@ $results[0]=$data;
 my $itemcount=0;
 my $additemnumber;
 my @tmpitems;
+my $crval = C4::Context->preference('ClaimsReturnedValue');
 my %avc = (
    itemlost => GetAuthValCode('items.itemlost',$fw),
    damaged  => GetAuthValCode('items.damaged' ,$fw),
    suppress => GetAuthValCode('items.suppress',$fw),
 );
+foreach(@{GetAuthorisedValues($avc{itemlost})}) {
+   if ($$_{authorised_value} ~~ 1) {
+      $template->param(charge_authval => $$_{lib});
+   }
+   elsif ($$_{authorised_value} ~~ $crval) {
+      $template->param(claimsreturned_authval => $$_{lib});
+   }
+}
+my @fail = qw(nocr nocr_notcharged nolc_noco);
 foreach my $item (@items){
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
     $itemcount++;
+    if ($$item{itemlost}) {
+        if (my $lostitem = C4::LostItems::GetLostItem($$item{itemnumber})) {
+            my $lostbor = C4::Members::GetMember($$lostitem{borrowernumber});
+            $item->{lostby_date} = C4::Dates->new($$lostitem{date_lost},'iso')->output;
+            $item->{lostby_name} = "$$lostbor{firstname} $$lostbor{surname}";
+            $item->{lostby_borrowernumber} = $$lostitem{borrowernumber};
+            $item->{lostby_cardnumber} = $$lostbor{cardnumber};
+        }
+    }
+    if ($updatefail && ($$item{itemnumber} ~~ $itemnumber)) {
+        $item->{"updatefail_$updatefail"} = 1;
+        if ($updatefail ~~ 'nocr_charged') {
+            my $oldiss = C4::Circulation::GetOldIssue($itemnumber);
+            my $acc    = C4::Accounts::GetLine($query->param('oiborrowernumber'),$query->param('accountno'));
+            my $accbor = C4::Members::GetMember($$acc{borrowernumber});
+            $$item{"cr_oi_name"} = "$$accbor{firstname} $$accbor{surname}";
+            $$item{"cr_oi_cardnumber"} = $$accbor{cardnumber};
+            foreach(qw(returndate issuedate date_due)) {
+               $$item{"cr_oi_$_"} = C4::Dates->new($$oldiss{$_},'iso')->output;
+            }
+            foreach(keys %$acc) {
+               $$item{"cr_oi_$_"} = $$acc{$_};
+            }
+            foreach(qw(amount amountoutstanding)) {
+               $$item{"cr_oi_$_"} = sprintf('%.02f',$$item{"cr_oi_$_"});
+            }
+        }
+        if ($updatefail ~~ @fail) {
+            my $oldiss = C4::Circulation::GetOldIssue($itemnumber) // {};
+            if ($$oldiss{borrowernumber}) { # may be anonymised
+               my $lastbor = C4::Members::GetMember($$oldiss{borrowernumber});
+               $$item{lastbor_name} = "$$lastbor{firstname} $$lastbor{surname}";
+               $$item{lastbor_returndate} = C4::Dates->new($$oldiss{returndate},'iso')->output;
+               $$item{lastbor_borrowernumber} = $$oldiss{borrowernumber};
+               $$item{lastbor_cardnumber}     = $$lastbor{cardnumber};
+            }
+        }
+    }
+
     $item->{itemlostloop}    = GetAuthorisedValues($avc{itemlost},$item->{itemlost}) if $avc{itemlost};
     $item->{itemdamagedloop} = GetAuthorisedValues($avc{damaged}, $item->{damaged})  if $avc{damaged};
     $item->{itemsuppressloop}= GetAuthorisedValues($avc{suppress},$item->{suppress}) if $avc{suppress};

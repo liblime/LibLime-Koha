@@ -126,6 +126,7 @@ function confirmCancelWaiting(that) {
 <div id="checkedout">
   <!-- TMPL_IF NAME="issueloop" -->
   <form action="/cgi-bin/koha/reserve/renewscript.pl" method="post" class="checkboxed">
+    <input type="hidden" name="cardnumber"     value="<TMPL_VAR NAME="cardnumber">">
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
     <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->" />
     <table id="issuest">

@@ -48,7 +48,7 @@ my $user = C4::Context->userenv->{id};
 
 # get account details
 my $branches = GetBranches();
-my $branch = GetBranch( $input, $branches );
+my $branch   = GetBranch( $input, $branches );
 
 my($total_due,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
 my $haveRefund = 0;

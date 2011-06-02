@@ -257,11 +257,9 @@ sub kocIssueItem {
     
     my $date_due_object = C4::Dates->new($date_due ,'iso');
     C4::Circulation::AddRenewal(
-        $issue->{'borrowernumber'},    # borrowernumber
-        $item->{'itemnumber'},         # itemnumber
-        undef,                         # branch
-        $date_due_object,              # datedue
-        $circ->{'date'},               # issuedate
+        issue      => $issue,
+        datedueObj => $date_due_object,
+        issuedate  => $circ->{'date'},
     ) unless ($DEBUG);
     $out{renew} = 1;
     } else {

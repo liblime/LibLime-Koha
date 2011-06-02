@@ -35,28 +35,19 @@ my $cgi= CGI->new();
 
 my ($loggedinuser, $cookie, $sessionID) = checkauth($cgi, 0, {circulate => '*'}, 'intranet');
 
-my $biblionumber=$cgi->param('biblionumber');
-my $itemnumber=$cgi->param('itemnumber');
-my $biblioitemnumber=$cgi->param('biblioitemnumber');
-my $itemlost=$cgi->param('itemlost');
-my $itemnotes=$cgi->param('itemnotes');
-my $wthdrawn=$cgi->param('wthdrawn');
-my $damaged=$cgi->param('damaged');
-my $otherstatus=$cgi->param('otherstatus') // '';
-my $suppress=$cgi->param('suppress');
+my $biblionumber    = $cgi->param('biblionumber');
+my $itemnumber      = $cgi->param('itemnumber');
+my $biblioitemnumber= $cgi->param('biblioitemnumber');
+my $itemlost        = $cgi->param('itemlost');
+my $itemnotes       = $cgi->param('itemnotes');
+my $wthdrawn        = $cgi->param('wthdrawn');
+my $damaged         = $cgi->param('damaged');
+my $otherstatus     = $cgi->param('otherstatus') // '';
+my $suppress        = $cgi->param('suppress');
+my $confirm         = $cgi->param('confirm');
 
-my $confirm=$cgi->param('confirm');
-my $dbh = C4::Context->dbh;
-
-# get the rest of this item's information
 my $item_data_hashref = GetItem($itemnumber, undef);
-
-# make sure item statuses are set to 0 if empty or NULL
-for ($damaged,$itemlost,$wthdrawn,$suppress) {
-    if (!$_ or ($_ eq "")) {
-        $_ = 0;
-    }
-}
+for ($damaged,$itemlost,$wthdrawn,$suppress) { if (!$_ or ($_ eq "")) { $_ = 0;} }
 
 # modify MARC item if input differs from items table.
 my $item_changes = {};
@@ -78,22 +69,19 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
 } elsif ($suppress ne $item_data_hashref->{'suppress'}) {
     $item_changes->{'suppress'} = $suppress;
 } else {
-    #nothings changed, so do nothing.
+    #nothing changed, so do nothing.
     print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber#item$itemnumber");
-	exit;
+    exit;
+}
+if ($cgi->param('force_lostcharge_borrowernumber')) {
+   C4::LostItems::CreateLostItem(
+      $item_data_hashref->{itemnumber},
+      $cgi->param('force_lostcharge_borrowernumber'),
+   );
 }
 
-ModItem($item_changes, $biblionumber, $itemnumber);
-my $issue = GetItemIssue($itemnumber);
-my $lost_item = C4::LostItems::GetLostItem($itemnumber);
-my $issues = GetItemIssues($itemnumber, 1);
-my $lostreturned_issue;
-foreach my $issue_ref (@$issues) {
-  if ($issue_ref->{'itemnumber'} eq $itemnumber) {
-    $lostreturned_issue = $issue_ref;
-    last;
-  }
-}
+my $issue      = GetItemIssue($itemnumber);
+my $lostitem   = C4::LostItems::GetLostItem($itemnumber);
 
 # Cancel item specific reserves if changing to non-holdable status
 if ($cancel_reserves) {
@@ -105,52 +93,79 @@ if ($cancel_reserves) {
    }
    C4::Reserves::CancelReserves(\%p);
 }
+
 # If the item is being made lost, charge the patron the lost item charge and
-# create a lost item record
-if($issue && $itemlost){
-    ## FIXME: move this business logic to a single subroutine in a *.pm -hQ
-    ## check item in and charge the lost item fee for most any lost status
-    C4::Accounts::chargelostitem($itemnumber) if $itemlost == 1;
-
-    ## dupecheck is performed in the function
-    my $id = C4::LostItems::CreateLostItem(
+# create a lost item record.  also, if cron is not running, calculate overdues
+my $crval = C4::Context->preference('ClaimsReturnedValue');
+if (($issue || $lostitem) && $itemlost) {  
+   ## dupecheck is performed in the function
+   my $id = $$lostitem{id} || C4::LostItems::CreateLostItem(
       $item_data_hashref->{itemnumber},
-      $issue->{borrowernumber}
-    );
-
-   ## Claims Returned
-   if ($itemlost==C4::Context->preference('ClaimsReturnedValue')) {
-      C4::Accounts::makeClaimsReturned($id,1);
+      $$issue{borrowernumber}
+   );
+   ## charge the lost item fee for LOST value 1 BEFORE checking in item
+   if ($itemlost==1) {
+      C4::Accounts::chargelostitem($itemnumber);
    }
-   elsif (($$item_data_hashref{itemlost}==C4::Context->preference('ClaimsReturnedValue') )
-       && ($itemlost != $$item_data_hashref{itemlost})) { # changing from claims returned to something else
-      C4::Accounts::makeClaimsReturned($id,0,1);
+   elsif ($crval) { ## Claims Returned
+      if ($itemlost==$crval) {
+         if (C4::Accounts::makeClaimsReturned($id,1)) {
+            ## do nothing
+         }
+         else {
+            C4::LostItems::DeleteLostItem($id);
+            print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr#item$itemnumber");
+            exit;
+         }
+      }
+      elsif (($$item_data_hashref{itemlost}==$crval)
+         && ($itemlost != $$item_data_hashref{itemlost})) { # changing from claims returned to something else
+         C4::Accounts::makeClaimsReturned($id,0,1);
+      }
    }
 
-   C4::Circulation::MarkIssueReturned($$issue{borrowernumber},$itemnumber)
-      if C4::Context->preference('MarkLostItemsReturned');
+   if (C4::Context->preference('MarkLostItemsReturned') && $issue) {
+      #C4::Circulation::MarkIssueReturned($$issue{borrowernumber},$itemnumber)
+      ## update: AddIssue() will figure out the overdue fine, using today as returndate, 
+      ## temporarily setting items.itemlost to nada
+      C4::Circulation::AddReturn(
+         $item_data_hashref->{barcode},
+         undef,  # branch
+         0,      # exemptfine
+         0,      # dropbox,
+         undef,  # returndate
+         1,      # tolost
+      );
+      ## is checked in
+      $item_changes->{onloan} = undef;
+   }
 }
-# If the item is being marked found, refund the patron the lost item charge,
-# apply the maxfine charge, and delete the lost item record
-elsif ($lost_item && $itemlost==0) {
-    DeleteLostItem($lost_item->{id}); # item's no longer lost, so delete the lost item record
-    if (C4::Context->preference('RefundReturnedLostItem')) {
-        C4::Circulation::FixAccountForLostAndReturned($itemnumber); # credit the charge for losing this item
-    }
-    # Charge the maxfine
-    if (C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem')) {
-        my $borrower = GetMember($lostreturned_issue->{borrowernumber},'borrowernumber');
-        my ($circ_policy) = C4::Circulation::GetIssuingRule($borrower->{categorycode},$lost_item->{itemtype},$lostreturned_issue->{branchcode});
-        if ($circ_policy->{max_fine}) {
-            C4::Accounts::manualinvoice(
-               borrowernumber => $lostreturned_issue->{borrowernumber},
-               itemnumber     => $itemnumber, 
-               description    => 'Max overdue fine', 
-               accounttype    => 'F', 
-               amount         => $circ_policy->{max_fine}
-            );
-        }
-    }
+elsif ($itemlost == $crval) { # not charged lost to patron, want make claims returned on overdue
+   my($oi,$acc) = C4::LostItems::tryClaimsReturned($item_data_hashref);
+   if ($oi && $acc) {
+      print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_charged"
+         . "&oiborrowernumber=$$oi{borrowernumber}&accountno=$$acc{accountno}#item$itemnumber");
+      exit;
+   }
+   elsif ($oi) {
+       print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_notcharged"
+         . "&oiborrowernumber=$$oi{borrowernumber}#item$itemnumber");
+      exit;    
+   }
+   else {
+      print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_nooi#item$itemnumber");
+      exit;
+   }
+}
+elsif ($itemlost && !$lostitem && !$issue && ($itemlost==1)) {
+   print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nolc_noco#item$itemnumber");
+   exit;    
+}
+elsif ($lostitem && $itemlost==0) {
+## If the item is being marked found, refund the patron the lost item charge,
+## and delete the lost item record if syspref MarkLostItemsReturned is ON
+    C4::Circulation::FixAccountForLostAndReturned($itemnumber,$issue,$lostitem->{id});
 }
 
+ModItem($item_changes, $biblionumber, $itemnumber) if $item_changes;
 print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber#item$itemnumber");

@@ -177,6 +177,7 @@ sub add_accounts_to_template {
     my $allfile = [];
     my @notify = NumberNotifyId($borrowernumber);
     my $line_id = 0;
+    my $total   = 0;
 
     ## FIXME: why do we have this outer loop?  it's causing duplicates to be displayed from
     ## the inner loop. temporary fix w/ %seen needs a more permanent fix. -hQ
@@ -194,6 +195,7 @@ sub add_accounts_to_template {
             $haveRefund ||= 1 if ($$acct{accounttype} eq 'RCR' )
                               && ($$acct{amountoutstanding} < 0);
             next if $seen{$$acct{accountno}};
+            next if $$acct{amountoutstanding} < 0;
             $seen{$$acct{accountno}}++;
             if ( $acct->{amountoutstanding} != 0 ) {
                 $acct->{amount}            += 0.00;
@@ -214,7 +216,8 @@ sub add_accounts_to_template {
                     notify_id         => $acct->{notify_id},
                     notify_level      => $acct->{notify_level},
                 };
-                $line->{'net_balance'} =  1 if($acct->{'amountoutstanding'} > 0);
+                $total += $$acct{amountoutstanding};
+                $line->{'net_balance'} =  1;
                 $line->{'net_balance'} = undef if ((C4::Context->preference("EnableOverdueAccruedAmount")) && ($acct->{'accounttype'} eq "FU"));
                 push @{ $pay_loop}, $line;
                 ++$line_id;
@@ -227,7 +230,7 @@ sub add_accounts_to_template {
         push @{$allfile}, {
             loop_pay => $pay_loop,
             notify   => $n,
-            total    => sprintf( '%.2f', $totalnotify),
+            total    => sprintf( '%.2f', $total),
         };
     }
 
