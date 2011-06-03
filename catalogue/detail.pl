@@ -181,13 +181,13 @@ foreach my $item (@items) {
     my ($reservedate,$reservedfor,$expectedAt,$waitingdate);
     my $ItemBorrowerReserveInfo;
     my ($rescount,$res) = GetReservesFromBiblionumber($biblionumber);
-    my ($restype,$reserves,$reserve_count) = CheckReserves($item->{itemnumber});
-    if ($reserves != 0) {
+    my $reserves = C4::Reserves::GetPendingReserveOnItem($item->{itemnumber});
+    if ($reserves) {
       $reservedate = $reserves->{reservedate};
       $waitingdate = $reserves->{waitingdate};
       $reservedfor = $reserves->{borrowernumber};
       $expectedAt  = $reserves->{branchcode};
-      $ItemBorrowerReserveInfo = GetMemberDetails( $reservedfor, 0);
+      $ItemBorrowerReserveInfo = GetMember($reservedfor);
       undef $reservedate if ($reserves->{nullitem});
       $template->param( totalreserves => $rescount );
     }

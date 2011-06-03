@@ -785,6 +785,18 @@ sub GetReservesForBranch {
     return (@transreserv);
 }
 
+sub GetPendingReserveOnItem {
+    my $itemnumber = shift;
+
+    my $reserve = C4::Context->dbh->selectrow_hashref(q{
+        SELECT *
+        FROM   reserves
+        WHERE  itemnumber = ?
+        ORDER BY priority ASC
+        }, undef, $itemnumber);
+    return $reserve;
+}
+
 =item CheckReserves
 
   ($status, $reserve, $count) = &CheckReserves($itemnumber);

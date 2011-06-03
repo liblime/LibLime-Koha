@@ -3,7 +3,7 @@ package SIPServer;
 use strict;
 use warnings;
 # use Exporter;
-use Sys::Syslog qw(syslog);
+use Sys::Syslog qw(openlog syslog);
 use Net::Server::PreFork;
 use IO::Socket::INET;
 use Socket qw(:DEFAULT :crlf);
@@ -70,6 +70,8 @@ push @parms,
     "syslog_ident=$syslog_ident",
     "syslog_facility=" . LOG_SIP;
 
+openlog($syslog_ident, "ndelay,pid", "local6");
+
 #
 # Server Management: set parameters for the Net::Server::PreFork
 # module.  The module silently ignores parameters that it doesn't
@@ -108,6 +110,12 @@ sub process_request {
     ($port, $sockaddr) = sockaddr_in($sockname);
     $sockaddr = inet_ntoa($sockaddr);
     $proto = $self->{server}->{client}->NS_proto();
+
+    my $peer_sockname = getpeername(STDIN);
+    my ($peer_port, $peer_sockaddr) = sockaddr_in($peer_sockname);
+    $peer_sockaddr = inet_ntoa($peer_sockaddr);
+    $ENV{REMOTE_ADDR} = $peer_sockaddr; # to satisfy C4::Auth::IsIpInLibrary()
+    syslog('LOG_INFO', 'process_request: connection from: %s:%s:%s', $proto, $peer_sockaddr, $peer_port);
 
     $self->{service} = $config->find_service($sockaddr, $port, $proto);
 
