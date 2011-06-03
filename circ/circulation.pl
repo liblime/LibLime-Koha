@@ -512,6 +512,7 @@ if ($borrowerslist) {
         } @$borrowerslist
       )
     {
+        no warnings qw(uninitialized);
         push @values, $_->{'borrowernumber'};
         if (C4::Context->preference('DisplayInitials')) {
           $labels{ $_->{'borrowernumber'} } =
