@@ -1306,17 +1306,30 @@ table in the Koha database.
 =cut
 
 sub CheckReserves {
-    my $itemnumber = shift;
+   my $itemnumber = shift;
 
-    # Split this out to make testing a bit easier
-    return _GetNextReserve($itemnumber, _Findgroupreserve($itemnumber));
+   # Split this out to make testing a bit easier
+   my($type,$res) = _GetNextReserve($itemnumber, _Findgroupreserve($itemnumber));
+   unless($res) {
+      my $biblionumber = shift; my $borrowernumber = shift;
+      return unless ($biblionumber && $borrowernumber);
+      my $sth = C4::Context->dbh->prepare('SELECT res.*,items.barcode 
+            FROM reserves res, items 
+           WHERE res.biblionumber   = ? 
+             AND res.borrowernumber = ?
+             AND res.itemnumber     = items.itemnumber
+        ORDER BY priority DESC LIMIT 1');
+      $sth->execute($biblionumber,$borrowernumber);
+      $res = $sth->fetchrow_hashref();
+      if ($res && ($$res{found} ~~ 'W')) { $type = 'Waiting'  }
+      elsif ($res)                       { $type = 'Reserved' }
+   }
+   return $type, $res;
 }
 
 sub _GetNextReserve {
     my ($itemnumber, $reserves) = @_;
-
     return (0, 0) if !defined $reserves;
-
     my $item = C4::Items::GetItem($itemnumber);
 
     # $highest is used to track the most important item
@@ -1345,11 +1358,12 @@ sub _GetNextReserve {
             $exact = $res;
             last;
         }
-        if (!defined $highest || $res->{priority} < $highest->{priority}) {
+        if (!defined $highest || ($res->{priority} < $highest->{priority})) {
             # See if this item is more important than what we've got so far.
             $highest = $res;
         }
     }
+
     return ('Waiting', $exact) if $exact;
     return (0, 0) if ($nohold == @$reserves);
 
@@ -1384,7 +1398,6 @@ sub _GetNextReserve {
 
 sub _NextLocalReserve {
     my $reserves = shift;
-
     my $branchcode = (C4::Context->userenv) ? C4::Context->userenv->{branch} : '';
     my @pruned = grep {$_->{branchcode} ~~ $branchcode} @$reserves;
     my @sorted = sort {$a->{priority} <=> $b->{priority}} @pruned;
@@ -1689,111 +1702,23 @@ sub ModReservePass
    return $$item{itemnumber};
 }
 
-=item ModReserveFill
-
-  &ModReserveFill($reserve);
-
-Fill a reserve. If I understand this correctly, this means that the
-reserved book has been found and given to the patron who reserved it.
-That is, the barcode has been scanned it at checkin.
-
-C<$reserve> specifies the reserve to fill. It is a reference-to-hash
-whose keys are fields from the reserves table in the Koha database.
-
-Returns true on success.
-
-=cut
-
-# not exported.
-# upon checkout, set that the reserve is completed.
-# overlying logic assumes item-level hold, however this can be true
-# also of bib-level holds.
-# $co* prefix is checkout
-sub ModReserveFillCheckout
+# force setting itemnumber if $itemnumber
+sub FillReserve
 {
-   ## the reserves ($res) hash should be complete, from CheckReserves()
-   my($coBorrowernumber,$coBiblionumber,$coItemnumber,$res) = @_;
-   my $dbh = C4::Context->dbh;
-   my $sth;
-   my $currBranch = C4::Context->userenv->{branch};
-   $res //= {};
-   
-   ## trivial: do nothing if there are no reserves
-   return 1 unless $res;
-
-   ## for whatever reason, this is the wrong bib.
-   ## hold harmless and do nothing.
-   return 1 if $coBiblionumber != $$res{biblionumber};
-   
-   ## this item is no longer available to fill hold requests
-   RmFromHoldsQueue(itemnumber => $coItemnumber);
-
-   ## patron who is checking out is not the one who placed the hold.
-   ## If we get here, overrides were performed.
-   return 1 if ($coBorrowernumber != $$res{borrowernumber});
-
-   ## first of all, make sure we are checking out item at pickup branch
-   if ($currBranch ne $$res{branchcode}) {
-      die qq|Unexpected workflow: item probably needs checkin and transfer before checkout
-         reserves.branchcode=$$res{branchcode}
-         currBranch=$currBranch (*** HERE ***)
-         checkout itemnumber=$coItemnumber
-         reserves.biblionumber=$$res{biblionumber}
-         reserves.reservenumber=$$res{reservenumber}
-         borrowernumber=$coBorrowernumber is same as hold's borrower
-      |;
+   my($res,$itemnumber) = @_;
+   my $setitem = '';
+   my @vals    = ($$res{reservenumber});
+   if ($itemnumber) {
+      $setitem = 'itemnumber=?';
+      push @vals, $itemnumber;
    }
-
-   ## sanity check on status of hold.  It *should* be in Waiting mode and
-   ## no longer in the bib's holds list priorities.  That is, it was properly 
-   ## checked in (and transferred, if applicable).
-   if (($$res{found} ~~ 'W') && ($$res{priority} ~~ 0)) {
-      ## do nothing right now.
-   }
-   else { ## sigh, this means Workflow wasn't followed.
-      ## If we get here, the patron is checking out an item that fills the
-      ## hold, whether it was bib-level or item-level.
-      
-      ## Let's see... hold is still set to 'in transit'
-      if ($$res{found} ~~ 'T') {
-         ## look for the item in the branchtransfers table.
-         ## maybe they forgot to tell Koha that it has arrived?
-         $sth = $dbh->prepare('
-            SELECT * FROM branchtransfers
-             WHERE itemnumber = ?
-               AND tobranch   = ?
-               AND datearrived IS NULL');
-         $sth->execute($coItemnumber,$currBranch);
-         my $bt = $sth->fetchrow_hashref() // {};
-         if ($bt) { ## it was never set to arrived, but here we are already at checkout
-            $sth = $dbh->prepare('
-               UPDATE branchtransfers
-                  SET datearrived = NOW()
-                WHERE datearrived IS NULL
-                  AND itemnumber = ?
-                  AND tobranch   = ?');
-            $sth->execute($coItemnumber,$currBranch);
-         }
-      }
-      elsif ($$res{found} ~~ 'F') {
-         ## old data from legacy ModReserveFill() or otherwise messed up workflow
-         die qq|Cannot handle reserves.found='F' still in reserves table at checkout.
-            Should have been moved to old_reserves (reservenumber=$$res{reservenumber})
-         |;
-      }
-   }
-
-   ## set the reserve to fill
-   $sth = $dbh->prepare(q|
-      UPDATE reserves
+   C4::Context->dbh->do(qq|UPDATE reserves
          SET found         = 'F',
-             priority      = 0
-       WHERE reservenumber = ?|);
-   $sth->execute($$res{reservenumber});
+             priority      = 0,$setitem
+       WHERE reservenumber = ?|,undef,@vals);
    _moveToOldReserves($$res{reservenumber});
    _NormalizePriorities($$res{biblionumber});
-
-   return 1;
+   RmFromHoldsQueue(itemnumber=>$$res{itemnumber});
 }
 
 sub ModReserveTrace
