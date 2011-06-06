@@ -1146,6 +1146,33 @@ sub GetItemsLost {
     return $items;
 }
 
+sub GetOtherStatusWhere
+{
+   my %g = @_;
+   my $f = '';
+   my $v;
+   if ($g{id} || $g{statuscode_id}) {
+      $f = 'statuscode_id';
+      $v = $g{id} || $g{statuscode_id};
+   }
+   elsif ($g{code} || $g{statuscode}) {
+      $f = 'statuscode';
+      $v = $g{code} || $g{statuscode};
+   }
+   else {
+      return;
+   }
+   return C4::Context->dbh->selectrow_hashref("SELECT * FROM itemstatus
+      WHERE $f = ?",undef,$v);
+}
+
+sub GetItemOtherStatus
+{
+   return C4::Context->dbh->selectrow_hashref('SELECT itemstatus.* FROM itemstatus
+      LEFT JOIN items ON itemstatus.statuscode = items.otherstatus
+      WHERE items.itemnumber = ?',undef,$_[0]);
+}
+
 =head2 GetItemsForInventory
 
 =over 4

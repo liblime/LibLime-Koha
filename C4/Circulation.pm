@@ -377,11 +377,11 @@ database, the transfer should indeed have succeeded. The value should be ignored
 sub transferbook {
     my ( $tbr, $barcode, $ignoreRs ) = @_;
     my $messages;
-    my $dotransfer      = 1;
-    my $branches        = GetBranches();
+    my $dotransfer = 1;
+    my $branches   = GetBranches();
     my $itemnumber = GetItemnumberFromBarcode( $barcode );
     my $issue      = GetItemIssue($itemnumber);
-    my $biblio = GetBiblioFromItemNumber($itemnumber);
+    my $biblio     = GetBiblioFromItemNumber($itemnumber);
 
     # bad barcode..
     if ( not $itemnumber ) {
@@ -392,6 +392,10 @@ sub transferbook {
     # get branches of book...
     my $hbr = $biblio->{'homebranch'};
     my $fbr = $biblio->{'holdingbranch'};
+    if ($fbr ~~ $tbr) {
+       $messages->{'SameBranch'} = $tbr;
+       $dotransfer = 0;
+    }
 
     # if using Branch Transfer Limits
     if ( C4::Context->preference("UseBranchTransferLimits") == 1 ) {
@@ -424,6 +428,7 @@ sub transferbook {
         $messages->{'WasReturned'} = $issue;
     }
 
+    ## huh? -hQ
     # find reserves.....
     # That'll save a database query.
     my ( $resfound, $resrec ) =
@@ -455,7 +460,7 @@ sub transferbook {
 
         # don't need to update MARC anymore, we do it in batch now
         $messages->{'WasTransfered'} = 1;
-
+        C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber);
     }
     ModDateLastSeen( $itemnumber );
     return ( $dotransfer, $messages, $biblio, $itemnumber );
@@ -969,27 +974,30 @@ sub CanBookBeIssued {
 "$currborinfo->{'reservedate'} : $currborinfo->{'firstname'} $currborinfo->{'surname'} ($currborinfo->{'cardnumber'})";
     }
 
-    # See if the item is on reserve.
-    my ( $restype, $res ) = C4::Reserves::CheckReserves( $item->{'itemnumber'} );
-    if ($restype) {
-        my $resbor = $res->{'borrowernumber'};
-        my ( $resborrower ) = C4::Members::GetMemberDetails( $resbor, 0 );
-        my $branches  = GetBranches();
-        my $branchname = $branches->{ $res->{'branchcode'} }->{'branchname'};
-        if ( $resbor ne $borrower->{'borrowernumber'} && $restype eq "Waiting" )
-        {
-            # The item is on reserve and waiting, but has been
-            # reserved by some other patron.
-            $needsconfirmation{RESERVE_WAITING} =
-"$resborrower->{'firstname'} $resborrower->{'surname'} ($resborrower->{'cardnumber'}, $branchname)";
-        }
-        elsif ( $restype eq "Reserved" ) {
-            # The item is on reserve for someone else.
-            $needsconfirmation{RESERVED} =
-"$res->{'reservedate'} : $resborrower->{'firstname'} $resborrower->{'surname'} ($resborrower->{'cardnumber'})";
-        }
-    }
-    return ( \%issuingimpossible, \%needsconfirmation );
+   # See if the item is on reserve.
+   RESERVE: {
+      my @prompts = split(/\|/,C4::Context->preference('reservesNeedConfirmationOnCheckout'));
+      unless (@prompts) { @prompts = qw(otherBibItem patronNotReservist_holdWaiting) }
+      last RESERVE if ('noPrompts' ~~ @prompts);
+      my ($restype,$res) = C4::Reserves::CheckReserves( $item->{'itemnumber'},$$item{biblionumber},$$borrower{borrowernumber});
+      last RESERVE unless $res;
+      my $suffix = ($$res{found} ~~ 'W')? 'WAITING' : 'PENDING';
+      if ($$borrower{borrowernumber} ~~ $$res{borrowernumber}) {
+         last unless ('otherBibItem' ~~ @prompts);
+         if (($$item{biblionumber} == $$res{biblionumber}) && ($$res{itemnumber} ne $$item{itemnumber})) {
+            $needsconfirmation{"RESERVE_SAMEBOR_DIFFBIBITEM_$suffix"} = $res;
+         }
+      }
+      else {
+         if (  (($suffix eq 'WAITING') && ('patronNotReservist_holdWaiting' ~~ @prompts))
+            || (($suffix eq 'PENDING') && ('patronNotReservist_holdPending' ~~ @prompts)) ) { 
+            $needsconfirmation{"RESERVE_DIFFBOR_$suffix"} = $res;
+         }
+      }
+      ;
+   }
+
+   return ( \%issuingimpossible, \%needsconfirmation );
 }
 
 =head2 AddIssue
@@ -1045,6 +1053,7 @@ sub AddIssue {
    my $datedueObj    = $g{datedueObj};
    my $cancelReserve = $g{cancelReserve}  || 0;
    my $requeueReserve= $g{requeueReserve} || 0;
+   my $fillReserve   = $g{fillReserve}    || 0;
    my $howReserve    = $g{howReserve}     || '';
    my $issuedate     = $g{issuedate}      // '';
    my $sipmode       = $g{sipmode}        || 0;
@@ -1052,9 +1061,9 @@ sub AddIssue {
    unless($howReserve) {
       if    ($cancelReserve)  { $howReserve = 'cancel' }
       elsif ($requeueReserve) { $howReserve = 'requeue'}
-      ## else ignore reserves
+      elsif ($fillReserve)    { $howReserve = 'fill'   }
    }
-   
+  
    my $datedue;
    my($charge,$itemtype);
    my $sth;
@@ -1097,29 +1106,30 @@ sub AddIssue {
       );
    }
 
-   my($restype,$res) = C4::Reserves::CheckReserves($item->{'itemnumber'});
+   my($restype,$res) = C4::Reserves::CheckReserves($item->{'itemnumber'},$$item{biblionumber},$$borrower{borrowernumber});
    ## value(s) of $restype:
    ##    'Reserved'
    ##    'Waiting'
    ##    empty or undef or otherwise false (zero, I believe)
-            
-   if ($restype) {
+   if ($res) {
       my $resbor = $res->{'borrowernumber'};
-      if ( $resbor eq $borrower->{'borrowernumber'} ) {
-         # The item is reserved by the current patron.
-         # For now, ignore the fact the item is in any Waiting or Transfer status
-         return unless C4::Reserves::ModReserveFillCheckout(
-            $$borrower{borrowernumber},
-            $$item{biblionumber},
-            $$item{itemnumber},
-            $res
-         );
+      if (($resbor eq $borrower->{'borrowernumber'}) || ($howReserve eq 'fill')) {
+         if ($howReserve eq 'requeue') {
+            ModReserve(1,$res->{'biblionumber'},
+                         $res->{'borrowernumber'},
+                         $res->{'branchcode'},                                 
+                         undef,     ## $res->{'itemnumber'},
+                         $res->{'reservenumber'});
+         }
+         else {
+            C4::Reserves::FillReserve($res,$$item{itemnumber});
+         }
       }
       ## cancels top reserve regardless Waiting or priority 1 or such
-      elsif ($cancelReserve) {
+      elsif ($howReserve eq 'cancel') {
          C4::Reserves::CancelReserve($res->{'reservenumber'});
       }
-      elsif ( $restype eq "Waiting" ) {
+      elsif (($$res{found} ~~ 'W') || ($howReserve eq 'requeue')) {
          # The item is on reserve and waiting, but has been
          # reserved by some other patron.
          ## FIXME: requeue as bib-level hold is temporary until we get
@@ -1132,29 +1142,9 @@ sub AddIssue {
       }
    }
    
-   ## remove from tmp_holdsqueue
+   ## remove from tmp_holdsqueue and branchtransfers
    C4::Reserves::RmFromHoldsQueue(itemnumber=>$$item{itemnumber});
-            
-   ## Starting process for transfer job (checking transfert 
-   ## and validate it if we have one)
-   my ($datesent,$frombr,$tobr) = GetTransfers($item->{'itemnumber'});
-   if ($datesent) {
-      if ($frombr ne $tobr) {
-         # updating line of branchtranfert to finish it, and changing the to branch value, implement a comment for visibility of this case (maybe for stats ....)
-                    my $sth =
-                        $dbh->prepare(
-                        "UPDATE branchtransfers 
-                            SET datearrived = now(),
-                            tobranch = ?,
-                            comments = 'Forced branchtransfer'
-                        WHERE itemnumber= ? AND datearrived IS NULL"
-                        );
-                    $sth->execute(C4::Context->userenv->{'branch'},$item->{'itemnumber'});
-      }
-      elsif ($frombr ~~ $tobr) { # item hasn't gone anywhere: cancel transfer
-                    $dbh->do('DELETE FROM branchtransfers WHERE itemnumber = ?',undef,$$item{itemnumber});
-      }
-   }
+   DeleteTransfer($$item{itemnumber});
 
    # Record in the database the fact that the book was issued.
    $sth = $dbh->prepare(
@@ -2916,27 +2906,6 @@ sub GetIssuingCharges {
     return ( $charge, $item_type );
 }
 
-=head2 AddIssuingCharge
-
-&AddIssuingCharge( $itemno, $borrowernumber, $charge )
-
-=cut
-
-sub AddIssuingCharge {
-    my ( $itemnumber, $borrowernumber, $charge ) = @_;
-    my $dbh = C4::Context->dbh;
-    my $nextaccntno = _getnextaccountno( $borrowernumber );
-    my $query ="
-        INSERT INTO accountlines
-            (borrowernumber, itemnumber, accountno,
-            date, amount, description, accounttype,
-            amountoutstanding)
-        VALUES (?, ?, ?,now(), ?, 'Rental', 'Rent',?)
-    ";
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $borrowernumber, $itemnumber, $nextaccntno, $charge, $charge );
-    $sth->finish;
-}
 
 =head2 GetTransfers
 
@@ -3028,15 +2997,12 @@ sub GetRenewalDetails {
 =cut
 
 sub DeleteTransfer {
-    my ($itemnumber) = @_;
-    my $dbh          = C4::Context->dbh;
-    my $sth          = $dbh->prepare(
+    my $itemnumber = shift;
+    return unless $itemnumber;
+    C4::Context->dbh->do(
         "DELETE FROM branchtransfers
-         WHERE itemnumber=?
-         AND datearrived IS NULL "
+         WHERE itemnumber=? ",undef,$itemnumber
     );
-    $sth->execute($itemnumber);
-    $sth->finish;
 }
 
 =head2 AnonymiseIssueHistory

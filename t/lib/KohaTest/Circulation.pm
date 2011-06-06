@@ -34,7 +34,6 @@ sub methods : Test( 1 ) {
                       AddRenewal 
                       GetRenewCount 
                       GetIssuingCharges 
-                      AddIssuingCharge 
                       GetTransfers 
                       GetTransfersFromTo 
                       DeleteTransfer 

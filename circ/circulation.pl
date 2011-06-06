@@ -164,7 +164,7 @@ $barcode = C4::Circulation::barcodedecode(barcode=>$barcode) if( $barcode && (C4
 my $stickyduedate  = $query->param('stickyduedate') || $session->param('stickyduedate');
 my $duedatespec    = $query->param('duedatespec')   || $session->param('stickyduedate');
 my $issueconfirmed = $query->param('issueconfirmed');
-my $howReserve     = $query->param('howhandleReserve');
+my $howReserve     = $query->param('howReserve');
 my $organisation   = $query->param('organisations');
 my $print          = $query->param('print');
 my $newexpiry      = $query->param('dateexpiry');
@@ -432,34 +432,37 @@ if ($barcode) {
     if( !$blocker ){
         my $confirm_required = 0;
     	  unless($issueconfirmed) {
-            #  Get the item title for more information
-            my $getmessageiteminfo  = GetBiblioFromItemNumber(undef,$barcode);
-		      $template->param( itemhomebranch => $getmessageiteminfo->{'homebranch'} );
+            my $getmessageiteminfo = GetBiblioFromItemNumber(undef,$barcode);
+		      $template->param( 
+               itemhomebranch          => $getmessageiteminfo->{'homebranch'},
+               getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
+               biblionumber            => $getmessageiteminfo->{'biblionumber'},
+            );
 		      
             # pass needsconfirmation to template if issuing is possible and user hasn't yet confirmed.
        	   foreach my $needsconfirmation ( keys %$question ) {
-                 ## PTFS PT 7310367 don't display confirmation for holds
-                 # next if $needsconfirmation eq 'RESERVED';
-                 
-                 ## PT 7310367 depracated, added syspref reservesNeedConfirmationOnCheckout
-                 ## for work done on PT 9244211 holds should clear on checkout.
-                 ## only skip confirmation for the syspref if borrower is the one who placed
-                 ## a hold, either bib- or item-level.  This logic assumes the converse,
-                 ## catching the case of an item-level hold.
-                 ## FIXME: outstanding question is for a bib-level hold and no other
-                 ## item is available to fill the hold. -hQ
-                 if (C4::Context->preference('reservesNeedConfirmationOnCheckout')) {
-       	            $template->param(
-       	               $needsconfirmation => $$question{$needsconfirmation},
-       	               getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
-       	               NEEDSCONFIRMATION  => 1
-       	            );
-       	            $confirm_required = 1;
+       	      $template->param(
+       	         $needsconfirmation => $$question{$needsconfirmation},
+       	         NEEDSCONFIRMATION  => 1
+       	      );
+               if (ref($$question{$needsconfirmation}) eq 'HASH') {
+                  if ($$question{$needsconfirmation}{reservenumber}) {
+                     my $res = $$question{$needsconfirmation};
+                     $template->param(RESERVED => 1) unless $confirm_required;
+                     if ($$res{borrowernumber} ne $borrowernumber) {
+                        my $resbor = GetMember($$res{borrowernumber});
+                        foreach(qw(firstname surname cardnumber)) { $$res{$_} = $$resbor{$_} }
+                     }
+                     foreach(keys %$res) {
+                        $template->param("res_$_" => $$res{$_});
+                     }                     
                   }
-       	    }
+               }
+       	      $confirm_required = 1;
+       	   }
 		  }
         if ($confirm_required) {
-            $template->param(howhandleReserve=>$howReserve || 'requeue');
+            $template->param(howReserve=>$howReserve || 'requeue');
         }
         else {
             $datedueObj = C4::Circulation::AddIssue( 

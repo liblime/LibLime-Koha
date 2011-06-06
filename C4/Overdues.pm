@@ -306,8 +306,8 @@ sub CalcFine {
     my $max_fine= C4::Context->preference('UseGranularMaxFines')? $$data{max_fine} : 0;
     if    ($max_fine && ($amount >= $max_fine)) { $amount = $max_fine; $ismax = 1 }
     elsif ($MaxFine  && ($amount >= $MaxFine )) { $amount = $MaxFine;  $ismax = 1 }
+    $debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
 
-	$debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
     return ($amount, $data->{'chargename'}, $days_minus_grace, $daystocharge, $ismax);
     # FIXME: chargename is NEVER populated anywhere.
 }

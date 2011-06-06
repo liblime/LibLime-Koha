@@ -274,22 +274,28 @@ function refocus(calendar) {
 <!-- TMPL_IF NAME="DEBT" -->
     <li>The patron has a debt of <!-- TMPL_VAR name="DEBT" --></li>
 <!-- /TMPL_IF -->
-
 <!-- TMPL_IF NAME="RENEW_ISSUE" -->
     <li>Item is currently checked out to this patron.  Renew?</li>
 <!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="RESERVE_WAITING" -->
-    <li>Item is consigned for <!-- TMPL_VAR NAME="RESERVE_WAITING" --></li>
-<!-- /TMPL_IF -->
-
-<!-- TMPL_IF NAME="RESERVED" -->
-    <li>Item is on reserve for <!-- TMPL_VAR NAME="RESERVED" --></li>
-<!-- /TMPL_IF -->
-
 <!-- TMPL_IF NAME="ISSUED_TO_ANOTHER" -->
     <li>Item ( <!-- TMPL_VAR NAME="getTitleMessageIteminfo" --> ) checked out to <!-- TMPL_VAR NAME="ISSUED_TO_ANOTHER" -->. Check in and check out?</li>
 <!-- /TMPL_IF -->
-
+<TMPL_IF NAME="RESERVED">
+    <li><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="getTitleMessageIteminfo"></a> is <b>on hold</b>
+   <TMPL_IF EXPR="RESERVE_DIFFBOR_PENDING or RESERVE_SAMEBOR_DIFFBIBITEM_PENDING">
+      <TMPL_IF EXPR="res_found eq 'T'">(was in transit)
+      <TMPL_ELSIF NAME="res_priority">(priority <TMPL_VAR NAME="res_priority">)
+      </TMPL_IF>
+   <TMPL_ELSE>and waiting
+   </TMPL_IF>
+   <TMPL_IF EXPR="RESERVE_SAMEBOR_DIFFBIBITEM_WAITING or RESERVE_SAMEBOR_DIFFBIBITEM_PENDING">
+      <br>for this patron
+      <br>(same title, <span class=problem>different item</span>: 
+      <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="res_biblionumber">&itemnumber=<TMPL_VAR NAME="res_itemnumber">#item<TMPL_VAR NAME="res_itemnumber">"><TMPL_VAR NAME="res_barcode"></a>)
+   <TMPL_ELSE>for <span class=problem>a different patron</span>:<br>
+      <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<TMPL_VAR NAME="res_borrowernumber">"><TMPL_VAR NAME="res_firstname"> <TMPL_VAR NAME="res_surname"> (<TMPL_VAR NAME="res_cardnumber">)</a>
+   </TMPL_IF>
+</TMPL_IF>
 <!-- TMPL_IF NAME="TOO_MANY" -->
 <!-- TMPL_IF NAME="CAN_user_circulate_override_checkout_max" -->
     <li>Too many checked out (already checked out / max : <!-- TMPL_VAR name="TOO_MANY" -->)</li>
@@ -317,7 +323,7 @@ Checkout anyway?<br>
 <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
 <input type=hidden name="qbarcode" value="<!-- TMPL_VAR NAME="qbarcode" -->">
 
-   <!-- TMPL_IF EXPR="RESERVED or RESERVE_WAITING" -->
+   <!-- TMPL_IF NAME="RESERVED" -->
       <!-- TMPL_IF NAME="DisableHoldsIssueOverrideUnlessAuthorised" -->
       <TMPL_UNLESS NAME="CAN_user_superlibrarian">
     <p>
@@ -333,21 +339,24 @@ Checkout anyway?<br>
       <!-- /TMPL_IF -->
    <!-- /TMPL_IF -->
 
-   <!-- TMPL_IF EXPR="RESERVED or RESERVE_WAITING" -->
+   <!-- TMPL_IF NAME="RESERVED" -->
     <table border=0 cellspacing=0 cellpadding=4>
-    <tr><td><input type="radio" id="howhandleReserve" name="howhandleReserve" value="requeue" 
-      <TMPL_IF EXPR="howhandleReserve eq 'requeue'">checked</TMPL_IF> /><b>Requeue</b>: Send reserve back to top
-     of title's <a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<TMPL_VAR NAME="biblionumber">">Existing Holds</a> list</td></tr>
-    <tr><td><input type="radio" id="howhandleReserve" name="howhandleReserve" value="cancel" 
-      <TMPL_IF EXPR="howhandleReserve ne 'requeue'">checked</TMPL_IF> /><b>Cancel</b> Reserve
+    <tr><td><input type="radio" name="howReserve" value="requeue" 
+      <TMPL_IF EXPR="howReserve eq 'requeue'">checked</TMPL_IF> /><b>Requeue</b>: Send reserve back to title's <a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<TMPL_VAR NAME="biblionumber">">Existing Holds</a> list</td></tr>
+    <tr><td><input type="radio" name="howReserve" value="cancel" 
+      <TMPL_IF EXPR="howReserve eq 'cancel'">checked</TMPL_IF> /><b>Cancel</b> Reserve
+    <TMPL_IF EXPR="RESERVE_DIFFBOR_WAITING or RESERVE_SAMEBOR_DIFFBIBITEM_PENDING or RESERVE_SAMEBOR_DIFFBIBITEM_WAITING">
+    <tr><td><input type="radio" name="howReserve" value="fill" 
+      <TMPL_IF EXPR="howReserve eq 'fill'">checked</TMPL_IF> /><b>Fill</b> Reserve: current patron is authorized
     </td></tr>
+    </TMPL_IF>
     </table>
    <!-- /TMPL_IF -->
 
     <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME="barcode" -->" />
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
     <input type="hidden" name="issueconfirmed" value="1" />
-    <!-- TMPL_IF EXPR="RESERVED or RESERVE_WAITING" --><input type="hidden" name="reserve_confirmed" value="1" /><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="RESERVED" --><input type="hidden" name="reserve_confirmed" value="1" /><!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="DEBT" --><input type="hidden" name="debt_confirmed" value="1" /><!-- /TMPL_IF -->
 
     <input type="hidden" name="charges_overridden" value="<!-- TMPL_VAR NAME="charges_overridden" -->" />

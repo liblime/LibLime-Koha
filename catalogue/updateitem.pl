@@ -65,7 +65,12 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
     $cancel_reserves = 1 if (!C4::Context->preference('AllowHoldsOnDamagedItems'));
 } elsif ($otherstatus ne ($item_data_hashref->{'otherstatus'} // '')) {
     $item_changes->{'otherstatus'} = $otherstatus;
-    undef($item_changes->{'otherstatus'}) if ($otherstatus eq '');
+    if (!$otherstatus) {
+      undef($item_changes->{'otherstatus'});
+    }
+    elsif (my $stat = C4::Items::GetOtherStatusWhere(statuscode=>$otherstatus)) {
+      C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber) if !$$stat{holdsfilled};
+    }
 } elsif ($suppress ne $item_data_hashref->{'suppress'}) {
     $item_changes->{'suppress'} = $suppress;
 } else {
