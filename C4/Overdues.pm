@@ -304,11 +304,8 @@ sub CalcFine {
     my $ismax   = 0;
     my $MaxFine = C4::Context->preference('MaxFine') || 0;
     my $max_fine= C4::Context->preference('UseGranularMaxFines')? $$data{max_fine} : 0;
-    my $max_amount = $max_fine? $max_fine : $MaxFine;
-    if ($amount >= $max_amount) {
-        $amount = $max_amount;
-        $ismax = 1;
-    }
+    if    ($max_fine && ($amount >= $max_fine)) { $amount = $max_fine; $ismax = 1 }
+    elsif ($MaxFine  && ($amount >= $MaxFine )) { $amount = $MaxFine;  $ismax = 1 }
 
 	$debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
     return ($amount, $data->{'chargename'}, $days_minus_grace, $daystocharge, $ismax);
