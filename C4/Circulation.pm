@@ -1929,7 +1929,7 @@ sub _FixAccountOverdues {
     ## fines.pl cron isn't running?
     if(!$row && $$issue{overdue}) { ## is overdue, not yet charged
         my($amount,$type,$daycounttotal,$daycount,$ismax) = C4::Overdues::CalcFine(
-            GetItem($$issue{itemnumber},
+            GetItem($$issue{itemnumber}),
             $$flags{borcatcode},
             $$flags{branch},
             undef,undef,
