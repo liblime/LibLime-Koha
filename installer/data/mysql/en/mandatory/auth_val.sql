@@ -1,3 +1,4 @@
+INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'LOST','5','Trace' );
 INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'DEPARTMENTS', 'Default', 'Default Department' );
 INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'TERMS', 'Default', 'Default Term' );
 INSERT INTO `authorised_values` (`category`,`authorised_value`,`prefix`,`lib`,`imageurl`,`opaclib`) VALUES
@@ -13,4 +14,4 @@ INSERT INTO `authorised_values` (`category`,`authorised_value`,`prefix`,`lib`,`i
     ('ETYPE','j',NULL,'Online system or service',NULL,NULL),
     ('ETYPE','m',NULL,'Combination',NULL,NULL),
     ('ETYPE','u',NULL,'Unknown',NULL,NULL),
-    ('ETYPE','z',NULL,'Other',NULL,NULL)
+    ('ETYPE','z',NULL,'Other',NULL,NULL);
