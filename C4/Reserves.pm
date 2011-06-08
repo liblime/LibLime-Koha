@@ -607,20 +607,35 @@ sub GetHoldsQueueItems
    return $total,$items;
 }
 
+sub GetHighestPriority {
+    my $biblionumber = shift;
+
+    my ($priority) = C4::Context->dbh->selectrow_array(q{
+        SELECT max(priority) FROM reserves WHERE biblionumber = ?
+        }, undef, $biblionumber);
+    return $priority // 0;
+}
+
 =item AddReserve
     
-    AddReserve($branch,$borrowernumber,$biblionumber,$constraint,
+    AddReserve($branchcode,$borrowernumber,$biblionumber,$constraint,
     $bibitems,$priority,$notes,$title,$checkitem,$found)
 
 =cut
 
 sub AddReserve {
     my (
-        $branch,    $borrowernumber, $biblionumber,
+        $branchcode, $borrowernumber, $biblionumber,
         $constraint, $bibitems,  $priority, $resdate,  $notes,
         $title,      $checkitem, $found
     ) = @_;
-    my $dbh     = C4::Context->dbh;
+
+    die 'Insufficient arguments provided to AddReserve'
+        unless (defined $branchcode && defined $borrowernumber && defined $biblionumber);
+    $priority //= GetHighestPriority($biblionumber) + 1;
+    $title //= C4::Biblio::GetBiblioData($biblionumber)->{title};
+    $constraint //= 'a';
+
     my $const   = lc substr( $constraint, 0, 1 );
 
     my ($sec,$min,$hour,$day,$mon,$year,undef,undef,undef) = localtime();
@@ -656,9 +671,10 @@ sub AddReserve {
              (?,?,?,?,?,
              ?,?,?,?,?,$expirationdate)
     /;
+    my $dbh = C4::Context->dbh;
     my $sth = $dbh->prepare($query);
     $sth->execute(
-        $borrowernumber, $biblionumber, $resdate, $branch,
+        $borrowernumber, $biblionumber, $resdate, $branchcode,
         $const,          $priority,     $notes,   $checkitem,
         $found,          $waitingdate
     );
@@ -682,7 +698,7 @@ sub AddReserve {
     }
 
     UpdateStats(
-      $branch,
+      $branchcode,
       my $type = 'reserve',
       my $amount,
       my $other = $biblionumber,
