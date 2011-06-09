@@ -251,7 +251,7 @@ sub add_validate {
       }
     }
     # set up default display
-    default_display();
+    default_display($searchfield,$template);
     return;
 }
 
@@ -272,7 +272,7 @@ sub delete_confirmed {
     my $dbh    = C4::Context->dbh;
     $dbh->do('DELETE FROM letter WHERE module=? AND code=?',{},$module,$code);
     # setup default display for screen
-    default_display();
+    default_display($searchfield,$template);
     return;
 }
 
