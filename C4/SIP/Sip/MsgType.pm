@@ -656,6 +656,11 @@ sub handle_checkin {
             $status->alert(1);
             if ($item->destination_loc and $item->destination_loc ne $current_loc) {
                 $status->alert_type('02');  # hold at other library
+                # If item is already in transit to another branch, do not alert
+                if ($status->{hold}->{found} eq 'T') {
+                  $status->alert(0);
+                  $status->alert_type(undef);
+                }
             } else {
                 $status->alert_type('01');  # hold at this library
             }

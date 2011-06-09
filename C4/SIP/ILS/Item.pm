@@ -107,7 +107,7 @@ sub new {
     my ($whatever, $arrayref) = GetReservesFromBiblionumber($item->{biblionumber});
 	$item->{hold_queue} = [ sort priority_sort @$arrayref ];
 	$item->{hold_shelf}    = [( grep {   defined $_->{found}  and $_->{found} eq 'W' } @{$item->{hold_queue}} )];
-	$item->{pending_queue} = [( grep {(! defined $_->{found}) or  $_->{found} ne 'W' } @{$item->{hold_queue}} )];
+	$item->{pending_queue} = [( grep {(! defined $_->{found}) or  ($_->{found} ne 'W' and $_->{found} ne 'S') } @{$item->{hold_queue}} )];
 	$self = $item;
 	bless $self, $type;
 
@@ -176,7 +176,9 @@ sub hold_patron_name {
                 ($email or  $phone) ? " ($email$phone)"   :  # only 1 populated, we don't care which: no comma
                 "" ;                                         # neither populated, empty string
     my $name = $holder->{firstname} ? $holder->{firstname} . ' ' : '';
-    $name .= $holder->{surname} . $extra;
+    # Previously extra was concatenated on.  Have removed for now,
+    # syspref in the future?
+    $name .= $holder->{surname};
     # $self->{hold_patron_name} = $name;      # TODO: consider caching
     return $name;
 }
