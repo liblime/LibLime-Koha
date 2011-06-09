@@ -1057,7 +1057,6 @@ sub AddIssue {
    my $howReserve    = $g{howReserve}     || '';
    my $issuedate     = $g{issuedate}      // '';
    my $sipmode       = $g{sipmode}        || 0;
-   $datedueObj       = undef unless ref($datedueObj);
    unless($howReserve) {
       if    ($cancelReserve)  { $howReserve = 'cancel' }
       elsif ($requeueReserve) { $howReserve = 'requeue'}
@@ -1077,6 +1076,7 @@ sub AddIssue {
       # TODO: for hourly circ, this will need to be a C4::Dates object
       # and all calls to AddIssue including issuedate will need to pass a Dates object.
    }
+   if ($datedueObj) { $datedue = $datedueObj->output('iso') }
     
    my $item = GetItem('', $barcode) or return undef;  # if we don't get an Item, abort.
    my $branch = _GetCircControlBranch($item,$borrower);
@@ -1089,7 +1089,7 @@ sub AddIssue {
                item           => $item,
                issue          => $actualissue,
                branch         => $branch,
-               datedue        => $datedue,
+               datedueObj     => $datedueObj,
                issuedate      => $issuedate,# renewal date
                exemptfine     => $g{exemptfine},
             );
