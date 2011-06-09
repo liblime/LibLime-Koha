@@ -52,6 +52,7 @@ amountdue_notices.pl [ -n ] [ -library <branchcode> ] [ -csv [ <filename> ] ]
    -code         <lettercode>     name of notice code to use
    -csv          <filename>       populate CSV file
    -html         <filename>       Output html to file
+   -ignore       <days>           Ignore fines older than <days>
 
 =head1 OPTIONS
 
@@ -190,6 +191,7 @@ my $mybranch;
 my $letter_code;
 my $csvfilename;
 my $htmlfilename;
+my $ignore = 365;
 
 GetOptions(
     'help|?'         => \$help,
@@ -199,7 +201,8 @@ GetOptions(
     'library=s'      => \$mybranch,
     'code=s'         => \$letter_code,
     'csv:s'          => \$csvfilename,    # this optional argument gets '' if not supplied.
-    'html:s'          => \$htmlfilename,    # this optional argument gets '' if not supplied.
+    'html:s'         => \$htmlfilename,    # this optional argument gets '' if not supplied.
+    'ignore=i'       => \$ignore,
 ) or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage( -verbose => 2 ) if $man;
@@ -299,10 +302,11 @@ SELECT accountlines.borrowernumber, SUM(accountlines.amountoutstanding) AS amoun
     AND borrowers.branchcode = ?
     AND (accountlines.description NOT LIKE '%Debt Collect%')
     AND (accountlines.description NOT LIKE '%collections agency%')
+    AND DATEDIFF(CURDATE(),accountlines.date) <= ?
   GROUP BY accountlines.borrowernumber
   HAVING SUM(accountlines.amountoutstanding) >= ?
 END_SQL
-    $sth->execute( $branchcode, $notify_value );
+    $sth->execute( $branchcode, $ignore, $notify_value );
     while ( my $patron_hits = $sth->fetchrow_hashref() ) {
       my $letter = C4::Letters::getletter( 'circulation', $letter_code );
       unless ($letter) {
