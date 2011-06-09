@@ -1074,7 +1074,7 @@ sub AddIssue {
       # TODO: for hourly circ, this will need to be a C4::Dates object
       # and all calls to AddIssue including issuedate will need to pass a Dates object.
    }
-   if ($datedueObj) { $datedue = $datedueObj->output('iso') }
+   if (ref($datedueObj)) { $datedue = $datedueObj->output('iso') }
     
    my $item = GetItem('', $barcode) or return undef;  # if we don't get an Item, abort.
    my $branch = _GetCircControlBranch($item,$borrower);
@@ -1157,13 +1157,14 @@ sub AddIssue {
    unless ($datedue) {
       my $itype = ( C4::Context->preference('item-level_itypes') ) ? $biblio->{'itype'} : $biblio->{'itemtype'};
       my $loanlength = GetLoanLength( $borrower->{'categorycode'}, $itype, $branch );
-      $datedue = CalcDateDue( C4::Dates->new( $issuedate, 'iso' ), $loanlength, $branch, $borrower );
+      $datedueObj = CalcDateDue( C4::Dates->new( $issuedate, 'iso' ), $loanlength, $branch, $borrower );
+      $datedue    = $datedueObj->output('iso');
    }
    $sth->execute(
             $borrower->{'borrowernumber'},      # borrowernumber
             $item->{'itemnumber'},              # itemnumber
             $issuedate,                         # issuedate
-            $datedue->output('iso'),            # date_due
+            $datedue,                           # date_due
             C4::Context->userenv->{'branch'}    # branchcode
    );
    $sth->finish;
@@ -1176,7 +1177,7 @@ sub AddIssue {
                   itemlost         => 0,
                   paidfor          => '',
                   datelastborrowed => C4::Dates->new()->output('iso'),
-                  onloan           => $datedue->output('iso'),
+                  onloan           => $datedue,
                 }, $item->{'biblionumber'}, $item->{'itemnumber'});
    ModDateLastSeen( $item->{'itemnumber'} );
 
@@ -2752,7 +2753,7 @@ sub AddRenewal {
    $itemnumber       ||= $$issue{itemnumber};
    $borrowernumber   ||= $$issue{borrowernumber};
    my $lostitem        = $g{lostitem} || GetLostItem($itemnumber);
-   if (ref($datedue) !~ /C4\:\:Dates/) { # not an object
+   if ($datedue && (ref($datedue) !~ /C4\:\:Dates/)) { # not an object
       if    ($datedue =~ /^\d\d\/\d\d\/\d{4}$/) { $datedue = C4::Dates->new($datedue,'us' ) }
       elsif ($datedue =~ /^\d{4}\-\d\d\-\d\d$/) { $datedue = C4::Dates->new($datedue,'iso') }
    }
@@ -2817,7 +2818,7 @@ sub AddRenewal {
 
    # Log the renewal
    UpdateStats( $branch, 'renew', $charge, $source, $itemnumber, $item->{itype}, $borrowernumber);
-   return $datedue;
+   return $datedue->output('iso');
 }
 
 sub GetRenewCount {
