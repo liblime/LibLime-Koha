@@ -46,19 +46,19 @@ my ($template, $loggedinuser, $cookie)
             }
     );
 
-	my $limit_ind_branch=(C4::Context->preference('IndependantBranches') &&
+        my $limit_ind_branch=(C4::Context->preference('IndependantBranches') &&
               C4::Context->userenv &&
               C4::Context->userenv->{flags} % 2 !=1  &&
               C4::Context->userenv->{branch}?1:0);
-	my $branches = GetBranches($limit_ind_branch);    
-    my $branch                = $query->param("branch") || '';
-	if ( C4::Context->preference("IndependantBranches") ) {
-    	$branch = C4::Context->userenv->{'branch'};
-	}
+        my $branches = GetBranches($limit_ind_branch);    
+        my $branch   = $query->param("branch") || '';
+        if ( C4::Context->preference("IndependantBranches") ) {
+            $branch = C4::Context->userenv->{'branch'};
+        }
 
 if ($op eq "export") {
     binmode(STDOUT,":utf8");
-	print $query->header(   -type => 'application/octet-stream', 
+        print $query->header(   -type => 'application/octet-stream', 
                             -charset => 'utf-8',
                             -attachment=>$filename);
      
@@ -86,37 +86,48 @@ if ($op eq "export") {
         :
         "SELECT biblioitems.biblionumber FROM biblioitems WHERE biblionumber >0 ";
                   
-    if ( $StartingBiblionumber ) {
-        $query .= " AND biblioitems.biblionumber >= ? ";
-        push @sql_params, $StartingBiblionumber;
-    }
-    
-    if ( $EndingBiblionumber ) {
+   if ( $StartingBiblionumber ) {
+      if ($EndingBiblionumber) {
+         $query .= ' AND biblioitems.biblionumber BETWEEN ? AND ? ';
+         push @sql_params, $StartingBiblionumber, $EndingBiblionumber;
+      }
+      else {
+         $query .= ' AND biblioitems.biblionumber >= ? ';
+         push @sql_params, $StartingBiblionumber;
+      }
+   } 
+   elsif ( $EndingBiblionumber ) {
         $query .= " AND biblioitems.biblionumber <= ? ";
         push @sql_params, $EndingBiblionumber;    
     }
     
     if ( $branch ) {
-        $query .= " AND biblioitems.biblionumber = items.biblionumber AND homebranch = ? ";
+        $query .= " AND biblioitems.biblionumber = items.biblionumber AND items.homebranch = ? ";
         push @sql_params, $branch;
     }
     
     if ( $start_callnumber ) {
-        $query .= " AND biblioitems.biblionumber = items.biblionumber AND itemcallnumber <= ? ";
-        push @sql_params, $start_callnumber;
-    }
-    
-    if ( $end_callnumber ) {
-        $query .= " AND biblioitems.biblionumber = items.biblionumber AND itemcallnumber >= ? ";
+       if ($end_callnumber) {
+          $query .= ' AND biblioitems.biblionumber = items.biblionumber
+                      AND items.itemcallnumber BETWEEN ? AND ? ';
+          push @sql_params, $start_callnumber, $end_callnumber;
+       }
+       else {
+        $query .= " AND biblioitems.biblionumber = items.biblionumber AND items.itemcallnumber <= ? ";
+         push @sql_params, $start_callnumber;
+       }
+    }    
+    elsif ( $end_callnumber ) {
+        $query .= " AND biblioitems.biblionumber = items.biblionumber AND items.itemcallnumber >= ? ";
         push @sql_params, $end_callnumber;
     }
     if ( $start_accession ) {
-        $query .= " AND biblioitems.biblionumber = items.biblionumber AND dateaccessioned >= ? ";
+        $query .= " AND biblioitems.biblionumber = items.biblionumber AND items.dateaccessioned >= ? ";
         push @sql_params,$start_accession->output('iso');
     }
     
     if ( $end_accession ) {
-        $query .= " AND biblioitems.biblionumber = items.biblionumber AND dateaccessioned <= ? ";
+        $query .= " AND biblioitems.biblionumber = items.biblionumber AND items.dateaccessioned <= ? ";
         push @sql_params, $end_accession->output('iso');
     }
     
@@ -141,9 +152,9 @@ if ($op eq "export") {
         if ( $strip_nonlocal_items || $limit_ind_branch) {
             my ( $homebranchfield, $homebranchsubfield ) =
                 GetMarcFromKohaField( 'items.homebranch', '' );
-			for my $itemfield ($record->field($homebranchfield)){
-				# if stripping nonlocal items, use loggedinuser's branch if they didn't select one
-				$branch = C4::Context->userenv->{'branch'} unless $branch;
+                        for my $itemfield ($record->field($homebranchfield)){
+                                # if stripping nonlocal items, use loggedinuser's branch if they didn't select one
+                                $branch = C4::Context->userenv->{'branch'} unless $branch;
                 $record->delete_field($itemfield) if ($itemfield->subfield($homebranchsubfield) ne $branch);
             }
         }
@@ -188,7 +199,7 @@ else {
        push @itemtypesloop, \%row;
     }
     my @branchloop;
-	for my $thisbranch (sort { $branches->{$a}->{branchname} cmp $branches->{$b}->{branchname} } keys %$branches) {
+        for my $thisbranch (sort { $branches->{$a}->{branchname} cmp $branches->{$b}->{branchname} } keys %$branches) {
         my $selected = 1 if $thisbranch eq $branch;
         my %row = (
             value => $thisbranch,
@@ -201,7 +212,7 @@ else {
     $template->param(
         branchloop   => \@branchloop,
         itemtypeloop => \@itemtypesloop,
-		DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
+                DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
     );
     
     output_html_with_http_headers $query, $cookie, $template->output;
