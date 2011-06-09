@@ -30,13 +30,7 @@ use Koha;
 use C4::Context;
 use CGI;
 
-my $input         = new CGI;
-my $borrowernumber= $input->param('borrowernumber');
-my $superlibrarian= $input->param('superlibrarian');
-my $data=GetMember($borrowernumber,'borrowernumber');
-my $borrowernumber=$input->param('borrowernumber');
-my $authorized = 0;
-
+my $input = CGI->new();
 my ($template, $loggedinuser, $cookie)
 	  = get_template_and_user({template_name => "members/refund.tmpl",
 					  query => $input,
@@ -45,8 +39,12 @@ my ($template, $loggedinuser, $cookie)
 					  flagsrequired => {borrowers => '*', updatecharges => '*'},
 					  debug => 1,
 					  });
+my $borrowernumber = $input->param('borrowernumber');
+my $superlibrarian = $input->param('superlibrarian');
+my $data           = GetMember($borrowernumber,'borrowernumber');
+my $authorized     = 0;
+my $showForm       = 0;
 
-my $showForm = 0;
 if ($superlibrarian) {
   my $authcode = C4::Auth::checkpw( C4::Context->dbh, $input->param('auth_username'), $input->param('auth_password'), 0, my $bypass_userenv = 1 );
   my $permissions = C4::Auth::haspermission( $input->param('auth_username'), { 'superlibrarian' => 1 } );
