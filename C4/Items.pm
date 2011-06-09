@@ -2239,6 +2239,11 @@ sub _koha_modify_item {
     my $error;
     my $query = "UPDATE items SET ";
     my @bind;
+    if (($$item{notforloan} != 0)
+     || ($$item{suppress}   != 0)
+     || ($$item{wthdrawn}   != 0) ) {
+       $dbh->do('DELETE FROM tmp_holdsqueue where itemnumber=?',undef,$$item{itemnumber});
+    }
     for my $key ( keys %$item ) {
         $query.="$key=?,";
         push @bind, $item->{$key};

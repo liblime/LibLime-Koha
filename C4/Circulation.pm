@@ -1015,7 +1015,7 @@ Issue a book. Does no check, they are done in CanBookBeIssued. If we reach this 
 =item C<$datedueObj> is a C4::Dates object for the max date of return, i.e. the date due (optional).
 Calculated if empty.
 
-=item C<$howReserve> is either 'cancel' or 'requeue' (optional) for reconciling a reserve that belongs
+=item C<$howReserve> is 'cancel','fill', or 'requeue' (optional) for reconciling a reserve that belongs
 to another patron other than the checkout patron.
 
 =item C<$cancelReserve> is 1 to override and cancel any pending reserves for the item (optional); used
@@ -1035,10 +1035,8 @@ AddIssue does the following things :
       - renewal NO  =
           * BOOK ACTUALLY ISSUED ? do a return if book is actually issued (but to someone else)
           * RESERVE PLACED ?
-              - fill reserve if reserve to this patron
+              - fill reserve if reserve to this patron or authorised
               - cancel reserve or not, otherwise
-          * TRANSFERT PENDING ?
-              - complete the transfert
           * ISSUE THE BOOK
 
 =back
@@ -1115,11 +1113,13 @@ sub AddIssue {
       my $resbor = $res->{'borrowernumber'};
       if (($resbor eq $borrower->{'borrowernumber'}) || ($howReserve eq 'fill')) {
          if ($howReserve eq 'requeue') {
-            ModReserve(1,$res->{'biblionumber'},
-                         $res->{'borrowernumber'},
-                         $res->{'branchcode'},                                 
-                         undef,     ## $res->{'itemnumber'},
-                         $res->{'reservenumber'});
+            if ($$res{priority} == 0) {
+               ModReserve(1,$res->{'biblionumber'},
+                            $res->{'borrowernumber'},
+                            $res->{'branchcode'},                                 
+                            undef,     ## $res->{'itemnumber'},
+                            $res->{'reservenumber'});
+            } # else ignore numbered priority: actual requeue as-is
          }
          else {
             C4::Reserves::FillReserve($res,$$item{itemnumber});
@@ -1134,12 +1134,14 @@ sub AddIssue {
          # reserved by some other patron.
          ## FIXME: requeue as bib-level hold is temporary until we get
          ## a permanent fix for retaining bib- or item-level hold
-         ModReserve(1,$res->{'biblionumber'},
-                      $res->{'borrowernumber'},
-                      $res->{'branchcode'},                                 
-                      undef,     ## $res->{'itemnumber'},
-                      $res->{'reservenumber'});
-      }
+         if (($$res{priority}==0) || ($$res{found} ~~ 'W')) {
+            ModReserve(1,$res->{'biblionumber'},
+                         $res->{'borrowernumber'},
+                         $res->{'branchcode'},                                 
+                         undef,     ## $res->{'itemnumber'},
+                         $res->{'reservenumber'});
+         }
+      }  
    }
    
    ## remove from tmp_holdsqueue and branchtransfers
