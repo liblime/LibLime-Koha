@@ -251,7 +251,6 @@ if($duedatespec_allow){
 } else {
     $datedueObj = $globalduedate if ($globalduedate);
 }
-
 my $todaysdate = C4::Dates->new->output('iso');
 
 # check and see if we should print
