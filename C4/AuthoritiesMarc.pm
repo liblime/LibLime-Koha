@@ -308,7 +308,7 @@ sub SearchAuthorities {
             sub getReportedTag {
                 my ($authrecord, $authtypecode) = @_;
                 my $query_auth_tag = "SELECT auth_tag_to_report FROM auth_types WHERE authtypecode=?";
-                my $sth = $dbh->prepare($query_auth_tag);
+                my $sth = C4::Context->dbh->prepare($query_auth_tag);
                 $sth->execute($authtypecode);
                 my $auth_tag_to_report = $sth->fetchrow;
                 my $reported_tag;
