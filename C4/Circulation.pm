@@ -377,11 +377,11 @@ database, the transfer should indeed have succeeded. The value should be ignored
 sub transferbook {
     my ( $tbr, $barcode, $ignoreRs ) = @_;
     my $messages;
-    my $dotransfer      = 1;
-    my $branches        = GetBranches();
+    my $dotransfer = 1;
+    my $branches   = GetBranches();
     my $itemnumber = GetItemnumberFromBarcode( $barcode );
     my $issue      = GetItemIssue($itemnumber);
-    my $biblio = GetBiblioFromItemNumber($itemnumber);
+    my $biblio     = GetBiblioFromItemNumber($itemnumber);
 
     # bad barcode..
     if ( not $itemnumber ) {
@@ -392,6 +392,10 @@ sub transferbook {
     # get branches of book...
     my $hbr = $biblio->{'homebranch'};
     my $fbr = $biblio->{'holdingbranch'};
+    if ($fbr ~~ $tbr) {
+       $messages->{'SameBranch'} = $tbr;
+       $dotransfer = 0;
+    }
 
     # if using Branch Transfer Limits
     if ( C4::Context->preference("UseBranchTransferLimits") == 1 ) {
@@ -424,6 +428,7 @@ sub transferbook {
         $messages->{'WasReturned'} = $issue;
     }
 
+    ## huh? -hQ
     # find reserves.....
     # That'll save a database query.
     my ( $resfound, $resrec ) =
@@ -455,7 +460,7 @@ sub transferbook {
 
         # don't need to update MARC anymore, we do it in batch now
         $messages->{'WasTransfered'} = 1;
-
+        C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber);
     }
     ModDateLastSeen( $itemnumber );
     return ( $dotransfer, $messages, $biblio, $itemnumber );

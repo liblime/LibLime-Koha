@@ -160,6 +160,11 @@ Item Status Administration
             <!-- /TMPL_IF -->
           (if checked, item of this current status can have a hold placed on it)
       </li>
+      <li>
+          <label for="holdfilled">Holds filled</label>
+          <input type="checkbox" id="holdsfilled" name="holdsfilled" <TMPL_IF NAME="holdsfilled">checked="checked"</TMPL_IF> value="1" />
+          (if checked, item of this current status can be picked to fill a hold, viz. for the cronjob)
+      </li>
 	  </ol>
     </fieldset>
 
@@ -181,6 +186,7 @@ Item Status Administration
 
 	<tr><th scope="row">Description</th><td><!-- TMPL_VAR name="description" --></td></tr>
 	<tr><th scope="row">Holds allowed</th><td><!-- TMPL_IF NAME="holdsallowed" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td></tr>
+	<tr><th scope="row">Holds filled</th><td><!-- TMPL_IF NAME="holdsfilled" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td></tr>
 </table>
 		<form action="<!-- TMPL_VAR name="script_name" -->" method="post">
 		<input type="hidden" name="op" value="delete_confirmed" /><input type="hidden" name="statuscode" value="<!-- TMPL_VAR name="statuscode" -->" />
@@ -197,6 +203,7 @@ Item Status Administration
     <th>Code</th>
     <th>Description</th>
     <th>Holds allowed</th>
+    <th>Holds filled</th>
     <th>Action</th>
   </tr>
   <!-- TMPL_LOOP name="loop" -->
@@ -212,6 +219,7 @@ Item Status Administration
     </td>
     <td><!-- TMPL_VAR name="description" --></td>
     <td><!-- TMPL_IF NAME="holdsallowed" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
+    <td><!-- TMPL_IF NAME="holdsfilled" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
     <td>
       <a href="<!-- TMPL_VAR name="script_name" -->?op=add_form&amp;statuscode=<!-- TMPL_VAR name="statuscode" escape="HTML" -->">Edit</a>
       <a href="<!-- TMPL_VAR name="script_name" -->?op=delete_confirm&amp;statuscode=<!-- TMPL_VAR name="statuscode" escape="HTML" -->">Delete</a>

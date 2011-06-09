@@ -19,6 +19,7 @@ BEGIN {
 use C4::Context;
 use C4::Reserves;
 
+my %seen = ();
 my @f = qw(reservenumber biblionumber itemnumber barcode surname firstname phone 
 borrowernumber cardnumber reservedate title itemcallnumber holdingbranch pickbranch 
 notes item_level_request queue_sofar);
@@ -26,18 +27,49 @@ my @branches = C4::Reserves::getBranchesQueueWeight();
 
 C4::Reserves::CleanupQueue();
 
+## shallow picking skims the top of pending reserves in each bib
 HOLD:
 foreach my $res (values %{C4::Reserves::GetReservesForQueue() // {}}) {
    ## dupecheck on reservenumber
    ## DupecheckQueue() already filters out holds on shelf (found=non-empty),
    ## priority, and reservedate.
    next HOLD if C4::Reserves::DupecheckQueue($$res{reservenumber});
-   
-   ## handle cases:
-   ## (1) trivial: item-level hold w/ an itemnumber
-   ## (2) bib-level hold w/out an itemnumber:
-   ##    (a) there is an item available, attempt to prefill it
-   ##    (b) there is no item available (user will probably pass)
+   my $item;
+   ($res,$item) = _pick($res);   
+   unless ($item) {
+      push @{$seen{$$res{biblionumber}}}, $$res{reservenumber};
+      undef $res; # free memory
+      next HOLD;
+   }
+   die "Bad logic: expected itemnumber" unless $$item{itemnumber};
+   delete $seen{$$res{biblionumber}}; # fill one hold per bib
+   _save($res,$item);
+}
+
+## drill vertically down the bib and keep trying to fill a hold.
+## quit on first fill or until exhausted in bib.
+BIB:
+foreach my $biblionumber(keys %seen) {
+   foreach my $res(values %{C4::Reserves::GetReservesForQueue($biblionumber,@{$seen{$biblionumber}}) // {}}) {
+      next BIB if _save(_pick($res));
+   }
+}
+
+sub _save
+{
+   my($res,$item) = @_;
+   return unless $item;
+   foreach(keys %$item) { $$res{$_} = $$item{$_} }
+   my %new = ();
+   foreach(@f) { $new{$_} = $$res{$_} }
+   $new{queue_sofar} = $new{holdingbranch};
+   C4::Reserves::SaveHoldInQueue(%new);
+   return 1;
+}
+
+sub _pick
+{
+   my $res = shift;
    my $item;
    if ($$res{itemnumber}) {
       $$res{item_level_request} = 1;
@@ -52,15 +84,7 @@ foreach my $res (values %{C4::Reserves::GetReservesForQueue() // {}}) {
       $item = C4::Reserves::GetItemForBibPrefill($res,@branches);
       ## (b) do nothing else
    }
-   next HOLD unless $item;
-   die "Bad logic: expected itemnumber" unless $$item{itemnumber};
-   foreach(keys %$item) { $$res{$_} = $$item{$_} }
-   
-   ## save the hold request to the tmp_holdsqueue table
-   my %new = ();
-   foreach(@f) { $new{$_} = $$res{$_} }
-   $new{queue_sofar} = $new{holdingbranch};
-   C4::Reserves::SaveHoldInQueue(%new);
+   return $res, $item;
 }
 
 exit;

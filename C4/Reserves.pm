@@ -147,7 +147,6 @@ BEGIN {
     );
 }
 
-# not exported.
 # sanity checks for running build_holds_queue.pl
 sub CleanupQueue
 {
@@ -164,30 +163,17 @@ sub CleanupQueue
       RmFromHoldsQueue(reservenumber => $resnum);
    }
 
-   ## remove suspended holds
-   $dbh->do("DELETE FROM tmp_holdsqueue WHERE reservenumber IN(
+   ## suspended, waiting, intransit
+   $dbh->do("DELETE FROM tmp_holdsqueue 
+   WHERE reservenumber IN(
       SELECT reservenumber FROM reserves
-      WHERE  found = 'S')");
+      WHERE  found IN ('S','W','T')
+   )");
 
    ## remove issued items currently checked out
    $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber IN(
       SELECT itemnumber FROM issues)');
    
-   ## if reserve has been checked in at holdingbranch,
-   ## remove it from tmp_holdsqueue.
-   $sth = $dbh->prepare("
-         SELECT tmp_holdsqueue.reservenumber
-           FROM reserves,tmp_holdsqueue
-          WHERE reserves.found IS NOT NULL
-            AND reserves.found IN ('W', 'T')
-            AND reserves.priority = 0
-            AND reserves.reservenumber = tmp_holdsqueue.reservenumber
-   ");
-   $sth->execute();
-   while(my $row = $sth->fetchrow_hashref()) {
-      RmFromHoldsQueue(reservenumber => $$row{reservenumber});
-   }
-
    ## race condition: pickup branch changed after previous run of
    ## build_holds_queue.pl.  Force sync data.
    $sth = $dbh->prepare('
@@ -386,8 +372,11 @@ sub GetItemForBibPrefill
              items.itemcallnumber,
              items.barcode,
              items.holdingbranch,
-             items.notforloan
-        FROM items,biblio
+             items.notforloan,
+             itemstatus.holdsfilled
+        FROM items
+        JOIN biblio USING         (biblionumber)
+   LEFT JOIN itemstatus ON        (items.otherstatus = itemstatus.statuscode)
        WHERE items.biblionumber = ? %s
          AND items.biblionumber = biblio.biblionumber",
       @notitems? sprintf("AND items.itemnumber NOT IN (%s)", 
@@ -432,8 +421,11 @@ sub GetItemForQueue
              items.itemcallnumber,
              items.barcode,
              items.holdingbranch,
-             items.notforloan
-        FROM items,biblio
+             items.notforloan,
+             itemstatus.holdsfilled
+        FROM items
+        JOIN biblio USING (biblionumber)
+   LEFT JOIN itemstatus ON (itemstatus.statuscode = items.otherstatus)
        WHERE biblio.biblionumber = items.biblionumber
          AND items.biblionumber  = ?
          AND items.itemnumber    = ?
@@ -453,7 +445,6 @@ sub GetItemForQueue
    $$item{reservenumber}    = $$res{reservenumber};
    return _itemfillbib($item);
 }
-
 
 sub _itemfillbib
 {
@@ -476,6 +467,8 @@ sub _itemfillbib
    ## notforloan: even if you can place a hold on a notforloan item,
    ## there's no real item avaiable to fill the hold
    return if $$item{notforloan} != 0;
+
+   return if (defined $$item{holdsfilled} && !$$item{holdsfilled});
 
    ## check with issuing rules
    $sth = $dbh->prepare("
@@ -512,8 +505,19 @@ sub _itemfillbib
 
 sub GetReservesForQueue 
 {
-    my $dbh = C4::Context->dbh;
-    my $all = $dbh->selectall_hashref(q{
+    my($biblionumber,@skip) = @_;
+    my $bybib = my $groupby = '';
+    my @vals  = ();
+    if ($biblionumber) { # drill vertically down the bib
+      $bybib = sprintf('AND reserves.biblionumber = ? AND reserves.reservenumber NOT IN (%s)',
+         join(',',map{'?'}@skip)
+      );
+      @vals  = ($biblionumber,@skip);
+    }
+    else { # shallow skimming across the bib
+      $groupby = 'GROUP BY reserves.biblionumber HAVING MIN(priority)';
+    }
+    return C4::Context->dbh->selectall_hashref(qq|
       SELECT reserves.reservenumber,
              reserves.biblionumber,
              reserves.itemnumber,
@@ -530,19 +534,12 @@ sub GetReservesForQueue
              reserves.priority,
              reserves.found
         FROM reserves,borrowers
-       WHERE
-         ( /* in transit or otherwise not waiting at pickup branch */
-           (reserves.found IS NULL AND reserves.priority >= 1)
-           OR (reserves.found = 'T' AND reserves.priority = 0)
-         )
+       WHERE reserves.found IS NULL 
+         AND reserves.priority >= 1
          AND reserves.reservedate <= NOW()
          AND reserves.borrowernumber = borrowers.borrowernumber
-    /* this was added for the case of suspended reserves with high (low number) priority */
-    GROUP BY reserves.biblionumber 
-      HAVING MIN(priority)
-    },'biblionumber');
-
-    return $all;
+         $bybib $groupby
+    |,'biblionumber',{},@vals);
 }
 
 sub GetHoldsQueueItems 
@@ -2048,12 +2045,12 @@ item-level hold request.  An item is available if
 * it is not set to trace or other blocking status
 * it is not on loan (see below)
 * it is not notforhold by itemtype
-* itemstatus
-      holdsallowed = 1
-      holdsfilled  = 1
+* itemstatus.holdsallowed = 1
+
 Does not check
 * issuing rule blocks
 * is sitting on the hold shelf (reserves.found = 'W'aiting)
+* itemstatus.holdsfilled
 
 Whether or not the item is currently on loan is 
 also checked - if the AllowOnShelfHolds system preference
