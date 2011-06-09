@@ -161,8 +161,8 @@ sub HoldsShelf
    LEFT JOIN biblio    ON (old_reserves.biblionumber   = biblio.biblionumber)
    LEFT JOIN borrowers ON (old_reserves.borrowernumber = borrowers.borrowernumber)
    LEFT JOIN items     ON (old_reserves.itemnumber     = items.itemnumber)
-       WHERE old_reserves.found = 'W' 
-         AND old_reserves.expirationdate <= NOW() $lim
+       WHERE old_reserves.found = 'W' $lim
+         AND (old_reserves.expirationdate <= NOW() OR old_reserves.cancellationdate IS NOT NULL)
          AND old_reserves.priority >= 0
    |;
    my $sth = $dbh->prepare($sql);

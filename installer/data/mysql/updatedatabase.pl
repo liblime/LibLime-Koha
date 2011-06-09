@@ -4666,7 +4666,19 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Minor version update to $DBversion )\n";
 }
-
+$DBversion = '4.07.00.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    $dbh->do("DELETE FROM systempreferences WHERE variable = 'reservesNeedConfirmationOnCheckout'");
+    $dbh->do("INSERT INTO systempreferences(variable,explanation,value,type) VALUES(?,?,?,?)",undef,
+      'reservesNeedConfirmationOnCheckout',
+      "Pipe-delimited list of types of prompts upon checkout with a hold pending: one or more of "
+    . "'patronNotReservist_holdPending','patronNotReservist_holdWaiting','otherBibItem','noPrompts'.",
+      'patronNotReservist_holdWaiting|otherBibItem',
+      'free'
+    );
+    print "Upgrade to $DBversion done ( Modified systempreferences.reservesNeedConfirmationOnCheckout )\n";
+}
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 

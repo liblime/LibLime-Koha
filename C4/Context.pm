@@ -82,7 +82,7 @@ BEGIN {
 			$main::SIG{__DIE__} = \&CGI::Carp::confess;
 		}
     }  	# else there is no browser to send fatals to!
-	$VERSION = '4.07.00.000';
+	$VERSION = '4.07.00.001';
 }
 
 use DBI;
@@ -561,7 +561,9 @@ sub AUTOLOAD
 
     $AUTOLOAD =~ s/.*:://;        # Chop off the package name,
                     # leaving only the function name.
-    return $self->config($AUTOLOAD);
+    config($self,$AUTOLOAD);
+# we are not necessarily blessed
+#    return $self->config($AUTOLOAD);
 }
 
 =item Zconn

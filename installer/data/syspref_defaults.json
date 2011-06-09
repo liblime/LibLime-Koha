@@ -372,10 +372,10 @@
       "type" : "YesNo"
    },
    "reservesNeedConfirmationOnCheckout" : {
-      "explanation" : "If ON, an item that can fill an item-level hold request requires confirmation to check out regardless whether the check out patron is the one who placed the hold or not",
+      "explanation" : "Pipe-delimited list of types of prompts upon checkout with a hold pending: one or more of 'patronNotReservist_holdPending','patronNotReservist_holdWaiting','otherBibItem','noPrompts'.",
       "options" : "",
-      "value" : "0",
-      "type" : "YesNo"
+      "value" : "patronNotReservist_holdWaiting|otherBibItem",
+      "type" : "free"
    },
    "OPACShowExpiredHolds" : {
       "explanation" : "The number in days that expired holds will display in the OPAC my hold history tab.  A value of 0 will display nothing.",
