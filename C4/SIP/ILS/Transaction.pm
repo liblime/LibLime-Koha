@@ -7,6 +7,7 @@ package ILS::Transaction;
 use Carp;
 use strict;
 use warnings;
+use Koha;
 use C4::Context;
 
 my %fields = (

@@ -14,6 +14,7 @@ BEGIN {
 
 # Koha modules used
 use MARC::Record;
+use Koha;
 use C4::Context;
 use C4::Biblio;
 use Time::HiRes qw(gettimeofday);

@@ -23,6 +23,7 @@ use warnings;
 
 use Carp qw(carp cluck croak confess);
 
+use Koha;
 use C4::Context;
 use C4::Dates qw(format_date_in_iso);
 use Digest::MD5 qw(md5_base64);

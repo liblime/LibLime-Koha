@@ -20,6 +20,7 @@ package C4::Session::Defaults::Items;
 use strict;
 
 use C4::Auth;
+use Koha;
 use C4::Context;
 
 use vars qw($VERSION @ISA @EXPORT);

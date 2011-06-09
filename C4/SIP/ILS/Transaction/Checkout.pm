@@ -15,6 +15,7 @@ use CGI;
 use ILS;
 use ILS::Transaction;
 
+use Koha;
 use C4::Context;
 use C4::Circulation;
 use C4::Members;

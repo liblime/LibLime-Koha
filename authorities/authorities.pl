@@ -23,6 +23,7 @@ use CGI;
 use C4::Auth;
 use C4::Output;
 use C4::AuthoritiesMarc;
+use Koha;
 use C4::Context;
 use C4::Koha; # XXX subfield_is_koha_internal_p
 use Date::Calc qw(Today);

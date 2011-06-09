@@ -21,6 +21,7 @@ package C4::Maintainance; #assumes C4/Maintainance
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+use Koha;
 use C4::Context;
 
 require Exporter;

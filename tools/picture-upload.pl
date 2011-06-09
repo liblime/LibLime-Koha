@@ -40,6 +40,7 @@ use File::Temp;
 use File::Copy;
 use CGI;
 use GD;
+use Koha;
 use C4::Context;
 use C4::Auth;
 use C4::Output;

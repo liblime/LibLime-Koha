@@ -5,6 +5,7 @@ BEGIN {
     use FindBin;
     eval { require "$FindBin::Bin/../../kohalib.pl" };
 }
+use Koha;
 use C4::Context;
 #use MARC::File::XML(BinaryEncoding=>"utf8");
 #use MARC::File::USMARC;

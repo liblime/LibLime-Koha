@@ -5,6 +5,7 @@ use warnings;
 use feature 'say';
 
 use Data::Dumper;
+use Koha;
 use C4::Context;
 
 my $defaults = C4::Context::_seed_preference_defaults_cache();

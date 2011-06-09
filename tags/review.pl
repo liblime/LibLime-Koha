@@ -27,6 +27,7 @@ use CGI;
 use CGI::Cookie; # need to check cookies before having CGI parse the POST request
 
 use C4::Auth qw(:DEFAULT check_cookie_auth);
+use Koha;
 use C4::Context;
 use C4::Dates qw(format_date format_date_in_iso);
 # use C4::Koha;

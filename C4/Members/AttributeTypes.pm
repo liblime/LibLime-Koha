@@ -18,6 +18,7 @@ package C4::Members::AttributeTypes;
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+use Koha;
 use C4::Context;
 
 use vars qw($VERSION);

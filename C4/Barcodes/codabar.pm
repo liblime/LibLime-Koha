@@ -22,6 +22,7 @@ use warnings;
 
 use Carp;
 
+use Koha;
 use C4::Context;
 use C4::Debug;
 use C4::Dates;

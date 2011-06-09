@@ -7,6 +7,7 @@ use strict;
 use MARC::File::USMARC;
 use MARC::Record;
 use MARC::Batch;
+use Koha;
 use C4::Context;
 use C4::Biblio;
 use C4::AuthoritiesMarc;

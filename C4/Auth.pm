@@ -25,6 +25,7 @@ use Digest::MD5 qw(md5_base64);
 use CGI::Session;
 
 require Exporter;
+use Koha;
 use C4::Context;
 use C4::Output;    # to get the template
 use C4::Members;

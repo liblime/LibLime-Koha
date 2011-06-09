@@ -25,6 +25,7 @@ use JSON;
 #use Data::Dump 'pp';
 
 use C4::Auth;
+use Koha;
 use C4::Context;
 use C4::Branch;
 use C4::Category;

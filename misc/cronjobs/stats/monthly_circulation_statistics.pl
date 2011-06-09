@@ -49,6 +49,7 @@
 open OUTFILE, ">circstats.csv" or die "Cannot open file circstats.csv: $!";
 print OUTFILE "\"ccode\",\"branch\",\"issues\",\"renewals\"\n";
 
+use Koha;
 use C4::Context;
 use C4::Koha;
 use Mail::Sendmail;  # comment out 3 lines if not doing e-mail sending of file

@@ -6,6 +6,7 @@ use warnings;
 
 use Test::More;
 
+use Koha;
 use C4::Context;
 sub testing_class { 'C4::Context' };
 

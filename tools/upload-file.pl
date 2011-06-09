@@ -24,6 +24,7 @@ use warnings;
 use IO::File;
 use CGI;
 use CGI::Session;
+use Koha;
 use C4::Context;
 use C4::Auth qw/check_cookie_auth/;
 use CGI::Cookie; # need to check cookies before

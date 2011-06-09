@@ -50,6 +50,7 @@ use Sip::Checksum qw(verify_cksum);
 use Sip::Constants qw(:all);
 
 use C4::Auth qw(&check_api_auth);
+use Koha;
 use C4::Context;
 
 # TODO: just read SIPconfig.xml and extract what we can....

@@ -17,6 +17,7 @@ use Sip::Checksum qw(verify_cksum);
 
 use Data::Dumper;
 use CGI;
+use Koha;
 use C4::Context;
 use C4::Auth qw(&check_api_auth);
 use C4::Biblio;

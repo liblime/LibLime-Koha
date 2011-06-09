@@ -8,6 +8,7 @@ use warnings;
 # results page and decide which template to load, operations 
 # to perform, etc.
 ## load Koha modules
+use Koha;
 use C4::Context;
 use C4::Output;
 use C4::Auth qw(:DEFAULT get_session);

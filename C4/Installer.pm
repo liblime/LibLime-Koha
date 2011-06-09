@@ -20,6 +20,7 @@ package C4::Installer;
 use strict;
 
 our $VERSION = 3.00;
+use Koha;
 use C4::Context;
 
 =head1 NAME

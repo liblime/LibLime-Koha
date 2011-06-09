@@ -37,6 +37,7 @@ use C4::Members;
 use C4::Accounts;
 use C4::Biblio;
 use C4::Reserves;
+use Koha;
 use C4::Context;
 use C4::View::Member;
 use CGI::Session;

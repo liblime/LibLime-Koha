@@ -21,6 +21,7 @@ use strict;
 use warnings;
 
 use CGI;
+use Koha;
 use C4::Context;
 use C4::Debug;
 use C4::Dates;

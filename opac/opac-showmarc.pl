@@ -31,6 +31,7 @@ use warnings;
 use CGI;
 
 # Koha modules used
+use Koha;
 use C4::Context;
 use C4::Output;
 use C4::Auth;

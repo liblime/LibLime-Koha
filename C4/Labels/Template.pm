@@ -5,6 +5,7 @@ use warnings;
 use PDF::Reuse;
 use POSIX qw(ceil);
 
+use Koha;
 use C4::Context;
 use C4::Debug;
 use C4::Labels::Profile 1.000000;

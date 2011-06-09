@@ -21,6 +21,7 @@ use strict;
 use C4::Output;
 use C4::Auth;
 use CGI;
+use Koha;
 use C4::Context;
 
 

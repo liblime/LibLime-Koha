@@ -124,6 +124,7 @@ use Carp;
 
 use Pod::Usage;
 use Getopt::Long;
+use Koha;
 use C4::Context;
 
 

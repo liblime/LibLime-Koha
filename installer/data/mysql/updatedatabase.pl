@@ -21,6 +21,7 @@ use warnings;
 use DBI;
 use Getopt::Long;
 # Koha modules
+use Koha;
 use C4::Context;
 use C4::Installer;
 

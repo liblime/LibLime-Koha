@@ -22,6 +22,7 @@ use warnings;
 
 use Test::More qw(no_plan);
 
+use Koha;
 use C4::Context;
 
 my $root_dir = C4::Context->config( 'intranetdir' ) . '/installer/data/mysql';

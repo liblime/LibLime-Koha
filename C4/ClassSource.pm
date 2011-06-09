@@ -21,6 +21,7 @@ use strict;
 use warnings;
 
 require Exporter;
+use Koha;
 use C4::Context;
 use C4::Koha;
 use C4::ClassSortRoutine;

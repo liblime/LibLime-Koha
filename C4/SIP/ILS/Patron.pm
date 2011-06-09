@@ -16,6 +16,7 @@ use Sys::Syslog qw(syslog);
 use Data::Dumper;
 
 use C4::Debug;
+use Koha;
 use C4::Context;
 # use C4::Dates;
 use C4::Koha;

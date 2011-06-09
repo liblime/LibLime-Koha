@@ -20,6 +20,7 @@ package C4::Review;
 use strict;
 use warnings;
 
+use Koha;
 use C4::Context;
 
 use vars qw($VERSION @ISA @EXPORT);

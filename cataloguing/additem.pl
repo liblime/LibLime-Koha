@@ -25,6 +25,7 @@ use C4::Auth;
 use C4::Output;
 use C4::Biblio;
 use C4::Items;
+use Koha;
 use C4::Context;
 use C4::Dates;
 use C4::Form::AddItem;

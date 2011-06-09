@@ -37,6 +37,7 @@ This script needs a biblionumber as parameter
 use strict;
 
 use C4::Auth;
+use Koha;
 use C4::Context;
 use C4::Output;
 use CGI;

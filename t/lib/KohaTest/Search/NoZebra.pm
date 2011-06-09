@@ -10,6 +10,7 @@ use MARC::Record;
 
 use C4::Search;
 use C4::Biblio;
+use Koha;
 use C4::Context;
 
 =head2 STARTUP METHODS

@@ -17,6 +17,7 @@ use strict;
 use DBI;
 use Getopt::Long;
 # Koha modules
+use Koha;
 use C4::Context;
 
 use MARC::Record;

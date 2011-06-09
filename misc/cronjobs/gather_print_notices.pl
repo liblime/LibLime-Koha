@@ -29,6 +29,7 @@ BEGIN {
 }
 
 use CGI; # NOT a CGI script, this is just to keep C4::Output::gettemplate happy
+use Koha;
 use C4::Context;
 use C4::Dates;
 use C4::Debug;

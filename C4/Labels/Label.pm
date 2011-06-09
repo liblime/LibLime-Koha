@@ -8,6 +8,7 @@ use Algorithm::CheckDigits;
 use Text::CSV_XS;
 use Data::Dumper;
 
+use Koha;
 use C4::Context;
 use C4::Debug;
 use C4::Biblio;

@@ -3,6 +3,7 @@ use parent qw(Plack::Middleware);
 use Modern::Perl;
 use Plack::Util;
 
+use Koha;
 use C4::Context;
 
 use Data::Dumper;

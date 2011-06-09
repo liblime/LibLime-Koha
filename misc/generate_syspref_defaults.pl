@@ -2,6 +2,7 @@
 
 use warnings;
 use strict;
+use Koha;
 use C4::Context;
 use JSON;
 

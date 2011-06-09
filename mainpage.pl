@@ -20,6 +20,7 @@ use strict;
 
 use CGI;
 
+use Koha;
 use C4::Context;
 my $dbh = C4::Context->dbh;
 $dbh->{RaiseError} = 0;

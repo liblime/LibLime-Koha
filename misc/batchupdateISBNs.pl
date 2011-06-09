@@ -30,6 +30,7 @@ BEGIN {
     use FindBin;
     eval { require "$FindBin::Bin/kohalib.pl" };
 }
+use Koha;
 use C4::Context;
 use MARC::File::XML;
 use MARC::Record;

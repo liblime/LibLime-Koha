@@ -25,6 +25,7 @@ BEGIN {
     eval { require "$FindBin::Bin/../kohalib.pl" };
 }
 
+use Koha;
 use C4::Context;
 use C4::Dates;
 use Getopt::Long;

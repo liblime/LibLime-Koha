@@ -19,6 +19,7 @@
 
 use strict;
 
+use Koha;
 use C4::Context;
 use CGI;
 use C4::Auth;

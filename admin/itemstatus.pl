@@ -47,6 +47,7 @@ use List::Util qw/min/;
 use File::Spec;
 
 use C4::Koha;
+use Koha;
 use C4::Context;
 use C4::Auth;
 use C4::Output;

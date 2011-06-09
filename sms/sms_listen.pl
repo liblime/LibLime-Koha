@@ -5,6 +5,7 @@ use warnings;
 
 use C4::SMS;
 use C4::Auth;
+use Koha;
 use C4::Context;
 use C4::Members;
 use C4::Circulation;

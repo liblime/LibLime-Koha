@@ -20,6 +20,7 @@ package C4::XSLT;
 use strict;
 use warnings;
 
+use Koha;
 use C4::Context;
 use C4::Branch;
 use C4::Items;
