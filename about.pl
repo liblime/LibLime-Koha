@@ -38,7 +38,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
-my $kohaVersion   = C4::Context::KOHAVERSION;
+my $kohaSchemaVersion = C4::Context::KOHAVERSION;
 my $osVersion     = `uname -a`;
 my $perl_path = $^X;
 if ($^O ne 'VMS') {
@@ -52,7 +52,8 @@ $apacheVersion = (`/usr/sbin/apache2 -V`)[0] unless $apacheVersion;
 my $zebraVersion = `zebraidx -V`;
 
 $template->param(
-    kohaVersion   => $kohaVersion,
+    kohaSchemaVersion   => $kohaSchemaVersion,
+    kohaCodeVersion => $Koha::VERSION,
     osVersion     => $osVersion,
     perlPath      => $perl_path,
     perlVersion   => $perlVersion,
