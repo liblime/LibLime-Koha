@@ -29,8 +29,11 @@ use File::Slurp;
 use C4::Boolean;
 use C4::Debug;
 use POSIX ();
+use Koha;
 
 $VERSION = '4.07.00.001';
+
+die "Version mismatch: $VERSION > $Koha::VERSION" if ($VERSION gt $Koha::VERSION);
 
 our $cache = CHI->new( driver => 'RawMemory', global => 1);
 
