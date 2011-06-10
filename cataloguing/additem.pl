@@ -257,7 +257,7 @@ if ($op eq 'set_session_defaults') {
       # check that there is no issue on this item before deletion.
       my $sth=$dbh->prepare("select * from issues i where i.itemnumber=?");
       $sth->execute($itemnumber);
-      my $onloan=$sth->fetchrow;
+      my $onloan=$sth->fetchrow_hashref;
 	   $sth->finish();
       $nextop="additem";
     
@@ -269,7 +269,7 @@ if ($op eq 'set_session_defaults') {
 		   # check it doesnt have a waiting reserve
 		   $sth=$dbh->prepare("SELECT * FROM reserves WHERE found = 'W' AND itemnumber = ?");
 		   $sth->execute($itemnumber);
-		   my $reserve=$sth->fetchrow;
+		   my $reserve=$sth->fetchrow_hashref;
 		   if ($reserve) {
 		      push @errors, "item_waiting";
 		   } else {

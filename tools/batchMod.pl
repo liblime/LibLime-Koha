@@ -44,7 +44,6 @@ my $del          = $input->param('del');
 my $completedJobID = $input->param('completedJobID');
 my $runinbackground = $input->param('runinbackground');
 
-
 my $template_name;
 if (!defined $op) {
     $template_name = "tools/batchMod.tmpl";
@@ -147,7 +146,7 @@ if ($op ~~ 'action') {
 			my $localitem = TransformMarcToKoha( $dbh, $marcitem, "", 'items' );
 			my $localmarcitem=Item2Marc($itemdata);
 			UpdateMarcWith($marcitem,$localmarcitem);
-			eval{my ($oldbiblionumber,$oldbibnum,$oldbibitemnum) = ModItemFromMarc($localmarcitem,$itemdata->{biblionumber},$itemnumber)};
+			eval{my ($oldbiblionumber,$oldbibnum,$oldbibitemnum) = C4::Items::ModItemFromMarc($localmarcitem,$itemdata->{biblionumber},$itemnumber)};
 		    }
 		}
 		$i++;

@@ -1016,7 +1016,7 @@ Issue a book. Does no check, they are done in CanBookBeIssued. If we reach this 
 =item C<$datedueObj> is a C4::Dates object for the max date of return, i.e. the date due (optional).
 Calculated if empty.
 
-=item C<$howReserve> is either 'cancel' or 'requeue' (optional) for reconciling a reserve that belongs
+=item C<$howReserve> is 'cancel','fill', or 'requeue' (optional) for reconciling a reserve that belongs
 to another patron other than the checkout patron.
 
 =item C<$cancelReserve> is 1 to override and cancel any pending reserves for the item (optional); used
@@ -1036,10 +1036,8 @@ AddIssue does the following things :
       - renewal NO  =
           * BOOK ACTUALLY ISSUED ? do a return if book is actually issued (but to someone else)
           * RESERVE PLACED ?
-              - fill reserve if reserve to this patron
+              - fill reserve if reserve to this patron or authorised
               - cancel reserve or not, otherwise
-          * TRANSFERT PENDING ?
-              - complete the transfert
           * ISSUE THE BOOK
 
 =back
@@ -1058,7 +1056,6 @@ sub AddIssue {
    my $howReserve    = $g{howReserve}     || '';
    my $issuedate     = $g{issuedate}      // '';
    my $sipmode       = $g{sipmode}        || 0;
-   $datedueObj       = undef unless ref($datedueObj);
    unless($howReserve) {
       if    ($cancelReserve)  { $howReserve = 'cancel' }
       elsif ($requeueReserve) { $howReserve = 'requeue'}
@@ -1078,6 +1075,7 @@ sub AddIssue {
       # TODO: for hourly circ, this will need to be a C4::Dates object
       # and all calls to AddIssue including issuedate will need to pass a Dates object.
    }
+   if (ref($datedueObj)) { $datedue = $datedueObj->output('iso') }
     
    my $item = GetItem('', $barcode) or return undef;  # if we don't get an Item, abort.
    my $branch = _GetCircControlBranch($item,$borrower);
@@ -1090,7 +1088,7 @@ sub AddIssue {
                item           => $item,
                issue          => $actualissue,
                branch         => $branch,
-               datedue        => $datedue,
+               datedueObj     => $datedueObj,
                issuedate      => $issuedate,# renewal date
                exemptfine     => $g{exemptfine},
             );
@@ -1116,11 +1114,13 @@ sub AddIssue {
       my $resbor = $res->{'borrowernumber'};
       if (($resbor eq $borrower->{'borrowernumber'}) || ($howReserve eq 'fill')) {
          if ($howReserve eq 'requeue') {
-            ModReserve(1,$res->{'biblionumber'},
-                         $res->{'borrowernumber'},
-                         $res->{'branchcode'},                                 
-                         undef,     ## $res->{'itemnumber'},
-                         $res->{'reservenumber'});
+            if ($$res{priority} == 0) {
+               ModReserve(1,$res->{'biblionumber'},
+                            $res->{'borrowernumber'},
+                            $res->{'branchcode'},                                 
+                            undef,     ## $res->{'itemnumber'},
+                            $res->{'reservenumber'});
+            } # else ignore numbered priority: actual requeue as-is
          }
          else {
             C4::Reserves::FillReserve($res,$$item{itemnumber});
@@ -1135,12 +1135,14 @@ sub AddIssue {
          # reserved by some other patron.
          ## FIXME: requeue as bib-level hold is temporary until we get
          ## a permanent fix for retaining bib- or item-level hold
-         ModReserve(1,$res->{'biblionumber'},
-                      $res->{'borrowernumber'},
-                      $res->{'branchcode'},                                 
-                      undef,     ## $res->{'itemnumber'},
-                      $res->{'reservenumber'});
-      }
+         if (($$res{priority}==0) || ($$res{found} ~~ 'W')) {
+            ModReserve(1,$res->{'biblionumber'},
+                         $res->{'borrowernumber'},
+                         $res->{'branchcode'},                                 
+                         undef,     ## $res->{'itemnumber'},
+                         $res->{'reservenumber'});
+         }
+      }  
    }
    
    ## remove from tmp_holdsqueue and branchtransfers
@@ -1156,13 +1158,14 @@ sub AddIssue {
    unless ($datedue) {
       my $itype = ( C4::Context->preference('item-level_itypes') ) ? $biblio->{'itype'} : $biblio->{'itemtype'};
       my $loanlength = GetLoanLength( $borrower->{'categorycode'}, $itype, $branch );
-      $datedue = CalcDateDue( C4::Dates->new( $issuedate, 'iso' ), $loanlength, $branch, $borrower );
+      $datedueObj = CalcDateDue( C4::Dates->new( $issuedate, 'iso' ), $loanlength, $branch, $borrower );
+      $datedue    = $datedueObj->output('iso');
    }
    $sth->execute(
             $borrower->{'borrowernumber'},      # borrowernumber
             $item->{'itemnumber'},              # itemnumber
             $issuedate,                         # issuedate
-            $datedue->output('iso'),            # date_due
+            $datedue,                           # date_due
             C4::Context->userenv->{'branch'}    # branchcode
    );
    $sth->finish;
@@ -1175,7 +1178,7 @@ sub AddIssue {
                   itemlost         => 0,
                   paidfor          => '',
                   datelastborrowed => C4::Dates->new()->output('iso'),
-                  onloan           => $datedue->output('iso'),
+                  onloan           => $datedue,
                 }, $item->{'biblionumber'}, $item->{'itemnumber'});
    ModDateLastSeen( $item->{'itemnumber'} );
 
@@ -2751,7 +2754,7 @@ sub AddRenewal {
    $itemnumber       ||= $$issue{itemnumber};
    $borrowernumber   ||= $$issue{borrowernumber};
    my $lostitem        = $g{lostitem} || GetLostItem($itemnumber);
-   if (ref($datedue) !~ /C4\:\:Dates/) { # not an object
+   if ($datedue && (ref($datedue) !~ /C4\:\:Dates/)) { # not an object
       if    ($datedue =~ /^\d\d\/\d\d\/\d{4}$/) { $datedue = C4::Dates->new($datedue,'us' ) }
       elsif ($datedue =~ /^\d{4}\-\d\d\-\d\d$/) { $datedue = C4::Dates->new($datedue,'iso') }
    }
@@ -2816,7 +2819,7 @@ sub AddRenewal {
 
    # Log the renewal
    UpdateStats( $branch, 'renew', $charge, $source, $itemnumber, $item->{itype}, $borrowernumber);
-   return $datedue;
+   return $datedue->output('iso');
 }
 
 sub GetRenewCount {

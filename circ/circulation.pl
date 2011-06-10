@@ -252,7 +252,6 @@ if($duedatespec_allow){
 } else {
     $datedueObj = $globalduedate if ($globalduedate);
 }
-
 my $todaysdate = C4::Dates->new->output('iso');
 
 # check and see if we should print
@@ -466,7 +465,7 @@ if ($barcode) {
             $template->param(howReserve=>$howReserve || 'requeue');
         }
         else {
-            $datedueObj = C4::Circulation::AddIssue( 
+            my $datedue = C4::Circulation::AddIssue( 
                borrower       => $borrower,
                barcode        => $barcode,
                datedueObj     => $datedueObj,
@@ -476,7 +475,7 @@ if ($barcode) {
             my $biblio = GetBiblioData($item->{biblionumber}) // {};
             $last_issue{title} = $biblio->{title};
             $last_issue{barcode} = $barcode;
-            $last_issue{duedate} = $datedueObj->output();
+            $last_issue{duedate} = C4::Dates->new($datedue,'iso')->output;
             
             $inprocess = 1;
             if($globalduedate && ! $stickyduedate && $duedatespec_allow ){

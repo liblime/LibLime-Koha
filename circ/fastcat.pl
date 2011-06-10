@@ -30,7 +30,17 @@ use CGI::Session;
 use MARC::Record;
 use MARC::Field;
 
-my $query = new CGI;
+my $query = CGI->new();
+my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
+    {
+        template_name   => 'circ/fastcat.tmpl',
+        query           => $query,
+        type            => 'intranet',
+        authnotrequired => 0,
+        flagsrequired   => { circulate => q{*} },
+    }
+);
+
 
 my $barcode        = $query->param('barcode');
 my $borrowernumber = $query->param('borrowernumber');
@@ -48,7 +58,7 @@ my $notes        = $query->param('notes');
 my $publishercode      = $query->param('publishercode');
 my $publicationyear    = $query->param('publicationyear');
 my $place              = $query->param('place');
-my $homebranch         = $query->param('homebranch');
+my $homebranch         = $query->param('homebranch') || C4::Context->userenv->{branch};
 my $holdingbranch      = $query->param('holdingbranch');
 my $itemtype           = $query->param('itemtype');
 my $ccode              = $query->param('ccode');
@@ -78,16 +88,6 @@ my $permanent_location = $query->param('permanent_location');
 #  my $sessionID = $query->cookie("CGISESSID") ;
 #  my $session = get_session($sessionID);
 #}
-
-my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
-    {
-        template_name   => 'circ/fastcat.tmpl',
-        query           => $query,
-        type            => 'intranet',
-        authnotrequired => 0,
-        flagsrequired   => { circulate => q{*} },
-    }
-);
 
 if ($write_record) {
     my $bib_record    = MARC::Record->new();

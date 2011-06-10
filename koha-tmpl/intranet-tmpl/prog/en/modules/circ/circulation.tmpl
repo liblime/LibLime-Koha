@@ -411,9 +411,8 @@ Checkout anyway?<br>
                 <input type=hidden name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->">
                 <input type=hidden name="branch" value="<!-- TMPL_VAR NAME="branch" -->">
                 <input type="submit" name="fastadd1" value="Fast Bib Add">
-                <!-- TMPL_IF NAME="duedatespec" -->
                 <input type=hidden name="stickyduedate" value="<!-- TMPL_VAR NAME="stickyduedate" -->">
-                <!-- /TMPL_IF -->
+                <input type=hidden name="duedatespec" value="<TMPL_VAR NAME="duedatespec">">
                 </form>
                 <!-- /TMPL_IF -->
             </li>
