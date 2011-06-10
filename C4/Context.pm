@@ -21,38 +21,47 @@ use warnings;
 use vars qw($VERSION $AUTOLOAD $context @context_stack $cache);
 
 use CHI;
-our $cache;
+use DBI;
+use ZOOM;
+use Carp;
+use XML::Simple;
+use File::Slurp;
+use C4::Boolean;
+use C4::Debug;
+use POSIX ();
 
-BEGIN {
-    $cache = CHI->new( driver => 'RawMemory', global => 1);
-	if ($ENV{'HTTP_USER_AGENT'})	{
- 		require CGI::Carp;
-        # FIXME for future reference, CGI::Carp doc says
-        #  "Note that fatalsToBrowser does not work with mod_perl version 2.0 and higher."
-		import CGI::Carp qw(fatalsToBrowser);
-			sub handle_errors {
-			    my $msg = shift;
-			    my $debug_level;
-			    eval {C4::Context->dbh();};
-			    if ($@){
-				$debug_level = 1;
-			    } 
-			    else {
-				$debug_level =  C4::Context->preference("DebugLevel");
-			    }
+$VERSION = '4.07.00.001';
 
-                print q(<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+our $cache = CHI->new( driver => 'RawMemory', global => 1);
+
+if ($ENV{'HTTP_USER_AGENT'})	{
+    require CGI::Carp;
+    # FIXME for future reference, CGI::Carp doc says
+    #  "Note that fatalsToBrowser does not work with mod_perl version 2.0 and higher."
+    import CGI::Carp qw(fatalsToBrowser);
+
+    sub handle_errors {
+        my $msg = shift;
+        my $debug_level;
+        eval {C4::Context->dbh();};
+        if ($@){
+            $debug_level = 1;
+        } 
+        else {
+            $debug_level =  C4::Context->preference("DebugLevel");
+        }
+
+        print q(<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
                             "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
                        <html lang="en" xml:lang="en"  xmlns="http://www.w3.org/1999/xhtml">
                        <head><title>Koha Error</title></head>
-                       <body>
-                );
-				if ($debug_level eq "2"){
-					# debug 2 , print extra info too.
-					my %versions = get_versions();
+                       <body>);
+        if ($debug_level eq '2'){
+            # debug 2 , print extra info too.
+            my %versions = get_versions();
 
-		# a little example table with various version info";
-					print "
+            # a little example table with various version info";
+            print "
 						<h1>Koha error</h1>
 						<p>The following fatal error has occurred:</p> 
                         <pre><code>$msg</code></pre>
@@ -64,36 +73,25 @@ BEGIN {
 						<tr><th>OS</th><td>      $versions{osVersion}</td></tr>
 						<tr><th>Perl</th><td>    $versions{perlVersion}</td></tr>
 						</table>";
-
-				} elsif ($debug_level eq "1"){
-					print "
+        } elsif ($debug_level eq '1'){
+            print "
 						<h1>Koha error</h1>
 						<p>The following fatal error has occurred:</p> 
                         <pre><code>$msg</code></pre>";
-				} else {
-					print "<p>production mode - trapped fatal error</p>";
-				}       
-                print "</body></html>";
-			}
-		CGI::Carp::set_message(\&handle_errors);
-		## give a stack backtrace if KOHA_BACKTRACES is set
-		## can't rely on DebugLevel for this, as we're not yet connected
-		if ($ENV{KOHA_BACKTRACES}) {
-			$main::SIG{__DIE__} = \&CGI::Carp::confess;
-		}
-    }  	# else there is no browser to send fatals to!
-	$VERSION = '4.07.00.001';
-}
+        } else {
+            print "<p>production mode - trapped fatal error</p>";
+        }       
+        print '</body></html>';
+    }
 
-use DBI;
-use ZOOM;
-use JSON;
-use Carp;
-use XML::Simple;
-use File::Slurp;
-use C4::Boolean;
-use C4::Debug;
-use POSIX ();
+    CGI::Carp::set_message(\&handle_errors);
+
+    ## give a stack backtrace if KOHA_BACKTRACES is set
+    ## can't rely on DebugLevel for this, as we're not yet connected
+    if ($ENV{KOHA_BACKTRACES}) {
+        $main::SIG{__DIE__} = \&CGI::Carp::confess;
+    }
+}  	# else there is no browser to send fatals to!
 
 =head1 NAME
 
