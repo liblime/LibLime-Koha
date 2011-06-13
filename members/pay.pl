@@ -92,7 +92,6 @@ if ($input->param('woall')) {
     C4::Accounts::writeoff(
       branch         => C4::Context->userenv->{'branch'},
       user           => C4::Context->userenv->{'id'},
-      amount         => $input->param('amount'),
       accountno      => $input->param('accountno'),
       borrowernumber => $borrowernumber,
       itemnumber     => $input->param('itemnumber'),
@@ -179,7 +178,6 @@ sub add_accounts_to_template {
     my $allfile = [];
     my @notify = NumberNotifyId($borrowernumber);
     my $line_id = 0;
-    my $total   = 0;
 
     ## FIXME: why do we have this outer loop?  it's causing duplicates to be displayed from
     ## the inner loop. temporary fix w/ %seen needs a more permanent fix. -hQ
@@ -218,7 +216,6 @@ sub add_accounts_to_template {
                     notify_id         => $acct->{notify_id},
                     notify_level      => $acct->{notify_level},
                 };
-                $total += $$acct{amountoutstanding};
                 $line->{'net_balance'} =  1;
                 $line->{'net_balance'} = undef if ((C4::Context->preference("EnableOverdueAccruedAmount")) && ($acct->{'accounttype'} eq "FU"));
                 push @{ $pay_loop}, $line;
