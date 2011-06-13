@@ -539,25 +539,18 @@ sub UpdateFine {
             my $diff = $amount - $data->{'amount'};
             $diff = 0 if ( $data->{amount} > $amount);
             my $out  = $data->{'amountoutstanding'} + $diff;
-            my $query = "
-                UPDATE accountlines
-				SET date=now(), amount=?, amountoutstanding=?,
-					lastincrement=?, accounttype='FU', description=?
-	  			WHERE borrowernumber=?
-				AND   itemnumber=?
-				AND   accounttype IN ('FU','O')
-				AND   description LIKE ?
-				LIMIT 1 ";
+            $out = $amount if $out > $amount; # sudden change in circrules
+            my $query = "UPDATE accountlines
+				   SET date             = now(), 
+                   amount           = ?, 
+                   amountoutstanding= ?,
+					    lastincrement    = ?, 
+                   accounttype      = 'FU', 
+                   description      = ?
+	  			 WHERE borrowernumber   = ?
+               AND accountno        = ?";
             my $sth2 = $dbh->prepare($query);
-			# FIXME: BOGUS query cannot ensure uniqueness w/ LIKE %x% !!!
-			# 		LIMIT 1 added to prevent multiple affected lines
-			# FIXME: accountlines table needs unique key!! Possibly a combo of borrowernumber and accountline.  
-			# 		But actually, we should just have a regular autoincrementing PK and forget accountline,
-			# 		including the bogus getnextaccountno function (doesn't prevent conflict on simultaneous ops).
-			# FIXME: Why only 2 account types here?
-			$debug and print STDERR "UpdateFine query: $query\n" .
-				"w/ args: $amount, $out, $diff, $data->{'borrowernumber'}, $data->{'itemnumber'}, \"\%$due\%\"\n";
-            $sth2->execute($amount, $out, $diff, $$data{description},$data->{'borrowernumber'}, $data->{'itemnumber'}, "%$due%");
+            $sth2->execute($amount, $out, $diff, $$data{description},$data->{'borrowernumber'}, $data->{accountno});
             UpdateStats( my $branch = '', my $stattype = "fine_update", $amount, my $other = '', $data->{'itemnumber'}, my $itemtype = '', $data->{'borrowernumber'}, my $proccode = '' );
         } else {
             #      print "no update needed $data->{'amount'}"

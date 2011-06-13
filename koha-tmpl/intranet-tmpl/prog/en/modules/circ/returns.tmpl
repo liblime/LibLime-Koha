@@ -192,7 +192,7 @@ function ContinueReturns() {
 <!-- /TMPL_IF -->
 
 <!-- case of a mistake in transfer loop -->
-<TMPL_IF Name="WrongTransfer">
+<TMPL_IF NAME="WrongTransfer">
     <div class="dialog message">
     <p class="error">Already scheduled to be in transit
     <TMPL_IF NAME="TransferWaitingAtBranchname">to <TMPL_VAR NAME="TransferWaitingAtBranchname">
@@ -233,9 +233,6 @@ function ContinueReturns() {
             <input type=hidden name="dotransfer" value="1">
             <input type=hidden name="transferitem" value="<TMPL_VAR NAME="WrongTransferItem">">
             <input type=hidden name="tobranch" value="<TMPL_VAR NAME="wpickbranch">">
-            <input type="hidden" name="WT-itemNumber" value="<!-- TMPL_VAR Name="WrongTransferItem" -->" />
-            <input type="hidden" name="WT-waitingAt" value="<!-- TMPL_VAR Name="TransferWaitingAt" -->" />
-            <input type="hidden" name="WT-From" value="<!-- TMPL_VAR Name="wtransfertFrom" -->" />
             <input type="hidden" name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
             <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
             <input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">
@@ -285,7 +282,7 @@ function ContinueReturns() {
 
 <!-- TMPL_IF Name="found" -->
     <!-- case of a reservation found, and display info -->
-    <!-- TMPL_IF EXPR="waiting" -->
+    <!-- TMPL_IF EXPR="waiting and not reroute" -->
         <!-- TMPL_IF NAME="soundon" -->
         <audio src="/intranet-tmpl/prog/sound/ending.ogg" autoplay="autoplay" autobuffer="autobuffer"></audio>
         <!-- /TMPL_IF -->      
