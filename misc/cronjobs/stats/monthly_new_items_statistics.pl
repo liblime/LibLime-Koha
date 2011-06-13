@@ -47,6 +47,7 @@
 open OUTFILE, ">addstats.csv" or die "Cannot open file addstats.csv: $!";
 print OUTFILE "\"type\",\"count\"\n";
 
+use Koha;
 use C4::Context;
 use Mail::Sendmail;  # comment out 3 lines if not doing e-mail sending of file
 use MIME::QuotedPrint;

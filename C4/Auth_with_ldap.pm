@@ -22,6 +22,7 @@ use strict;
 use Digest::MD5 qw(md5_base64);
 
 use C4::Debug;
+use Koha;
 use C4::Context;
 use C4::Members qw(AddMember changepassword);
 use C4::Utils qw( :all );

@@ -22,6 +22,7 @@ package C4::Languages;
 use strict; 
 use warnings;
 use Carp;
+use Koha;
 use C4::Context;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $DEBUG);
 

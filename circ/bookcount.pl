@@ -24,6 +24,7 @@ use strict;
 # use warnings;
 use CGI;
 use C4::Debug;
+use Koha;
 use C4::Context;
 use C4::Circulation;
 use C4::Output;

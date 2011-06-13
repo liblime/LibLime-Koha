@@ -11,6 +11,7 @@ BEGIN {
     eval { require "$FindBin::Bin/../kohalib.pl" };
 }
 
+use Koha;
 use C4::Context;
 my $fixit="UPDATE services_throttle SET service_count=0 WHERE service_type='xisbn'";
 my $sth = C4::Context->dbh->prepare($fixit);

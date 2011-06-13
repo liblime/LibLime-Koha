@@ -20,6 +20,7 @@ package C4::Scheduler;
 use strict;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+use Koha;
 use C4::Context;
 use Schedule::At;
 

@@ -33,6 +33,7 @@ my $success = C4::SMS->send_sms( message     => 'This is my text message',
 use strict;
 use warnings;
 
+use Koha;
 use C4::Context;
 
 use vars qw( $VERSION );

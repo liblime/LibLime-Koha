@@ -19,6 +19,7 @@ package C4::Koha;
 
 use warnings;
 use strict;
+use Koha;
 use C4::Context;
 use C4::Output;
 use Storable;

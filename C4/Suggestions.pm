@@ -22,6 +22,7 @@ use strict;
 use CGI;
 use Mail::Sendmail;
 
+use Koha;
 use C4::Context;
 use C4::Output;
 use C4::Dates qw(format_date);

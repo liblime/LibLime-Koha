@@ -5,6 +5,7 @@ use warnings;
 
 use autouse 'Data::Dumper' => qw(Dumper);
 
+use Koha;
 use C4::Context;
 use C4::Debug;
 use C4::Creators::PDF;

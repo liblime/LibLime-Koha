@@ -13,6 +13,7 @@ BEGIN {
     eval { require "$FindBin::Bin/../../kohalib.pl" };
 }
 
+use Koha;
 use C4::Context;
 my $dbh = C4::Context->dbh();
 my $sth = $dbh->prepare("Show tables");

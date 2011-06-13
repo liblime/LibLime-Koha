@@ -6,6 +6,7 @@ use diagnostics;
 
 # use Install;
 use InstallAuth;
+use Koha;
 use C4::Context;
 use C4::Output;
 use C4::Languages qw(getAllLanguages getTranslatedLanguages);

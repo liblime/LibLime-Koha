@@ -22,6 +22,7 @@
 use strict;
 use C4::Auth;
 use CGI;
+use Koha;
 use C4::Context;
 
 use C4::Search;

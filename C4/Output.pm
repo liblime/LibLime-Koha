@@ -28,6 +28,7 @@ package C4::Output;
 use strict;
 use warnings;
 
+use Koha;
 use C4::Context;
 use C4::Languages qw(getTranslatedLanguages get_bidi regex_lang_subtags language_get_description accept_language );
 

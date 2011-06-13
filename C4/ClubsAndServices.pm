@@ -27,6 +27,7 @@ use strict;
 
 require Exporter;
 
+use Koha;
 use C4::Context;
 
 use vars qw($VERSION @ISA @EXPORT);

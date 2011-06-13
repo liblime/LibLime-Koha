@@ -28,6 +28,7 @@ use C4::Dates;
 use C4::Serials;
 use C4::Letters;
 use C4::Output;
+use Koha;
 use C4::Context;
 
 

@@ -20,6 +20,7 @@
 use strict;
 use warnings;
 use CGI;
+use Koha;
 use C4::Context;
 use C4::Auth qw/check_cookie_auth/;
 use C4::Debug;

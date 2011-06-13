@@ -20,6 +20,7 @@ use strict;
 use CGI;
 use C4::Auth;
 use C4::Output;
+use Koha;
 use C4::Context;
 use C4::Labels::Label;
 use C4::Labels::Layout;

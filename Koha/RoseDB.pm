@@ -1,6 +1,7 @@
 package Koha::RoseDB;
 
 use Rose::DB;
+use Koha;
 use C4::Context;
 our @ISA = qw(Rose::DB);
 

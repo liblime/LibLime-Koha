@@ -22,6 +22,7 @@ use warnings;
 
 require Exporter;
 use Class::Factory::Util;
+use Koha;
 use C4::Context;
 use C4::Koha;
 

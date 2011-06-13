@@ -20,6 +20,7 @@ package C4::Matcher;
 use strict;
 use warnings;
 
+use Koha;
 use C4::Context;
 use MARC::Record;
 use MARC::File::XML;

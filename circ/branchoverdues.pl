@@ -18,6 +18,7 @@
 
 use strict;
 # use warnings;  # FIXME
+use Koha;
 use C4::Context;
 use CGI;
 use C4::Output;

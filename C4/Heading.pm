@@ -20,6 +20,7 @@ package C4::Heading;
 use strict;
 use MARC::Record;
 use MARC::Field;
+use Koha;
 use C4::Context;
 use C4::Heading::MARC21;
 use C4::Search;

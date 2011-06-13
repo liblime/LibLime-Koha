@@ -21,6 +21,7 @@ use strict;
 use warnings;
 
 use Text::CSV;      # Don't be tempted to use Text::CSV::Unicode -- even in binary mode it fails.
+use Koha;
 use C4::Context;
 use C4::Members::AttributeTypes;
 

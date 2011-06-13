@@ -13,6 +13,7 @@ BEGIN {
 use POE qw(Wheel::SocketFactory Wheel::ReadWrite Filter::Stream Driver::SysRW);
 use Unix::Syslog qw(:macros);
 
+use Koha;
 use C4::Context;
 use C4::Biblio;
 use C4::Search;

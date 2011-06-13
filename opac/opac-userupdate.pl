@@ -24,6 +24,7 @@ use CGI;
 use Mail::Sendmail;
 
 use C4::Auth;    # checkauth, getborrowernumber.
+use Koha;
 use C4::Context;
 use C4::Koha;
 use C4::Circulation;

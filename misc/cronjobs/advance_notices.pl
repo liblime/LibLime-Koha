@@ -49,6 +49,7 @@ BEGIN {
     eval { require "$FindBin::Bin/../kohalib.pl" };
 }
 use C4::Biblio;
+use Koha;
 use C4::Context;
 use C4::Letters;
 use C4::Members;

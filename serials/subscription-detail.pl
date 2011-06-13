@@ -23,6 +23,7 @@ use C4::Koha;
 use C4::Dates qw/format_date/;
 use C4::Serials;
 use C4::Output;
+use Koha;
 use C4::Context;
 use Date::Calc qw/Today Day_of_Year Week_of_Year Add_Delta_Days/;
 use Carp;

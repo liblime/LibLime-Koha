@@ -38,6 +38,7 @@ an XML format such as OAI DC, RSS2, MARCXML, or MODS.
 =cut
 
 use CGI;
+use Koha;
 use C4::Context;
 use C4::Biblio;
 use XML::LibXML;

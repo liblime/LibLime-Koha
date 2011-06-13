@@ -82,6 +82,7 @@ $|++;
 use DBI;
 use Getopt::Long;
 use Pod::Usage;
+use Koha;
 use C4::Context;
 use English qw(-no_match_vars);
 

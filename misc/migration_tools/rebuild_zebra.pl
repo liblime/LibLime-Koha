@@ -2,6 +2,7 @@
 
 use strict;
 
+use Koha;
 use C4::Context;
 use Getopt::Long;
 use File::Temp qw/ tempdir /;

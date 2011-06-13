@@ -23,6 +23,7 @@ use warnings;
 
 use CGI;
 use C4::Auth qw/check_api_auth checkpw/;
+use Koha;
 use C4::Context;
 use XML::Simple;
 

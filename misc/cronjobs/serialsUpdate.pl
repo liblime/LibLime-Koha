@@ -28,6 +28,7 @@ BEGIN {
     eval { require "$FindBin::Bin/../kohalib.pl" };
 }
 
+use Koha;
 use C4::Context;
 use C4::Dates qw/format_date format_date_in_iso/;
 use C4::Debug;

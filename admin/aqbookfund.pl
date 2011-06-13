@@ -55,6 +55,7 @@ use List::Util qw/min/;
 use C4::Branch; # GetBranches
 use C4::Auth;
 use C4::Koha;
+use Koha;
 use C4::Context;
 use C4::Bookfund;
 use C4::Output;

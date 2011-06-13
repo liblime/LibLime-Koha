@@ -49,6 +49,7 @@
 open OUTFILE, ">borrstats.csv" or die "Cannot open file borrstats.csv: $!";
 print OUTFILE "\"type\",\"branch\",\"count\"\n";
 
+use Koha;
 use C4::Context;
 use Mail::Sendmail;  # comment out 3 lines if not doing e-mail sending of file
 use MIME::QuotedPrint;

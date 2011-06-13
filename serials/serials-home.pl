@@ -46,6 +46,7 @@ use CGI;
 use C4::Auth;
 use C4::Serials;
 use C4::Output;
+use Koha;
 use C4::Context;
 
 my $query         = new CGI;

@@ -21,6 +21,7 @@ use XML::Simple;
 use LWP::Simple;
 # use LWP::UserAgent;
 use HTTP::Request::Common;
+use Koha;
 use C4::Context;
 use C4::Debug;
 

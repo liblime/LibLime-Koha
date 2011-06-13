@@ -20,6 +20,7 @@
 # Suite 330, Boston, MA  02111-1307 USA
 
 
+use Koha;
 use C4::Context;
 require C4::Dates;
 my $DEBUG = 0;

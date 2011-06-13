@@ -25,6 +25,7 @@ use CHI;
 
 require Exporter;
 
+use Koha;
 use C4::Context;
 use C4::Koha;
 

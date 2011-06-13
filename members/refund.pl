@@ -26,6 +26,7 @@ use C4::Members;
 use C4::Branch;
 use C4::Accounts;
 use C4::Items;
+use Koha;
 use C4::Context;
 use CGI;
 

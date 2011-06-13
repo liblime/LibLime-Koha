@@ -26,6 +26,7 @@
 
 use strict;
 use CGI;
+use Koha;
 use C4::Context;
 use C4::Auth qw/check_cookie_auth/;
 
