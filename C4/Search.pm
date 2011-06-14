@@ -19,6 +19,7 @@ use strict;
 use warnings;
 no warnings qw(uninitialized);
 require Exporter;
+use Koha;
 use C4::Context;
 use C4::Biblio;    # GetMarcFromKohaField, GetBiblioData
 use C4::Koha;

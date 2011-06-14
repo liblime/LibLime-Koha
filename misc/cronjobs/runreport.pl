@@ -21,6 +21,7 @@ use strict;
 use warnings;
 
 use C4::Reports::Guided; # 0.12
+use Koha;
 use C4::Context;
 
 use Getopt::Long qw(:config auto_help auto_version);

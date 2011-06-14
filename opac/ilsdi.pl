@@ -23,6 +23,7 @@ use warnings;
 use C4::ILSDI::Services;
 use C4::Auth;
 use C4::Output;
+use Koha;
 use C4::Context;
 use XML::Simple;
 use CGI;

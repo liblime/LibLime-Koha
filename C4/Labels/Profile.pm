@@ -3,6 +3,7 @@ package C4::Labels::Profile;
 use strict;
 use warnings;
 
+use Koha;
 use C4::Context;
 use C4::Debug;
 use C4::Labels::Lib 1.000000 qw(get_unit_values);

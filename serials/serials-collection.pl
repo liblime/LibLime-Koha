@@ -27,6 +27,7 @@ use C4::Dates qw/format_date/;
 use C4::Serials;
 use C4::Letters;
 use C4::Output;
+use Koha;
 use C4::Context;
 
 

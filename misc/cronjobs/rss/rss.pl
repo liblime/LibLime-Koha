@@ -28,6 +28,7 @@ use strict;
 use warnings;
 
 use HTML::Template::Pro;
+use Koha;
 use C4::Context;
 use Time::Local;
 use POSIX;

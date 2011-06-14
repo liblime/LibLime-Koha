@@ -22,6 +22,7 @@ use vars qw($VERSION @EXPORT);
 use Carp;
 use Date::Calc qw( Date_to_Days );
 
+use Koha;
 use C4::Context;
 
 BEGIN {

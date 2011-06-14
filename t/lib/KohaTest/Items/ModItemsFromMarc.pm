@@ -6,6 +6,7 @@ use warnings;
 
 use Test::More;
 
+use Koha;
 use C4::Context;
 use C4::Biblio;
 use C4::Items;

@@ -41,6 +41,7 @@ the items attached to the biblio
 
 use strict;
 use C4::Auth;
+use Koha;
 use C4::Context;
 use C4::Output;
 use CGI;

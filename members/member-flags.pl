@@ -10,6 +10,7 @@ use warnings;
 use CGI;
 use C4::Output;
 use C4::Auth qw(:DEFAULT :EditPermissions);
+use Koha;
 use C4::Context;
 use C4::Members;
 use C4::Branch;

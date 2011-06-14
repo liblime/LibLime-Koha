@@ -6,6 +6,7 @@ BEGIN {
     use FindBin;
     eval { require "$FindBin::Bin/../kohalib.pl" };
 }
+use Koha;
 use C4::Context;
 use C4::Dates qw/format_date/;
 use Mail::Sendmail;  # comment out if not doing e-mail notices

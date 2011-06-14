@@ -21,6 +21,7 @@ use CGI;
 use C4::Auth;
 use C4::Dates qw/format_date format_date_in_iso/;
 use C4::Output;
+use Koha;
 use C4::Context;
 use C4::Serials;
 

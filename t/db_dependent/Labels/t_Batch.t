@@ -21,6 +21,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 22;
+use Koha;
 use C4::Context;
 use Data::Dumper;
 

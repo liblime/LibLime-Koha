@@ -5,6 +5,7 @@ use HTML::Template::Pro;
 
 use C4::Output;    # contains gettemplate
 # use C4::Auth;
+use Koha;
 use C4::Context;
 use CGI;
 

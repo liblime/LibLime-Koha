@@ -19,6 +19,7 @@ use warnings;
 use Carp;
 use HTML::Scrubber;
 
+use Koha;
 use C4::Context;
 use C4::Debug;
 

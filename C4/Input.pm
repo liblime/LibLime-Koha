@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 require Exporter;
+use Koha;
 use C4::Context;
 use CGI;
 

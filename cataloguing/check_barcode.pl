@@ -34,6 +34,7 @@ use C4::Items;
 use C4::Circulation;
 use C4::Reserves;
 use C4::Barcodes;
+use Koha;
 use C4::Context;
 
 my $cgi = new CGI;

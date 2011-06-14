@@ -31,6 +31,7 @@
 
 # modules to use
 use Getopt::Long;
+use Koha;
 use C4::Context;
 
 # Benchmarking/testing variables

@@ -29,6 +29,7 @@ use strict;
 # use warnings; # FIXME
 
 use CGI;
+use Koha;
 use C4::Context;
 use C4::Auth qw/:DEFAULT get_session/;
 use C4::Output;

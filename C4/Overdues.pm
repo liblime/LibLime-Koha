@@ -22,6 +22,7 @@ use strict;
 use Date::Calc qw/Today Date_to_Days/;
 use Date::Manip qw/UnixDate/;
 use C4::Circulation;
+use Koha;
 use C4::Context;
 use C4::Accounts;
 use C4::Log; # logaction

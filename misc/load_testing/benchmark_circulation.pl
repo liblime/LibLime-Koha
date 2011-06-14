@@ -15,6 +15,7 @@ use HTTPD::Bench::ApacheBench;
 use LWP::UserAgent;
 use Data::Dumper;
 use HTTP::Cookies;
+use Koha;
 use C4::Context;
 
 my $baseurl= C4::Context->preference("staffClientBaseURL")."/cgi-bin/koha/";

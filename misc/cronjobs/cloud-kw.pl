@@ -14,6 +14,7 @@ use Carp;
 use YAML::Syck;
 use Pod::Usage;
 use Getopt::Long;
+use Koha;
 use C4::Context;
 
 

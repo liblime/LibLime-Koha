@@ -21,6 +21,7 @@ use strict;
 use warnings;
 use C4::Auth;
 use CGI;
+use Koha;
 use C4::Context;
 use C4::Branch; # GetBranches
 use C4::Dates qw/format_date/;

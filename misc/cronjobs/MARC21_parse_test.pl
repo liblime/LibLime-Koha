@@ -31,6 +31,7 @@ use Pod::Usage;
 
 use C4::Biblio;
 use C4::Charset;
+use Koha;
 use C4::Context;
 use C4::Debug;
 

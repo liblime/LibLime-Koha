@@ -138,6 +138,7 @@ use strict;            # always use
 # to perform, etc.
 
 ## load Koha modules
+use Koha;
 use C4::Context;
 use C4::Output;
 use C4::Auth;

@@ -32,6 +32,7 @@ use CGI::Cookie;
 use MARC::File::USMARC;
 
 # Koha modules used
+use Koha;
 use C4::Context;
 use C4::Auth;
 use C4::Output;

@@ -64,6 +64,7 @@ if this order comes from a suggestion.
 
 use strict;
 use CGI;
+use Koha;
 use C4::Context;
 use C4::Input;
 

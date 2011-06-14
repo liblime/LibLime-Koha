@@ -7,6 +7,7 @@ use warnings;
 use Test::More;
 
 use C4::Acquisition;
+use Koha;
 use C4::Context;
 use C4::Members;
 use C4::Biblio;

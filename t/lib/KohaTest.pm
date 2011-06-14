@@ -12,6 +12,7 @@ use C4::Auth;
 use C4::Biblio;
 use C4::Bookfund;
 use C4::Bookseller;
+use Koha;
 use C4::Context;
 use C4::Items;
 use C4::Members;

@@ -11,6 +11,7 @@ BEGIN {
     eval { require "$FindBin::Bin/kohalib.pl" };
 }
 
+use Koha;
 use C4::Context;
 use C4::Output;  # contains gettemplate
 use C4::Biblio;

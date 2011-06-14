@@ -15,6 +15,7 @@ use Carp;
 use ILS::Transaction;
 
 use C4::Debug;
+use Koha;
 use C4::Context;
 use C4::Biblio;
 use C4::Items;

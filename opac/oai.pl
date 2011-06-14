@@ -6,6 +6,7 @@ use diagnostics;
 
 use CGI qw/:standard -oldstyle_urls/;
 use vars qw( $GZIP );
+use Koha;
 use C4::Context;
 
 
@@ -108,6 +109,7 @@ use strict;
 use warnings;
 use diagnostics;
 use HTTP::OAI;
+use Koha;
 use C4::Context;
 
 use base ("HTTP::OAI::Identify");
@@ -363,6 +365,7 @@ use XML::LibXML;
 use XML::LibXSLT;
 use CGI qw/:standard -oldstyle_urls/;
 
+use Koha;
 use C4::Context;
 use C4::Biblio;
 

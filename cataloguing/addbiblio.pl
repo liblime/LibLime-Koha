@@ -25,6 +25,7 @@ use C4::Auth;
 use C4::Biblio;
 use C4::Search;
 use C4::AuthoritiesMarc;
+use Koha;
 use C4::Context;
 use MARC::Record;
 use C4::Log;

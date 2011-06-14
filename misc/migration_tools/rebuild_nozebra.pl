@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 
+use Koha;
 use C4::Context;
 use Getopt::Long;
 use C4::Biblio;

@@ -7,6 +7,7 @@
 
 use Test;
 use strict;
+use Koha;
 use C4::Context;
 
 # Making 30 tests.

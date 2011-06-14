@@ -9,6 +9,7 @@ use strict;
 
 =cut
 
+use Koha;
 use C4::Context;
 use Data::Dumper;
 use Test::More;

@@ -6,6 +6,7 @@
 
 
 use strict;
+use Koha;
 use C4::Context;
 my $dir=C4::Context->config('intranetdir');
 qx(grep -r "^ *use" $dir | grep -v "C4\|strict\|vars" >/tmp/modulesKoha.log);

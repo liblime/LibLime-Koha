@@ -8,6 +8,7 @@ BEGIN {
     eval { require "$FindBin::Bin/../kohalib.pl" };
 }
 
+use Koha;
 use C4::Context;
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)
                                             = localtime(time);

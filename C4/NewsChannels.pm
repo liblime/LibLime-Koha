@@ -20,6 +20,7 @@ package C4::NewsChannels;
 use strict;
 use warnings;
 
+use Koha;
 use C4::Context;
 use C4::Dates qw(format_date);
 

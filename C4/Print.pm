@@ -18,6 +18,7 @@ package C4::Print;
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+use Koha;
 use C4::Context;
 use C4::Circulation;
 use C4::Members;

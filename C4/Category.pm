@@ -17,6 +17,7 @@ package C4::Category;
 
 use strict;
 use warnings;
+use Koha;
 use C4::Context;
 
 our $AUTOLOAD;

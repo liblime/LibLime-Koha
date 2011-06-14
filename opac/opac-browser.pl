@@ -28,6 +28,7 @@ use strict;
 use warnings;
 
 use C4::Auth;
+use Koha;
 use C4::Context;
 use C4::Output;
 use CGI;

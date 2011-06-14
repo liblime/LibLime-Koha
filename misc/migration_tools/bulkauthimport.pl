@@ -15,6 +15,7 @@ use MARC::File::USMARC;
 use MARC::File::XML;
 use MARC::Record;
 use MARC::Batch;
+use Koha;
 use C4::Context;
 use C4::Charset;
 use C4::AuthoritiesMarc;

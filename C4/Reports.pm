@@ -21,6 +21,7 @@ use strict;
 use CGI;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+use Koha;
 use C4::Context;
 use C4::Debug;
 

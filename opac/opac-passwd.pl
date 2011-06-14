@@ -24,6 +24,7 @@ use warnings;
 use CGI;
 
 use C4::Auth;    # checkauth, getborrowernumber.
+use Koha;
 use C4::Context;
 use Digest::MD5 qw(md5_base64);
 use C4::Circulation;

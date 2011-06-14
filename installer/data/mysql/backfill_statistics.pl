@@ -11,6 +11,7 @@ use DBI;
 use Getopt::Long;
 
 # Koha modules
+use Koha;
 use C4::Context;
 use C4::Items;
 use C4::Debug;

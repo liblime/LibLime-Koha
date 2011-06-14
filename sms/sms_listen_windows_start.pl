@@ -5,6 +5,7 @@ use strict;
 
 use Win32::Process;
 use Win32;
+use Koha;
 use C4::Context;
 use CGI;
 my $input=new CGI;

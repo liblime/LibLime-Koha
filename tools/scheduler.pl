@@ -18,6 +18,7 @@
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+use Koha;
 use C4::Context;
 use C4::Scheduler;
 use C4::Reports::Guided;
