@@ -116,7 +116,7 @@ sub getAuthorisedValues4MARCSubfields {
     return $authval_per_framework{ $frameworkcode };
 }
 
-my $stylesheet = {};
+our $stylesheet = {};
 
 sub XSLTParse4Display {
     my ( $biblionumber, $orig_record, $xsl_suffix, $interface ) = @_;

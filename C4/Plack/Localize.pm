@@ -14,6 +14,8 @@ sub call {
     local $C4::Context::context;
     $C4::Context::context = C4::Context->new();
 
+    local $C4::XSLT::stylesheet;
+
     my $res = $self->app->($env);
     return $res;
 }
