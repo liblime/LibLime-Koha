@@ -15,10 +15,10 @@ use C4::Members;
 use C4::Branch;
 use C4::Output;
 
-my $input = CGI->new();
+our $input = CGI->new();
 
 my $flagsrequired = { permissions => 1 };
-my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
+our ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {   template_name   => 'members/member-flags.tmpl',
         query           => $input,
         type            => 'intranet',
@@ -29,7 +29,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 
 my $member        = $input->param('member');
-my $bor           = GetMemberDetails( $member, q{} );
+our $bor           = GetMemberDetails( $member, q{} );
 if ( $bor->{'category_type'} eq 'S' ) {
     $flagsrequired->{'staffaccess'} = 1;
 }
