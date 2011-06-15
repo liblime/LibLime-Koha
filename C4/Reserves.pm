@@ -2274,6 +2274,15 @@ sub _FixPriority {
     return;
 }
 
+sub NextPriority
+{
+   my($biblionumber) = @_;
+   my $sth = C4::Context->dbh->prepare('SELECT MAX(priority) FROM reserves WHERE biblionumber=?');
+   $sth->execute($biblionumber);
+   my $p = ($sth->fetchrow_array())[0] // 0; $p++;
+   return $p;
+}
+
 =item _Findgroupreserve
 
   @results = &_Findgroupreserve($itemnumber);
@@ -2492,7 +2501,7 @@ sub SuspendReserve {
             }, undef, $resumedate, $reservenumber
         );
     RmFromHoldsQueue(reservenumber => $reservenumber);
-    _FixPriority( $reservenumber, $reserve->{priority} );
+#    _FixPriority( $reservenumber, $reserve->{priority} );
     return;
 }
 

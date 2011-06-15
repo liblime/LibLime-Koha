@@ -21,7 +21,8 @@
     <!-- TMPL_IF NAME="moredetailview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF -->
     <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_IF NAME="object" --><!-- TMPL_VAR NAME="object" --><!-- TMPL_ELSE --><!-- TMPL_VAR NAME="biblionumber" --><!-- /TMPL_IF -->">Items</a></li>
     <!-- TMPL_IF NAME="CAN_user_reserveforothers" -->
-    <!-- TMPL_IF NAME="holdsview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_IF NAME="object" --><!-- TMPL_VAR NAME="object" --><!-- TMPL_ELSE --><!-- TMPL_VAR NAME="biblionumber" --><!-- /TMPL_IF -->">Holds</a></li>
+      <li <TMPL_IF NAME="editholdsview">class="active"</TMPL_IF>><a href="/cgi-bin/koha/reserve/editholds.pl?biblionumber=<TMPL_VAR NAME="biblionumber">">Edit holds</a></li>
+      <li <TMPL_IF NAME="placeholdview">class="active"</TMPL_IF>><a href="/cgi-bin/koha/reserve/placehold.pl?biblionumber=<TMPL_VAR NAME="biblionumber">">Place new hold</a></li>
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF name="subscriptionsnumber" --><li><a href="/cgi-bin/koha/serials/serials-home.pl?searched=1&amp;title_filter=<!-- TMPL_VAR NAME="subscriptiontitle" -->">Subscription(s)</a></li><!-- /TMPL_IF -->

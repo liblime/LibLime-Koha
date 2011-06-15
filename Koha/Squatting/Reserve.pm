@@ -20,13 +20,12 @@ use Carp;
     use C4::Auth ();
 
     our @returnable_types = (
-        'text/html',
-        'application/json'
+        'application/json',
+        'text/html'
         );
 
     sub _GetPreferredContentType {
-        my ($accept_header) = @_;
-
+        my ($accept_header) = @_; $accept_header //= '*/*';
         $accept_header =~ s/;.*$//;
         my @accepted_types = split(/,/, $accept_header);
         my @common = grep {$_ ~~ @returnable_types} @accepted_types;
@@ -64,9 +63,10 @@ use Carp;
 
         _CheckAuth($self, {reserveforothers => '*'});
 
+        $self->v->{'callback'} = $self->input->{'callback'};
         try {
             $self->v->{reserve}
-                = Koha::Model::Reserve->new(reservenumber => $reserve_id)->load;
+               = Koha::Model::Reserve->new(reservenumber => $reserve_id)->load;
             $self->render('_rdb_obj', _SetContentType($self));
         }
         catch {
@@ -96,6 +96,7 @@ use Carp;
             carp $_;
             HTTP::Exception::500->throw;
         };
+
     }
 
     sub ReserveUpdate {
@@ -104,23 +105,23 @@ use Carp;
         _CheckAuth($self, {reserveforothers => 'edit_holds'});
 
         my $input = $self->input;
+        if ($input->{priority} ~~ 'del') { return ReserveCancel($self,$reservenumber) }
         my $r = Koha::Model::Reserve->new(reservenumber => $reservenumber);
         $r->load;
 
-        $input->{priority} //= $r->priority;
-        $input->{branchcode} //= $r->branchcode;
+        $input->{priority}    //= $r->priority;
+        $input->{branchcode}  //= $r->branchcode;
+        $input->{waitingdate} //= $r->waitingdate;
 
         if ($r->found ~~ 'S' && !$input->{is_suspended}) {
             $r->unsuspend();
         }
-        elsif (!($r->found ~~ 'S') && $input->{is_suspended}) {
+        elsif ($input->{is_suspended} || $input->{resume_date}) {
             $r->suspend($input->{resume_date});
         }
-
         $r->priority($input->{priority});
         $r->branchcode($input->{branchcode});
         $r->save;
-
         return ReserveShow($self, $reservenumber);
     }
 
@@ -186,7 +187,10 @@ use Carp;
 
     sub RenderRdbAsJson {
         my ($self, $v) = @_;
-        as_json($v->{reserve});
+        my $func = $v->{'callback'};
+        my $str  = as_json($v->{reserve});
+        if ($func) { "$func($str)" }
+        else       { $str          }
     }
 
     sub RenderRdbSetAsJson {
@@ -202,16 +206,25 @@ use Carp;
                                              $r->borrower->surname,
                                              $r->borrower->firstname);
                 $t->{borrowercard} = $r->borrower->cardnumber;
-                $t->{branchname} =  $r->branchcode; #for now... no FK in db
+#                $t->{branchname} =  $r->branchcode; #for now... no FK in db
+                $t->{branchname}   = $r->branch->branchname;
                 $t->{itembarcode} = ($r->item) ? $r->item->barcode : undef;
                 $t->{uri} = R('ReserveSingle', $t->{reservenumber});
                 push @reserveset, $t;
             }
         }
         else {
-            @reserveset = map {R('ReserveSingle', $_->reservenumber)} @{$v->{reserveset}};
+            if (ref($v->{reserveset}) ~~ 'ARRAY') {
+               @reserveset = map {R('ReserveSingle', $_->reservenumber)} @{$v->{reserveset}};
+            }
+            else {
+               @reserveset = ($v->{reserveset});
+            }
         }
-        to_json(\@reserveset);
+         my $str  = to_json(\@reserveset);
+         my $func = $v->{'callback'};
+         if ($func) { "$func($str)" }
+         else       { $str          }
     }
 
     our @V = (
@@ -220,7 +233,7 @@ use Carp;
           deleted => sub {q()},
         ),
         V('application/json',
-          _ => \&RenderRdbAsJson,
+          _           => \&RenderRdbAsJson,
           _rdb_objset => \&RenderRdbSetAsJson,
         ),
         );

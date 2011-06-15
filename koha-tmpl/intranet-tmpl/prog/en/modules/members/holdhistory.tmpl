@@ -57,7 +57,7 @@ $.tablesorter.addParser({
                 <tr class="<!-- TMPL_VAR NAME="color" -->">
                    <td><!-- TMPL_VAR NAME="reservedate" --></td>
                    <td align=center><!-- TMPL_VAR NAME="filldate" --></td>
-                   <td><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
+                   <td><a href="/cgi-bin/koha/reserve/editholds.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
                    <td><!-- TMPL_VAR NAME="itemtype" --></td>
                    <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
                    <td>
@@ -90,7 +90,7 @@ $.tablesorter.addParser({
                 <tr class="<!-- TMPL_VAR NAME="color" -->">
                    <td><!-- TMPL_VAR NAME="reservedate" --></td>
                    <td align=center><!-- TMPL_VAR NAME="holdexpdate" --></td>
-                   <td><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
+                   <td><a href="/cgi-bin/koha/reserve/editholds.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
                    <td><!-- TMPL_VAR NAME="itemtype" --></td>
                    <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
                    <td>
@@ -126,7 +126,7 @@ $.tablesorter.addParser({
                    <!-- TMPL_ELSE -->
                      <td align=center><!-- TMPL_VAR NAME="cancellationdate" --></td> 
                    <!-- /TMPL_IF -->
-                   <td><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
+                   <td><a href="/cgi-bin/koha/reserve/editholds.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
                    <td><!-- TMPL_VAR NAME="itemtype" --></td>
                    <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
                    <td>

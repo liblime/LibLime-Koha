@@ -1,0 +1,362 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation &rsaquo; Holds &rsaquo; Edit holds on <!-- TMPL_VAR NAME="title" escape="html" --></title>
+<!-- TMPL_INCLUDE NAME="doc-head-close-plack.inc" -->
+<style>
+#simplemodal-container a.modalCloseImg {
+   background:url(<TMPL_VAR NAME="themelang">/img/x.png) no-repeat;
+   width:25px;
+   height:29px;
+   display:inline;
+   z-index:3200;
+   position:absolute;
+   top:-15px;
+   right:-18px;
+   cursor:pointer;
+}
+</style>
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/dates.js"></script>
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+<script>
+$.ajaxSetup({accepts:'application/json',dataType:'json',beforeSend:function(xhr){xhr.setRequestHeader('Accept','application/json')}});
+var mydb     = '<TMPL_VAR NAME="SessionStorage">';
+var batchres = new Array;
+var branches = new Array;
+
+function chMode(limit) {
+   if($('#mode').val()=='batch'){ $('#update').html('<input type=button value="Update Holds" onclick="updateHolds()">'); }
+   else                         { $('#update').html('') }
+}
+function getInit(limit) { 
+   $.ajax({
+      url: '/reserves/?biblionumber=<TMPL_VAR NAME="biblionumber">',
+      async: false,
+      accepts: 'application/json',
+      error: function(xhr,rc,thrown) {
+         _err(rc);
+      },
+      success: function(all) {
+         if(all.length > 0) {
+            for(var i=0;i<all.length;i++) {
+               var r = all[i].split('/');
+               if ($('#tr_'+r[2])) {
+                  $('#tr_'+r[2]).remove();
+               }
+            }
+            getSet(all.length,0,limit);
+         }
+         else {
+            $('#existingReserves').append('<tr><td colspan=8>There are no holds - '
+             +'<a href="placehold.pl?biblionumber=<TMPL_VAR NAME="biblionumber">">Place a hold</a></td></tr>');
+         }
+      },
+      statusCode: {
+         403: function(xhr,rc) { _err(rc) },
+         404: function(xhr,rc) { _err(rc) }
+      }
+   });
+
+} //eof getInit
+
+function modPriority(sel,onshelf,reservenumber,limit) {
+   if (onshelf==1) {
+      var msg = 'This item is currently on the holds shelf.\n';
+      var tog = 0;
+      if ((sel.selectedIndex + 1) == sel.options.length) {
+         msg += 'Are you sure you want to cancel this hold?';
+         tog  = 1;
+      }
+      else if (sel.selectedIndex != sel.options.length-2) {
+         msg += 'Are you sure you want to requeue this hold?';
+         tog = 1;
+      }
+      if (tog) {
+         var ans = confirm(msg);
+         if (ans) {}
+         else {
+            var el = document.getElementById('rank_'+reservenumber);
+            for(var i=0;i<sel.options.length;i++) {
+               if(sel.options[i].value=='W') {
+                  el.selectedIndex = i;
+                  break;
+               }
+            }
+            return;
+         }
+      }
+   }
+   modRes(reservenumber,limit);
+} //eof modPriority()
+
+function modRes(reservenumber,limit) {
+   if ($('#mode').val()=='batch') {
+      var skip = 0;
+      for(var i=0;i<batchres.length;i++) {
+         if(batchres[i]==reservenumber){ skip = 1; break }
+      }
+      if(!skip) { batchres.push(reservenumber) }
+      return;
+   }
+   var msg = $('#saving').modal();
+   var myfound;
+   var issusp      = 0;
+   var resumedate  = $('#resume_'+reservenumber).val();
+   var mywaitingdate;
+   if(resumedate != '') {
+      $('#susp_'+reservenumber).attr('checked','checked');
+      issusp = 1;
+      myfound = 'S';
+      mywaitingdate = dformat2db(resumedate,dformat,mydb);
+   }
+   else if($('#susp_'+reservenumber).is(':checked')) { 
+      myfound = 'S';
+      issusp  = 1;
+      if (resumedate != '') { mywaitingdate = dformat2db(resumedate,dformat,mydb) }
+   }
+   var method = 'POST';
+   if ($('#rank_'+reservenumber).val()=='del') { method = 'DELETE' }
+   $.ajax({
+      url : '/reserves/'+reservenumber,
+      type: method,
+      data: {
+         priority    :$('#rank_'+reservenumber).val(),
+         branchcode  :$('#pick_'+reservenumber).val(),
+         found       :myfound,
+         is_suspended:issusp,
+         resume_date :mywaitingdate
+      },
+      complete: function() { 
+         var mylimit = limit;
+         if (mylimit < 10) { mylimit = 10 }
+         document.location.href='editholds.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&limit='+mylimit;
+      },
+   });
+}
+
+function _err(rc) {
+   return $('#existingReserves').append('<tr><td colspan=8><span class=problem>'+rc+'</span></td></tr>');
+}
+function getSet(allLen,offset,limit) {
+   $('#pager1').html('Loading...');
+   $('#pager2').html('Loading...');
+   $.ajax({
+      url : '/reserves/?biblionumber=<TMPL_VAR NAME="biblionumber">&inflate=1&limit='+limit+'&offset='+offset,
+      async: false,
+      complete: function() { 
+         var to   = limit+offset; if (to>allLen) { to = allLen }
+         var pager = '';
+         var mymode = '<TMPL_VAR NAME="mode">';
+         var moder = 'Mode:<select name="mode" id="mode" onchange="chMode('+to+')">'+
+                     (mymode=='batch'?'<option selected>':'<option>')+'batch'+
+                     (mymode=='batch'?'<option>':'<option selected>')+'single</select> | ';
+         if(mymode=='batch'){ $('#update').html('<input type=button value="Update Holds" onclick="updateHolds()">'); }
+         var more = limit;
+         if(more < 10)  { more = 10 }
+         if(to<allLen)  { pager = 'Showing '+to+' of <b>'+allLen+'</b> holds | <a href="javascript:;" onclick="getSet('+allLen+','+(to+1)+','+allLen+');">View All</a> | <a href="javascript:;" onclick="getSet('+allLen+','+to+','+more+');">More...</a>'; }
+         else           { pager = 'Showing '+to+' of <b>'+allLen+'</b> holds'; }
+         $('#pager1').html(moder+pager);
+         $('#pager2').html(pager);
+         $('#showto').val(to);
+         document.getElementById('pager2').scrollIntoView();
+      },
+      error: function(xhr,rc,thrown) {
+         _err(rc);
+      },
+      success: function(all) {
+         var c = 0;
+         $.each(all, function(residx,res) {
+            c++;
+            var details      = '';
+            var listPriority = '';
+            var listPick     = '';
+            var suspended    = '';
+            var onshelf      = 0;
+            var mas          = '';
+            var setcal       = 0;
+            var branchname   = res.branchname; 
+            if (res.reservenotes==null) { res.reservenotes = ''; }
+            for(var i=1;i<=allLen;i++) {
+               var ch = '';
+               if (i==res.priority) { ch = ' selected'; }
+               listPriority += '<option '+ch+'>'+i;
+            }
+            if (res.found=='W') {
+               listPriority += '<option value="W" selected>Waiting';
+               onshelf       = 1;
+               mas           = 'Waiting since<br>'+ts2date(res.waitingdate,dformat);
+               listPick      = 'Item waiting at<br><b>'+branchname+'</b>';
+//               suspended     = '<input type=checkbox disabled>';
+            }
+            else if (res.found=='T') {
+               listPriority += '<option value="T" selected>In Transit';
+               listPick      = 'Waiting to be pulled at<br>'+branchname;
+//               suspended     = '<input type=checkbox disabled>';
+            }
+            else {
+               var isSuspended = res.found=='S'?true:false;
+               suspended = '<input type=checkbox name="suspend_'+res.reservenumber+'" '+(isSuspended?'checked':'')+' id="susp_'+res.reservenumber+'" onclick="$(\'#resume_'+res.reservenumber+'\').val(\'\');modRes('+res.reservenumber+','+(c+offset)+')" value=1>';
+               listPick = '<select name="pick_'+res.reservenumber+'" id="pick_'+res.reservenumber+'" onchange="modRes('+res.reservenumber+','+(c+offset)+')">';
+               for(var i=0;i<branches.length;i++) {
+                  listPick += '<option value="'+branches[i][0]+'" '+(res.branchcode==branches[i][0]?'selected': '')+'>'+branches[i][1];
+               }
+               listPick += '</select>';
+               var resumedate = '';
+               if (res.waitingdate) { resumedate = ts2date(res.waitingdate,dformat) }
+               mas ='resume on (optional)<br>'+
+               '<input type=text name="resume_'+res.reservenumber+'" size=10 maxlength=10 '+
+               'id="resume_'+res.reservenumber+'" value="'+resumedate+'" id="resume_'+res.reservenumber+'">';
+               setcal = 1;
+            }
+            listPriority += '<option value="del">cancel';
+            if (res.itemnumber) {
+               if (res.priority==0) { details = 'only item<br>'; }
+               details += '<a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber='+res.biblionumber+'&itemnumber='+res.itemnumber+'#item'+res.itemnumber+'">'+res.itembarcode+'</a>';
+            }
+            else {
+               details = '<i>Next available</i>';
+            }
+
+            $('#existingReserves > tbody:last').append('<tr id="tr_'
+               +res.reservenumber         +'"><td><select id="rank_'
+               +res.reservenumber         + '" onchange="modPriority(this,'
+               +onshelf                   +','+res.reservenumber+','+(c+offset)+')">'
+               +listPriority              +'</select></td><td><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber='
+               +res.borrowernumber        +'">'+res.borrowername+'</a><br><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='
+               +res.borrowernumber        +'">'+res.borrowercard+'</a></td><td>'
+               +res.reservenotes          +'</td><td>' + ts2date(res.reservedate,dformat) +'</td><td nowrap>'
+               +listPick                  +'</td><td>'
+               +details                   +'</td><td align=center>'
+               +suspended                 +'</td><td nowrap>'
+               +mas                       +'</td></tr>');
+            if(setcal==1) {
+               Calendar.setup({
+                     inputField: "resume_"+res.reservenumber,
+                     ifFormat  : "<TMPL_VAR NAME="DHTMLcalendar_dateformat">",
+                     button    : "resume_"+res.reservenumber,
+                     align     : "T1",
+                     onClose   : function() { 
+                        calendar.hide();
+                        modRes(res.reservenumber,(c+offset));
+                     }
+               });
+            }
+            /*
+            $('<input>').attr({
+               type: 'hidden',
+               name: 'reservenumber',
+               value: res.reservenumber,
+            }).appendTo('myf');
+            */
+         });
+      }
+   });
+} //eof getSet()
+
+function updateHolds(reservenumber) {
+   if (batchres.length==0) { alert('Nothing to update'); return }
+   $('#saving').modal();
+   for(var i=0;i<batchres.length;i++) {
+      var issusp = 0;
+      var myfound;
+      var mywaitingdate;
+      var susp = $('#susp_'+batchres[i]).is(':checked');
+      var resumedate = $('#resume_'+batchres[i]).val();
+      if(susp) { 
+         myfound = 'S';
+         issusp  = 1;
+         if (resumedate != '') { mywaitingdate = dformat2db(resumedate,dformat,mydb); }
+      }
+      if(resumedate != '') {
+         issusp  = 1;
+         myfound = 'S';
+         mywaitingdate = dformat2db(resumedate,dformat,mydb);
+      }
+      var method = 'POST';
+      if ($('rank_'+batchres[i]).val()=='del') { method = 'DELETE' }
+      $.ajax({
+         url :'/reserves/'+batchres[i],
+         type: method,
+         data: {
+            priority    :$('#rank_'+batchres[i]).val(),
+            branchcode  :$('#pick_'+batchres[i]).val(),
+            found       :myfound,
+            is_suspended:issusp,
+            resume_date :mywaitingdate
+         },
+         success: function() {
+            var mysofar = parseInt(document.myf.sofar.value);
+            mysofar += 1;
+            document.myf.sofar.value = mysofar;
+            if(mysofar==batchres.length) {
+               document.location.href='editholds.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&mode=batch';
+            }
+         }
+      });
+   }
+} //eof updateHolds()
+$(document).ready(function() {
+   $.ajax({
+      url:'/branches/',
+      success: function(all) {
+         $.each(all, function(idx,br) {
+            branches.push([br.branchcode,br.branchname]);
+         });
+         getInit(<TMPL_VAR NAME="limit">);
+      }
+   });
+});
+</script>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="circ-search-plack.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/catalogue/search.pl">Catalog</a> &rsaquo; <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a> &rsaquo; Edit holds</div>
+
+<div id="doc3" class="yui-t2">
+<div id="bd">
+	<div id="yui-main">
+	<div class="yui-b">
+      <form id="myf" name="myf" id="myf">
+      <input type=hidden name="showto" value="0">
+      <input type=hidden name="limit"  value="<TMPL_VAR NAME="limit">">
+      <input type=hidden name="sofar"  value="0">
+      <table class=borderless width="100%">
+      <tr class=borderless valign=bottom>
+         <td class=borderless><h3>Edit holds on <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a></h3></td>
+         <td class=borderless align=right id="pager1" nowrap></td></tr>
+      <tr class=borderless><td class=borderless colspan=2>
+      <table id="existingReserves" width="100%">
+      <tbody>
+      <thead><tr>
+         <th>Priority</th>
+         <th>Patron</th>
+         <th>Notes</th>
+         <th>Date</th>
+         <th>Pick up Library</th>
+         <th>Details</th>
+         <th>Suspended</th>
+         <th>Waiting/<br>Resume</th></tr>
+      </thead>
+      </tbody>
+      </table>
+      </td></tr>
+      <tr class=borderless>
+         <td class=borderless id="update"></td>
+         <td class=borderless align=right id="pager2"></td>
+      </tr></table>
+      </form>
+   </div><!-- eof yui-b -->
+   </div><!-- eof yui-main -->
+
+   <div class="yui-b">
+   <!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
+   </div>
+</div><!-- eof bd -->
+<div id="saving" style="border:double 4px #000;background-color:#ffffcc;opacity:100;padding:6px;display:none"><img 
+src="/intranet-tmpl/prog/img/loading-trans.gif" align=abscenter>Saving... &nbsp; &nbsp; &nbsp;
+</div>
+<script>
+function setCal(reservenumber,limit) {
+}
+</script>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
