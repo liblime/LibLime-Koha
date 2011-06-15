@@ -143,13 +143,13 @@ if($do_it){
     }
    
     ## We generate branchlist
-    my $branch_choices=GetBranches();
+    my $branches=GetBranches();
 	my @branchloop;
 	foreach (sort {$branches->{$a}->{'branchname'} cmp $branches->{$b}->{'branchname'}} keys %$branches) {
 		my $thisbranch = ''; # FIXME: populate $thisbranch to preselect one
 		my %row = (branchcode => $_,
 			selected => ($thisbranch eq $_ ? 1 : 0),
-			branchname => $branch_choices->{$_}->{'branchname'},
+			branchname => $branches->{$_}->{'branchname'},
 		);
 		push @branchloop, \%row;
 	} 
