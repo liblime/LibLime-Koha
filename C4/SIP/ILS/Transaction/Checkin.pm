@@ -48,7 +48,8 @@ sub do_checkin {
     my $barcode = $self->{item}->id;
     $debug and warn "do_checkin() calling AddReturn($barcode, $branch)";
     my ($return, $messages, $iteminformation, $borrower) = AddReturn($barcode, $branch);
-    $self->alert(!$return);
+    $debug and warn "AddReturn return value: $return";
+    $self->alert(0);
     # ignoring messages: NotIssued, IsPermanent, WasLost, WasTransfered
 
     # biblionumber, biblioitemnumber, itemnumber
@@ -98,6 +99,13 @@ sub do_checkin {
             C4::Items::ModItemTransfer($messages->{ResFound}->{itemnumber},
                 $branch,
                 $messages->{ResFound}->{branchcode});
+        }
+        # If item is already in transit to another branch, do not alert
+        if (($branch ne $messages->{ResFound}->{branchcode}) &&
+            ($messages->{ResFound}->{found} eq 'T')) {
+          $debug and warn "Alert type set to undefined";
+          $self->alert_type(undef);
+          $self->screen_msg(undef);
         }
     }
     $self->alert(1) if defined $self->alert_type;  # alert_type could be "00", hypothetically

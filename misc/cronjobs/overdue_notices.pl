@@ -546,41 +546,6 @@ END_SQL
         }
     }
 
-#    if (@output_chunks) {
-#        if ($nomail) {
-#            if ( defined $csvfilename ) {
-#                print $csv_fh @output_chunks;
-#            } elsif ( defined $htmlfilename ) {
-#            } elsif ( defined $htmlfilename) {
-#                print $html_fh @output_chunks;
-#            } else {
-#                local $, = "\f";    # pagebreak
-#                print @output_chunks;
-#            }
-#        } elsif ( defined $htmlfilename ) {
-#            print $html_fh @output_chunks;
-#        } else {
-#            my $attachment = {
-#                filename => defined $csvfilename ? 'attachment.csv' : 'attachment.txt',
-#                type => 'text/plain',
-#                content => join( "\n", @output_chunks )
-#            };
-#
-#            my $letter = {
-#                title   => 'Overdue Notices',
-#                content => 'These messages were not sent directly to the patrons.',
-#            };
-#            C4::Letters::EnqueueLetter(
-#                {   letter                 => $letter,
-#                    borrowernumber         => undef,
-#                    message_transport_type => 'email',
-#                    attachments            => [$attachment],
-#                    to_address             => $admin_email_address,
-#                }
-#            );
-#        }
-#    }
-
 # Examine overdueitemrules table
 
     $rqoverduerules = $dbh->prepare("SELECT * FROM overdueitemrules WHERE delay1 IS NOT NULL AND branchcode = ? ");

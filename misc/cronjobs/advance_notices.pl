@@ -145,8 +145,11 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
     my @Ttitems;
     if ( 0 == $upcoming->{'days_until_due'} ) {
         # This item is due today. Send an 'item due' message.
-        $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $upcoming->{'borrowernumber'},
-                                                                                   message_name   => 'item due' } );
+        $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences(
+          { borrowernumber => $upcoming->{'borrowernumber'},
+            message_name   => 'Item Due'
+          }
+        );
         # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
         next DUEITEM unless $borrower_preferences;
         
@@ -174,8 +177,11 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
                                     } );
         }
     } else {
-        $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $upcoming->{'borrowernumber'},
-                                                                                   message_name   => 'advance notice' } );
+        $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences(
+          { borrowernumber => $upcoming->{'borrowernumber'},
+            message_name   => 'Advance Notice'
+          }
+        );
         # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
         next UPCOMINGITEM unless $borrower_preferences && exists $borrower_preferences->{'days_in_advance'};
         next UPCOMINGITEM unless $borrower_preferences->{'days_in_advance'} == $upcoming->{'days_until_due'};
@@ -241,14 +247,17 @@ SELECT biblio.*, items.*, issues.*
 END_SQL
 
 PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
+    my @Ttitems;
     my @items = @{$upcoming_digest->{$borrowernumber}};
     my $count = scalar @items;
     my $borrower = C4::Members::GetMember($borrowernumber);
-    my $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $borrowernumber,
-                                                                                  message_name   => 'advance notice' } );
+    my $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( 
+         { borrowernumber => $borrowernumber,
+           message_name   => 'Advance Notice'
+         }
+       );
     # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
     next PATRON unless $borrower_preferences; # how could this happen?
-
 
     my $letter_type = 'PREDUEDGST';
     my $letter = C4::Letters::getletter( 'circulation', $letter_type );
@@ -256,6 +265,7 @@ PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
     $sth->execute($borrowernumber,$borrower_preferences->{'days_in_advance'});
     my $titles = "";
     while ( my $item_info = $sth->fetchrow_hashref()) {
+      push (@Ttitems, $item_info);
       my @item_info = map { $_ =~ /^date|date$/ ? format_date($item_info->{$_}) : $item_info->{$_} || '' } @item_content_fields;
       $titles .= join("\t",@item_info) . "\n";
     }
@@ -266,6 +276,9 @@ PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
                                                   'items.content' => $titles
                                                 }
                          } );
+    if (($letter) && (C4::Context->preference('TalkingTechEnabled'))) {
+      C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'0');
+    }
     if ($nomail) {
       local $, = "\f";
       print $letter->{'content'};
@@ -284,8 +297,11 @@ PATRON: for my $borrowernumber ( keys %{ $due_digest} ) {
     my @items = @{$due_digest->{$borrowernumber}};
     my $count = scalar @items;
     my $borrower = C4::Members::GetMember($borrowernumber);
-    my $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $borrowernumber,
-                                                                                  message_name   => 'item due' } );
+    my $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences( 
+         { borrowernumber => $borrowernumber,
+           message_name   => 'Item Due'
+         }
+       );
     # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
     next PATRON unless $borrower_preferences; # how could this happen?
 
