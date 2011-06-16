@@ -53,9 +53,6 @@ BEGIN {
         );
 }
 
-
-my $dbh = C4::Context->dbh;
-
 =head1 NAME
 
 C4::VirtualShelves - Functions for manipulating Koha virtual virtualshelves
@@ -122,7 +119,7 @@ sub GetShelves ($$$$) {
         ORDER BY virtualshelves.category
 		DESC 
 		LIMIT ?, ?);
-    my $sth2 = $dbh->prepare($query);
+    my $sth2 = C4::Context->dbh->prepare($query);
     $sth2->execute(@params);
     my %shelflist;
     while ( my ( $shelfnumber, $shelfname, $owner, $surname,
@@ -176,7 +173,7 @@ sub GetShelvesSummary ($$$$) {
 		ORDER BY virtualshelves.category
 		DESC 
 		LIMIT ?, ?);
-	my $sth2 = $dbh->prepare($query);
+	my $sth2 = C4::Context->dbh->prepare($query);
 	$sth2->execute(@params);
     my $shelves = $sth2->fetchall_arrayref({});
     return ($shelves, $total);
@@ -209,7 +206,7 @@ sub GetRecentShelves ($$$) {
 	my $query = "SELECT * FROM virtualshelves";
 	$query .= ($owner ? " WHERE owner = ? AND category = ?" : " WHERE category >= ? ");
 	$query .= " ORDER BY lastmodified DESC LIMIT ?, ?";
-	my $sth = $dbh->prepare($query);
+	my $sth = C4::Context->dbh->prepare($query);
 	$sth->execute(@params);
 	@shelflist = $sth->fetchall_arrayref({});
 	return ( \@shelflist, $total );
@@ -233,7 +230,7 @@ sub GetShelf ($) {
         FROM   virtualshelves
         WHERE  shelfnumber=?
     );
-    my $sth = $dbh->prepare($query);
+    my $sth = C4::Context->dbh->prepare($query);
     $sth->execute($shelfnumber);
     return $sth->fetchrow;
 }
@@ -312,6 +309,7 @@ Returns a code to know what's happen.
 
 sub AddShelf {
     my ( $shelfname, $owner, $category, $sortfield ) = @_;
+    my $dbh = C4::Context->dbh;
     my $query = qq(
         SELECT *
         FROM   virtualshelves
@@ -344,6 +342,7 @@ C<$shelfnumber>, unless that item is already on that shelf.
 sub AddToShelf {
     my ( $biblionumber, $shelfnumber ) = @_;
     return unless $biblionumber;
+    my $dbh = C4::Context->dbh;
     my $query = qq(
         SELECT *
         FROM   virtualshelfcontents
@@ -380,6 +379,7 @@ sub AddToShelf {
 sub AddToShelfFromBiblio {
     my ( $biblionumber, $shelfnumber ) = @_;
     return unless $biblionumber;
+    my $dbh = C4::Context->dbh;
     my $query = qq(
         SELECT *
         FROM   virtualshelfcontents
@@ -449,7 +449,7 @@ sub ModShelf {
 
     $debug and warn "ModShelf query:\n $query\n",
 	                "ModShelf query args: ", join(',', @bind_params), "\n";
-	my $sth = $dbh->prepare($query);
+	my $sth = C4::Context->dbh->prepare($query);
    	$sth->execute( @bind_params );
 }
 
@@ -473,7 +473,7 @@ sub ShelfPossibleAction {
         FROM   virtualshelves
         WHERE  shelfnumber=?
     );
-    my $sth = $dbh->prepare($query);
+    my $sth = C4::Context->dbh->prepare($query);
     $sth->execute($shelfnumber);
     my ( $owner, $category ) = $sth->fetchrow;
 	my $borrower = C4::Members::GetMemberDetails($user);
@@ -502,7 +502,7 @@ sub DelFromShelf {
         DELETE FROM virtualshelfcontents
         WHERE  shelfnumber=? AND biblionumber=?
     );
-    my $sth = $dbh->prepare($query);
+    my $sth = C4::Context->dbh->prepare($query);
     $sth->execute( $shelfnumber, $biblionumber );
 }
 
@@ -530,7 +530,7 @@ sub DelShelf {
 		carp "DelShelf called without valid argument (shelfnumber)";
 		return undef;
 	}
-	my $sth = $dbh->prepare("DELETE FROM virtualshelves WHERE shelfnumber=?");
+	my $sth = C4::Context->dbh->prepare("DELETE FROM virtualshelves WHERE shelfnumber=?");
 	return $sth->execute(shift);
 }
 
@@ -599,7 +599,7 @@ sub _shelf_count ($$) {
 	my $query = "SELECT count(*) FROM virtualshelves";
 	$query .= ($params[1] > 1) ? " WHERE category >= ?" : " WHERE  owner=? AND category=?";
 	shift @params if $params[1] > 1;
-	my $sth = $dbh->prepare($query);
+	my $sth = C4::Context->dbh->prepare($query);
 	$sth->execute(@params);
 	my $total = $sth->fetchrow;
 	return $total;

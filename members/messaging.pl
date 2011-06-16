@@ -37,15 +37,11 @@ use C4::Biblio;
 use C4::Reserves;
 use C4::Branch; # GetBranchName
 
-use Data::Dumper;
-
 use vars qw($debug);
 
 BEGIN {
 	$debug = $ENV{DEBUG} || 0;
 }
-
-my $dbh = C4::Context->dbh;
 
 my $query = CGI->new();
 

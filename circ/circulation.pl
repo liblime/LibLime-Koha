@@ -59,7 +59,6 @@ sub FormatFinesSummary {
         Res => 'reserve_fees'
     );
 
-    my $dbh = C4::Context->dbh;
     my $summary = GetFinesSummary( $borrower->{'borrowernumber'} );
     my %params;
     foreach my $type ( keys %type_map ) {

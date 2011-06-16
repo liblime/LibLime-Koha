@@ -1,12 +1,8 @@
 package C4::Plack::Localize;
 use parent qw(Plack::Middleware);
-use Modern::Perl;
-use Plack::Util;
 
 use Koha;
 use C4::Context;
-
-use Data::Dumper;
 
 sub call {
     my ($self, $env) = @_;
