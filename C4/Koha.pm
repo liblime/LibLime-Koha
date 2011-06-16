@@ -1164,8 +1164,13 @@ sub _isbn_cleanup {
 }
 
 sub CgiOrPlackHostnameFinder {
-    return $ENV{SERVER_NAME} # CGI mode
-    || (split qr{,}, $ENV{HTTP_X_FORWARDED_HOST})[0] # Plack proxy mode
+    my $hostname
+        =  $ENV{HTTP_X_FORWARDED_HOST}
+        // $ENV{HTTP_X_FORWARDED_SERVER}
+        // $ENV{HTTP_HOST}
+        // $ENV{SERVER_NAME}
+        // 'koha-opac.default';
+    return (split qr{,}, $hostname)[0];
 }
 
 sub GetOpacConfigByHostname {
