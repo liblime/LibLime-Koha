@@ -21,14 +21,6 @@
     new YAHOO.widget.Button("delete_periodical_serial");
     new YAHOO.widget.Button("delete_subscription");
     new YAHOO.widget.Button("delete_subscription_serial");
-	new YAHOO.widget.Button({
-	        type: "menu",
-	        label: _("Edit"),
-	        name: "editmenubutton",
-	        menu: editmenu,
-	        container: "editmenuc",
-			
-	    });
     new YAHOO.widget.Button("renew");
     new YAHOO.widget.Button("receive");
 	}
