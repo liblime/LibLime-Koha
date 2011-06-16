@@ -62,8 +62,6 @@ BEGIN {
 	$debug = $ENV{DEBUG} || 0;
 }
 
-my $dbh = C4::Context->dbh;
-
 my $input = new CGI;
 if (!$debug) {
     $debug = $input->param('debug') || 0;

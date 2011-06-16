@@ -1,7 +1,7 @@
 package C4::Plack::ScrubStatus;
 use parent qw(Plack::Middleware);
 
-use Modern::Perl;
+use Koha;
 use Plack::Util;
 
 sub call {
