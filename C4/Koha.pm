@@ -1164,13 +1164,17 @@ sub _isbn_cleanup {
 }
 
 sub CgiOrPlackHostnameFinder {
+    my $env = shift || \%ENV;
+
     my $hostname
-        =  $ENV{HTTP_X_FORWARDED_HOST}
-        // $ENV{HTTP_X_FORWARDED_SERVER}
-        // $ENV{HTTP_HOST}
-        // $ENV{SERVER_NAME}
+        =  $env->{HTTP_X_FORWARDED_HOST}
+        // $env->{HTTP_X_FORWARDED_SERVER}
+        // $env->{HTTP_HOST}
+        // $env->{SERVER_NAME}
         // 'koha-opac.default';
-    return (split qr{,}, $hostname)[0];
+    $hostname = (split qr{,}, $hostname)[0];
+    $hostname =~ s/:.*//;
+    return $hostname;
 }
 
 sub GetOpacConfigByHostname {
