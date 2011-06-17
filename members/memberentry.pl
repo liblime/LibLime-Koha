@@ -410,7 +410,6 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
 			delete $newdata{'password'};
 			delete $newdata{'userid'};
 		}
-                $newdata{'staffnumber'} = $loggedinuser;
 		&ModMember(%newdata);
         if (C4::Context->preference('ExtendedPatronAttributes') and $input->param('setting_extended_patron_attributes')) {
             C4::Members::Attributes::SetBorrowerAttributes($borrowernumber, $extended_patron_attributes);
