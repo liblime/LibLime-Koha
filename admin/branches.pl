@@ -110,7 +110,7 @@ elsif ( $op eq 'add_validate' ) {
     my $params = $input->Vars;
     unless ( $params->{'branchcode'} && $params->{'branchname'} ) {
         $template->param( else => 1 );
-        default("MESSAGE1",$template);
+        defmsg("MESSAGE1",$template);
     }
     else {
         my $error = ModBranch($params); # FIXME: causes warnings to log on duplicate branchcode
@@ -123,7 +123,7 @@ elsif ( $op eq 'add_validate' ) {
             $template->param( 'heading-branches-add-branch-p' => 1, 'add' => 1, "ERROR$error" => 1 );
         } else {
             $template->param( else => 1);
-            default("MESSAGE2",$template);
+            defmsg("MESSAGE2",$template);
         }
     }
 }
@@ -137,7 +137,7 @@ elsif ( $op eq 'delete' ) {
     my ($total) = $sth->fetchrow_array;
     if ($total) {
         $template->param( else => 1 );
-        default("MESSAGE7", $template);
+        defmsg("MESSAGE7", $template);
     }
     else {
         $template->param( delete_confirm => 1 );
@@ -150,7 +150,7 @@ elsif ( $op eq 'delete_confirmed' ) {
     # actually delete branch and return to the main screen....
     DelBranch($branchcode);
     $template->param( else => 1 );
-    default("MESSAGE3",$template);
+    defmsg("MESSAGE3",$template);
 }
 elsif ( $op eq 'editcategory' ) {
 
@@ -164,11 +164,11 @@ elsif ( $op eq 'addcategory_validate' ) {
     # confirm settings change...
     my $params = $input->Vars;
     unless ( $params->{'categorycode'} && $params->{'categoryname'} ) {
-        default("MESSAGE4",$template);
+        defmsg("MESSAGE4",$template);
     }
     else {
         ModBranchCategoryInfo($params);
-        default("MESSAGE5",$template);
+        defmsg("MESSAGE5",$template);
     }
 }
 elsif ( $op eq 'delete_category' ) {
@@ -177,7 +177,7 @@ elsif ( $op eq 'delete_category' ) {
     my $message = "MESSAGE8" if CheckBranchCategorycode($categorycode);
     if ($message) {
         $template->param( else => 1 );
-        default($message,$template);
+        defmsg($message,$template);
     }
     else {
         $template->param( delete_category => 1 );
@@ -189,12 +189,12 @@ elsif ( $op eq 'categorydelete_confirmed' ) {
     # actually delete branch and return to the main screen....
     DelBranchCategory($categorycode);
     $template->param( else => 1 );
-    default("MESSAGE6",$template);
+    defmsg("MESSAGE6",$template);
 
 }
 else {
     # if no operation has been set...
-    default("",$template);
+    defmsg("",$template);
 }
 
 $template->param( AllowOnShelfHolds => C4::Context->preference('AllowOnShelfHolds') );
@@ -203,7 +203,7 @@ $template->param( AllowOnShelfHolds => C4::Context->preference('AllowOnShelfHold
 #
 # html output functions....
 
-sub default {
+sub defmsg {
     my $message       = shift || '';
     my $innertemplate = shift or return;
     $innertemplate->param($message => 1) if $message;
