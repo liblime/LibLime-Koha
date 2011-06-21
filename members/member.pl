@@ -23,6 +23,7 @@
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+use warnings;
 use C4::Auth;
 use C4::Output;
 use CGI;
@@ -264,7 +265,7 @@ if ( $input->param('advanced_patron_search') && $count) {
    my $from = ($count>$resultsperpage)?($resultsperpage*($pg-1))+1 : 1;
    $to      = ($from+$resultsperpage)>$count? $count : $from+$resultsperpage;
    $template->param(
-      paginationbar => _adv_pagination(),
+      paginationbar => _adv_pagination($count, $resultsperpage, $currPage),
       startfrom     => $startfrom,
       from          => $from,
       to            => $to,
@@ -330,6 +331,7 @@ exit;
 
 sub _adv_pagination
 {
+   my ($count, $resultsperpage, $currPage) = @_;
    my $out = '';
    my $totalPages = $count%$resultsperpage? int($count/$resultsperpage)+1 : $count/$resultsperpage;
    if ($currPage==1) {
