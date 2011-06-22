@@ -90,7 +90,7 @@ function AreMandatoriesNotOk(){
             <!-- /TMPL_LOOP -->
         <!-- /TMPL_LOOP -->
     <!-- /TMPL_LOOP -->
-    var StrAlert = _("Can't save this record because the following field aren't filled :\n\n");
+    var StrAlert = _("Can't save this record because the following fields aren't filled :\n\n");
     for(var i=0,len=mandatories.length; i<len ; i++){
         var tag=mandatories[i].substr(4,3);
         var subfield=mandatories[i].substr(17,1);
@@ -654,7 +654,7 @@ $(document).ready(function() {
         window.close();
     </script>
 <!--TMPL_ELSE-->
-    <form method="post" name="f" id="f" action="/cgi-bin/koha/cataloguing/addbiblio.pl" onsubmit="return Check();">
+    <form method="post" name="f" id="f" action="/cgi-bin/koha/cataloguing/addbiblio.pl">
 	<input type="hidden" value="0" id="confirm_not_duplicate" name="confirm_not_duplicate" />
 <!-- /TMPL_IF -->
 	
@@ -673,7 +673,7 @@ $(document).ready(function() {
 	// YUI Toolbar Functions
 
 	function yuiToolbar() {
-	    new YAHOO.widget.Button("addbiblio", { onclick: { fn: submitForm } });
+	    new YAHOO.widget.Button("addbiblio", { onclick: { fn: Check } });
 		new YAHOO.widget.Button({
                                             id: "z3950search", 
                                             type: "button", 
@@ -687,7 +687,7 @@ $(document).ready(function() {
 	</script>
 
 		<ul class="toolbar">
-			<li><input id="addbiblio" type="button" value="Save" /></li>
+			<li><input id="addbiblio" type="button" value="Save" onclick="Check()"/></li>
 			<li id="z3950searchc"><input type="button" id="z3950search" value="z39.50 Search" onclick="PopupZ3950(); return false;" /></li>
 			<li id="changeframework"><label for="Frameworks">Change framework: </label>
 			<select name="Frameworks" id="Frameworks" onchange="Changefwk(this);">
