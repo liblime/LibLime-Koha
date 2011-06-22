@@ -34,15 +34,18 @@ function active(numlayer)
 function Check(f) {
 
     var total_errors=0;
-//	alert(f.field_value.length);
-    for (i=0 ; i<f.field_value.length ; i++) {
-//	alert (f.field_value[i].value);
-        if (f.field_value[i].value.length==0 && f.mandatory[i].value==1) {
-            document.getElementById("error"+i).style.backgroundColor="#FF0000";
+    for (i=0 ; i<f.field_value_0.length ; i++) {
+      if (f.mandatory_0[i]) {
+         if (f.mandatory_0[i].value==1 && f.field_value_0[i].value.length==0) {
+            document.getElementById('error'+i).style.backgroundColor='#ff0000';
+            document.getElementById('error'+i).style.color='#ffffff';
             total_errors++;
-        } else {
-//			document.getElementById("error"+i).style.backgroundColor="#FFFFFF";
-        }
+         }
+         else {
+            document.getElementById('error'+i).style.backgroundColor='';
+            document.getElementById('error'+i).style.color='#000000';
+         }
+      }
     }
     var alertString2;
     if (total_errors==0) {
@@ -63,7 +66,7 @@ function CheckMultipleAdd(f) {
     }
 }
 function Dopop(link,i) {
-    defaultvalue=document.forms[0].field_value[i].value;
+    defaultvalue=document.forms[0].field_value_0[i].value;
     newin=window.open(link+"&result="+defaultvalue,"valuebuilder",'width=500,height=400,toolbar=false,scrollbars=yes');
 }
 
