@@ -590,7 +590,7 @@ $data{'cardnumber'}=fixup_cardnumber($data{'cardnumber'}, $branches->{C4::Contex
 # --------------------------------------------------------------------------------------------------------
   #in modify mod :default value from $CGIbranch comes from borrowers table
   #in add mod: default value come from branches table (ip correspendence)
-$default=$data{'branchcode'}  if ($op eq 'modify' || ($op eq 'add' && $category_type eq 'C'));
+$default=$data{'branchcode'}  if ($op eq 'modify' || ($op eq 'add' && $category_type eq 'C' && $data{'branchcode'}));
 
 # I need some javascript here, so CGI:: won't do
 #my $CGIbranch = CGI::scrolling_list(-id    => 'branchcode',
