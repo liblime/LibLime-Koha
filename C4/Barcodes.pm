@@ -17,9 +17,6 @@ package C4::Barcodes;
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
-
 use Carp;
 
 use Koha;
@@ -33,7 +30,6 @@ use C4::Barcodes::codabar;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 use vars qw($debug $cgi_debug);	# from C4::Debug, of course
-use vars qw($max $prefformat);
 
 BEGIN {
     $VERSION = 0.01;
@@ -43,13 +39,7 @@ BEGIN {
 }
 
 sub _prefformat {
-	unless (defined $prefformat) {
-		unless ($prefformat = C4::Context->preference('autoBarcode')) {
-			carp "The autoBarcode syspref is missing/undefined.  Assuming 'incremental'.";
-			$prefformat = 'incremental';
-		}
-	}
-	return $prefformat;
+    return C4::Context->preference('autoBarcode') // 'incremental';
 }
 
 sub initial {

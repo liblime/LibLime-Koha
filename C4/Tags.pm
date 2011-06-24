@@ -14,8 +14,6 @@ package C4::Tags;
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
 use Carp;
 use Exporter;
 
@@ -44,24 +42,23 @@ BEGIN {
 		&get_filters
 	);
 	# %EXPORT_TAGS = ();
-	$ext_dict = C4::Context->preference('TagsExternalDictionary');
 	if ($debug) {
 		require Data::Dumper;
 		import Data::Dumper qw(:DEFAULT);
 		print STDERR __PACKAGE__ . " external dictionary = " . ($ext_dict||'none') . "\n";
 	}
-	if ($ext_dict) {
-		require Lingua::Ispell;
-		import Lingua::Ispell qw(spellcheck add_word_lc save_dictionary);
-	}
 }
 
-INIT {
-    $ext_dict and $Lingua::Ispell::path = $ext_dict;
-    $debug and print STDERR "\$Lingua::Ispell::path = $Lingua::Ispell::path\n";
-	@fields = qw(tag_id borrowernumber biblionumber term language date_created);
-	$select_all = "SELECT " . join(',',@fields) . "\n FROM   tags_all\n";
+if ($ext_dict) {
+    require Lingua::Ispell;
+    import Lingua::Ispell qw(spellcheck add_word_lc save_dictionary);
 }
+
+$ext_dict = C4::Context->preference('TagsExternalDictionary');
+$ext_dict and $Lingua::Ispell::path = $ext_dict;
+$debug and print STDERR "\$Lingua::Ispell::path = $Lingua::Ispell::path\n";
+@fields = qw(tag_id borrowernumber biblionumber term language date_created);
+$select_all = "SELECT " . join(',',@fields) . "\n FROM   tags_all\n";
 
 sub get_filters (;$) {
 	my $query = "SELECT * FROM tags_filters ";

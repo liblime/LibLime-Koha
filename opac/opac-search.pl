@@ -1,8 +1,6 @@
 #!/usr/bin/env perl
 # Script to perform searching
 # Mostly copied from search.pl, see POD there
-use strict;            # always use
-use warnings;
 
 ## STEP 1. Load things that are used in both search page and
 # results page and decide which template to load, operations 
@@ -34,6 +32,8 @@ use vars qw($cache $MRXorig);
 # This is not intended to be a long-term cache, but one that persists for
 # only the duration one might expect to page around some search results.
 # The max_size may need to be increased for very busy sites.
+
+no warnings qw(redefine);
 $cache = CHI->new(driver => 'Memory', global => 1, max_size => 3_000_000, expires_in => 120);
 $MRXorig = \&MARC::Record::new_from_xml;
 local *MARC::Record::new_from_xml = \&MRXcached;
@@ -59,13 +59,6 @@ sub MRXcached {
 
     return $record;
 };
-
-BEGIN {
-	if (C4::Context->preference('BakerTaylorEnabled')) {
-		require C4::External::BakerTaylor;
-		import C4::External::BakerTaylor qw(&image_url &link_url);
-	}
-}
 
 my ($template,$borrowernumber,$cookie);
 
@@ -113,43 +106,21 @@ elsif (C4::Context->preference("marcflavour") eq "MARC21" ) {
 $template->param( 'AllowOnShelfHolds' => C4::Context->preference('AllowOnShelfHolds') );
 
 if (C4::Context->preference('BakerTaylorEnabled')) {
-	$template->param(
-		BakerTaylorEnabled  => 1,
-		BakerTaylorImageURL => &image_url(),
-		BakerTaylorLinkURL  => &link_url(),
-		BakerTaylorBookstoreURL => C4::Context->preference('BakerTaylorBookstoreURL'),
+    require C4::External::BakerTaylor;
+    $template->param(
+        BakerTaylorEnabled  => 1,
+        BakerTaylorImageURL => C4::External::BakerTaylor::image_url(),
+        BakerTaylorLinkURL  => C4::External::BakerTaylor::link_url(),
+        BakerTaylorBookstoreURL => C4::Context->preference('BakerTaylorBookstoreURL'),
 	);
 }
+
 if (C4::Context->preference('TagsEnabled')) {
 	$template->param(TagsEnabled => 1);
 	foreach (qw(TagsShowOnList TagsInputOnList)) {
 		C4::Context->preference($_) and $template->param($_ => 1);
 	}
 }
-
-## URI Re-Writing
-# Deprecated, but preserved because it's interesting :-)
-# The same thing can be accomplished with mod_rewrite in
-# a more elegant way
-#                  
-#my $rewrite_flag;
-#my $uri = $cgi->url(-base => 1);
-#my $relative_url = $cgi->url(-relative=>1);
-#$uri.="/".$relative_url."?";
-#warn "URI:$uri";
-#my @cgi_params_list = $cgi->param();
-#my $url_params = $cgi->Vars;
-#
-#for my $each_param_set (@cgi_params_list) {
-#    $uri.= join "",  map "\&$each_param_set=".$_, split("\0",$url_params->{$each_param_set}) if $url_params->{$each_param_set};
-#}
-#warn "New URI:$uri";
-# Only re-write a URI if there are params or if it already hasn't been re-written
-#unless (($cgi->param('r')) || (!$cgi->param()) ) {
-#    print $cgi->redirect(     -uri=>$uri."&r=1",
-#                            -cookie => $cookie);
-#    exit;
-#}
 
 # load the branches
 my $mybranch = ( C4::Context->preference('SearchMyLibraryFirst') && C4::Context->userenv && C4::Context->userenv->{branch} ) ? C4::Context->userenv->{branch} : '';

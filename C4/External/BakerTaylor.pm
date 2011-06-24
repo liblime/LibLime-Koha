@@ -25,9 +25,6 @@ use Koha;
 use C4::Context;
 use C4::Debug;
 
-use strict;
-use warnings;
-
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 use vars qw($user $pass $agent $image_url $link_url);
 
@@ -38,8 +35,11 @@ BEGIN {
 	@EXPORT_OK = qw(&availability &content_cafe &image_url &link_url &http_jacket_link);
 	%EXPORT_TAGS = (all=>\@EXPORT_OK);
 }
-INIT {
-	&initialize;
+
+sub _auto_init {
+    if (! defined $user) {
+        initialize();
+    }
 }
 
 sub initialize {
@@ -47,29 +47,31 @@ sub initialize {
 	$pass     = (@_ ? shift : C4::Context->preference('BakerTaylorPassword')    ) || ''; # CC82349
 	$link_url = (@_ ? shift : C4::Context->preference('BakerTaylorBookstoreURL'));
         $image_url = "http://contentcafe2.btol.com/ContentCafe/Jacket.aspx?UserID=$user&Password=$pass&Options=Y&Return=T&Type=S&Value=";
-	$agent = "Koha/$VERSION [en] (Linux)";
-			#"Mozilla/4.76 [en] (Win98; U)",	#  if for some reason you want to go stealth, you might prefer this
 }
 
 sub image_url (;$) {
+    _auto_init();
 	($user and $pass) or return undef;
 	my $isbn = (@_ ? shift : '');
 	$isbn =~ s/(p|-)//g;	# sanitize
 	return $image_url . $isbn;
 }
 sub link_url (;$) {
+    _auto_init();
 	my $isbn = (@_ ? shift : '');
 	$isbn =~ s/(p|-)//g;	# sanitize
 	$link_url or return undef;
 	return $link_url . $isbn;
 }
 sub content_cafe_url ($) {
+    _auto_init();
 	($user and $pass) or return undef;
 	my $isbn = (@_ ? shift : '');
 	$isbn =~ s/(p|-)//g;	# sanitize
 	return "http://contentcafe2.btol.com/ContentCafeClient/ContentCafe.aspx?UserID=$user&Password=$pass&Options=Y&ItemKey=$isbn";
 }
 sub http_jacket_link ($) {
+    _auto_init();
 	my $isbn = shift or return undef;
 	$isbn =~ s/(p|-)//g;	# sanitize
 	my $image = availability($isbn);
@@ -81,6 +83,7 @@ sub http_jacket_link ($) {
 }
 
 sub availability ($) {
+    _auto_init();
 	my $isbn = shift or return undef;
 	($user and $pass) or return undef;
 	$isbn =~ s/(p|-)//g;	# sanitize

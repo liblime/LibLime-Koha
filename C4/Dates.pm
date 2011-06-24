@@ -32,12 +32,8 @@ BEGIN {
 	@EXPORT_OK = qw(format_date_in_iso format_date);
 }
 
-use vars qw($prefformat);
 sub _prefformat {
-    unless (defined $prefformat) {
-        $prefformat = C4::Context->preference('dateformat');
-    }
-    return $prefformat;
+    return C4::Context->preference('dateformat');
 }
 
 our %format_map = ( 

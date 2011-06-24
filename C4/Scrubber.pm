@@ -14,8 +14,6 @@ package C4::Scrubber;
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
 use Carp;
 use HTML::Scrubber;
 
@@ -24,26 +22,21 @@ use C4::Context;
 use C4::Debug;
 
 use vars qw($VERSION @ISA);
-use vars qw(%scrubbertypes $scrubbertype);
+use vars qw(%scrubbertypes);
 
-BEGIN {
-	$VERSION = 0.02;
-	# @ISA = qw(HTML::Scrubber);
-}
+$VERSION = 0.02;
 
-INIT {
-	%scrubbertypes = (
-		default => {},	# place holder, default settings are below as fallbacks in call to constructor
-		    tag => {},	# uses defaults
-		comment => {
-			allow   => [qw( br b i em big small strong )],
-		},
-		staff   => {
-			default => [ 1 =>{'*'=>1} ],
-			comment => 1,
-		},
-	);
-}
+%scrubbertypes = (
+    default => {},	# place holder, default settings are below as fallbacks in call to constructor
+    tag => {},	# uses defaults
+    comment => {
+        allow   => [qw( br b i em big small strong )],
+    },
+    staff   => {
+        default => [ 1 =>{'*'=>1} ],
+        comment => 1,
+    },
+    );
 
 
 sub new {
