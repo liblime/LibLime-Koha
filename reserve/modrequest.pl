@@ -68,7 +68,6 @@ for (my $i=0;$i<$count;$i++){
    }
 }
 my $from=$query->param('from');
-my $biblionumbers = $query->param('biblionumbers');
 $from ||= q{};
 if ( $from eq 'borrower'){
     print $query->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrower[0]");

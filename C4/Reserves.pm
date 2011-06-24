@@ -2196,7 +2196,7 @@ sub _NormalizePriorities {
         WHERE  biblionumber = ?
           AND  (found IS NULL OR found = 'S')
           AND  priority > 0
-        ORDER BY priority ASC, timestamp ASC
+        ORDER BY priority ASC, timestamp DESC
     };
     my $reserves_list
         = $dbh->selectcol_arrayref($query, undef, $biblionumber);
@@ -2209,9 +2209,8 @@ sub _NormalizePriorities {
         WHERE  reservenumber = ?
     };
     ## this is failing for list of one item, priority already 1
-    #my $sth = $dbh->prepare_cached($query);
+    my $sth = $dbh->prepare_cached($query);
     for ( my $j = 0 ; $j < @{$reserves_list} ; $j++ ) {
-        my $sth = $dbh->prepare($query);
         $sth->execute( $j+1, $reserves_list->[$j] );
     }
     return;
