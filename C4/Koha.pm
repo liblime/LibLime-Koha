@@ -22,16 +22,13 @@ use strict;
 use Koha;
 use C4::Context;
 use C4::Output;
-use Storable;
-use Clone;
+use Storable qw(freeze thaw);
+use Clone qw(clone);
 use URI::Split qw(uri_split);
 use List::Util qw(first);
 use Business::ISBN;
-use CHI;
 
 use vars qw($VERSION @ISA @EXPORT $DEBUG);
-
-my $cache;
 
 BEGIN {
 	$VERSION = 3.01;
@@ -71,7 +68,6 @@ BEGIN {
 	);
 	$DEBUG = 0;
 
-        $cache = CHI->new(driver => 'Memory', global => 1);
 }
 
 =head1 NAME
@@ -828,33 +824,57 @@ $authvalcode = GetAuthValCode($kohafield,$frameworkcode);
 
 =cut
 
+sub _seed_authvalcode_cache {
+    my ($kohafield) = @_;
+    return C4::Context->dbh->selectall_hashref( q{
+        SELECT frameworkcode, authorised_value
+        FROM marc_subfield_structure
+        WHERE kohafield = ?
+       }, 'frameworkcode', undef, $kohafield) // {};
+}
+
 sub GetAuthValCode {
-	my ($kohafield,$fwcode) = @_;
-	my $dbh = C4::Context->dbh;
-	$fwcode='' unless $fwcode;
-	my $sth = $dbh->prepare('select authorised_value from marc_subfield_structure where kohafield=? and frameworkcode=?');
-	$sth->execute($kohafield,$fwcode);
-	my ($authvalcode) = $sth->fetchrow_array;
-	return $authvalcode;
+    my ($kohafield, $fwcode) = @_;
+    return if (!$kohafield);
+    $fwcode //= q{};
+
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                       datastore => C4::Context->cachehash});
+    my $codes = ($cache->compute(
+                     'authvalcodes:$kohafield',
+                     '5m',
+                     sub {_seed_authvalcode_cache($kohafield)}));
+    $codes->{$fwcode}{authorised_value};
 }
 
 =head2 GetAuthorisedValue
 
 =cut
 
-sub _seed_authvals_cache {
-    return C4::Context->dbh->selectall_hashref('SELECT * FROM authorised_values', ['category', 'authorised_value']);
+sub _seed_frozen_authvals_cache {
+    return freeze(C4::Context->dbh->selectall_hashref('SELECT * FROM authorised_values', ['category', 'authorised_value']));
 }
 
 sub GetAuthorisedValuesTree {
-    return $cache->compute('authvalstree', '5m', \&_seed_authvals_cache);
+    my $frozen_cache = C4::Context->getcache(__PACKAGE__,
+                                             {driver => 'RawMemory',
+                                              datastore => C4::Context->cachehash});
+    thaw($frozen_cache->compute('frozen_authvals', '15s', \&_seed_frozen_authvals_cache));
+}
+
+sub _seed_thawed_authvals_cache {
+    GetAuthorisedValuesTree();
 }
 
 sub GetAuthorisedValue {
     my ($category, $authorised_value) = @_;
     return undef if (!defined $category || !defined $authorised_value);
-    my $authvals = GetAuthorisedValuesTree();
-    return $authvals->{$category}{$authorised_value};
+    my $thawed_cache = C4::Context->getcache(__PACKAGE__,
+                                             {driver => 'RawMemory',
+                                              datastore => C4::Context->cachehash});
+    $thawed_cache->compute('thawed_authvals', '15s', \&_seed_thawed_authvals_cache);
+    return clone($thawed_cache->{$category}{$authorised_value});
 }
 
 =head2 GetAuthorisedValues

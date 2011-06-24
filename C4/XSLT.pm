@@ -116,7 +116,29 @@ sub getAuthorisedValues4MARCSubfields {
     return $authval_per_framework{ $frameworkcode };
 }
 
-our $stylesheet = {};
+sub _seed_stylesheet_cache {
+    my ($interface, $xsl_suffix) = @_;
+    my $stylesheet_cache = C4::Context->getcache(__PACKAGE__,
+                                                 {driver => 'RawMemory',
+                                                  datastore => C4::Context->cachehash});
+    my $xslt = XML::LibXSLT->new();
+    my $xslfile;
+    if ($interface eq 'intranet') {
+        $xslfile = C4::Context->config('intrahtdocs') .
+            "/prog/en/xslt/" .
+            C4::Context->preference('marcflavour') .
+            "slim2intranet$xsl_suffix.xsl";
+    } else {
+        $xslfile = C4::Context->config('opachtdocs') .
+            "/prog/en/xslt/" .
+            C4::Context->preference('marcflavour') .
+            "slim2OPAC$xsl_suffix.xsl";
+    }
+    my $parser = XML::LibXML->new();
+    $parser->recover_silently(1);
+    my $style_doc = $parser->parse_file($xslfile);
+    $xslt->parse_stylesheet($style_doc);
+}
 
 sub XSLTParse4Display {
     my ( $biblionumber, $orig_record, $xsl_suffix, $interface ) = @_;
@@ -141,25 +163,13 @@ sub XSLTParse4Display {
     # don't die when you find &, >, etc
     $parser->recover_silently(1);
     my $source = $parser->parse_string($xmlrecord);
-    unless ( $stylesheet->{$interface} ) {
-        my $xslt = XML::LibXSLT->new();
-        my $xslfile;
-        if ($interface eq 'intranet') {
-            $xslfile = C4::Context->config('intrahtdocs') .
-                      "/prog/en/xslt/" .
-                      C4::Context->preference('marcflavour') .
-                      "slim2intranet$xsl_suffix.xsl";
-        } else {
-            $xslfile = C4::Context->config('opachtdocs') .
-                      "/prog/en/xslt/" .
-                      C4::Context->preference('marcflavour') .
-                      "slim2OPAC$xsl_suffix.xsl";
-        }
-        my $style_doc = $parser->parse_file($xslfile);
-        $stylesheet->{$interface} = $xslt->parse_stylesheet($style_doc);
-    }
-    my $results = $stylesheet->{$interface}->transform($source);
-    my $newxmlrecord = $stylesheet->{$interface}->output_string($results);
+    my $stylesheet_cache = C4::Context->getcache(__PACKAGE__,
+                                                 {driver => 'RawMemory',
+                                                  datastore => C4::Context->cachehash});
+    my $stylesheet = $stylesheet_cache->compute($interface, '1h',
+                                                sub {_seed_stylesheet_cache($interface, $xsl_suffix)});
+    my $results = $stylesheet->transform($source);
+    my $newxmlrecord = $stylesheet->output_string($results);
     return $newxmlrecord;
 }
 

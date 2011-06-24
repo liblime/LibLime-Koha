@@ -21,7 +21,6 @@ use warnings;
 use Carp;
 use List::MoreUtils qw(uniq);
 use Net::CIDR::Compare;
-use CHI;
 
 require Exporter;
 
@@ -30,8 +29,6 @@ use C4::Context;
 use C4::Koha;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-
-my $cache;
 
 BEGIN {
 	# set the version for version checking
@@ -57,7 +54,6 @@ BEGIN {
 	);
 	@EXPORT_OK = qw( &onlymine &mybranch GetBranchCodeFromName GetSiblingBranchesOfType );
 
-        $cache = CHI->new(driver => 'Memory', global => 1);
 }
 
 =head1 NAME
@@ -110,6 +106,9 @@ The functions in this module deal with branches.
 =cut
 
 sub _clear_branches_cache {
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                      datastore => C4::Context->cachehash});
     $cache->remove('branches');
 }
 
@@ -133,6 +132,9 @@ sub _seed_branches_cache {
 }
 
 sub GetAllBranches {
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                      datastore => C4::Context->cachehash});
     return $cache->compute('branches', '5m', \&_seed_branches_cache);
 }
 
@@ -294,6 +296,9 @@ C<$results> is an ref to an array.
 =cut
 
 sub _clear_bcat_cache {
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                      datastore => C4::Context->cachehash});
     $cache->remove('branchcategories');
 }
 
@@ -303,6 +308,9 @@ sub _seed_bcat_cache {
 }
 
 sub GetAllBranchCategories {
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                      datastore => C4::Context->cachehash});
     return $cache->compute('branchecategories', '1h', \&_seed_bcat_cache);
 }
 

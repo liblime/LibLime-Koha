@@ -1472,6 +1472,10 @@ sub GetItemsInfo {
         WHERE  itemnumber = ?"
        );
     my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=? "); 
+    my $authvals = C4::Koha::GetAuthorisedValuesTree();
+    my $notforloan_code = C4::Koha::GetAuthValCode('items.notforloan') // '';
+    my $stack_code = C4::Koha::GetAuthValCode('items.stack') // '';
+
     while ( my $data = $sth->fetchrow_hashref ) {
         $itemcount++;
         my $datedue = '';
@@ -1516,7 +1520,7 @@ sub GetItemsInfo {
                         'NOT_LOAN'  => 'notforloan',
                         'WITHDRAWN' => 'wthdrawn' );
         foreach my $key (keys %authmap) {
-          my $authorised_value_row = &GetAuthorisedValue($key,$data->{$authmap{$key}});
+          my $authorised_value_row = $authvals->{$key}{$data->{$authmap{$key}}};
           my $staffkey = $authmap{$key} . "desc";
           my $opackey = "opac" . $authmap{$key} . "desc";
           $data->{$staffkey} = $authorised_value_row->{'lib'}
@@ -1527,10 +1531,10 @@ sub GetItemsInfo {
                 ($authorised_value_row->{'opaclib'} ne ''));
         }
 
-        my $nfl_authval = GetAuthorisedValue(GetAuthValCode('items.notforloan'), $data->{itemnotforloan});
+        my $nfl_authval = $authvals->{$notforloan_code}{$data->{itemnotforloan}};
         $data->{notforloanvalue} = ($nfl_authval) ? $nfl_authval->{lib} : undef;
 
-        my $stack_authval = GetAuthorisedValue(GetAuthValCode('items.stack'), $data->{itemnotforloan});
+        my $stack_authval = $authvals->{$stack_code}{$data->{itemnotforloan}};
         $data->{stack} = ($stack_authval) ? $stack_authval->{lib} : undef;
 
         # Find the last 3 people who borrowed this item.
