@@ -1,16 +1,10 @@
 #!/usr/bin/env perl
 
-use Modern::Perl;
+use Koha;
 use Plack::App::CGIBin;
 use Plack::Builder;
-use Data::Dumper;
 
 my $app = Plack::App::CGIBin->new(root => $ENV{PERL5LIB})->to_app;
-
-my $svc = sub {
-    my $env = shift;
-    return [200, [ 'Content-type' => 'text/plain' ], [Dumper [$env, \%ENV]] ];
-};
 
 builder {
     enable 'Deflater';
@@ -21,5 +15,4 @@ builder {
     enable '+C4::Plack::ScrubStatus';
 
     mount '/' => $app;
-    mount '/svc2' => $svc;
 };
