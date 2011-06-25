@@ -10,9 +10,9 @@ builder {
     enable 'Deflater';
     enable 'Static', path => qr{^/opac-tmpl/}, root => 'koha-tmpl/';
     enable 'Static', path => qr{^/intranet-tmpl/}, root => 'koha-tmpl/';
-    enable '+C4::Plack::Localize';
-    enable '+C4::Plack::Rewrite';
-    enable '+C4::Plack::ScrubStatus';
+    enable '+Koha::Plack::Localize';
+    enable '+Koha::Plack::Rewrite';
+    enable '+Koha::Plack::ScrubStatus';
 
     mount '/' => $app;
 };

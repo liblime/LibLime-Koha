@@ -1,4 +1,4 @@
-package C4::Plack::Rewrite;
+package Koha::Plack::Rewrite;
 use parent qw(Plack::Middleware);
 
 use Modern::Perl;

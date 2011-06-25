@@ -1,4 +1,4 @@
-package C4::Plack::ScrubStatus;
+package Koha::Plack::ScrubStatus;
 use parent qw(Plack::Middleware);
 
 use Koha;
