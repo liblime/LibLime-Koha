@@ -208,11 +208,11 @@ if ( $query->param('place_reserve') ) {
         # holdingbranch, force the value $rank and $found.
         my $rank = $biblioData->{rank};
         if ($itemNum ne ''){
-            $rank = '0' unless C4::Context->preference('ReservesNeedReturns');
-            my $item = GetItem($itemNum);
-            if ( $item->{'holdingbranch'} eq $branch ){
-                $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
-            }
+           # $rank = '0' unless C4::Context->preference('ReservesNeedReturns');
+           # my $item = GetItem($itemNum);
+           # if ( $item->{'holdingbranch'} eq $branch ){
+           #     $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
+           # }
         }
         else {
             # Inserts a null into the 'itemnumber' field of 'reserves' table.
