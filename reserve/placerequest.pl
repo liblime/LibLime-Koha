@@ -73,14 +73,16 @@ my $found;
 
 # if we have an item selectionned, and the pickup branch is the same as the holdingbranch
 # of the document, we force the value $rank and $found .
-if ($checkitem && $checkitem ne ''){
-    $rank[0] = '0' unless C4::Context->preference('ReservesNeedReturns');
-    my $item = $checkitem;
-    $item = GetItem($item);
-    if ( $item->{'holdingbranch'} eq $branch ){
-        $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
-    }
-}
+## UPDATE: syspref is broken in the OFF state due to branchtransfers destbranch same as holdingbranch
+## without item arrived; will not work in consortium
+#if ($checkitem && $checkitem ne ''){
+#    $rank[0] = '0' unless C4::Context->preference('ReservesNeedReturns');
+#    my $item = $checkitem;
+#    $item = GetItem($item);
+#    if ( $item->{'holdingbranch'} eq $branch ){
+#        $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
+#    }
+#}
 
 if ($type eq 'str8' && $borrowernumber ne ''){
 
