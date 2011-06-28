@@ -659,6 +659,8 @@ function ContinueReturns() {
                // if the key pressed is the enter key
                if (e.which == 13) {
                   setOverrideDate();
+                  document.myf.submit();
+                  return;
                }
             });
             </script>
@@ -753,7 +755,6 @@ function ContinueReturns() {
       if (odate != '') {
          document.cookie = 'checkin_override_date='+odate+'; path=/';
       }
-      return document.myf.submit(); 
    }
    </script>
 </div>
