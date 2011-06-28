@@ -70,6 +70,8 @@ my $frameworkcode = &GetFrameworkCode($biblionumber);
 my $today_iso = C4::Dates->today('iso');
 $template->param(today_iso => $today_iso);
 
+my $bctype = C4::Context->preference('autoBarcode') // '';
+$bctype = '' if lc($bctype) eq 'off';
 my $tagslib = &GetMarcStructure(1,$frameworkcode);
 my $record = GetMarcBiblio($biblionumber);
 my $oldrecord = TransformMarcToKoha($dbh,$record);
@@ -143,20 +145,24 @@ if ($op eq 'set_session_defaults') {
 
     # If we have to add & duplicate
     if ($add_duplicate_submit) {
-
-        # We try to get the next barcode
-        use C4::Barcodes;
-        my $barcodeobj = C4::Barcodes->new;
-        my $barcodevalue = $barcodeobj->next_value($addedolditem->{'barcode'}) if $barcodeobj;
         my ($tagfield,$tagsubfield) = &GetMarcFromKohaField("items.barcode",$frameworkcode);
-        if ($record->field($tagfield)->subfield($tagsubfield)) {
-            # If we got the next codebar value, we put it in the record
-            if ($barcodevalue) {
-                $record->field($tagfield)->update($tagsubfield => $barcodevalue);
-            # If not, we delete the recently inserted barcode from the record (so the user can input a barcode himself)
-            } else {
-                $record->field($tagfield)->update($tagsubfield => '');
-            }
+        if ($bctype) {
+           # We try to get the next barcode
+           use C4::Barcodes;
+           my $barcodeobj = C4::Barcodes->new;
+           my $barcodevalue = $barcodeobj->next_value($addedolditem->{'barcode'}) if $barcodeobj;
+           if ($record->field($tagfield)->subfield($tagsubfield)) {
+               # If we got the next codebar value, we put it in the record
+               if ($barcodevalue) {
+                   $record->field($tagfield)->update($tagsubfield => $barcodevalue);
+               # If not, we delete the recently inserted barcode from the record (so the user can input a barcode himself)
+               } else {
+                   $record->field($tagfield)->update($tagsubfield => '');
+               }
+           }
+        }
+        else {
+            $record->field($tagfield)->update($tagsubfield => '');
         }
         $itemrecord = $record;
     }
@@ -235,8 +241,6 @@ if ($op eq 'set_session_defaults') {
                 'items.notforloan','items.issues','items.renewals','items.reserves','items.restricted','items.onloan',
                 'items.materials','items.copynumber');
     @today_fields=('items.datelastseen','items.dateaccessioned');
-
-
     $nextop="additem";
 #-------------------------------------------------------------------------------
 } elsif ($op eq "delitem") {
@@ -492,6 +496,9 @@ foreach(@$item) {
             C4::Context->preference('AllowHoldsOnDamagedItems')
          );
       }
+#      elsif (($$_{subfield} eq 'p') && !$bctype) {
+#         $$_{marc_value} =~ s/(value\=\")([^\"]*)(\")/$1$3/s;
+#      }
    }
    ## reset subfield's marc_lib
    $$_{marc_lib} =~ s/^(<span id\=\"error)(\d+)/$1$i/;
