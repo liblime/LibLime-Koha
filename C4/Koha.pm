@@ -842,7 +842,7 @@ sub GetAuthValCode {
                                       {driver => 'RawMemory',
                                        datastore => C4::Context->cachehash});
     my $codes = ($cache->compute(
-                     'authvalcodes:$kohafield',
+                     qq{authvalcodes:$kohafield},
                      '5m',
                      sub {_seed_authvalcode_cache($kohafield)}));
     $codes->{$fwcode}{authorised_value};
