@@ -127,8 +127,8 @@ if ($show_results) {
     my $ge = my $le = '';
     my $cq = $query->param('ccl_query');
     if ($cq) {
-       ($fdate) = $cq =~ /ge=(\d{4}\-\d\d\-\d\d)$/;
-       ($tdate) = $cq =~ /le=(\d{4}\-\d\d\-\d\d)$/;
+       ($fdate) = $cq =~ /ge=(\d{4}\-\d\d\-\d\d)/;
+       ($tdate) = $cq =~ /le=(\d{4}\-\d\d\-\d\d)/;
     }
     else {
        if ($datefrom) { $fdate = $datefrom->output('iso')}
