@@ -3,15 +3,12 @@
 use Koha;
 use Plack::App::CGIBin;
 use Plack::Builder;
+use Koha::Plack::Util;
 
 my $app = Plack::App::CGIBin->new(root => $ENV{PERL5LIB})->to_app;
 
 sub is_staff {
-    my $env = shift;
-
-    my ($hostname) = split(/, /, $env->{HTTP_X_FORWARDED_HOST}//$env->{HTTP_HOST});
-    $hostname //= $env->{SERVER_NAME};
-                          
+    my $hostname = Koha::Plack::Util::GetCanonicalHostname(shift);
     return $hostname =~ /-staff\./;
 }
 
