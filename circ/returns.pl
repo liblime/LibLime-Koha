@@ -167,7 +167,8 @@ foreach ( $query->param ) {
 
 ############
 # Deal with the requests....
-
+my $notransfer = 0;
+my $reservenumber = $query->param('reservenumber');
 if ($query->param('WT-itemNumber')){
 	updateWrongTransfer ($query->param('WT-itemNumber'),$query->param('WT-waitingAt'),$query->param('WT-From'));
 }
@@ -175,7 +176,6 @@ if ( $query->param('resbarcode') ) {
     my $item           = $query->param('itemnumber');
     my $borrowernumber = $query->param('borrowernumber');
     my $resbarcode     = $query->param('resbarcode');
-    my $reservenumber  = $query->param('reservenumber');
     my $diffBranchReturned = $query->param('diffBranch');
     my $iteminfo   = GetBiblioFromItemNumber($item);
     # fix up item type for display
@@ -183,15 +183,20 @@ if ( $query->param('resbarcode') ) {
     my $diffBranchSend = ($userenv_branch ne $diffBranchReturned) ? $diffBranchReturned : undef;
 
     ## wonky case of hold Waiting at branch B but here we are checkin at branch A,
-    ## if we keep the item here, then we have to requeue the hold
+    ## if we keep the item here, then we have to requeue the hold as a bib-level hold.  
+    ## This case does not reflect reality and is a contrived scenario of playing with 
+    ## Koha as superlibrarian
     if ($query->param('requeue')) {
+        $notransfer = 1;
         ModReserve(1,
             $query->param('biblionumber'),
             $borrowernumber,
             $query->param('pickbranch'),
-            $item,
+            undef,#$item,
             $reservenumber,
         );
+        ModItem({holdingbranch=>$userenv_branch}, $iteminfo->{'biblionumber'}, $iteminfo->{'itemnumber'} );
+#        C4::Items::ModItemTransfer($query->param('itemnumber')); # delete from branchtransfers
     }
     else {
 # diffBranchSend tells ModReserveAffect whether document is expected in this library or not,
@@ -199,25 +204,6 @@ if ( $query->param('resbarcode') ) {
         ModReserveAffect( $item, $borrowernumber, $diffBranchSend, $reservenumber );
     }
 
-#   check if we have other reserves for this document, if we have a return send the message of transfer
-    my ( $messages, $nextreservinfo ) = GetOtherReserves($item);
-
-    my ($borr) = GetMemberDetails( $nextreservinfo, 0 );
-    my $name   = $borr->{'surname'} . ", " . $borr->{'title'} . " " . $borr->{'firstname'};
-    if ( $messages->{'transfert'} ) {
-        $template->param(
-            itemtitle      => $iteminfo->{'title'},
-            itembiblionumber => $iteminfo->{'biblionumber'},
-            iteminfo       => $iteminfo->{'author'},
-            tobranchname   => GetBranchName($messages->{'transfert'}),
-            name           => $name,
-            borrowernumber => $borrowernumber,
-            borcnum        => $borr->{'cardnumber'},
-            borfirstname   => $borr->{'firstname'},
-            borsurname     => $borr->{'surname'},
-            diffbranch     => 1,
-        );
-    }
     if ($query->param('fromqueue')) {
        $template->param(
          closeGB     => 1,
@@ -244,7 +230,8 @@ my $today       = C4::Dates->new();
 my $today_iso   = $today->output('iso');
 my $dropboxdate = $calendar->addDate($today, -1);
 $barcode =~ s/^\s*|\s+//g;
-if ($dotransfer){
+
+if ($dotransfer && !$notransfer){
 	# An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
 	my $transferitem = $query->param('transferitem');
 	my $tobranch     = $query->param('tobranch');
