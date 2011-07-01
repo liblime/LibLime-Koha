@@ -41,7 +41,10 @@ if ( !defined $module ) {
     $module = q{};
 }
 
-my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
+our $template;
+my $borrowernumber;
+my $cookie;
+( $template, $borrowernumber, $cookie ) = get_template_and_user(
     {
         template_name   => 'tools/receipt_template_manager.tmpl',
         query           => $input,
@@ -63,21 +66,21 @@ $template->param(
 );
 
 if ( $op eq 'add_form' ) {
-    add_form( $module, $code, $template );
+    add_form( $module, $code );
 }
 elsif ( $op eq 'add_validate' ) {
     add_validate($input);
     $op = q{};    # next operation is to return to default screen
 }
 elsif ( $op eq 'delete_confirm' ) {
-    delete_confirm( $module, $code, $template );
+    delete_confirm( $module, $code );
 }
 elsif ( $op eq 'delete_confirmed' ) {
     delete_confirmed( $module, $code );
     $op = q{};    # next operation is to return to default screen
 }
 else {
-    default_display($template);
+    default_display();
 }
 
 # Do this last as delete_confirmed resets
@@ -91,7 +94,7 @@ else {
 output_html_with_http_headers $input, $cookie, $template->output;
 
 sub add_form {
-    my ( $module, $code, $template ) = @_;
+    my ( $module, $code ) = @_;
 
     my $reciept_template;
 
@@ -223,12 +226,12 @@ sub add_validate {
     );
 
     # set up default display
-    default_display($template);
+    default_display();
     return;
 }
 
 sub delete_confirm {
-    my ( $module, $code, $template ) = @_;
+    my ( $module, $code ) = @_;
 
     my $reciept_template = GetReceiptTemplate(
         {
@@ -256,12 +259,11 @@ sub delete_confirmed {
     );
 
     # setup default display for screen
-    default_display($template);
+    default_display();
     return;
 }
 
 sub default_display {
-    my $template = shift;
     $template->param(
         receipts_loop => GetReceiptTemplates(
             { branchcode => C4::Context->userenv->{'branch'} }

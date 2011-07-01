@@ -244,7 +244,7 @@ sub get_form_values {
 
             my $attributes_no_value = qq( tabindex="1" id="$subfield_data{id}" name="field_value_$item_index" class="input_marceditor" size="67" maxlength="255" );
             my $attributes          = qq( $attributes_no_value value="$value" );
-            if ( $subfieldlib->{authorised_value} ) {
+            if ( $subfieldlib->{authorised_value} || ($subfieldlib->{kohafield} eq "items.otherstatus") ) {
                 my @authorised_values;
                 my %authorised_lib;
                 # builds list, depending on authorised value...
@@ -289,7 +289,7 @@ sub get_form_values {
                     }
                     $value = $default_source unless ( $value );
                 }
-                elsif ( $subfieldlib->{authorised_value} eq "otherstatus" ) {
+                elsif ( $subfieldlib->{kohafield} eq "items.otherstatus" ) {
                      push @authorised_values, "" unless ( $subfieldlib->{mandatory} );
                      my $sth = $dbh->prepare("SELECT statuscode,description FROM itemstatus ORDER BY description");
                      $sth->execute;

@@ -18,7 +18,7 @@ package C4::Context;
 
 use strict;
 use warnings;
-use vars qw($VERSION $AUTOLOAD $context @context_stack $cache);
+use vars qw($VERSION $AUTOLOAD $context @context_stack);
 
 use CHI;
 use DBI;
@@ -34,8 +34,6 @@ use Koha;
 $VERSION = '4.07.00.001';
 
 die "Version mismatch: $VERSION > $Koha::VERSION" if ($VERSION gt $Koha::VERSION);
-
-our $cache = CHI->new( driver => 'RawMemory', global => 1);
 
 if ($ENV{'HTTP_USER_AGENT'})	{
     require CGI::Carp;
@@ -317,8 +315,7 @@ sub new {
         } elsif (-s CONFIG_FNAME) {
             $conf_fname = CONFIG_FNAME;
         } else {
-            warn "unable to locate Koha configuration file koha-conf.xml";
-            return undef;
+            croak "unable to locate Koha configuration file koha-conf.xml";
         }
     }
         # Load the desired config file.
@@ -335,9 +332,20 @@ sub new {
     $self->{"userenv"} = undef;        # User env
     $self->{"activeuser"} = undef;        # current active user
     $self->{"shelves"} = undef;
+    $self->{cachehash} = {};
+    $self->{caches} = {};
 
     bless $self, $class;
     return $self;
+}
+
+sub getcache {
+    my ($self, $name, $args) = @_;
+    $context->{caches}{$name} //= CHI->new(%{$args});
+}
+
+sub cachehash {
+    return $context->{cachehash};
 }
 
 =item set_context
@@ -484,6 +492,9 @@ sub _seed_preference_defaults_cache {
 }
 
 sub preference_defaults {
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                      datastore => C4::Context->cachehash});
     return $cache->compute('systempreferences_defaults', '1h', \&_seed_preference_defaults_cache);
 }
 
@@ -499,6 +510,9 @@ sub _seed_preferences_cache {
 
 sub _clear_syspref_cache {
     shift; #unused
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                      datastore => C4::Context->cachehash});
     $cache->remove('systempreferences');
 }
 
@@ -510,6 +524,9 @@ sub preference {
     # just always key against the lower case version
     my $lcvar = lc($var);
 
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                      datastore => C4::Context->cachehash});
     my $sysprefs = $cache->compute('systempreferences', '1m', \&_seed_preferences_cache);
 
     # Just return the variable's value if we have it

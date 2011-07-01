@@ -23,6 +23,7 @@
 # Suite 330, Boston, MA  02111-1307 USA
 
 use strict;
+use warnings;
 use C4::Auth;
 use C4::Output;
 use CGI;
@@ -92,8 +93,8 @@ my ($count,$results);
 my $search_sql;
 
 $template->param( 
- BorrowerListsLoop => GetLists(),  
- SearchBorrowerListsLoop => GetLists({ selected => $input->param('from_list_id') }),
+ BorrowerListsLoop => GetLists(),
+ SearchBorrowerListsLoop => GetLists({ selected => qq/$input->param('from_list_id')/ }),
 );     
 
 my $to;
@@ -190,10 +191,13 @@ if ( $input->param('advanced_patron_search') ) {
 }
 else {
     my $type = (length($member) == 1) ? 'simple' : 'advanced';
+    my $startfrom = $input->param('startfrom') // 1;
+    my $resultsperpage = $input->param('resultsperpage') // 20;
+    my $offset = ($startfrom-1) * $resultsperpage;
     my $limits
         = {
-            offset => ($input->param('startfrom')-1) * $input->param('resultsperpage'),
-            limit  => $input->param('resultsperpage'),
+            offset => $offset,
+            limit  => $resultsperpage,
           };
     ($count, $results) = SearchMember($member, $orderby, $type, undef, $limits);
     # we prepend a bunch of empty elements into the array so that the PATRON loop
@@ -210,6 +214,7 @@ for (my $i=($startfrom-1)*$resultsperpage; $i < $to; $i++){
   #find out stats
   my ($od,$issue,$fines)=GetMemberIssuesAndFines($results->[$i]{'borrowernumber'});
 
+  no warnings qw(uninitialized);
   my %row = (
     count => $i+1,
     borrowernumber => $results->[$i]{'borrowernumber'},
@@ -264,7 +269,7 @@ if ( $input->param('advanced_patron_search') && $count) {
    my $from = ($count>$resultsperpage)?($resultsperpage*($pg-1))+1 : 1;
    $to      = ($from+$resultsperpage)>$count? $count : $from+$resultsperpage;
    $template->param(
-      paginationbar => _adv_pagination(),
+      paginationbar => _adv_pagination($count, $resultsperpage, $currPage),
       startfrom     => $startfrom,
       from          => $from,
       to            => $to,
@@ -308,7 +313,7 @@ foreach my $a ( @attributes ) { $a->{'value'} = $input->param( $a->{'code'} ); }
 
 my $cat = GetBorrowercategoryList();
 foreach(@$cat) {
-   if ($$_{categorycode} eq $input->param('categorycode')) {
+   if ($$_{categorycode} ~~ $input->param('categorycode')) {
       $$_{selected} = 1;
       last;
    }
@@ -330,6 +335,7 @@ exit;
 
 sub _adv_pagination
 {
+   my ($count, $resultsperpage, $currPage) = @_;
    my $out = '';
    my $totalPages = $count%$resultsperpage? int($count/$resultsperpage)+1 : $count/$resultsperpage;
    if ($currPage==1) {

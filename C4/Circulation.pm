@@ -52,10 +52,6 @@ use C4::Branch; # GetBranches
 use C4::Log; # logaction
 use Data::Dumper;
 
-use CHI;
-my $cache;
-my %cache_store;
-
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 BEGIN {
@@ -105,8 +101,6 @@ BEGIN {
                 &CreateBranchTransferLimit
                 &DeleteBranchTransferLimits
 	);
-
-        $cache = CHI->new(driver => 'RawMemory', datastore => \%cache_store);
 }
 
 =head1 NAME
@@ -1241,6 +1235,9 @@ sub _seed_irule_cache {
 }
 
 sub _clear_irule_cache {
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                      datastore => C4::Context->cachehash});
     $cache->remove('irules');
 }
 
@@ -1249,6 +1246,10 @@ sub GetIssuingRule {
     $categorycode //= '*';
     $itemtype //= '*';
     $branchcode //= '*';
+
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                      datastore => C4::Context->cachehash});
 
     my $irules = $cache->compute('irules', '5m', \&_seed_irule_cache);
     my $irule = $irules->{$categorycode}{$itemtype}{$branchcode} //
@@ -1659,7 +1660,7 @@ sub AddReturn {
             $sth->execute( $item->{'itemnumber'} );
             # if we have a reservation with valid transfer, we can set it's status to 'W'
             my ($resfound,$resrec) = C4::Reserves::CheckReserves($item->{'itemnumber'});
-            C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W', $resrec->{'reservenumber'}) if ($resfound);
+            C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W', $resrec) if ($resfound);
         } else {
             $messages->{'WrongTransfer'}     = $tobranch;
             $messages->{'WrongTransferItem'} = $item->{'itemnumber'};

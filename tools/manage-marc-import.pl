@@ -182,11 +182,12 @@ sub create_labelbatch_from_importbatch {
         my $branch_code = GetBranchCodeFromName($template->param('LoginBranchname'));
         my $batch = C4::Labels::Batch->new(branch_code => $branch_code);
 	my @items = GetItemNumbersFromImportBatch($batch_id);
-        if (grep{$_ == 0} @items) {
+        if (! scalar @items) {
             warn sprintf('create_labelbatch_from_importbatch() : Call to C4::ImportBatch::GetItemNumbersFromImportBatch returned no item number(s) from import batch #%s.', $batch_id);
             return -1;
         }
         foreach my $item_number (@items) {
+            next if (!defined $item_number);
             $err = $batch->add_item($item_number);
             if ($err == -1) {
                 warn sprintf('create_labelbatch_from_importbatch() : Error attempting to add item #%s of import batch #%s to label batch.', $item_number, $batch_id);
@@ -311,7 +312,6 @@ sub put_in_background {
         # close STDOUT to signal to Apache that
         # we're now running in the background
         close STDOUT;
-        close STDERR;
     } else {
         # fork failed, so exit immediately
         warn "fork failed while attempting to run $ENV{'SCRIPT_NAME'} as a background job";

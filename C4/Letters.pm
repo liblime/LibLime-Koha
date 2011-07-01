@@ -819,6 +819,7 @@ sub CreateTALKINGtechMESSAGE {
     }
     $branch->{branchname} =~ s/Public Library/PL/;
     if (defined $tmpfh) {
+      no warnings qw(uninitialized);
       printf $tmpfh "\"V\",\"EN\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"\",\"%s\",\"%12.12s\",\"%s\",\"%s\",\"%s\",\"\"\r\n",
       $code,$notelevel,$borrower->{cardnumber},$borrower->{title},
       $borrower->{firstname},$borrower->{surname},$borrower->{phone},

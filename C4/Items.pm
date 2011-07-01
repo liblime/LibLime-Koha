@@ -1351,20 +1351,6 @@ sub GetItemsByBiblioitemnumber {
             $data->{'date_due'} = '';                                                                                                         
         }    # else         
         $sth2->finish;
-        # Find the last 3 people who borrowed this item.                  
-        my $query2 = "SELECT * FROM old_issues, borrowers WHERE itemnumber = ?
-                      AND old_issues.borrowernumber = borrowers.borrowernumber
-                      ORDER BY returndate desc,timestamp desc LIMIT 3";
-        $sth2 = $dbh->prepare($query2) || die $dbh->errstr;
-        $sth2->execute( $data->{'itemnumber'} ) || die $sth2->errstr;
-        my $i2 = 0;
-        while ( my $data2 = $sth2->fetchrow_hashref ) {
-            $data->{"timestamp$i2"} = $data2->{'timestamp'};
-            $data->{"card$i2"}      = $data2->{'cardnumber'};
-            $data->{"borrower$i2"}  = $data2->{'borrowernumber'};
-            $i2++;
-        }
-        $sth2->finish;
         push(@results,$data);
     } 
     $sth->finish;
@@ -1472,6 +1458,10 @@ sub GetItemsInfo {
         WHERE  itemnumber = ?"
        );
     my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=? "); 
+    my $authvals = C4::Koha::GetAuthorisedValuesTree();
+    my $notforloan_code = C4::Koha::GetAuthValCode('items.notforloan') // '';
+    my $stack_code = C4::Koha::GetAuthValCode('items.stack') // '';
+
     while ( my $data = $sth->fetchrow_hashref ) {
         $itemcount++;
         my $datedue = '';
@@ -1516,7 +1506,7 @@ sub GetItemsInfo {
                         'NOT_LOAN'  => 'notforloan',
                         'WITHDRAWN' => 'wthdrawn' );
         foreach my $key (keys %authmap) {
-          my $authorised_value_row = &GetAuthorisedValue($key,$data->{$authmap{$key}});
+          my $authorised_value_row = $authvals->{$key}{$data->{$authmap{$key}}};
           my $staffkey = $authmap{$key} . "desc";
           my $opackey = "opac" . $authmap{$key} . "desc";
           $data->{$staffkey} = $authorised_value_row->{'lib'}
@@ -1527,26 +1517,11 @@ sub GetItemsInfo {
                 ($authorised_value_row->{'opaclib'} ne ''));
         }
 
-        my $nfl_authval = GetAuthorisedValue(GetAuthValCode('items.notforloan'), $data->{itemnotforloan});
+        my $nfl_authval = $authvals->{$notforloan_code}{$data->{itemnotforloan}};
         $data->{notforloanvalue} = ($nfl_authval) ? $nfl_authval->{lib} : undef;
 
-        my $stack_authval = GetAuthorisedValue(GetAuthValCode('items.stack'), $data->{itemnotforloan});
+        my $stack_authval = $authvals->{$stack_code}{$data->{itemnotforloan}};
         $data->{stack} = ($stack_authval) ? $stack_authval->{lib} : undef;
-
-        # Find the last 3 people who borrowed this item.
-        my $sth2 = $dbh->prepare("SELECT * FROM old_issues,borrowers
-                                    WHERE itemnumber = ?
-                                    AND old_issues.borrowernumber = borrowers.borrowernumber
-                                    ORDER BY returndate DESC
-                                    LIMIT 3");
-        $sth2->execute($data->{'itemnumber'});
-        my $ii = 0;
-        while (my $data2 = $sth2->fetchrow_hashref()) {
-            $data->{"timestamp$ii"} = $data2->{'timestamp'} if $data2->{'timestamp'};
-            $data->{"card$ii"}      = $data2->{'cardnumber'} if $data2->{'cardnumber'};
-            $data->{"borrower$ii"}  = $data2->{'borrowernumber'} if $data2->{'borrowernumber'};
-            $ii++;
-        }
 
         $results[$i] = $data;
         $i++;

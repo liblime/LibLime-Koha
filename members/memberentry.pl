@@ -410,7 +410,6 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
 			delete $newdata{'password'};
 			delete $newdata{'userid'};
 		}
-                $newdata{'staffnumber'} = $loggedinuser;
 		&ModMember(%newdata);
         if (C4::Context->preference('ExtendedPatronAttributes') and $input->param('setting_extended_patron_attributes')) {
             C4::Members::Attributes::SetBorrowerAttributes($borrowernumber, $extended_patron_attributes);
@@ -591,7 +590,7 @@ $data{'cardnumber'}=fixup_cardnumber($data{'cardnumber'}, $branches->{C4::Contex
 # --------------------------------------------------------------------------------------------------------
   #in modify mod :default value from $CGIbranch comes from borrowers table
   #in add mod: default value come from branches table (ip correspendence)
-$default=$data{'branchcode'}  if ($op eq 'modify' || ($op eq 'add' && $category_type eq 'C'));
+$default=$data{'branchcode'}  if ($op eq 'modify' || ($op eq 'add' && $category_type eq 'C' && $data{'branchcode'}));
 
 # I need some javascript here, so CGI:: won't do
 #my $CGIbranch = CGI::scrolling_list(-id    => 'branchcode',

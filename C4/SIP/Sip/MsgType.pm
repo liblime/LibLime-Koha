@@ -586,7 +586,7 @@ sub handle_checkout {
 	$resp .= add_field(FID_TITLE_ID, $item ? $item->title_id : '');
 	# Due date is required.  Since it didn't get checked out,
 	# it's not due, so leave the date blank
-        if (defined $item->due_date) {
+        if (defined $item && defined $item->due_date) {
          $resp .= add_field(FID_DUE_DATE, $item->due_date);
         } else {
          $resp .= add_field(FID_DUE_DATE, '');

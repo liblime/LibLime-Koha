@@ -20,6 +20,8 @@ package C4::ImportBatch;
 use strict;
 use warnings;
 
+use Try::Tiny;
+
 use Koha;
 use C4::Context;
 use C4::Koha;
@@ -562,8 +564,8 @@ sub BatchCommitBibRecords {
                                $rowref->{'overlay_status'}, $rowref->{'import_record_id'});
 
         if ($bib_result eq 'create_new') {
-            $num_added++;
             my ($biblionumber, $biblioitemnumber) = AddBiblio($marc_record, '');
+            $num_added++;
             my $sth = $dbh->prepare_cached("UPDATE import_biblios SET matched_biblionumber = ? WHERE import_record_id = ?");
             $sth->execute($biblionumber, $rowref->{'import_record_id'});
             $sth->finish();
@@ -574,7 +576,6 @@ sub BatchCommitBibRecords {
             }
             SetImportRecordStatus($rowref->{'import_record_id'}, 'imported');
         } elsif ($bib_result eq 'replace') {
-            $num_updated++;
             my $biblionumber = $bib_match;
             my ($count, $oldbiblio) = GetBiblio($biblionumber);
             my $oldxml = GetXmlBiblio($biblionumber);
@@ -587,6 +588,7 @@ sub BatchCommitBibRecords {
             }
 
             ModBiblio($marc_record, $biblionumber, $oldbiblio->{'frameworkcode'});
+            $num_updated++;
             my $sth = $dbh->prepare_cached("UPDATE import_records SET marcxml_old = ? WHERE import_record_id = ?");
             $sth->execute($old_marc->as_xml(), $rowref->{'import_record_id'});
             $sth->finish();
@@ -646,26 +648,31 @@ sub BatchCommitItems {
     $sth->bind_param(1, $import_record_id);
     $sth->execute();
     while (my $row = $sth->fetchrow_hashref()) {
-        my $item_marc = MARC::Record->new_from_xml(StripNonXmlChars($row->{'marcxml'}), 'UTF-8', $row->{'encoding'});
-        # FIXME - duplicate barcode check needs to become part of AddItemFromMarc()
-        my $item = TransformMarcToKoha($dbh, $item_marc);
-        my $duplicate_barcode = exists($item->{'barcode'}) && GetItemnumberFromBarcode($item->{'barcode'});
-        if ($duplicate_barcode) {
-            my $updsth = $dbh->prepare("UPDATE import_items SET status = ?, import_error = ? WHERE import_items_id = ?");
-            $updsth->bind_param(1, 'error');
-            $updsth->bind_param(2, 'duplicate item barcode');
-            $updsth->bind_param(3, $row->{'import_items_id'});
-            $updsth->execute();
+        try {
+            my $item_marc = MARC::Record->new_from_xml(StripNonXmlChars($row->{'marcxml'}), 'UTF-8', $row->{'encoding'});
+            # FIXME - duplicate barcode check needs to become part of AddItemFromMarc()
+            my $item = TransformMarcToKoha($dbh, $item_marc);
+            my $duplicate_barcode = exists($item->{'barcode'}) && GetItemnumberFromBarcode($item->{'barcode'});
+            if ($duplicate_barcode) {
+                my $updsth = $dbh->prepare("UPDATE import_items SET status = ?, import_error = ? WHERE import_items_id = ?");
+                $updsth->bind_param(1, 'error');
+                $updsth->bind_param(2, 'duplicate item barcode');
+                $updsth->bind_param(3, $row->{'import_items_id'});
+                $updsth->execute();
+                $num_items_errored++;
+            } else {
+                my ($item_biblionumber, $biblioitemnumber, $itemnumber) = AddItemFromMarc($item_marc, $biblionumber);
+                my $updsth = $dbh->prepare("UPDATE import_items SET status = ?, itemnumber = ? WHERE import_items_id = ?");
+                $updsth->bind_param(1, 'imported');
+                $updsth->bind_param(2, $itemnumber);
+                $updsth->bind_param(3, $row->{'import_items_id'});
+                $updsth->execute();
+                $updsth->finish();
+                $num_items_added++;
+            }
+        }
+        catch {
             $num_items_errored++;
-        } else {
-            my ($item_biblionumber, $biblioitemnumber, $itemnumber) = AddItemFromMarc($item_marc, $biblionumber);
-            my $updsth = $dbh->prepare("UPDATE import_items SET status = ?, itemnumber = ? WHERE import_items_id = ?");
-            $updsth->bind_param(1, 'imported');
-            $updsth->bind_param(2, $itemnumber);
-            $updsth->bind_param(3, $row->{'import_items_id'});
-            $updsth->execute();
-            $updsth->finish();
-            $num_items_added++;
         }
     }
     $sth->finish();
@@ -866,15 +873,14 @@ sub GetImportBatchRangeDesc {
 =cut
 
 sub GetItemNumbersFromImportBatch {
-	my ($batch_id) = @_;
- 	my $dbh = C4::Context->dbh;
-	my $sth = $dbh->prepare("select itemnumber from import_batches,import_records,import_items where import_batches.import_batch_id=import_records.import_batch_id and import_records.import_record_id=import_items.import_record_id and import_batches.import_batch_id=?");
-	$sth->execute($batch_id);
-	my @items ;
-	while ( my ($itm) = $sth->fetchrow_array ) {
-		push @items, $itm;
-	}
-	return @items;
+    my $items = C4::Context->dbh->selectcol_arrayref(q{
+        SELECT itemnumber
+        FROM import_batches,import_records,import_items
+        WHERE import_batches.import_batch_id=import_records.import_batch_id
+          AND import_records.import_record_id=import_items.import_record_id
+          AND import_batches.import_batch_id=?
+        }, undef, shift);
+    return @{$items};
 }
 
 =head2 GetNumberOfImportBatches 

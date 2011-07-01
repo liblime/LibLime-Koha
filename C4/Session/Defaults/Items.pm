@@ -211,7 +211,7 @@ sub getSavedDefaultsList {
 
     #warn "getSavedDefaultsList( branchcode => '$branchcode', getAll => '$getAll' )" if $debug;
 
-    my $branchcode = $branchcode || C4::Context->userenv->{'branch'};
+    $branchcode = $branchcode || C4::Context->userenv->{'branch'};
     $branchcode = '%' if ( $getAll );
 
     my $flags = C4::Auth::haspermission( C4::Context->userenv->{'id'} );

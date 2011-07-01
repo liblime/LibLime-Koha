@@ -728,10 +728,10 @@ sub HoldItem {
     my $found;
 
     # Get rank and found
-    $rank = '0' unless C4::Context->preference('ReservesNeedReturns');
-    if ( $item->{'holdingbranch'} eq $branch ) {
-        $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
-    }
+   # $rank = '0' unless C4::Context->preference('ReservesNeedReturns');
+   # if ( $item->{'holdingbranch'} eq $branch ) {
+   #     $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
+   # }
 
     # Add the reserve
     #          $branch, $borrowernumber, $biblionumber, $constraint, $bibitems,  $priority, $notes, $title, $checkitem,  $found

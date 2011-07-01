@@ -224,8 +224,8 @@ sub writeoff
           AND borrowernumber = ?');
       $sth->execute($g{borrowernumber});
       while(my $row = $sth->fetchrow_hashref()) {
-         $g{accountno} = $$row{accountno};
-         $g{amount}    = $$row{amount};
+         $g{accountno}         = $$row{accountno};
+         $g{amountoutstanding} = $$row{amountoutstanding};
          _writeoff_each(%g);
       }
       return 1;
@@ -240,15 +240,15 @@ sub _writeoff_each
    my $sth;
    return unless ($g{accountno} && $g{borrowernumber});
    $g{itemnumber} ||= undef;
-   unless ($g{amount}) {
-      $sth = $dbh->prepare('SELECT amount FROM accountlines
+   unless ($g{amountoutstanding}) {
+      $sth = $dbh->prepare('SELECT amountoutstanding FROM accountlines
          WHERE borrowernumber = ?
            AND accountno      = ?');
       $sth->execute($g{borrowernumber},$g{accountno});
-      ($g{amount}) = $sth->fetchrow_array;
-      return unless $g{amount};
+      ($g{amountoutstanding}) = $sth->fetchrow_array;
+      return unless $g{amountoutstanding};
    }
-   die "Amount of accountno.$g{accountno} must be positive" if ($g{amount} <0);
+   die "Amount of accountno.$g{accountno} must be positive" if ($g{amountoutstanding} <0);
    $sth = $dbh->prepare('UPDATE accountlines 
       SET amountoutstanding = 0
     WHERE accountno         = ?
@@ -270,9 +270,15 @@ sub _writeoff_each
       $g{borrowernumber},
       $newno,
       $g{itemnumber},
-      (-1 *$g{amount}),
+      (-1 *$g{amountoutstanding}),
       "Writeoff for no.$g{accountno} (-$g{user})"
    );
+   my $wodate = C4::Dates->new()->output;
+   $dbh->do("UPDATE accountlines
+      SET description    = CONCAT(description,', writeoff at no.$newno $wodate')
+    WHERE borrowernumber = ?
+      AND accountno      = ?",undef,$g{borrowernumber},$g{accountno});
+
    C4::Stats::UpdateStats($g{branch},'writeoff',(-1 *$g{amount}),'',$g{itemnumber},'',
       $g{borrowernumber},$newno);
    if ($g{moditem_paidfor} && ($g{accounttype} ~~ 'L')) {

@@ -15,11 +15,9 @@ package C4::Search;
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
+use Koha;
 no warnings qw(uninitialized);
 require Exporter;
-use Koha;
 use C4::Context;
 use C4::Biblio;    # GetMarcFromKohaField, GetBiblioData
 use C4::Koha;
@@ -1312,14 +1310,15 @@ sub searchResults {
     $sth->execute;
     my ($itemtag) = $sth->fetchrow;
 
-    ## find column names of items related to MARC
-    my $sth2 = $dbh->prepare("SHOW COLUMNS FROM items");
-    $sth2->execute;
     my %subfieldstosearch;
-    while ( ( my $column ) = $sth2->fetchrow ) {
-        my ( $tagfield, $tagsubfield ) =
-          &GetMarcFromKohaField( "items." . $column, "" );
-        $subfieldstosearch{$column} = $tagsubfield;
+    if (!$opac || !C4::Context->preference('OPACXSLTResultsDisplay')) {
+        my $sth2 = $dbh->prepare("SHOW COLUMNS FROM items");
+        $sth2->execute;
+        while ( ( my $column ) = $sth2->fetchrow ) {
+            my ( $tagfield, $tagsubfield ) =
+                &GetMarcFromKohaField( "items." . $column, "" );
+            $subfieldstosearch{$column} = $tagsubfield;
+        }
     }
 
     # handle which records to actually retrieve
@@ -1440,8 +1439,10 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
             my $item;
 
             # populate the items hash
-            foreach my $code ( keys %subfieldstosearch ) {
-                $item->{$code} = $field->subfield( $subfieldstosearch{$code} );
+            if (!$opac || !C4::Context->preference('OPACXSLTResultsDisplay')) {
+                foreach my $code ( keys %subfieldstosearch ) {
+                    $item->{$code} = $field->subfield( $subfieldstosearch{$code} );
+                }
             }
             my $hbranch     = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'homebranch'    : 'holdingbranch';
             my $otherbranch = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'holdingbranch' : 'homebranch';

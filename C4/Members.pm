@@ -199,7 +199,7 @@ sub _constrain_sql_by_branchcategory {
 sub SearchMember {
     my ($searchstring, $orderby, $type, $category_type, $limits) = @_;
     $orderby ||= 'surname';
-    $limits //= {offset => 0, limit => 100};
+    $limits //= {offset => 0, limit => C4::Context->preference('PatronsPerPage')};
 
     # FIXME: find where in members.pl this function is being called a second time with no args
     return (0, []) if (!$searchstring);
@@ -273,7 +273,9 @@ sub SearchMember {
 
     $query =~ s/COUNT\(borrowernumber\)/*/xms;
     $query .= " ORDER BY $orderby ";
-    $query .= sprintf ' LIMIT %d,%d', $limits->{offset}//0, $limits->{limit}//100;
+    $query .= sprintf(' LIMIT %d,%d',
+                      $limits->{offset}//0,
+                      $limits->{limit}//C4::Context->preference('PatronsPerPage'));
 
     $data = $dbh->selectall_arrayref($query, {Slice => {}}, @bind);
 
@@ -675,7 +677,7 @@ sub ModMember {
     }
 
     my ($oldval,$newval);
-    my $staffnumber = $data{'staffnumber'};
+    my $staffnumber = C4::Context->userenv->{'number'};
     delete $data{'staffnumber'};
     my $worklibraries = $data{worklibrary};
     delete $data{worklibrary};
