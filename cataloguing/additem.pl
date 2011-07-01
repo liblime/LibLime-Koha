@@ -368,6 +368,9 @@ my @tmp = splice( @$item, $barcode_index, 1 );
 my $t = $tmp[0];
 my $barcode_id = $t->{id};
 unshift( @$item, $t );
+for my $i(0..$#{$item}) { # fix index of error field
+   $$item[$i]{marc_lib} =~ s/^(<span id\=\"error)(\d+)/$1$i/;
+}
 
 # what's the next op ? it's what we are not in : an add if we're editing, otherwise, and edit.
 $template->param( title => $record->title() ) if ($record ne "-1");
