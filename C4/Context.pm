@@ -339,6 +339,13 @@ sub new {
     return $self;
 }
 
+sub DESTROY {
+    my $self = shift;
+    for (values ($self->{Zconn} // {})) {
+        $_->destroy();
+    }
+}
+
 sub getcache {
     my ($self, $name, $args) = @_;
     $context->{caches}{$name} //= CHI->new(%{$args});
