@@ -7,17 +7,12 @@ use Koha::Plack::Util;
 
 my $app = Plack::App::CGIBin->new(root => $ENV{PERL5LIB})->to_app;
 
-sub is_staff {
-    my $hostname = Koha::Plack::Util::GetCanonicalHostname(shift);
-    return $hostname =~ /-staff\./;
-}
-
 builder {
     enable 'Deflater';
     enable 'Static', path => qr{^/opac-tmpl/}, root => 'koha-tmpl/';
     enable 'Static', path => qr{^/intranet-tmpl/}, root => 'koha-tmpl/';
     enable '+Koha::Plack::Localize';
-    enable '+Koha::Plack::Rewrite', staff_resolver => \&is_staff;
+    enable '+Koha::Plack::Rewrite';
     enable '+Koha::Plack::ScrubStatus';
 
     mount '/' => $app;
