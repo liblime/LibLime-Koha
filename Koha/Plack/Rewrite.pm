@@ -1,15 +1,21 @@
 package Koha::Plack::Rewrite;
 use parent qw(Plack::Middleware);
 
-use Modern::Perl;
+use Koha;
 use Plack::Util::Accessor qw(staff_resolver);
 use Carp qw(croak);
+use Koha::Plack::Util;
+
+sub is_staff {
+    my $hostname = Koha::Plack::Util::GetCanonicalHostname(shift);
+    return $hostname =~ /-staff\./;
+}
 
 sub call {
     my ($self, $env) = @_;
 
     if (!defined $self->staff_resolver) {
-        croak sprintf('Must define a "staff_resolver" function for %s.', __PACKAGE__);
+        $self->staff_resolver(\&is_staff);
     }
 
     if ($env->{REQUEST_URI} ~~ '/') {
