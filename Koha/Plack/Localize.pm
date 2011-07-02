@@ -2,14 +2,27 @@ package Koha::Plack::Localize;
 use parent qw(Plack::Middleware);
 
 use Koha;
-use Plack::Util::Accessor qw(host_map);
+use Plack::Util::Accessor qw(host_map host_mapper);
 use Koha::Plack::Util;
+
+sub regex_mapper {
+    my $env = shift;
+    my $host_regexes = shift;
+    my $hostname = Koha::Plack::Util::GetCanonicalHostname($env);
+    
+    for my $r (keys %$host_regexes) {
+        return $host_regexes->{$r} if ($hostname =~ $r);
+    }
+}
 
 sub call {
     my ($self, $env) = @_;
 
     my $config;
-    if (my $configs = $self->host_map) {
+    if ($self->host_mapper) {
+        $config = $self->host_mapper->($env);
+    }
+    elsif (my $configs = $self->host_map) {
         my $hostname = Koha::Plack::Util::GetCanonicalHostname($env);
         $config = $configs->{$hostname};
     }
