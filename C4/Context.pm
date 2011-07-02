@@ -341,7 +341,7 @@ sub new {
 
 sub DESTROY {
     my $self = shift;
-    for (values ($self->{Zconn} // {})) {
+    for (values %{$self->{Zconn}}) {
         $_->destroy();
     }
 }
