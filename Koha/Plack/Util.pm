@@ -4,8 +4,16 @@ use Koha;
 
 sub GetCanonicalHostname {
     my $env = shift;
-    my ($hostname) = split(/, /, $env->{HTTP_X_FORWARDED_HOST}//$env->{HTTP_HOST});
-    $hostname //= $env->{SERVER_NAME};
+
+    my $hostname
+        =  $env->{HTTP_X_FORWARDED_HOST}
+        // $env->{HTTP_X_FORWARDED_SERVER}
+        // $env->{HTTP_HOST}
+        // $env->{SERVER_NAME}
+        // 'koha-opac.default';
+    $hostname = (split qr{,}, $hostname)[0];
+    $hostname =~ s/:.*//;
+
     return $hostname;
 }
 
