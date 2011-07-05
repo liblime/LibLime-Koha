@@ -58,7 +58,7 @@ for (my $i = 0; $i < $count; $i++) {
 		$resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1]; 
 	}
 
-	if ( $resumedate =~ m/(\d{4})-(0[13578]|1[02])-(0[1-9]|[12]\d|3[01])|(\d{4})-(0[469]|11])-(0[1-9]|[12]\d|30)|(\d{4})-(02)-(0[1-9]|1\d|2[0-9])/ ) {
+	if ( $resumedate =~ m/^([0-9]{4})(?:(1[0-2]|0[1-9])|-?(1[0-2]|0[1-9])-?)(3[0-1]|0[1-9]|[1-2][0-9])$/ ) {
                 SuspendReserve( $reservenumber[$i], $resumedate );
         } else {              
                 SuspendReserve( $reservenumber[$i] );
