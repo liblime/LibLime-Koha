@@ -50,7 +50,7 @@ my $cookie;
         query           => $input,
         type            => 'intranet',
         authnotrequired => 0,
-        flagsrequired   => { tools => 'edit_reciepts' },
+        flagsrequired   => { tools => 'receipts_manage' },
     }
 );
 
