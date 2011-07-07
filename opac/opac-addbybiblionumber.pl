@@ -128,9 +128,11 @@ else {
 
 	my @biblios;
 	for my $bib (@biblionumber) {
+                $bib =~ s/[^\d]//g;
 		my $data = GetBiblioData( $bib );
+                next if !$data;
 		push(@biblios, 
-			{ biblionumber => $bib,
+			{ biblionumber => $data->{'biblionumber'},
 			  title        => $data->{'title'},
 			  author       => $data->{'author'},
 			} );

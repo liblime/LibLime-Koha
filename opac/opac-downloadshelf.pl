@@ -32,8 +32,8 @@ use C4::VirtualShelves;
 use C4::Record;
 use C4::Ris;
 use C4::Csv;
-use utf8;
-my $query = new CGI;
+
+my $query = CGI->new();
 
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user (
     {
@@ -46,13 +46,17 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user (
 );
 
 my $shelfid = $query->param('shelfid');
+$shelfid =~ s/[^\d]//g;
 my $format  = $query->param('format');
-my $dbh     = C4::Context->dbh;
+
+my @shelf = GetShelf($shelfid);
+if (! @shelf) {
+    print $query->redirect('/cgi-bin/koha/errors/404.pl');
+    exit;
+}
 
 if ($shelfid && $format) {
-
-    my @shelf               = GetShelf($shelfid);
-    my ($items, $totitems)  = GetShelfContents($shelfid);
+    my ($items, undef)      = GetShelfContents($shelfid);
     my $marcflavour         = C4::Context->preference('marcflavour');
     my $output;
 

@@ -32,7 +32,7 @@ use Koha;
 use C4::Context;
 
 
-my $query      = new CGI;
+my $query      = CGI->new();
 my $op         = $query->param('op');
 my $dbh        = C4::Context->dbh;
 my $selectview = $query->param('selectview');
@@ -43,6 +43,13 @@ my $sth;
 # my $id;
 my ( $template, $loggedinuser, $cookie );
 my $biblionumber = $query->param('biblionumber');
+$biblionumber =~ s/[^\d]//g;
+my $biblio = GetBiblioData($biblionumber);
+if (!$biblio) {
+    print $query->redirect('/cgi-bin/koha/errors/404.pl');
+    exit;
+}
+
 if ( $selectview eq "full" ) {
     ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         {

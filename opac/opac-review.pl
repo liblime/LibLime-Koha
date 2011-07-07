@@ -28,9 +28,16 @@ use C4::Biblio;
 use C4::Scrubber;
 use C4::Debug;
 
-my $query        = new CGI;
+my $query = CGI->new();
 my $biblionumber = $query->param('biblionumber');
-my $review       = $query->param('review');
+$biblionumber =~ s/[^\d]//g;
+my $biblio = GetBiblioData($biblionumber);
+if (!$biblio) {
+    print $query->redirect('/cgi-bin/koha/errors/404.pl');
+    exit;
+}
+
+my $review = $query->param('review');
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     {
         template_name   => "opac-review.tmpl",
@@ -42,7 +49,6 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 
 # FIXME: need to allow user to delete their own comment(s)
 
-my $biblio = GetBiblioData($biblionumber);
 my $savedreview = getreview($biblionumber,$borrowernumber);
 my ($clean, @errors);
 if (defined $review) {
