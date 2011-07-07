@@ -580,6 +580,7 @@ sub UpdateFine {
 		my $sth2 = $dbh->prepare($query);
 		$debug and print STDERR "UpdateFine query: $query\nw/ args: $borrowernumber, $itemnum, $amount, $desc, $amount, $amount, $nextaccntno\n";
         $sth2->execute($borrowernumber, $itemnum, $amount, $desc, $amount, $amount, $nextaccntno);
+       UpdateStats( my $branch = '', my $stattype = "fine_new", $amount, my $other = '', $itemnum, my $itemtype = '', $borrowernumber, my $proccode = '' );
     }
     # logging action
 
@@ -596,7 +597,6 @@ sub UpdateFine {
         $borrowernumber,
         "due=".$due."  amount=".$amount." itemnumber=".$itemnum
         ) if C4::Context->preference("FinesLog");
-    UpdateStats( my $branch = '', my $stattype = "fine_new", $amount, my $other = '', $itemnum, my $itemtype = '', $borrowernumber, my $proccode = '' );
     return $retnum;
 }
 
