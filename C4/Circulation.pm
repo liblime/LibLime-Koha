@@ -2165,7 +2165,6 @@ sub _FixAccountNowFound
     my $rcr = $sth->fetchrow_hashref();
     return if $rcr;
     
-    $sth->execute($$lostitem{borrowernumber});
     my($nextno) = _getnextaccountno($$lostitem{borrowernumber});
     my $rcramount = -1 *($paid);
     $dbh->do("INSERT INTO accountlines (
