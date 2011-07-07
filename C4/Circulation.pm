@@ -1854,13 +1854,13 @@ sub _chargeToAccount
    $charge ||= 0;
    return ($charge,$itemtype) unless $charge > 0;
    my $text         = $isrenewal? 'renewed' : 'issued';
-   my $issuedate_us = C4::Dates->new($issuedate,'iso')->output;
+   my $issuedate_local = C4::Dates->new($issuedate,'iso')->output;
    my $dbh = C4::Context->dbh;
    my $sth = $dbh->prepare("SELECT 1 FROM accountlines
       WHERE accounttype    = 'Rent'
         AND itemnumber     = ?
         AND borrowernumber = ?
-        AND description LIKE 'Rental fee, % $issuedate_us%'");
+        AND description LIKE 'Rental fee, % $issuedate_local%'");
    $sth->execute($itemnumber,$borrowernumber);
    return ($charge, $itemtype) if $sth->fetchrow_array;
    $dbh->do("INSERT INTO accountlines (
@@ -1873,7 +1873,7 @@ sub _chargeToAccount
          amountoutstanding,
          accounttype) VALUES (?,?,?,?,NOW(),?,?,'Rent')",undef,
       $borrowernumber,_getnextaccountno($borrowernumber),$itemnumber,
-      "Rental fee, $text $issuedate_us",$charge,$charge);
+      "Rental fee, $text $issuedate_local",$charge,$charge);
    return $charge,$itemtype;
 }
 
@@ -1908,13 +1908,13 @@ sub _FixAccountOverdues {
         ($$issue{title}) = $sth->fetchrow_array() // '';
     }
     my $checkindate = $$flags{returndateObj}->output; # us
-    my $duedate_us  = $$flags{datedueObj}->output('us');
+    my $duedate_local  = $$flags{datedueObj}->output;
     my $row = $dbh->selectrow_hashref(qq|
         SELECT *
          FROM accountlines
         WHERE borrowernumber = ?
           AND itemnumber     = ?
-          AND description LIKE '%due on $duedate_us%'
+          AND description LIKE '%due on $duedate_local%'
           AND accounttype IN ('FU','F','O')
      ORDER BY accountno DESC
     |, undef, $$issue{borrowernumber}, $$issue{itemnumber});
@@ -1937,7 +1937,7 @@ sub _FixAccountOverdues {
                 $$issue{borrowernumber}, 
                 $amount, 
                 undef, 
-                $start_date->output('us'),
+                $start_date->output,
                 $ismax
             );
             ##.. then exempt fine
@@ -2021,7 +2021,7 @@ sub _FixAccountOverdues {
         }
         else { # new amount is greater than previous
             C4::Overdues::UpdateFine(
-                $issue->{itemnumber}, $issue->{borrowernumber}, $amount, undef, $start_date->output('us'),$ismax
+                $issue->{itemnumber}, $issue->{borrowernumber}, $amount, undef, $start_date->output,$ismax
             );
             _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost});
         }
@@ -2755,8 +2755,7 @@ sub AddRenewal {
    $borrowernumber   ||= $$issue{borrowernumber};
    my $lostitem        = $g{lostitem} || GetLostItem($itemnumber);
    if ($datedue && (ref($datedue) !~ /C4\:\:Dates/)) { # not an object
-      if    ($datedue =~ /^\d\d\/\d\d\/\d{4}$/) { $datedue = C4::Dates->new($datedue,'us' ) }
-      elsif ($datedue =~ /^\d{4}\-\d\d\-\d\d$/) { $datedue = C4::Dates->new($datedue,'iso') }
+      $datedue = C4::Dates->new($datedue);
    }
 
     unless ($datedue && $datedue->output('iso')) {
