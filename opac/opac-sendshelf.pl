@@ -45,9 +45,14 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user (
 );
 
 my $shelfid = $query->param('shelfid');
-my $email   = $query->param('email');
+$shelfid =~ s/[^\d]//g;
+my @shelf = GetShelf($shelfid);
+if (! @shelf) {
+    print $query->redirect('/cgi-bin/koha/errors/404.pl');
+    exit;
+}
 
-my $dbh          = C4::Context->dbh;
+my $email   = $query->param('email');
 
 if ( $email ) {
     my $email_from = C4::Context->preference('KohaAdminEmailAddress');
@@ -68,7 +73,6 @@ if ( $email ) {
         }
     );
 
-    my @shelf               = GetShelf($shelfid);
     my ($items, $totitems)  = GetShelfContents($shelfid);
     my $marcflavour         = C4::Context->preference('marcflavour');
     my $iso2709;
