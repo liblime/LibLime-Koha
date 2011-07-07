@@ -250,7 +250,8 @@ foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignore
                borrowernumber => $borrower->{borrowernumber},
                description    => 'Sent to collections agency', 
                accounttype    => 'A', 
-               amount         => $send_fine
+               amount         => $send_fine,
+               notmanual      => 1,
             );
             $total += $send_fine;
         }

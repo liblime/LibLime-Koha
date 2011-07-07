@@ -681,7 +681,7 @@ sub GetFineByDescription {
           accountno, itemnumber, date, description, amount, amountoutstanding, DATE(timestamp) as update_date
           FROM accountlines
           WHERE borrowernumber = ? AND accounttype = ? AND description LIKE ?
-          ORDER BY date DESC
+          ORDER BY accountno DESC
           LIMIT 1
     ", {}, $borrowernumber, $type, '%' . $description . '%' );
 }
