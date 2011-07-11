@@ -429,9 +429,9 @@ if ($suggest_count) {
 # limits are use to limit to results to a pre-defined category such as branch or language
 my @limits;
 @limits = split("\0",$params->{'limit'}) if $params->{'limit'};
-
-if($params->{'multibranchlimit'}) {
-push @limits, join(" or ", map { "branch: $_ "}  @{GetBranchesInCategory($params->{'multibranchlimit'})}) ;
+if($params->{multibranchlimit}) {
+    my $branchlist = GetBranchesInCategory($params->{multibranchlimit});
+    push @limits, sprintf '(%s)', join(' or ', map { "branch: $_"} @{$branchlist});
 }
 
 my $available;
