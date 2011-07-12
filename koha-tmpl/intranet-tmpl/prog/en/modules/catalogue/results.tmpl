@@ -280,41 +280,6 @@ function GetZ3950Terms(){
 
             <!-- ######### -->
             <div id="facets">
-                <dl>
-                <!-- TMPL_IF NAME="NoZebra" -->
-                <!-- FACETS START -->
-                <!-- TMPL_IF NAME="opacfacets" -->
-                    <dt id="facets1" onclick="var Elt=document.getElementById('facets_list');if (Elt.style.display!='block'){Elt.style.display='block';} else {Elt.style.display='none';}">
-                    Refine your search
-                    </dt>
-                    <dd id="facets_list" style="display:none;">
-                    <ul>
-                    <!-- TMPL_LOOP NAME="facets_loop" -->
-                    <li id="<!-- TMPL_VAR NAME="type_id" -->"><!-- TMPL_VAR NAME="type_label" -->
-                        <ul>
-                        <!-- TMPL_LOOP NAME="facets" -->
-                            <li>
-                                <a href="/cgi-bin/koha/catalogue/search.pl?q=<!-- TMPL_VAR NAME="searchdesc" --> and <!-- TMPL_VAR NAME="type_link_value" -->:<!-- TMPL_VAR NAME="facet_link_value" -->" title="<!-- TMPL_VAR NAME="facet_title_value" -->">
-                                    <!-- TMPL_VAR NAME="facet_label_value" -->
-                                </a> (<!-- TMPL_VAR NAME="facet_count" -->)
-                            </li>
-                        <!-- /TMPL_LOOP -->
-                        <!-- TMPL_IF NAME="expandable" -->
-                            <li class="showmore">
-                                <a href="/cgi-bin/koha/catalogue/search.pl?q=<!-- TMPL_VAR NAME="searchdesc" -->&amp;expand=<!-- TMPL_VAR NAME="expand" -->#<!-- TMPL_VAR NAME="type_id" -->">
-                                    Show More
-                                </a>
-                            </li>
-                        <!-- /TMPL_IF -->
-                        </ul>
-                    </li>
-                    <!-- /TMPL_LOOP -->
-                    </ul>
-                    </dd>
-                <!-- /TMPL_IF -->
-                <!-- FACETS END -->
-                <!-- /TMPL_IF --> <!-- NoZebra -->
-                </dl>
             </div>
             <!-- ######### -->
 

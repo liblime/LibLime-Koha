@@ -328,7 +328,6 @@ sub get_template_and_user {
             suggestion                  => C4::Context->preference("suggestion"),
             virtualshelves              => C4::Context->preference("virtualshelves"),
             StaffSerialIssueDisplayCount => C4::Context->preference("StaffSerialIssueDisplayCount"),
-            NoZebra                     => C4::Context->preference('NoZebra'),
             LinkLostItemsToPatron       => C4::Context->preference('LinkLostItemsToPatron'),
             RefundReturnedLostItem      => C4::Context->preference('RefundReturnedLostItem'),
             GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),

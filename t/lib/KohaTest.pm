@@ -513,9 +513,6 @@ Useful for test routines that need to do a
 lot of indexing without having to wait for
 zebraqueue.
 
-In NoZebra model, this only marks zebraqueue
-done - the records should already be indexed.
-
 =cut
 
 sub reindex_marc {
@@ -524,8 +521,6 @@ sub reindex_marc {
     # mark zebraqueue done regardless of the indexing mode
     my $dbh = C4::Context->dbh();
     $dbh->do("UPDATE zebraqueue SET done = 1 WHERE done = 0");
-
-    return if C4::Context->preference('NoZebra');
 
     my $directory = tempdir(CLEANUP => 1);
     foreach my $record_type qw(biblio authority) {

@@ -460,11 +460,7 @@ if ($tag) {
 	# FIXME: tag search and standard search should work together, not exclusively
 	# FIXME: No facets for tags search.
 }
-elsif (C4::Context->preference('NoZebra')) {
-    eval {
-        ($error, $results_hashref, $facets) = NZgetRecords($query,$simple_query,\@sort_by,\@servers,$results_per_page,$offset,$expanded_facet,$branches,$query_type,$scan);
-    };
-} elsif ($build_grouped_results) {
+if ($build_grouped_results) {
     eval {
         ($error, $results_hashref, $facets) = C4::Search::pazGetRecords($query,$simple_query,\@sort_by,\@servers,$results_per_page,$offset,$expanded_facet,$branches,$query_type,$scan);
     };

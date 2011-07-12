@@ -45,8 +45,6 @@ $installer->set_version_syspref();
 
 $installer->set_marcflavour_syspref('MARC21');
 
-$installer->set_indexing_engine(0);
-
 =head1 DESCRIPTION
 
 =head1 METHODS
@@ -461,35 +459,6 @@ sub set_marcflavour_syspref {
           "INSERT IGNORE INTO `systempreferences` (variable,value,explanation,options,type) VALUES('marcflavour','$marc_cleaned','Define global MARC flavor (MARC21 or UNIMARC) used for character encoding','MARC21|UNIMARC','Choice');"
         );
     $request->execute;
-}
-
-=head2 set_indexing_engine 
-
-=over 4
-
-$installer->set_indexing_engine($nozebra);
-
-=back
-
-Sets system preferences related to the indexing
-engine.  The C<$nozebra> argument is a boolean;
-if true, turn on NoZebra mode and turn off QueryFuzzy,
-QueryWeightFields, and QueryStemming.  If false, turn
-off NoZebra mode (i.e., use the Zebra search engine).
-
-=cut
-
-sub set_indexing_engine {
-    my $self = shift;
-    my $nozebra = shift;
-
-    if ($nozebra) {
-        $self->{'dbh'}->do("UPDATE systempreferences SET value=1 WHERE variable='NoZebra'");
-        $self->{'dbh'}->do("UPDATE systempreferences SET value=0 WHERE variable in ('QueryFuzzy','QueryWeightFields','QueryStemming')");
-    } else {
-        $self->{'dbh'}->do("UPDATE systempreferences SET value=0 WHERE variable='NoZebra'");
-    }
-
 }
 
 =head2 set_version_syspref
