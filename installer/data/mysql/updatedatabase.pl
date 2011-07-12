@@ -3560,8 +3560,11 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do(qq/
         ALTER TABLE old_reserves ADD COLUMN displayexpired TINYINT(1) NOT NULL DEFAULT 1;
     /);
+    $dbh->do(q/
+        ALTER TABLE reserves_suspended ADD COLUMN displayexpired TINYINT(1) NOT NULL DEFAULT 1;
+    /);
 
-	print "Upgrade to $DBversion done ( Add displayexpired column to the reserves and old_reserves tables )\n";
+	print "Upgrade to $DBversion done ( Add displayexpired column to the various reserves tables )\n";
     SetVersion ($DBversion);
 }
 
