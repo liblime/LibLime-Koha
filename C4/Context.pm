@@ -29,6 +29,7 @@ use File::Slurp;
 use C4::Boolean;
 use C4::Debug;
 use POSIX ();
+use JSON qw(from_json);
 use Koha;
 
 $VERSION = '4.07.00.001';
