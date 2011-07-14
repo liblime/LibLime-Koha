@@ -282,7 +282,7 @@ foreach my $i (keys(%handlers)) {
 }
 
 sub new {
-    my ($class, $msg, $seqno) = @_;
+    my ($class, $msg, $seqno, $ok_patron_pin) = @_;
     my $self = {};
     my $msgtag = substr($msg, 0, 2);
 
@@ -309,6 +309,7 @@ sub new {
     bless $self, $class;
 
     $self->{seqno} = $seqno;
+    $self->{ok_patron_pin} = $ok_patron_pin;
     $self->_initialize(substr($msg,2), $handlers{$msgtag});
 
     return($self);
@@ -362,6 +363,7 @@ sub handle {
     my ($msg, $server, $req) = @_;
     my $config = $server->{config};
     my $self;
+    my $ok_patron_pin = $config->{options}->{ok_patron_pin};
 
     #
     # What's the field delimiter for variable length fields?
@@ -379,7 +381,7 @@ sub handle {
     if ($msg eq REQUEST_ACS_RESEND_CKSUM) {
 		# Special case
 		$error_detection = 1;
-		$self = new Sip::MsgType ((REQUEST_ACS_RESEND), 0);
+		$self = new Sip::MsgType ((REQUEST_ACS_RESEND), 0, $ok_patron_pin);
     } elsif((length($msg) > 11) && (substr($msg, -9, 2) eq "AY")) {
 		$error_detection = 1;
 
@@ -392,7 +394,7 @@ sub handle {
 	} else {
 	    # Save the sequence number, then strip off the
 	    # error detection data to process the message
-	    $self = new Sip::MsgType (substr($msg, 0, -9), substr($msg, -7, 1));
+	    $self = new Sip::MsgType (substr($msg, 0, -9), substr($msg, -7, 1), $ok_patron_pin);
 	}
     } elsif ($error_detection) {
 	# We received a non-ED message when ED is supposed to be active.
@@ -400,9 +402,9 @@ sub handle {
 		syslog("LOG_WARNING",
 	       "Received message without error detection: '%s'", $msg);
 		$error_detection = 0;
-		$self = new Sip::MsgType ($msg, 0);
+		$self = new Sip::MsgType ($msg, 0, $ok_patron_pin);
     } else {
-		$self = new Sip::MsgType ($msg, 0);
+		$self = new Sip::MsgType ($msg, 0, $ok_patron_pin);
     }
 
 	if ((substr($msg, 0, 2) ne REQUEST_ACS_RESEND) &&
@@ -938,6 +940,7 @@ sub handle_patron_info {
     my $fields = $self->{fields};
     my ($inst_id, $patron_id, $terminal_pwd, $patron_pwd, $start, $end);
     my ($resp, $patron, $count);
+    my $ok_patron_pin = $self->{ok_patron_pin};
 
     $inst_id      = $fields->{(FID_INST_ID)};
     $patron_id    = $fields->{(FID_PATRON_ID)};
@@ -981,9 +984,17 @@ sub handle_patron_info {
 
 	$resp .= add_field(FID_VALID_PATRON, 'Y');
 	if (defined($patron_pwd)) {
-	    # If patron password was provided, report whether it was right or not.
-	    $resp .= add_field(FID_VALID_PATRON_PWD,
+	    # If patron password was provided, report whether it was right
+            # or not.  Unless ok_patron_pin was added to an <options> tag in
+            # SIPconfig.xml
+            syslog("LOG_DEBUG", "handle_patron_info: ok_patron_pin: %s", $ok_patron_pin);
+            if ($ok_patron_pin) {
+              $resp .= add_field(FID_VALID_PATRON_PWD,sipbool(1));
+            }
+            else {
+              $resp .= add_field(FID_VALID_PATRON_PWD,
 			       sipbool($patron->check_password($patron_pwd)));
+            }
 	}
 
 	$resp .= maybe_add(FID_CURRENCY,   $patron->currency);

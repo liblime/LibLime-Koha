@@ -86,6 +86,12 @@ if (defined($config->{'server-params'})) {
     }
 }
 
+if (defined($config->{'options'})) {
+  while (my ($key, $val) = each %{$config->{'options'}}) {
+    push @parms, $key . '=' . $val;
+  }
+}
+
 print scalar(localtime),  " -- startup -- procid:$$\n";
 #print "Params for Net::Server : \n" . Dumper(\@parms);
 
