@@ -603,6 +603,8 @@ WriteMakefile(
                             'PDF::API2::Util'                  => 2.000,
                             'PDF::Reuse'                       => 0.33,
                             'PDF::Reuse::Barcode'              => 0.05,
+                            'Plack'                            => 0.9978,
+                            'Plack::Middleware::Deflater'      => 0.03,
                             'POE'                              => 0.9999,
                             'POSIX'                            => 1.09,
                             'Rose::DB'                         => 0.762,
