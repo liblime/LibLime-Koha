@@ -169,6 +169,7 @@ foreach my $component ( sort @component_names ) {
 }
 
 $template->param( components => \@components );
+$template->param( localtime => scalar localtime() );
 
 my @environment = map { {variable => $_, value => $ENV{$_}} } sort keys %ENV;
 $template->param( environment => \@environment);
