@@ -88,7 +88,7 @@ use Carp;
         try {
             my $results
                 = Koha::Model::ReserveSet->new(limits => $self->input);
-            $self->v->{reserveset} = ($results) ? $results->reserves : undef;
+            $self->v->{reserveset} = ($results) ? $results->reserves : [];
             $self->v->{inflate} = $self->input->{inflate} // 0;
             $self->render('_rdb_objset', _SetContentType($self));
         }
