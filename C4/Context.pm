@@ -326,6 +326,7 @@ sub new {
     warn "read_config_file($conf_fname) returned undef" if !defined($self->{"config"});
     return undef if !defined($self->{"config"});
 
+    $ENV{TZ} = $self->{config}{timezone} || $ENV{TZ};
     $self->{"dbh"} = undef;        # Database handle
     $self->{"Zconn"} = undef;    # Zebra Connections
     $self->{"stopwords"} = undef; # stopwords list
