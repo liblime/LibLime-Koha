@@ -30,7 +30,7 @@ sub call {
         $config = $ENV{KOHA_CONF};
     }
 
-    local %ENV;
+    local %ENV = %ENV;
     require C4::Context;
     local $C4::Context::context;
 
