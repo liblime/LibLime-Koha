@@ -573,6 +573,7 @@ WriteMakefile(
                             'HTML::Template::Pro'              => 0.69,
                             'HTML::Scrubber'                   => 0.08,
                             'HTTP::Cookies'                    => 1.39,
+                            'HTTP::Exception'                  => 0.03001,
                             'HTTP::OAI'                        => 3.20,
                             'HTTP::Request::Common'            => 1.26,
                             'IPC::Cmd'                         => 0.46,
@@ -593,6 +594,8 @@ WriteMakefile(
                             'Mail::Sendmail'                   => 0.79,
                             'Memoize::Memcached'               => 0.03, # optional
                             'Modern::Perl'                     => 1.03,
+                            'Moose'                            => 2.0006,
+                            'MooseX::Role::Parameterized'      => 0.26,
                             'Net::CIDR::Compare'               => 0.03,
                             'Net::LDAP'                        => 0.33, # optional
                             'Net::LDAP::Filter'                => 0.14, # optional
@@ -603,6 +606,9 @@ WriteMakefile(
                             'PDF::API2::Util'                  => 2.000,
                             'PDF::Reuse'                       => 0.33,
                             'PDF::Reuse::Barcode'              => 0.05,
+                            'Plack'                            => 0.9978,
+                            'Plack::Middleware::Deflater'      => 0.03,
+                            'Plack::Middleware::MethodOverride' => 0.10,
                             'POE'                              => 0.9999,
                             'POSIX'                            => 1.09,
                             'Rose::DB'                         => 0.762,
@@ -611,6 +617,8 @@ WriteMakefile(
                             'Rose::DB::Object::Loader'         => 0.787,
                             'Schedule::At'                     => 1.06,
                             'SMS::Send'                        => 0.05, # optional
+                            'Squatting'                        => 0.81,
+                            'Squatting::On::PSGI'              => 0.06,
                             'Term::ANSIColor'                  => 1.10,
                             'Test'                             => 1.25,
                             'Test::Harness'                    => 2.56,
