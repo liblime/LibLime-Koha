@@ -2211,6 +2211,7 @@ routine accepts a hashref specifying the columns to update.
 
 sub _koha_modify_item {
     my ( $item ) = @_;
+    return unless $item;
     my $dbh=C4::Context->dbh;  
     my $error;
     my $query = "UPDATE items SET ";

@@ -63,7 +63,6 @@ use Carp;
 
         _CheckAuth($self, {reserveforothers => '*'});
 
-        $self->v->{'callback'} = $self->input->{'callback'};
         try {
             $self->v->{reserve}
                = Koha::Model::Reserve->new(reservenumber => $reserve_id)->load;
@@ -105,7 +104,6 @@ use Carp;
         _CheckAuth($self, {reserveforothers => 'edit_holds'});
 
         my $input = $self->input;
-        if ($input->{priority} ~~ 'del') { return ReserveCancel($self,$reservenumber) }
         my $r = Koha::Model::Reserve->new(reservenumber => $reservenumber);
         $r->load;
 
@@ -187,10 +185,7 @@ use Carp;
 
     sub RenderRdbAsJson {
         my ($self, $v) = @_;
-        my $func = $v->{'callback'};
-        my $str  = as_json($v->{reserve});
-        if ($func) { "$func($str)" }
-        else       { $str          }
+        return as_json($v->{reserve});
     }
 
     sub RenderRdbSetAsJson {
@@ -214,17 +209,9 @@ use Carp;
             }
         }
         else {
-            if (ref($v->{reserveset}) ~~ 'ARRAY') {
-               @reserveset = map {R('ReserveSingle', $_->reservenumber)} @{$v->{reserveset}};
-            }
-            else {
-               @reserveset = ($v->{reserveset});
-            }
+            @reserveset = map {R('ReserveSingle', $_->reservenumber)} @{$v->{reserveset}};
         }
-         my $str  = to_json(\@reserveset);
-         my $func = $v->{'callback'};
-         if ($func) { "$func($str)" }
-         else       { $str          }
+        return to_json(\@reserveset);
     }
 
     our @V = (

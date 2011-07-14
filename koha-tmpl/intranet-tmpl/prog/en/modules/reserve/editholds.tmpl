@@ -30,7 +30,6 @@ function getInit(limit) {
    $.ajax({
       url: '/reserves/?biblionumber=<TMPL_VAR NAME="biblionumber">',
       async: false,
-      accepts: 'application/json',
       error: function(xhr,rc,thrown) {
          _err(rc);
       },
@@ -58,9 +57,12 @@ function getInit(limit) {
 } //eof getInit
 
 function modPriority(sel,onshelf,reservenumber,limit) {
-   if (onshelf==1) {
-      var msg = 'This item is currently on the holds shelf.\n';
-      var tog = 0;
+   if (onshelf != 0) {
+      var msg  = 'This item is currently ';
+      var tog  = 0;
+      var rank = (onshelf==1)? 'W':'T';
+      if      (onshelf==1) { msg += 'on the holds shelf.\n'; }
+      else if (onshelf==2) { msg += 'in transit.\n';         }
       if ((sel.selectedIndex + 1) == sel.options.length) {
          msg += 'Are you sure you want to cancel this hold?';
          tog  = 1;
@@ -75,7 +77,7 @@ function modPriority(sel,onshelf,reservenumber,limit) {
          else {
             var el = document.getElementById('rank_'+reservenumber);
             for(var i=0;i<sel.options.length;i++) {
-               if(sel.options[i].value=='W') {
+               if(sel.options[i].value == rank) {
                   el.selectedIndex = i;
                   break;
                }
@@ -187,6 +189,7 @@ function getSet(allLen,offset,limit) {
 //               suspended     = '<input type=checkbox disabled>';
             }
             else if (res.found=='T') {
+               onshelf       = 2;
                listPriority += '<option value="T" selected>In Transit';
                listPick      = 'Waiting to be pulled at<br>'+branchname;
 //               suspended     = '<input type=checkbox disabled>';

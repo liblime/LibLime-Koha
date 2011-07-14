@@ -417,13 +417,6 @@ sub DelBiblio {
     return;
 }
 
-sub GetItemsCount {
-   my $biblionumber = shift;
-   my $sth = C4::Context->dbh->prepare('SELECT COUNT(*) FROM items WHERE biblionumber=?');
-   $sth->execute($biblionumber);
-   return ($sth->fetchrow_array);
-}
-
 sub GetAvailableItemsCount {
   my ( $biblionumber, $branchcode ) = @_;
 #  warn "GetAvailableItemsCount( $biblionumber, $branchcode )";
