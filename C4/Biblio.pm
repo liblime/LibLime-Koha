@@ -1850,13 +1850,13 @@ sub TransformHtmlToMarc {
     my $record  = MARC::Record->new();
     my $i=0;
     my @fields;
+    my ( $biblionumbertagfield, $biblionumbertagsubfield ) =
+        &GetMarcFromKohaField( "biblio.biblionumber", '' );
     while ($params->[$i]){ # browse all CGI params
         my $param = $params->[$i];
         my $newfield=0;
         # if we are on biblionumber, store it in the MARC::Record (it may not be in the edited fields)
         if ($param eq 'biblionumber') {
-            my ( $biblionumbertagfield, $biblionumbertagsubfield ) =
-                &GetMarcFromKohaField( "biblio.biblionumber", '' );
             if ($biblionumbertagfield < 10) {
                 $newfield = MARC::Field->new(
                     $biblionumbertagfield,
@@ -1895,6 +1895,12 @@ sub TransformHtmlToMarc {
             } else {
                 while(defined $params->[$j] && $params->[$j] =~ /_code_/){ # browse all it's subfield
                     my $inner_param = $params->[$j];
+                    my $biblionumbertagsubfield_string = "_code_" . $biblionumbertagsubfield . "_";
+                    if (($tag eq $biblionumbertagfield) &&
+                        ($inner_param =~ /$biblionumbertagsubfield_string/)) {
+                      $j += 2;
+                      next;
+                    }
                     if ($newfield){
                         if($cgi->param($params->[$j+1]) ne ''){  # only if there is a value (code => value)
                             $newfield->add_subfields(
