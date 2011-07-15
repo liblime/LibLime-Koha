@@ -539,8 +539,10 @@ sub patronflags {
         foreach ( sort { $a->{'date_due'} cmp $b->{'date_due'} }
             @$itemsoverdue )
         {
-            $flaginfo{'itemlisttext'} .=
-              "$_->{'date_due'} $_->{'barcode'} $_->{'title'} \n";  # newline is display layer
+            my $dd = $$_{date_due} // '';
+            my $bc = $$_{barcode}  // '';
+            my $ti = $$_{title}    // '';
+            $flaginfo{'itemlisttext'} .= "$dd $bc $ti \n";  # newline is display layer
         }
         $flags{'ODUES'} = \%flaginfo;
     }
