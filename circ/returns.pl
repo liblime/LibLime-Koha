@@ -235,7 +235,7 @@ if ($dotransfer && ($notransfer==0)){
 	# An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
 	my $transferitem = $query->param('transferitem');
 	my $tobranch     = $query->param('tobranch');
-	C4::Items::ModItemTransfer($transferitem, $userenv_branch, $tobranch);
+	C4::Items::ModItemTransfer($transferitem, $userenv_branch, $tobranch, $userenv_branch);
 }
 elsif ($query->param('cancelTransfer')) {
     C4::Items::ModItemTransfer($query->param('itemnumber'));
@@ -521,7 +521,7 @@ foreach my $code ( keys %$messages ) {
       # $err{reserve} = 1;
       foreach(keys %{$$messages{$code}}) { $template->param("res_$_"=>$$messages{$code}{$_}) }
       $template->param(
-         currBranch => C4::Context->userenv->{branch},
+         currBranch => $userenv_branch,
          pickbranchname => $$branches{$$messages{$code}{branchcode}}{branchname},
       );
    }
