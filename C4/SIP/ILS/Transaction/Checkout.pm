@@ -123,7 +123,7 @@ sub do_checkout {
       barcode => $barcode, 
       sipmode => 1
    );
-	my $due  = $c4due->output('iso') || undef;
+	my $due  = $c4due || undef;
 	$debug and warn "Item due: $due";
 	$self->{'due'} = $due;
 	$self->{item}->due_date($due);
