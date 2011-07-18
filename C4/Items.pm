@@ -639,27 +639,29 @@ to another.
 =cut
 
 sub ModItemTransfer {
-    my ( $itemnumber, $frombranch, $tobranch ) = @_;
+    my ( $itemnumber, $frombranch, $tobranch, $currbranch ) = @_;
     my $dbh = C4::Context->dbh;
     if(!$frombranch && !$tobranch) {
         $dbh->do('DELETE FROM branchtransfers WHERE itemnumber=?',undef,$itemnumber);
         return;
     }
 
+    my $datearrived = ($currbranch ~~ $tobranch)? 'NOW()' : 'NULL';
     my $sth = $dbh->prepare('SELECT 1 FROM branchtransfers WHERE itemnumber = ?');
     $sth->execute($itemnumber);
     if ($sth->fetchrow_array) {
-        $sth = $dbh->prepare('UPDATE branchtransfers
+        $sth = $dbh->prepare("UPDATE branchtransfers
             SET frombranch   = ?,
                 tobranch     = ?,
-                datesent     = NOW()
-            WHERE itemnumber = ?');
+                datesent     = NOW(),
+                datearrived  = $datearrived
+            WHERE itemnumber = ?");
         $sth->execute($frombranch,$tobranch,$itemnumber);
     }
     else {
         $sth = $dbh->prepare(
-        "INSERT INTO branchtransfers (itemnumber, frombranch, datesent, tobranch)
-        VALUES (?, ?, NOW(), ?)");
+        "INSERT INTO branchtransfers (itemnumber, frombranch, datesent, tobranch, datearrived)
+        VALUES (?, ?, NOW(),?,$datearrived)");
         $sth->execute($itemnumber, $frombranch, $tobranch);
     }
     ModItem({ holdingbranch => $tobranch }, undef, $itemnumber);
