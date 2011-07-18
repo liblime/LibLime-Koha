@@ -231,7 +231,7 @@ my $today_iso   = $today->output('iso');
 my $dropboxdate = $calendar->addDate($today, -1);
 $barcode =~ s/^\s*|\s+//g;
 
-if ($dotransfer && !$notransfer){
+if ($dotransfer && ($notransfer==0)){
 	# An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
 	my $transferitem = $query->param('transferitem');
 	my $tobranch     = $query->param('tobranch');
