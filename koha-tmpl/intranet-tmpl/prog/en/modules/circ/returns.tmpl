@@ -230,6 +230,7 @@ function ContinueReturns() {
 		        <!-- TMPL_IF NAME="wboremail" --><li><a id="boremail" href="mailto:<!-- TMPL_VAR NAME="wboremail" -->"><!-- TMPL_VAR NAME="wboremail" --></a></li><!-- /TMPL_IF -->
         </ul> 
         <form method="post" action="returns.pl" class="confirm">
+            <input type=hidden name="resbarcode" value="<TMPL_VAR NAME="barcode">">
             <input type=hidden name="dotransfer" value="1">
             <input type=hidden name="transferitem" value="<TMPL_VAR NAME="WrongTransferItem">">
             <input type=hidden name="tobranch" value="<TMPL_VAR NAME="wpickbranch">">
@@ -293,7 +294,11 @@ function ContinueReturns() {
         <input type=hidden name="lostbarcode"  value="">
         <input type=hidden name="lostborrowernumber" value="">
         <input type=hidden name="unlinkFromAccount" value="0">
-        <h3>Hold Found<TMPL_IF NAME="pull"> (please pull)<TMPL_ELSE> (item is already waiting)</TMPL_IF>:<br><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a></h3>
+        <h3>Hold Found
+            <TMPL_IF NAME="pull">(please pull)
+            <TMPL_ELSIF EXPR="waiting">(item is already waiting)
+            <TMPL_ELSE>ERROR: uncaught exception
+            </TMPL_IF>:<br><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a></h3>
         <!-- TMPL_IF NAME="reservenotes" --><h4>Notes: <!-- TMPL_VAR Name="reservenotes" --></h4><!-- /TMPL_IF -->
         <br><h4>Hold for:</h4>
 			<ul>
@@ -343,10 +348,14 @@ function ContinueReturns() {
                 </form>
 	        </div>
         <TMPL_ELSE>
-            <TMPL_IF EXPR="currentbranch ne destbranchname and foundwait">
+            <TMPL_IF EXPR="currentbranch ne destbranchname and (foundwait or pull) and not WrongTransfer">
             <div class="dialog message">
             <span class="error">Unexpected check in.</span>
-            <h3>Hold found marked as <span class=error>Waiting</span>:</h3>
+            <h3>Hold found marked as <span class=error>
+               <TMPL_IF EXPR="res_found eq 'W'">Waiting
+               <TMPL_ELSIF EXPR="res_found eq 'T'">In Transit
+               <TMPL_ELSE>ERROR
+               </TMPL_IF></span>:</h3>
             <h4><a href="/cgi-bin/koha/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a><br>
             at <TMPL_VAR NAME="pickbranchname"> for</h4>
             <ul>

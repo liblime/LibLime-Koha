@@ -79,12 +79,15 @@ if ($query->param('checkinnote')) {
    exit;
 }
 
-my $biblionumber = $query->param('biblionumber');
-my $fw = GetFrameworkCode($biblionumber);
-
-## get notes and subjects from MARC record
-my $marcflavour      = C4::Context->preference("marcflavour");
+my $biblionumber     = $query->param('biblionumber');
 my $record           = GetMarcBiblio($biblionumber);
+unless ($record) {
+   print "Content-type: text/plain\n\n";
+   print "Cannot find biblionumber=$biblionumber";
+   exit;
+}
+my $fw               = GetFrameworkCode($biblionumber);
+my $marcflavour      = C4::Context->preference("marcflavour");
 
 if (C4::Context->preference("XSLTDetailsDisplay") ) {
     $template->param(

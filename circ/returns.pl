@@ -235,7 +235,7 @@ if ($dotransfer && ($notransfer==0)){
 	# An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
 	my $transferitem = $query->param('transferitem');
 	my $tobranch     = $query->param('tobranch');
-	C4::Items::ModItemTransfer($transferitem, $userenv_branch, $tobranch); 
+	C4::Items::ModItemTransfer($transferitem, $userenv_branch, $tobranch);
 }
 elsif ($query->param('cancelTransfer')) {
     C4::Items::ModItemTransfer($query->param('itemnumber'));
@@ -254,20 +254,19 @@ if ($barcode) {
     $barcode = C4::Circulation::barcodedecode(barcode=>$barcode) 
     if(C4::Context->preference('itemBarcodeInputFilter') 
     || C4::Context->preference('itembarcodelength'));
-    $itemnumber = GetItemnumberFromBarcode($barcode);
-
+    $itemnumber = C4::Items::GetItemnumberFromBarcode($barcode);
     if ( C4::Context->preference("InProcessingToShelvingCart") ) {
-        my $item = GetItem( $itemnumber );
+        my $item = C4::Items::GetItem( $itemnumber );
         if ( $item->{'location'} eq 'PROC' ) {
             $item->{'location'} = 'CART';
-            ModItem( $item, $item->{'biblionumber'}, $item->{'itemnumber'} );
+            C4::Items::ModItem( $item, $item->{'biblionumber'}, $item->{'itemnumber'} );
         }
     }
 
     if ( C4::Context->preference("ReturnToShelvingCart") ) {
         my $item = GetItem( $itemnumber );
         $item->{'location'} = 'CART';
-        ModItem( $item, $item->{'biblionumber'}, $item->{'itemnumber'} );
+        C4::Items::ModItem( $item, $item->{'biblionumber'}, $item->{'itemnumber'} );
     }
 
 #
@@ -275,10 +274,10 @@ if ($barcode) {
 #
     if ($checkin_override_date ) {
         ( $returned, $messages, $issueinformation, $borrower ) =
-        AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode, $checkin_override_date->output('iso'));
+        C4::Circulation::AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode, $checkin_override_date->output('iso'));
     } else {
         ( $returned, $messages, $issueinformation, $borrower ) =
-        AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode);
+        C4::Circulation::AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode);
     }
     # get biblio description
     my $biblio = GetBiblioFromItemNumber($itemnumber);
@@ -493,7 +492,9 @@ foreach my $code ( keys %$messages ) {
    }
    elsif ( $code eq 'NotIssued' ) {
         $err{notissued} = 1;
-        $err{msg} = $branches->{ $messages->{'IsPermanent'} }->{'branchname'};
+        if ($branches->{$messages->{IsPermanent}}) {
+           $err{msg} = $branches->{ $messages->{'IsPermanent'} }->{'branchname'};
+        }
    }
    elsif ( $code eq 'WasLost' ) {
       $err{waslost} = 1;
