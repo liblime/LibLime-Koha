@@ -371,7 +371,7 @@ function ContinueReturns() {
             <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
             <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
             <!-- /TMPL_LOOP -->
-            <input type=button value="Confirm and transfer" class="approve">
+            <input type=button value="Confirm and transfer" class="approve" onclick="this.form.submit();">
             <input type=button value="Ignore, Requeue hold and Keep Here" class="deny" onclick="
                 document.transwaitf.requeue.value = 1;
                 this.form.submit();
@@ -565,35 +565,37 @@ function ContinueReturns() {
 		<!-- TMPL_ELSE -->
 		<h4><strong>Hold at</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
         <!-- /TMPL_IF -->
-            <!-- TMPL_IF name="transfertodo" -->
-		<!-- TMPL_IF name="HoldButtonConfirm" -->
+         <!-- TMPL_IF name="transfertodo" -->
+      		<!-- TMPL_IF name="HoldButtonConfirm" -->
+                <input type=hidden name="dotransfer" value="1">
+                <input type=hidden name="transferitem" value="<TMPL_VAR NAME="itemnumber">">
+                <input type=hidden name="tobranch" value="<TMPL_VAR NAME="destbranch">">
                 <input type="submit" class="approve" value="Confirm hold and <TMPL_IF NAME="reroute">reroute </TMPL_IF>Transfer" />
-        	<!-- /TMPL_IF -->
-		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
-			<!-- TMPL_IF NAME="UseReceiptTemplates" -->
-				<!-- TMPL_IF NAME="UseReceiptTemplates_TransitHold" -->
+        	   <!-- /TMPL_IF -->
+		      <!-- TMPL_IF name="HoldButtonPrintConfirm" -->
+			      <!-- TMPL_IF NAME="UseReceiptTemplates" -->
+				      <!-- TMPL_IF NAME="UseReceiptTemplates_TransitHold" -->
 			                <input type="submit" value="Print Slip, Transfer and Confirm" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=hold_found&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->'); this.form.submit();" />
-				<!-- /TMPL_IF -->
-			<!-- TMPL_ELSE -->
+				      <!-- /TMPL_IF -->
+			      <!-- TMPL_ELSE -->
 		                <input type="submit" value="Print slip, Transfer, and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
-			<!-- /TMPL_IF -->
-        	<!-- /TMPL_IF -->
-            <!-- TMPL_ELSE -->
-		<!-- TMPL_IF name="HoldButtonConfirm" -->
+			      <!-- /TMPL_IF -->
+        	   <!-- /TMPL_IF -->
+         <!-- TMPL_ELSE -->
+		      <!-- TMPL_IF name="HoldButtonConfirm" -->
                 <input type="submit" class="approve" value="Confirm hold" />
-        	<!-- /TMPL_IF -->
-		<!-- TMPL_IF name="HoldButtonPrintConfirm" -->
-			<!-- TMPL_IF NAME="UseReceiptTemplates" -->
-				<!-- TMPL_IF NAME="UseReceiptTemplates_HoldFound" -->
+        	   <!-- /TMPL_IF -->
+		      <!-- TMPL_IF name="HoldButtonPrintConfirm" -->
+			      <!-- TMPL_IF NAME="UseReceiptTemplates" -->
+				      <!-- TMPL_IF NAME="UseReceiptTemplates_HoldFound" -->
 			                <input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=hold_found&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->'); this.form.submit();" />
-				<!-- /TMPL_IF -->
-			<!-- TMPL_ELSE -->
+				      <!-- /TMPL_IF -->
+			      <!-- TMPL_ELSE -->
 		                <input type="submit" value="Print Slip and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;op=slip'); this.form.submit();" />
-			<!-- /TMPL_IF -->
-
-        	<!-- /TMPL_IF -->
+			      <!-- /TMPL_IF -->
             <!-- /TMPL_IF -->
-		<!-- TMPL_IF name="HoldButtonIgnore" -->
+         <!-- /TMPL_IF -->
+		   <!-- TMPL_IF name="HoldButtonIgnore" -->
                 <input type=hidden name="cancelTransfer" value="0">
                 <input type="button" class="deny" value="Ignore<TMPL_IF NAME="WrongTransfer">, Cancel transfer, Keep here<TMPL_ELSIF NAME="transfertodo">, Keep here</TMPL_IF>" onclick=" 
                     <TMPL_IF NAME="queue_branchlimit">parent.parent.GB_hide();

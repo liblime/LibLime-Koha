@@ -307,13 +307,10 @@ function confirmCancelWaiting(that) {
           </td>
           <td><!-- TMPL_IF name="waiting" -->
             <em>Item is <strong>waiting</strong></em>
-            <!-- /TMPL_IF -->
-            <!-- TMPL_IF name="transfered" -->
+            <!-- TMPL_ELSIF name="transfered" -->
             <em>Item <strong>in transit</strong> from
               <!-- TMPL_VAR NAME="frombranch" --> since <!-- TMPL_VAR NAME="datesent" --> </em>
-            <!-- /TMPL_IF -->
-
-            <!-- TMPL_IF name="nottransfered" -->
+            <!-- TMPL_ELSIF name="nottransfered" -->
             <em>Item hasn't been transfered yet from <!-- TMPL_VAR NAME="nottransferedby" --></em>
             <!-- /TMPL_IF -->
 	    <!-- TMPL_IF NAME="waitingposition" --><strong><!-- TMPL_VAR NAME="waitingposition" --></strong><!-- /TMPL_IF --></td>
