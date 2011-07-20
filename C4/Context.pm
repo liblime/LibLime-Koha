@@ -34,8 +34,6 @@ use Koha;
 
 $VERSION = '4.07.00.001';
 
-die "Version mismatch: $VERSION > $Koha::VERSION" if ($VERSION gt $Koha::VERSION);
-
 if ($ENV{'HTTP_USER_AGENT'})	{
     require CGI::Carp;
     # FIXME for future reference, CGI::Carp doc says
