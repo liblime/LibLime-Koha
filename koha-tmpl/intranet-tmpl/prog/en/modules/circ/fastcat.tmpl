@@ -10,6 +10,13 @@
         <div id="yui-main">
             <div class="yui-b"><div class="yui-g">
 
+<TMPL_IF NAME="errNoFA">
+<div class="alert"><span class=problem>Warning:</span> No &quot;FA&quot; framework found for fast add.  
+Using default framework.<br>
+After adding this item, add the &quot;FA&quot; framework and change this bibliographic record's
+framework accordingly.
+</div>
+</TMPL_IF>
 <h2>Add Brief Record For Barcode <!-- TMPL_VAR NAME="barcode" --></h2>
 
 <form method="post" action="/cgi-bin/koha/circ/fastcat.pl">
