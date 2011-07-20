@@ -469,13 +469,11 @@ if (@worklibs && $itemnumber) { # item ownership
 
 ## Move barcode field to the top of the list.
 my $barcode_index = 0;
-foreach my $i ( @$item ) {
-  if ( $i->{'marc_lib'} =~ m/Barcode/ ) {
-      last;
-  }
-  else {
-    $barcode_index++;
-  }
+for my $i(0..$#{$item}) {
+   if (($$item[$i]{tag} ~~ '952') && ($$item[$i]{subfield} ~~ 'p')) {
+      $barcode_index = $i;
+      last;   
+   }
 }
 my @tmp = splice( @$item, $barcode_index, 1 );
 my $t = $tmp[0];
