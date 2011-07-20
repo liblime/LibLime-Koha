@@ -105,9 +105,13 @@ sub CreateLostItem {
     my $date_lost = C4::Dates->new()->output('iso');
 
     # Get the item and biblio data
-    my $sth = $dbh->prepare("SELECT * FROM items LEFT JOIN biblio ON items.biblionumber=biblio.biblionumber WHERE itemnumber=?");
+    my $sth = $dbh->prepare("
+      SELECT items.*,biblioitems.itemtype FROM items,biblioitems
+       WHERE items.itemnumber=?
+         AND items.biblioitemnumber=biblioitems.biblioitemnumber");
     $sth->execute($itemnumber);
     my $item = $sth->fetchrow_hashref;
+    $$item{itype} //= $$item{itemtype};
 
     ## dupecheck: an item-borrower pair can only be lost once per borrower
     $sth = $dbh->prepare('SELECT id FROM lost_items

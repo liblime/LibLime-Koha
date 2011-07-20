@@ -1530,7 +1530,7 @@ sub AddReturn {
     my $validTransfert = 0;
     
     # get information on item
-    my $itemnumber  = GetItemnumberFromBarcode( $barcode );
+    my $itemnumber  = C4::Items::GetItemnumberFromBarcode( $barcode );
     unless ($itemnumber) {
         return (0, { BadBarcode => $barcode }); # no barcode means no item or borrower.  bail out.
     }
@@ -1574,7 +1574,7 @@ sub AddReturn {
             $doreturn = 0;
         }
     }
-    my $item = GetItem($itemnumber) or die "GetItem($itemnumber) failed";
+    my $item = C4::Items::GetItem($itemnumber) or die "GetItem($itemnumber) failed";
         # full item data, but no borrowernumber or checkout info (no issue)
         # we know GetItem should work because GetItemnumberFromBarcode worked
     my $hbr = $item->{C4::Context->preference("HomeOrHoldingBranch")} || '';
@@ -1615,8 +1615,8 @@ sub AddReturn {
 
     # Set items.otherstatus back to NULL on check in regardless of whether the
     # item was actually checked out.
-    ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
-    ModItem({ onloan      => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
+    C4::Items::ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
+    C4::Items::ModItem({ onloan      => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
 
     # case of a return of document (deal with issues and holdingbranch)
     if ($doreturn) {
@@ -1626,7 +1626,7 @@ sub AddReturn {
             # define circControlBranch only if dropbox mode is set
             # don't allow dropbox mode to create an invalid entry in issues (issuedate > today)
             # FIXME: check issuedate > returndate, factoring in holidays
-            $circControlBranch = _GetCircControlBranch($item,$borrower) unless ( $item->{'issuedate'} eq C4::Dates->today('iso') );;
+            $circControlBranch = _GetCircControlBranch($item,$borrower) unless ( $issue->{'issuedate'} eq C4::Dates->today('iso') );;
         }
 
         if ($borrowernumber) {
@@ -1646,7 +1646,7 @@ sub AddReturn {
         UpdateHoldingbranch($branch, $item->{'itemnumber'});
         $item->{'holdingbranch'} = $branch; # update item data holdingbranch too
     }
-    ModDateLastSeen( $item->{'itemnumber'} );
+    C4::Items::ModDateLastSeen( $item->{'itemnumber'} );
 
     # check if we have a transfer for this document
     my ($datesent,$frombranch,$tobranch) = GetTransfers( $item->{'itemnumber'} );
@@ -1924,7 +1924,7 @@ sub _FixAccountOverdues {
     ## fines.pl cron isn't running?
     if(!$row && $$issue{overdue}) { ## is overdue, not yet charged
         my($amount,$type,$daycounttotal,$daycount,$ismax) = C4::Overdues::CalcFine(
-            GetItem($$issue{itemnumber}),
+            C4::Items::GetItem($$issue{itemnumber}),
             $$flags{borcatcode},
             $$flags{branch},
             undef,undef,
@@ -2096,7 +2096,9 @@ sub _FixAccountNowFound
         );
     }
     elsif ($tolost) {
-        $by .= sprintf('staff (-%s)',C4::Context->userenv->{id});
+        my $userid = 'cron';
+        if (my $userenv = C4::Context->userenv) { $userid = $userenv->{id} }
+        $by .= sprintf('staff (-%s)',$userid);
     }
     elsif ( ($co ~~ 'renewal') || 
             ($issuebor && ($issuebor == $$lost{borrowernumber}))

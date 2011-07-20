@@ -2215,6 +2215,9 @@ sub _koha_modify_item {
     my $error;
     my $query = "UPDATE items SET ";
     my @bind;
+    $$item{notforloan} //= 0;
+    $$item{suppress}   //= 0;
+    $$item{wthdrawn}   //= 0;
     if (($$item{notforloan} != 0)
      || ($$item{suppress}   != 0)
      || ($$item{wthdrawn}   != 0) ) {

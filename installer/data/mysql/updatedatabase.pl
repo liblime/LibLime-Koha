@@ -4681,6 +4681,13 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Modified systempreferences.reservesNeedConfirmationOnCheckout )\n";
 }
 
+$DBversion = '4.09.00.000';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do('ALTER TABLE lost_items change itemtype itemtype varchar(10) DEFAULT NULL');
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Allow lost_items.itemtype to be nullable )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

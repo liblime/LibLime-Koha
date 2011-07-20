@@ -1365,7 +1365,7 @@ CREATE TABLE lost_items (
   itemcallnumber VARCHAR(100) DEFAULT NULL,
   itemnotes MEDIUMTEXT,
   location VARCHAR(80) DEFAULT NULL,
-  itemtype VARCHAR(10) NOT NULL,
+  itemtype VARCHAR(10) DEFAULT NULL,
   title mediumtext,
   date_lost DATE NOT NULL,
   claims_returned tinyint(1) NOT NULL DEFAULT 0,
@@ -2589,23 +2589,6 @@ CREATE TABLE IF NOT EXISTS clubsAndServicesEnrollments (
   last_updated timestamp NOT NULL default CURRENT_TIMESTAMP,
   branchcode varchar(4) default NULL COMMENT 'foreign key to branches',
   PRIMARY KEY  (caseId)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS lost_items (
-    id INT(11) NOT NULL auto_increment,
-    borrowernumber INT(11) NOT NULL,
-    itemnumber INT(11) NOT NULL,
-    biblionumber INT(11) NOT NULL,
-    barcode VARCHAR(20) DEFAULT NULL,
-    homebranch VARCHAR(10) DEFAULT NULL,
-    holdingbranch VARCHAR(10) DEFAULT NULL,
-    itemcallnumber VARCHAR(100) DEFAULT NULL,
-    itemnotes MEDIUMTEXT,
-    location VARCHAR(80) DEFAULT NULL,
-    itemtype VARCHAR(10) NOT NULL,
-    title mediumtext,
-    date_lost DATE NOT NULL,
-    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS periodicals;

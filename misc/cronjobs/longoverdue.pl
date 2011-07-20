@@ -38,6 +38,7 @@ use C4::Context;
 use C4::Items;
 use C4::LostItems;
 use C4::Accounts;
+use C4::Circulation;
 use Getopt::Long;
 
 my  $lost;  #  key=lost value,  value=num days.
@@ -63,7 +64,9 @@ This script takes the following parameters :
                         where n is num days overdue, and lv is the lost value.  See warning below.
 
     --charge | -c       This specifies what lost value triggers Koha to charge the account for the
-                        lost item.  Replacement costs are not charged if this is not specified.
+                        lost item.  Replacement costs are not charged if this is not specified.  Normally,
+                        the 'Lost+Charge' authorized value of the LOST category has a value of 1, so set this
+                        to 1.
 
     --verbose | v       verbose.
 
@@ -118,13 +121,13 @@ sub bounds ($) {
 # FIXME - This sql should be inside the API.
 sub longoverdue_sth {
     my $query = "
-    SELECT items.itemnumber, borrowernumber, date_due
+    SELECT issues.*,items.barcode,items.holdingbranch
       FROM issues, items
      WHERE items.itemnumber = issues.itemnumber
-      AND  DATE_SUB(CURDATE(), INTERVAL ? DAY)  > date_due
-      AND  DATE_SUB(CURDATE(), INTERVAL ? DAY) <= date_due
-      AND  itemlost <> ?
-     ORDER BY date_due
+      AND  DATE_SUB(CURDATE(), INTERVAL ? DAY)  > issues.date_due
+      AND  DATE_SUB(CURDATE(), INTERVAL ? DAY) <= issues.date_due
+      AND  items.itemlost <> ?
+     ORDER BY issues.date_due
     ";
     return C4::Context->dbh->prepare($query);
 }
@@ -155,9 +158,20 @@ foreach my $startrange (sort keys %$lost) {
         while (my $row=$sth_items->fetchrow_hashref) {
             printf ("Due %s: item %5s from borrower %5s to lost: %s\n", $row->{date_due}, $row->{itemnumber}, $row->{borrowernumber}, $lostvalue) if($verbose);
             if($confirm) {
-                ModItemLost($row->{'biblionumber'}, $row->{'itemnumber'}, $lostvalue);
-                C4::Accounts::chargelostitem($row->{'itemnumber'}) if( $charge && $charge eq $lostvalue);
                 C4::LostItems::CreateLostItem($row->{'itemnumber'}, $row->{'borrowernumber'});
+                C4::Accounts::chargelostitem($row->{'itemnumber'}) if( $charge && $charge eq $lostvalue);
+                ## honor syspref
+                if (C4::Context->preference('MarkLostItemsReturned')) {
+                   C4::Circulation::AddReturn(
+                      $$row{barcode},
+                      $$row{holdingbranch}, # assume returned to where last checked out
+                      0,     # exemptfine
+                      0,     # dropbox
+                      undef, # returndate: will default to today
+                      1,     # tolost
+                   );
+                }
+                ModItemLost($row->{'biblionumber'}, $row->{'itemnumber'}, $lostvalue);
             }
             $count++;
         }
