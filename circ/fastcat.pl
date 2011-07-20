@@ -89,6 +89,10 @@ my $permanent_location = $query->param('permanent_location');
 #  my $session = get_session($sessionID);
 #}
 
+## look for the 'FA' framework
+my %fw = %{C4::Koha::getframeworks() // {}};
+my $errNoFA = $fw{FA} ? 0:1;
+
 if ($write_record) {
     my $bib_record    = MARC::Record->new();
     my $author_tag    = q{100};
@@ -128,8 +132,8 @@ if ($write_record) {
           MARC::Field->new( $publisher_tag, q{ }, q{ }, @publisher_fields );
         $bib_record->append_fields($field);
     }
-
-    my ( $biblionumber, $biblioitemnumber ) = AddBiblio( $bib_record, q{} );
+    my $framework = $errNoFA? '' : 'FA';
+    my ( $biblionumber, $biblioitemnumber ) = AddBiblio( $bib_record, $framework );
 
     my $item = {
         itemnotes => $itemnotes,
@@ -198,6 +202,7 @@ if ($duedatespec) {
 }
 
 $template->param(
+    errNoFA        => $errNoFA,
     fastcat        => 1,
     barcode        => $barcode,
     borrowernumber => $borrowernumber,
@@ -206,6 +211,7 @@ $template->param(
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;
+exit;
 
 sub get_item_type_loop {
     my $dbh = shift;
