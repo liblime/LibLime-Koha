@@ -1880,6 +1880,7 @@ sub _chargeToAccount
 sub _FixAccountOverdues {
     my ($issue, $flags) = @_;
     return unless $issue;
+    my $verbiage = $$flags{atreturn}? 'returned' : 'renewed';
 
     $$flags{datedueObj} //= C4::Dates->new($$issue{date_due},'iso');
     if (ref($$flags{returndateObj}) =~ /C4\:\:Dates/) {
@@ -1941,9 +1942,9 @@ sub _FixAccountOverdues {
                 $ismax
             );
             ##.. then exempt fine
-            _checkinDescFine($$issue{borrowernumber},$accountno,$checkindate,$$flags{tolost}) if $$flags{atreturn};
+            _checkinDescFine($$issue{borrowernumber},$accountno,$checkindate,$$flags{tolost},$verbiage);
             _exemptFine($$issue{borrowernumber},$accountno) if ($$flags{exemptfine});
-            _logFine($$issue{borrowernumber},"returned item $$issue{itemnumber} $checkindate, $amount due",0) 
+            _logFine($$issue{borrowernumber},"$verbiage item $$issue{itemnumber} $checkindate, $amount due",0) 
             if $$flags{atreturn};
         }
         return;
@@ -1951,7 +1952,7 @@ sub _FixAccountOverdues {
 
     ## hereafter, we have accountline
     if ($$flags{exemptfine}) {
-        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost}) if $$flags{atreturn};
+        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost},$verbiage);
         _exemptFine($$issue{borrowernumber},$$row{accountno});
         _rcrFine($issue,$row,0);
         _logFine($$issue{borrowernumber},"exempt fee item $$issue{itemnumber}",1);
@@ -1967,6 +1968,7 @@ sub _FixAccountOverdues {
           WHERE borrowernumber    = $$issue{borrowernumber}
             AND accountno         = $$row{accountno}
         ");
+        $msg .= ", $verbiage $checkindate" if !$$flags{tolost};
         _rcrFine($issue,$row,0);
         _logFine($$issue{borrowernumber},$msg,1);
         return;
@@ -1991,7 +1993,7 @@ sub _FixAccountOverdues {
         ($amount, undef, undef, undef, $ismax)
             = C4::Overdues::CalcFine($item, $borrower->{categorycode}, $branchcode,
                                      undef, undef, $start_date, $enddateObj);
-        $msg = "adjusted backdate returned item $$issue{itemnumber} $checkindate";
+        $msg = "adjusted backdate $verbiage item $$issue{itemnumber} $checkindate";
     }
 
     if ($amount && ($amount != $$row{amount})) {
@@ -2036,12 +2038,12 @@ sub _FixAccountOverdues {
             C4::Overdues::UpdateFine(
                 $issue->{itemnumber}, $issue->{borrowernumber}, $amount, undef, $start_date->output,$ismax
             );
-            _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost});
+            _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost},$verbiage);
         }
-        _logFine($$issue{borrowernumber},$msg || "returned item $$issue{itemnumber} $checkindate",1);
+        _logFine($$issue{borrowernumber},$msg || "$verbiage item $$issue{itemnumber} $checkindate",1);
     }
-    elsif ($$row{accountno} !~ /returned $checkindate/) {
-        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost});
+    elsif ($$row{accountno} !~ /(returned|renewed) $checkindate/) {
+        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost},$verbiage);
     }
 
     ## bogus
@@ -2289,7 +2291,7 @@ sub _rcrFine
 
 sub _checkinDescFine
 {
-    my $desc = $_[3]? 'checkin as lost' : 'returned';
+    my $desc = $_[3]? 'checkin as lost' : $_[4];
     return C4::Context->dbh->do("UPDATE accountlines
         SET description    = CONCAT(description, ', $desc $_[2]')
       WHERE borrowernumber = ?
