@@ -283,6 +283,8 @@ elsif ( $step && $step == 3 ) {
     #
     # 1ST install, 3rd sub-step : insert the SQL files the user has selected
     #
+        my $syspref_defaults = C4::Context::_seed_preference_defaults_cache();
+        C4::Context->preference($_) for (keys %$syspref_defaults);
 
         my ($fwk_language, $list) = $installer->load_sql_in_order($all_languages, $query->param('framework'));
         $template->param(
