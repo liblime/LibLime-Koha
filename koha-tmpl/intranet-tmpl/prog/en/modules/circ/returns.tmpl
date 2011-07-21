@@ -62,12 +62,19 @@ function HaltReturns() {
 }
 
 function ContinueReturns() {
-	$('#barcode').attr("disabled", false);
-	$('#barcode_submit').attr("disabled", false);
-
-	$('#continue_button').hide();
-
 	$('#barcode').focus();
+   if (document.transferf) {
+      document.transferf.lost_item_id.value       = '<TMPL_VAR NAME="lost_item_id">';
+      document.transferf.lostbarcode.value        = '<TMPL_VAR NAME="itembarcode">';
+      document.transferf.lostborrowernumber.value = '<TMPL_VAR NAME="lostborrowernumber">';
+      document.transferf.unlinkFromAccount.value  = 1;
+      $('#errmsg').hide('slow'); 
+      return false;
+   }
+   else {
+      document.simplelostf.submit();
+      return;
+   }
 }
 </script>
 
@@ -133,7 +140,7 @@ function ContinueReturns() {
                                     $('#errmsg').hide('slow'); 
                                     return false;
                                 }
-                                else if (document.transferf) {
+                                else if (document.transferf || document.alreadytransf || document.holdtransf) {
                                     document.transferf.lost_item_id.value       = '<TMPL_VAR NAME="lost_item_id">';
                                     document.transferf.lostbarcode.value        = '<TMPL_VAR NAME="itembarcode">';
                                     document.transferf.lostborrowernumber.value = '<TMPL_VAR NAME="lostborrowernumber">';
@@ -149,7 +156,7 @@ function ContinueReturns() {
                                 if(document.foundf) {
                                     $('#errmsg').hide('slow');
                                 }
-                                else if (document.transferf) {
+                                else if (document.transferf || document.alreadytransf || document.holdtransf) {
                                     $('#errmsg').hide('slow');
                                 }
                                 else {
@@ -162,7 +169,15 @@ function ContinueReturns() {
 					          </TMPL_IF>
                            </form>
                         <TMPL_ELSE>
+                        <form method=post action="returns.pl" name="simplelostf">
+                        <TMPL_LOOP NAME="inputloop">
+                        <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
+                        <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
+                        <input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" />
+                        <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+                        </TMPL_LOOP>
 			               <p><button id="continue_button" onclick="ContinueReturns();">Continue</button></p>
+                        </form>
                         </TMPL_IF><!-- lostborrowernumber -->
                      </TMPL_IF><!-- waslost -->
                     <!-- TMPL_IF Name="withdrawn" -->
@@ -205,6 +220,10 @@ function ContinueReturns() {
         <TMPL_ELSE><br><TMPL_VAR NAME="TransferWaitingAtBranchname"></h3>
             <form method=post action="returns.pl" name="alreadytransf">
             <input type=hidden name="cancelTransfer" value="0">
+            <input type=hidden name="lost_item_id"       value="">
+            <input type=hidden name="lostbarcode"        value="">
+            <input type=hidden name="lostborrowernumber" value="">
+            <input type=hidden name="unlinkFromAccount"  value="0">
             <input type=hidden name="itemnumber"     value="<TMPL_VAR NAME="itemnumber">">
             <TMPL_LOOP NAME="inputloop">
             <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
@@ -229,7 +248,8 @@ function ContinueReturns() {
                 <!-- TMPL_IF NAME="wborphone" --><li><!-- TMPL_VAR Name="wborphone" --></li><!-- /TMPL_IF -->
 		        <!-- TMPL_IF NAME="wboremail" --><li><a id="boremail" href="mailto:<!-- TMPL_VAR NAME="wboremail" -->"><!-- TMPL_VAR NAME="wboremail" --></a></li><!-- /TMPL_IF -->
         </ul> 
-        <form method="post" action="returns.pl" class="confirm">
+        <form method="post" action="returns.pl" name="holdtransf">
+            <input type=hidden name="resbarcode" value="<TMPL_VAR NAME="barcode">">
             <input type=hidden name="dotransfer" value="1">
             <input type=hidden name="transferitem" value="<TMPL_VAR NAME="WrongTransferItem">">
             <input type=hidden name="tobranch" value="<TMPL_VAR NAME="wpickbranch">">
@@ -293,7 +313,11 @@ function ContinueReturns() {
         <input type=hidden name="lostbarcode"  value="">
         <input type=hidden name="lostborrowernumber" value="">
         <input type=hidden name="unlinkFromAccount" value="0">
-        <h3>Hold Found<TMPL_IF NAME="pull"> (please pull)<TMPL_ELSE> (item is already waiting)</TMPL_IF>:<br><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a></h3>
+        <h3>Hold Found
+            <TMPL_IF NAME="pull">(please pull)
+            <TMPL_ELSIF EXPR="waiting">(item is already waiting)
+            <TMPL_ELSE>ERROR: uncaught exception
+            </TMPL_IF>:<br><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a></h3>
         <!-- TMPL_IF NAME="reservenotes" --><h4>Notes: <!-- TMPL_VAR Name="reservenotes" --></h4><!-- /TMPL_IF -->
         <br><h4>Hold for:</h4>
 			<ul>
@@ -343,10 +367,14 @@ function ContinueReturns() {
                 </form>
 	        </div>
         <TMPL_ELSE>
-            <TMPL_IF EXPR="currentbranch ne destbranchname and foundwait">
+            <TMPL_IF EXPR="currentbranch ne destbranchname and (foundwait or pull) and not WrongTransfer">
             <div class="dialog message">
             <span class="error">Unexpected check in.</span>
-            <h3>Hold found marked as <span class=error>Waiting</span>:</h3>
+            <h3>Hold found marked as <span class=error>
+               <TMPL_IF EXPR="res_found eq 'W'">Waiting
+               <TMPL_ELSIF EXPR="res_found eq 'T'">In Transit
+               <TMPL_ELSE>ERROR
+               </TMPL_IF></span>:</h3>
             <h4><a href="/cgi-bin/koha/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a><br>
             at <TMPL_VAR NAME="pickbranchname"> for</h4>
             <ul>
