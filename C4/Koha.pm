@@ -873,8 +873,8 @@ sub GetAuthorisedValue {
     my $thawed_cache = C4::Context->getcache(__PACKAGE__,
                                              {driver => 'RawMemory',
                                               datastore => C4::Context->cachehash});
-    $thawed_cache->compute('thawed_authvals', '15s', \&_seed_thawed_authvals_cache);
-    return clone($thawed_cache->{$category}{$authorised_value});
+    my $authvals = $thawed_cache->compute('thawed_authvals', '15s', \&_seed_thawed_authvals_cache);
+    return clone($authvals->{$category}{$authorised_value});
 }
 
 =head2 GetAuthorisedValues
