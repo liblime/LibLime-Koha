@@ -201,7 +201,6 @@ use Carp;
                                              $r->borrower->surname,
                                              $r->borrower->firstname);
                 $t->{borrowercard} = $r->borrower->cardnumber;
-#                $t->{branchname} =  $r->branchcode; #for now... no FK in db
                 $t->{branchname}   = $r->branch->branchname;
                 $t->{itembarcode} = ($r->item) ? $r->item->barcode : undef;
                 $t->{uri} = R('ReserveSingle', $t->{reservenumber});

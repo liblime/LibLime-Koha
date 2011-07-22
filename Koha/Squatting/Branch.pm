@@ -44,31 +44,42 @@ use Carp;
 
     sub BranchShow {
         my ($self, $branchcode) = @_;
-        $self->v->{'callback'} = $self->input->{'callback'};
+
         try {
             $self->v->{branch}
                = Koha::Model::Branch->new(branchcode => $branchcode)->load;
             $self->render('_rdb_obj', _SetContentType($self));
         }
         catch {
-            carp $_;
-            $self->status = 404;
-            return $self->render('404');
+            if (/^No such Koha::/) {
+                HTTP::Exception::404->throw;
+            }
+            else {
+                carp $_;
+                HTTP::Exception::500->throw;
+            }
         };
     }
 
     sub BranchSetShow {
         my ($self) = @_;
-        my $results
+
+        try {
+            my $results
                 = Koha::Model::BranchSet->new(limits => $self->input);
-        $self->v->{branchset} = ($results) ? $results->branches : undef;
-         $self->v->{inflate} = $self->input->{inflate} // 0;
-         $self->v->{callback} = $self->input->{'callback'}; 
-         $self->render('_rdb_objset', _SetContentType($self));
+            $self->v->{branchset} = ($results) ? $results->branches : undef;
+            $self->v->{inflate} = $self->input->{inflate} // 0;
+            $self->render('_rdb_objset', _SetContentType($self));
+        }
+        catch {
+            carp $_;
+            HTTP::Exception::500->throw;
+        };
     }
 
     our @C = (
         C( BranchShow => ['/branches/(\w+)'],
+           get => \&BranchShow,
         ),
         C( BranchSetShow => ['/branches/'],
            get => \&BranchSetShow,
@@ -83,10 +94,7 @@ use Carp;
 
     sub RenderRdbAsJson {
         my ($self, $v) = @_;
-        my $func = $v->{'callback'};
-        my $str  = as_json($v->{branch});
-        if ($func) { "$func($str)" }
-        else       { $str          }
+        return as_json($v->{branch});
     }
 
     sub RenderRdbSetAsJson {
@@ -103,10 +111,7 @@ use Carp;
         else {
                @branchset = ($v->{branchset});
         }
-         my $str  = to_json(\@branchset);
-         my $func = $v->{'callback'};
-         if ($func) { "$func($str)" }
-         else       { $str          }
+         return to_json(\@branchset);
     }
 
     our @V = (
