@@ -601,7 +601,7 @@ sub checkauth {
             C4::Context::set_shelves_userenv('tot',$session->param('totshelves'));
             $debug and printf STDERR "AUTH_SESSION: (%s)\t%s %s - %s\n", map {$session->param($_)} qw(cardnumber firstname surname branch) ;
             $ip       = $session->param('ip');
-            $lasttime = $session->param('lasttime');
+            $lasttime = $session->param('lasttime') || 0;
             $userid   = $session->param('id');
             $sessiontype = $session->param('sessiontype');
         }

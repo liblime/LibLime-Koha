@@ -268,7 +268,7 @@ elsif ( $step && $step == 3 ) {
         # we have finished, just redirect to mainpage.
         #
         print $query->redirect("/cgi-bin/koha/mainpage.pl");
-        exit 1;
+        exit;
     }
     elsif ( $op && $op eq 'finish' ) {
         $installer->set_version_syspref();
@@ -476,7 +476,7 @@ else {
             my ($version) = $rq->fetchrow;
             if ($version) {
                 $query->redirect("install.pl?step=3");
-				exit;
+				    exit;
             }
         }
     }
