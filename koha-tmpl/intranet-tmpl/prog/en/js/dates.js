@@ -87,3 +87,34 @@ function ValidateForm(){
 	}
     return true
  }
+
+// args: date in UI format, dateformat syspref, database type
+function dformat2db(d,dformat,mydb) {
+   // current db format is mysql: YYYY-MM-DD
+   if(!mydb) { mydb = 'mysql' }
+   if(d) {
+      var parts=d.split('/');
+      if (mydb=='mysql') {
+         if      (dformat=='us')  { return [parts[2],parts[0],parts[1]].join('-') }
+         else if (dformat=='iso') { return [parts[0],parts[1],parts[2]].join('-') }
+         else                     { return [parts[2],parts[1],parts[0]].join('-') }
+      }
+      else {
+         alert('Error: unsupported date and/or database type');
+      }
+   }
+}
+
+// currently supports only mysql timestamp
+function ts2date(ts,dformat) {
+   if (ts) {
+      var regex=/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])\s*(?:([0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?$/;
+      var parts=ts.replace(regex,"$1 $2 $3 $4 $5 $6").split(' ');
+      if      (dformat=='us')  { return [parts[1],parts[2],parts[0]].join('/') }
+      else if (dformat=='iso') { return [parts[0],parts[1],parts[2]].join('/') }
+      else                     { return [parts[2],parts[1],parts[0]].join('/') }
+   }
+   return '';
+//   var d = new Date(parts[0],parts[1]-1,parts[2],parts[3],parts[4],parts[5]);
+}
+

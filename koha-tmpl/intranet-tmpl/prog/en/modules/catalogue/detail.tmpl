@@ -220,7 +220,7 @@ function barcodeMatch(barcode,itemnumber) {
 
 <TMPL_IF NAME="last_borrower_show_button">
 <input type=button value="Hold for <TMPL_VAR NAME="last_borrower_firstname"> <TMPL_VAR NAME="last_borrower_surname">" 
-onclick="document.location.href='/cgi-bin/koha/reserve/request.pl?searchtohold=<TMPL_VAR NAME="searchtohold">&cardnumber=<TMPL_VAR NAME="last_borrower_cardnumber">&borrowernumber=<TMPL_VAR NAME="last_borrower_borrowernumber">&biblionumber=<TMPL_VAR NAME="biblionumber">';">
+onclick="document.location.href='/cgi-bin/koha/reserve/placehold.pl?searchtohold=<TMPL_VAR NAME="searchtohold">&cardnumber=<TMPL_VAR NAME="last_borrower_cardnumber">&borrowernumber=<TMPL_VAR NAME="last_borrower_borrowernumber">&biblionumber=<TMPL_VAR NAME="biblionumber">';">
 </TMPL_IF>
 
 <div id="bibliodetails" class="toptabs">

@@ -61,6 +61,14 @@ __PACKAGE__->meta->setup(
             class       => 'Koha::Schema::Biblioitem',
             key_columns => { biblioitemnumber => 'biblioitemnumber' },
         },
+        homebranch => {
+            class    => 'Koha::Schema::Branch',
+            key_columns => { homebranch => 'branchcode' },
+        },
+        holdingbranch => {
+            class    => 'Koha::Schema::Branch',
+            key_columns => { holdingbranch => 'branchcode' },
+        },
     ],
 
     relationships => [

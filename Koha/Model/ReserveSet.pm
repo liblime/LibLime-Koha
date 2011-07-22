@@ -34,7 +34,6 @@ sub BUILD {
             offset => $self->limits->{offset} // 0,
         );
     }
-
     my $raw_reserves = Koha::Schema::Reserve::Manager->get_reserves(@limits);
 
     my @cooked_reserves = map {Koha::Model::Reserve->new(db_obj => $_)} @$raw_reserves;

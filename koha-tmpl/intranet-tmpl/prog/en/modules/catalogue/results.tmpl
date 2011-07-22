@@ -383,10 +383,10 @@ function GetZ3950Terms(){
                                   <!-- TMPL_IF NAME="norequests" -->
                                         No holds allowed
                                     <!-- TMPL_ELSE -->
-                                        <a class="reserve" id="reserve_<!-- TMPL_VAR NAME="biblionumber" -->" href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Holds</a>
-                                        <!-- <a class="reserve" id="reserve_<!-- TMPL_VAR NAME="biblionumber" -->" href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&cardnumber=<!-- TMPL_VAR NAME="last_borrower_cardnumber" -->">Hold for <!-- TMPL_VAR NAME="last_borrower_firstname" --> <!-- TMPL_VAR NAME="last_borrower_surname" --></a> -->
+                                        <a class="reserve" id="reserve_<!-- TMPL_VAR NAME="biblionumber" -->" href="/cgi-bin/koha/reserve/placehold.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Holds</a>
+                                        <!-- <a class="reserve" id="reserve_<!-- TMPL_VAR NAME="biblionumber" -->" href="/cgi-bin/koha/reserve/placehold.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&cardnumber=<!-- TMPL_VAR NAME="last_borrower_cardnumber" -->">Hold for <!-- TMPL_VAR NAME="last_borrower_firstname" --> <!-- TMPL_VAR NAME="last_borrower_surname" --></a> -->
 					<!-- TMPL_IF NAME="last_borrower_show_button" -->
-	                                        <input type="button" onClick = "window.location = '/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&cardnumber=<!-- TMPL_VAR NAME="last_borrower_cardnumber" -->&searchtohold=1'" value="Hold for <!-- TMPL_VAR NAME="last_borrower_firstname" --> <!-- TMPL_VAR NAME="last_borrower_surname" -->" />
+	                                        <input type="button" onClick = "window.location = '/cgi-bin/koha/reserve/placehold.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&cardnumber=<!-- TMPL_VAR NAME="last_borrower_cardnumber" -->&searchtohold=1'" value="Hold for <!-- TMPL_VAR NAME="last_borrower_firstname" --> <!-- TMPL_VAR NAME="last_borrower_surname" -->" />
 					<!-- /TMPL_IF -->
                                     <!-- /TMPL_IF -->
                                 </td>
@@ -480,7 +480,7 @@ function GetZ3950Terms(){
 </div>
 <!-- /TMPL_IF -->
 
-<form id="hold_form" method="get" action="/cgi-bin/koha/reserve/request.pl">
+<form id="hold_form" method="get" action="/cgi-bin/koha/reserve/placehold.pl">
     <!-- Value will be set here by placeHold() -->
     <input id="hold_form_biblios" type="hidden" name="biblionumbers" value="" />
     <input type="hidden" name="multi_hold" value="1"/>
@@ -492,7 +492,7 @@ function GetZ3950Terms(){
     </TMPL_IF>
 </form>
 
-<form id="list_form" method="get" action="/cgi-bin/koha/reserve/request.pl">
+<form id="list_form" method="get" action="/cgi-bin/koha/reserve/placehold.pl">
     <!-- Value will be set here by addToList() -->
     <input id="list_form_biblios" type="hidden" name="biblionumbers" value="" />
     <input type="hidden" name="multi_listadd" value="1"/>

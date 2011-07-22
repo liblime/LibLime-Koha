@@ -281,7 +281,7 @@ function refocus(calendar) {
     <li>Item ( <!-- TMPL_VAR NAME="getTitleMessageIteminfo" --> ) checked out to <!-- TMPL_VAR NAME="ISSUED_TO_ANOTHER" -->. Check in and check out?</li>
 <!-- /TMPL_IF -->
 <TMPL_IF NAME="RESERVED">
-    <li><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="getTitleMessageIteminfo"></a> is <b>on hold</b>
+    <li><a href="/cgi-bin/koha/reserve/editholds.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="getTitleMessageIteminfo"></a> is <b>on hold</b>
    <TMPL_IF EXPR="RESERVE_DIFFBOR_PENDING or RESERVE_SAMEBOR_DIFFBIBITEM_PENDING">
       <TMPL_IF EXPR="res_found eq 'T'">(was in transit)
       <TMPL_ELSIF NAME="res_priority">(priority <TMPL_VAR NAME="res_priority">)
@@ -342,7 +342,7 @@ Checkout anyway?<br>
    <!-- TMPL_IF NAME="RESERVED" -->
     <table border=0 cellspacing=0 cellpadding=4>
     <tr><td><input type="radio" name="howReserve" value="requeue" 
-      <TMPL_IF EXPR="howReserve eq 'requeue'">checked</TMPL_IF> /><b>Requeue</b>: Send reserve back to title's <a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<TMPL_VAR NAME="biblionumber">">Existing Holds</a> list</td></tr>
+      <TMPL_IF EXPR="howReserve eq 'requeue'">checked</TMPL_IF> /><b>Requeue</b>: Send reserve back to title's <a href="/cgi-bin/koha/reserve/editholds.pl?biblionumber=<TMPL_VAR NAME="biblionumber">">Existing Holds</a> list</td></tr>
     <tr><td><input type="radio" name="howReserve" value="cancel" 
       <TMPL_IF EXPR="howReserve eq 'cancel'">checked</TMPL_IF> /><b>Cancel</b> Reserve
     <TMPL_IF EXPR="RESERVE_DIFFBOR_WAITING or RESERVE_SAMEBOR_DIFFBIBITEM_PENDING or RESERVE_SAMEBOR_DIFFBIBITEM_WAITING">

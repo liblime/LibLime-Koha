@@ -1830,13 +1830,11 @@ sub ModReserveStatus {
     }
     my $holdperiod = C4::Context->preference('ReservesMaxPickUpDelay');
     if (defined($holdperiod) && ($holdperiod > 0)) {
-      my ($holdexpyear,$holdexpmonth,$holdexpday) = Today();
-      my $holdstartdate = C4::Dates->new(sprintf "%02d/%02d/%04d",$holdexpmonth,$holdexpday,$holdexpyear, 'us');
       # Check to see if hold expiration date falls on a closed library day.
       # Note the useDaysMode syspref will need to be set to Calendar for
       # the code to advance to the next non-closed day.
       my $calendar = C4::Calendar->new( branchcode => $$res{branchcode});
-      my $holdexpdate  = $calendar->addDate($holdstartdate, $holdperiod);
+      my $holdexpdate  = $calendar->addDate(C4::Dates->new(), $holdperiod);
       $setexpiration = sprintf(", expirationdate='%s' ",$holdexpdate->output('iso'));
    }
    C4::Context->dbh->do("UPDATE reserves
@@ -1900,14 +1898,11 @@ sub ModReserveAffect {
         ";
       }
       else {
-        my ($holdexpyear,$holdexpmonth,$holdexpday) = Today();
-        my $holdstartdate = C4::Dates->new(sprintf "%02d/%02d/%04d",$holdexpmonth,$holdexpday,$holdexpyear, 'us');
-
         # Check to see if hold expiration date falls on a closed library day.
         # Note the useDaysMode syspref will need to be set to Calendar for
         # the code to advance to the next non-closed day.
         my $calendar = C4::Calendar->new( branchcode => $request->{branchcode});
-        my $holdexpdate  = $calendar->addDate($holdstartdate, $holdperiod);
+        my $holdexpdate  = $calendar->addDate(C4::Dates->new(), $holdperiod);
         my $sqlexpdate = $holdexpdate->output('iso');
         $query = "
             UPDATE reserves
@@ -2274,6 +2269,15 @@ sub _FixPriority {
     return;
 }
 
+sub NextPriority
+{
+   my($biblionumber) = @_;
+   my $sth = C4::Context->dbh->prepare('SELECT MAX(priority) FROM reserves WHERE biblionumber=?');
+   $sth->execute($biblionumber);
+   my $p = ($sth->fetchrow_array())[0] // 0; $p++;
+   return $p;
+}
+
 =item _Findgroupreserve
 
   @results = &_Findgroupreserve($itemnumber);
@@ -2492,7 +2496,7 @@ sub SuspendReserve {
             }, undef, $resumedate, $reservenumber
         );
     RmFromHoldsQueue(reservenumber => $reservenumber);
-    _FixPriority( $reservenumber, $reserve->{priority} );
+#    _FixPriority( $reservenumber, $reserve->{priority} );
     return;
 }
 

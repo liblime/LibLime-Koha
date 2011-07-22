@@ -217,7 +217,7 @@ function confirmCancelWaiting(that) {
             <span class="renewals-disabled">
               <!-- /TMPL_IF -->
               <!-- TMPL_IF NAME="norenew_reason_on_reserve" -->
-              <a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">On Hold</a>
+              <a href="/cgi-bin/koha/reserve/editholds.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">On Hold</a>
               <!-- /TMPL_IF -->
 	          <!-- TMPL_IF NAME="norenew_reason_too_many" -->
 	          Not Renewable
@@ -296,7 +296,7 @@ function confirmCancelWaiting(that) {
           <td><TMPL_VAR NAME="pickupbranch"></td>
           <td><!-- TMPL_VAR NAME="reservedate" --></td>
           <td align=center><!-- TMPL_VAR NAME="holdexpdate" --></td>
-          <td><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" title="<!-- TMPL_IF NAME="reserves_245b" --><!-- TMPL_VAR NAME="reserves_245b" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245h" --> <!-- TMPL_VAR NAME="reserves_245h" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245n" --> <!-- TMPL_VAR NAME="reserves_245n" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245p" --> <!-- TMPL_VAR NAME="reserves_245p" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_260c" --> <!-- TMPL_VAR NAME="reserves_260c" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="callnumber" --> <!-- TMPL_VAR NAME="callnumber" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="enumchron" --> <!-- TMPL_VAR NAME="enumchron" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="copynumber" --> Copy: <!-- TMPL_VAR NAME="copynumber" --><!-- /TMPL_IF -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
+          <td><a href="/cgi-bin/koha/reserve/editholds.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" title="<!-- TMPL_IF NAME="reserves_245b" --><!-- TMPL_VAR NAME="reserves_245b" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245h" --> <!-- TMPL_VAR NAME="reserves_245h" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245n" --> <!-- TMPL_VAR NAME="reserves_245n" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_245p" --> <!-- TMPL_VAR NAME="reserves_245p" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="reserves_260c" --> <!-- TMPL_VAR NAME="reserves_260c" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="callnumber" --> <!-- TMPL_VAR NAME="callnumber" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="enumchron" --> <!-- TMPL_VAR NAME="enumchron" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="copynumber" --> Copy: <!-- TMPL_VAR NAME="copynumber" --><!-- /TMPL_IF -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></td>
           <td><TMPL_VAR NAME="reservenotes"></td>
           <td><!-- TMPL_VAR NAME="itemtype" --></td>
           <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>

@@ -34,16 +34,18 @@ __PACKAGE__->meta->setup(
             class       => 'Koha::Schema::Biblio',
             key_columns => { biblionumber => 'biblionumber' },
         },
-
         borrower => {
             class       => 'Koha::Schema::Borrower',
             key_columns => { borrowernumber => 'borrowernumber' },
         },
-
         item => {
             class       => 'Koha::Schema::Item',
             key_columns => { itemnumber => 'itemnumber' },
         },
+        branch => {
+            class       => 'Koha::Schema::Branch',
+            key_columns => { branchcode => 'branchcode' },
+       },
     ],
 );
 
