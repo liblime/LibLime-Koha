@@ -1530,7 +1530,7 @@ sub AddReturn {
     my $validTransfert = 0;
     
     # get information on item
-    my $itemnumber  = GetItemnumberFromBarcode( $barcode );
+    my $itemnumber  = C4::Items::GetItemnumberFromBarcode( $barcode );
     unless ($itemnumber) {
         return (0, { BadBarcode => $barcode }); # no barcode means no item or borrower.  bail out.
     }
@@ -1545,7 +1545,7 @@ sub AddReturn {
         $$issue{returndate} = $returndate;
         $datedue = C4::Dates->new($$issue{date_due},'iso');
         my $rd   = $returndate; $rd =~ s/\D//g;
-        my $dd   = $datedue   ; $dd =~ s/\D//g;
+        my $dd   = $$issue{date_due}; $dd =~ s/\D//g;
         if ($$issue{overdue} && ($rd <= $dd)) {
             $$issue{overdue} = 0;
             $dropbox = 1;
@@ -1574,7 +1574,7 @@ sub AddReturn {
             $doreturn = 0;
         }
     }
-    my $item = GetItem($itemnumber) or die "GetItem($itemnumber) failed";
+    my $item = C4::Items::GetItem($itemnumber) or die "GetItem($itemnumber) failed";
         # full item data, but no borrowernumber or checkout info (no issue)
         # we know GetItem should work because GetItemnumberFromBarcode worked
     my $hbr = $item->{C4::Context->preference("HomeOrHoldingBranch")} || '';
@@ -1615,8 +1615,8 @@ sub AddReturn {
 
     # Set items.otherstatus back to NULL on check in regardless of whether the
     # item was actually checked out.
-    ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
-    ModItem({ onloan      => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
+    C4::Items::ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
+    C4::Items::ModItem({ onloan      => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
 
     # case of a return of document (deal with issues and holdingbranch)
     if ($doreturn) {
@@ -1626,7 +1626,7 @@ sub AddReturn {
             # define circControlBranch only if dropbox mode is set
             # don't allow dropbox mode to create an invalid entry in issues (issuedate > today)
             # FIXME: check issuedate > returndate, factoring in holidays
-            $circControlBranch = _GetCircControlBranch($item,$borrower) unless ( $item->{'issuedate'} eq C4::Dates->today('iso') );;
+            $circControlBranch = _GetCircControlBranch($item,$borrower) unless ( $issue->{'issuedate'} eq C4::Dates->today('iso') );;
         }
 
         if ($borrowernumber) {
@@ -1646,7 +1646,7 @@ sub AddReturn {
         UpdateHoldingbranch($branch, $item->{'itemnumber'});
         $item->{'holdingbranch'} = $branch; # update item data holdingbranch too
     }
-    ModDateLastSeen( $item->{'itemnumber'} );
+    C4::Items::ModDateLastSeen( $item->{'itemnumber'} );
 
     # check if we have a transfer for this document
     my ($datesent,$frombranch,$tobranch) = GetTransfers( $item->{'itemnumber'} );
@@ -1659,8 +1659,10 @@ sub AddReturn {
             );
             $sth->execute( $item->{'itemnumber'} );
             # if we have a reservation with valid transfer, we can set it's status to 'W'
-            my ($resfound,$resrec) = C4::Reserves::CheckReserves($item->{'itemnumber'});
-            C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W', $resrec) if ($resfound);
+            ## UPDATE: hold is trapped outside of and after AddReturn()... 
+            ## transfer does not have to for hold but for other reasons -hQ
+            #my ($resfound,$resrec) = C4::Reserves::CheckReserves($item->{'itemnumber'});
+            #C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W', $resrec) if ($resfound);
         } else {
             $messages->{'WrongTransfer'}     = $tobranch;
             $messages->{'WrongTransferItem'} = $item->{'itemnumber'};
@@ -1842,8 +1844,6 @@ C<$flags> : hashref containing flags indicating checkin options. Can be one of:
 
 Returns nothing.
 
-*** NOTE *** TODO: handle refund owed for payment+backdate checkin
-
 =cut
 
 sub _chargeToAccount
@@ -1880,6 +1880,7 @@ sub _chargeToAccount
 sub _FixAccountOverdues {
     my ($issue, $flags) = @_;
     return unless $issue;
+    my $verbiage = $$flags{atreturn}? 'returned' : 'renewed';
 
     $$flags{datedueObj} //= C4::Dates->new($$issue{date_due},'iso');
     if (ref($$flags{returndateObj}) =~ /C4\:\:Dates/) {
@@ -1924,7 +1925,7 @@ sub _FixAccountOverdues {
     ## fines.pl cron isn't running?
     if(!$row && $$issue{overdue}) { ## is overdue, not yet charged
         my($amount,$type,$daycounttotal,$daycount,$ismax) = C4::Overdues::CalcFine(
-            GetItem($$issue{itemnumber}),
+            C4::Items::GetItem($$issue{itemnumber}),
             $$flags{borcatcode},
             $$flags{branch},
             undef,undef,
@@ -1941,9 +1942,9 @@ sub _FixAccountOverdues {
                 $ismax
             );
             ##.. then exempt fine
-            _checkinDescFine($$issue{borrowernumber},$accountno,$checkindate,$$flags{tolost}) if $$flags{atreturn};
+            _checkinDescFine($$issue{borrowernumber},$accountno,$checkindate,$$flags{tolost},$verbiage);
             _exemptFine($$issue{borrowernumber},$accountno) if ($$flags{exemptfine});
-            _logFine($$issue{borrowernumber},"returned item $$issue{itemnumber} $checkindate, $amount due",0) 
+            _logFine($$issue{borrowernumber},"$verbiage item $$issue{itemnumber} $checkindate, $amount due",0) 
             if $$flags{atreturn};
         }
         return;
@@ -1951,7 +1952,7 @@ sub _FixAccountOverdues {
 
     ## hereafter, we have accountline
     if ($$flags{exemptfine}) {
-        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost}) if $$flags{atreturn};
+        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost},$verbiage);
         _exemptFine($$issue{borrowernumber},$$row{accountno});
         _rcrFine($issue,$row,0);
         _logFine($$issue{borrowernumber},"exempt fee item $$issue{itemnumber}",1);
@@ -1959,6 +1960,7 @@ sub _FixAccountOverdues {
     }
     elsif (!$$issue{overdue}) { # wow: backdate checkin where it's no longer overdue
         my $msg = 'adjusted to no longer overdue';
+        $msg .= ", returned $checkindate" if $$flags{atreturn};
         $dbh->do("UPDATE accountlines
             SET description = CONCAT(description, ', $msg'),
                 amountoutstanding = 0,
@@ -1966,7 +1968,7 @@ sub _FixAccountOverdues {
           WHERE borrowernumber    = $$issue{borrowernumber}
             AND accountno         = $$row{accountno}
         ");
-        $msg .= ", returned $checkindate" if $$flags{atreturn};
+        $msg .= ", $verbiage $checkindate" if !$$flags{tolost};
         _rcrFine($issue,$row,0);
         _logFine($$issue{borrowernumber},$msg,1);
         return;
@@ -1991,7 +1993,7 @@ sub _FixAccountOverdues {
         ($amount, undef, undef, undef, $ismax)
             = C4::Overdues::CalcFine($item, $borrower->{categorycode}, $branchcode,
                                      undef, undef, $start_date, $enddateObj);
-        $msg = "adjusted backdate returned item $$issue{itemnumber} $checkindate";
+        $msg = "adjusted backdate $verbiage item $$issue{itemnumber} $checkindate";
     }
 
     if ($amount && ($amount != $$row{amount})) {
@@ -1999,6 +2001,12 @@ sub _FixAccountOverdues {
             ## lower both the amount and the amountoutstanding by diff cmp to new amount
             my $diff = $$row{amount} - $amount;
             my $newout = $$row{amountoutstanding} - $diff;
+            my $tryRCR = 0;
+            my $amountoutstanding = $newout;
+            if ($amountoutstanding <0) {
+               $tryRCR = 1;
+               $amountoutstanding = 0;
+            }
             if ($$row{description} =~ /max overdue/i) {
                 $$row{description} =~ s/\, max overdue//i;
             }
@@ -2012,23 +2020,30 @@ sub _FixAccountOverdues {
               WHERE borrowernumber    = ?
                 AND accountno         = ?",undef,
                 $amount,
-                $newout,
+                $amountoutstanding,
                 $desc,
                 $$issue{borrowernumber},
                 $$row{accountno}
             );
-            _rcrFine($issue,$row,$newout);
+            ##general case _rcrFine($issue,$row,$newout) doesn't apply
+            RCR: {
+               last RCR unless $tryRCR;
+               my $paid = $$row{amount}-$$row{amountoutstanding};
+               my $owed = -1*($paid-$amount) if ($paid > $amount);
+               last RCR unless $owed;
+               _rcrFine($issue,$row,$owed,1);
+            }
         }
         else { # new amount is greater than previous
             C4::Overdues::UpdateFine(
                 $issue->{itemnumber}, $issue->{borrowernumber}, $amount, undef, $start_date->output,$ismax
             );
-            _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost});
+            _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost},$verbiage);
         }
-        _logFine($$issue{borrowernumber},$msg || "returned item $$issue{itemnumber} $checkindate",1);
+        _logFine($$issue{borrowernumber},$msg || "$verbiage item $$issue{itemnumber} $checkindate",1);
     }
-    elsif ($$row{accountno} !~ /returned $checkindate/) {
-        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost});
+    elsif ($$row{accountno} !~ /(returned|renewed) $checkindate/) {
+        _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost},$verbiage);
     }
 
     ## bogus
@@ -2096,7 +2111,9 @@ sub _FixAccountNowFound
         );
     }
     elsif ($tolost) {
-        $by .= sprintf('staff (-%s)',C4::Context->userenv->{id});
+        my $userid = 'cron';
+        if (my $userenv = C4::Context->userenv) { $userid = $userenv->{id} }
+        $by .= sprintf('staff (-%s)',$userid);
     }
     elsif ( ($co ~~ 'renewal') || 
             ($issuebor && ($issuebor == $$lost{borrowernumber}))
@@ -2201,7 +2218,7 @@ sub _getnextaccountno
 # RCR refund owed (not yet issued) for prior payment on overdue charges
 sub _rcrFine
 {
-    my($iss,$acc,$newoutstanding) = @_;
+    my($iss,$acc,$newoutstanding,$amountIsOwed) = @_;
     return if $$acc{description} !~ /paid at no\.\d+/;
 
     ## the paid amount is amount-amountoutstanding
@@ -2211,9 +2228,12 @@ sub _rcrFine
     ##  amountoutstanding  $4.00    $2.00
     ##  new overdue        $3.50    $4.00
     ##  refund owed        $0       $1.00   if paid>newamountoutstanding
-    my $paid = $$acc{amount} - $$acc{amountoutstanding};
-    my $owed = -1*($paid - $newoutstanding);
-    return unless ($paid > $newoutstanding);
+    my $paid = my $owed = 0;
+    if (!$amountIsOwed) {
+       $paid = $$acc{amount} - $$acc{amountoutstanding};
+       $owed = -1*($paid - $newoutstanding);
+       return unless ($paid > $newoutstanding);
+    }
 
     my $dbh = C4::Context->dbh;
     ## already have an RCR accountline
@@ -2228,22 +2248,27 @@ sub _rcrFine
     if (my $dat = $sth->fetchrow_hashref()) {
         ##... doing this would never happen, since you can't checkin
         ## item twice for same due date
-        if ($$dat{amount} != $owed) {
-            ## update previous RCR amount owed to patron
+        my $setamount = 0;
+        if ($amountIsOwed) {
+            $setamount = $$dat{amount}+$newoutstanding;
+        }
+        elsif ($$dat{amount} != $owed) {
+            $setamount = $$dat{amount}+$owed;
+        }
+        if ($setamount) {            
             $dbh->do("UPDATE accountlines
-                SET amount         = ?
-              WHERE accountno      = ?
-                AND borrowernumber = ?",undef,
-                $owed, $$dat{accountno}, $$iss{borrowernumber}
-            );
-            return;
+               SET amount         = ?, amountoutstanding = ?
+             WHERE accountno      = ?
+               AND borrowernumber = ?",undef,
+            $setamount,$setamount,$$dat{accountno},$$iss{borrowernumber});
         } # else the refund amount is unchanged
         return;
     }
     
     ## else typical case: insert new RCR for refund owed
     ## avoid circular dependency by doing this here instead of in Accounts.pm
-    my($nextnum) = _getnextaccountno($$iss{borrowernumber});
+    my($nextnum)  = _getnextaccountno($$iss{borrowernumber});
+    my $setamount = $amountIsOwed? $newoutstanding : $owed;
     $dbh->do("INSERT INTO accountlines (
             date,
             accountno,
@@ -2258,15 +2283,15 @@ sub _rcrFine
         $$iss{borrowernumber},
         $$iss{itemnumber},
         "Refund owed at no.$$acc{accountno} for payment on overdue charges",
-        $owed,
-        $owed
+        $setamount,
+        $setamount
     );
     return;
 }
 
 sub _checkinDescFine
 {
-    my $desc = $_[3]? 'checkin as lost' : 'returned';
+    my $desc = $_[3]? 'checkin as lost' : $_[4];
     return C4::Context->dbh->do("UPDATE accountlines
         SET description    = CONCAT(description, ', $desc $_[2]')
       WHERE borrowernumber = ?

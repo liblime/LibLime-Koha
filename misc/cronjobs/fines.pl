@@ -165,8 +165,8 @@ for (my $i=0; $i<scalar(@$data); $i++) {
         if( $amount > 0 ) ;
  	}
     my @cells = ();
-    push @cells, map {$borrower->{$_}} @borrower_fields;
-    push @cells, map {$data->[$i]->{$_}} @item_fields;
+    push @cells, map {$borrower->{$_} // ''} @borrower_fields;
+    push @cells, map {$data->[$i]->{$_} // ''} @item_fields;
     push @cells, $type, $daycounttotal, $amount;
     print FILE join($delim, @cells), "\n";
 }
