@@ -1545,7 +1545,7 @@ sub AddReturn {
         $$issue{returndate} = $returndate;
         $datedue = C4::Dates->new($$issue{date_due},'iso');
         my $rd   = $returndate; $rd =~ s/\D//g;
-        my $dd   = $datedue   ; $dd =~ s/\D//g;
+        my $dd   = $$issue{date_due}; $dd =~ s/\D//g;
         if ($$issue{overdue} && ($rd <= $dd)) {
             $$issue{overdue} = 0;
             $dropbox = 1;
@@ -1844,8 +1844,6 @@ C<$flags> : hashref containing flags indicating checkin options. Can be one of:
 
 Returns nothing.
 
-*** NOTE *** TODO: handle refund owed for payment+backdate checkin
-
 =cut
 
 sub _chargeToAccount
@@ -1962,6 +1960,7 @@ sub _FixAccountOverdues {
     }
     elsif (!$$issue{overdue}) { # wow: backdate checkin where it's no longer overdue
         my $msg = 'adjusted to no longer overdue';
+        $msg .= ", $verbiage $checkindate" if !$$flags{tolost};
         $dbh->do("UPDATE accountlines
             SET description = CONCAT(description, ', $msg'),
                 amountoutstanding = 0,
@@ -1969,7 +1968,6 @@ sub _FixAccountOverdues {
           WHERE borrowernumber    = $$issue{borrowernumber}
             AND accountno         = $$row{accountno}
         ");
-        $msg .= ", $verbiage $checkindate" if !$$flags{tolost};
         _rcrFine($issue,$row,0);
         _logFine($$issue{borrowernumber},$msg,1);
         return;
@@ -2002,6 +2000,12 @@ sub _FixAccountOverdues {
             ## lower both the amount and the amountoutstanding by diff cmp to new amount
             my $diff = $$row{amount} - $amount;
             my $newout = $$row{amountoutstanding} - $diff;
+            my $tryRCR = 0;
+            my $amountoutstanding = $newout;
+            if ($amountoutstanding <0) {
+               $tryRCR = 1;
+               $amountoutstanding = 0;
+            }
             if ($$row{description} =~ /max overdue/i) {
                 $$row{description} =~ s/\, max overdue//i;
             }
@@ -2015,12 +2019,19 @@ sub _FixAccountOverdues {
               WHERE borrowernumber    = ?
                 AND accountno         = ?",undef,
                 $amount,
-                $newout,
+                $amountoutstanding,
                 $desc,
                 $$issue{borrowernumber},
                 $$row{accountno}
             );
-            _rcrFine($issue,$row,$newout);
+            ##general case _rcrFine($issue,$row,$newout) doesn't apply
+            RCR: {
+               last RCR unless $tryRCR;
+               my $paid = $$row{amount}-$$row{amountoutstanding};
+               my $owed = -1*($paid-$amount) if ($paid > $amount);
+               last RCR unless $owed;
+               _rcrFine($issue,$row,$owed,1);
+            }
         }
         else { # new amount is greater than previous
             C4::Overdues::UpdateFine(
@@ -2206,7 +2217,7 @@ sub _getnextaccountno
 # RCR refund owed (not yet issued) for prior payment on overdue charges
 sub _rcrFine
 {
-    my($iss,$acc,$newoutstanding) = @_;
+    my($iss,$acc,$newoutstanding,$amountIsOwed) = @_;
     return if $$acc{description} !~ /paid at no\.\d+/;
 
     ## the paid amount is amount-amountoutstanding
@@ -2216,9 +2227,12 @@ sub _rcrFine
     ##  amountoutstanding  $4.00    $2.00
     ##  new overdue        $3.50    $4.00
     ##  refund owed        $0       $1.00   if paid>newamountoutstanding
-    my $paid = $$acc{amount} - $$acc{amountoutstanding};
-    my $owed = -1*($paid - $newoutstanding);
-    return unless ($paid > $newoutstanding);
+    my $paid = my $owed = 0;
+    if (!$amountIsOwed) {
+       $paid = $$acc{amount} - $$acc{amountoutstanding};
+       $owed = -1*($paid - $newoutstanding);
+       return unless ($paid > $newoutstanding);
+    }
 
     my $dbh = C4::Context->dbh;
     ## already have an RCR accountline
@@ -2233,22 +2247,27 @@ sub _rcrFine
     if (my $dat = $sth->fetchrow_hashref()) {
         ##... doing this would never happen, since you can't checkin
         ## item twice for same due date
-        if ($$dat{amount} != $owed) {
-            ## update previous RCR amount owed to patron
+        my $setamount = 0;
+        if ($amountIsOwed) {
+            $setamount = $$dat{amount}+$newoutstanding;
+        }
+        elsif ($$dat{amount} != $owed) {
+            $setamount = $$dat{amount}+$owed;
+        }
+        if ($setamount) {            
             $dbh->do("UPDATE accountlines
-                SET amount         = ?
-              WHERE accountno      = ?
-                AND borrowernumber = ?",undef,
-                $owed, $$dat{accountno}, $$iss{borrowernumber}
-            );
-            return;
+               SET amount         = ?, amountoutstanding = ?
+             WHERE accountno      = ?
+               AND borrowernumber = ?",undef,
+            $setamount,$setamount,$$dat{accountno},$$iss{borrowernumber});
         } # else the refund amount is unchanged
         return;
     }
     
     ## else typical case: insert new RCR for refund owed
     ## avoid circular dependency by doing this here instead of in Accounts.pm
-    my($nextnum) = _getnextaccountno($$iss{borrowernumber});
+    my($nextnum)  = _getnextaccountno($$iss{borrowernumber});
+    my $setamount = $amountIsOwed? $newoutstanding : $owed;
     $dbh->do("INSERT INTO accountlines (
             date,
             accountno,
@@ -2263,8 +2282,8 @@ sub _rcrFine
         $$iss{borrowernumber},
         $$iss{itemnumber},
         "Refund owed at no.$$acc{accountno} for payment on overdue charges",
-        $owed,
-        $owed
+        $setamount,
+        $setamount
     );
     return;
 }
