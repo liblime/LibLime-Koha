@@ -30,25 +30,25 @@ use C4::Context;
 
 
 # retrieve parameters
-my $input = new CGI;
-my $frameworkcode         = $input->param('frameworkcode')         || ''; # set to select framework
-my $existingframeworkcode = $input->param('existingframeworkcode') || '';
-my $searchfield           = $input->param('searchfield') || 0;
+our $input = CGI->new();
+our $frameworkcode         = $input->param('frameworkcode')         || ''; # set to select framework
+our $existingframeworkcode = $input->param('existingframeworkcode') || '';
+our $searchfield           = $input->param('searchfield') || 0;
 # set when we have to create a new framework (in frameworkcode) by copying an old one (in existingframeworkcode)
-my $frameworkinfo = getframeworkinfo($frameworkcode);
+our $frameworkinfo = getframeworkinfo($frameworkcode);
 $searchfield=~ s/\,//g;
 
-my $offset    = $input->param('offset') || 0;
-my $op        = $input->param('op')     || '';
-my $dspchoice = $input->param('select_display');
-my $pagesize = 20;
+our $offset    = $input->param('offset') || 0;
+our $op        = $input->param('op')     || '';
+our $dspchoice = $input->param('select_display');
+our $pagesize = 20;
 
-my $script_name = "/cgi-bin/koha/admin/marctagstructure.pl";
+our $script_name = "/cgi-bin/koha/admin/marctagstructure.pl";
 
-my $dbh = C4::Context->dbh;
+our $dbh = C4::Context->dbh;
 
 # open template
-my ($template, $loggedinuser, $cookie)
+our ($template, $loggedinuser, $cookie)
     = get_template_and_user({template_name => "admin/marctagstructure.tmpl",
 			     query => $input,
 			     type => "intranet",
@@ -58,8 +58,8 @@ my ($template, $loggedinuser, $cookie)
 			     });
 
 # get framework list
-my $frameworks = getframeworks();
-my @frameworkloop;
+our $frameworks = getframeworks();
+our @frameworkloop;
 foreach my $thisframeworkcode (keys %$frameworks) {
 	push @frameworkloop, {
         value => $thisframeworkcode,
@@ -69,9 +69,9 @@ foreach my $thisframeworkcode (keys %$frameworks) {
 }
 
 # check that framework is defined in marc_tag_structure
-my $sth=$dbh->prepare("select count(*) from marc_tag_structure where frameworkcode=?");
+our $sth=$dbh->prepare("select count(*) from marc_tag_structure where frameworkcode=?");
 $sth->execute($frameworkcode);
-my ($frameworkexist) = $sth->fetchrow;
+our ($frameworkexist) = $sth->fetchrow;
 unless ($frameworkexist) {
 	# if frameworkcode does not exists, then OP must be changed to "create framework" if we are not on the way to create it
 	# (op = itemtyp_create_confirm)
@@ -177,7 +177,7 @@ if ($op eq 'add_form') {
             );
         }
 	}
-    print $input->redirect("/cgi-bin/koha/admin/marctagstructure.pl?searchfield=$tagfield&frameworkcode=$frameworkcode");
+   print $input->redirect("marctagstructure.pl?searchfield=$tagfield&frameworkcode=$frameworkcode");
 	exit;
 													# END $OP eq ADD_VALIDATE
 ################## DELETE_CONFIRM ##################################
@@ -327,6 +327,7 @@ if ($op eq 'add_form') {
 } #---- END $OP eq DEFAULT
 
 output_html_with_http_headers $input, $cookie, $template->output;
+exit;
 
 #
 # the sub used for searches

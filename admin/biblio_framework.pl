@@ -29,12 +29,6 @@ use C4::Context;
 use C4::Auth;
 use C4::Output;
 
-sub StringSearch  {
-	my $dbh = C4::Context->dbh;
-	my $sth=$dbh->prepare("Select * from biblio_framework where (frameworkcode like ?) order by frameworktext");
-	$sth->execute((shift || '') . '%');
-    return $sth->fetchall_arrayref({});
-}
 
 my $input = new CGI;
 my $script_name   = "/cgi-bin/koha/admin/biblio_framework.pl";
@@ -140,4 +134,12 @@ if ($op eq 'add_form') {
 } #---- END $OP eq DEFAULT
 
 output_html_with_http_headers $input, $cookie, $template->output;
+exit;
+
+sub StringSearch  {
+	my $dbh = C4::Context->dbh;
+	my $sth=$dbh->prepare("Select * from biblio_framework where (frameworkcode like ?) order by frameworktext");
+	$sth->execute((shift || '') . '%');
+    return $sth->fetchall_arrayref({});
+}
 
