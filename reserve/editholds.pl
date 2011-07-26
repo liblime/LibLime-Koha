@@ -40,10 +40,16 @@ my $biblionumber   = $cgi->param('biblionumber');
 my $bib            = C4::Biblio::GetBiblioData($biblionumber);
 my $limit          = $cgi->param('limit')    || 10;
 my $offset         = $cgi->param('offset')   || 0;
-my $mode           = $cgi->param('mode')     || 'single';
+my $mode           = $cgi->param('mode')     || 'batch'; # else: single
 my $dformat        = C4::Context->preference('dateformat') // 'iso';
+my $pg             = $cgi->param('pg')       || 1;
+my $sortf          = $cgi->param('sortf')    || 'int:priority';
+my $sortRev        = $cgi->param('sortRev')  || 'DESC';
 $template->param(
    editholdsview => 1,
+   pg            => $pg,
+   sortf         => $sortf,
+   sortRev       => $sortRev,
    HTTP_HOST     => $ENV{HTTP_HOST},
    dateformat    => $dformat,
    biblionumber  => $biblionumber,

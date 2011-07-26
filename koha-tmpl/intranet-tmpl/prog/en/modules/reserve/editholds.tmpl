@@ -2,6 +2,9 @@
 <title>Koha &rsaquo; Circulation &rsaquo; Holds &rsaquo; Edit holds on <!-- TMPL_VAR NAME="title" escape="html" --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close-plack.inc" -->
 <style>
+tr.hilight td {
+   background-color: #ffffcc;
+}
 #simplemodal-container a.modalCloseImg {
    background:url(<TMPL_VAR NAME="themelang">/img/x.png) no-repeat;
    width:25px;
@@ -21,27 +24,49 @@ $.ajaxSetup({accepts:'application/json',dataType:'json',beforeSend:function(xhr)
 var mydb     = '<TMPL_VAR NAME="SessionStorage">';
 var batchres = new Array;
 var branches = new Array;
+var reserves = new Array;
+var savingModal;
 
-function chMode(limit) {
-   if($('#mode').val()=='batch'){ $('#update').html('<input type=button value="Update Holds" onclick="updateHolds()">'); }
+function chMode() {
+   var mymode = 'batch';
+   if (mymode=='batch') {
+//   if($('#mode').val()=='batch'){ 
+      $('#update').html('<input type=button value="Update Holds" onclick="updateHolds()">'); }
    else                         { $('#update').html('') }
 }
+jQuery.fn.sortAll = function() {
+   var p   = 'int:priority';
+   if (document.myf.sortf) { p = $('#sortf').val(); if(p=='' || !p){ p='int:priority' } }
+   else if ('<TMPL_VAR NAME="sortf">' != '') { p = '<TMPL_VAR NAME="sortf">' }
+   var arr = p.split(/:/); var type=arr[0]; var sortf=arr[1];
+   var reverse = false;
+   if (document.myf.sortRev) { reverse = ($('select#sortRev').val()=='ASC')? true:false; }
+   else if ('<TMPL_VAR NAME="sortRev">'=='ASC') { reverse = true }
+   this.sort(function(a,b){
+      var left = a[sortf]; var right=b[sortf];
+      if (type=='int') { left=parseInt(left.replace(/[^\d]/g,''));right=parseInt(right.replace(/[^\d]/g,'')); }
+      else             { left=left.toLowerCase()       ;right=right.toLowerCase();        }
+      if(reverse) { l=left; r=right; left=r; right=l; }
+      if(left < right) { return -1 }
+      if(left > right) { return  1 }
+      return 0;
+   });
+   return this;
+};
 function getInit(limit) { 
+   batchres = new Array;
+   document.myf.sofar.value = 0;
    $.ajax({
-      url: '/reserves/?biblionumber=<TMPL_VAR NAME="biblionumber">',
+      url: '/reserves/?biblionumber=<TMPL_VAR NAME="biblionumber">&inflate=1',
       async: false,
       error: function(xhr,rc,thrown) {
-         _err(rc);
+         _err(rc)
       },
       success: function(all) {
          if(all.length > 0) {
-            for(var i=0;i<all.length;i++) {
-               var r = all[i].split('/');
-               if ($('#tr_'+r[2])) {
-                  $('#tr_'+r[2]).remove();
-               }
-            }
-            getSet(all.length,0,limit);
+            reserves = $(all).sortAll();
+            pager(reserves,parseInt(document.myf.pg.value));
+            chMode('batch');
          }
          else {
             $('#existingReserves').append('<tr><td colspan=8>There are no holds - '
@@ -90,83 +115,36 @@ function modPriority(sel,onshelf,reservenumber,limit) {
 } //eof modPriority()
 
 function modRes(reservenumber,limit) {
-   if ($('#mode').val()=='batch') {
-      var skip = 0;
-      for(var i=0;i<batchres.length;i++) {
-         if(batchres[i]==reservenumber){ skip = 1; break }
+   var add  = 1;
+   var rank = $('#rank_'+reservenumber).val();
+   var pick = $('#pick_'+reservenumber).val();
+   var resd = $('#resume_'+reservenumber).val();
+   if(resd.length>0) {
+      var el = document.getElementById('susp_'+reservenumber);
+      el.checked = true;
+   }
+   var isSp = ($('#susp_'+reservenumber).is(':checked')==true)? 1:0;
+   if (isSp==0) { resd=null }
+
+   for(var i=0;i<batchres.length;i++) {
+      if(batchres[i][0]==reservenumber){
+         batchres[i] = [reservenumber,rank,pick,isSp,resd];
+         add = 0;
+         break;
       }
-      if(!skip) { batchres.push(reservenumber) }
-      return;
+   }      
+   if (add==1) {
+      batchres.push([reservenumber,rank,pick,isSp,resd]);
    }
-   var msg = $('#saving').modal();
-   var myfound;
-   var issusp      = 0;
-   var resumedate  = $('#resume_'+reservenumber).val();
-   var mywaitingdate;
-   if(resumedate != '') {
-      $('#susp_'+reservenumber).attr('checked','checked');
-      issusp = 1;
-      myfound = 'S';
-      mywaitingdate = dformat2db(resumedate,dformat,mydb);
-   }
-   else if($('#susp_'+reservenumber).is(':checked')) { 
-      myfound = 'S';
-      issusp  = 1;
-      if (resumedate != '') { mywaitingdate = dformat2db(resumedate,dformat,mydb) }
-   }
-   var method = 'POST';
-   if ($('#rank_'+reservenumber).val()=='del') { method = 'DELETE' }
-   $.ajax({
-      url : '/reserves/'+reservenumber,
-      type: method,
-      data: {
-         priority    :$('#rank_'+reservenumber).val(),
-         branchcode  :$('#pick_'+reservenumber).val(),
-         found       :myfound,
-         is_suspended:issusp,
-         resume_date :mywaitingdate
-      },
-      complete: function() { 
-         var mylimit = limit;
-         if (mylimit < 10) { mylimit = 10 }
-         document.location.href='editholds.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&limit='+mylimit;
-      },
-   });
+   var trclass = 'hilight';
+   if (rank=='del') { trclass = 'confirm' }
+   $('#tr_'+reservenumber).attr('class',trclass);
 }
 
 function _err(rc) {
    return $('#existingReserves').append('<tr><td colspan=8><span class=problem>'+rc+'</span></td></tr>');
 }
-function getSet(allLen,offset,limit) {
-   $('#pager1').html('Loading...');
-   $('#pager2').html('Loading...');
-   $.ajax({
-      url : '/reserves/?biblionumber=<TMPL_VAR NAME="biblionumber">&inflate=1&limit='+limit+'&offset='+offset,
-      async: false,
-      complete: function() { 
-         var to   = limit+offset; if (to>allLen) { to = allLen }
-         var pager = '';
-         var mymode = '<TMPL_VAR NAME="mode">';
-         var moder = 'Mode:<select name="mode" id="mode" onchange="chMode('+to+')">'+
-                     (mymode=='batch'?'<option selected>':'<option>')+'batch'+
-                     (mymode=='batch'?'<option>':'<option selected>')+'single</select> | ';
-         if(mymode=='batch'){ $('#update').html('<input type=button value="Update Holds" onclick="updateHolds()">'); }
-         var more = limit;
-         if(more < 10)  { more = 10 }
-         if(to<allLen)  { pager = 'Showing '+to+' of <b>'+allLen+'</b> holds | <a href="javascript:;" onclick="getSet('+allLen+','+(to+1)+','+allLen+');">View All</a> | <a href="javascript:;" onclick="getSet('+allLen+','+to+','+more+');">More...</a>'; }
-         else           { pager = 'Showing '+to+' of <b>'+allLen+'</b> holds'; }
-         $('#pager1').html(moder+pager);
-         $('#pager2').html(pager);
-         $('#showto').val(to);
-         document.getElementById('pager2').scrollIntoView();
-      },
-      error: function(xhr,rc,thrown) {
-         _err(rc);
-      },
-      success: function(all) {
-         var c = 0;
-         $.each(all, function(residx,res) {
-            c++;
+function showReserve(res,allLen,c) {
             var details      = '';
             var listPriority = '';
             var listPick     = '';
@@ -174,7 +152,18 @@ function getSet(allLen,offset,limit) {
             var onshelf      = 0;
             var mas          = '';
             var setcal       = 0;
-            var branchname   = res.branchname; 
+            for(var i=0;i<batchres.length;i++) {
+               if(batchres[i][0]==res.reservenumber) {
+                  if      (batchres[i][1]=='W') { res.priority=''; res.found='W' }
+                  else if (batchres[i][1]=='T') { res.priority=''; res.found='T' }
+                  else                          { res.priority=batchres[i][1];   }
+                  res.branchcode = batchres[i][2];
+                  res.found      = batchres[i][3]? 'S':'';
+                  break;
+               }
+            }
+
+            var branchname = res.branchname;
             if (res.reservenotes==null) { res.reservenotes = ''; }
             for(var i=1;i<=allLen;i++) {
                var ch = '';
@@ -196,8 +185,8 @@ function getSet(allLen,offset,limit) {
             }
             else {
                var isSuspended = res.found=='S'?true:false;
-               suspended = '<input type=checkbox name="suspend_'+res.reservenumber+'" '+(isSuspended?'checked':'')+' id="susp_'+res.reservenumber+'" onclick="$(\'#resume_'+res.reservenumber+'\').val(\'\');modRes('+res.reservenumber+','+(c+offset)+')" value=1>';
-               listPick = '<select name="pick_'+res.reservenumber+'" id="pick_'+res.reservenumber+'" onchange="modRes('+res.reservenumber+','+(c+offset)+')">';
+               suspended = '<input type=checkbox name="susp_'+res.reservenumber+'" '+(isSuspended?'checked':'')+' id="susp_'+res.reservenumber+'" onclick="$(\'#resume_'+res.reservenumber+'\').val(\'\');modRes('+res.reservenumber+','+c+')" value=1>';
+               listPick = '<select name="pick_'+res.reservenumber+'" id="pick_'+res.reservenumber+'" onchange="modRes('+res.reservenumber+','+c+')">';
                for(var i=0;i<branches.length;i++) {
                   listPick += '<option value="'+branches[i][0]+'" '+(res.branchcode==branches[i][0]?'selected': '')+'>'+branches[i][1];
                }
@@ -221,7 +210,7 @@ function getSet(allLen,offset,limit) {
             $('#existingReserves > tbody:last').append('<tr id="tr_'
                +res.reservenumber         +'"><td><select id="rank_'
                +res.reservenumber         + '" onchange="modPriority(this,'
-               +onshelf                   +','+res.reservenumber+','+(c+offset)+')">'
+               +onshelf                   +','+res.reservenumber+','+c+')">'
                +listPriority              +'</select></td><td><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber='
                +res.borrowernumber        +'">'+res.borrowername+'</a><br><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='
                +res.borrowernumber        +'">'+res.borrowercard+'</a></td><td>'
@@ -238,51 +227,47 @@ function getSet(allLen,offset,limit) {
                      align     : "T1",
                      onClose   : function() { 
                         calendar.hide();
-                        modRes(res.reservenumber,(c+offset));
+                        modRes(res.reservenumber,c);
                      }
                });
             }
-            /*
-            $('<input>').attr({
-               type: 'hidden',
-               name: 'reservenumber',
-               value: res.reservenumber,
-            }).appendTo('myf');
-            */
-         });
-      }
-   });
-} //eof getSet()
 
-function updateHolds(reservenumber) {
-   if (batchres.length==0) { alert('Nothing to update'); return }
-   $('#saving').modal();
+   var trclass = 'hilight';
    for(var i=0;i<batchres.length;i++) {
-      var issusp = 0;
+      if(batchres[i][0]==res.reservenumber) {
+         if (batchres[i][1]=='del') { trclass = 'confirm' }
+         $('#tr_'+res.reservenumber).attr('class',trclass);
+      }
+   }
+} //eof showReserve
+
+function updateHolds() {
+   if (savingModal) { savingModal.close(); }
+   if (batchres.length==0) { alert('Nothing to update'); return }
+   savingModal = $('#saving').modal();
+   for(var i=0;i<batchres.length;i++) {
+      var reservenumber = batchres[i][0];
+      var rank = batchres[i][1];
+      var pick = batchres[i][2];
+      var susp = batchres[i][3];
+      var resd = batchres[i][4];
       var myfound;
       var mywaitingdate;
-      var susp = $('#susp_'+batchres[i]).is(':checked');
-      var resumedate = $('#resume_'+batchres[i]).val();
-      if(susp) { 
+      if(susp==1) { 
          myfound = 'S';
-         issusp  = 1;
-         if (resumedate != '') { mywaitingdate = dformat2db(resumedate,dformat,mydb); }
-      }
-      if(resumedate != '') {
-         issusp  = 1;
-         myfound = 'S';
-         mywaitingdate = dformat2db(resumedate,dformat,mydb);
+         if (resd != '') { mywaitingdate = dformat2db(resd,dformat,mydb); }
       }
       var method = 'POST';
-      if ($('rank_'+batchres[i]).val()=='del') { method = 'DELETE' }
+      if (rank=='del') { method = 'DELETE' }
       $.ajax({
-         url :'/reserves/'+batchres[i],
+         url :'/reserves/'+reservenumber,
          type: method,
+         async: true,
          data: {
-            priority    :$('#rank_'+batchres[i]).val(),
-            branchcode  :$('#pick_'+batchres[i]).val(),
+            priority    :rank,
+            branchcode  :pick,
             found       :myfound,
-            is_suspended:issusp,
+            is_suspended:susp,
             resume_date :mywaitingdate
          },
          success: function() {
@@ -290,17 +275,76 @@ function updateHolds(reservenumber) {
             mysofar += 1;
             document.myf.sofar.value = mysofar;
             if(mysofar==batchres.length) {
-               document.location.href='editholds.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&mode=batch';
+               savingModal.close();
+               getInit(10);
             }
          }
       });
    }
 } //eof updateHolds()
+
+function pager(all,pg) {
+   if(!pg || pg==null || pg==undefined || pg==0) { pg = 1 }
+   document.myf.pg.value = pg;
+   var limit  = 10;
+   var offset = (pg-1)*10; if(offset>all.length) { offset=all.length }
+   var from   = offset+1;
+   var to     = limit+offset; if (to>all.length) { to=all.length }
+   var first  = ''; var last = '';
+   var nPg    = ''; var next = '';    
+   var pPg    = ''; var prev = '';
+   var pgs    = 1;  var omni = ''; // TODO: omni=View All
+   if (all.length%10 > 0) { pgs = parseInt(all.length/10)+1 }
+   else                   { pgs = all.length/10             }
+   if (limit<all.length)  { nPg = pg+1 } if (nPg>pgs) { nPg = 0 }
+   if (pg != 1)           { pPg = pg-1 } if (pPg<1)   { pPg = 0 }
+   var curr = ' Page <b>'+pg+'</b> of '+pgs;
+   if (nPg!='') { next = ' .. <a href="javascript:;" onclick="document.myf.pg.value='+nPg+';pager(reserves,'+nPg+');">Next <b>&gt;</b></a> '; }
+   if (pPg!='') { prev = '<a href="javascript:;" onclick="pager(reserves,'+pPg+');"><b>&lt;</b> Prev</a> .. '; }
+   if (pg>1)    { first= '<a href="javascript:;" onclick="pager(reserves,1);"><b>&lt;&lt;</b> First</a> ' }
+   if (pg<pgs)  { last = '<a href="javascript:;" onclick="pager(reserves,'+pgs+');">Last <b>&gt;&gt;</b>' }
+   var sorter  = 'Sort by';
+   var sortOps = '';
+   var dirOps  = '';
+   var dirArr  = new Array('ASC','DESC');
+   var sortArr = new Array(
+      ['int:priority',     'Priority'        ],
+      ['str:borrowername', 'Patron Name'     ],
+      ['int:reservedate',  'Date'            ],
+      ['str:branchname',   'Pickup Library'  ]
+   );
+   for(var i=0;i<sortArr.length;i++) {
+      var sel = '';
+      if(document.myf.sortf) {
+         if (document.myf.sortf.selectedIndex==i) { sel = ' selected' }
+      }
+      else if (sortArr[i][0]=='<TMPL_VAR NAME="sortf">') { sel = ' selected' }
+      sortOps += '<option value="'+sortArr[i][0]+'"'+sel+'>'+sortArr[i][1]+'</option>';
+   }
+   for(var i=0;i<dirArr.length;i++) {
+      var sel = '';
+      if(document.myf.sortRev) {
+         if (document.myf.sortRev.selectedIndex==i) { sel = ' selected' }
+      }
+      else if (dirArr[i]=='<TMPL_VAR NAME="sortRev">') { sel = ' selected' }
+      dirOps += '<option'+sel+'>'+dirArr[i];
+   }
+   sorter+= '<select name="sortf" id="sortf" onchange="reserves=reserves.sortAll();pager(reserves,'+pg+');">'+sortOps+'</select>'
+          + '<select name="sortRev" id="sortRev" onchange="reserves=reserves.sortAll();pager(reserves,'+pg+');">'+dirOps+'</select>';
+   $('#pager1').html(sorter);
+   $('#pager2').html('Showing '+from+' to '+to+' of '+all.length+' rows | ' +first+prev+curr+next+last);
+   $('#existingReserves > :not(thead) > tr').remove();
+
+   var c = 0;
+   for(var i=offset;i<limit+offset;i++) {
+      if(all[i]) { showReserve(all[i],all.length,c); c++; }
+   }
+}
 $(document).ready(function() {
    $.ajax({
       url:'/branches/',
-      success: function(all) {
-         $.each(all, function(idx,br) {
+      success: function(data) {
+         $.each(data, function(idx,br) {
             branches.push([br.branchcode,br.branchname]);
          });
          getInit(<TMPL_VAR NAME="limit">);
@@ -319,12 +363,12 @@ $(document).ready(function() {
 <div id="bd">
 	<div id="yui-main">
 	<div class="yui-b">
-      <form id="myf" name="myf" id="myf">
-      <input type=hidden name="showto" value="0">
+      <form name="myf" id="myf">
       <input type=hidden name="limit"  value="<TMPL_VAR NAME="limit">">
+      <input type=hidden name="pg"     value="<TMPL_VAR NAME="pg">" id="pg">
       <input type=hidden name="sofar"  value="0">
       <table class=borderless width="100%">
-      <tr class=borderless valign=bottom>
+      <tr class=borderless>
          <td class=borderless><h3>Edit holds on <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a></h3></td>
          <td class=borderless align=right id="pager1" nowrap></td></tr>
       <tr class=borderless><td class=borderless colspan=2>
@@ -335,7 +379,7 @@ $(document).ready(function() {
          <th>Patron</th>
          <th>Notes</th>
          <th>Date</th>
-         <th>Pick up Library</th>
+         <th>Pickup Library</th>
          <th>Details</th>
          <th>Suspended</th>
          <th>Waiting/<br>Resume</th></tr>
