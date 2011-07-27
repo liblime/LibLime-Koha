@@ -116,7 +116,7 @@ if ($type eq 'str8' && $borrowernumber ne ''){
     }
 
     my $searchtohold = $input->param('searchtohold');
-    my $url = "editholds.pl?searchtohold=$searchtohold&close_greybox=$searchtohold&biblionumber=$biblionumber";
+    my $url = "editholds.pl?searchtohold=$searchtohold&close_greybox=$searchtohold&biblionumber=$biblionumber&sortRev=ASC";
     print $input->redirect($url);
    exit;
 } elsif ($borrowernumber eq ''){
