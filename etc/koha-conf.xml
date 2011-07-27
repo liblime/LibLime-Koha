@@ -172,6 +172,7 @@ __PAZPAR2_TOGGLE_XML_POST__
 <!-- db_scheme should follow the DBD driver name --> 
 <!-- port info: mysql:3306 Pg:5432 (5433 on Debian) -->
 <config>
+ <!-- <timezone>US/Eastern</timezone> -->
  <db_scheme>__DB_TYPE__</db_scheme>
  <database>__DB_NAME__</database>
  <hostname>__DB_HOST__</hostname>
