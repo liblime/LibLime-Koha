@@ -20,7 +20,7 @@
 
 use strict;
 use warnings;
-
+use Try::Tiny;
 use CGI;
 use C4::Auth;
 use C4::Branch;
@@ -270,9 +270,15 @@ $template->param(
 );
 
 # COinS format FIXME: for books Only
-$template->param(
-    ocoins => GetCOinSBiblio($biblionumber),
-);
+my $coins = try {
+    return GetCOinSBiblio($_->{biblionumber})
+}
+catch {
+    warn $_;
+    return undef;
+};
+
+$template->param(ocoins => $coins);
 
 my $loggedincommenter;
 my $reviews;

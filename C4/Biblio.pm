@@ -19,7 +19,7 @@ package C4::Biblio;
 
 use strict;
 use warnings;
-# use utf8;
+use Carp;
 use MARC::Record;
 use MARC::File::USMARC;
 use MARC::File::XML;
@@ -1058,6 +1058,7 @@ Returns the COinS(a span) which can be included in a biblio record
 sub GetCOinSBiblio {
     my ( $biblionumber ) = @_;
     my $record = GetMarcBiblio($biblionumber);
+    croak "Unable to find record ($biblionumber)" if !$record;
 
     # get the coin format
     my $pos7 = substr $record->leader(), 7,1;
