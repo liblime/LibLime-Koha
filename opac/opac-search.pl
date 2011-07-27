@@ -7,6 +7,7 @@
 # to perform, etc.
 ## load Koha modules
 use Koha;
+use Try::Tiny;
 use C4::Context;
 use C4::Output;
 use C4::Auth qw(:DEFAULT get_session);
@@ -508,7 +509,13 @@ for (my $i=0;$i<=@servers;$i++) {
 			}
 		}
 		foreach (@newresults) {
-		    $_->{coins} = GetCOinSBiblio($_->{'biblionumber'});
+		    $_->{coins} = try {
+                        return GetCOinSBiblio($_->{biblionumber})
+                    }
+                    catch {
+                        warn $_;
+                        return undef;
+                    };
 		}
       
 	if ($results_hashref->{$server}->{"hits"}){
