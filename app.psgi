@@ -17,6 +17,7 @@ builder {
     enable 'Deflater';
     enable 'HTTPExceptions';
     enable 'MethodOverride';
+    enable 'Status', path => qr{/C4/|/Koha/|/misc/|/t/|/xt/|/etc/}, status => 404;
     enable 'Static', path => qr{^/opac-tmpl/}, root => "$root/koha-tmpl/";
     enable 'Static', path => qr{^/intranet-tmpl/}, root => "$root/koha-tmpl/";
     enable 'Header', unset => ['Status'];
