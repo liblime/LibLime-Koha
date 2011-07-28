@@ -80,7 +80,7 @@
    "HoldExpireLength" : {
       "explanation" : "Specify how many days before a hold expires",
       "options" : null,
-      "value" : "",
+      "value" : null,
       "type" : "Integer"
    },
    "DebugLevel" : {
@@ -97,7 +97,7 @@
    },
    "GetItAcquisitions" : {
       "explanation" : "If set, a link to GetIt Acquisitions will appear in the Koha menu and GetIt Acquisitions-specific functionality will appear elsewhere. Please refer to the documentation for details.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -109,7 +109,7 @@
    },
    "CircFinesBreakdown" : {
       "explanation" : "Show a breakdown of fines by type on the checkout page",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -121,7 +121,7 @@
    },
    "EnableHoldOnShelfNotice" : {
       "explanation" : "If ON, allow hold awaiting pickup (holds shelf) notices to be sent.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -133,13 +133,13 @@
    },
    "opacmsgtab" : {
       "explanation" : "If on,enables display of My Messaging tab in OPAC patron account and the email/text message settings in OPAC user update tab.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "HoldButtonConfirm" : {
       "explanation" : "Display Confirm button when hold triggered. Leave either this setting or HoldButtonPrintConfirm on.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -151,13 +151,13 @@
    },
    "CheckoutTimeout" : {
       "explanation" : "Value in seconds before a window pops up on the circ screen asking the librarian if they would like to continue using this record or to search for a new borrower.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "Integer"
    },
    "opaclayoutstylesheet" : {
       "explanation" : "Enter the name of the layout CSS stylesheet to use in the OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "opac.css",
       "type" : "free"
    },
@@ -170,12 +170,12 @@
    "IntranetNav" : {
       "explanation" : "Use HTML tabs to add navigational links to the left-hand navigational bar in the Staff Client",
       "options" : "70|10",
-      "value" : "",
+      "value" : null,
       "type" : "Textarea"
    },
    "SyndeticsExcerpt" : {
       "explanation" : "Display Excerpts and first chapters on OPAC from Syndetics",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -193,25 +193,25 @@
    },
    "ShowPatronSearchBySQL" : {
       "explanation" : "If turned on,a search by sql box will appear on the Patrons search pages.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "intranetreadinghistory" : {
       "explanation" : "If ON, Reading History is enabled for all patrons",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "opaccolorstylesheet" : {
       "explanation" : "Define an auxiliary stylesheet for OPAC use, to override specified settings from the primary opac.css stylesheet. Enter the filename (if the file is in the server's css directory) or a complete URL beginning with http (if the file lives on a remote server).",
-      "options" : "",
+      "options" : null,
       "value" : "colors.css",
       "type" : "free"
    },
    "BibliosCataloging" : {
       "explanation" : "If set, a link to Biblios Cataloging will appear in the Koha menu and Biblios Cataloging-specific functionality will appear elsewhere. Please refer to the documentation for details.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -223,15 +223,15 @@
    },
    "itembarcodelength" : {
       "explanation" : "Number of characters in system-wide barcode schema (item barcodes).",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "Integer"
    },
    "LibraryName" : {
       "explanation" : "Define the library name as displayed on the OPAC",
-      "options" : "",
-      "value" : "",
-      "type" : ""
+      "options" : null,
+      "value" : null,
+      "type" : "Free"
    },
    "ISBD" : {
       "explanation" : "ISBD",
@@ -247,19 +247,19 @@
    },
    "AllowNotForLoanOverride" : {
       "explanation" : "If ON, Koha will allow the librarian to loan a not for loan item.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "OPACAmazonEnabled" : {
       "explanation" : "Turn ON Amazon Content in the OPAC - You MUST set AWSAccessKeyID, AWSPrivateKey, and AmazonAssocTag if enabled",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "borrowerRelationship" : {
       "explanation" : "Define valid relationships between a guarantor & a guarantee (separated by | or ,)",
-      "options" : "",
+      "options" : null,
       "value" : "father|mother",
       "type" : "free"
    },
@@ -283,7 +283,7 @@
    },
    "AllowDueDateInPast" : {
       "explanation" : "Allows a due date to be set in the past for testing.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -301,13 +301,13 @@
    },
    "SpecifyDueDate" : {
       "explanation" : "Define whether to display \"Specify Due Date\" form in Circulation",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "SyndeticsReviews" : {
       "explanation" : "Display Reviews on OPAC from Syndetics",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -319,20 +319,20 @@
    },
    "AmazonCoverImages" : {
       "explanation" : "Display Cover Images in Staff Client from Amazon Web Services",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "AWSPrivateKey" : {
       "explanation" : "See:  http://aws.amazon.com.  Note that this is required after 2009/08/15 in order to retrieve any enhanced content other than book covers from Amazon.",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "free"
    },
    "SMSSendDriver" : {
       "explanation" : "Sets which SMS::Send driver is used to send SMS messages.",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "free"
    },
    "emailLibrarianWhenHoldIsPlaced" : {
@@ -349,13 +349,13 @@
    },
    "DisplayClearScreenButton" : {
       "explanation" : "If set to ON, a clear screen button will appear on the circulation page.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "MarkLostItemsReturned" : {
       "explanation" : "If ON,will check in items (removing them from a patron list of checked out items) when they are marked as lost",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -367,13 +367,13 @@
    },
    "UsePeriodicals" : {
       "explanation" : "Use newer \"periodicals\" module to manage serials.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "reservesNeedConfirmationOnCheckout" : {
       "explanation" : "Pipe-delimited list of types of prompts upon checkout with a hold pending: one or more of 'patronNotReservist_holdPending','patronNotReservist_holdWaiting','otherBibItem','noPrompts'.",
-      "options" : "",
+      "options" : null,
       "value" : "patronNotReservist_holdWaiting|otherBibItem",
       "type" : "free"
    },
@@ -385,8 +385,8 @@
    },
    "OCLCAffiliateID" : {
       "explanation" : "Use with FRBRizeEditions and XISBN. You can sign up for an AffiliateID here: http://www.worldcat.org/wcpa/do/AffiliateUserServices?method=initSelfRegister",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "free"
    },
    "LetterLog" : {
@@ -397,37 +397,37 @@
    },
    "OPACFinesTab" : {
       "explanation" : "If OFF the patron fines tab in the OPAC is disabled.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "AmazonReviews" : {
       "explanation" : "Display Amazon review on staff interface - You MUST set AWSAccessKeyID, AWSPrivateKey, and AmazonAssocTag if enabled",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "reviewson" : {
       "explanation" : "If ON, enables patron reviews of bibliographic records in the OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "MARCOrgCode" : {
       "explanation" : "Define MARC Organization Code - http://www.loc.gov/marc/organizations/orgshome.html",
-      "options" : "",
+      "options" : null,
       "value" : "OSt",
       "type" : "free"
    },
    "FilterBeforeOverdueReport" : {
       "explanation" : "Do not run overdue report until filter selected",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "MaxShelfHoldsPerDay" : {
       "explanation" : "Maximum number of on-shelf holds each patron can place per day.",
-      "options" : "",
+      "options" : null,
       "value" : "3",
       "type" : "Integer"
    },
@@ -445,21 +445,21 @@
    },
    "AmazonAssocTag" : {
       "explanation" : "See:  http://aws.amazon.com",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "free"
    },
    "EnableHoldExpiredNotice" : {
       "explanation" : "If ON, allow hold expiration notices to be sent.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "AllowMultipleHoldsPerBib" : {
       "explanation" : "This allows multiple items per record to be placed on hold by a single patron. To enable,enter a list of space separated itemtype codes in the field (i.e. MAG JMAG YMAG). Useful for magazines,encyclopedias and other bibs where the attached items are not identical.",
-      "options" : "",
-      "value" : "",
-      "type" : ""
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
    },
    "SyndeticsCoverImageSize" : {
       "explanation" : "Choose the size of the Syndetics Cover Image to display on the OPAC detail page, MC is Medium, LC is Large",
@@ -469,13 +469,13 @@
    },
    "HoldsTransportationReductionThreshold" : {
       "explanation" : "The number of holds that must be in the queue for the holds transportation reduction to be enabled ( assuming FillRequestsAtPickupLibrary is enabled ).",
-      "options" : "",
+      "options" : null,
       "value" : "1000000",
       "type" : "Integer"
    },
    "OPACPatronDetails" : {
       "explanation" : "If OFF the patron details tab in the OPAC is disabled.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -488,7 +488,7 @@
    "defaultSortOrder" : {
       "explanation" : "Specify the default sort order",
       "options" : "asc|dsc|az|za",
-      "value" : null,
+      "value" : "asc",
       "type" : "Choice"
    },
    "BorrowersLog" : {
@@ -499,13 +499,13 @@
    },
    "ShowPatronImageInWebBasedSelfCheck" : {
       "explanation" : "If ON, displays patron image when a patron uses web-based self-checkout",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "OPACUseHoldType" : {
       "explanation" : "If ON, allow OPAC users to place hold on specific items that are designated as item-level hold records.  Used in conjuction with OPACItemHolds.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -517,26 +517,26 @@
    },
    "AllowCheckInDateChange" : {
       "explanation" : "Allow modification of checkin date/time",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "SyndeticsSeries" : {
       "explanation" : "Display Series information on OPAC from Syndetics",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "OPACShowActiveBranchFirstInResults" : {
       "explanation" : "If ON, in the OPAC, use the active library as the primary sort field for a record's holdings.  Used in conjunction with OPACDefaultItemSort where OPACDefaultItemSort is the secondary sort field.  Otherwise if Off, sort by OPACDefaultItemSort.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "URLLinkText" : {
       "explanation" : "Text to display as the link anchor in the OPAC",
       "options" : null,
-      "value" : "",
+      "value" : null,
       "type" : "free"
    },
    "OPACSearchForTitleIn" : {
@@ -547,19 +547,19 @@
    },
    "OPACItemHolds" : {
       "explanation" : "Allow OPAC users to place hold on specific items. If OFF, users can only request next available copy.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "FillRequestsAtPickupLibraryAge" : {
       "explanation" : "Measured in days. If there are any higher-priority active holds that have been waiting longer than the FillRequestsAtPickupLibraryAge, then the item will fill the highest priority active hold, even thought that will require transportation. Note that the highest-priority hold may not be the one thatâ€™ s been waiting longest.",
-      "options" : "",
+      "options" : null,
       "value" : "30",
       "type" : "Integer"
    },
    "opaclanguagesdisplay" : {
       "explanation" : "If ON, enables display of Change Language feature on OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -577,20 +577,20 @@
    },
    "XISBN" : {
       "explanation" : "Use with FRBRizeEditions. If ON, Koha will use the OCLC xISBN web service in the Editions tab on the detail pages. See: http://www.worldcat.org/affiliate/webservices/xisbn/app.jsp",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "soundon" : {
       "explanation" : "Enable to turn on circulation sounds. Not available on all browsers.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "Replica_user" : {
       "explanation" : "Username for reporting database replica",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "Textarea"
    },
    "insecure" : {
@@ -619,8 +619,8 @@
    },
    "patronbarcodelength" : {
       "explanation" : "Number of characters in system-wide barcode schema (patron cardnumbers).",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "Integer"
    },
    "OPACShowCompletedHolds" : {
@@ -631,7 +631,7 @@
    },
    "UsePatronBranchForPatronInfo" : {
       "explanation" : "If ON, the SIP patron information response (64) will use the patron branch rather than the institution ID in the AO field",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -643,37 +643,37 @@
    },
    "opacstylesheet" : {
       "explanation" : "Enter a complete URL to use an alternate layout stylesheet in OPAC",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "free"
    },
    "TagsShowOnDetail" : {
       "explanation" : "Number of tags to display on detail page.  0 is off.",
-      "options" : "",
+      "options" : null,
       "value" : "10",
       "type" : "Integer"
    },
    "StaffSerialIssueDisplayCount" : {
       "explanation" : "Number of serial issues to display per subscription in the Staff client",
-      "options" : "",
+      "options" : null,
       "value" : "3",
       "type" : "Integer"
    },
    "OPACAllowHoldDateInFuture" : {
       "explanation" : "If set, along with the AllowHoldDateInFuture system preference, OPAC users can set the date of a hold to be in the future.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "RefundLostReturnedAmount" : {
       "explanation" : "Refund a returned lost item rather than applying it to an outstanding balance",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "AllowOverrideLogin" : {
       "explanation" : "If ON,Koha will allow staff members to temporarily log in as a user with more rights in certain situations",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -691,7 +691,7 @@
    },
    "XISBNDailyLimit" : {
       "explanation" : "The xISBN Web service is free for non-commercial use when usage does not exceed 500 requests per day",
-      "options" : "",
+      "options" : null,
       "value" : "499",
       "type" : "Integer"
    },
@@ -703,14 +703,14 @@
    },
    "OPACAmazonReviews" : {
       "explanation" : "Display Amazon readers reviews on OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "BakerTaylorPassword" : {
       "explanation" : "Baker & Taylor Password for Content Cafe (external content)",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "Free"
    },
    "BatchItemEditor" : {
@@ -728,12 +728,12 @@
    "barcodeValidationRoutine" : {
       "explanation" : "The type of barcode and routine against which barcodes will be checked for well-formed syntax.  Leave blank to allow any barcode string.",
       "options" : "|codabar",
-      "value" : "",
+      "value" : null,
       "type" : "Choice"
    },
    "InProcessingToShelvingCart" : {
       "explanation" : "If set, when any item with a location code of PROC is 'checked in', it's location code will be changed to CART.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -751,31 +751,31 @@
    },
    "canreservefromotherbranches" : {
       "explanation" : "With Independent branches on, can a user from one library place a hold on an item from another library",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "ceilingDueDate" : {
       "explanation" : "If set, date due will not be past this date.  Enter date according to the dateformat System Preference",
       "options" : null,
-      "value" : "",
+      "value" : null,
       "type" : "free"
    },
    "OPACShelfBrowser" : {
       "explanation" : "Enable/disable Shelf Browser on item details page. WARNING: this feature is very resource consuming on collections with large numbers of items.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "SyndeticsCoverImages" : {
       "explanation" : "Display Cover Images from Syndetics",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "SyndeticsAwards" : {
       "explanation" : "Display Awards on OPAC from Syndetics",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -799,13 +799,13 @@
    },
    "HoldButtonPrintConfirm" : {
       "explanation" : "Display Confirm and Print Slip button when hold triggered. Leave either this setting or HoldButtonConfirm on.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "OPACSerialIssueDisplayCount" : {
       "explanation" : "Number of serial issues to display per subscription in the OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "3",
       "type" : "Integer"
    },
@@ -817,19 +817,19 @@
    },
    "SyndeticsSummary" : {
       "explanation" : "Display Summary Information from Syndetics",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "opacheader" : {
       "explanation" : "Add HTML to be included as a custom header in the OPAC",
       "options" : "70|10",
-      "value" : "",
+      "value" : null,
       "type" : "Textarea"
    },
    "opacbookbag" : {
       "explanation" : "If ON, enables display of Cart feature",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -841,31 +841,31 @@
    },
    "AutoSelfCheckAllowed" : {
       "explanation" : "For corporate and special libraries which want web-based self-check available from any PC without the need for a manual staff login. Most libraries will want to leave this turned off. If on,requires self-check ID and password to be entered in AutoSelfCheckID and AutoSelfCheckPass sysprefs.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "CourseReserves" : {
       "explanation" : "Turn ON Course Reserves functionality",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "OPACUserCSS" : {
       "explanation" : "Add CSS to be included in the OPAC in an embedded <style> tag.",
       "options" : null,
-      "value" : "",
+      "value" : null,
       "type" : "free"
    },
    "EnableHoldCancelledNotice" : {
       "explanation" : "If ON, allow hold cancellation notices to be sent.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "PINESISBN" : {
       "explanation" : "Use with FRBRizeEditions. If ON, Koha will use PINES OISBN web service in the Editions tab on the detail pages.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -877,13 +877,13 @@
    },
    "OpacHighlightedWords" : {
       "explanation" : "If Set, then queried words are higlighted in OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "OPACAmazonSimilarItems" : {
       "explanation" : "Turn ON Amazon Similar Items feature  - You MUST set AWSAccessKeyID, AWSPrivateKey, and AmazonAssocTag if enabled",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -895,14 +895,14 @@
    },
    "DisplayInitials" : {
       "explanation" : "Ability to turn the initials field on/off in patron screen",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "AutoSelfCheckPass" : {
       "explanation" : "Password to be used for automatic web-based self-check. Only applies if AutoSelfCheckAllowed syspref is turned on.",
       "options" : "70|10",
-      "value" : "",
+      "value" : null,
       "type" : "Textarea"
    },
    "NewPatronReadingHistory" : {
@@ -913,7 +913,7 @@
    },
    "EnableClubsAndServices" : {
       "explanation" : "Turn on the Clubs and Services module",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -931,19 +931,19 @@
    },
    "KohaAdminEmailAddress" : {
       "explanation" : "Define the email address where patron modification requests are sent",
-      "options" : "",
+      "options" : null,
       "value" : "root@localhost",
       "type" : "free"
    },
    "FRBRizeEditions" : {
       "explanation" : "If ON, Koha will query one or more ISBN web services for associated ISBNs and display an Editions tab on the details pages",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "TalkingTechMessagePath" : {
       "explanation" : "Set the file system path for the Talking Tech MESSAGE file",
-      "options" : "",
+      "options" : null,
       "value" : "/tmp",
       "type" : "free"
    },
@@ -961,7 +961,7 @@
    },
    "TagsInputOnList" : {
       "explanation" : "Allow users to input tags from the search results list.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -973,8 +973,8 @@
    },
    "AWSAccessKeyID" : {
       "explanation" : "See:  http://aws.amazon.com",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "free"
    },
    "AutomaticItemReturn" : {
@@ -1010,18 +1010,18 @@
    "opaccredits" : {
       "explanation" : "Define HTML Credits at the bottom of the OPAC page",
       "options" : "70|10",
-      "value" : "",
+      "value" : null,
       "type" : "Textarea"
    },
    "z3950NormalizeAuthor" : {
       "explanation" : "If ON, Personal Name Authorities will replace authors in biblio.author",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "SpineLabelAutoPrint" : {
       "explanation" : "If this setting is turned on, a print dialog will automatically pop up for the quick spine label printer.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1033,37 +1033,37 @@
    },
    "opacthemes" : {
       "explanation" : "Define the current theme for the OPAC interface.",
-      "options" : "",
+      "options" : null,
       "value" : "prog",
       "type" : "Themes"
    },
    "SyndeticsEditions" : {
       "explanation" : "Display Editions from Syndetics",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "AllowHoldsOnDamagedItems" : {
       "explanation" : "Allow hold requests to be placed on damaged items",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "AmazonSimilarItems" : {
       "explanation" : "Turn ON Amazon Similar Items feature  - You MUST set AWSAccessKeyID, AWSPrivateKey, and AmazonAssocTag if enabled",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "LibraryThingForLibrariesID" : {
       "explanation" : "See:http://librarything.com/forlibraries/",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "free"
    },
    "XSLTResultsDisplay" : {
       "explanation" : "Enable XSL stylesheet control over results page display on OPAC WARNING: MARC21 Only",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1075,7 +1075,7 @@
    },
    "hidelostitems" : {
       "explanation" : "If ON, disables display of\"lost\" items in OPAC.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1087,7 +1087,7 @@
    },
    "AmazonEnabled" : {
       "explanation" : "Turn ON Amazon Content - You MUST set AWSAccessKeyID, AWSPrivateKey, and AmazonAssocTag if enabled",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1105,19 +1105,19 @@
    },
    "UseBranchTransferLimits" : {
       "explanation" : "If ON, Koha will will use the rules defined in branch_transfer_limits to decide if an item transfer should be allowed.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "LibraryThingForLibrariesTabbedView" : {
       "explanation" : "Put LibraryThingForLibraries Content in Tabs.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "gist" : {
       "explanation" : "Default Goods and Services tax rate NOT in %, but in numeric form (0.12 for 12%), set to 0 to disable GST",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "Integer"
    },
@@ -1135,9 +1135,9 @@
    },
    "TagsExternalDictionary" : {
       "explanation" : "Path on server to local ispell executable, used to set $Lingua::Ispell::path  This dictionary is used as a \"whitelist\" of pre-allowed tags.",
-      "options" : "",
+      "options" : null,
       "value" : null,
-      "type" : ""
+      "type" : "Free"
    },
    "GoogleJackets" : {
       "explanation" : "if ON, displays jacket covers from Google Books API",
@@ -1148,25 +1148,25 @@
    "AutoSelfCheckID" : {
       "explanation" : "Staff ID with circulation rights to be used for automatic web-based self-check. Only applies if AutoSelfCheckAllowed syspref is turned on.",
       "options" : "70|10",
-      "value" : "",
+      "value" : null,
       "type" : "Textarea"
    },
    "OPACAmazonCoverImages" : {
       "explanation" : "Display cover images on OPAC from Amazon Web Services",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "OpacMaintenance" : {
       "explanation" : "If ON, enables maintenance warning in OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "BakerTaylorUsername" : {
       "explanation" : "Baker & Taylor Username for Content Cafe (external content)",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "Free"
    },
    "ReturnBeforeExpiry" : {
@@ -1177,7 +1177,7 @@
    },
    "TagsInputOnDetail" : {
       "explanation" : "Allow users to input tags from the detail page.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1189,20 +1189,20 @@
    },
    "ClaimsReturnedValue" : {
       "explanation" : "Lost value of Claims Returned,to be ignored by fines cron job",
-      "options" : "",
+      "options" : null,
       "value" : "5",
       "type" : "Integer"
    },
    "viewLabeledMARC" : {
       "explanation" : "Allow display of labeled MARC view of bibiographic records",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "staffClientBaseURL" : {
       "explanation" : "Specify the base URL of the staff client",
       "options" : null,
-      "value" : "",
+      "value" : null,
       "type" : "free"
    },
    "WebBasedSelfCheck" : {
@@ -1213,13 +1213,13 @@
    },
    "AllowReadingHistoryAnonymizing" : {
       "explanation" : "Allows a borrower to optionally delete his or her reading history.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "AllowOnShelfHolds" : {
       "explanation" : "Allow hold requests to be placed on items that are not on loan",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1231,7 +1231,7 @@
    },
    "viewMARC" : {
       "explanation" : "Allow display of MARC view of bibiographic records",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1243,13 +1243,13 @@
    },
    "BakerTaylorBookstoreURL" : {
       "explanation" : "URL template for \"My Libary Bookstore\" links, to which the \"key\" value is appended, and \"https://\" is prepended.  It should include your hostname and \"Parent Number\".  Make this variable empty to turn MLB links off.  Example: ocls.mylibrarybookstore.com/MLB/actions/searchHandler.do?nextPage=bookDetails&parentNum=10923&key=",
-      "options" : "",
-      "value" : "",
-      "type" : ""
+      "options" : null,
+      "value" : null,
+      "type" : "Free"
    },
    "OPACShowCheckoutName" : {
       "explanation" : "Displays in the OPAC the name of patron who has checked out the material. WARNING: Most sites should leave this off. It is intended for corporate or special sites which need to track who has the item.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1261,25 +1261,25 @@
    },
    "DisableHoldsIssueOverrideUnlessAuthorised" : {
       "explanation" : "If this preference is enabled,it will block staff ability to checkout items on hold,but includes a superlibrarian override.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "itemBarcodeInputFilter" : {
       "explanation" : "If set, allows specification of a item barcode input filter",
-      "options" : "whitespace|T-prefix|cuecat",
-      "value" : "",
+      "options" : "|whitespace|T-prefix|cuecat",
+      "value" : null,
       "type" : "Choice"
    },
    "OpacSuppression" : {
       "explanation" : "Turn ON the OPAC Suppression feature, requires further setup, ask your system administrator for details",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "TagsShowOnList" : {
       "explanation" : "Number of tags to display on search results list.  0 is off.",
-      "options" : "",
+      "options" : null,
       "value" : "6",
       "type" : "Integer"
    },
@@ -1291,7 +1291,7 @@
    },
    "LinkLostItemsToPatron" : {
       "explanation" : "If set, items marked lost will be listed in the patron Lost Items list",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1303,7 +1303,7 @@
    },
    "virtualshelves" : {
       "explanation" : "If ON, enables Lists management",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1328,7 +1328,7 @@
    "intranetstylesheet" : {
       "explanation" : "Enter a complete URL to use an alternate layout stylesheet in Intranet",
       "options" : "50",
-      "value" : "",
+      "value" : null,
       "type" : "free"
    },
    "OPACAdvancedSearchTypes" : {
@@ -1351,7 +1351,7 @@
    },
    "HidePatronName" : {
       "explanation" : "If this is switched on, patron's cardnumber will be shown instead of their name on the holds and catalog screens",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1364,12 +1364,12 @@
    "intranetuserjs" : {
       "explanation" : "Custom javascript for inclusion in Intranet",
       "options" : "70|10",
-      "value" : "",
+      "value" : null,
       "type" : "Textarea"
    },
    "XSLTDetailsDisplay" : {
       "explanation" : "Enable XSL stylesheet control over details page display on OPAC WARNING: MARC21 Only",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1381,13 +1381,13 @@
    },
    "MaxFine" : {
       "explanation" : "Maximum fine a patron can have for a single late return",
-      "options" : "",
+      "options" : null,
       "value" : "9999",
       "type" : "Integer"
    },
    "OPACFRBRizeEditions" : {
       "explanation" : "If ON, the OPAC will query one or more ISBN web services for associated ISBNs and display an Editions tab on the details pages",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1405,7 +1405,7 @@
    },
    "template" : {
       "explanation" : "Define the preferred staff interface template",
-      "options" : "",
+      "options" : null,
       "value" : "prog",
       "type" : "Themes"
    },
@@ -1424,13 +1424,13 @@
    "defaultSortField" : {
       "explanation" : "Specify the default field used for sorting",
       "options" : "relevance|popularity|call_number|pubdate|acqdate|title|author",
-      "value" : null,
+      "value" : "relevance",
       "type" : "Choice"
    },
    "Replica_DSN" : {
       "explanation" : "DSN for reporting database replica",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "Textarea"
    },
    "uppercasesurnames" : {
@@ -1441,7 +1441,7 @@
    },
    "SyndeticsAuthorNotes" : {
       "explanation" : "Display Notes about the Author on OPAC from Syndetics",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1453,13 +1453,13 @@
    },
    "OPACFineNoRenewals" : {
       "explanation" : "Fine limit above which user cannot renew books via OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "100",
       "type" : "Integer"
    },
    "ApplyMaxFineWhenLostItemChargeRefunded" : {
       "explanation" : "Use with RefundReturnedLostItem. If set, the maxfine on an item will be applied automatically when the lost item charges are refunded after a patron returns the item",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1483,15 +1483,15 @@
    },
    "EnableOverdueAccruedAmount" : {
       "explanation" : "If ON,splits fines and charges into amount due and overdue accrued amount.  The latter amount can not be paid until the item is checked in.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "NewItemsDefaultLocation" : {
       "explanation" : "If set, all new items will have a location of the given Location Code ( Authorized Value type LOC )",
-      "options" : "",
-      "value" : "",
-      "type" : ""
+      "options" : null,
+      "value" : null,
+      "type" : "Free"
    },
    "numReturnedItemsToShow" : {
       "explanation" : "Number of returned items to show on the check-in page",
@@ -1513,7 +1513,7 @@
    },
    "advancedMARCeditor" : {
       "explanation" : "If ON, the MARC editor won't display field/subfield descriptions",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1525,19 +1525,19 @@
    },
    "ResetOpacInactivityTimeout" : {
       "explanation" : "This will set an inactivity timer that will reset the OPAC to the main OPAC screen after the specified amount of time has passed since mouse movement was last detected. The value is 0 for disabled,or a positive integer for the number of seconds of inactivity before resetting the OPAC.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "Integer"
    },
    "Replica_pass" : {
       "explanation" : "Password for reporting database replica",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "Textarea"
    },
    "ShowOPACAvailabilityFacetSearch" : {
       "explanation" : "If ON, show the availability search option in the OPAC Refine your search.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1550,12 +1550,12 @@
    "opacuserjs" : {
       "explanation" : "Define custom javascript for inclusion in OPAC",
       "options" : "70|10",
-      "value" : "",
+      "value" : null,
       "type" : "Textarea"
    },
    "AllowHoldDateInFuture" : {
       "explanation" : "If set a date field is displayed on the Hold screen of the Staff Interface, allowing the hold date to be set in the future.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1573,7 +1573,7 @@
    },
    "DisplayMultiPlaceHold" : {
       "explanation" : "If ON,displays the Place Hold button at the top of the search results list in staff and OPAC. Sites whose policies require tighter control over holds may want to turn this option off and limit users to placing holds one at a time.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1604,7 +1604,7 @@
    "globalDueDate" : {
       "explanation" : "If set, allows a global static due date for all checkouts",
       "options" : "10",
-      "value" : "",
+      "value" : null,
       "type" : "free"
    },
    "IndependantBranches" : {
@@ -1615,25 +1615,25 @@
    },
    "OPACXSLTResultsAvailabilityDisplay" : {
       "explanation" : "If ON, the availability section of the OPAC results will display when OPACXLSTResultsDisplay is also ON",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "intranetcolorstylesheet" : {
       "explanation" : "Define the color stylesheet to use in the Staff Client",
       "options" : "50",
-      "value" : "",
+      "value" : null,
       "type" : "free"
    },
    "suggestion" : {
       "explanation" : "If ON, enables patron suggestions feature in OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "SyndeticsEnabled" : {
       "explanation" : "Turn on Syndetics Enhanced Content",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1645,13 +1645,13 @@
    },
    "HoldButtonIgnore" : {
       "explanation" : "Display Ignore button when hold triggered.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "BakerTaylorEnabled" : {
       "explanation" : "Enable or disable all Baker & Taylor features.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1663,7 +1663,7 @@
    },
    "PatronDisplayReturn" : {
       "explanation" : "If ON,allows items to be returned in the patron details display checkout list.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1681,7 +1681,7 @@
    },
    "RefundReturnedLostItem" : {
       "explanation" : "If set, item charges will be refunded when a patron returns the item",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1693,14 +1693,14 @@
    },
    "item-level_itypes" : {
       "explanation" : "If ON, enables Item-level Itemtype / Issuing Rules",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "BCCAllNotices" : {
       "explanation" : "If set,sends a blind carbon of every email sent to the specified address",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "free"
    },
    "AmazonLocale" : {
@@ -1717,7 +1717,7 @@
    },
    "Babeltheque" : {
       "explanation" : "Turn ON Babeltheque content  - See babeltheque.com to subscribe to this service",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1741,13 +1741,13 @@
    },
    "SyndeticsTOC" : {
       "explanation" : "Display Table of Content information from Syndetics",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "opacreadinghistory" : {
       "explanation" : "If ON, enables display of Patron Circulation History in OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1759,13 +1759,13 @@
    },
    "EnhancedMessagingPreferences" : {
       "explanation" : "If ON, allows patrons to select to receive additional messages about items due or nearly due.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "HideItypeInOPAC" : {
       "explanation" : "If ON, do not use/display item type in the OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1777,15 +1777,15 @@
    },
    "FillRequestsAtPickupLibrary" : {
       "explanation" : "Fill hold requests at your local library if possible before sending an item to another branch to fill a hold request.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "kohaspsuggest" : {
       "explanation" : "Track search queries, turn on by defining host:dbname:user:pass",
-      "options" : "",
-      "value" : "",
-      "type" : ""
+      "options" : null,
+      "value" : null,
+      "type" : "Free"
    },
    "QueryAutoTruncate" : {
       "explanation" : "If ON, query truncation is enabled by default",
@@ -1795,19 +1795,19 @@
    },
    "printcirculationslips" : {
       "explanation" : "If ON, enable printing circulation receipts",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "ReservesNeedReturns" : {
       "explanation" : "If ON, a hold placed on an item available in this library must be checked-in, otherwise, a hold on a specific item, that is in the library & available is considered available",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "LibraryThingForLibrariesEnabled" : {
       "explanation" : "Enable or Disable Library Thing for Libraries Features",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1819,13 +1819,13 @@
    },
    "TalkingTechEnabled" : {
       "explanation" : "Turn on Talking Tech phone messaging",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "WarnOnlyOnMaxFine" : {
       "explanation" : "If UseGranularMaxFines and WarnOnlyOnMaxFine are both enabled,fine warnings will only occur when the fine for an item hits the max_fine attribute set in issuingrules.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1837,20 +1837,20 @@
    },
    "DisplayOthernames" : {
       "explanation" : "Ability to turn the othernames field on/off in patron screen",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "BatchMemberDeletePaidDebtCollections" : {
       "explanation" : "If on,the batch delete will refuse to delete members with unpaid fines before being put in debt collections.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "libraryAddress" : {
       "explanation" : "The address to use for printing receipts, overdues, etc. if different than physical address",
       "options" : null,
-      "value" : "",
+      "value" : null,
       "type" : "free"
    },
    "IssuingInProcess" : {
@@ -1867,31 +1867,31 @@
    },
    "TagsEnabled" : {
       "explanation" : "Enables or disables all tagging features.  This is the main switch for tags.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "ThingISBN" : {
       "explanation" : "Use with FRBRizeEditions. If ON, Koha will use the ThingISBN web service in the Editions tab on the detail pages.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "IntranetmainUserblock" : {
       "explanation" : "Add a block of HTML that will display on the intranet home page",
       "options" : "70|10",
-      "value" : "",
+      "value" : null,
       "type" : "Textarea"
    },
    "OPACDisplayRequestPriority" : {
       "explanation" : "Show patrons the priority level on holds in the OPAC",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "EditAllLibraries" : {
       "explanation" : "If set, all libraries have privileges to edit all items; if OFF, libraries may only edit items owned by their own library",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1915,7 +1915,7 @@
    },
    "ReservesMaxPickUpDelay" : {
       "explanation" : "Define the Maximum delay to pick up an item on hold",
-      "options" : "",
+      "options" : null,
       "value" : "7",
       "type" : "Integer"
    },
@@ -1927,7 +1927,7 @@
    },
    "autoMemberNum" : {
       "explanation" : "If ON, patron number is auto-calculated",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
@@ -1939,19 +1939,19 @@
    },
    "viewISBD" : {
       "explanation" : "Allow display of ISBD view of bibiographic records",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "AllowAllMessageDeletion" : {
       "explanation" : "Allow any Library to delete any message",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "UseGranularMaxFines" : {
       "explanation" : "If enabled,this allows you to define the max for an item by a combination of itemtype & patroncategory.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -1975,7 +1975,7 @@
    },
    "BatchMemberDeleteFineThreshhold" : {
       "explanation" : "Any borrower with an amount of fines greater than this value cannot be deleted via batch borrower deleting.",
-      "options" : "",
+      "options" : null,
       "value" : "0.0",
       "type" : "Float"
    },
@@ -1993,25 +1993,25 @@
    },
    "TagsModeration" : {
       "explanation" : "Require tags from patrons to be approved before becoming visible.",
-      "options" : "",
-      "value" : null,
+      "options" : null,
+      "value" : "1",
       "type" : "YesNo"
    },
    "opacsmallimage" : {
       "explanation" : "Enter a complete URL to an image to replace the default Koha logo",
-      "options" : "",
-      "value" : "",
+      "options" : null,
+      "value" : null,
       "type" : "free"
    },
    "DisplayOPACiconsXSLT" : {
       "explanation" : "If ON, displays the format, audience, type icons in XSLT MARC21 results and display pages.",
-      "options" : "",
+      "options" : null,
       "value" : "1",
       "type" : "YesNo"
    },
    "UseReceiptTemplates" : {
       "explanation" : "Enable the use of the Receipt Templates system.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -2023,13 +2023,13 @@
    },
    "UseGranularMaxHolds" : {
       "explanation" : "If enabled,this allows you to define the maximum number of holds by a combination of itemtype & patroncategory.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
    "SyndeticsClientCode" : {
       "explanation" : "Client Code for using Syndetics Solutions content",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "free"
    },
@@ -2047,7 +2047,7 @@
    },
    "ReturnToShelvingCart" : {
       "explanation" : "If set, when any item is 'checked in', it's location code will be changed to CART.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "YesNo"
    },
@@ -2059,7 +2059,7 @@
    },
    "PrintNoticesMaxLines" : {
       "explanation" : "If greater than 0, sets the maximum number of lines an overdue notice will print. If the number of items is greater than this number, the notice will end with a warning asking the borrower to check their online account for a full list of overdue items.",
-      "options" : "",
+      "options" : null,
       "value" : "0",
       "type" : "Integer"
    }
