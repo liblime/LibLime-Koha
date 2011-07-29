@@ -609,6 +609,7 @@ WriteMakefile(
                             'Plack'                            => 0.9978,
                             'Plack::Middleware::Deflater'      => 0.03,
                             'Plack::Middleware::Header'        => 0.04,
+                            'Plack::Middleware::Status'        => 1.101150,
                             'Plack::Middleware::MethodOverride' => 0.10,
                             'POE'                              => 0.9999,
                             'POSIX'                            => 1.09,
