@@ -717,10 +717,14 @@ sub _new_dbh
     my $db_name   = $context->config("database");
     my $db_host   = $context->config("hostname");
     my $db_port   = $context->config("port") || '';
+    my $db_socket = $context->config('socket');
     my $db_user   = $context->config("user");
     my $db_passwd = $context->config("pass");
-    my $dbh = DBI->connect("DBI:$db_driver:dbname=$db_name;host=$db_host;port=$db_port",
-        $db_user, $db_passwd) or die $DBI::errstr;
+
+    my $dsn = "DBI:$db_driver:dbname=$db_name;";
+    $dsn .= ($db_socket) ? "mysql_socket=$db_socket" : "host=$db_host;port=$db_port";
+
+    my $dbh = DBI->connect($dsn, $db_user, $db_passwd) or die $DBI::errstr;
     $dbh->{RaiseError} = 1;
 	my $tz = $ENV{TZ};
     if ( $db_driver eq 'mysql' ) { 
