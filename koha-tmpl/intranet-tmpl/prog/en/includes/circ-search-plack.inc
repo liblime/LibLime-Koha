@@ -21,21 +21,28 @@
 </div><!-- /TMPL_IF -->
 
 <ul>
-    <!-- TMPL_IF NAME="CAN_user_circulate" --><li id="circtab0"><a href="#circ_search" onclick="_circtab(0)">Check Out</a></li><!-- /TMPL_IF -->
-    <!-- TMPL_IF NAME="CAN_user_circulate" --><li id="circtab1"><a href="#checkin_search" onclick="_circtab(1)">Check In</a></li><!-- /TMPL_IF -->
-    <!-- TMPL_IF NAME="CAN_user_catalogue" --><li id="circtab2"><a href="#catalog_search" onclick="_circtab(2)">Search the Catalog</a></li><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_circulate" --><li id="circtab0"><a href="#circ_search"    onclick="return _circtab(0)">Check Out</a></li><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_circulate" --><li id="circtab1"><a href="#checkin_search" onclick="return _circtab(1)">Check In</a></li><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_catalogue" --><li id="circtab2"><a href="#catalog_search" onclick="return _circtab(2)">Search the Catalog</a></li><!-- /TMPL_IF -->
 </ul>   
 
 </div>
 <script>
 function _circtab(idx) {
-   var tabs = new Array('circ_search','checkin_search','catalog_search');
+   var tabs = new Array(
+      ['circ_search'   ,'findborrower'],
+      ['checkin_search','ret_barcode' ],
+      ['catalog_search','search-form' ]
+   );
    for(var i=0;i<3;i++) {
       if($('#circtab'+i)) {
-         if(i==idx) { $('#circtab'+i).addClass('ui-tabs-selected');   $('#'+tabs[i]).css('display','block'); }
-         else       { $('#circtab'+i).removeClass('ui-tabs-selected');$('#'+tabs[i]).css('display','none');  }
+         var tab = tabs[i][0];
+         if(i==idx) { $('#circtab'+i).addClass('ui-tabs-selected');   $('#'+tab).css('display','block'); }
+         else       { $('#circtab'+i).removeClass('ui-tabs-selected');$('#'+tab).css('display','none');  }
       }
    }
+   $('#'+tabs[idx][1]).focus();
+   return false; // don't jump to anchor
    //$('html').animate({scrollTop:0});
    //$('body').animate({scrollTop:0});
 }

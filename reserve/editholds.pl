@@ -43,7 +43,7 @@ my $offset         = $cgi->param('offset')   || 0;
 my $mode           = $cgi->param('mode')     || 'batch'; # else: single
 my $dformat        = C4::Context->preference('dateformat') // 'iso';
 my $pg             = $cgi->param('pg')       || 1;
-my $sortf          = $cgi->param('sortf')    || 'int:priority';
+my $sortf          = $cgi->param('sortf')    || 'int:rank';
 my $sortRev        = $cgi->param('sortRev')  || 'DESC';
 $template->param(
    editholdsview => 1,
