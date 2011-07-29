@@ -281,6 +281,7 @@ if ( $borr->{debarred} && ($borr->{debarred} eq 1) ) {
                     );
 }
 
+my $userenv = C4::Context->userenv; 
 my @reserves = GetReservesFromBorrowernumber( $borrowernumber );
 $template->param( RESERVES => \@reserves );
 if ( C4::Context->preference('UseGranularMaxHolds') ) {
@@ -307,7 +308,12 @@ if ( C4::Context->preference('UseGranularMaxHolds') ) {
             my @reservesByItemtype = C4::Reserves::GetReservesByBorrowernumberAndItemtypeOf($borrowernumber, $biblionumber);
             my $res_count = scalar( @reservesByItemtype );
 
-            my $branch = C4::Circulation::_GetCircControlBranch($item, $borr);
+            my $branch = C4::Circulation::GetCircControlBranch(
+               pickup_branch        => $userenv? $userenv->{branch} : $item->{homebranch},
+               item_homebranch      => $item->{homebranch},
+               item_holdingbranch   => $item->{holdingbranch},
+               borrower_branch      => $borr->{branchcode},
+            );
             my $irule = GetIssuingRule($borr->{'categorycode'}, $itemtype, $branch);
             
             if (($irule->{max_holds}>0) && ($res_count >= $irule->{max_holds})) {
@@ -543,7 +549,12 @@ foreach my $biblioNum (@biblionumbers) {
         # If there is no loan, return and transfer, we show a checkbox.
         $itemLoopIter->{notforloan} = $itemLoopIter->{notforloan} || 0;
 
-        my $branch = C4::Circulation::_GetCircControlBranch($itemInfo, $borr);
+        my $branch = C4::Circulation::GetCircControlBranch(
+            pickup_branch     => $userenv? $userenv->{branch} : $itemInfo->{homebranch},
+            item_homebranch   => $itemInfo->{homebranch},
+            item_holdingbranch=> $itemInfo->{holdingbranch},
+            borrower_branch   => $borr->{branchcode}
+        );
         my $issuingrule = GetIssuingRule( $borr->{'categorycode'}, $itemInfo->{'itype'}, $branch );
 
         my $policy_holdallowed = 1;

@@ -509,17 +509,22 @@ foreach my $biblionumber (@biblionumbers) {
             
             # if independent branches is on we need to check if the person can reserve
             # for branches they arent logged in to
+            my $userenv = C4::Context->userenv;
             if ( C4::Context->preference("IndependantBranches") ) { 
                 if (! C4::Context->preference("canreservefromotherbranches")){
                     # cant reserve items so need to check if item homebranch and userenv branch match if not we cant reserve
-                    my $userenv = C4::Context->userenv;
                     if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) {
                         $item->{cantreserve} = 1 if ( $item->{homebranch} ne $userenv->{branch} );
                     }
                 }
             }
             
-            my $branch = C4::Circulation::_GetCircControlBranch($item, $borrowerinfo);
+            my $branch = C4::Circulation::GetCircControlBranch(
+                  pickup_branch        => $userenv? $userenv->{branch} : $item->{homebranch},
+                  item_homebranch      => $item->{homebranch},
+                  item_holdingbranch   => $item->{holdingbranch},
+                  borrower_branch      => $borrowerinfo->{branchcode},
+            );
             my $issuingrule = GetIssuingRule($borrowerinfo->{categorycode}, $item->{itype}, $branch);
             my $policy_holdallowed = 1;
             $item->{'holdallowed'} = $issuingrule->{'holdallowed'};

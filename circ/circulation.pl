@@ -83,6 +83,15 @@ sub FormatFinesSummary {
 # PARAMETERS READING
 #
 my $query = new CGI;
+my ( $template, $loggedinuser, $cookie ) = get_template_and_user (
+    {
+        template_name   => 'circ/circulation.tmpl',
+        query           => $query,
+        type            => "intranet",
+        authnotrequired => 0,
+        flagsrequired   => { circulate => '*' },
+    }
+);
 
 my $dbh = C4::Context->dbh;
 
@@ -113,15 +122,6 @@ if (!C4::Context->userenv || !$branch) {
     }
 }
 
-my ( $template, $loggedinuser, $cookie ) = get_template_and_user (
-    {
-        template_name   => 'circ/circulation.tmpl',
-        query           => $query,
-        type            => "intranet",
-        authnotrequired => 0,
-        flagsrequired   => { circulate => '*' },
-    }
-);
 my $branches = GetBranches();
 
 my @failedrenews = $query->param('failedrenew');    # expected to be itemnumbers 

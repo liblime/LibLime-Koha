@@ -91,8 +91,10 @@ $template->param(multi_hold => $multihold);
 my $branches = GetBranches();
 my $itemtypes = GetItemTypes();
 my $itemstatuses = GetOtherItemStatus();
+
     
-my $default = C4::Context->userenv->{branch};
+my $userenv = C4::Context->userenv;
+my $default = $userenv? $userenv->{branch} : undef;
 my @values;
 my %label_of;
     
@@ -512,14 +514,18 @@ foreach my $biblionumber (@biblionumbers) {
             if ( C4::Context->preference("IndependantBranches") ) { 
                 if (! C4::Context->preference("canreservefromotherbranches")){
                     # cant reserve items so need to check if item homebranch and userenv branch match if not we cant reserve
-                    my $userenv = C4::Context->userenv;
                     if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) {
                         $item->{cantreserve} = 1 if ( $item->{homebranch} ne $userenv->{branch} );
                     }
                 }
             }
             
-            my $branch = C4::Circulation::_GetCircControlBranch($item, $borrowerinfo);
+            my $branch = C4::Circulation::GetCircControlBranch(
+               pickup_branch        => $default || $item->{homebranch},
+               item_homebranch      => $item->{homebranch},
+               item_holdingbranch   => $item->{holdingbranch},
+               borrower_branch      => $borrowerinfo->{branchcode}
+            );
             my $issuingrule = GetIssuingRule($borrowerinfo->{categorycode}, $item->{itype}, $branch);
             my $policy_holdallowed = 1;
             $item->{'holdallowed'} = $issuingrule->{'holdallowed'};

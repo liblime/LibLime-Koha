@@ -463,14 +463,24 @@ sub transferbook {
 
 
 sub TooMany {
-    my $borrower        = shift;
+    my $borrower     = shift;
     my $biblionumber = shift;
-    my $item        = shift;
+    my $item         = shift;
     my $cat_borrower    = $borrower->{'categorycode'};
     my $dbh             = C4::Context->dbh;
-    my $branch;
     # Get which branchcode we need
-    $branch = _GetCircControlBranch($item,$borrower);
+    my $userenv;
+    my $currBranch;
+
+    if (C4::Context->userenv) { $userenv = C4::Context->userenv }
+    if ($userenv) { $currBranch = $userenv->{branch}; }
+    else          { $currBranch = $borrower->{branchcode} }
+    my $branch = GetCircControlBranch(
+      pickup_branch      => $currBranch,
+      item_homebranch    => $item->{homebranch},
+      item_holdingbranch => $item->{holdingbranch},
+      borrower_branch    => $borrower->{branchcode},
+    );
     my $type = (C4::Context->preference('item-level_itypes')) 
             ? $item->{'itype'}         # item-level
             : $item->{'itemtype'};     # biblio-level
@@ -796,9 +806,17 @@ sub CanBookBeIssued {
     #
     # DUE DATE is OK ? -- should already have checked.
     #
+    my $useBranch;
+    if (C4::Context->userenv) { $useBranch = C4::Context->userenv->{branch} }
     unless ( $duedate ) {
         my $issuedate = C4::Dates->new()->output('iso');
-        my $branch = _GetCircControlBranch($item,$borrower);
+        my $branch = GetCircControlBranch(
+            pickup_branch      => $issue->{branchcode} // $useBranch // $item->{homebranch},
+            item_homebranch    => $item->{homebranch},
+            item_holdingbranch => $item->{holdingbranch},
+            borrower_branch    => $borrower->{branchcode},
+        );
+
         my $itype = ( C4::Context->preference('item-level_itypes') ) ? $item->{'itype'} : $biblioitem->{'itemtype'};
         my $loanlength = GetLoanLength( $borrower->{'categorycode'}, $itype, $branch );
         $duedate = CalcDateDue( C4::Dates->new( $issuedate, 'iso' ), $loanlength, $branch, $borrower );
@@ -818,7 +836,7 @@ sub CanBookBeIssued {
     #
     if ( $borrower->{'category_type'} eq 'X' && (  $item->{barcode}  )) { 
         # stats only borrower -- add entry to statistics table, and return issuingimpossible{STATS} = 1  .
-        &UpdateStats(C4::Context->userenv->{'branch'},'localuse','','',$item->{'itemnumber'},$item->{'itemtype'},$borrower->{'borrowernumber'});
+        &UpdateStats($useBranch // $item->{homebranch},'localuse','','',$item->{'itemnumber'},$item->{'itemtype'},$borrower->{'borrowernumber'});
         return( { STATS => 1 }, {});
     }
     if ( $borrower->{flags}->{GNA} ) {
@@ -1072,8 +1090,13 @@ sub AddIssue {
    if (ref($datedueObj)) { $datedue = $datedueObj->output('iso') }
     
    my $item = GetItem('', $barcode) or return undef;  # if we don't get an Item, abort.
-   my $branch = _GetCircControlBranch($item,$borrower);
    my $actualissue = GetItemIssue( $item->{itemnumber});
+   my $branch = GetCircControlBranch(
+      pickup_branch      => C4::Context->userenv->{branch},
+      item_homebranch    => $item->{homebranch},
+      item_holdingbranch => $item->{holdingbranch},
+      borrower_branch    => $borrower->{branchcode},
+   );
    my $biblio = GetBiblioFromItemNumber($item->{itemnumber});
         
    if (($actualissue->{borrowernumber} // '') eq $borrower->{'borrowernumber'}) {
@@ -1081,7 +1104,6 @@ sub AddIssue {
                borrower       => $borrower,
                item           => $item,
                issue          => $actualissue,
-               branch         => $branch,
                datedueObj     => $datedueObj,
                issuedate      => $issuedate,# renewal date
                exemptfine     => $g{exemptfine},
@@ -1626,7 +1648,12 @@ sub AddReturn {
             # define circControlBranch only if dropbox mode is set
             # don't allow dropbox mode to create an invalid entry in issues (issuedate > today)
             # FIXME: check issuedate > returndate, factoring in holidays
-            $circControlBranch = _GetCircControlBranch($item,$borrower) unless ( $issue->{'issuedate'} eq C4::Dates->today('iso') );;
+            $circControlBranch = GetCircControlBranch(
+               pickup_branch      => $issue->{branchcode},
+               item_homebranch    => $item->{homebranch},
+               item_holdingbranch => $item->{holdingbranch},
+               borrower_branch    => $borrower->{branchcode},
+            ) unless ($issue->{'issuedate'} eq C4::Dates->today('iso'));
         }
 
         if ($borrowernumber) {
@@ -1692,13 +1719,19 @@ sub AddReturn {
     # fix up the overdues in accounts...
     ## also does exemptfine but not claims returned
     if ($borrowernumber) {
-        ## FIXME: which branch do we use?  patron's or item's?
+       my $acctBranch = GetCircControlBranch(
+            pickup_branch      => $issue->{branchcode},
+            item_homebranch    => $item->{homebranch},
+            item_holdingbranch => $item->{holdingbranch},
+            borrower_branch    => $borrower->{branchcode},
+       );
+ 
         _FixAccountOverdues(
             $issue, {
                 exemptfine    => $exemptfine, 
                 dropbox       => $dropbox, 
                 returndate    => $returndate,
-                branch        => $branch,
+                branch        => $acctBranch,
                 today         => $today,
                 returndateObj => $returndateObj,
                 borcatcode    => $$borrower{categorycode},
@@ -1978,8 +2011,7 @@ sub _FixAccountOverdues {
     my $borrower = C4::Members::GetMember($$issue{borrowernumber});
     my ($accounttype, $amount, $msg, $ismax) = ('F', $$row{amount}, undef, 0);
     if ($flags->{dropbox} || $flags->{returndate}) {
-        my $branchcode = _GetCircControlBranch($item, $borrower);
-        my $cal        = C4::Calendar->new(branchcode => $branchcode);
+        my $cal        = C4::Calendar->new(branchcode => $$flags{branch});
         my $enddateObj;
         if ($$flags{returndateObj}) {
             $enddateObj = $$flags{returndateObj};
@@ -1990,7 +2022,7 @@ sub _FixAccountOverdues {
             : C4::Dates->new($flags->{returndate}, 'iso');
         }
         ($amount, undef, undef, undef, $ismax)
-            = C4::Overdues::CalcFine($item, $borrower->{categorycode}, $branchcode,
+            = C4::Overdues::CalcFine($item, $borrower->{categorycode}, $$flags{branch},
                                      undef, undef, $start_date, $enddateObj);
         $msg = "adjusted backdate $verbiage item $$issue{itemnumber} $checkindate";
     }
@@ -2340,9 +2372,15 @@ sub FixAccountForLostAndReturned {
     my $dbh = C4::Context->dbh;
     if ((ref($issue) ~~ 'HASH') && $$issue{borrowernumber}) { # handle currently checked out
         my $bor = C4::Members::GetMember($$issue{borrowernumber});
+        my $acctBranch = GetCircControlBranch(
+               pickup_branch      => $issue->{branchcode},
+               item_homebranch    => $issue->{homebranch},
+               item_holdingbranch => $issue->{holdingbranch},
+               borrower_branch    => $bor->{branchcode},
+        );
         _FixAccountOverdues(
             $issue, {
-                branch        => C4::Context->userenv->{branch},
+                branch        => $acctBranch,
                 borcatcode    => $$bor{categorycode},
                 atreturn      => 0,
             },
@@ -2365,7 +2403,9 @@ sub FixAccountForLostAndReturned {
    ## Update lost item accountype so we don't go through this again
    ## Yes, we might be fixing somebody else's account other than passed in $borrowernumber
    my $today = C4::Dates->new()->output;
-   my $user  = C4::Context->userenv->{id};
+   my $userenv = C4::Context->userenv;
+   my $user = 'cron';
+   if ($userenv) { $user = $userenv->{id} }
    $sth = $dbh->prepare(qq|
     /* this is like receiving a credit or writeoff */
       UPDATE accountlines
@@ -2379,7 +2419,7 @@ sub FixAccountForLostAndReturned {
 
    return if $$data{description} =~ /writeoff at no\.\d+/i;
    if ($$data{description} =~ /claims returned at no\.(\d+)/) {
-      my $desc = sprintf(", NO LONGER LOST %s (-%s)",C4::Dates->new()->output(),C4::Context->userenv->{id});
+      my $desc = sprintf(", NO LONGER LOST %s (-%s)",C4::Dates->new()->output(),$user);
       $dbh->do("UPDATE accountlines
          SET  description = CONCAT(description,?)
         WHERE description NOT RLIKE 'NO LONGER LOST'
@@ -2427,9 +2467,15 @@ sub FixAccountForLostAndReturned {
    return 1;
 }
 
-=head2 _GetCircControlBranch
+=head2 GetCircControlBranch
 
-   my $circ_control_branch = _GetCircControlBranch($iteminfos, $borrower);
+   my $circ_control_branch = GetCircControlBranch(%args);
+
+Args:
+
+C<pickup_branch> : typically the logged in branch, or the issuing branch
+C<borrower_branch> or C<borrower_branchcode>
+C<item_homebranch> and/or C<item_holdingbranch>
 
 Internal function : 
 
@@ -2437,31 +2483,24 @@ Return the library code to be used to determine which circulation
 policy applies to a transaction.  Looks up the CircControl and
 HomeOrHoldingBranch system preferences.
 
-C<$iteminfos> is a hashref to iteminfo. Only {homebranch or holdingbranch} is used.
-
-C<$borrower> is a hashref to borrower. Only {branchcode} is used.
-
 =cut
 
-sub _GetCircControlBranch {
-    my ($item, $borrower) = @_;
-    my $circcontrol = C4::Context->preference('CircControl');
-    my $branch;
+sub GetCircControlBranch {
+   my %g = @_;
+   $g{pickup_branch}   //= $g{pickup_branchcode} // $g{issue_branch} // $g{issue_branchcode};
+   $g{borrower_branch} //= $g{borrower_branchcode};
+   die "pickup_branch required"   unless $g{pickup_branch};
+   die "borrower_branch required" unless $g{borrower_branch};
+   die "item_homebranch required" unless $g{item_homebranch};
+   my $control       = C4::Context->preference('CircControl');
+   my $homeOrHolding = C4::Context->preference('HomeOrHoldingBranch') || 'homebranch';
+   if    ($control eq 'PickupLibrary') { return $g{pickup_branch}   }
+   elsif ($control eq 'PatronLibrary') { return $g{borrower_branch} }
 
-    if ($circcontrol eq 'PickupLibrary') {
-        $branch= C4::Context->userenv->{'branch'};
-    } elsif ($circcontrol eq 'PatronLibrary') {
-        $branch=$borrower->{branchcode};
-    } else {
-        my $branchfield = C4::Context->preference('HomeOrHoldingBranch') || 'homebranch';
-        $branch = $item->{$branchfield} // '';
-        # default to item home branch if holdingbranch is used
-        # and is not defined
-        if (!$branch && $branchfield eq 'holdingbranch') {
-            $branch = $item->{homebranch};
-        }
-    }
-    return $branch;
+   if ($homeOrHolding eq 'holdingbranch') {
+      die "item_holdingbranch required" unless $g{item_holdingbranch};
+   }
+   return $g{"item_$homeOrHolding"};
 }
 
 
@@ -2488,7 +2527,8 @@ sub GetItemIssue {
     }
     
     my $sth = C4::Context->dbh->prepare("
-      SELECT s.*,i.biblionumber,b.title,p.firstname,p.surname,p.cardnumber,p.categorycode
+      SELECT s.*,i.biblionumber,b.title,i.homebranch,i.holdingbranch,
+             p.firstname,p.surname,p.cardnumber,p.categorycode
         FROM issues s, items i, biblio b, borrowers p
        WHERE s.itemnumber     = ? $and 
          AND s.itemnumber     = i.itemnumber
@@ -2767,7 +2807,6 @@ sub AddRenewal {
    my $itemnumber      = $g{itemnumber}      || $$issue{itemnumber}                     || return;
    my $item            = $g{item}            || GetItem($itemnumber)                    || return;
    my $biblio          = $g{biblio}          || GetBiblioFromItemNumber($itemnumber)    || return;
-   my $branch          = $g{branch}          || $$item{homebranch}; # opac-renew doesn't send branch
    my $lastreneweddate = $g{lastreneweddate} || C4::Dates->new()->output('iso');
    my $source          = $g{source}          || ''; #FIMXE: what is the default?
    my $borrowernumber  = $g{borrowernumber}  || $$issue{borrowernumber}                 || return;
@@ -2781,25 +2820,25 @@ sub AddRenewal {
    if ($datedue && (ref($datedue) !~ /C4\:\:Dates/)) { # not an object
       $datedue = C4::Dates->new($datedue);
    }
+   my $currBranch;
+   if (C4::Context->userenv) { $currBranch = C4::Context->userenv->{branch} }
+   my $branch = GetCircControlBranch(
+      pickup_branch      => $issue->{branchcode},
+      item_homebranch    => $item->{homebranch},
+      item_holdingbranch => $item->{holdingbranch},
+      borrower_branch    => $borrower->{branchcode},
+   );
 
     unless ($datedue && $datedue->output('iso')) {
-        if ( C4::Context->preference('CircControl') eq 'PickupLibrary' ) {
-            $branch = $issue->{'branchcode'};
-        } elsif ( C4::Context->preference('CircControl') eq 'PatronLibrary' ) {
-            $branch = $borrower->{'categorycode'};
-        } else {
-            $branch = $item->{homebranch};
-        }
-
         my $loanlength = GetLoanLength(
             $borrower->{'categorycode'},
              (C4::Context->preference('item-level_itypes')) ? $biblio->{'itype'} : $biblio->{'itemtype'} ,
             $branch
         );
         ## FIXME: why go through this trouble if datedue later uses today?
-        $datedue = (C4::Context->preference('RenewalPeriodBase') eq 'date_due') ?
-                                        C4::Dates->new($issue->{date_due}, 'iso') :
-                                        C4::Dates->new(); # FIXME: datedue=today?
+#        $datedue = (C4::Context->preference('RenewalPeriodBase') eq 'date_due') ?
+#                                        C4::Dates->new($issue->{date_due}, 'iso') :
+#                                        C4::Dates->new(); # FIXME: datedue=today?
         $datedue =  CalcDateDue(C4::Dates->new(),$loanlength,$branch,$borrower);
     }
     die "Invalid date passed to AddRenewal." if ($datedue && ! $datedue->output('iso'));
@@ -2816,13 +2855,14 @@ sub AddRenewal {
     $sth->execute( $datedue->output('iso'), $renews, $lastreneweddate, $borrowernumber, $itemnumber );
     $sth->finish;
     my %mod = ( 
-       renewals => ($$biblio{renewals} // 0)+1,
+       renewals => $renews,
        onloan   => $datedue->output('iso'),
        itemlost => 0,
     );
     my($charge) = _chargeToAccount($$item{itemnumber},$$borrower{borrowernumber},$issuedate,1);
 
     ModItem(\%mod, $biblio->{'biblionumber'}, $itemnumber);
+
     _FixAccountOverdues(
       $issue, {
          exemptfine    => $g{exemptfine},
