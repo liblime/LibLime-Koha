@@ -71,11 +71,15 @@ sub new {
     $self->{'dbms'}     = C4::Context->config("db_scheme") ? C4::Context->config("db_scheme") : "mysql";
     $self->{'hostname'} = C4::Context->config("hostname");
     $self->{'port'}     = C4::Context->config("port");
+    $self->{'socket'}   = C4::Context->config("socket");
     $self->{'user'}     = C4::Context->config("user");
     $self->{'password'} = C4::Context->config("pass");
-    $self->{'dbh'} = DBI->connect("DBI:$self->{dbms}:dbname=$self->{dbname};host=$self->{hostname}" . 
-                                  ( $self->{port} ? ";port=$self->{port}" : "" ),
-                                  $self->{'user'}, $self->{'password'});
+
+    my $dsn = sprintf('DBI:%s:dbname=%s;', $self->{dbms}, $self->{dbname});
+    $dsn .= ($self->{socket}) ?
+        "mysql_socket=$self->{socket}" : "host=$self->{host};port=$self->{port}";
+
+    $self->{'dbh'} = DBI->connect($dsn, $self->{'user'}, $self->{'password'});
     $self->{'language'} = undef;
     $self->{'marcflavour'} = undef;
 	$self->{'dbh'}->do('set NAMES "utf8"');
@@ -523,10 +527,13 @@ sub load_sql {
     my $error;
     my $strcmd;
     if ( $self->{dbms} eq 'mysql' ) {
-        $strcmd = "mysql "
-            . ( $self->{hostname} ? " -h $self->{hostname} " : "" )
-            . ( $self->{port}     ? " -P $self->{port} "     : "" )
-            . ( $self->{user}     ? " -u $self->{user} "     : "" )
+        $strcmd = "mysql ";
+        $strcmd .= ($self->{socket}) ? 
+              " -S $self->{socket} "
+              :   ( $self->{hostname} ? " -h $self->{hostname} " : "" )
+                . ( $self->{port}     ? " -P $self->{port} "     : "" );
+        $strcmd .=
+              ( $self->{user}     ? " -u $self->{user} "     : "" )
             . ( $self->{password} ? " -p'$self->{password}'"   : "" )
             . " $self->{dbname} ";
         $error = qx($strcmd --default-character-set=utf8 <$filename 2>&1 1>/dev/null);

@@ -50,11 +50,7 @@ $info{'hostname'} = C4::Context->config("hostname");
 $info{'port'}     = C4::Context->config("port");
 $info{'user'}     = C4::Context->config("user");
 $info{'password'} = C4::Context->config("pass");
-$dbh = DBI->connect(
-    "DBI:$info{dbms}:dbname=$info{dbname};host=$info{hostname}"
-      . ( $info{port} ? ";port=$info{port}" : "" ),
-    $info{'user'}, $info{'password'}
-);
+$dbh = $installer->{dbh};
 
 if ( $step && $step == 1 ) {
     #First Step
@@ -415,11 +411,7 @@ elsif ( $step && $step == 3 ) {
         #Check if there are enough tables.
         # Paul has cleaned up tables so reduced the count
         #I put it there because it implied a data import if condition was not satisfied.
-        my $dbh = DBI->connect(
-    		"DBI:$info{dbms}:dbname=$info{dbname};host=$info{hostname}"
-      		. ( $info{port} ? ";port=$info{port}" : "" ),
-            	$info{'user'}, $info{'password'}
-        );
+        my $dbh = $installer->{dbh};
 	my $rq;
         if ( $info{dbms} eq 'mysql' ) { $rq = $dbh->prepare( "SHOW TABLES FROM " . $info{'dbname'} ); }
 	elsif ( $info{dbms} eq 'Pg' ) { $rq = $dbh->prepare( "SELECT *
