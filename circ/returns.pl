@@ -220,7 +220,7 @@ my $returned = 0;
 my $messages;
 my $issueinformation;
 my $itemnumber;
-my $barcode     = $query->param('barcode');
+my $barcode     = $query->param('barcode') // '';
 my $exemptfine  = $query->param('exemptfine');
 my $dropboxmode = $query->param('dropboxmode');
 my $dotransfer  = $query->param('dotransfer');
