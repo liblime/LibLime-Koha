@@ -1523,7 +1523,9 @@ sub AddReturn {
         warn "AddReturn error: branch '$branch' not found.  Reverting to " . C4::Context->userenv->{'branch'};
         undef $branch;
     }
-    $branch = C4::Context->userenv->{'branch'} unless $branch;  # we trust userenv to be a safe fallback/default
+    if (C4::Context->userenv) {
+      $branch = C4::Context->userenv->{'branch'} unless $branch;  # we trust userenv to be a safe fallback/default
+    }
     my $messages;
     my $borrower;
     my $doreturn       = 1;
@@ -1626,7 +1628,7 @@ sub AddReturn {
             # define circControlBranch only if dropbox mode is set
             # don't allow dropbox mode to create an invalid entry in issues (issuedate > today)
             # FIXME: check issuedate > returndate, factoring in holidays
-            $circControlBranch = _GetCircControlBranch($item,$borrower) unless ( $issue->{'issuedate'} eq C4::Dates->today('iso') );;
+            $circControlBranch = _GetCircControlBranch($item,$borrower,$branch) unless ( $issue->{'issuedate'} eq C4::Dates->today('iso') );;
         }
 
         if ($borrowernumber) {
@@ -1979,7 +1981,7 @@ sub _FixAccountOverdues {
     my $borrower = C4::Members::GetMember($$issue{borrowernumber});
     my ($accounttype, $amount, $msg, $ismax) = ('F', $$row{amount}, undef, 0);
     if ($flags->{dropbox} || $flags->{returndate}) {
-        my $branchcode = _GetCircControlBranch($item, $borrower);
+        my $branchcode = _GetCircControlBranch($item, $borrower,$$issue{branchcode});
         my $cal        = C4::Calendar->new(branchcode => $branchcode);
         my $enddateObj;
         if ($$flags{returndateObj}) {
@@ -2445,12 +2447,14 @@ C<$borrower> is a hashref to borrower. Only {branchcode} is used.
 =cut
 
 sub _GetCircControlBranch {
-    my ($item, $borrower) = @_;
+    my ($item, $borrower,$thisbranch) = @_;
     my $circcontrol = C4::Context->preference('CircControl');
     my $branch;
 
     if ($circcontrol eq 'PickupLibrary') {
-        $branch= C4::Context->userenv->{'branch'};
+        if    (C4::Context->userenv){ $branch= C4::Context->userenv->{'branch'}; }
+        elsif ($thisbranch)         { $branch= $thisbranch;                      }
+        else                        { $branch= $item->{homebranch}               }
     } elsif ($circcontrol eq 'PatronLibrary') {
         $branch=$borrower->{branchcode};
     } else {
