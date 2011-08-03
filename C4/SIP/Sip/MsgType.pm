@@ -1374,8 +1374,11 @@ sub handle_renew {
     $patron = $status->patron;
     $item   = $status->item;
 
-    my $renewitem = GetItem($item->{itemnumber});
-    $renewitem->{onloan} =~ s/-//g;
+    my $renewitem;
+    if (defined($item)) {
+      $renewitem = GetItem($item->{itemnumber});
+      $renewitem->{onloan} =~ s/-//g;
+    }
     if ($status->ok) {
 	$resp .= '1';
 	$resp .= $status->renewal_ok ? 'Y' : 'N';
