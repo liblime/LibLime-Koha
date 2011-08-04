@@ -151,7 +151,7 @@ sub CreateLostItem {
     # Copy it into lost_items.
     $sth = $dbh->prepare("INSERT into lost_items (borrowernumber,itemnumber,biblionumber,barcode,homebranch,holdingbranch,itemcallnumber,itemnotes,location,itemtype,title,date_lost) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
     $sth->execute($borrowernumber,$item->{itemnumber},$item->{biblionumber},$item->{barcode},$item->{homebranch},$item->{holdingbranch},
-    $item->{itemcallnumber},$item->{itemnotes},$item->{location},$item->{itype},$item->{title},$date_lost);
+    $item->{itemcallnumber},$item->{itemnotes},$item->{location},$item->{itype}//'',$item->{title},$date_lost);
     $id = $dbh->{mysql_insertid};
     return $id;
 }
