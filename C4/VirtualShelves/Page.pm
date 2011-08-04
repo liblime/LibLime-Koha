@@ -210,7 +210,6 @@ SWITCH: {
                             $this_item->{dateadded} = format_date($this_item->{dateadded});
                             $this_item->{imageurl} = getitemtypeinfo($this_item->{itemtype})->{imageurl};
                             $this_item->{coins} = try{GetCOinSBiblio($this_item->{biblionumber})} catch {warn $_; undef};
-                            warn "ASDFASDFASDFASDF";
 			}
 			push @paramsloop, {display => 'privateshelves'} if $category == 1;
 			$showadd = 1;

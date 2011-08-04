@@ -271,7 +271,7 @@ $template->param(
 
 # COinS format FIXME: for books Only
 my $coins = try {
-    return GetCOinSBiblio($_->{biblionumber})
+    return GetCOinSBiblio($biblionumber)
 }
 catch {
     warn $_;
