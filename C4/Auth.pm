@@ -1628,7 +1628,7 @@ sub GetUserGroupBranches {
     if (defined $flags and $flags->{superlibrarian}) {
         @branches = keys %{C4::Branch::GetBranches()};
     } else {
-        my $borrower = GetMember($userid, 'userid') or return undef;
+        my $borrower = C4::Members::GetMember($userid, 'userid') or return undef;
         push @branches, $borrower->{branchcode};
         my $categories = C4::Branch::GetBranchCategories($borrower->{branchcode}, $category);
         push(@branches, map {@{C4::Branch::GetBranchesInCategory($_->{categorycode})}} @{$categories});
