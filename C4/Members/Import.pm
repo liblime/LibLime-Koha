@@ -196,7 +196,7 @@ sub ImportFromFH {
         my $borrowernumber;
         my $member;
         if ( ($matchpoint eq 'cardnumber') && ($borrower{'cardnumber'}) ) {
-            $member = GetMember( $borrower{'cardnumber'}, 'cardnumber' );
+            $member = C4::Members::GetMember( $borrower{'cardnumber'}, 'cardnumber' );
             if ($member) {
                 $borrowernumber = $member->{'borrowernumber'};
             }
@@ -207,7 +207,7 @@ sub ImportFromFH {
                         my @borrowernumbers = $matchpoint_attr_type->get_patrons($attr->{value});
                         if(scalar(@borrowernumbers) == 1){
                             $borrowernumber = $borrowernumbers[0];
-                            $member = GetMember($borrowernumber, 'borrowernumber');
+                            $member = C4::Members::GetMember($borrowernumber, 'borrowernumber');
                         }
                         last;
                     }

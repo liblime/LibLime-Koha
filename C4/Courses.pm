@@ -357,7 +357,7 @@ sub GetInstructors {
     my @instructors;
     while (my $row = $sth->fetchrow_hashref) {
         next if !$row->{instructor_borrowernumber};
-        my $borrower = GetMember ($row->{instructor_borrowernumber}, 'borrowernumber');
+        my $borrower = C4::Members::GetMember ($row->{instructor_borrowernumber}, 'borrowernumber');
         push @instructors, $borrower if $borrower;
     }
     return \@instructors;

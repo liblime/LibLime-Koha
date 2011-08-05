@@ -2107,7 +2107,7 @@ sub _FixAccountNowFound
         $tocredit = 1;
     }
     if ($issuebor && ($issuebor != $$lost{borrowernumber})) {
-        my $bor = GetMember($issuebor);
+        my $bor = C4::Members::GetMember($issuebor);
         $by .= sprintf("a different patron (%s %s %s)",
             $$bor{firstname},$$bor{surname},$$bor{cardnumber}
         );
@@ -2149,7 +2149,7 @@ sub _FixAccountNowFound
             $desc .= 'this patron';
         }
         elsif ($issuebor) {
-            my $bor = GetMember($issuebor);
+            my $bor = C4::Members::GetMember($issuebor);
             $desc .= "a different patron ($$bor{firstname} $$bor{surname}, $$bor{cardnumber})";
         }
         else {

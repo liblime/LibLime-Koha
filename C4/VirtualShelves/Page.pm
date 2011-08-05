@@ -174,7 +174,7 @@ SWITCH: {
 
 		} elsif ( $op eq 'modif' ) {
 			my ( $shelfnumber2, $shelfname, $owner, $category, $sortfield ) =GetShelf( $shelfnumber );
-			my $member = GetMember($owner,'borrowernumber');
+			my $member = C4::Members::GetMember($owner,'borrowernumber');
 			my $ownername = defined($member) ? $member->{firstname} . " " . $member->{surname} : '';
 			$template->param(
 				edit                => 1,
@@ -313,7 +313,7 @@ foreach my $element (sort { lc($shelflist->{$a}->{'shelfname'}) cmp lc($shelflis
 	if ($owner eq $loggedinuser or $canmanage) {
 		$shelflist->{$element}->{'mine'} = 1;
 	} 
-	my $member = GetMember($owner,'borrowernumber');
+	my $member = C4::Members::GetMember($owner,'borrowernumber');
 	$shelflist->{$element}->{ownername} = defined($member) ? $member->{firstname} . " " . $member->{surname} : '';
 	$numberCanManage++ if $canmanage;	# possibly outmoded
 	if ($shelflist->{$element}->{'category'} eq '1') {
