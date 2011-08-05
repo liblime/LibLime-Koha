@@ -52,6 +52,7 @@ foreach my $res (values %{C4::Reserves::GetReservesForQueue() // {}}) {
 BIB:
 foreach my $biblionumber(keys %seen) {
    foreach my $res(values %{C4::Reserves::GetReservesForQueue($biblionumber,@{$seen{$biblionumber}}) // {}}) {
+      next if C4::Reserves::DupecheckQueue($$res{reservenumber});
       next BIB if _save(_pick($res));
    }
 }
