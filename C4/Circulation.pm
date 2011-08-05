@@ -1109,7 +1109,7 @@ sub AddIssue {
       if (($resbor eq $borrower->{'borrowernumber'}) || ($howReserve eq 'fill')) {
          if ($howReserve eq 'requeue') {
             if ($$res{priority} == 0) {
-               ModReserve(1,$res->{'biblionumber'},
+               C4::Reserves::ModReserve(1,$res->{'biblionumber'},
                             $res->{'borrowernumber'},
                             $res->{'branchcode'},                                 
                             undef,     ## $res->{'itemnumber'},
@@ -1130,7 +1130,7 @@ sub AddIssue {
          ## FIXME: requeue as bib-level hold is temporary until we get
          ## a permanent fix for retaining bib- or item-level hold
          if (($$res{priority}==0) || ($$res{found} ~~ 'W')) {
-            ModReserve(1,$res->{'biblionumber'},
+            C4::Reserves::ModReserve(1,$res->{'biblionumber'},
                          $res->{'borrowernumber'},
                          $res->{'branchcode'},                                 
                          undef,     ## $res->{'itemnumber'},
