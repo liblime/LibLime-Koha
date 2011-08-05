@@ -32,6 +32,7 @@ use C4::Members;
 use C4::Circulation;
 use C4::Output;
 use C4::Dates qw/format_date/;
+use Try::Tiny;
 use Exporter;
 use Data::Dumper;
 
