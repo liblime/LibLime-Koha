@@ -278,7 +278,7 @@ sub SendAlerts {
 
             # and parse borrower ...
             my $innerletter = $letter;
-            my $borinfo = GetMember( $_->{'borrowernumber'}, 'borrowernumber' );
+            my $borinfo = C4::Members::GetMember( $_->{'borrowernumber'}, 'borrowernumber' );
             parseletter( $innerletter, 'borrowers', $_->{'borrowernumber'} );
 
             # ... then send mail
