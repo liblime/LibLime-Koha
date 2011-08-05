@@ -192,7 +192,7 @@ if ( $barcode ) {
 
 if ($query->param('reserve_confirmed')) {
    my $perm = C4::Auth::haspermission(C4::Context->userenv->{id}, {superlibrarian => 1});
-   if ($$perm{superlibrarian}) {
+   if ($perm) {
       $issueconfirmed = 1;   
    }
    elsif (C4::Context->preference('DisableHoldsIssueOverrideUnlessAuthorised')) {
