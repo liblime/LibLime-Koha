@@ -1721,7 +1721,7 @@ sub FillReserve
    my @vals    = ($$res{reservenumber});
    if ($itemnumber) {
       $setitem = ',itemnumber=?';
-      push @vals, $itemnumber;
+      unshift @vals, $itemnumber; # add to FRONT of array :-)
    }
    C4::Context->dbh->do(qq|UPDATE reserves
          SET found         = 'F',
