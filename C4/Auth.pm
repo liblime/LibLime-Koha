@@ -299,7 +299,7 @@ sub get_template_and_user {
             HideItypeInOPAC              => C4::Context->boolean_preference('HideItypeInOPAC'),
             GetItAcquisitions            => C4::Context->preference("GetItAcquisitions"),
             BibliosCataloging            => C4::Context->preference("BibliosCataloging"),
-            biblios_link                 => $ENV{BIBLIOS_LINK} // '',
+            biblios_link                 => C4::Context->config('biblios_url') // $ENV{BIBLIOS_LINK} // '',
             BatchItemEditor              => C4::Context->preference('BatchItemEditor'),
     );
 
