@@ -75,7 +75,7 @@ foreach my $item (@$items) {
     }
 }
 
-exit(1);
+exit;
 
 =head1 NAME
 
