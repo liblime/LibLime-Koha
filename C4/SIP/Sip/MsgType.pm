@@ -618,6 +618,7 @@ sub handle_checkin {
     my ($current_loc, $inst_id, $item_id, $terminal_pwd, $item_props, $cancel);
     my ($patron, $item, $status);
     my $resp = CHECKIN_RESP;
+    my $hold_patron_id;
     my ($no_block, $trans_date, $return_date) = @{$self->{fixed_fields}};
 	my $fields = $self->{fields};
 
@@ -674,6 +675,8 @@ sub handle_checkin {
     $resp .= add_field(FID_INST_ID, $inst_id);
     $resp .= add_field(FID_ITEM_ID, $item_id);
 
+    $hold_patron_id = $status->{hold}->{borrowernumber};
+
     if ($item) {
         $resp .= add_field(FID_PERM_LOCN, $item->permanent_location);
         $resp .= maybe_add(FID_TITLE_ID,  $item->title_id);
@@ -690,8 +693,8 @@ sub handle_checkin {
             $resp .= maybe_add(FID_COLLECTION_CODE,      $item->collection_code    );
             $resp .= maybe_add(FID_CALL_NUMBER,          $item->call_number        );
             $resp .= maybe_add(FID_DESTINATION_LOCATION, $item->destination_loc    );
-            $resp .= maybe_add(FID_HOLD_PATRON_ID,       $item->hold_patron_bcode     );
-            $resp .= maybe_add(FID_HOLD_PATRON_NAME,     $item->hold_patron_name   );
+            $resp .= maybe_add(FID_HOLD_PATRON_ID,       $item->hold_patron_bcode($hold_patron_id)     );
+            $resp .= maybe_add(FID_HOLD_PATRON_NAME,     $item->hold_patron_name($hold_patron_id)   );
             if ($status->hold and $status->hold->{branchcode} ne $item->destination_loc) {
                 warn 'SIP hold mismatch: $status->hold->{branchcode}=' . $status->hold->{branchcode} . '; $item->destination_loc=' . $item->destination_loc;
                 # just me being paranoid.
