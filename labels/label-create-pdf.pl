@@ -112,7 +112,7 @@ foreach my $item (@{$items}) {
                                           );
         $pdf->Add($label_a->draw_guide_box) if $layout->get_attr('guidebox');
         my $label_a_text = $label_a->create_label();
-        _print_text($label_a_text);
+        _print_text($pdf, $label_a_text);
         ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($row_count, $col_count, $llx, $lly);
         my $label_b = C4::Labels::Label->new(
                                         batch_id            => $batch_id,
@@ -163,7 +163,7 @@ foreach my $item (@{$items}) {
                                           );
         $pdf->Add($label->draw_guide_box) if $layout->get_attr('guidebox');
         my $label_text = $label->create_label();
-        _print_text($label_text) if $label_text;
+        _print_text($pdf, $label_text) if $label_text;
         ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($row_count, $col_count, $llx, $lly);
         next LABEL_ITEMS;
 }
@@ -173,6 +173,7 @@ $pdf->End();
 exit;
 
 sub _print_text {
+    my $pdf = shift;
     my $label_text = shift;
     foreach my $text_line (@$label_text) {
 
