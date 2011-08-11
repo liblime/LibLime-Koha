@@ -12,27 +12,27 @@ use C4::Labels::Layout 1.000000;
 use C4::Labels::PDF 1.000000;
 use C4::Labels::Label 1.000000;
 
-my $cgi = new CGI;
+our $cgi = CGI->new();
 
-my $batch_id    = $cgi->param('batch_id') if $cgi->param('batch_id');
-my $template_id = $cgi->param('template_id') || undef;
-my $layout_id   = $cgi->param('layout_id') || undef;
-my $start_label = $cgi->param('start_label') || 1;
-my @label_ids   = $cgi->param('label_id') if $cgi->param('label_id');
-my @item_numbers  = $cgi->param('item_number') if $cgi->param('item_number');
+our $batch_id    = $cgi->param('batch_id') if $cgi->param('batch_id');
+our $template_id = $cgi->param('template_id') || undef;
+our $layout_id   = $cgi->param('layout_id') || undef;
+our $start_label = $cgi->param('start_label') || 1;
+our @label_ids   = $cgi->param('label_id') if $cgi->param('label_id');
+our @item_numbers  = $cgi->param('item_number') if $cgi->param('item_number');
 
-my $items = undef;
+our $items = undef;
 
-my $pdf_file = (@label_ids || @item_numbers ? "label_single_" . scalar(@label_ids || @item_numbers) : "label_batch_$batch_id");
+our $pdf_file = (@label_ids || @item_numbers ? "label_single_" . scalar(@label_ids || @item_numbers) : "label_batch_$batch_id");
 print $cgi->header( -type       => 'application/pdf', #'text/plain',
                     -encoding   => 'utf-8',
                     -attachment => "$pdf_file.pdf",   #"$pdf_file.txt",
                   );
 
-my $pdf = C4::Labels::PDF->new(InitVars => 0);
-my $batch = C4::Labels::Batch->retrieve(batch_id => $batch_id);
-my $template = C4::Labels::Template->retrieve(template_id => $template_id, profile_id => 1);
-my $layout = C4::Labels::Layout->retrieve(layout_id => $layout_id);
+our $pdf = C4::Labels::PDF->new(InitVars => 0);
+our $batch = C4::Labels::Batch->retrieve(batch_id => $batch_id);
+our $template = C4::Labels::Template->retrieve(template_id => $template_id, profile_id => 1);
+our $layout = C4::Labels::Layout->retrieve(layout_id => $layout_id);
 
 sub _calc_next_label_pos {
     my ($row_count, $col_count, $llx, $lly) = @_;
