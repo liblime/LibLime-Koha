@@ -34,28 +34,6 @@ my $batch = C4::Labels::Batch->retrieve(batch_id => $batch_id);
 my $template = C4::Labels::Template->retrieve(template_id => $template_id, profile_id => 1);
 my $layout = C4::Labels::Layout->retrieve(layout_id => $layout_id);
 
-sub _calc_next_label_pos {
-    my ($row_count, $col_count, $llx, $lly) = @_;
-    if ($col_count lt $template->get_attr('cols')) {
-        $llx = ($llx + $template->get_attr('label_width') + $template->get_attr('col_gap'));
-        $col_count++;
-    }
-    else {
-        $llx = $template->get_attr('left_margin');
-        if ($row_count eq $template->get_attr('rows')) {
-            $pdf->Page();
-            $lly = ($template->get_attr('page_height') - $template->get_attr('top_margin') - $template->get_attr('label_height'));
-            $row_count = 1;
-        }
-        else {
-            $lly = ($lly - $template->get_attr('row_gap') - $template->get_attr('label_height'));
-            $row_count++;
-        }
-        $col_count = 1;
-    }
-    return ($row_count, $col_count, $llx, $lly);
-}
-
 my $fs = $layout->get_attr('format_string');
 $| = 1;
 
@@ -113,7 +91,7 @@ foreach my $item (@{$items}) {
         $pdf->Add($label_a->draw_guide_box) if $layout->get_attr('guidebox');
         my $label_a_text = $label_a->create_label();
         _print_text($pdf, $label_a_text);
-        ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($row_count, $col_count, $llx, $lly);
+        ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($template, $pdf, $row_count, $col_count, $llx, $lly);
         my $label_b = C4::Labels::Label->new(
                                         batch_id            => $batch_id,
                                         item_number         => $item->{'item_number'},
@@ -136,7 +114,7 @@ foreach my $item (@{$items}) {
                                           );
         $pdf->Add($label_b->draw_guide_box) if $layout->get_attr('guidebox');
         my $label_b_text = $label_b->create_label();
-        ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($row_count, $col_count, $llx, $lly);
+        ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($template, $pdf, $row_count, $col_count, $llx, $lly);
         next LABEL_ITEMS;
     }
     else {
@@ -164,7 +142,7 @@ foreach my $item (@{$items}) {
         $pdf->Add($label->draw_guide_box) if $layout->get_attr('guidebox');
         my $label_text = $label->create_label();
         _print_text($pdf, $label_text) if $label_text;
-        ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($row_count, $col_count, $llx, $lly);
+        ($row_count, $col_count, $llx, $lly) = _calc_next_label_pos($template, $pdf, $row_count, $col_count, $llx, $lly);
         next LABEL_ITEMS;
 }
 
@@ -181,6 +159,28 @@ sub _print_text {
         my $line = "BT /$pdf_font $text_line->{'font_size'} Tf $text_line->{'text_llx'} $text_line->{'text_lly'} Td ($text_line->{'line'}) Tj ET";
         $pdf->Add($line);
     }
+}
+
+sub _calc_next_label_pos {
+    my ($template, $pdf, $row_count, $col_count, $llx, $lly) = @_;
+    if ($col_count lt $template->get_attr('cols')) {
+        $llx = ($llx + $template->get_attr('label_width') + $template->get_attr('col_gap'));
+        $col_count++;
+    }
+    else {
+        $llx = $template->get_attr('left_margin');
+        if ($row_count eq $template->get_attr('rows')) {
+            $pdf->Page();
+            $lly = ($template->get_attr('page_height') - $template->get_attr('top_margin') - $template->get_attr('label_height'));
+            $row_count = 1;
+        }
+        else {
+            $lly = ($lly - $template->get_attr('row_gap') - $template->get_attr('label_height'));
+            $row_count++;
+        }
+        $col_count = 1;
+    }
+    return ($row_count, $col_count, $llx, $lly);
 }
 
 =head1 NAME
