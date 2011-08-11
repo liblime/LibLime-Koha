@@ -83,7 +83,7 @@ my $xml_out = $xml->XMLout($xml_data);
 #die "XML OUT:\n" . Dumper($xml_out);
 print $xml_out;
 
-exit(1);
+exit;
 
 =head1 NAME
 

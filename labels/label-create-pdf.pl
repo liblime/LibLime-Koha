@@ -170,7 +170,7 @@ foreach my $item (@{$items}) {
 
 $pdf->End();
 
-exit(1);
+exit;
 
 sub _print_text {
     my $label_text = shift;

@@ -70,7 +70,7 @@ if ($do_it) {
 # Printing results to screen
         $template->param(mainloop => $results);
         output_html_with_http_headers $input, $cookie, $template->output;
-        exit(1);
+        exit;
     } else {
 # Printing to a csv file
         print $input->header(-type => 'application/vnd.sun.xml.calc',
@@ -104,7 +104,7 @@ if ($do_it) {
             print $sep.$col->{totalcol};
         }
         print $sep.@$results[0]->{total};
-        exit(1);
+        exit;
     }
 # Displaying choices
 } else {

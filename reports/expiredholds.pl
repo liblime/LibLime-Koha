@@ -98,7 +98,7 @@ if ($do_it) {
       # Printing results to screen
       $template->param(results => \@rows);
       output_html_with_http_headers $input, $cookie, $template->output;
-      exit(1);
+      exit;
    }
    else {
    # Printing to a csv file

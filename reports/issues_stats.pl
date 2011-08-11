@@ -124,7 +124,7 @@ if ($do_it) {
 		print map {$sep.$_->{totalcol}} @$cols;
         print $sep.@$results[0]->{total};
 	}
-	exit(1); # exit either way after $do_it
+	exit;
 }
 
 my $dbh = C4::Context->dbh;
