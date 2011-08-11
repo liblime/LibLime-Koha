@@ -21,6 +21,8 @@ use strict;
 use warnings;
 use PDF::Reuse;
 use PDF::Reuse::Barcode;
+use IO::All;
+use File::Temp;
 
 BEGIN {
     use version; our $VERSION = qv('1.0.0_1');
@@ -37,12 +39,18 @@ sub new {
     my $type = ref($invocant) || $invocant;
     my %opts = @_;
     my $self = {};
+
+    my $tmpfile = File::Temp->new( UNLINK => 0, SUFFIX => '.pdf' );
+    $self->{filename} = "$tmpfile";
+    close $tmpfile;
+    $opts{Name} = $self->{filename};
+
     _InitVars() if ($opts{InitVars} == 0);
     _InitVars($opts{InitVars}) if ($opts{InitVars} > 0);
     delete($opts{InitVars});
     prDocDir($opts{'DocDir'}) if $opts{'DocDir'};
     delete($opts{'DocDir'});
-    prFile(%opts);
+    prFile(\%opts);
     bless ($self, $type);
     return $self;
 }
@@ -50,6 +58,9 @@ sub new {
 sub End {
     my $self = shift;
     prEnd();
+    my $io = io $self->{filename};
+    print $io->all;
+    $io->unlink;
 }
 
 sub Add {
