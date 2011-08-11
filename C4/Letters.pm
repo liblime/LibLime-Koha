@@ -475,9 +475,6 @@ sub SendAlerts {
 
 =cut
 
-our %handles = ();
-our %columns = ();
-
 sub parseletter_sth {
     my $table = shift;
     unless ($table) {
@@ -489,8 +486,7 @@ sub parseletter_sth {
     . 'left join issues on issues.itemnumber = items.itemnumber '
     . 'LEFT JOIN biblio on items.biblionumber = biblio.biblionumber '
     . 'WHERE items.itemnumber = ? ';
-# check cache first
-    (defined $handles{$table}) and return $handles{$table};
+
     my $query = 
     ($table eq 'biblio'       ) ? "SELECT * FROM $table WHERE   biblionumber = ?"                      :
     ($table eq 'biblioitems'  ) ? "SELECT * FROM $table WHERE   biblionumber = ?"                      :
@@ -503,11 +499,7 @@ sub parseletter_sth {
         warn "ERROR: No parseletter_sth query for table '$table'";
         return;     # nothing to get
     }
-    unless ($handles{$table} = C4::Context->dbh->prepare($query)) {
-        warn "ERROR: Failed to prepare query: '$query'";
-        return;
-    }
-    return $handles{$table};    # now cache is populated for that $table
+    return C4::Context->dbh->prepare($query);
 }
 
 sub parseletter {
