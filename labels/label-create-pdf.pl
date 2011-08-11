@@ -163,13 +163,13 @@ sub _print_text {
 
 sub _calc_next_label_pos {
     my ($template, $pdf, $row_count, $col_count, $llx, $lly) = @_;
-    if ($col_count lt $template->get_attr('cols')) {
+    if ($col_count < $template->get_attr('cols')) {
         $llx = ($llx + $template->get_attr('label_width') + $template->get_attr('col_gap'));
         $col_count++;
     }
     else {
         $llx = $template->get_attr('left_margin');
-        if ($row_count eq $template->get_attr('rows')) {
+        if ($row_count == $template->get_attr('rows')) {
             $pdf->Page();
             $lly = ($template->get_attr('page_height') - $template->get_attr('top_margin') - $template->get_attr('label_height'));
             $row_count = 1;
