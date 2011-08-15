@@ -4687,6 +4687,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Allow lost_items.itemtype to be nullable )\n";
 }
+$DBversion = '4.09.00.001';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do('ALTER TABLE accountlines change amount amount decimal(10,2) NOT NULL DEFAULT 0');
+    $dbh->do('ALTER TABLE accountlines change amountoutstanding amountoutstanding decimal(10,2) NOT NULL DEFAULT 0');
+    $dbh->do('ALTER TABLE accountlines change lastincrement lastincrement decimal(10,2) NOT NULL DEFAULT 0');
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Prevent floating point rounding problems for money fields in accountlines )\n";
+}
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 

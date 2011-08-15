@@ -99,6 +99,7 @@ if ( $individual || $writeoff ) {
         notify_level      => $notify_level,
     );
 }
+$total_due = sprintf('%.2f',$total_due);
 
 if ( $total_paid and $total_paid ne '0.00' ) {
     if (( $total_paid <= 0) or ($total_paid > $total_due )) {
