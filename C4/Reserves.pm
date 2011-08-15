@@ -1361,7 +1361,12 @@ sub _GetNextReserve {
         $res->{dbitemnumber} = $res->{itemnumber};
         $res->{itemnumber} = $itemnumber; # Some callers require this be set
         my $borrower = C4::Members::GetMember($res->{borrowernumber});
-        my $branch = C4::Circulation::_GetCircControlBranch($item, $borrower);
+        my $branch = C4::Circulation::GetCircControlBranch(
+            pickup_branch      => $res->{branchcode},
+            item_homebranch    => $item->{homebranch},
+            item_holdingbranch => $item->{holdingbranch},
+            borrower_branch    => $borrower->{branchcode},
+        );
         my $issuingrule
             = C4::Circulation::GetIssuingRule($res->{borrowercategory}, $item->{itype}, $branch);
         if ($issuingrule) {

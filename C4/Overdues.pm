@@ -124,14 +124,14 @@ sub Getoverdues {
     my $statement;
     if ( C4::Context->preference('item-level_itypes') ) {
         $statement = "
-   SELECT issues.*, items.itype as itemtype, items.homebranch, items.barcode, items.itemlost
+   SELECT issues.*, items.itype as itemtype, items.homebranch, items.holdingbranch, items.barcode, items.itemlost
      FROM issues 
 LEFT JOIN items       USING (itemnumber)
     WHERE date_due < CURDATE() 
 ";
     } else {
         $statement = "
-   SELECT issues.*, biblioitems.itemtype, items.itype, items.homebranch, items.barcode, items.itemlost
+   SELECT issues.*, biblioitems.itemtype, items.itype, items.homebranch, items.holdingbranch, items.barcode, items.itemlost
      FROM issues 
 LEFT JOIN items       USING (itemnumber)
 LEFT JOIN biblioitems USING (biblioitemnumber)
@@ -308,7 +308,6 @@ sub CalcFine {
     if    ($max_fine && ($amount >= $max_fine)) { $amount = $max_fine; $ismax = 1 }
     elsif ($MaxFine  && ($amount >= $MaxFine )) { $amount = $MaxFine;  $ismax = 1 }
     $debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
-
     return ($amount, $data->{'chargename'}, $days_minus_grace, $daystocharge, $ismax);
     # FIXME: chargename is NEVER populated anywhere.
 }

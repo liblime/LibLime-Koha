@@ -76,7 +76,7 @@ ENDUSAGE
 die $usage if $help;
 
 use vars qw(@borrower_fields @item_fields @other_fields);
-use vars qw($fldir $libname $control $mode $delim $dbname $today $today_iso $today_days);
+use vars qw($fldir $libname $mode $delim $dbname $today $today_iso $today_days);
 use vars qw($filename);
 
 CHECK {
@@ -84,7 +84,6 @@ CHECK {
         @item_fields = qw(itemnumber barcode date_due itemlost);
        @other_fields = qw(type days_overdue fine);
     $libname = C4::Context->preference('LibraryName');
-    $control = C4::Context->preference('CircControl');
     $mode    = C4::Context->preference('finesMode');
     $dbname  = C4::Context->config('database');
     $delim   = "\t"; # ?  C4::Context->preference('delimiter') || "\t";
@@ -134,10 +133,13 @@ for (my $i=0; $i<scalar(@$data); $i++) {
         next;   # Note: this doesn't solve everything.  After NULL borrowernumber, multiple issues w/ real borrowernumbers can pile up.
     }
     my $borrower = BorType($data->[$i]->{'borrowernumber'});
-    my $branchcode = ($control eq 'ItemHomeLibrary') ? $data->[$i]->{homebranch} :
-                     ($control eq 'PatronLibrary'  ) ?   $borrower->{branchcode} :
-                                                       $data->[$i]->{branchcode} ;
-    # In final case, CircControl must be PickupLibrary. (branchcode comes from issues table here).
+    my $branchcode = C4::Circulation::GetCircControlBranch(
+         pickup_branch        => $data->[$i]->{branchcode},
+         item_homebranch      => $data->[$i]->{homebranch},
+         item_holdingbranch   => $data->[$i]->{holdingbranch},
+         borrower_branch      => $borrower->{branchcode},
+    );
+   # In final case, CircControl must be PickupLibrary. (branchcode comes from issues table here).
     my $calendar;
     unless (defined ($calendars{$branchcode})) {
         $calendars{$branchcode} = C4::Calendar->new(branchcode => $branchcode);
