@@ -133,7 +133,7 @@ my $subject = 'Debt Collect';
 my $wait = 21;
 my $max_wait = 365;
 my $send_fine = 10;
-my $minimum = 25;
+my $minimum = C4::Context->preference('OwedNotificationValue');
 
 GetOptions(
     'h|help' => \$help,
@@ -145,7 +145,7 @@ GetOptions(
     'to=s' => \@to,
     'w|wait=i' => \$wait,
     'max-wait=i' => \$max_wait,
-    'ignore' => \@ignored,
+    'ignore=s' => \@ignored,
     'min' => \$minimum,
     'subject=s' => \$subject,
     'o|once' => \$once,
@@ -172,6 +172,8 @@ my $today = C4::Dates->new()->output( 'iso' );
 my %calendars;
 my @submitted;
 my @updated;
+
+@ignored = split(/,/,join(',',@ignored));
 
 # If $branch is not set, it is the same as not passing it
 foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignored ) } ) {
