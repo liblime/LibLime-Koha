@@ -124,10 +124,11 @@ function HaltReturns() {
                                     $('#errmsg').hide('slow'); 
                                     return false;
                                 }
-                                else if (document.transferf || document.alreadytransf || document.holdtransf) {
+                                else if (document.transferf || document.alreadytransf || document.holdtransf || document.transwaitf) {
                                     var f;
                                     if (document.transferf)          { f = document.transferf     }
                                     else if (document.alreadytransf) { f = document.alreadytransf }
+                                    else if (document.transwaitf)    { f = document.transwaitf    }
                                     else                             { f = document.holdtransf    }
                                     f.lost_item_id.value       = '<TMPL_VAR NAME="lost_item_id">';
                                     f.lostbarcode.value        = '<TMPL_VAR NAME="itembarcode">';
@@ -153,7 +154,11 @@ function HaltReturns() {
                         <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
                         </TMPL_LOOP>
 			               <p><input type=button value="Continue" onclick="
-                           if (document.transferf || document.holdtransf || document.foundf || document.transwaitf) {
+                           if (document.transferf
+                            || document.holdtransf 
+                            || document.foundf 
+                            || document.transwaitf
+                            || document.alreadytransf) {
                              $('#errmsg').hide('slow');
                               return false;
                            }
@@ -385,6 +390,10 @@ function HaltReturns() {
             <input type=hidden name="pickbranch"    value="<TMPL_VAR NAME="destbranch">">
             <input type=hidden name="exemptfine"    value="<TMPL_VAR NAME="exemptfine">">
             <input type=hidden name="dropboxmode"   value="<TMPL_VAR NAME="dropboxmode">">
+            <input type=hidden name="lost_item_id"  value="">
+            <input type=hidden name="lostbarcode"   value="">
+            <input type=hidden name="lostborrowernumber" value="">
+            <input type=hidden name="unlinkFromAccount" value="">
             <!-- TMPL_LOOP Name="inputloop" -->
             <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
             <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
