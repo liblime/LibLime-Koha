@@ -63,7 +63,6 @@ for ( my $i = 0 ; $i < @$accts ; $i++ ) {
     }
     $accts->[$i]{'description'} //= '';
     $accts->[$i]{'description'} =~ s/(\s*\(-cron\)\s*)//g;
-    $accts->[$i]{'description'} =~ s/\s*by a different patron(\s*\(.+?\)\s*)//g;
 }
 
 # add the row parity
