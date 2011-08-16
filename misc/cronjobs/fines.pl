@@ -132,9 +132,11 @@ for (my $i=0; $i<scalar(@$data); $i++) {
         print STDERR "ERROR in Getoverdues line $i: issues.borrowernumber IS NULL.  Repair 'issues' table now!  Skipping record.\n";
         next;   # Note: this doesn't solve everything.  After NULL borrowernumber, multiple issues w/ real borrowernumbers can pile up.
     }
+    # for legacy data that doesn't set issuingbranch:
+    $data->[$i]->{issuingbranch} ||= $data->[$i]->{branchcode};
     my $borrower = BorType($data->[$i]->{'borrowernumber'});
     my $branchcode = C4::Circulation::GetCircControlBranch(
-         pickup_branch        => $data->[$i]->{branchcode},
+         pickup_branch        => $data->[$i]->{issuingbranch},
          item_homebranch      => $data->[$i]->{homebranch},
          item_holdingbranch   => $data->[$i]->{holdingbranch},
          borrower_branch      => $borrower->{branchcode},

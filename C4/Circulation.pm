@@ -811,7 +811,7 @@ sub CanBookBeIssued {
     unless ( $duedate ) {
         my $issuedate = C4::Dates->new()->output('iso');
         my $branch = GetCircControlBranch(
-            pickup_branch      => $issue->{branchcode} // $useBranch // $item->{homebranch},
+            pickup_branch      => $issue->{issuingbranch} // $issue->{branchcode} // $useBranch // $item->{homebranch},
             item_homebranch    => $item->{homebranch},
             item_holdingbranch => $item->{holdingbranch},
             borrower_branch    => $borrower->{branchcode},
@@ -1091,8 +1091,9 @@ sub AddIssue {
     
    my $item = GetItem('', $barcode) or return undef;  # if we don't get an Item, abort.
    my $actualissue = GetItemIssue( $item->{itemnumber});
+   my $currBranch = C4::Context->userenv->{branch};
    my $branch = GetCircControlBranch(
-      pickup_branch      => C4::Context->userenv->{branch},
+      pickup_branch      => $currBranch,
       item_homebranch    => $item->{homebranch},
       item_holdingbranch => $item->{holdingbranch},
       borrower_branch    => $borrower->{branchcode},
@@ -1168,8 +1169,8 @@ sub AddIssue {
    # Record in the database the fact that the book was issued.
    $sth = $dbh->prepare(
                 "INSERT INTO issues 
-                    (borrowernumber, itemnumber,issuedate, date_due, branchcode)
-                VALUES (?,?,?,?,?)"
+                    (borrowernumber, itemnumber,issuedate, date_due, branchcode, issuingbranch)
+                VALUES (?,?,?,?,?,?)"
    );
    unless ($datedue) {
       my $itype = ( C4::Context->preference('item-level_itypes') ) ? $biblio->{'itype'} : $biblio->{'itemtype'};
@@ -1182,7 +1183,8 @@ sub AddIssue {
             $item->{'itemnumber'},              # itemnumber
             $issuedate,                         # issuedate
             $datedue,                           # date_due
-            C4::Context->userenv->{'branch'}    # branchcode
+            $currBranch,                        # branchcode: this might change upon renewal
+            $currBranch,                        # issuingbranch: this must not change
    );
    $sth->finish;
    if ( C4::Context->preference('ReturnToShelvingCart') ) { ## ReturnToShelvingCart is on, anything issued should be taken off the cart.
@@ -1190,7 +1192,7 @@ sub AddIssue {
    }
    $item->{'issues'}++;
    ModItem(     { issues           => $item->{'issues'},
-                  holdingbranch    => C4::Context->userenv->{'branch'},
+                  holdingbranch    => $currBranch, # this might change upon renewal
                   itemlost         => 0,
                   paidfor          => '',
                   datelastborrowed => C4::Dates->new()->output('iso'),
@@ -1204,7 +1206,7 @@ sub AddIssue {
    
    # Record the fact that this book was issued
    &UpdateStats(
-         C4::Context->userenv->{'branch'},
+         $currBranch,
          'issue', $charge,
          ($sipmode ? "SIP-$sipmode" : ''), $item->{'itemnumber'},
          $item->{'itype'}, $borrower->{'borrowernumber'}
@@ -1649,7 +1651,7 @@ sub AddReturn {
             # don't allow dropbox mode to create an invalid entry in issues (issuedate > today)
             # FIXME: check issuedate > returndate, factoring in holidays
             $circControlBranch = GetCircControlBranch(
-               pickup_branch      => $issue->{branchcode},
+               pickup_branch      => $issue->{issuingbranch} // $issue->{branchcode},
                item_homebranch    => $item->{homebranch},
                item_holdingbranch => $item->{holdingbranch},
                borrower_branch    => $borrower->{branchcode},
@@ -1720,12 +1722,11 @@ sub AddReturn {
     ## also does exemptfine but not claims returned
     if ($borrowernumber) {
        my $acctBranch = GetCircControlBranch(
-            pickup_branch      => $issue->{branchcode},
+            pickup_branch      => $issue->{issuingbranch} // $issue->{branchcode},
             item_homebranch    => $item->{homebranch},
             item_holdingbranch => $item->{holdingbranch},
             borrower_branch    => $borrower->{branchcode},
-       );
- 
+       ); 
         _FixAccountOverdues(
             $issue, {
                 exemptfine    => $exemptfine, 
@@ -2136,10 +2137,13 @@ sub _FixAccountNowFound
         $tocredit = 1;
     }
     if ($issuebor && ($issuebor != $$lost{borrowernumber})) {
-        my $bor = C4::Members::GetMember($issuebor);
-        $by .= sprintf("a different patron (%s %s %s)",
-            $$bor{firstname},$$bor{surname},$$bor{cardnumber}
-        );
+### for patron privacy, this feature is removed.  however, it is useful for circulation detective work
+### even when patron circ history is anonymised
+#        my $bor = C4::Members::GetMember($issuebor);
+#        $by .= sprintf("a different patron (%s %s %s)",
+#            $$bor{firstname},$$bor{surname},$$bor{cardnumber}
+         $by .= 'a different patron';
+#        );
     }
     elsif ($tolost) {
         my $userid = 'cron';
@@ -2178,8 +2182,11 @@ sub _FixAccountNowFound
             $desc .= 'this patron';
         }
         elsif ($issuebor) {
-            my $bor = C4::Members::GetMember($issuebor);
-            $desc .= "a different patron ($$bor{firstname} $$bor{surname}, $$bor{cardnumber})";
+### for patron privacy, this feature is removed.  however, it is useful for circulation detective work
+### even when patron circ history is anonymised
+#            my $bor = C4::Members::GetMember($issuebor);
+#            $desc .= "a different patron ($$bor{firstname} $$bor{surname}, $$bor{cardnumber})";
+             $desc .= 'a different patron';
         }
         else {
             $desc .= sprintf("staff (-%s)",C4::Context->userenv->{id});
@@ -2373,7 +2380,7 @@ sub FixAccountForLostAndReturned {
     if ((ref($issue) ~~ 'HASH') && $$issue{borrowernumber}) { # handle currently checked out
         my $bor = C4::Members::GetMember($$issue{borrowernumber});
         my $acctBranch = GetCircControlBranch(
-               pickup_branch      => $issue->{branchcode},
+               pickup_branch      => $issue->{issuingbranch} // $issue->{branchcode},
                item_homebranch    => $issue->{homebranch},
                item_holdingbranch => $issue->{holdingbranch},
                borrower_branch    => $bor->{branchcode},
@@ -2487,20 +2494,23 @@ HomeOrHoldingBranch system preferences.
 
 sub GetCircControlBranch {
    my %g = @_;
-   $g{pickup_branch}   //= $g{pickup_branchcode} // $g{issue_branch} // $g{issue_branchcode};
+   $g{pickup_branch}   //= $g{pickup_branchcode} // $g{issuingbranch} // $g{issue_branch} // $g{issue_branchcode};
    $g{borrower_branch} //= $g{borrower_branchcode};
    die "pickup_branch required"   unless $g{pickup_branch};
    die "borrower_branch required" unless $g{borrower_branch};
    die "item_homebranch required" unless $g{item_homebranch};
    my $control       = C4::Context->preference('CircControl');
-   my $homeOrHolding = C4::Context->preference('HomeOrHoldingBranch') || 'homebranch';
+#   my $homeOrHolding = C4::Context->preference('HomeOrHoldingBranch') || 'homebranch';
    if    ($control eq 'PickupLibrary') { return $g{pickup_branch}   }
    elsif ($control eq 'PatronLibrary') { return $g{borrower_branch} }
 
-   if ($homeOrHolding eq 'holdingbranch') {
-      die "item_holdingbranch required" unless $g{item_holdingbranch};
-   }
-   return $g{"item_$homeOrHolding"};
+#### actually, the syspref HomeOrHoldingBranch doesn't apply for circrules
+#### otherwise, CircContorl=ItemHomeBranch would conflict with HomeOrHoldingBranch=holdingbranch
+#   if ($homeOrHolding eq 'holdingbranch') {
+#      die "item_holdingbranch required" unless $g{item_holdingbranch};
+#   }
+#   return $g{"item_$homeOrHolding"};
+   return $g{"item_homebranch"};
 }
 
 
@@ -2822,8 +2832,9 @@ sub AddRenewal {
    }
    my $currBranch;
    if (C4::Context->userenv) { $currBranch = C4::Context->userenv->{branch} }
+   else                      { $currBranch = $$issue{issuingbranch}         }
    my $branch = GetCircControlBranch(
-      pickup_branch      => $issue->{branchcode},
+      pickup_branch      => $issue->{issuingbranch} // $issue->{branchcode},
       item_homebranch    => $item->{homebranch},
       item_holdingbranch => $item->{holdingbranch},
       borrower_branch    => $borrower->{branchcode},
@@ -2848,11 +2859,17 @@ sub AddRenewal {
     # of how many times it has been renewed.
     my $dbh = C4::Context->dbh; my $sth;
     my $renews = ($issue->{'renewals'} // 0) + 1;
-    $sth = $dbh->prepare("UPDATE issues SET date_due = ?, renewals = ?, lastreneweddate = ?
+    $sth = $dbh->prepare("UPDATE issues SET date_due = ?, renewals = ?, lastreneweddate = ?, branchcode=?
                             WHERE borrowernumber=? 
                             AND itemnumber=?"
     );
-    $sth->execute( $datedue->output('iso'), $renews, $lastreneweddate, $borrowernumber, $itemnumber );
+    $sth->execute( $datedue->output('iso'), 
+      $renews, 
+      $lastreneweddate,
+      $currBranch,
+      $borrowernumber, 
+      $itemnumber 
+   );
     $sth->finish;
     my %mod = ( 
        renewals => $renews,

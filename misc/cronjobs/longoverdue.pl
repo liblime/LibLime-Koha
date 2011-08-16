@@ -121,7 +121,7 @@ sub bounds ($) {
 # FIXME - This sql should be inside the API.
 sub longoverdue_sth {
     my $query = "
-    SELECT issues.*,items.barcode,items.holdingbranch,items.holdingbranch
+    SELECT issues.*,items.barcode,items.holdingbranch,items.homebranch
       FROM issues, items
      WHERE items.itemnumber = issues.itemnumber
       AND  DATE_SUB(CURDATE(), INTERVAL ? DAY)  > issues.date_due
