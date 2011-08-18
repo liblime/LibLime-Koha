@@ -9,6 +9,8 @@ our @ISA = qw(Rose::DB);
 __PACKAGE__->use_private_registry;
 
 __PACKAGE__->register_db(
+      domain   => __PACKAGE__->default_domain,
+      type     => __PACKAGE__->default_type,
       driver   => 'mysql',
       database => C4::Context->config('database'),
       host     => C4::Context->config('hostname'),

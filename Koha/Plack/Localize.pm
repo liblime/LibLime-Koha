@@ -36,7 +36,24 @@ sub call {
 
     $C4::Context::context = C4::Context->new($config);
 
-    $self->app->($env);
+    require Koha::RoseDB;
+
+    Koha::RoseDB->register_db(
+        domain   => Koha::RoseDB->default_domain,
+        type     => Koha::RoseDB->default_type,
+        driver   => 'mysql',
+        database => C4::Context->config('database'),
+        host     => C4::Context->config('hostname'),
+        port     => C4::Context->config('port'),
+        username => C4::Context->config('user'),
+        password => C4::Context->config('pass'),
+        );
+
+    my $retval = $self->app->($env);
+
+    Koha::RoseDB->unregister_db(domain=>Koha::RoseDB->default_domain, type=>Koha::RoseDB->default_type);
+
+    return $retval;
 }
 
 1;
