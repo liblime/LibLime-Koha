@@ -111,7 +111,6 @@ sub do_checkout {
     foreach (grep {$_->{borrowernumber} eq $self->{patron}->{borrowernumber}} @$pending) {
         $debug and warn "Filling reserve (borrowernumber,biblionumber,reservedate): "
             . sprintf("(%s,%s,%s)\n",$_->{borrowernumber},$_->{biblionumber},$_->{reservedate});
-        C4::Reserves::ModReserveFillCheckout($_->{borrowernumber},$_->{biblionumber},$_->{itemnumber},$_);
         # TODO: adjust representation in $self->item
     }
 	# can issue
