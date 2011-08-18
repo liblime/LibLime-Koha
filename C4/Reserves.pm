@@ -124,7 +124,6 @@ BEGIN {
     
         &GetOtherReserves
         
-        &ModReserveFill
         &ModReserveAffect
         &ModReserve
         &ModReserveStatus
@@ -2314,7 +2313,7 @@ _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber );
 =back
 
 Sends a notification to the patron that their hold has been filled (through
-ModReserveAffect, _not_ ModReserveFill)
+ModReserveAffect)
 
 =cut
 

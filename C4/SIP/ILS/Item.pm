@@ -353,14 +353,6 @@ sub barcode_is_borrowernumber ($$$) {    # because hold_queue only has borrowern
     my $converted = _barcode_to_borrowernumber($barcode) or return undef;
     return ($number eq $converted); # even though both *should* be numbers, eq is safer.
 }
-sub fill_reserve ($$) {
-    my $self = shift;
-    my $hold = shift or return undef;
-    foreach (qw(biblionumber borrowernumber reservedate)) {
-        $hold->{$_} or return undef;
-    }
-    return ModReserveFill($hold);
-}
 1;
 __END__
 

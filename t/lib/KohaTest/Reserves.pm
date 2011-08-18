@@ -24,7 +24,6 @@ sub methods : Test( 1 ) {
                        CheckReserves 
                        CancelReserve 
                        ModReserve 
-                       ModReserveFill 
                        ModReserveStatus 
                        ModReserveAffect 
                        ModReserveCancelAll 
