@@ -26,6 +26,7 @@ BEGIN {
         HOLD            RENEW             RENEW_ALL
         PATRON_ENABLE
         BLOCK_PATRON
+        REALTIME_UPDATES
     )],
 
     ACS_msgs => [qw(
@@ -36,6 +37,7 @@ BEGIN {
         FEE_PAID_RESP   ITEM_INFO_RESP    ITEM_STATUS_UPDATE_RESP
         HOLD_RESP       RENEW_RESP        RENEW_ALL_RESP
         PATRON_ENABLE_RESP
+        REALTIME_UPDATES_RESP
     )],
 
     SC_status     => [qw(SC_STATUS_OK SC_STATUS_PAPER SC_STATUS_SHUTDOWN)],
@@ -89,6 +91,7 @@ BEGIN {
         FID_ALERT_TYPE
         FID_HOLD_PATRON_ID
         FID_HOLD_PATRON_NAME
+        FID_COMMENT
         )],
     );
 
@@ -121,6 +124,7 @@ use constant {
     HOLD               => '15',
     RENEW              => '29',
     RENEW_ALL          => '65',
+    REALTIME_UPDATES   => '43',
 };
 
 # Message responses from ACS to SC
@@ -140,6 +144,7 @@ use constant {
     HOLD_RESP               => '16',
     RENEW_RESP              => '30',
     RENEW_ALL_RESP          => '66',
+    REALTIME_UPDATES_RESP   => '44',
 };
 
 #
@@ -240,6 +245,9 @@ use constant {
     FID_ALERT_TYPE             => 'CV',
     FID_HOLD_PATRON_ID         => 'CY',
     FID_HOLD_PATRON_NAME       => 'DA',
+
+    # SIP Extension by TalkingTech
+    FID_COMMENT                => 'DE',
 };
 
 #

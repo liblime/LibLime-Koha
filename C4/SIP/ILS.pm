@@ -17,6 +17,7 @@ use ILS::Transaction::FeePayment;
 use ILS::Transaction::Hold;
 use ILS::Transaction::Renew;
 use ILS::Transaction::RenewAll;
+use ILS::Transaction::RealtimeUpdate;
 
 my $debug = 0;
 
@@ -464,6 +465,29 @@ sub renew_all {
 
 	$trans->do_renew_all;
     $trans->ok(1);
+    return $trans;
+}
+
+sub realtime_update {
+    my ($self, $patron_id, $item_id, $fee_id, $trans_id,
+        $comment, $terminal_locn, $terminal_pwd, $notice_status) = @_;
+    my $trans;
+    my ($patron,$item);
+
+    $trans = new ILS::Transaction::RealtimeUpdate;
+
+    $trans->patron($patron = new ILS::Patron $patron_id);
+    if (defined $patron) {
+        syslog("LOG_DEBUG", "ILS::realtime_update: patron '%s': ", $patron->name);
+    } else {
+        syslog("LOG_DEBUG", "ILS::realtime_update: Invalid patron id: '%s'", $patron_id);
+    }
+    $trans->item($item = new ILS::Item $item_id);
+
+    $trans->create_print_notice($patron->{borrowernumber},$item) if ($notice_status != 1);
+    $trans->transaction_id($trans_id);
+    $trans->ok(1);
+
     return $trans;
 }
 

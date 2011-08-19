@@ -40,7 +40,8 @@ use subs qw(handle_patron_status handle_checkout handle_checkin
 	    handle_block_patron handle_sc_status handle_request_acs_resend
 	    handle_login handle_patron_info handle_end_patron_session
 	    handle_fee_paid handle_item_information handle_item_status_update
-	    handle_patron_enable handle_hold handle_renew handle_renew_all);
+	    handle_patron_enable handle_hold handle_renew handle_renew_all
+            handle_realtime_updates);
 
 #
 # For the most part, Version 2.00 of the protocol just adds new
@@ -269,7 +270,21 @@ my %handlers = (
 				       (FID_FEE_ACK)],
 			}
 		    }
-		}
+		},
+                (REALTIME_UPDATES) => {
+                    name => "Realtime Updates",
+                    handler => \&handle_realtime_updates,
+                    protocol => {
+                        2 => {
+                            template => "A2A18A18A3A3",
+                            template_len => 44,
+                            fields => [(FID_INST_ID), (FID_PATRON_ID),
+                                       (FID_ITEM_ID), (FID_FEE_ID),
+                                       (FID_TRANSACTION_ID), (FID_COMMENT),
+                                       (FID_TERMINAL_LOCN), (FID_TERMINAL_PWD)]
+                        }
+                    }
+                }
 		);
 
 #
@@ -1487,6 +1502,46 @@ sub handle_renew_all {
 
     return(RENEW_ALL);
 }
+
+sub handle_realtime_updates {
+    my ($self, $server) = @_;
+    my $ils = $server->{ils};
+    my ($notice_status, $trans_date, $notice_delivery_date, $notice_type, $notice_medium) = @{$self->{fixed_fields}};
+    my $fields = $self->{fields};
+    my ($inst_id, $patron_id, $item_id, $fee_id, $trans_id, $comment, $terminal_locn, $terminal_pwd);
+    my $status;
+    my $resp = REALTIME_UPDATES_RESP;
+
+    $inst_id = $fields->{(FID_INST_ID)};
+    $patron_id = $fields->{(FID_PATRON_ID)};
+    $item_id = $fields->{(FID_ITEM_ID)};
+    $fee_id = $fields->{(FID_FEE_ID)};
+    $trans_id = $fields->{(FID_TRANSACTION_ID)};
+    $comment = $fields->{(FID_COMMENT)};
+    $terminal_locn = $fields->{(FID_TERMINAL_LOCN)};
+    $terminal_pwd = $fields->{(FID_TERMINAL_PWD)};
+
+    $ils->check_inst_id($inst_id, "handle_realtime_updates");
+
+    $status = $ils->realtime_update($patron_id, $item_id, $fee_id, $trans_id,
+                                    $comment, $terminal_locn, $terminal_pwd,
+                                    $notice_status);
+
+    syslog("LOG_DEBUG", "Sip::MsgType::handle_realtime_updates('%s', '%s', '%s',...)",$notice_status,$notice_type,$notice_medium);
+    $resp .= ($notice_status == 1) ? 'Y' : 'N';
+    $resp .= Sip::timestamp;
+    $resp .= add_field(FID_INST_ID, $inst_id);
+    $resp .= add_field(FID_PATRON_ID, $patron_id);
+    $resp .= maybe_add(FID_TRANSACTION_ID, $status->transaction_id);
+    $resp .= maybe_add(FID_ITEM_ID, $item_id);
+    $resp .= maybe_add(FID_SCREEN_MSG, $status->screen_msg);
+    $resp .= maybe_add(FID_PRINT_LINE, $status->print_line);
+
+    $self->write_msg($resp);
+
+    return(REALTIME_UPDATES);
+}
+
 
 #
 # send_acs_status($self, $server)
