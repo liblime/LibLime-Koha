@@ -3,18 +3,13 @@
 <!-- TMPL_INCLUDE NAME="doc-head-close-plack.inc" -->
 <style>
 tr.hilight td {
-   background-color: #ffffcc;
+   background-color: #ffffcc; /* pale yellow */
 }
-#simplemodal-container a.modalCloseImg {
-   background:url(<TMPL_VAR NAME="themelang">/img/x.png) no-repeat;
-   width:25px;
-   height:29px;
-   display:inline;
-   z-index:3200;
-   position:absolute;
-   top:-15px;
-   right:-18px;
-   cursor:pointer;
+tr.qrelevant td {
+   background-color: #cdfecd; /* pale green */
+}
+#simplemodal-overlay {
+   background-color: #000000;
 }
 </style>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/dates.js"></script>
@@ -26,17 +21,90 @@ var batchres = new Array;
 var branches = new Array;
 var reserves = new Array;
 var savingModal;
+var notingModal;
 
-function chMode() {
-   var mymode = 'batch';
-   if (mymode=='batch') {
-//   if($('#mode').val()=='batch'){ 
-      $('#update').html('<input type=button value="Update Holds" onclick="updateHolds()">'); }
-   else                         { $('#update').html('') }
+function trim(s) { return s.replace(/^\s*/,'').replace(/\s*$/,'') }
+function htmlEsc(s,p) { // p=1=change pacman to quotus
+   if(p) { return s.replace(/>/g,'&gt;').replace(/</g,'&lt;'); }
+   return s.replace(/&gt;/g,'>').replace(/&lt;/g,'<');
+}
+function clearSearch() {
+   var str = $('#qReserves').val();
+   str = trim(str).toLowerCase();
+   if(str.length==0) {
+      for(var i=0;i<reserves.length;i++) {
+         if(reserves[i].relevant==1) {
+            reserves[i].relevant='0';
+            var trclass = $('#tr_'+reserves[i].reservenumber).attr('class');
+            if(trclass=='qrelevant') {
+               $('#tr_'+reserves[i].reservenumber).attr('class','');
+            }
+         }
+      }
+      $('#matcher').html('');
+   }
+}
+function searchAll() {
+   var str = $('#qReserves').val();
+   str = trim(str).toLowerCase();
+   document.myf.qReserves.value = str;
+   if(str.length==0) { return }
+   
+   var matches = new Array;
+   for(var i=0;i<reserves.length;i++) {
+      var ok = 0;
+      reserves[i].relevant = '0';
+      var res = reserves[i];
+      var bc  = ''; // barcode
+      var nm  = res.borrowername.toLowerCase();
+      var cn  = res.borrowercard.toLowerCase();
+      var nt  = '';
+      if(res.itembarcode  != null) { bc = res.itembarcode.toLowerCase()  }
+      if(res.reservenotes != null) { nt = res.reservenotes.toLowerCase() }
+      if      (bc.match(str)) { ok=1 }
+      else if (nm.match(str)) { ok=1 }
+      else if (cn.match(str)) { ok=1 }
+      else if (nt.match(str)) { ok=1 }
+      if (ok==1) { // matched!
+         matches.push(i); // just the index number in reserves array
+         reserves[i].relevant = '1';
+      }
+   }
+
+   if(matches.length==0) {
+      $('#matcher').html('no matches on');
+      for(var i=0;i<reserves.length;i++) {
+         reserves[i].relevant='0';
+         $('#tr_'+reserves[i].reservenumber).attr('class','');
+      }
+      return;
+   }
+   document.myf.sortf.selectedIndex   = 4;
+   document.myf.sortRev.selectedIndex = 0;
+   reserves.sortAll();
+   pager(1);
+   var es = (matches.length==1)? '':'es';
+   $('#qReserves').val(str);
+   $('#matcher').html(matches.length +' match'+es+' on');
+}
+function saveNote() {
+   var str = htmlEsc(trim($('#notes').val()),1);
+   var idx = $('#idx').val();
+   if (reserves[idx].reservenotes==str) { notingModal.close();return }
+   reserves[idx].reservenotes = str;
+   $('#nota_'+reserves[idx].reservenumber).html(str);
+   notingModal.close();
+   modRes(reserves[idx].reservenumber,idx);   
+}
+function editNotes(reservenumber,idx) {
+   notingModal = $('#noting').modal();
+   $('#idx').val(idx);
+   $('#notes').val(reserves[idx].reservenotes);
+   $('#notes').focus();
 }
 jQuery.fn.sortAll = function() {
-   var p   = 'int:priority';
-   if (document.myf.sortf) { p = $('#sortf').val(); if(p=='' || !p){ p='int:priority' } }
+   var p   = 'int:rank';
+   if (document.myf.sortf) { p = $('#sortf').val(); if(p=='' || !p){ p='int:rank' } }
    else if ('<TMPL_VAR NAME="sortf">' != '') { p = '<TMPL_VAR NAME="sortf">' }
    var arr = p.split(/:/); var type=arr[0]; var sortf=arr[1];
    var reverse = false;
@@ -46,15 +114,25 @@ jQuery.fn.sortAll = function() {
       var left = a[sortf]; var right=b[sortf];
       if (type=='int') { left=parseInt(left.replace(/[^\d]/g,''));right=parseInt(right.replace(/[^\d]/g,'')); }
       else             { left=left.toLowerCase()       ;right=right.toLowerCase();        }
-      if(reverse) { l=left; r=right; left=r; right=l; }
-      if(left < right) { return -1 }
-      if(left > right) { return  1 }
-      return 0;
+      if(left < right) { return reverse? 1:-1 }
+      if(left > right) { return reverse? -1:1 }
+      // secondary sort
+      var c; var d;
+      var f = (a['found']=='T')?1:0; // waiting goes on top of intransit
+      var g = (b['found']=='T')?1:0;
+      if (sortf != 'rank') { //
+         c=f+parseInt(a['rank']); d=g+parseInt(b['rank']);
+      }
+      else { // intransit and waiting: secondary sort by found, then by borrowername
+         c=f+a['borrowername'].toLowerCase(); d=g+b['borrowername'].toLowerCase();
+      }
+      return ((c<d)? -1:((c>d)? 1:0));
    });
    return this;
 };
-function getInit(limit) { 
+function getInit() { 
    batchres = new Array;
+   reserves = new Array;
    document.myf.sofar.value = 0;
    $.ajax({
       url: '/reserves/?biblionumber=<TMPL_VAR NAME="biblionumber">&inflate=1',
@@ -64,11 +142,23 @@ function getInit(limit) {
       },
       success: function(all) {
          if(all.length > 0) {
+            for(var i=0;i<all.length;i++) { 
+               all[i].relevant='0';
+               all[i].rank=all[i].priority;
+               all[i].pick=all[i].branchcode;
+               all[i].pickname=all[i].branchname;
+            }
             reserves = $(all).sortAll();
-            pager(reserves,parseInt(document.myf.pg.value));
-            chMode('batch');
+            pager(parseInt(document.myf.pg.value));
+            $('#updater').html('<input type=button value="Update Holds" onclick="updateHolds()" id="updateBtn">');
          }
          else {
+            $('#existingReserves > :not(thead) > tr').remove();
+            $('#matcher').html('');
+            $('#searcher').html('');
+            $('#sorter').html('');
+            $('#pager2').html('');
+            $('#updater').html('');
             $('#existingReserves').append('<tr><td colspan=8>There are no holds - '
              +'<a href="placehold.pl?biblionumber=<TMPL_VAR NAME="biblionumber">">Place a hold</a></td></tr>');
          }
@@ -78,10 +168,10 @@ function getInit(limit) {
          404: function(xhr,rc) { _err(rc) }
       }
    });
-
+   if (savingModal) { savingModal.close(); }
 } //eof getInit
 
-function modPriority(sel,onshelf,reservenumber,limit) {
+function modPriority(sel,onshelf,reservenumber,idx) {
    if (onshelf != 0) {
       var msg  = 'This item is currently ';
       var tog  = 0;
@@ -111,15 +201,16 @@ function modPriority(sel,onshelf,reservenumber,limit) {
          }
       }
    }
-   modRes(reservenumber,limit);
+   modRes(reservenumber,idx);
 } //eof modPriority()
 
-function modRes(reservenumber,limit) {
+function modRes(reservenumber,idx) {
    var add  = 1;
    var rank = $('#rank_'+reservenumber).val();
    var pick = $('#pick_'+reservenumber).val();
    var resd = $('#resume_'+reservenumber).val();
-   if(resd.length>0) {
+   var nota = $('#nota_'+reservenumber).html();
+   if(resd && (resd.length>0)) {
       var el = document.getElementById('susp_'+reservenumber);
       el.checked = true;
    }
@@ -128,23 +219,35 @@ function modRes(reservenumber,limit) {
 
    for(var i=0;i<batchres.length;i++) {
       if(batchres[i][0]==reservenumber){
-         batchres[i] = [reservenumber,rank,pick,isSp,resd];
+         batchres[i] = [reservenumber,rank,pick,isSp,resd,nota];
          add = 0;
          break;
       }
    }      
    if (add==1) {
-      batchres.push([reservenumber,rank,pick,isSp,resd]);
+      batchres.push([reservenumber,rank,pick,isSp,resd,nota]);
    }
    var trclass = 'hilight';
    if (rank=='del') { trclass = 'confirm' }
    $('#tr_'+reservenumber).attr('class',trclass);
+   // for sorting
+   reserves[idx].rank = rank;
+   reserves[idx].reservenotes = nota;
+   if (reserves[idx].pick != pick) {
+      reserves[idx].pick = pick;
+      for(var i=0;i<branches.length;i++) {
+         if (branches[i][0]==pick) {
+            reserves[idx].pickname = branches[i][1];
+            break;
+         }
+      }
+   }
 }
 
 function _err(rc) {
    return $('#existingReserves').append('<tr><td colspan=8><span class=problem>'+rc+'</span></td></tr>');
 }
-function showReserve(res,allLen,c) {
+function showReserve(res,allLen,idx) {
             var details      = '';
             var listPriority = '';
             var listPick     = '';
@@ -152,53 +255,57 @@ function showReserve(res,allLen,c) {
             var onshelf      = 0;
             var mas          = '';
             var setcal       = 0;
+            var ususp        = res.found=='S'? true:false;
+            var uresume      = (res.waitingdate)? ts2date(res.waitingdate,dformat):'';
+            var urank        = res.priority>0? res.priority : res.found;
+            var upick        = res.pick;
             for(var i=0;i<batchres.length;i++) {
                if(batchres[i][0]==res.reservenumber) {
-                  if      (batchres[i][1]=='W') { res.priority=''; res.found='W' }
-                  else if (batchres[i][1]=='T') { res.priority=''; res.found='T' }
-                  else                          { res.priority=batchres[i][1];   }
-                  res.branchcode = batchres[i][2];
-                  res.found      = batchres[i][3]? 'S':'';
+                  urank   = batchres[i][1]; 
+                  upick   = batchres[i][2];
+                  ususp   = batchres[i][3]==1? true:false;
+                  uresume = batchres[i][4]==null? '' : batchres[i][4];
                   break;
                }
             }
 
             var branchname = res.branchname;
-            if (res.reservenotes==null) { res.reservenotes = ''; }
+            if   (res.reservenotes==null) { res.reservenotes = '';                         }
+            else                          { res.reservenotes = htmlEsc(res.reservenotes,1);}
             for(var i=1;i<=allLen;i++) {
                var ch = '';
-               if (i==res.priority) { ch = ' selected'; }
+               if (i==urank ) { ch = ' selected'; }
                listPriority += '<option '+ch+'>'+i;
             }
             if (res.found=='W') {
-               listPriority += '<option value="W" selected>Waiting';
+               listPriority += '<option value="W" '+(urank=='W'?'selected':'')+'>Waiting';
                onshelf       = 1;
                mas           = 'Waiting since<br>'+ts2date(res.waitingdate,dformat);
-               listPick      = 'Item waiting at<br><b>'+branchname+'</b>';
-//               suspended     = '<input type=checkbox disabled>';
+               listPick      = 'Item waiting at<br><b>'+branchname+'</b>'
+                             + '<input type=hidden name="resume_"'+res.reservenumber+'" id="resume_"'+res.reservenumber+'" '
+                             + 'value="'+ts2date(res.waitingdate,dformat)+'">';
             }
             else if (res.found=='T') {
                onshelf       = 2;
-               listPriority += '<option value="T" selected>In Transit';
-               listPick      = 'Waiting to be pulled at<br>'+branchname;
-//               suspended     = '<input type=checkbox disabled>';
+               mas           = 'Last updated<br>'+ts2date(res.timestamp,dformat);
+               listPriority += '<option value="T" '+(urank=='T'?'selected':'')+'>In Transit';
+               listPick      = 'Waiting to be pulled at<br>'+branchname
+                             + '<input type=hidden name="resume_"'+res.reservenumber+'" id="resume_"'+res.reservenumber+'" '
+                             + 'value="'+ts2date(res.waitingdate,dformat)+'">';
             }
             else {
-               var isSuspended = res.found=='S'?true:false;
-               suspended = '<input type=checkbox name="susp_'+res.reservenumber+'" '+(isSuspended?'checked':'')+' id="susp_'+res.reservenumber+'" onclick="$(\'#resume_'+res.reservenumber+'\').val(\'\');modRes('+res.reservenumber+','+c+')" value=1>';
-               listPick = '<select name="pick_'+res.reservenumber+'" id="pick_'+res.reservenumber+'" onchange="modRes('+res.reservenumber+','+c+')">';
+               suspended = '<input type=checkbox name="susp_'+res.reservenumber+'" '+(ususp?'checked':'')+' id="susp_'+res.reservenumber+'" onclick="$(\'#resume_'+res.reservenumber+'\').val(\'\');modRes('+res.reservenumber+','+idx+')" value=1>';
+               listPick = '<select name="pick_'+res.reservenumber+'" id="pick_'+res.reservenumber+'" onchange="modRes('+res.reservenumber+','+idx+')">';
                for(var i=0;i<branches.length;i++) {
-                  listPick += '<option value="'+branches[i][0]+'" '+(res.branchcode==branches[i][0]?'selected': '')+'>'+branches[i][1];
+                  listPick += '<option value="'+branches[i][0]+'" '+(upick==branches[i][0]?'selected': '')+'>'+branches[i][1];
                }
                listPick += '</select>';
-               var resumedate = '';
-               if (res.waitingdate) { resumedate = ts2date(res.waitingdate,dformat) }
-               mas ='resume on (optional)<br>'+
-               '<input type=text name="resume_'+res.reservenumber+'" size=10 maxlength=10 '+
-               'id="resume_'+res.reservenumber+'" value="'+resumedate+'" id="resume_'+res.reservenumber+'">';
+               mas ='resume on (optional)<br>'
+                   +'<input type=text name="resume_'+res.reservenumber+'" size=10 maxlength=10 '
+                   +'id="resume_'+res.reservenumber+'" value="'+uresume+'" id="resume_'+res.reservenumber+'">';
                setcal = 1;
             }
-            listPriority += '<option value="del">cancel';
+            listPriority += '<option value="del" '+(urank=='del'?'selected':'')+'>cancel';
             if (res.itemnumber) {
                if (res.priority==0) { details = 'only item<br>'; }
                details += '<a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber='+res.biblionumber+'&itemnumber='+res.itemnumber+'#item'+res.itemnumber+'">'+res.itembarcode+'</a>';
@@ -210,11 +317,13 @@ function showReserve(res,allLen,c) {
             $('#existingReserves > tbody:last').append('<tr id="tr_'
                +res.reservenumber         +'"><td><select id="rank_'
                +res.reservenumber         + '" onchange="modPriority(this,'
-               +onshelf                   +','+res.reservenumber+','+c+')">'
+               +onshelf                   +','+res.reservenumber+','+idx+')">'
                +listPriority              +'</select></td><td><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber='
                +res.borrowernumber        +'">'+res.borrowername+'</a><br><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='
-               +res.borrowernumber        +'">'+res.borrowercard+'</a></td><td>'
-               +res.reservenotes          +'</td><td>' + ts2date(res.reservedate,dformat) +'</td><td nowrap>'
+               +res.borrowernumber        +'">'+res.borrowercard+'</a></td><td><a href="javascript:;" onclick="editNotes('
+               +res.reservenumber         +','+idx+')"><img src="/intranet-tmpl/prog/img/toolbar-edit.gif" border=0></a><span id="nota_'
+               +res.reservenumber         +'">'
+               +res.reservenotes          +'</span></td><td>' + ts2date(res.reservedate,dformat) +'</td><td nowrap>'
                +listPick                  +'</td><td>'
                +details                   +'</td><td align=center>'
                +suspended                 +'</td><td nowrap>'
@@ -227,11 +336,12 @@ function showReserve(res,allLen,c) {
                      align     : "T1",
                      onClose   : function() { 
                         calendar.hide();
-                        modRes(res.reservenumber,c);
+                        modRes(res.reservenumber,idx);
                      }
                });
             }
 
+   if(res.relevant==1) { $('#tr_'+res.reservenumber).attr('class','qrelevant'); }
    var trclass = 'hilight';
    for(var i=0;i<batchres.length;i++) {
       if(batchres[i][0]==res.reservenumber) {
@@ -251,14 +361,22 @@ function updateHolds() {
       var pick = batchres[i][2];
       var susp = batchres[i][3];
       var resd = batchres[i][4];
+      var nota = batchres[i][5];
       var myfound;
       var mywaitingdate;
-      if(susp==1) { 
-         myfound = 'S';
-         if (resd != '') { mywaitingdate = dformat2db(resd,dformat,mydb); }
-      }
+      if (resd != '') { mywaitingdate = dformat2db(resd,dformat,mydb); }
+      if (nota && nota.length>0) { nota = htmlEsc(nota) }
+
       var method = 'POST';
       if (rank=='del') { method = 'DELETE' }
+      else if ((rank=='T') || (rank=='W')) {
+         myfound = rank;
+         rank = 0;
+      }
+      else if(susp==1) { 
+         myfound = 'S';
+      }
+
       $.ajax({
          url :'/reserves/'+reservenumber,
          type: method,
@@ -268,51 +386,71 @@ function updateHolds() {
             branchcode  :pick,
             found       :myfound,
             is_suspended:susp,
-            resume_date :mywaitingdate
+            resume_date :mywaitingdate,
+            reservenotes:nota
+         },
+         error: function(xhr,rc,thrown) {
+            _err(rc)
          },
          success: function() {
             var mysofar = parseInt(document.myf.sofar.value);
             mysofar += 1;
             document.myf.sofar.value = mysofar;
             if(mysofar==batchres.length) {
-               savingModal.close();
-               getInit(10);
+               getInit();
+               // retain searching and sorting
+               if(document.myf.qReserves) {
+                  if(document.myf.qReserves.value.length>0) {
+                     var pg    = parseInt(document.myf.pg.value);
+                     var sortF = document.myf.sortf.selectedIndex;
+                     var sortR = document.myf.sortRev.selectedIndex;
+                     searchAll();
+                     $('#sortf')[0].selectedIndex = sortF;
+                     $('#sortRev')[0].selectedIndex = sortR;
+                     reserves.sortAll();
+                     pager(pg);
+                  }
+               }
             }
          }
       });
    }
 } //eof updateHolds()
 
-function pager(all,pg) {
+function pager(pg) {
    if(!pg || pg==null || pg==undefined || pg==0) { pg = 1 }
    document.myf.pg.value = pg;
+   var pgs    = 1;  var omni = ''; // TODO: omni=View All
+   if (reserves.length%10 > 0) { pgs = parseInt(reserves.length/10)+1 }
+   else                        { pgs = reserves.length/10             }
+   if (pg>pgs) { pg = pgs; document.myf.pg.value = pg; } // adjust for after cancelling holds on last page
    var limit  = 10;
-   var offset = (pg-1)*10; if(offset>all.length) { offset=all.length }
+   var offset = (pg-1)*10; if(offset>reserves.length) { offset=reserves.length }
    var from   = offset+1;
-   var to     = limit+offset; if (to>all.length) { to=all.length }
+   var to     = limit+offset; if (to>reserves.length) { to=reserves.length }
    var first  = ''; var last = '';
    var nPg    = ''; var next = '';    
    var pPg    = ''; var prev = '';
-   var pgs    = 1;  var omni = ''; // TODO: omni=View All
-   if (all.length%10 > 0) { pgs = parseInt(all.length/10)+1 }
-   else                   { pgs = all.length/10             }
-   if (limit<all.length)  { nPg = pg+1 } if (nPg>pgs) { nPg = 0 }
+   if (to<reserves.length){ nPg = pg+1 } if (nPg>pgs) { nPg = 0 }
    if (pg != 1)           { pPg = pg-1 } if (pPg<1)   { pPg = 0 }
    var curr = ' Page <b>'+pg+'</b> of '+pgs;
-   if (nPg!='') { next = ' .. <a href="javascript:;" onclick="document.myf.pg.value='+nPg+';pager(reserves,'+nPg+');">Next <b>&gt;</b></a> '; }
-   if (pPg!='') { prev = '<a href="javascript:;" onclick="pager(reserves,'+pPg+');"><b>&lt;</b> Prev</a> .. '; }
-   if (pg>1)    { first= '<a href="javascript:;" onclick="pager(reserves,1);"><b>&lt;&lt;</b> First</a> ' }
-   if (pg<pgs)  { last = '<a href="javascript:;" onclick="pager(reserves,'+pgs+');">Last <b>&gt;&gt;</b>' }
+   if (nPg!='') { next = ' .. <a href="javascript:;" onclick="document.myf.pg.value='+nPg+';pager('+nPg+');">Next <b>&gt;</b></a> '; }
+   if (pPg!='') { prev = '<a href="javascript:;" onclick="pager('+pPg+');"><b>&lt;</b> Prev</a> .. '; }
+   if (pg>1)    { first= '<a href="javascript:;" onclick="pager(1);"><b>&lt;&lt;</b> First</a> ' }
+   if (pg<pgs)  { last = ' <a href="javascript:;" onclick="pager('+pgs+');">Last <b>&gt;&gt;</b> ' }
+   if (nPg==pgs){ next = ' .. ' }
+   if (pPg==1)  { prev = ' .. ' }
    var sorter  = 'Sort by';
    var sortOps = '';
    var dirOps  = '';
    var dirArr  = new Array('ASC','DESC');
    var sortArr = new Array(
-      ['int:priority',     'Priority'        ],
+      ['int:rank',         'Priority'        ],
       ['str:borrowername', 'Patron Name'     ],
       ['int:reservedate',  'Date'            ],
-      ['str:branchname',   'Pickup Library'  ]
+      ['str:pickname',     'Pickup Library'  ]
    );
+   if(reserves.length>10) { sortArr.push(['int:relevant','Relevance']) }
    for(var i=0;i<sortArr.length;i++) {
       var sel = '';
       if(document.myf.sortf) {
@@ -329,25 +467,45 @@ function pager(all,pg) {
       else if (dirArr[i]=='<TMPL_VAR NAME="sortRev">') { sel = ' selected' }
       dirOps += '<option'+sel+'>'+dirArr[i];
    }
-   sorter+= '<select name="sortf" id="sortf" onchange="reserves=reserves.sortAll();pager(reserves,'+pg+');">'+sortOps+'</select>'
-          + '<select name="sortRev" id="sortRev" onchange="reserves=reserves.sortAll();pager(reserves,'+pg+');">'+dirOps+'</select>';
-   $('#pager1').html(sorter);
-   $('#pager2').html('Showing '+from+' to '+to+' of '+all.length+' rows | ' +first+prev+curr+next+last);
+   sorter+= '<select name="sortf" id="sortf" onchange="if(this.selectedIndex==4){searchAll()}else{reserves=reserves.sortAll();pager('+pg+');}">'+sortOps+'</select>'
+          + '<select name="sortRev" id="sortRev" onchange="reserves=reserves.sortAll();pager('+pg+');">'+dirOps+'</select>';
+   var searcher = '';
+   if(reserves.length>10) {
+      var qstr = '';
+      var qmsg = '';
+      if(document.myf.qReserves) { qstr = $('#qReserves').val() }
+      if(document.getElementById('matcher')) { qmsg = $('#matcher').html() }
+      searcher = '<input type=text name="qReserves" id="qReserves" value="'+qstr+'" size=10 '
+               + 'maxlength=255 autocomplete=off '
+               + 'onkeypress="if(event.keyCode==13) { searchAll(); }" '
+               + 'onkeyup="clearSearch();"><button type="button" id="searchBtn" '
+               + 'onkeypress="searchAll();return false;" onclick="searchAll();return false;"><img '
+               + 'src="/intranet-tmpl/prog/img/search.png" align=texttop border=0></button>';
+   }
+   else if (reserves.length==1) { sorter = '' }
+   var es = reserves.length==1? '':'s';
+
+   $('#searcher').html(searcher);
+   $('#sorter').html(sorter);
+   $('#pager2').html('Showing '+from+' to '+to+' of '+reserves.length+' row'+es+' | ' +first+prev+curr+next+last);
    $('#existingReserves > :not(thead) > tr').remove();
 
-   var c = 0;
    for(var i=offset;i<limit+offset;i++) {
-      if(all[i]) { showReserve(all[i],all.length,c); c++; }
+      if(reserves[i]) { showReserve(reserves[i],reserves.length,i); }
    }
-}
+} // eofPager()
+
 $(document).ready(function() {
    $.ajax({
       url:'/branches/',
+      error: function(xhr,rc,thrown) {
+         _err(rc)
+      },
       success: function(data) {
          $.each(data, function(idx,br) {
             branches.push([br.branchcode,br.branchname]);
          });
-         getInit(<TMPL_VAR NAME="limit">);
+         getInit();
       }
    });
 });
@@ -368,9 +526,9 @@ $(document).ready(function() {
       <input type=hidden name="pg"     value="<TMPL_VAR NAME="pg">" id="pg">
       <input type=hidden name="sofar"  value="0">
       <table class=borderless width="100%">
-      <tr class=borderless>
+      <tr class=borderless valign=bottom>
          <td class=borderless><h3>Edit holds on <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a></h3></td>
-         <td class=borderless align=right id="pager1" nowrap></td></tr>
+         <td class=borderless align=right width="460" nowrap="nowrap"><span id="matcher"></span> <span id="searcher"></span> <span id="sorter"></span></td></tr>
       <tr class=borderless><td class=borderless colspan=2>
       <table id="existingReserves" width="100%">
       <tbody>
@@ -388,9 +546,19 @@ $(document).ready(function() {
       </table>
       </td></tr>
       <tr class=borderless>
-         <td class=borderless id="update"></td>
-         <td class=borderless align=right id="pager2"></td>
+         <td class=borderless><span id="updater"></span> <span id="clearer"></span></td>
+         <td class=borderless align=right id="pager2" nowrap></td>
       </tr></table>
+      <div id="noting" style="display:none;opacity:1 !important;padding:4px;border:double 1px #000;background-color:grey">
+      <table border=0 cellspacing=0 cellpadding=0 class=borderless>
+         <input type=hidden name="idx" value="0" id="idx">
+         <tr class=borderless><td colspan=2 class=borderless><textarea name="notes" id="notes" rows=10 cols=40 wrap=virtual></textarea></td></tr>
+         <tr><td class=borderless><input type=button value="Save Note" onclick="saveNote()"> 
+                                  <input type=button value="Clear" onclick="$('#notes').val('');$('#notes').focus()">
+                                  <input type=button value="Reset" onclick="$('#notes').val(reserves[$('#idx').val()].reservenotes);$('#notes').focus()"></td>
+             <td class=borderless align=right><input type=button value="Cancel" onclick="notingModal.close()"></td></tr>
+      </table>
+      </div>
       </form>
    </div><!-- eof yui-b -->
    </div><!-- eof yui-main -->
@@ -399,11 +567,8 @@ $(document).ready(function() {
    <!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
    </div>
 </div><!-- eof bd -->
-<div id="saving" style="border:double 4px #000;background-color:#ffffcc;opacity:100;padding:6px;display:none"><img 
-src="/intranet-tmpl/prog/img/loading-trans.gif" align=abscenter>Saving... &nbsp; &nbsp; &nbsp;
+<div id="saving" style="border:solid 4px #736f6e;background-color:#ffffcc;opacity:1 !important;padding:10px;display:none"><h3><img 
+src="/intranet-tmpl/prog/img/loading-trans.gif"> Saving... </h3>
 </div>
-<script>
-function setCal(reservenumber,limit) {
-}
-</script>
+
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

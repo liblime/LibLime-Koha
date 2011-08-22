@@ -1,5 +1,5 @@
     <div id="header" class="clearfix">
-        <div id="toplevelnav">
+        <div id="toplevelnav" style="line-height:1em;padding-top:6px;height:22px">
             <ul id="toplevelmenu">
                 <!-- TMPL_IF NAME="CAN_user_circulate" --><li><a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a></li><!-- /TMPL_IF -->
                 <!-- TMPL_IF NAME="CAN_user_borrowers" --><li><a href="/cgi-bin/koha/members/members-home.pl">Patrons</a></li><!-- /TMPL_IF -->

@@ -107,16 +107,28 @@ use Carp;
         my $r = Koha::Model::Reserve->new(reservenumber => $reservenumber);
         $r->load;
 
-        $input->{priority}    //= $r->priority;
-        $input->{branchcode}  //= $r->branchcode;
-        $input->{waitingdate} //= $r->waitingdate;
+        $input->{priority}     //= $r->priority;
+        $input->{branchcode}   //= $r->branchcode;
+        $input->{waitingdate}  //= $r->waitingdate;
+        $input->{reservenotes} //= $r->reservenotes;
+        $input->{found}        //= $r->found;
 
+        my @wt = qw(W T);
         if ($r->found ~~ 'S' && !$input->{is_suspended}) {
             $r->unsuspend();
         }
         elsif ($input->{is_suspended} || $input->{resume_date}) {
             $r->suspend($input->{resume_date});
         }
+        elsif (($input->{priority} >0) && ($r->found ~~ @wt)) { # requeue as bib-level hold
+            $r->found(undef);
+            $r->itemnumber(undef);
+            $r->waitingdate(undef);
+        }
+        elsif ($input->{found} ~~ @wt) {
+            $r->found($input->{found});
+        }
+        $r->reservenotes($input->{reservenotes});
         $r->priority($input->{priority});
         $r->branchcode($input->{branchcode});
         $r->save;
