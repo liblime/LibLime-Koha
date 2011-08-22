@@ -4696,6 +4696,40 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Prevent floating point rounding problems for money fields in accountlines )\n";
 }
 
+$DBversion = '4.09.00.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    # Altering MARC subfield structure for Other item and Cataloging status
+    # Previous conflict with the 952$k field
+    my $frames_sth = $dbh -> prepare("SELECT frameworkcode FROM biblio_framework");
+
+    my $delete_sth = $dbh -> prepare("
+        DELETE FROM marc_subfield_structure WHERE tagfield='952' AND tagsubfield='k';");
+
+    my $insert_sth = $dbh ->prepare("
+        INSERT INTO marc_subfield_structure
+        (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
+        VALUES ('952', 'k', 'Other item status', 'Other item status', 0, 0, 'items.otherstatus', 10, 'otherstatus', '', '', 0, 0, ?, NULL, '', '');");
+
+    my $insert_sth_2 = $dbh ->prepare("
+        INSERT INTO marc_subfield_structure
+        (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
+        VALUES ('952', 'K', 'Cataloging Status', 'Cataloging Status', 0, 0, 'items.catstat', 10, 'CATSTAT', '', '', NULL, 0, ?, '', '', NULL);");
+
+
+    $delete_sth -> execute;
+    $insert_sth -> execute("");
+    $insert_sth_2 -> execute("");
+    $frames_sth->execute;
+    while (my $frame = $frames_sth->fetchrow_hashref) {
+        $insert_sth -> execute($frame->{frameworkcode});
+        $insert_sth_2 -> execute($frame->{frameworkcode});
+    }
+
+    print "Upgrade to $DBversion done ( Modify framework code )\n";
+    SetVersion ($DBversion);
+}
+
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
