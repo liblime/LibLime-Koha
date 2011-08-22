@@ -973,7 +973,13 @@ sub handle_patron_info {
 	$resp .= add_count('patron_info/unavail_holds',
 			   scalar @{$patron->unavail_holds});
 
-    # FID_INST_ID added last (order irrelevant for fields w/ identifiers)
+        # FID_INST_ID added first (order irrelevant for fields w/ identifiers)
+        if (C4::Context->preference('UsePatronBranchForPatronInfo')) {
+          $resp .= add_field(FID_INST_ID,       ($patron->{branchcode} || 'SIP2'));
+        }
+        else {
+          $resp .= add_field(FID_INST_ID,       ($ils->institution_id || 'SIP2'));
+        }
 
 	# while the patron ID we got from the SC is valid, let's
 	# use the one returned from the ILS, just in case...
@@ -1034,6 +1040,14 @@ sub handle_patron_info {
         $resp .= 'YYYY' . (' ' x 10) . $lang . Sip::timestamp();
         $resp .= '0000' x 6;
 
+        # Required institution id field
+        if (C4::Context->preference('UsePatronBranchForPatronInfo')) {
+          $resp .= add_field(FID_INST_ID,       ($patron->{branchcode} || 'SIP2'));
+        }
+        else {
+          $resp .= add_field(FID_INST_ID,       ($ils->institution_id || 'SIP2'));
+        }
+
         # patron ID is invalid, but field is required, so just echo it back
         $resp .= add_field(FID_PATRON_ID,     $fields->{(FID_PATRON_ID)});
         $resp .= add_field(FID_PERSONAL_NAME, '');
@@ -1043,12 +1057,6 @@ sub handle_patron_info {
         }
     }
 
-    if (C4::Context->preference('UsePatronBranchForPatronInfo')) {
-      $resp .= add_field(FID_INST_ID,       ($patron->{branchcode} || 'SIP2'));
-    }
-    else {
-      $resp .= add_field(FID_INST_ID,       ($ils->institution_id || 'SIP2'));
-    }
     $self->write_msg($resp);
     return(PATRON_INFO);
 }
