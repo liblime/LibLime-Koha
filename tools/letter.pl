@@ -64,20 +64,20 @@ sub protected_letters {
     return { map { $_->[0] => 1 } @{$codes} };
 }
 
-my $input       = new CGI;
-my $searchfield = $input->param('searchfield');
-my $script_name = '/cgi-bin/koha/tools/letter.pl';
-my $code        = $input->param('code');
-my $module      = $input->param('module');
-my $content     = $input->param('content');
-my $ttcode      = $input->param('ttcode');
-my $op          = $input->param('op');
-my $dbh = C4::Context->dbh;
+our $input       = new CGI;
+our $searchfield = $input->param('searchfield');
+our $script_name = '/cgi-bin/koha/tools/letter.pl';
+our $code        = $input->param('code');
+our $module      = $input->param('module');
+our $content     = $input->param('content');
+our $ttcode      = $input->param('ttcode');
+our $op          = $input->param('op');
+our $dbh = C4::Context->dbh;
 if (!defined $module ) {
     $module = q{};
 }
 
-my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
+our ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     {
         template_name   => 'tools/letter.tmpl',
         query           => $input,
