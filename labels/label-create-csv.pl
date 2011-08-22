@@ -76,7 +76,7 @@ foreach my $item (@$items) {
 }
 
 exit;
-
+__END__
 =head1 NAME
 
 labels/label-create-csv.pl - A script for creating a csv export of labels and label batches in Koha
