@@ -186,9 +186,11 @@ sub GetLostItems {
     my $borrowernumber = shift;
     my $dbh = C4::Context->dbh;
     my $sth = $dbh->prepare("
-      SELECT * FROM lost_items 
-       WHERE borrowernumber=?
-    ORDER BY date_lost DESC");
+      SELECT li.*,b.title FROM lost_items li,biblio b, items
+       WHERE li.borrowernumber=?
+         AND li.itemnumber = items.itemnumber
+         AND items.biblionumber = b.biblionumber
+    ORDER BY li.date_lost DESC");
     $sth->execute($borrowernumber);
     my @lost_items;
     while (my $row = $sth->fetchrow_hashref) {
