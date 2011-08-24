@@ -182,7 +182,6 @@ if ( $input->param('advanced_patron_search') ) {
     }
   }
 } elsif ( $input->param('sqlsearch') ) {
-  $resultsperpage = '100';
   $search_sql = 'SELECT * FROM borrowers LEFT JOIN categories ON borrowers.categorycode = categories.categorycode WHERE ';
   my @parts = split( /;/, $input->param('sqlsearch') );
   $search_sql .= $parts[0];
@@ -192,7 +191,6 @@ if ( $input->param('advanced_patron_search') ) {
 else {
     my $type = (length($member) == 1) ? 'simple' : 'advanced';
     my $startfrom = $input->param('startfrom') // 1;
-    my $resultsperpage = $input->param('resultsperpage') // 20;
     my $offset = ($startfrom-1) * $resultsperpage;
     my $limits
         = {

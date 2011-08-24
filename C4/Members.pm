@@ -208,7 +208,7 @@ sub SearchMember {
     my $sth;
     my @bind;
     my $query = q{
-        SELECT *
+        SELECT SQL_CALC_FOUND_ROWS *
         FROM borrowers
         LEFT JOIN categories
           ON borrowers.categorycode=categories.categorycode
@@ -239,8 +239,6 @@ sub SearchMember {
         return (1, [$data]);
     }
 
-    $query =~ s/\*/COUNT(borrowernumber)/xms;
-
     if ($category_type) {
         $query .= ' AND category_type = ? ';
         push @bind, $category_type;
@@ -268,16 +266,13 @@ sub SearchMember {
         $query .= ') ';
     }
 
-    $data = $dbh->selectrow_arrayref($query, undef, @bind);
-    my $row_count = $data->[0];
-
-    $query =~ s/COUNT\(borrowernumber\)/*/xms;
     $query .= " ORDER BY $orderby ";
     $query .= sprintf(' LIMIT %d,%d',
                       $limits->{offset}//0,
                       $limits->{limit}//C4::Context->preference('PatronsPerPage'));
 
     $data = $dbh->selectall_arrayref($query, {Slice => {}}, @bind);
+    my ($row_count) = $dbh->selectrow_array('SELECT FOUND_ROWS()');
 
     # This assumes a lost barcode search will never match a patron's name.
     # Not necessarily an absolute guarantee, but it's worth the performance tradeoff.
