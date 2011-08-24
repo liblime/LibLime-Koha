@@ -523,7 +523,7 @@ foreach my $biblionumber (@biblionumbers) {
                   pickup_branch        => $userenv? $userenv->{branch} : $item->{homebranch},
                   item_homebranch      => $item->{homebranch},
                   item_holdingbranch   => $item->{holdingbranch},
-                  borrower_branch      => $borrowerinfo->{branchcode},
+                  borrower_branch      => $borrowerinfo->{branchcode} // $userenv->{branch},
             );
             my $issuingrule = GetIssuingRule($borrowerinfo->{categorycode}, $item->{itype}, $branch);
             my $policy_holdallowed = 1;
