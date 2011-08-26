@@ -15,12 +15,11 @@ use Koha::Squatting::Branch   'On::PSGI';
 my $reserves = Koha::Squatting::Reserve->init;
 my $branches = Koha::Squatting::Branch->init;
 
-sub is_staff {
-    my $hostname = Koha::Plack::Util::GetCanonicalHostname(shift);
-    return $hostname =~ /-staff\./;
-}
-
 builder {
+    enable \&Koha::Plack::Util::PrefixFhOutput;
+
+    enable_if { $_[0]->{REMOTE_ADDR} eq '127.0.0.1' } 'ReverseProxy';
+
     enable 'Deflater';
     enable 'HTTPExceptions';
     enable 'MethodOverride';
@@ -29,13 +28,13 @@ builder {
     enable 'Static', path => qr{^/intranet-tmpl/}, root => "$root/koha-tmpl/";
 
     enable 'Status', path => qr{/C4/|/Koha/|/misc/|/t/|/xt/|/etc/}, status => 404;
-    enable 'Rewrite', rules => sub {
-        my $env = shift;
-        return 302 if (is_staff($env) && s{^/$}{/cgi-bin/koha/mainpage.pl});
-        return 302 if (!is_staff($env) && s{^/$}{/cgi-bin/koha/opac-main.pl});
-        if (!is_staff($env)) { s{^/cgi-bin/koha/}{/cgi-bin/koha/opac/}}
-        return;
-    };
+    enable 'Rewrite', rules => \&Koha::Plack::Util::RedirectRootAndOpac;
+
+    enable_if { return (Plack::Request->new(shift)->cookies()->{debug} // 0) != 0 }
+        'Debug', panels => [
+            qw(Environment Response Timer Memory Session),
+            ['DBIProfile', profile => 2],
+            ];
 
     enable 'Header', unset => ['Status'];
     enable '+Koha::Plack::Localize';
