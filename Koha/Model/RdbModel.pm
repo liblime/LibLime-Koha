@@ -3,11 +3,11 @@ package Koha::Model::RdbModel;
 use Koha;
 use MooseX::Role::Parameterized;
 
-parameter 'nohandle' => {
+parameter 'nohandle' => (
     is  => 'ro',
     isa => 'ArrayRef[Str]',
     default => sub{[]},
-};
+);
 
 role {
     my $p = shift;
