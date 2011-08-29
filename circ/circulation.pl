@@ -35,6 +35,7 @@ use C4::Circulation;
 use C4::Items qw();
 use C4::Members;
 use C4::Accounts;
+use C4::LostItems;
 use C4::Biblio;
 use C4::Reserves;
 use Koha;
@@ -344,11 +345,8 @@ if ($borrowernumber) {
     $cookie = [$cookie, $lbb, $lbc, $lbf, $lbs];        
     
     my ( $od, $issue, $fines ) = GetMemberIssuesAndFines( $borrowernumber );
-    my $li = C4::Members::GetMemberLostItems(
-      borrowernumber       => $borrowernumber,
-      formatdate           => 1,
-      only_claimsreturned  => 0,
-    ) // [];
+    # deprecated: C4::Members::GetMemberLostItems
+    my $li = C4::LostItems::GetLostItems($borrowernumber) // [];
     my $numlostitems = scalar @$li;
     @$li = splice(@$li,0,5);
     $template->param( 
