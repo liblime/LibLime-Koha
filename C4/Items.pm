@@ -438,42 +438,42 @@ item editors are included in this hash.
 
 =cut
 
-my %default_values_for_mod_from_marc = (
-    barcode              => undef, 
-    booksellerid         => undef, 
-    ccode                => undef, 
-    'items.cn_source'    => undef, 
-    copynumber           => undef, 
-    damaged              => 0,
-    dateaccessioned      => undef, 
-    enumchron            => undef, 
-    holdingbranch        => undef, 
-    homebranch           => undef, 
-    itemcallnumber       => undef, 
-    itemlost             => 0,
-    itemnotes            => undef, 
-    itype                => undef, 
-    location             => undef, 
-    permanent_location   => undef,
-    materials            => undef, 
-    notforloan           => 0,
-    otherstatus          => undef,
-    paidfor              => undef, 
-    price                => undef, 
-    replacementprice     => undef, 
-    replacementpricedate => undef, 
-    restricted           => undef, 
-    stack                => undef, 
-    suppress             => 0,
-    uri                  => undef, 
-    wthdrawn             => 0,
-    catstat              => undef,
-);
-
 sub ModItemFromMarc {
     my $item_marc = shift;
     my $biblionumber = shift;
     my $itemnumber = shift;
+
+    my %default_values_for_mod_from_marc = (
+        barcode              => undef, 
+        booksellerid         => undef, 
+        ccode                => undef, 
+        'items.cn_source'    => undef, 
+        copynumber           => undef, 
+        damaged              => 0,
+        dateaccessioned      => undef, 
+        enumchron            => undef, 
+        holdingbranch        => undef, 
+        homebranch           => undef, 
+        itemcallnumber       => undef, 
+        itemlost             => 0,
+        itemnotes            => undef, 
+        itype                => undef, 
+        location             => undef, 
+        permanent_location   => undef,
+        materials            => undef, 
+        notforloan           => 0,
+        otherstatus          => undef,
+        paidfor              => undef, 
+        price                => undef, 
+        replacementprice     => undef, 
+        replacementpricedate => undef, 
+        restricted           => undef, 
+        stack                => undef, 
+        suppress             => 0,
+        uri                  => undef, 
+        wthdrawn             => 0,
+        catstat              => undef,
+        );
 
     my $dbh = C4::Context->dbh;
     my $frameworkcode = GetFrameworkCode( $biblionumber );
