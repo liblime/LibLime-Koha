@@ -499,7 +499,7 @@ accountlines table of the Koha database.
 #
 sub UpdateFine {
     my ( $itemnum, $borrowernumber, $amount, $type, $due, $ismax ) = @_;
-	$debug and warn "UpdateFine($itemnum, $borrowernumber, $amount, " . ($type||'""') . ", $due) called";
+    $type ||= 'FU';
     my $dbh = C4::Context->dbh;
     # FIXME - What exactly is this query supposed to do? It looks up an
     # entry in accountlines that matches the given item and borrower
@@ -544,12 +544,12 @@ sub UpdateFine {
                    amount           = ?, 
                    amountoutstanding= ?,
 					    lastincrement    = ?, 
-                   accounttype      = 'FU', 
+                   accounttype      = ?, 
                    description      = ?
 	  			 WHERE borrowernumber   = ?
                AND accountno        = ?";
             my $sth2 = $dbh->prepare($query);
-            $sth2->execute($amount, $out, $diff, $$data{description},$data->{'borrowernumber'}, $data->{accountno});
+            $sth2->execute($amount,$out,$diff,$type,$$data{description},$data->{'borrowernumber'}, $data->{accountno});
             UpdateStats( my $branch = '', my $stattype = "fine_update", $amount, my $other = '', $data->{'itemnumber'}, my $itemtype = '', $data->{'borrowernumber'}, my $proccode = '' );
         } else {
             #      print "no update needed $data->{'amount'}"
