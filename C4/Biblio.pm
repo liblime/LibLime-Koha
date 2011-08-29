@@ -1940,9 +1940,6 @@ sub TransformHtmlToMarc {
     return $record;
 }
 
-# cache inverted MARC field map
-our $inverted_field_map;
-
 =head2 TransformMarcToKoha
 
 =over 4
@@ -1962,9 +1959,10 @@ sub TransformMarcToKoha {
     $limit_table=$limit_table||0;
     $frameworkcode = '' unless defined $frameworkcode;
     
-    unless (defined $inverted_field_map) {
-        $inverted_field_map = _get_inverted_marc_field_map();
-    }
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                       datastore => C4::Context->cachehash});
+    my $inverted_field_map = $cache->compute('inverted_field_map', '1h', \&_get_inverted_marc_field_map);
 
     my %tables = ();
     if ( defined $limit_table && $limit_table eq 'items') {
