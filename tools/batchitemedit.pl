@@ -27,10 +27,10 @@ use C4::Items;
 use C4::Output;
 use C4::ItemDeleteList;
 
-my $query = new CGI;
+our $query = new CGI;
 
 #    # editable fields
-my %ifields_map = (
+our %ifields_map = (
     homebranch         => 'items.homebranch',
     notforloan         => 'items.notforloan',
     damaged            => 'items.damaged',
@@ -43,14 +43,14 @@ my %ifields_map = (
     restricted         => 'items.restricted',
     ccode              => 'items.ccode',
 );
-my @ifields = keys %ifields_map;
+our @ifields = keys %ifields_map;
 
 #itemnumber biblionumber biblioitemnumber barcode dateaccessioned booksellerid homebranch price replacementprice
 #replacementpricedate datelastborrowed datelastseen stack notforloan damaged itemlost wthdrawn itemcallnumber
 #issues renewals reserves restricted itemnotes holdingbranch paidfor timestamp location permanent_location
 #onloan cn_source cn_sort ccode materials uri itype more_subfields_xml enumchron copynumber);
 
-my ( $template, $user, $cookie ) = get_template_and_user(
+our ( $template, $user, $cookie ) = get_template_and_user(
     {   template_name   => 'tools/batchitemedit.tmpl',
         query           => $query,
         type            => 'intranet',
@@ -59,11 +59,11 @@ my ( $template, $user, $cookie ) = get_template_and_user(
     }
 );
 
-my $op = $query->param('confirm');
+our $op = $query->param('confirm');
 
 $op ||= q{};    # quieten warnings
 
-my $dbh = C4::Context->dbh;
+our $dbh = C4::Context->dbh;
 
 if ( $op eq 'Proceed' ) {
     my $reading_from_file = 0;
