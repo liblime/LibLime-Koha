@@ -17,38 +17,9 @@ package C4::Session::Defaults::Items;
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-
 use C4::Auth;
 use Koha;
 use C4::Context;
-
-use vars qw($VERSION @ISA @EXPORT);
-
-BEGIN {   
-    $VERSION = 1.00;
-
-        require Exporter;
-    @ISA = qw( Exporter );
- 
-    # function exports
-    @EXPORT = qw(
-        &get
-        &set
-        &save
-        &load
-        &clear
-        &delete
-
-        &name
-        
-        &isUsingDefaults        
-        
-        &getSavedDefaultsList
-    );
-}
-
-our $debug = 1;
 
 =head1 NAME
 
@@ -120,8 +91,6 @@ sub save {
     my ( $self, %params ) = @_;
     my $name = $params{'name'};
     
-    warn "C4::Session::Defaults::Items->save( name => '$name' )" if $debug;
-
     my $branchcode = C4::Context->userenv->{'branch'};
     
     my $dbh = C4::Context->dbh;
@@ -129,8 +98,6 @@ sub save {
     my $sth = $dbh->prepare( $sql );
 
     my $params = $self->{'_session'}->dataref();
-
-    Data::Dumper::Dumper( $params );
 
     while ( my ($key, $value) = each %$params ) {
         $sth->execute( $branchcode, $name, $key, $value ) if ( $key =~ m/^$self->{'_prefix'}/ );
@@ -144,8 +111,6 @@ sub save {
 sub load {
     my ( $self, %params ) = @_;
     my $name = $params{'name'};
-
-    warn "C4::Session::Defaults::Items->load( name => '$name' )" if $debug;
 
     return unless ( $name );
 
@@ -188,8 +153,6 @@ sub delete {
     my $branchcode = C4::Context->userenv->{'branch'};    
     my $name = $self->name();
 
-    warn "C4::Session::Defaults::Items->delete( name = '$name', branchcode = '$branchcode' )" if $debug;
-
     my $dbh = C4::Context->dbh;
     my $sql = "DELETE FROM session_defaults WHERE branchcode = ? AND name = ?";
     my $sth = $dbh->prepare( $sql );
@@ -209,8 +172,6 @@ sub getSavedDefaultsList {
     my $branchcode = $params{'branchcode'};
     my $getAll = $params{'getAll'};
 
-    #warn "getSavedDefaultsList( branchcode => '$branchcode', getAll => '$getAll' )" if $debug;
-
     $branchcode = $branchcode || C4::Context->userenv->{'branch'};
     $branchcode = '%' if ( $getAll );
 
@@ -225,7 +186,7 @@ sub getSavedDefaultsList {
     my $name = $self->name();
     my @results;
     while ( my $r = $sth->fetchrow_hashref() ) {
-        $r->{'selected'} = 1 if ( $r->{'name'} eq $name );
+        $r->{'selected'} = 1 if ( $r->{'name'} ~~ $name );
         push( @results, $r );
     }
     
