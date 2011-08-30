@@ -29,7 +29,7 @@ use C4::Members::AttributeTypes;
 
 my $script_name = "/cgi-bin/koha/admin/patron-attr-types.pl";
 
-my $input = new CGI;
+our $input = CGI->new();
 my $op = $input->param('op');
 
 
