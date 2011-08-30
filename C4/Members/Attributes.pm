@@ -26,7 +26,6 @@ use C4::Context;
 use C4::Members::AttributeTypes;
 
 use vars qw($VERSION @ISA @EXPORT_OK @EXPORT %EXPORT_TAGS);
-our ($csv, $AttributeTypes);
 
 BEGIN {
     # set the version for version checking
@@ -198,7 +197,7 @@ Caches Text::CSV parser object for efficiency.
 
 sub extended_attributes_code_value_arrayref {
     my $string = shift or return;
-    $csv or $csv = Text::CSV->new({binary => 1});  # binary needed for non-ASCII Unicode
+    my $csv = Text::CSV->new({binary => 1});  # binary needed for non-ASCII Unicode
     my $ok   = $csv->parse($string);  # parse field again to get subfields!
     my @list = $csv->fields();
     # TODO: error handling (check $ok)
@@ -238,7 +237,7 @@ sub extended_attributes_merge {
     my $old = shift or return;
     my $new = shift or return $old;
     my $keep = @_ ? shift : 0;
-    $AttributeTypes or $AttributeTypes = C4::Members::AttributeTypes::GetAttributeTypes_hashref(1);
+    my $AttributeTypes = C4::Members::AttributeTypes::GetAttributeTypes_hashref(1);
     my @merged = @$old;
     foreach my $att (@$new) {
         unless ($att->{code}) {
