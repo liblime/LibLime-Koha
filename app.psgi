@@ -16,13 +16,17 @@ my $reserves = Koha::Squatting::Reserve->init;
 my $branches = Koha::Squatting::Branch->init;
 
 builder {
-    enable \&Koha::Plack::Util::PrefixFhOutput;
+    enable '+Koha::Plack::WarnPrefix';
 
     enable_if { $_[0]->{REMOTE_ADDR} eq '127.0.0.1' } 'ReverseProxy';
 
     enable 'Deflater';
     enable 'HTTPExceptions';
     enable 'MethodOverride';
+
+    enable 'Expires',
+        content_type => ['text/css', 'application/javascript', qr!^image/!],
+        expires => 'access plus 1 day';
 
     enable 'Static', path => qr{^/opac-tmpl/}, root => "$root/koha-tmpl/";
     enable 'Static', path => qr{^/intranet-tmpl/}, root => "$root/koha-tmpl/";

@@ -32,41 +32,4 @@ sub RedirectRootAndOpac {
     return;
 }
 
-# This needs to be turned into a proper middleware package
-sub PrefixFhOutput {
-    my $app = shift;
-
-    {
-        package Koha::Plack::Util::PrefixFhOutput;
-        our $name = '';
-        our $fh;
-
-        sub TIEHANDLE {
-            open my $old_err, '>&', $fh;
-            my $self = {fh => $old_err};
-            bless $self, shift;
-        }
-
-        sub PRINT {
-            my $self = shift;
-            return if not scalar @_;
-            my $format = ($name) ? qq{[$name] } . shift @_ : shift @_;
-            print {$self->{fh}} sprintf $format, @_;
-        }
-
-        sub PRINTF { PRINT @_ }
-    }
-
-    return sub {
-        my $env = shift;
-
-        local $Koha::Plack::Util::PrefixFhOutput::name = Koha::Plack::Util::GetCanonicalHostname($env);
-        local $Koha::Plack::Util::PrefixFhOutput::fh = $env->{'psgi.errors'};
-
-        tie(*{$env->{'psgi.errors'}}, 'Koha::Plack::Util::PrefixFhOutput');
-
-        return $app->($env);
-    };
-}
-
 1;
