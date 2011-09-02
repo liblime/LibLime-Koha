@@ -1891,10 +1891,7 @@ sub TransformHtmlToMarc {
             if($tag < 10){ # no code for theses fields
     # in MARC editor, 000 contains the leader.
                 if ($tag eq '000' ) {
-                    # The record length (position 0-4 in the leader) was not
-                    # being passed in the form variable.
-                    my $leader = "     " . $cgi->param($params->[$j+1]);
-                    $record->leader($leader) if length($leader)==24;
+                    $record->leader($cgi->param($params->[$j+1])) if length($cgi->param($params->[$j+1]))==24;
     # between 001 and 009 (included)
                 } elsif ($cgi->param($params->[$j+1]) ne '') {
                     $newfield = MARC::Field->new(
