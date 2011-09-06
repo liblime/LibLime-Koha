@@ -479,6 +479,10 @@ sub draw_label_text {
             }
             push(@label_lines, @line) unless @label_lines;
         }
+        if ($self->{callnum_split} ~~ 'none') {
+            my $line = join(' ',@label_lines);
+            @label_lines = ($line);
+        }
 
         LABEL_LINES:    # generate lines of label text for current field
         foreach my $line (@label_lines) {
