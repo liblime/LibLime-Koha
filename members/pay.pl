@@ -43,7 +43,6 @@ use C4::Items qw( ModItem );
 use C4::ReceiptTemplates;
 
 our $input = CGI->new();
-
 our ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
         template_name   => 'members/pay.tmpl',

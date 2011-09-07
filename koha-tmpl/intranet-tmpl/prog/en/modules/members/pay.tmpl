@@ -32,7 +32,13 @@
 </ul>
 <div class="tabs-container">
 
-<!-- TMPL_IF NAME="allfile" --><form action="/cgi-bin/koha/members/pay.pl" method="post">
+<!-- TMPL_IF NAME="allfile" --><form action="/cgi-bin/koha/members/pay.pl" method="post" name="payf" onsubmit="
+   for(var i=0;i<document.payf.length;i++) { 
+      if(document.payf[i].value.length>0) {
+         document.payf[i].value=encodeURIComponent(document.payf[i].value);
+      }
+   }
+   ">
 	<input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR name="borrowernumber" -->" />
 
 <table>
@@ -59,9 +65,9 @@
 	<!--<select name="payfine<!-- TMPL_VAR name="i" -->">
 	<option value="no">Unpaid</option>
 	<option value="yes">Paid</option> -->
-    <input type="submit" name="pay_indiv<!-- TMPL_VAR name="i" -->"i value="Pay" />
+    <input type="submit" name="pay_indiv<!-- TMPL_VAR name="i" -->" value="Pay" />
     <!-- TMPL_IF NAME="CAN_user_updatecharges_writeoff_charges" -->
-    <input type="submit" name="wo_indiv<!-- TMPL_VAR name="i" -->"i value="Writeoff" />
+    <input type="submit" name="wo_indiv<!-- TMPL_VAR name="i" -->" value="Writeoff" />
 	<!--<option value="wo">Writeoff</option> -->
     <!--  /TMPL_IF -->
 	<!--</select> -->
