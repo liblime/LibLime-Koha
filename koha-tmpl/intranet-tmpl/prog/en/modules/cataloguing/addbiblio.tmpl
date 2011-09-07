@@ -90,7 +90,7 @@ function AreMandatoriesNotOk(){
             <!-- /TMPL_LOOP -->
         <!-- /TMPL_LOOP -->
     <!-- /TMPL_LOOP -->
-    var StrAlert = _("Can't save this record because the following field aren't filled :\n\n");
+    var StrAlert = _("Can't save this record because the following aren't filled :\n\n");
     for(var i=0,len=mandatories.length; i<len ; i++){
         var tag=mandatories[i].substr(4,3);
         var subfield=mandatories[i].substr(17,1);
@@ -571,6 +571,7 @@ function enableForm(){
 
 function submitForm(){
 	enableForm();
+   if(!Check()) { return false }
 	$('#f').submit();
 }
 
@@ -647,14 +648,14 @@ $(document).ready(function() {
         <!-- /TMPL_IF -->
     <!-- /TMPL_UNLESS -->
 
-<!--TMPL_IF Name="done"-->
+<!-- TMPL_IF Name="done" -->
     <script type="text/javascript">
         opener.document.forms['f'].biblionumber.value=<!--TMPL_VAR Name="biblionumber"-->;
         opener.document.forms['f'].title.value='<!--TMPL_VAR Name="title" ESCAPE="HTML"-->';
         window.close();
     </script>
-<!--TMPL_ELSE-->
-    <form method="post" name="f" id="f" action="/cgi-bin/koha/cataloguing/addbiblio.pl" onsubmit="return Check();">
+<!-- TMPL_ELSE -->
+    <form method="post" name="f" id="f" action="/cgi-bin/koha/cataloguing/addbiblio.pl" onsubmit="return false">
 	<input type="hidden" value="0" id="confirm_not_duplicate" name="confirm_not_duplicate" />
 <!-- /TMPL_IF -->
 	
@@ -734,6 +735,8 @@ $(document).ready(function() {
             <!-- TMPL_UNLESS name="hide_marc" -->
             	<!-- TMPL_IF NAME="advancedMARCEditor" -->
 		<a href="#" tabindex="1" class="tagnum" title="<!-- TMPL_VAR NAME="tag_lib"--> - Click to Expand this Tag" onclick="ExpandField('tag_<!-- TMPL_VAR NAME="tag"-->_<!-- TMPL_VAR NAME='index' --><!-- TMPL_VAR NAME="random" -->'); return false;"><!-- TMPL_VAR NAME="tag" --></a>
+
+
 		<!-- TMPL_ELSE -->
                 	<span class="tagnum" title="<!-- TMPL_VAR NAME="tag_lib" -->"><!-- TMPL_VAR NAME="tag" --></span>
 		<!-- /TMPL_IF -->
@@ -755,7 +758,7 @@ $(document).ready(function() {
             <!-- /TMPL_UNLESS -->
 
             <!-- TMPL_UNLESS NAME="advancedMARCEditor" -->
-	            <a href="#" tabindex="1" class="expandfield" onclick="ExpandField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Click to Expand this Tag"><!-- TMPL_VAR NAME="tag_lib" --></a>
+	            <a href="#" tabindex="1" class="expandfield" onclick="ExpandField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Click to Expand this Tag"><!-- TMPL_VAR NAME="tag_lib" --><TMPL_IF NAME="mandatory">*</TMPL_IF></a>
             <!-- /TMPL_UNLESS -->
             <!-- TMPL_IF name="repeatable" -->
                 <a href="javascript:;" tabindex="1" class="buttonPlus" onclick="this.scrollIntoView();CloneField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Repeat this Tag">+</a>
@@ -788,7 +791,7 @@ $(document).ready(function() {
                 <!-- /TMPL_UNLESS -->
             
                 <!-- TMPL_UNLESS NAME="advancedMARCEditor" -->
-                    <!-- TMPL_IF name="mandatory" --><span class="subfield subfield_mandatory"><!-- TMPL_ELSE --><span class="subfield"><!-- /TMPL_IF -->
+                    <!-- TMPL_IF name="mandatory" --><span class="subfield subfield_mandatory">*<!-- TMPL_ELSE --><span class="subfield"><!-- /TMPL_IF -->
                         <!-- TMPL_VAR NAME="marc_lib_plain" -->
                     </span>
                     </label>
@@ -799,7 +802,7 @@ $(document).ready(function() {
                 <!-- TMPL_IF NAME="repeatable" -->
                     <span class="buttonPlus" onclick="CloneSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->')">+</span>
                 <!-- /TMPL_IF -->
-                <!-- TMPL_UNLESS NAME="mandatory" -->
+                <!-- TMPL_UNLESS NAME="tag_mandatory" -->
                     <span class="buttonMinus" onclick="UnCloneField('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->')">&#8722;</span>
                 <!-- /TMPL_UNLESS -->
                 
