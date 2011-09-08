@@ -2823,7 +2823,7 @@ sub _prefix_cardnum_multibranch
         #die "No patronbarcodeprefix set for branch $branch->{branchcode} in table branches"
         #   unless $branch->{patronbarcodeprefix};
         #####
-        unless ($branch->{patrongbarcodeprefix}) {
+        unless ($branch->{patronbarcodeprefix}) {
             push @all, $str;
         }
         else {
