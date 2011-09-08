@@ -26,6 +26,7 @@ use strict;
 use warnings;
 
 use CGI;
+use Try::Tiny;
 use C4::Output;
 use C4::Reserves;
 use C4::Auth;
@@ -58,11 +59,15 @@ for (my $i = 0; $i < $count; $i++) {
 		$resumedate = $parts[2] . '-' . $parts[0] . '-' . $parts[1]; 
 	}
 
-	if ( $resumedate =~ m/^([0-9]{4})(?:(1[0-2]|0[1-9])|-?(1[0-2]|0[1-9])-?)(3[0-1]|0[1-9]|[1-2][0-9])$/ ) {
+        try {
+	  if ( $resumedate =~ m/^([0-9]{4})(?:(1[0-2]|0[1-9])|-?(1[0-2]|0[1-9])-?)(3[0-1]|0[1-9]|[1-2][0-9])$/ ) {
                 SuspendReserve( $reservenumber[$i], $resumedate );
-        } else {              
+          } else {
                 SuspendReserve( $reservenumber[$i] );
-        } 
+          }
+        } catch {
+          warn "error caught: $_";
+        }
   } elsif ($reservenumber[$i]) {
 	CancelReserve($reservenumber[$i]);
   }
