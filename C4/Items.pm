@@ -2223,7 +2223,15 @@ sub _koha_modify_item {
     if (($$item{notforloan} != 0)
      || ($$item{suppress}   != 0)
      || ($$item{wthdrawn}   != 0) ) {
-       $dbh->do('DELETE FROM tmp_holdsqueue where itemnumber=?',undef,$$item{itemnumber});
+       $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber=?',undef,$$item{itemnumber});
+    }
+    if ($$item{otherstatus}) {
+       my $sth = $dbh->prepare('SELECT holdsfilled FROM itemstatus WHERE statuscode=?');
+       $sth->execute($$item{otherstatus});
+       my($holdsfilled) = ($sth->fetchrow_array)[0];
+       if (defined $holdsfilled && ($holdsfilled==0)) {
+          $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber=?',undef,$$item{itemnumber});
+       }
     }
     for my $key ( keys %$item ) {
         $query.="$key=?,";
