@@ -173,6 +173,13 @@ sub CleanupQueue
    ## remove issued items currently checked out
    $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber IN(
       SELECT itemnumber FROM issues)');
+
+   ## recent catalogue change: remove itemstatus.holdsfilled=0
+   ## actually ignore holdsallowed
+   $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber IN (
+      SELECT items.itemnumber FROM items,itemstatus
+       WHERE items.otherstatus = itemstatus.statuscode
+         AND itemstatus.holdsfilled = 0)');
    
    ## race condition: pickup branch changed after previous run of
    ## build_holds_queue.pl.  Force sync data.
