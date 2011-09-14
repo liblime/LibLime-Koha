@@ -53,7 +53,7 @@ my $userenv = C4::Context->userenv;
 if ($bor->{category_type} eq "S") {
     unless(C4::Auth::haspermission($userenv->{'id'},{'staffaccess'=>1})) {
         print $input->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$member&error=CANT_DELETE_STAFF");
-        exit 1;
+        exit;
     }
 }
 
