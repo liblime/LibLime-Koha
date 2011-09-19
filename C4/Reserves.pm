@@ -2490,7 +2490,7 @@ sub SuspendReserve {
 
     my $reserve = GetReserve($reservenumber);
     croak sprintf 'Nonexistent reserve (%d)', $reservenumber unless $reserve;
-    croak 'Cannot suspend waiting or in-transit holds' if ([qw(W T)] ~~ ($reserve->{found} // ''));
+    croak 'Cannot suspend waiting or in-transit holds' if ($reserve->{found} ~~ [qw(W T)]);
 
     C4::Context->dbh->do(q{
             UPDATE reserves SET
