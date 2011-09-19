@@ -86,7 +86,7 @@ if ($input->param('sample')) {
     );
     $csv->combine(@columnkeys);
     print $csv->string, "\n";
-    exit 1;
+    exit;
 }
 my $uploadborrowers = $input->param('uploadborrowers');
 my $matchpoint      = $input->param('matchpoint');
