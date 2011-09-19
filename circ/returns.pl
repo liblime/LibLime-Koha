@@ -30,6 +30,7 @@ use strict;
 
 use CGI;
 use Koha;
+use Carp;
 use C4::Context;
 use C4::Auth qw/:DEFAULT get_session/;
 use C4::Output;
@@ -258,6 +259,7 @@ if ($barcode) {
     if ( C4::Context->preference("InProcessingToShelvingCart") ) {
         my $item = C4::Items::GetItem( $itemnumber );
         if ( $item->{'location'} eq 'PROC' ) {
+            croak 'Item has no permanent location defined' if (!$item->{permanent_location});
             $item->{'location'} = 'CART';
             C4::Items::ModItem( $item, $item->{'biblionumber'}, $item->{'itemnumber'} );
         }
@@ -265,7 +267,8 @@ if ($barcode) {
 
     if ( C4::Context->preference("ReturnToShelvingCart") ) {
         my $item = GetItem( $itemnumber );
-        $item->{'location'} = 'CART';
+        $item->{permanent_location} ||= $item->{location};
+        $item->{location} = 'CART';
         C4::Items::ModItem( $item, $item->{'biblionumber'}, $item->{'itemnumber'} );
     }
 
