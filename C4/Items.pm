@@ -947,7 +947,6 @@ sub GetItemStatus {
             }
             $authvalsth->finish;
             return \%itemstatus;
-            exit;
         }
         else {
 
@@ -1047,7 +1046,6 @@ sub GetItemLocation {
             }
             $authvalsth->finish;
             return \%itemlocation;
-            exit;
         }
         else {
 
