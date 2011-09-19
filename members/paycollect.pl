@@ -28,6 +28,7 @@ use C4::Accounts;
 use C4::Koha;
 use C4::Branch;
 use C4::Dates;
+use URI::Escape;
 
 my $input = new CGI;
 
@@ -40,6 +41,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         debug           => 1,
     }
 );
+
 my @names          = $input->param();
 my $borrowernumber = $input->param('borrowernumber');
 
@@ -53,52 +55,39 @@ my $branch   = GetBranch( $input, $branches );
 
 my($total_due,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
 my $haveRefund = 0;
+my $total_paid = $input->param('paid');
+my $individual = $input->param('pay_individual');
+my $writeoff   = $input->param('writeoff_individual');
+my $accountno  = $input->param('accountno') || 0;
 foreach(@$accts) {
    if (($$_{amountoutstanding} <0) && ($$_{accounttype} eq 'RCR')) {
       $haveRefund = 1;
    }
+
+   if (($accountno == $$_{accountno}) && ( $individual || $writeoff )) {
+      if ($individual) {
+        $template->param( pay_individual => 1 );
+      } elsif ($writeoff) {
+        $template->param( writeoff_individual => 1 );
+      }
+      $total_due = $$_{amountoutstanding};
+      $template->param(
+        itemnumber        => $$_{itemnumber},
+        biblionumber      => $$_{biblionumber},
+        barcode           => $$_{barcode},
+        accounttype       => $$_{accounttype},
+        accountno         => $$_{accountno},
+        amount            => sprintf('%.2f',$$_{amount}),
+        amountoutstanding => sprintf('%.2f',$$_{amountoutstanding}),
+        date              => $$_{date},
+        title             => $$_{title},
+        description       => $$_{description},
+        notify_id         => $$_{notify_id},
+        notify_level      => $$_{notify_level},
+      );
+   }
 }
 $template->param(refundtab => $haveRefund);
-
-my $total_paid = $input->param('paid');
-my $individual = $input->param('pay_individual');
-my $writeoff   = $input->param('writeoff_individual');
-my $accountno;
-
-if ( $individual || $writeoff ) {
-    if ($individual) {
-        $template->param( pay_individual => 1 );
-    } elsif ($writeoff) {
-        $template->param( writeoff_individual => 1 );
-    }
-    my $accounttype       = $input->param('accounttype');
-    my $amount            = $input->param('amount');
-    my $amountoutstanding = $input->param('amountoutstanding');
-    $accountno = $input->param('accountno');
-    my $description  = $input->param('description');
-    my $title        = $input->param('title');
-    my $notify_id    = $input->param('notify_id');
-    my $notify_level = $input->param('notify_level');
-    my $itemnumber   = $input->param('itemnumber');
-    my $biblionumber = $input->param('biblionumber');
-    my $barcode      = $input->param('barcode');
-    my $date         = $input->param('date');
-    $total_due = $amountoutstanding;
-    $template->param(
-        itemnumber        => $itemnumber,
-        biblionumber      => $biblionumber,
-        barcode           => $barcode,
-        accounttype       => $accounttype,
-        accountno         => $accountno,
-        amount            => $amount,
-        amountoutstanding => $amountoutstanding,
-        date              => $date,
-        title             => $title,
-        description       => $description,
-        notify_id         => $notify_id,
-        notify_level      => $notify_level,
-    );
-}
 
 $total_due  = sprintf('%.2f',$total_due);
 $total_paid = sprintf('%.2f',$total_paid);
