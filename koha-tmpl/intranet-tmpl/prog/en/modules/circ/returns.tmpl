@@ -468,7 +468,7 @@ function HaltReturns() {
 		</div>
     <!-- /TMPL_IF -->
 
-    <!-- TMPL_IF Name="transfer" -->
+    <!-- TMPL_IF EXPR="transfer or needstransfer" -->
     <!-- transfer: item with no reservation, must be returned to its homebranch -->
 	<div class="dialog message">
       <p class=error>No holds pending; item needs to be returned to its homebranch.</p>
@@ -500,28 +500,6 @@ function HaltReturns() {
     </div>
     <!-- /TMPL_IF -->
 
-    <!-- TMPL_UNLESS NAME="lostreturned" -->
-    <!-- TMPL_IF Name="needstransfer" -->
-	<div class="dialog message"><h3> This item needs to be transfered to <!-- TMPL_VAR Name="homebranch" --></h3>
-	Transfer Now?<br />
-    <form method="post" action="returns.pl" name="mainform" id="mainform">              
-	<input type="submit" name="dotransfer" value="Yes" class="submit" />
-	<input type="submit" name="notransfer" value="No" class="submit" />
-	<input type="hidden" name="tobranch" value="<!-- TMPL_VAR NAME="homebranch" -->" />
-	<input type="hidden" name="transferitem" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
-        <input type="hidden" name="exemptfine" value="<!-- TMPL_VAR Name="exemptfine" -->" />
-        <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
-    	<!-- TMPL_LOOP Name="inputloop" -->     
-        <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
-	    <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" /> 
-    	<input type="hidden" name="dd-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="duedate" -->" /> 
-	    <input type="hidden" name="bn-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="borrowernumber" -->" /> 
-    	<!-- /TMPL_LOOP -->                            
-	<input type="hidden" name="barcode" value="0" />    
-	</form>   </div>
-	<!-- /TMPL_IF -->
-   <!-- /TMPL_UNLESS -->
-    	
     <!-- TMPL_IF Name="diffbranch" -->
 	<!-- diffbranch -->
         <h3>Item Consigned:</h3>
