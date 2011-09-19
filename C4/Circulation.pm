@@ -1939,7 +1939,7 @@ sub _FixAccountOverdues {
                 $$issue{itemnumber}, 
                 $$issue{borrowernumber}, 
                 $amount, 
-                undef, 
+                'F', 
                 $start_date->output,
                 $ismax
             );
@@ -2038,7 +2038,7 @@ sub _FixAccountOverdues {
         }
         else { # new amount is greater than previous
             C4::Overdues::UpdateFine(
-                $issue->{itemnumber}, $issue->{borrowernumber}, $amount, undef, $start_date->output,$ismax
+                $issue->{itemnumber}, $issue->{borrowernumber}, $amount, 'F', $start_date->output,$ismax
             );
             _checkinDescFine($$issue{borrowernumber},$$row{accountno},$checkindate,$$flags{tolost},$verbiage);
         }
