@@ -32,7 +32,7 @@ use POSIX ();
 use JSON qw(from_json);
 use Koha;
 
-$VERSION = '4.09.00.002';
+$VERSION = '4.09.00.003';
 
 if ($ENV{'HTTP_USER_AGENT'})	{
     require CGI::Carp;
