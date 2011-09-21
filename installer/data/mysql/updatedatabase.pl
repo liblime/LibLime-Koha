@@ -4688,6 +4688,14 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Allow lost_items.itemtype to be nullable )\n";
 }
 
+$DBversion = '4.08.00.002';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do('ALTER TABLE session_defaults DROP PRIMARY KEY');
+    $dbh->do('ALTER TABLE session_defaults ADD COLUMN session_defaults_id int(11) PRIMARY KEY AUTO_INCREMENT FIRST');
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add session_defaults_id to sesstion defaults table and make it the primary key )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
