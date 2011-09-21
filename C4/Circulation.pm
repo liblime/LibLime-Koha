@@ -2295,7 +2295,8 @@ sub _checkinDescFine
 {
     my $desc = $_[3]? 'checkin as lost' : $_[4];
     return C4::Context->dbh->do("UPDATE accountlines
-        SET description    = CONCAT(description, ', $desc $_[2]')
+        SET description    = CONCAT(description, ', $desc $_[2]'),
+            accounttype    = 'F'
       WHERE borrowernumber = ?
         AND accountno      = ?",undef,$_[0],$_[1]
     );
