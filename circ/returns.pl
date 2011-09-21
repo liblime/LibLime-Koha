@@ -48,10 +48,10 @@ use C4::Koha;   # FIXME : is it still useful ?
 use C4::ReceiptTemplates;
 
 my $query = CGI->new();
+my $sessionID = $query->cookie("CGISESSID");
+my $session = get_session($sessionID);
 
 if (!C4::Context->userenv){
-	my $sessionID = $query->cookie("CGISESSID");
-	my $session = get_session($sessionID);
 	if ($session->param('branch') eq 'NO_LIBRARY_SET'){
 		# no branch set we can't return
 		print $query->redirect("/cgi-bin/koha/circ/selectbranchprinter.pl");
@@ -108,26 +108,12 @@ my $branches = GetBranches();
 my $printers = GetPrinters();
 
 #my $branch  = C4::Context->userenv?C4::Context->userenv->{'branch'}:"";
-my $printer = C4::Context->userenv ? C4::Context->userenv->{'branchprinter'} : "";
+my $printer = C4::Context->userenv ? C4::Context->userenv->{'branchprinter'} : '';
 my $overduecharges = (C4::Context->preference('finesMode') && C4::Context->preference('finesMode') ne 'off');
 my $HoldButtonConfirm = (C4::Context->preference('HoldButtonConfirm'));
 my $HoldButtonIgnore = (C4::Context->preference('HoldButtonIgnore'));
 my $HoldButtonPrintConfirm = (C4::Context->preference('HoldButtonPrintConfirm'));
-
 my $userenv_branch = C4::Context->userenv->{'branch'} || '';
-#
-# Some code to handle the error if there is no branch or printer setting.....
-#
-my $checkin_override_date;
-if (C4::Context->preference('AllowCheckInDateChange')) {
-    my $tempdate = $query->param('checkin_override_date');
-    $tempdate  ||= $query->cookie('checkin_override_date') || '';
-    if ($tempdate && $tempdate =~ C4::Dates->regexp('syspref')) {
-        $checkin_override_date = C4::Dates->new($tempdate);
-        $template->param( checkin_override_date => $tempdate);
-    }
-}
-
 
 # Set up the item stack ....
 my %returneditems;
@@ -224,12 +210,25 @@ my $barcode     = $query->param('barcode') // '';
 my $exemptfine  = $query->param('exemptfine');
 my $dropboxmode = $query->param('dropboxmode');
 my $dotransfer  = $query->param('dotransfer');
+my $checkin_override_date = $query->param('checkin_override_date');
 my $calendar    = C4::Calendar->new( branchcode => $userenv_branch );
 	#dropbox: get last open day (today - 1)
 my $today       = C4::Dates->new();
 my $today_iso   = $today->output('iso');
 my $dropboxdate = $calendar->addDate($today, -1);
 $barcode =~ s/^\s*|\s+//g;
+
+if ($ENV{HTTP_REFERER} =~ /$ENV{SCRIPT_NAME}/) { # get/post to self
+   if ($dropboxmode) { $checkin_override_date = $dropboxdate->output(); }
+   $session->param('circ_ci_exemptfine', $exemptfine);
+   $session->param('circ_ci_dropboxmode',$dropboxmode);
+   $session->param('circ_ci_backdate',   $checkin_override_date);
+}
+else { # initial page load
+   $exemptfine  = $session->param('circ_ci_exemptfine');
+   $dropboxmode = $session->param('circ_ci_dropboxmode');
+   $checkin_override_date = $session->param('circ_ci_backdate');
+}
 
 if ($dotransfer && ($notransfer==0)){
 	# An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
@@ -272,9 +271,11 @@ if ($barcode) {
 #
 # save the return
 #
+
     if ($checkin_override_date ) {
+       my $backdateObj = C4::Dates->new($checkin_override_date);
         ( $returned, $messages, $issueinformation, $borrower ) =
-        C4::Circulation::AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode, $checkin_override_date->output('iso'));
+        C4::Circulation::AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode, $backdateObj->output('iso'));
     } else {
         ( $returned, $messages, $issueinformation, $borrower ) =
         C4::Circulation::AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode);
@@ -708,8 +709,9 @@ $template->param(
     errmsgloop              => \@errmsgloop,
     exemptfine              => $exemptfine,
     dropboxmode             => $dropboxmode,
-    dropboxdate				=> $dropboxdate->output(),
- 	overduecharges          => $overduecharges,
+    checkin_override_date   => $dropboxmode? '' : $checkin_override_date,
+    dropboxdate				 => $dropboxdate->output(),
+ 	overduecharges           => $overduecharges,
     soundon                 => C4::Context->preference("SoundOn"),
     DHTMLcalendar_dateformat=> C4::Dates->DHTMLcalendar(),
     AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange'),
