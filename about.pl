@@ -45,10 +45,12 @@ if ($^O ne 'VMS') {
     $perl_path .= $Config{_exe} unless $perl_path =~ m/$Config{_exe}$/i;
 }
 my $perlVersion   = $];
-my $mysqlVersion  = `mysql -V`;
-my $apacheVersion = `httpd -v`;
-$apacheVersion = `httpd2 -v` unless $apacheVersion;
-$apacheVersion = (`/usr/sbin/apache2 -V`)[0] unless $apacheVersion;
+my $mysqlVersion  = '';
+my $apacheVersion = ''; # [-1] paths below: compiled from source
+my @spaths = ('mysql','/usr/local/mysql/bin/mysql');
+foreach(@spaths) { if (`which $_`) { $mysqlVersion = `$_ -V`; last } }
+@spaths = ('httpd','httpd2','/usr/sbin/apache2', '/usr/local/apache2/bin/httpd');
+foreach(@spaths) { if (`which $_`) { $apacheVersion = (`$_ -V`)[0]; last; } }
 my $zebraVersion = `zebraidx -V`;
 
 $template->param(
@@ -168,10 +170,15 @@ foreach my $component ( sort @component_names ) {
     );
 }
 
+use Data::Dumper;
 $template->param( components => \@components );
 $template->param( localtime => scalar localtime() );
-
-my @environment = map { {variable => $_, value => $ENV{$_}} } sort keys %ENV;
+my @environment = map {{ 
+   variable => $_, 
+   value    => ref($ENV{$_})
+      ? Dumper $ENV{$_}
+      : $ENV{$_}
+}} sort keys %ENV;
 $template->param( environment => \@environment);
 
 output_html_with_http_headers $query, $cookie, $template->output;
