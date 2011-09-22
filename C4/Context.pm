@@ -549,7 +549,7 @@ sub preference {
     # croak "Systempreference '$var' is not registered" if !defined $new_var;
     if (!defined $new_var) {
         carp "Systempreference '$var' is not registered";
-        return;
+        return undef;
     }
 
     # Otherwise write the variable to the DB
