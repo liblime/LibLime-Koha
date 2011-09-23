@@ -4696,6 +4696,24 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add session_defaults_id to sesstion defaults table and make it the primary key )\n";
 }
 
+$DBversion = '4.08.00.003';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    SetVersion ($DBversion);
+    $dbh->do("ALTER TABLE clubsAndServicesArchetypes CHANGE branchcode branchcode varchar(10) DEFAULT NULL COMMENT 'branch where archetype was created.'");
+    $dbh->do("ALTER TABLE labels_layouts CHANGE callnum_split callnum_split varchar(8)");
+    $dbh->do("ALTER TABLE tmp_holdsqueue CHANGE itemcallnumber itemcallnumber varchar(255) DEFAULT NULL");
+    $dbh->do(q{ALTER TABLE deletedborrowers CHANGE cardnumber cardnumber varchar(16) DEFAULT NULL});
+
+    $dbh->do(q|INSERT IGNORE INTO letter(module,code,name,title,content) VALUES(
+         'circulation',
+         'BILLING',
+         'Billing Notice',
+         'Notice of Unresolved Charges',
+         'Dear <<borrowers.firstname>> <<borrowers.surname>>,\r\n\r\nLibrary records show that the following charges have not been paid.  Please resolve these charges at the Borrower Service\'s Desk as soon as possible. If you have already contacted the library and resolved this matter, please disregard this notice.\r\n\r\nPlease log in to your library account to verify how much you owe.\r\n\r\n<<borrowers.last_reported_amount>>\r\n<<borrowers.last_reported_date>>\r\n*This price may not be exact. The charge will be based on the current price from distributors.\r\n\r\nPlease do not reply to this email message, it has been sent from an information only mailbox.\r\n\r\nThank you for your attention to this matter.')|);
+
+    print "Upgrade to $DBversion done ( sync schema with kohastructure, add BILLING notice )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

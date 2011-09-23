@@ -873,7 +873,7 @@ CREATE TABLE `deletedbiblioitems` (
 DROP TABLE IF EXISTS `deletedborrowers`;
 CREATE TABLE `deletedborrowers` (
   `borrowernumber` int(11) NOT NULL default 0,
-  `cardnumber` varchar(9) NOT NULL default '',
+  `cardnumber` varchar(16) DEFAULT NULL,
   `surname` mediumtext NOT NULL,
   `firstname` text,
   `title` mediumtext,
@@ -1304,7 +1304,7 @@ CREATE TABLE `labels_layouts` (
   `guidebox` int(1) default '0',
   `font` char(10) character set utf8 collate utf8_unicode_ci NOT NULL default 'TR',
   `font_size` int(4) NOT NULL default '10',
-  `callnum_split` int(1) default '0',
+  `callnum_split` varchar(8),
   `text_justify` char(1) character set utf8 collate utf8_unicode_ci NOT NULL default 'L',
   `format_string` varchar(210) NOT NULL default 'barcode',
   `break_rule_string` varchar(255) NOT NULL DEFAULT '',
@@ -2571,7 +2571,7 @@ CREATE TABLE IF NOT EXISTS clubsAndServicesArchetypes (
   caseData2Desc text,
   caseData3Desc text,
   caseRequireEmail tinyint(1) NOT NULL default '0',
-  branchcode varchar(4) default NULL COMMENT 'branch where archetype was created.',
+  branchcode varchar(10) default NULL COMMENT 'branch where archetype was created.',
   last_updated timestamp NOT NULL default CURRENT_TIMESTAMP,
   PRIMARY KEY  (casaId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -2768,7 +2768,7 @@ CREATE TABLE `tmp_holdsqueue` (
    `cardnumber` varchar(16) default NULL,
    `reservedate` datetime default NULL,
    `title` mediumtext,
-   `itemcallnumber` varchar(30) default NULL,
+   `itemcallnumber` varchar(255) default NULL,
    `holdingbranch` varchar(10) default NULL,
    `pickbranch` varchar(10) default NULL,
    `notes` text,
