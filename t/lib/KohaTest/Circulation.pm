@@ -23,7 +23,7 @@ sub methods : Test( 1 ) {
                       GetIssuingRule 
                       GetBranchBorrowerCircRule
                       AddReturn 
-                      MarkIssueReturned 
+                      _MarkIssueReturned
                       _FixOverduesOnReturn
                       _FixAccountForLostAndReturned
                       GetItemIssue 

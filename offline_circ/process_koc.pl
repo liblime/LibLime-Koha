@@ -126,9 +126,10 @@ if ($completedJobID) {
     my $i = 0;
     foreach  my $line (@input_lines)  {
         ## apparently, chomp isn't working?
-        $line =~ s/\s*$//;
-        $i++;
+        $line =~ s/\s*$//s;
+        next unless $line;
         my $command_line = parse_command_line($line);
+        next unless $command_line;
         # map command names in the file to subroutine names
         my %dispatch_table = (
             issue     => \&kocIssueItem,
@@ -140,9 +141,10 @@ if ($completedJobID) {
         if ( exists $dispatch_table{ $command_line->{'command'} } ) {
             $dispatch_table{ $command_line->{'command'} }->($command_line);
         } else {
-            warn "unknown command: '$command_line->{command}' not processed";
+            next;
         }
 
+        $i++;
         if ($runinbackground) {
             $job->progress($i);
         }
@@ -189,15 +191,14 @@ sub parse_header_line {
 sub parse_command_line {
     my $command_line = shift;
     chomp($command_line);
-
     my ( $timestamp, $command, @args ) = split( /\t/, $command_line );
     my ( $date,      $time,    $id )   = split( /\s/, $timestamp );
 
     my %command = (
-        date    => $date,
-        time    => $time,
+        'date'    => $date,
+        'time'    => $time,
         id      => $id,
-        command => $command,
+        'command' => $command,
     );
 
     # set the rest of the keys using a hash slice
@@ -223,7 +224,6 @@ returns: listref of column names.
 
 sub arguments_for_command {
     my $command = shift;
-
     # define the fields for this version of the file.
     my %format = (
         issue   => [qw( cardnumber barcode )],
@@ -319,11 +319,15 @@ sub kocReturnItem {
   #warn( Data::Dumper->Dump( [ $circ, $item ], [ qw( circ item ) ] ) );
   my $borrowernumber = _get_borrowernumber_from_barcode( $circ->{'barcode'} );
   if ( $borrowernumber ) {
+   C4::Circulation::AddReturn(
+      $circ->{barcode},
+      undef, #branch
+      undef, #exemptfine
+      undef, #dropbox,
+      $circ->{date}, # iso
+      undef, #tolost
+   );
   my $borrower = GetMember( $borrowernumber, 'borrowernumber' );
-    C4::Circulation::MarkIssueReturned( $borrowernumber,
-                                      $item->{'itemnumber'},
-                                      undef,
-                                      $circ->{'date'} );
   
   push( @output, { return => 1,
     title => $item->{ 'title' },
