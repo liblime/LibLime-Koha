@@ -81,6 +81,7 @@ if (nodename =="barcodes[]"){
    <div class="dialog message">This patron does not exist.</div>
 <!-- TMPL_ELSE -->
     <!-- TMPL_IF NAME="reregistration" --><div class="dialog message">Patron's account has been renewed until <!-- TMPL_VAR NAME="dateexpiry" --></div><!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
 
 <h3><!-- TMPL_UNLESS NAME="I" -->
    <!-- TMPL_VAR NAME="title" --> <!-- TMPL_VAR NAME="firstname" --> <!-- /TMPL_UNLESS --> <!-- TMPL_IF NAME="showinitials" --> <!-- TMPL_VAR NAME="initials" --> <!-- /TMPL_IF --> <!-- TMPL_VAR NAME="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)</h3>
@@ -107,7 +108,7 @@ if (nodename =="barcodes[]"){
      <!-- TMPL_UNLESS NAME="I" --><!-- TMPL_IF NAME="showothernames" --><!-- TMPL_IF NAME="othernames" -->&ldquo;<!-- TMPL_VAR NAME="othernames" -->&rdquo;<!-- /TMPL_IF --><!-- /TMPL_IF -->
 
 <p class="address"><!-- TMPL_VAR NAME="streetnumber" -->
-        <!--TMPL_IF NAME="roaddetails"-->
+        <!-- TMPL_IF NAME="roaddetails" -->
          <!-- TMPL_VAR NAME="roaddetails" -->,
         <!-- /TMPL_IF -->
         <!-- TMPL_VAR NAME="address" --><br />
@@ -134,13 +135,14 @@ if (nodename =="barcodes[]"){
 	<!-- TMPL_IF NAME="fax" --><li><span class="label">Fax: </span><!-- TMPL_VAR NAME="fax" --></li><!-- /TMPL_IF -->
     <!-- TMPL_UNLESS NAME="I"-->
         <!-- TMPL_IF Name="email"    --><li><span class="label">Email (home):</span><a href="mailto:<!-- TMPL_VAR NAME="email" -->"><!-- TMPL_VAR NAME="email" --></a></li><!-- /TMPL_IF -->
-        <!-- TMPL_IF Name="emailpro" --><li><span class="label">Email (work): </span><a href="mailto:<!-- TMPL_VAR NAME="emailpro" -->"><!-- TMPL_VAR NAME="emailpro" --></a></li><!--/TMPL_IF-->
+        <!-- TMPL_IF Name="emailpro" --><li><span class="label">Email (work): </span><a href="mailto:<!-- TMPL_VAR NAME="emailpro" -->"><!-- TMPL_VAR NAME="emailpro" --></a></li><!-- /TMPL_IF -->
     <!-- /TMPL_UNLESS -->
     <!-- TMPL_IF NAME="showinitials" -->
     <li><span class="label">Middle Initial(s): </span><!-- TMPL_VAR NAME="initials" --></li>
     <!-- /TMPL_IF -->
     <li><span class="label">Date of birth:</span><!-- TMPL_VAR NAME="dateofbirth" --></li>
-    <li><span class="label">Sex:</span><!-- TMPL_VAR NAME="sex" --></li><!-- /TMPL_UNLESS -->
+    <li><span class="label">Sex:</span><!-- TMPL_VAR NAME="sex" --></li>
+<!-- <!-- /TMPL_UNLESS --> -->
     <!-- TMPL_IF NAME="printethnicityline" -->
     <li><span class="label">Ethnicity:</span><!-- TMPL_VAR NAME="ethnicity" --></li>
     <li><span class="label">Ethnicity notes: </span><!-- TMPL_VAR NAME="ethnotes" --></li>
@@ -167,7 +169,7 @@ if (nodename =="barcodes[]"){
 </div>
 
 <!-- TMPL_IF NAME="lost_summary" -->
-<div class="rows" id="lost-summary" style="padding : .5em;">
+<div id="lost-summary">
     <ol>
         <!-- unless __last__ below intentionally duplicated, to prevent whitespace problems -->
         <!-- TMPL_LOOP NAME="lost_summary" -->
@@ -175,7 +177,7 @@ if (nodename =="barcodes[]"){
             <span class="label"><!-- TMPL_VAR NAME="description" -->:</span>
             <!-- TMPL_LOOP NAME="items" -->
             <!-- TMPL_IF NAME="itemnumber" -->
-            <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<TMPL_VAR NAME="itemnumber">"><!-- TMPL_VAR NAME="barcode" --></a><!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
+            <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a><!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
             <!-- TMPL_ELSE -->
             &lt;deleted item&gt;<!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
             <!-- /TMPL_IF -->
@@ -378,7 +380,7 @@ if (nodename =="barcodes[]"){
 
  <div id="patron-alternate-address" style="padding-top: 1em;">
     <h3>Alternate Address</h3>
-    <!-- TMPL_UNLESS NAME="I"--><!-- TMPL_UNLESS NAME="C"-->
+    <!-- TMPL_UNLESS NAME="I" --><!-- TMPL_UNLESS NAME="C" -->
     <div class="rows">  <ol><li><span class="label">Address: </span><!-- TMPL_VAR NAME="B_address" --></li>
       <li><span class="label">Address 2: </span><!-- TMPL_VAR NAME="B_address2" --></li>
       <li><span class="label">City, State: </span><!-- TMPL_VAR NAME="B_city" --></li>
