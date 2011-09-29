@@ -157,7 +157,7 @@ foreach ( $query->param ) {
 my $notransfer = 0;
 my $reservenumber = $query->param('reservenumber');
 if ($query->param('WT-itemNumber')){
-	updateWrongTransfer ($query->param('WT-itemNumber'),$query->param('WT-waitingAt'),$query->param('WT-From'));
+   updateWrongTransfer ($query->param('WT-itemNumber'),$query->param('WT-waitingAt'),$query->param('WT-From'));
 }
 if ( $query->param('resbarcode') ) {
     my $item           = $query->param('itemnumber');
@@ -213,7 +213,7 @@ my $dropboxmode = $query->param('dropboxmode');
 my $dotransfer  = $query->param('dotransfer');
 my $checkin_override_date = $query->param('checkin_override_date');
 my $calendar    = C4::Calendar->new( branchcode => $userenv_branch );
-	#dropbox: get last open day (today - 1)
+   #dropbox: get last open day (today - 1)
 my $today       = C4::Dates->new();
 my $today_iso   = $today->output('iso');
 my $dropboxdate = $calendar->addDate($today, -1);
@@ -232,19 +232,21 @@ else { # initial page load
 }
 
 if ($dotransfer && ($notransfer==0)){
-	# An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
-	my $transferitem = $query->param('transferitem');
-	my $tobranch     = $query->param('tobranch');
-	C4::Items::ModItemTransfer($transferitem, $userenv_branch, $tobranch, $userenv_branch);
+   # An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
+   my $transferitem = $query->param('transferitem');
+   my $tobranch     = $query->param('tobranch');
+   C4::Items::ModItemTransfer($transferitem, $userenv_branch, $tobranch, $userenv_branch);
 }
 elsif ($query->param('cancelTransfer')) {
-    C4::Items::ModItemTransfer($query->param('itemnumber'));
+   C4::Items::ModItemTransfer($query->param('itemnumber'));
 }
 
 if (C4::Context->preference('LinkLostItemsToPatron') 
 && $query->param('lost_item_id') 
-&& $query->param('unlinkFromAccount')) {
-   C4::LostItems::DeleteLostItem($query->param('lost_item_id'));
+&& $query->param('unlinkFromAccount')) {   
+   ## bad legacy data: multiple lost entries for same item and patron, so this isn't going to work
+   #C4::LostItems::DeleteLostItem($query->param('lost_item_id'));
+   C4::LostItems::DeleteLostItemByItemnumber($query->param('itemnumber'));
 }
 
 
@@ -350,24 +352,28 @@ if ( $messages->{'WasTransfered'} ) {
 }
 
 if ( $messages->{'NeedsTransfer'} ){
-	$template->param(
-		found          => 1,
-		needstransfer  => 1,
-		itemnumber     => $itemnumber,
-	);
+   $template->param(
+      found          => 1,
+      needstransfer  => 1,
+      itemnumber     => $itemnumber,
+   );
 }
 
-if ( $messages->{'Wrongbranch'} ){
-	$template->param(
-		wrongbranch => 1,
-      rightbranch => $messages->{Wrongbranch}->{Rightbranch},
-	);
-}
+## deprecated: allow checkin in Circulation::AddReturn and manual transfer back
+## to home branch.  Previously, this refused a return and caused an infinite
+## loop in the event the item was loaned to a different branch for reasons other
+## than checkout or holds
+#if ( $messages->{'Wrongbranch'} ){
+#   $template->param(
+#      wrongbranch => 1,
+#      rightbranch => $messages->{Wrongbranch}->{Rightbranch},
+#   );
+#}
 
 # case of wrong transfert, if the document wasn't transfered to the right library (according to branchtransfer (tobranch) BDD)
 
 if ( $messages->{'WrongTransfer'} and not $messages->{'WasTransfered'}) {
-	$template->param(
+   $template->param(
         WrongTransfer  => 1,
         TransferWaitingAt => $messages->{'WrongTransfer'},
         WrongTransferItem => $messages->{'WrongTransferItem'},
@@ -475,7 +481,7 @@ if ( $messages->{'ResFound'}) {
             gonenoaddress  => $borr->{'gonenoaddress'},
             barcode        => $barcode,
             reservenumber  => $reserve->{'reservenumber'},
-            destbranch	   => $reserve->{'branchcode'},
+            destbranch     => $reserve->{'branchcode'},
             borrowernumber => $reserve->{'borrowernumber'},
             itemnumber     => $reserve->{'itemnumber'},
             biblionumber   => $reserve->{'biblionumber'},
@@ -563,7 +569,7 @@ foreach my $code ( keys %$messages ) {
             C4::Dates->new($$issueinformation{issuedate},'iso')->output()
         );
    }
-		
+      
    else {
         die "Unknown error code $code";    # note we need all the (empty) elsif's above, or we die.
         # This forces the issue of staying in sync w/ Circulation.pm
@@ -714,7 +720,7 @@ $template->param(
     dropboxmode             => $dropboxmode,
     checkin_override_date   => $dropboxmode? '' : $checkin_override_date,
     dropboxdate				 => $dropboxdate->output(),
- 	overduecharges           => $overduecharges,
+  	 overduecharges           => $overduecharges,
     soundon                 => C4::Context->preference("SoundOn"),
     DHTMLcalendar_dateformat=> C4::Dates->DHTMLcalendar(),
     AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange'),

@@ -1605,30 +1605,30 @@ sub AddReturn {
     my $hbr = $item->{C4::Context->preference("HomeOrHoldingBranch")} || '';
         # item must be from items table -- issues table has branchcode and issuingbranch, 
         # not homebranch nor holdingbranch
-
     my $borrowernumber = $borrower->{'borrowernumber'} || undef;    # we don't know if we had a borrower or not
 
     # check if the book is in a permanent collection....
     # FIXME -- This 'PE' attribute is largely undocumented.  afaict, there's no user interface that reflects this functionality.
     if ( $hbr ) {
-        my $branches = GetBranches();    # a potentially expensive call for a non-feature.
+    	  my $branches = GetBranches();    # a potentially expensive call for a non-feature.
         $branches->{$hbr}->{PE} and $messages->{'IsPermanent'} = $hbr;
     }
 
     # if indy branches and returning to different branch, refuse the return
-    if (($hbr ne $branch) && C4::Context->preference("IndependantBranches")){
-        $messages->{'Wrongbranch'} = {
-            Wrongbranch => $branch,
-            Rightbranch => $hbr,
-        };
-        $doreturn = 0 unless $$item{itemlost};
-        # bailing out here - in this case, current desired behavior
-        # is to act as if no return ever happened at all.
-        # FIXME - even in an indy branches situation, there should
-        # still be an option for the library to accept the item
-        # and transfer it to its owning library.
-        return ( $doreturn, $messages, $issue, $borrower ) unless $$item{itemlost};
-    }
+    ## FIXME - even in an indy branches situation, there should
+    ## still be an option for the library to accept the item
+    ## and transfer it to its owning library.
+	 ## Fixed and deprecated in circ/returns.pl -hQ
+    #if (($hbr ne $branch) && C4::Context->preference("IndependantBranches")){
+    #    $messages->{'Wrongbranch'} = {
+    #        Wrongbranch => $branch,
+    #        Rightbranch => $hbr,
+    #    };
+    #    $doreturn = 0 unless $$item{itemlost};
+    # 	bailing out here - in this case, current desired behavior
+    # 	is to act as if no return ever happened at all.
+    # 	return ( $doreturn, $messages, $issue, $borrower ) unless $$item{itemlost};
+    #}
 
     if ( $item->{'wthdrawn'} ) { # book has been cancelled
         $messages->{'wthdrawn'} = 1;
