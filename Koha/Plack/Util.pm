@@ -19,6 +19,7 @@ sub GetCanonicalHostname {
 
 sub IsStaff {
     my $hostname = GetCanonicalHostname(shift);
+    return 1 if $ENV{KOHA_STAFF};
     return $hostname =~ /-staff/;
 }
 
