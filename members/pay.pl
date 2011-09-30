@@ -314,8 +314,8 @@ sub writeoff {
     $sth->execute( $accountnum, $borrowernumber );
     $sth->finish;
     
-    $sth = $dbh->prepare("select max(accountno) from accountlines");
-    $sth->execute;
+    $sth = $dbh->prepare("select max(accountno) from accountlines where borrowernumber=?");
+    $sth->execute($borrowernumber);
     my $account = $sth->fetchrow_hashref;
     $sth->finish;
     $account->{'max(accountno)'}++;
