@@ -712,6 +712,7 @@ sub ModMember {
     my %hashborrowerfields = (map {$_=>1} @columns);
     $query = "UPDATE borrowers SET \n";
     my @parameters;  
+    my $execute_success;
     
     # test to know if you must update or not the borrower password
     if (exists $data{password}) {
@@ -740,13 +741,16 @@ sub ModMember {
         }
     }
     (@badkeys) and warn scalar(@badkeys) . " Illegal key(s) passed to ModMember: " . join(',',@badkeys);
-    $query =~ s/, $//;
-    $query .= " WHERE borrowernumber=?";
-    push @parameters, $data{'borrowernumber'};
-    $debug and print STDERR "$query (executed w/ arg: $data{'borrowernumber'})";
-    $sth = $dbh->prepare($query);
-    my $execute_success = $sth->execute(@parameters);
-    $sth->finish;
+    if (@parameters) {
+      $query =~ s/, $//;
+      $query .= " WHERE borrowernumber=?";
+      warn "QUERY: $query";
+      push @parameters, $data{'borrowernumber'};
+      $debug and print STDERR "$query (executed w/ arg: $data{'borrowernumber'})";
+      $sth = $dbh->prepare($query);
+      $execute_success = $sth->execute(@parameters);
+      $sth->finish;
+    }
 
 # ok if its an adult (type) it may have borrowers that depend on it as a guarantor
 # so when we update information for an adult we should check for guarantees and update the relevant part
