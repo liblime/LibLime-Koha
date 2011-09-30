@@ -36,7 +36,7 @@ use URI::Escape qw(uri_escape);
 my $input = new CGI;
 my $quicksearch = $input->param('quicksearch');
 my $startfrom = $input->param('startfrom')||1;
-my $resultsperpage = $input->param('resultsperpage')||C4::Context->preference("PatronsPerPage")||20;
+my $resultsperpage = C4::Context->preference("PatronsPerPage")|| $input->param('resultsperpage') || 20;
 
 my ($template, $loggedinuser, $cookie);
 if($quicksearch){
@@ -192,7 +192,6 @@ if ( $input->param('advanced_patron_search') ) {
 else {
     my $type = (length($member) == 1) ? 'simple' : 'advanced';
     my $startfrom = $input->param('startfrom') // 1;
-    my $resultsperpage = $input->param('resultsperpage') // 20;
     my $offset = ($startfrom-1) * $resultsperpage;
     my $limits
         = {
