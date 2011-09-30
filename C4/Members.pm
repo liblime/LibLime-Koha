@@ -1298,26 +1298,6 @@ sub GetBorNotifyAcctRecord {
     return ( $total, \@acctlines, $numlines );
 }
 
-sub GetMemberLostItems
-{
-   my %g   = @_;
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare('
-      SELECT * FROM lost_items
-       WHERE borrowernumber = ?
-    ORDER BY date_lost DESC');
-   $sth->execute($g{borrowernumber});
-   my @all = ();
-   while(my $row = $sth->fetchrow_hashref()) { 
-      next if ($g{only_claimsreturned} && !$$row{claims_returned});
-      if ($g{formatdate}) {
-         $$row{date_lost} = C4::Dates::format_date($$row{date_lost});
-      }
-      push @all, $row;
-   }
-   return \@all;
-}
-
 sub GetLostStats {
     my ( $borrowernumber, $hide_old ) = @_;
     my $dbh = C4::Context->dbh;
