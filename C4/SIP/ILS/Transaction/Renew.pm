@@ -43,6 +43,8 @@ sub do_renew_for ($$) {
 	} else {
 		$self->screen_msg(($self->screen_msg || '') . " " . $renewerror);
 		$self->renewal_ok(0);
+                $self->ok(0);
+                return $self;
 	}
     $! and warn "do_renew_for error: $!";
 	$self->ok(1) unless $!;
