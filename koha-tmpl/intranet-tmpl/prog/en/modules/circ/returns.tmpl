@@ -35,9 +35,11 @@ function Dopop(link) {
 			if (this.checked == true) {
 				$("#barcode").addClass("alert");
 				$("#dropboxmode").show();
+            document.cookie = 'dropboxmode=dropboxmode; path=/';
 			} else {
 				$("#barcode").removeClass("alert");
 				$("#dropboxmode").hide();
+            document.cookie = 'dropboxmode=; path=/';
 			}
 			$("#barcode").focus();
 		});
@@ -689,13 +691,11 @@ function HaltReturns() {
 			<!-- TMPL_ELSE -->
 			<input name="barcode" id="barcode" size="14" class="focus"/>
 			<!-- /TMPL_IF -->
-            <input id="barcode_submit" type="submit" class="submit" value="Submit" onclick="
-            setOverrideDate();"/>
+            <input id="barcode_submit" type="submit" class="submit" value="Submit"/>
             <script>
             $('barcode').keypress(function(e) {
                // if the key pressed is the enter key
                if (e.which == 13) {
-                  setOverrideDate();
                   document.myf.submit();
                   return;
                }
@@ -760,7 +760,7 @@ function HaltReturns() {
                         <script>
                         var odate = document.myf.f_checkin_override_date.value;
                         if (odate != '') {
-                           document.write('<input type=button value="Clear Date" onclick="clearOverrideDate()">');
+                           document.write('<input type=button value="Clear Date" onclick="$(\'#f_checkin_override_date\').val(\'\');">');
                         }
                         </script>
                         </label>
@@ -770,30 +770,6 @@ function HaltReturns() {
             </fieldset>
         </div>
     </form>
-
-   <script>
-   function getCookie(cname) {
-      var i,x,y,ARRcookies = document.cookie.split(';');
-      for(i=0;i<ARRcookies.length;i++) {
-         x=ARRcookies[i].substr(0,ARRcookies[i].indexOf('='));
-         y=ARRcookies[i].substr(ARRcookies[i].indexOf('=')+1);
-         x=x.replace(/^\s+|\s+$/g,'');
-         if(x==cname) {
-            return unescapce(y);
-         }
-      }
-   }
-   function clearOverrideDate() {
-      document.myf.f_checkin_override_date.value='';
-      document.cookie = 'checkin_override_date=; path=/';
-   }
-   function setOverrideDate() {
-      var odate = document.myf.f_checkin_override_date.value;
-      if (odate != '') {
-         document.cookie = 'checkin_override_date='+odate+'; path=/';
-      }
-   }
-   </script>
 </div>
 
 <!-- TMPL_IF Name="returned" -->
