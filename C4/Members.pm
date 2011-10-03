@@ -268,8 +268,9 @@ sub SearchMember {
 
     $query .= " ORDER BY $orderby ";
     $query .= sprintf(' LIMIT %d,%d',
-                      $limits->{offset}//0,
-                      $limits->{limit}//C4::Context->preference('PatronsPerPage'));
+                      $limits->{offset} //0,
+                      $limits->{limit} //C4::Context->preference('PatronsPerPage'))
+    if $limits->{limit};
 
     $data = $dbh->selectall_arrayref($query, {Slice => {}}, @bind);
     my ($row_count) = $dbh->selectrow_array('SELECT FOUND_ROWS()');
