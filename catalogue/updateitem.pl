@@ -64,6 +64,7 @@ if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
 } elsif ($damaged ne $item_data_hashref->{'damaged'}) {
     $item_changes->{'damaged'} = $damaged;
     $cancel_reserves = 1 if (!C4::Context->preference('AllowHoldsOnDamagedItems'));
+    C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber) if $damaged;
 } elsif ($otherstatus ne ($item_data_hashref->{'otherstatus'} // '')) {
     $item_changes->{'otherstatus'} = $otherstatus;
     if (!$otherstatus) {
@@ -102,7 +103,9 @@ if ($cancel_reserves) {
 
 # If the item is being made lost, charge the patron the lost item charge and
 # create a lost item record.  also, if cron is not running, calculate overdues
+
 my $crval = C4::Context->preference('ClaimsReturnedValue');
+C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber) if $itemlost;
 if (($issue || $lostitem) && $itemlost) {  
    ## dupecheck is performed in the function
    my $id = $$lostitem{id} || C4::LostItems::CreateLostItem(

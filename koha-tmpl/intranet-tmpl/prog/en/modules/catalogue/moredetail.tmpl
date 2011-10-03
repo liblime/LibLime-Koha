@@ -313,9 +313,9 @@ function damagedHasHolds(f,biblionumber,itemnumber) {
       f.submitdamaged.disabled      = false;
       f.submitdamaged.style.display = '';
    }
-   var v  = f.damaged.options[f.damaged.selectedIndex].value;
+   var v  = parseInt(f.damaged.options[f.damaged.selectedIndex].value);
    var el = document.getElementById('damagedmsg_'+itemnumber);
-   if (v != 1) { 
+   if ((v != 1) || (p=='1')) { 
       f.submitdamaged.readonly      = false;
       f.submitdamaged.disabled      = false;
       f.submitdamaged.style.display = '';
@@ -327,18 +327,23 @@ function damagedHasHolds(f,biblionumber,itemnumber) {
    f.submitdamaged.disabled = true;
    f.submitdamaged.style.display = 'none';
    $.getJSON('itemholds.pl',{'biblionumber':biblionumber,'itemnumber':itemnumber},function(data) {
+      var modTxt = 0;
       if(data.hasholds) {
-         f.submitdamaged.value = 'Cancel Hold(s) and Set Status';
+         modTxt = 1;
          f.nukeHolds.value     = 1;
          el.style.background   = '#ffffcc';
          el.innerHTML = '<strong class=error>This item has holds.</strong> '
          +'Setting this item to <strong>Damaged</strong> cancels current item-level holds.';
-         if (data.onlyiteminbib) {
-            f.onlyiteminbib.value = 1;
-            el.innerHTML += '<strong class=error>This is the only item in this '
-            +'bibliographic record.</strong>  Setting this item to '
-            +'<strong>Damaged</strong> also cancels all title-level holds.';
-         }
+      }
+      if (data.onlyiteminbib) {
+         modTxt = 1;
+         f.onlyiteminbib.value = 1;
+         el.innerHTML += '<strong class=error>This is the only item in this '
+         +'bibliographic record.</strong>  Setting this item to '
+         +'<strong>Damaged</strong> also cancels all title-level holds.';
+      }
+      if (modTxt) {
+         f.submitdamaged.value = 'Cancel Hold(s) and Set Status';
       }
    });
    f.submitdamaged.readonly      = false;
