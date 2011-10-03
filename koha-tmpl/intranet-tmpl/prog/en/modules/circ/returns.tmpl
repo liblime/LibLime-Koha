@@ -326,7 +326,7 @@ function HaltReturns() {
             <!-- TMPL_IF NAME="debarred" --><li class="error">Patron is RESTRICTED</li><!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="gonenoaddress" --><li class="error">Patron's address is in doubt</li><!-- /TMPL_IF --></ul>
 		    <!-- TMPL_IF name="transfertodo" -->
-            <h4><strong>Transfer to:</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
+            <h4><strong>Transfer to:</strong> <!-- TMPL_VAR Name="destbranchname" --> (<!-- TMPL_VAR Name="destbranchcode" -->)</h4>
 		    <!-- TMPL_ELSE -->
 		        <h4><strong>Hold at</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
             <!-- /TMPL_IF -->
@@ -433,7 +433,7 @@ function HaltReturns() {
                         <!-- TMPL_IF NAME="gonenoaddress" --><li class="error">Patron's address is in doubt</li><!-- /TMPL_IF -->
                     </ul>
 		<!-- TMPL_IF name="transfertodo" -->
-            <h4><strong>Transfer to:</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
+            <h4><strong>Transfer to:</strong> <!-- TMPL_VAR Name="destbranchname" --> (<!-- TMPL_VAR Name="destbranchcode" -->)</h4>
 		<!-- TMPL_ELSE -->
 		<h4><strong>Hold at</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
         <!-- /TMPL_IF -->
@@ -597,7 +597,7 @@ function HaltReturns() {
 <!-- TMPL_IF NAME="gonenoaddress" --><li class="error">Patron's address is in doubt</li><!-- /TMPL_IF -->
         </ul>
         <!-- TMPL_IF name="transfertodo" -->
-            <h4><strong>Transfer to:</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
+            <h4><strong>Transfer to:</strong> <!-- TMPL_VAR Name="destbranchname" --> (<!-- TMPL_VAR Name="destbranchcode" -->)</h4>
 		<!-- TMPL_ELSE -->
 		<h4><strong>Hold at</strong> <!-- TMPL_VAR Name="destbranchname" --></h4>
         <!-- /TMPL_IF -->

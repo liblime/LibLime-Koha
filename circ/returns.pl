@@ -460,6 +460,7 @@ if ( $messages->{'ResFound'}) {
             found          => 1,
             currentbranch  => $branches->{$userenv_branch}->{'branchname'},
             destbranchname => $branches->{ $reserve->{'branchcode'} }->{'branchname'},
+            destbranchcode => $branches->{ $reserve->{'branchcode'} }->{'branchcode'},
             name           => $borr->{'surname'} . ", " . $borr->{'title'} . " " . $borr->{'firstname'},
             borfirstname   => $borr->{'firstname'},
             borsurname     => $borr->{'surname'},
