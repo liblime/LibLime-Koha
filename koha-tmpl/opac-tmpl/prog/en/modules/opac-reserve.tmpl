@@ -228,6 +228,11 @@
             <!-- TMPL_IF NAME="bad_data" -->
               <div class="dialog alert">ERROR: Internal error: incomplete hold request.</div>
             <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="hold_already_exists" -->
+              <div class="dialog alert">
+                You already have a hold on this title so no additional hold was placed.  Please contact your library if you require assistance.
+              </div>
+            <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="none_available" -->
               <div class="dialog alert">
                 <strong>Sorry</strong>, none of these items can be placed on hold.
