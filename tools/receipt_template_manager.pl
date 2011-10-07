@@ -170,6 +170,19 @@ sub add_form {
           );
     }
 
+    ## Add utility variables
+    push @{$field_selection},
+        (
+            {
+                value => '',
+                text => '---UTILITY VARIABLES---',
+            },
+            {
+                value => 'CURRENT_DATE',
+                text => 'Current Date',
+            },
+        );
+
     if ( $module eq 'holds' ) {
         push @{$field_selection},
           add_fields(

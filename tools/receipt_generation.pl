@@ -132,6 +132,11 @@ if ($borrowernumber) {
     $content = _replace( $content, $borrower_data );
 }
 
+## Fill in non-database variables
+my $data;
+$data->{'CURRENT_DATE'} = C4::Dates->new()->output();
+$content = _replace( $content, $data );
+
 $template->param( output => $content );
 
 output_html_with_http_headers $cgi, $cookie, $template->output;
