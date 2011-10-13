@@ -4729,11 +4729,12 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = '4.09.00.003';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do(q{ALTER TABLE session_defaults DROP FOREIGN KEY `session_defaults_ibfk_1`,
-               DROP PRIMARY KEY,
-               ADD COLUMN session_defaults_id int(11) PRIMARY KEY AUTO_INCREMENT FIRST,
-               ADD CONSTRAINT `session_defaults_ibfk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
-              });
+    $dbh->do('ALTER TABLE session_defaults DROP FOREIGN KEY `session_defaults_ibfk_1`');
+    $dbh->do('ALTER TABLE session_defaults DROP PRIMARY KEY');
+    $dbh->do('ALTER TABLE session_defaults ADD COLUMN session_defaults_id int(11) 
+      PRIMARY KEY AUTO_INCREMENT FIRST');
+    $dbh->do('ALTER TABLE session_defaults ADD CONSTRAINT `session_defaults_ibfk_1` 
+      FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON UPDATE CASCADE ON DELETE CASCADE');
 
     SetVersion ($DBversion);
     print "Upgrade to $DBversion done ( Add session_defaults_id to sesstion defaults table and make it the primary key )\n";
