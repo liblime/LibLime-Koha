@@ -318,7 +318,7 @@ END_SQL
       my $amount_due = sprintf "%.2f",$patron_hits->{amountdue};
       $verbose and warn "Patron: $patron_hits->{borrowernumber} Amount: $amount_due\n";
 
-      my $sth2 = $dbh->prepare("SELECT date,description,amountoutstanding
+      my $sth2 = $dbh->prepare("SELECT date,description,amountoutstanding,itemnumber
                                 FROM accountlines
                                 WHERE borrowernumber = ?
                                   AND amountoutstanding > 0.0");
@@ -326,7 +326,16 @@ END_SQL
       my $outstanding_items = "";
       while (my @rows = $sth2->fetchrow_array()) {
         $rows[2] = sprintf "%.2f",$rows[2];
-        $outstanding_items .= join("\t",@rows) . "\n";
+        my @modified_row = ();
+        if (defined($rows[3])) {
+          my $item_details = C4::Biblio::GetBiblioFromItemNumber($rows[3]);
+          push @rows, $item_details->{title};
+          @modified_row = (@rows)[0,4,2];
+        }
+        else {
+          @modified_row = (@rows)[0,1,2];
+        }
+        $outstanding_items .= join("\t",@modified_row) . "\n";
       }
       $letter = parse_letter(
          {   letter         => $letter,
