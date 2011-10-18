@@ -167,10 +167,16 @@ elsif ($itemlost && !$lostitem && !$issue && ($itemlost==1)) {
    print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nolc_noco#item$itemnumber");
    exit;    
 }
-elsif ($lostitem && $itemlost==0) {
-## If the item is being marked found, refund the patron the lost item charge,
-## and delete the lost item record if syspref MarkLostItemsReturned is ON
-    C4::Circulation::FixAccountForLostAndReturned($itemnumber,$issue,$lostitem->{id});
+elsif ($lostitem && !$itemlost) {
+	## If the item is being marked found, refund the patron the lost item charge,
+	## and delete the lost item record if syspref MarkLostItemsReturned is ON
+	if ($issue) {
+		C4::Circulation::FixAccountForLostAndReturned($itemnumber,$issue,$lostitem->{id});
+	}
+	else { ## bad legacy data: item not currently checked out but linked as lost to patron
+		## remove from patron's Lost Items
+		C4::LostItems::DeleteLostItemByItemnumber($itemnumber);
+   }
 }
 
 ModItem($item_changes, $biblionumber, $itemnumber) if $item_changes;
