@@ -426,8 +426,7 @@ sub transferbook {
     ## huh? -hQ
     # find reserves.....
     # That'll save a database query.
-    my ( $resfound, $resrec ) =
-      CheckReserves( $itemnumber );
+    my ( $resfound, $resrec ) = C4::Reserves::CheckReserves( $itemnumber );
     if ( $resfound and not $ignoreRs ) {
         $resrec->{'ResFound'} = $resfound;
 
