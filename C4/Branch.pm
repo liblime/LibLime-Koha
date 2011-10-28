@@ -617,6 +617,7 @@ sub GetBranchByIp {
     $collection->add_range($client_cidr, $ip, 0);
     
     foreach my $branch (values %{GetBranches()}) {
+        next if !$branch->{branchip};
         my $library_cidr = $collection->new_list();
         map {$collection->add_range($library_cidr, $_, 0)} split(/\n/, $branch->{branchip});
         $collection->process_intersection();
