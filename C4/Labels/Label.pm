@@ -461,7 +461,7 @@ sub draw_label_text {
                 $field_data =~ s/\)/\\\)/g;
             }
             else {
-               $field_data = $$field{desc} || $$field{code};
+               $field_data = $$field{desc} || $$field{code} unless $field->{data} eq undef; ##fixes bug with unpopulated item fields where the desc/code is rendered in the labels.
             }
 
             eval{$Text::Wrap::columns = $self->{'text_wrap_cols'};};
