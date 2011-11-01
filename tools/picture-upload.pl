@@ -46,8 +46,8 @@ use C4::Auth;
 use C4::Output;
 use C4::Members;
 
-my $input  = new CGI;
-my ($template, $loggedinuser, $cookie) = get_template_and_user({
+our $input  = new CGI;
+our($template, $loggedinuser, $cookie) = get_template_and_user({
    template_name  => 'tools/picture-upload.tmpl',
    query          => $input,
    type           => 'intranet',
@@ -56,14 +56,14 @@ my ($template, $loggedinuser, $cookie) = get_template_and_user({
    debug          => 0,
 });
 
-my $filetype            = $input->param('filetype');
-my $cardnumber          = $input->param('cardnumber');
-my $uploadfilename      = $input->param('uploadfile');
-my $uploadfile          = $input->upload('uploadfile');
-my $borrowernumber      = $input->param('borrowernumber');
-my $op                  = $input->param('op');
+our $filetype            = $input->param('filetype');
+our $cardnumber          = $input->param('cardnumber');
+our $uploadfilename      = $input->param('uploadfile');
+our $uploadfile          = $input->upload('uploadfile');
+our $borrowernumber      = $input->param('borrowernumber');
+our $op                  = $input->param('op');
+our(%errors,@counts,%filerrors,@filerrors,$filename);
 
-my(%errors,@counts,%filerrors,@filerrors,$filename);
 if ($op eq 'FindBorrower') {
    my $borrowers = C4::Members::SearchMember($cardnumber) // [];
    $template->param(
@@ -73,7 +73,7 @@ if ($op eq 'FindBorrower') {
 elsif (($op eq 'Upload') && $uploadfile) {
    # Case is important in these operational values as the 
    # template must use case to be visually pleasing!
-   _process_upload();
+   _process_upload_patron_image();
 } 
 elsif (($op eq 'Upload') && !$uploadfile) {
    $template->param(
@@ -103,7 +103,7 @@ output_html_with_http_headers $input, $cookie, $template->output;
 exit;
 
 ##########################################################################
-sub _process_upload
+sub _process_upload_patron_image
 {
    my $dirname      = File::Temp::tempdir( CLEANUP => 1);
    my $filesuffix   = $1 if $uploadfilename =~ m/(\..+)$/i;

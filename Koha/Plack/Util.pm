@@ -17,4 +17,20 @@ sub GetCanonicalHostname {
     return $hostname;
 }
 
+sub IsStaff {
+    my $hostname = GetCanonicalHostname(shift);
+    return 1 if $ENV{KOHA_STAFF};
+    return $hostname =~ /-staff/;
+}
+
+sub RedirectRootAndOpac {
+    my $env = shift;
+    my $is_staff = shift // \&IsStaff;
+
+    return 302 if ($is_staff->($env) && s{^/$}{/cgi-bin/koha/mainpage.pl});
+    return 302 if (!$is_staff->($env) && s{^/$}{/cgi-bin/koha/opac-main.pl});
+    if (!$is_staff->($env)) { s{^/cgi-bin/koha/}{/cgi-bin/koha/opac/}}
+    return;
+}
+
 1;
