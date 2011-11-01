@@ -174,12 +174,29 @@ sub CleanupQueue
    $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber IN(
       SELECT itemnumber FROM issues)');
 
-   ## recent catalogue change: remove itemstatus.holdsfilled=0
+   ## recent catalog change: remove itemstatus.holdsfilled=0
    ## actually ignore holdsallowed
    $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber IN (
       SELECT items.itemnumber FROM items,itemstatus
        WHERE items.otherstatus = itemstatus.statuscode
          AND itemstatus.holdsfilled = 0)');
+
+   ## recent catalog change: remove damaged and lost items
+   $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber IN (
+      SELECT itemnumber FROM items WHERE damaged=1)');
+   $sth = $dbh->prepare("SELECT t.itemnumber FROM items,
+      authorised_values av, tmp_holdsqueue t
+      WHERE (items.itemlost <> '' 
+         AND items.itemlost IS NOT NULL
+         AND items.itemlost <> 0)
+      AND items.itemlost = av.authorised_value
+      AND av.category = 'LOST'
+      AND items.itemnumber = t.itemnumber");
+   $sth->execute();
+   while(my($itemnumber) = $sth->fetchrow_array) {
+      $dbh->do('DELETE FROM tmp_holdsqueue
+         WHERE itemnumber = ?',undef,$itemnumber);
+   }
    
    ## race condition: pickup branch changed after previous run of
    ## build_holds_queue.pl.  Force sync data.
@@ -380,6 +397,8 @@ sub GetItemForBibPrefill
              items.barcode,
              items.holdingbranch,
              items.notforloan,
+             items.damaged,
+             items.itemlost,
              itemstatus.holdsfilled
         FROM items
         JOIN biblio USING         (biblionumber)
@@ -429,6 +448,8 @@ sub GetItemForQueue
              items.barcode,
              items.holdingbranch,
              items.notforloan,
+             items.damaged,
+             items.itemlost,
              itemstatus.holdsfilled
         FROM items
         JOIN biblio USING (biblionumber)
@@ -467,9 +488,14 @@ sub _itemfillbib
    ## theoretically, the above check should sync with the issues table,
    ## so skip that check.
 
+   ## damaged or lost
+   return if $$item{itemlost};
+   return if $$item{damaged};
+
    ## if the item can't be used to place a hold, it can't be used to
    ## fill a hold.
    return unless IsAvailableForItemLevelRequest($$item{itemnumber});
+
 
    ## notforloan: even if you can place a hold on a notforloan item,
    ## there's no real item avaiable to fill the hold
