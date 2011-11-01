@@ -1513,6 +1513,7 @@ patron who last borrowed the book.
 =cut
 
 sub AddReturn {
+    ## dropbox is for backwards compatibility: use returndate instead
     my ($barcode, $branch, $exemptfine, $dropbox, $returndate, $tolost) = @_;
     my $today         = C4::Dates->new();
     $returndate     ||= $today->output('iso');
@@ -1697,7 +1698,6 @@ sub AddReturn {
         _FixAccountOverdues(
             $issue, {
                 exemptfine    => $exemptfine, 
-                dropbox       => $dropbox, 
                 returndate    => $returndate,
                 branch        => $branch,
                 today         => $today,
@@ -1979,20 +1979,11 @@ sub _FixAccountOverdues {
     my $item     = C4::Items::GetItem($$issue{itemnumber});
     my $borrower = C4::Members::GetMember($$issue{borrowernumber});
     my ($accounttype, $amount, $msg, $ismax) = ('F', $$row{amount}, undef, 0);
-    if ($flags->{dropbox} || $flags->{returndate}) {
-        my $branchcode = _GetCircControlBranch($item, $borrower,$$issue{branchcode});
-        my $cal        = C4::Calendar->new(branchcode => $branchcode);
-        my $enddateObj;
-        if ($$flags{returndateObj}) {
-            $enddateObj = $$flags{returndateObj};
-        }
-        else {
-            $enddateObj = ($flags->{dropbox})
-            ? $cal->addDate(C4::Dates->new(), -2) # why doesn't -1 work?
-            : C4::Dates->new($flags->{returndate}, 'iso');
-        }
+    if ($flags->{returndate}) {
+        my $cal        = C4::Calendar->new(branchcode => $$flags{branch});
+        my $enddateObj = $$flags{returndateObj};
         ($amount, undef, undef, undef, $ismax)
-            = C4::Overdues::CalcFine($item, $borrower->{categorycode}, $branchcode,
+            = C4::Overdues::CalcFine($item, $borrower->{categorycode}, $$flags{branch},
                                      undef, undef, $start_date, $enddateObj);
         $msg = "adjusted backdate $verbiage item $$issue{itemnumber} $checkindate";
     }
