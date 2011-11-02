@@ -32,7 +32,7 @@ use POSIX ();
 use JSON qw(from_json);
 use Koha;
 
-$VERSION = '4.07.00.001';
+$VERSION = '4.08.00.002';
 
 die "Version mismatch: $VERSION > $Koha::VERSION" if ($VERSION gt $Koha::VERSION);
 

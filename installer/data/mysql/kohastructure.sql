@@ -2720,11 +2720,12 @@ CREATE TABLE import_profile_subfield_actions (
 
 DROP TABLE IF EXISTS `session_defaults`;
 CREATE TABLE `session_defaults` (
+  `session_defaults_id` int(11) NOT NULL auto_increment,
   `branchcode` varchar(10) NOT NULL,
   `name` varchar(32) NOT NULL,
   `key` varchar(32) NOT NULL,
   `value` text,
-  PRIMARY KEY  (`branchcode`,`name`),
+  PRIMARY KEY  (`session_defaults_id`),
   CONSTRAINT `session_defaults_ibfk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
