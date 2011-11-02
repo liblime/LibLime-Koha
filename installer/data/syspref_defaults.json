@@ -1,4 +1,10 @@
 {
+   "SplitStatistics" : {
+      "explanation" : "Anonymize statistics by splitting each entry into two, one for patron info and one for item info",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
    "SoundOn" : {
       "explanation" : "Emit sounds for circulation actions",
       "options" : null,
