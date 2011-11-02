@@ -920,7 +920,7 @@
    "NextLibraryHoldsQueueWeight" : {
       "explanation" : "Specify a list of library location codes separated by commas -- the list of codes will be traversed and weighted with first values given higher weight for holds fulfillment -- alternatively, if RandomizeHoldsQueueWeight is set, the list will be used in order. This preference overrides both StaticHoldsQueueWeight and RandomizeHoldsQueueWeight.",
       "options" : null,
-      "value" : "0",
+      "value" : "",
       "type" : "TextArea"
    },
    "KohaAdminEmailAddress" : {
@@ -1724,7 +1724,7 @@
    "RandomizeHoldsQueueWeight" : {
       "explanation" : "if ON, the holds queue in circulation will be randomized, either based on all location codes, or by the location codes specified in StaticHoldsQueueWeight",
       "options" : null,
-      "value" : "0",
+      "value" : "",
       "type" : "YesNo"
    },
    "SyndeticsTOC" : {
@@ -1886,7 +1886,7 @@
    "StaticHoldsQueueWeight" : {
       "explanation" : "Specify a list of library location codes separated by commas -- the list of codes will be traversed and weighted with first values given higher weight for holds fulfillment -- alternatively, if RandomizeHoldsQueueWeight is set, the list will be randomly selective",
       "options" : null,
-      "value" : "0",
+      "value" : "",
       "type" : "Integer"
    },
    "BiblioDefaultView" : {
