@@ -72,27 +72,40 @@ statistics table in the Koha database.
 =cut
 
 #'
-sub UpdateStats {
 
-    #module to insert stats data into stats table
+sub UpdateStats {
     my (
-        $branch,         $type,
+        $branch,   $type,
         $amount,   $other,          $itemnum,
         $itemtype, $borrowernumber, $accountno
-      )
-      = @_;
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare(
-        "INSERT INTO statistics
+        )
+        = @_;
+
+    my @bind;
+    my $query = q{
+        INSERT INTO statistics
         (datetime, branch, type, value,
-         other, itemnumber, itemtype, borrowernumber, proccode)
-         VALUES (now(),?,?,?,?,?,?,?,?)"
-    );
-    $sth->execute(
-        $branch,    $type,    $amount,
-        $other,     $itemnum, $itemtype, $borrowernumber,
-		$accountno
-    );
+        other, itemnumber, itemtype, borrowernumber, proccode)
+        VALUES (now(),?,?,?,?,?,?,?,?)
+        };
+
+    if (C4::Context->preference('SplitStatistics')) {
+        # Add two entries, one with a null patron, and
+        # the other with a null item
+        $query .= ',(now(),?,?,?,?,?,?,?,?)';
+
+        @bind = ($branch, $type."_item", $amount, $other, $itemnum,
+        $itemtype, undef, undef,
+        $branch, $type."_patron", $amount, $other, undef,
+        undef, $borrowernumber, $accountno);
+    }
+    else {
+        @bind = ($branch, $type, $amount, $other, $itemnum,
+        $itemtype, $borrowernumber, $accountno);
+    }
+    C4::Context->dbh->do($query, undef, @bind);
+
+    return undef;
 }
 
 sub UpdateReserveCancelledStats {

@@ -1,4 +1,22 @@
 {
+   "KeepPreviousBorrowerInterval" : {
+      "explanation" : "Number of days that must pass before the previous borrower is expunged from old issues if that item has not since been checked out.",
+      "options" : null,
+      "value" : "30",
+      "type" : "Integer"
+   },
+   "KeepPreviousBorrower" : {
+      "explanation" : "Retain most recent borrower info for each item regardless of anonymization policy.",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
+   "SplitStatistics" : {
+      "explanation" : "Anonymize statistics by splitting each entry into two, one for patron info and one for item info",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
    "SoundOn" : {
       "explanation" : "Emit sounds for circulation actions",
       "options" : null,

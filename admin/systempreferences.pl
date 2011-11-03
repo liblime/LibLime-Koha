@@ -211,6 +211,9 @@ $tabsysprefs{StaffShowCancelledHolds}        = "Circulation";
 $tabsysprefs{StaffShowExpiredHolds}          = "Circulation";
 $tabsysprefs{AllowPatronsToCancelReadyHolds} = "Circulation";
 $tabsysprefs{SIPItemDisplay}                 = "Circulation";
+$tabsysprefs{KeepPreviousBorrower}           = "Circulation";
+$tabsysprefs{KeepPreviousBorrowerInterval}   = "Circulation";
+$tabsysprefs{SplitStatistics}                = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}            = "StaffClient";
