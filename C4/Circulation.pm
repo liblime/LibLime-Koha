@@ -3139,6 +3139,21 @@ sub AnonymiseIssueHistory {
     return C4::Context->dbh->do($query, undef, @bind);
 }
 
+sub AnonymisePreviousBorrowers {
+    my $interval = shift;
+
+    return undef unless C4::Context->preference('AllowReadingHistoryAnonymizing');
+    
+    my $query = q{
+        UPDATE borrowers b
+          JOIN old_issues oi ON (b.borrowernumber = oi.borrowernumber)
+        SET oi.borrowernumber = NULL
+        WHERE b.disable_reading_history = 1
+          AND returndate < NOW() - INTERVAL ? DAY
+    };
+    C4::Context->dbh->do($query, undef, $interval);
+}
+
 =head2 SendCirculationAlert
 
 Send out a C<check-in> or C<checkout> alert using the messaging system.
