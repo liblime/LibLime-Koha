@@ -1204,6 +1204,9 @@ sub AddIssue {
    ($charge,$itemtype) = _chargeToAccount($$item{itemnumber},$$borrower{borrowernumber},$issuedate);
    $item->{'charge'} = $charge;
    
+   # Possibly anonymize
+   AnonymisePreviousBorrower($item);
+
    # Record the fact that this book was issued
    &UpdateStats(
          $currBranch,
@@ -1242,6 +1245,22 @@ sub AddIssue {
     return $datedue;    # not necessarily the same as when it came in!
 }
 
+sub AnonymisePreviousBorrower {
+    my ($item) = @_;
+
+    my $previous = GetOldIssue($item->{itemnumber});
+    return if !$previous->{borrowernumber};
+
+    my $borrower = C4::Members::GetMember($previous->{borrowernumber});
+    return undef if !$borrower;
+
+    if (   C4::Context->preference('AllowReadingHistoryAnonymizing')
+        && $borrower->{disable_reading_history})
+    {
+        AnonymiseIssueHistory(
+            undef, $borrower->{borrowernumber}, $item->{itemnumber});
+    }
+}
 
 =head2 GetIssuingRule
 
@@ -1634,7 +1653,10 @@ sub AddReturn {
         $messages->{'wthdrawn'} = 1;
         $doreturn = 0;
     }
-    if ( C4::Context->preference('AllowReadingHistoryAnonymizing') && $borrower->{'disable_reading_history'} ) {
+    if (   C4::Context->preference('AllowReadingHistoryAnonymizing')
+        && !C4::Context->preference('KeepPreviousBorrower')
+        && $borrower->{'disable_reading_history'} )
+    {
         AnonymiseIssueHistory( '', $borrower->{'borrowernumber'} );
     }
 
@@ -1800,9 +1822,6 @@ sub AddReturn {
         } else {
             $messages->{'NeedsTransfer'} = 1;   # TODO: instead of 1, specify branchcode that the transfer SHOULD go to, $item->{homebranch}
         }
-    }
-    if ( $borrower->{'disable_reading_history'} ) {
-        AnonymiseIssueHistory( '', $borrower->{'borrowernumber'} );
     }
     return ( $doreturn, $messages, $issue, $borrower );
 }
@@ -2580,13 +2599,12 @@ Returns reference to an array of hashes
 
 =cut
 
-sub GetOldIssue
-{
+sub GetOldIssue {
    my $itemnumber = shift;
    my $dbh = C4::Context->dbh;
    my $sth = $dbh->prepare('SELECT * FROM old_issues
       WHERE itemnumber = ?
-   ORDER BY returndate DESC
+      ORDER BY returndate DESC, timestamp DESC
       LIMIT 1');
    $sth->execute($itemnumber);
    return $sth->fetchrow_hashref();
@@ -3095,19 +3113,30 @@ return the number of affected rows.
 sub AnonymiseIssueHistory {
     my $date           = shift;
     my $borrowernumber = shift;
-    my $dbh            = C4::Context->dbh;
+    my $itemnumber     = shift;
     
-    unless ( $date || $borrowernumber ) { return 0; } ## For safety
+    return 0 unless ( $date || $borrowernumber ); ## For safety
 
-    my $query = "
+    my @bind;
+    my $query = q{
         UPDATE old_issues
         SET    borrowernumber = NULL
         WHERE  borrowernumber IS NOT NULL
-    ";
-    $query .= " AND returndate < '$date' " if ( $date );
-    $query .= " AND borrowernumber = '$borrowernumber' " if defined $borrowernumber;
-    my $rows_affected = $dbh->do($query);
-    return $rows_affected;
+    };
+    if ($date) {
+        $query .= ' AND returndate < ? ';
+        push @bind, $date;
+    }
+    if ($borrowernumber) {
+        $query .= ' AND borrowernumber = ? ';
+        push @bind, $borrowernumber;
+    }
+    if ($itemnumber) {
+        $query .= ' AND itemnumber = ? ';
+        push @bind, $itemnumber;
+    }
+
+    return C4::Context->dbh->do($query, undef, @bind);
 }
 
 =head2 SendCirculationAlert

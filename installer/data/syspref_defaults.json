@@ -1,4 +1,10 @@
 {
+   "KeepPreviousBorrower" : {
+      "explanation" : "Retain most recent borrower info for each item regardless of anonymization policy.",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
    "SplitStatistics" : {
       "explanation" : "Anonymize statistics by splitting each entry into two, one for patron info and one for item info",
       "options" : null,
