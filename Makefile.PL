@@ -241,10 +241,10 @@ my $target_map = {
   './acqui'                     => 'INTRANET_CGI_DIR',
   './admin'                     => 'INTRANET_CGI_DIR',
   './authorities'               => 'INTRANET_CGI_DIR',
-  './C4'                        => 'PERL_MODULE_DIR',
-  './C4/SIP/t'                  => 'NONE',
-  './C4/SIP/koha_test'          => 'NONE',
-  './C4/tests'                  => 'NONE',
+  './lib/C4'                    => 'PERL_MODULE_DIR',
+  './lib/C4/SIP/t'              => 'NONE',
+  './lib/C4/SIP/koha_test'      => 'NONE',
+  './lib/C4/tests'              => 'NONE',
   './catalogue'                 => 'INTRANET_CGI_DIR',
   './cataloguing'               => 'INTRANET_CGI_DIR',
   './changelanguage.pl'         => 'INTRANET_CGI_DIR',
@@ -261,7 +261,6 @@ my $target_map = {
   './errors'                    => {target => 'INTRANET_CGI_DIR'},
   './koha-tmpl/intranet-tmpl'   => {target => 'INTRANET_TMPL_DIR', trimdir => -1},
   './koha-tmpl/opac-tmpl'       => {target => 'OPAC_TMPL_DIR', trimdir => -1},
-  './kohaversion.pl'            => 'INTRANET_CGI_DIR', 
   './labels'                    => 'INTRANET_CGI_DIR',
   './mainpage.pl'               => 'INTRANET_CGI_DIR',
   './Makefile.PL'               => 'NONE',
@@ -278,22 +277,22 @@ my $target_map = {
   './reports'                   => 'INTRANET_CGI_DIR',
   './reserve'                   => 'INTRANET_CGI_DIR',
   './reviews'                   => 'INTRANET_CGI_DIR',
-  './rewrite-config.PL'         => 'NONE',
+  './installer/rewrite-config.PL' => 'NONE',
   './reviews'                   => 'INTRANET_CGI_DIR',
   './serials'                   => 'INTRANET_CGI_DIR',
-  './skel'                      => 'NONE',
-  './skel/var/log/koha'         => { target => 'LOG_DIR', trimdir => -1 },
-  './skel/var/run/koha/zebradb' => { target => 'ZEBRA_RUN_DIR', trimdir => -1 },
-  './skel/var/lock/koha/zebradb/authorities' => { target => 'ZEBRA_LOCK_DIR', trimdir => 6 },
-  './skel/var/lib/koha/zebradb/authorities/key'  => { target => 'ZEBRA_DATA_DIR', trimdir => 6 },
-  './skel/var/lib/koha/zebradb/authorities/register'  => { target => 'ZEBRA_DATA_DIR', trimdir => 6 },
-  './skel/var/lib/koha/zebradb/authorities/shadow'  => { target => 'ZEBRA_DATA_DIR', trimdir => 6 },
-  './skel/var/lib/koha/zebradb/authorities/tmp'  => { target => 'ZEBRA_DATA_DIR', trimdir => 6 },
-  './skel/var/lock/koha/zebradb/biblios' => { target => 'ZEBRA_LOCK_DIR', trimdir => 6 },
-  './skel/var/lib/koha/zebradb/biblios/key'  => { target => 'ZEBRA_DATA_DIR', trimdir => 6 },
-  './skel/var/lib/koha/zebradb/biblios/register'  => { target => 'ZEBRA_DATA_DIR', trimdir => 6 },
-  './skel/var/lib/koha/zebradb/biblios/shadow'  => { target => 'ZEBRA_DATA_DIR', trimdir => 6 },
-  './skel/var/lib/koha/zebradb/biblios/tmp'  => { target => 'ZEBRA_DATA_DIR', trimdir => 6 },
+  './installer/skel'                      => 'NONE',
+  './installer/skel/var/log/koha'         => { target => 'LOG_DIR', trimdir => -1 },
+  './installer/skel/var/run/koha/zebradb' => { target => 'ZEBRA_RUN_DIR', trimdir => -1 },
+  './installer/skel/var/lock/koha/zebradb/authorities' => { target => 'ZEBRA_LOCK_DIR', trimdir => 7 },
+  './installer/skel/var/lib/koha/zebradb/authorities/key'  => { target => 'ZEBRA_DATA_DIR', trimdir => 7 },
+  './installer/skel/var/lib/koha/zebradb/authorities/register'  => { target => 'ZEBRA_DATA_DIR', trimdir => 7 },
+  './installer/skel/var/lib/koha/zebradb/authorities/shadow'  => { target => 'ZEBRA_DATA_DIR', trimdir => 7 },
+  './installer/skel/var/lib/koha/zebradb/authorities/tmp'  => { target => 'ZEBRA_DATA_DIR', trimdir => 7 },
+  './installer/skel/var/lock/koha/zebradb/biblios' => { target => 'ZEBRA_LOCK_DIR', trimdir => 7 },
+  './installer/skel/var/lib/koha/zebradb/biblios/key'  => { target => 'ZEBRA_DATA_DIR', trimdir => 7 },
+  './installer/skel/var/lib/koha/zebradb/biblios/register'  => { target => 'ZEBRA_DATA_DIR', trimdir => 7 },
+  './installer/skel/var/lib/koha/zebradb/biblios/shadow'  => { target => 'ZEBRA_DATA_DIR', trimdir => 7 },
+  './installer/skel/var/lib/koha/zebradb/biblios/tmp'  => { target => 'ZEBRA_DATA_DIR', trimdir => 7 },
   './sms'                       => 'INTRANET_CGI_DIR',
   './suggestion'                => 'INTRANET_CGI_DIR',
   './svc'                       => 'INTRANET_CGI_DIR',
@@ -474,18 +473,14 @@ my $file_map = {};
 get_file_map($target_map, $dirtree, $file_map, $config{'INSTALL_ZEBRA'} eq "yes" ? 1: 0);
 
 my $pl_files = {
-      'rewrite-config.PL' => [
+      'installer/rewrite-config.PL' => [
          'blib/KOHA_CONF_DIR/koha-conf.xml',
-         'blib/KOHA_CONF_DIR/koha-httpd.conf',
          'blib/MISC_DIR/koha-install-log'
          ],
-	  'fix-perl-path.PL' => [	# this script ensures the correct shebang line for the platform installed on...
-		 'blib'
-		 ]
 };
 
 if ($config{'INSTALL_ZEBRA'} eq "yes") {
-    push @{ $pl_files->{'rewrite-config.PL'} }, (
+    push @{ $pl_files->{'installer/rewrite-config.PL'} }, (
         'blib/ZEBRA_CONF_DIR/etc/passwd',
         'blib/ZEBRA_CONF_DIR/zebra-biblios.cfg',
         'blib/ZEBRA_CONF_DIR/zebra-authorities.cfg',
@@ -495,13 +490,13 @@ if ($config{'INSTALL_ZEBRA'} eq "yes") {
         'blib/ZEBRA_CONF_DIR/retrieval-info-auth-grs1.xml',
         'blib/ZEBRA_CONF_DIR/retrieval-info-auth-dom.xml',
     );
-    push @{ $pl_files->{'rewrite-config.PL'} }, (
+    push @{ $pl_files->{'installer/rewrite-config.PL'} }, (
         'blib/SCRIPT_DIR/koha-zebra-ctl.sh',
         'blib/SCRIPT_DIR/koha-pazpar2-ctl.sh',
         'blib/SCRIPT_DIR/koha-zebraqueue-ctl.sh',
     );
     if ($config{'INSTALL_PAZPAR2'} eq 'yes') {
-        push @{ $pl_files->{'rewrite-config.PL'} }, (
+        push @{ $pl_files->{'installer/rewrite-config.PL'} }, (
             'blib/PAZPAR2_CONF_DIR/koha-biblios.xml',
             'blib/PAZPAR2_CONF_DIR/pazpar2.xml'
         );
@@ -512,8 +507,8 @@ if ($config{'INSTALL_ZEBRA'} eq "yes") {
 }
 
 if ($config{'INSTALL_MODE'} ne "dev") {
-    push @{ $pl_files->{'rewrite-config.PL'} }, (
-        'blib/PERL_MODULE_DIR/C4/Context.pm',
+    push @{ $pl_files->{'installer/rewrite-config.PL'} }, (
+        'blib/PERL_MODULE_DIR/lib/C4/Context.pm',
         'blib/SCRIPT_NONDEV_DIR/kohalib.pl'
     );
 }
@@ -531,7 +526,7 @@ my %test_suite_override_dirs = (
 WriteMakefile(
               NAME         => 'koha',
               #VERSION     => strftime('2.9.%Y%m%d%H',gmtime),
-              VERSION_FROM => 'kohaversion.pl',
+              #VERSION_FROM => 'kohaversion.pl',
               ABSTRACT     => 'Award-winning integrated library system (ILS) and Web OPAC',
               AUTHOR       => 'Koha Developers <koha-devel@nongnu.org>',
               NO_META      => 1,
@@ -1291,19 +1286,19 @@ sub get_target_directories {
         $dirmap{'ZEBRA_RUN_DIR'} =  File::Spec->catdir(@basedir, $package, 'var', 'run', 'zebradb');
     } elsif ($mode eq 'dev') {
         my $curdir = File::Spec->rel2abs(File::Spec->curdir());
-        $dirmap{'INTRANET_CGI_DIR'} = File::Spec->catdir($curdir);
+        $dirmap{'INTRANET_CGI_DIR'} = File::Spec->catdir($curdir, 'cgi');
         $skipdirs{'INTRANET_CGI_DIR'} = 1;
         $dirmap{'INTRANET_TMPL_DIR'} = File::Spec->catdir($curdir, 'koha-tmpl', 'intranet-tmpl');
         $skipdirs{'INTRANET_TMPL_DIR'} = 1;
         $dirmap{'INTRANET_WWW_DIR'} = File::Spec->catdir($curdir, 'koha-tmpl');
         $skipdirs{'INTRANET_WWW_DIR'} = 1;
-        $dirmap{'OPAC_CGI_DIR'} = File::Spec->catdir($curdir);
+        $dirmap{'OPAC_CGI_DIR'} = File::Spec->catdir($curdir, 'cgi');
         $skipdirs{'OPAC_CGI_DIR'} = 1;
         $dirmap{'OPAC_TMPL_DIR'} = File::Spec->catdir($curdir, 'koha-tmpl', 'opac-tmpl');
         $skipdirs{'OPAC_TMPL_DIR'} = 1;
         $dirmap{'OPAC_WWW_DIR'} = File::Spec->catdir($curdir, 'koha-tmpl');
         $skipdirs{'OPAC_WWW_DIR'} = 1;
-        $dirmap{'PERL_MODULE_DIR'} = File::Spec->catdir($curdir);
+        $dirmap{'PERL_MODULE_DIR'} = File::Spec->catdir($curdir, 'lib');
         $skipdirs{'PERL_MODULE_DIR'} = 1;
         $dirmap{'KOHA_CONF_DIR'} = File::Spec->catdir(@basedir, $package, 'etc');
         $dirmap{'ZEBRA_CONF_DIR'} = File::Spec->catdir(@basedir, $package, 'etc', 'zebradb');

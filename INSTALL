@@ -57,10 +57,6 @@ Default installation instructions:
   system)
 9. Browse to http://servername:8080/ and answer the questions
 
-OR if you want to install all dependencies from CPAN and are root, you can
-replace steps 1-3 with "perl install-CPAN.pl" but this is non-standard and
-may not be safe.  Nevertheless, it's pretty cool when it works.
-
 The defaults will install Koha to places that follow relevant standards,
 such as the File Hierarchy Standard.  If you want to install Koha to a
 different directory like /opt/koha, then replace step 1 with (for example):
@@ -70,7 +66,7 @@ different directory like /opt/koha, then replace step 1 with (for example):
 You can change most of the defaults in a similar way, such as DB_HOST.
 For full instructions on how to override the default settings, run
 
-$ perldoc rewrite-config.PL
+$ perldoc installer/rewrite-config.PL
 
 
 UPGRADE

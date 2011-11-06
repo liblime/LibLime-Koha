@@ -192,22 +192,14 @@ $context = undef;        # Initially, no context is set
 
 
 =item KOHAVERSION
-    returns the kohaversion stored in kohaversion.pl file
+    returns the kohaversion
 
 =cut
 
 sub KOHAVERSION {
-    my $cgidir = C4::Context->intranetdir;
-
-    # Apparently the GIT code does not run out of a CGI-BIN subdirectory
-    # but distribution code does?  (Stan, 1jan08)
-    if(-d $cgidir . "/cgi-bin"){
-        my $cgidir .= "/cgi-bin";
-    }
-    
-    do $cgidir."/kohaversion.pl" || die "NO $cgidir/kohaversion.pl";
-    return kohaversion();
+    return $C4::Context::VERSION;
 }
+
 =item read_config_file
 
 =over 4
