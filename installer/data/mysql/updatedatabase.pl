@@ -12,8 +12,6 @@
 
 # NOTE:  If you do something more than once in here, make it table driven.
 
-# NOTE: Please keep the version in kohaversion.pl up-to-date!
-
 use strict;
 use warnings;
 
