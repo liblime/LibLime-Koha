@@ -483,9 +483,9 @@ with this method.
 
 sub _seed_preference_defaults_cache {
     my $defaults_filename
-        = C4::Context->config('intranetdir') . '/installer/data/syspref_defaults.json';
+        = C4::Context->config('basedir') . '/installer/data/syspref_defaults.json';
 
-    my $json = File::Slurp::read_file($defaults_filename, err_mode => 'carp') // '{}';
+    my $json = File::Slurp::read_file($defaults_filename);
 
     return from_json($json);
 }

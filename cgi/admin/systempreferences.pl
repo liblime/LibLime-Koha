@@ -463,6 +463,12 @@ $tabsysprefs{'OAI-PMH:Subset'}    = "OAI-PMH";
 
 # ILS-DI variables
 $tabsysprefs{'ILS-DI'} = "ILS-DI";
+
+#################################################
+# Load any uninitialized sysprefs
+my $syspref_defaults = C4::Context::_seed_preference_defaults_cache();
+C4::Context->preference($_) for (keys %$syspref_defaults);
+
 sub StringSearch {
     my ( $searchstring, $type, $tabsysprefs ) = @_;
     my $dbh = C4::Context->dbh;
