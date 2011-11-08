@@ -394,9 +394,9 @@ my %config_defaults = (
   'DB_USER'           => 'kohaadmin',
   'DB_PASS'           => 'katikoan',
   'INSTALL_ZEBRA'     => 'yes',
-  'INSTALL_SRU'       => 'yes',
+  'INSTALL_SRU'       => 'no',
   'INSTALL_PAZPAR2'   => 'no',
-  'AUTH_INDEX_MODE'   => 'grs1',
+  'AUTH_INDEX_MODE'   => 'dom',
   'ZEBRA_MARC_FORMAT' => 'marc21',
   'ZEBRA_LANGUAGE'    => 'en',
   'ZEBRA_USER'        => 'kohauser',
@@ -437,7 +437,7 @@ elsif ( $^O eq 'cygwin' ) {
 	$config_defaults{'INSTALL_BASE'} = 'c:/progra~1/koha';	# Use 8.3 names to be safe...
 }
 else {
-	$config_defaults{'INSTALL_MODE'} = 'standard';
+	$config_defaults{'INSTALL_MODE'} = 'dev';
 	$config_defaults{'INSTALL_BASE'} = '/usr/share/koha';
 }
 
@@ -1286,6 +1286,7 @@ sub get_target_directories {
         $dirmap{'ZEBRA_RUN_DIR'} =  File::Spec->catdir(@basedir, $package, 'var', 'run', 'zebradb');
     } elsif ($mode eq 'dev') {
         my $curdir = File::Spec->rel2abs(File::Spec->curdir());
+        $dirmap{'KOHA_BASE_DIR'} = File::Spec->catdir($curdir);
         $dirmap{'INTRANET_CGI_DIR'} = File::Spec->catdir($curdir, 'cgi');
         $skipdirs{'INTRANET_CGI_DIR'} = 1;
         $dirmap{'INTRANET_TMPL_DIR'} = File::Spec->catdir($curdir, 'koha-tmpl', 'intranet-tmpl');

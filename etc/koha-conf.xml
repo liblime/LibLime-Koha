@@ -183,6 +183,7 @@ __PAZPAR2_TOGGLE_XML_POST__
  <biblioservershadow>1</biblioservershadow>
  <authorityserver>authorities</authorityserver>
  <authorityservershadow>1</authorityservershadow>
+ <basedir>__KOHA_BASE_DIR__</basedir>
  <intranetdir>__INTRANET_CGI_DIR__</intranetdir>
  <opacdir>__OPAC_CGI_DIR__/opac</opacdir>
  <opachtdocs>__OPAC_TMPL_DIR__</opachtdocs>
