@@ -223,6 +223,7 @@ sub ImportFromFH {
                 next LINE;
             }
             $borrower{'borrowernumber'} = $borrowernumber;
+            delete $borrower{password} if ($borrower{password} ~~ '');
             for my $col (keys %borrower) {
                 # use values from extant patron unless our csv file includes this column or we provided a default.
                 # FIXME : You cannot update a field with a  perl-evaluated false value using the defaults.
