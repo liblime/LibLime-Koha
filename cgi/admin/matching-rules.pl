@@ -52,12 +52,12 @@ my $display_list = 0;
 if ($op eq "edit_matching_rule") {
     edit_matching_rule_form($template, $matcher_id);
 } elsif ($op eq "edit_matching_rule_confirmed") {
-    add_update_matching_rule($template, $matcher_id);
+    add_update_matching_rule($template, $matcher_id, $input);
     $display_list = 1;
 } elsif ($op eq "add_matching_rule") {
     add_matching_rule_form($template);
 } elsif ($op eq "add_matching_rule_confirmed") {
-    add_update_matching_rule($template, $matcher_id);
+    add_update_matching_rule($template, $matcher_id, $input);
     $display_list = 1;
 } elsif ($op eq "delete_matching_rule") {
     delete_matching_rule_form($template, $matcher_id);
@@ -91,6 +91,7 @@ sub add_matching_rule_form {
 sub add_update_matching_rule {
     my $template = shift;
     my $matcher_id = shift;
+    my $input = shift;
 
     # do parsing
     my $matcher = C4::Matcher->new('biblio', 1000); # FIXME biblio only for now
