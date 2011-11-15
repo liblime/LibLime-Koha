@@ -589,7 +589,7 @@ function HaltReturns() {
 		      <!-- TMPL_IF name="HoldButtonPrintConfirm" -->
 			      <!-- TMPL_IF NAME="UseReceiptTemplates" -->
 				      <!-- TMPL_IF NAME="UseReceiptTemplates_TransitHold" -->
-			                <input type="submit" value="Print Slip, Transfer and Confirm" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=hold_found&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->'); this.form.submit();" />
+			                <input type="submit" value="Print Slip, Transfer and Confirm" class="print" onclick="Dopop('/cgi-bin/koha/tools/receipt_generation.pl?action=transit_hold&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->'); this.form.submit();" />
 				      <!-- /TMPL_IF -->
 			      <!-- TMPL_ELSE -->
 		                <input type="submit" value="Print slip, Transfer, and Confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;reservenumber=<!-- TMPL_VAR NAME="reservenumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->&amp;op=slip'); this.form.submit();" />
