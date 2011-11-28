@@ -9,7 +9,7 @@ use Koha;
 use C4::Context;
 use CGI;
 
-my $query = new CGI;
+our $query = CGI->new();
 
 # find the script that called the online help using the CGI referer()
 our $refer = $query->referer();
@@ -20,10 +20,11 @@ if ($referurl) {
     $refer = $query->param('url');
 }
 
+$refer =~ s{/\.\.}{}g; # untaint
 $refer =~ /.*koha\/(.*)\.pl.*/;
 my $from = "modules/help/$1.tmpl";
 
-my $template = gethelptemplate( $from, "intranet" );
+our $template = gethelptemplate( $from, "intranet" );
 
 # my $template
 output_html_with_http_headers $query, "", $template->output;
