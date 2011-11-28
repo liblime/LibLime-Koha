@@ -19,6 +19,7 @@ if ($referurl) {
     $refer = $query->param('url');
 }
 
+$refer =~ s{/\.\.}{}g; # untaint
 $refer =~ /.*koha\/(.*)\.pl.*/;
 my $from = "modules/help/$1.tmpl";
 

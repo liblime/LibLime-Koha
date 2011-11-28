@@ -109,6 +109,7 @@ sub get_template_and_user {
     my $in       = shift;
     my $query    = $in->{'query'};
     my $language = $query->cookie('KohaOpacLanguage');
+    $language =~ s/[^\p{IsAlnum}\-_]//g; # untaint
     my $path =
       C4::Context->config('intrahtdocs') . "/prog/"
       . ( $language ? $language : "en" );
