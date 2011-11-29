@@ -566,6 +566,7 @@ WriteMakefile(
                             'Date::Manip'                      => 5.44,
                             'Digest::MD5'                      => 2.36,
                             'Digest::SHA'                      => 5.43,
+                            'Digest::SHA1'                     => 2.13,
                             'Email::Date'                      => 1.103,
                             'File::Temp'                       => 0.16,
                             'File::Slurp'                      => 9999.13,
