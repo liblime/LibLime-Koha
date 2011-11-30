@@ -117,6 +117,9 @@ function HaltReturns() {
                               <input type=hidden name="lost_item_id"   value="<TMPL_VAR NAME="lost_item_id">">
                               <input type=hidden name="itemnumber"     value="<TMPL_VAR NAME="itemnumber">">
                               <input type=hidden name="borrowernumber" value="<TMPL_VAR NAME="borrowernumber">">
+                              <input type="hidden" name="exemptfine" value="<TMPL_VAR NAME="exemptfine">"/>
+                              <input type="hidden" name="dropboxmode" value="<TMPL_VAR NAME="dropboxmode">"/>
+                              <input type="hidden" name="checkin_override_date" value="<TMPL_VAR NAME="checkin_override_date">"/>
                               <input type="button" value="Remove from patron's Lost Items" onclick="
                                 if(document.foundf) {
                                     document.foundf.lost_item_id.value       = '<TMPL_VAR NAME="lost_item_id">';
@@ -217,6 +220,9 @@ function HaltReturns() {
             <input type=hidden name="lostborrowernumber" value="">
             <input type=hidden name="unlinkFromAccount"  value="0">
             <input type=hidden name="itemnumber"     value="<TMPL_VAR NAME="itemnumber">">
+            <input type="hidden" name="exemptfine" value="<TMPL_VAR NAME="exemptfine">"/>
+            <input type="hidden" name="dropboxmode" value="<TMPL_VAR NAME="dropboxmode">"/>
+            <input type="hidden" name="checkin_override_date" value="<TMPL_VAR NAME="checkin_override_date">"/>
             <TMPL_LOOP NAME="inputloop">
             <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
             <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" />
@@ -354,6 +360,7 @@ function HaltReturns() {
                 <input type="hidden" name="diffBranch" value="<!-- TMPL_VAR Name="destbranch" -->" />
                 <input type="hidden" name="exemptfine" value="<!-- TMPL_VAR Name="exemptfine" -->" />
                 <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
+                <input type="hidden" name="checkin_override_date" value="<TMPL_VAR NAME="checkin_override_date">"/>
                 <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
                 <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
                 <input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">
@@ -486,6 +493,9 @@ function HaltReturns() {
         <input type=hidden name="tobranch"   value="<TMPL_VAR NAME="homebranch">">
         <input type=hidden name="transferitem" value="<TMPL_VAR NAME="itemnumber">">
         <input type=hidden name="itemnumber" value="<TMPL_VAR NAME="itemnumber">">
+        <input type="hidden" name="exemptfine" value="<TMPL_VAR NAME="exemptfine">"/>
+        <input type="hidden" name="dropboxmode" value="<TMPL_VAR NAME="dropboxmode">"/>
+        <input type="hidden" name="checkin_override_date" value="<TMPL_VAR NAME="checkin_override_date">"/>
 	    <!-- TMPL_LOOP Name="inputloop" -->     
        <input type="hidden" name="od-<!-- TMPL_VAR NAME="counter" -->" value="<!-- TMPL_VAR NAME="overdue" -->" />
 	    <input type="hidden" name="ri-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="barcode" -->" /> 
@@ -635,6 +645,7 @@ function HaltReturns() {
             <input type="hidden" name="diffBranch" value="<!-- TMPL_VAR Name="destbranch" -->" />
             <input type="hidden" name="exemptfine" value="<!-- TMPL_VAR Name="exemptfine" -->" />
             <input type="hidden" name="dropboxmode" value="<!-- TMPL_VAR Name="dropboxmode" -->" />
+            <input type="hidden" name="checkin_override_date" value="<!-- TMPL_VAR Name="checkin_override_date" -->" />
             <input type=hidden name="fromqueue" value="<!-- TMPL_VAR NAME="fromqueue" -->">
             <input type=hidden name="queue_branchlimit" value="<!-- TMPL_VAR NAME="queue_branchlimit" -->">
             <input type=hidden name="queue_currPage" value="<TMPL_VAR NAME="queue_currPage">">

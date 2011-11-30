@@ -211,6 +211,7 @@ my $barcode     = $query->param('barcode') // '';
 my $exemptfine  = $query->param('exemptfine');
 my $dropboxmode = $query->param('dropboxmode');
 my $dotransfer  = $query->param('dotransfer');
+my $canceltransfer = $query->param('cancelTransfer');
 my $checkin_override_date = $query->param('checkin_override_date');
 my $calendar    = C4::Calendar->new( branchcode => $userenv_branch );
 	#dropbox: get last open day (today - 1)
@@ -219,8 +220,10 @@ my $today_iso   = $today->output('iso');
 my $dropboxdate = $calendar->addDate($today, -1);
 $barcode =~ s/^\s*|\s+//g;
 
-if ($ENV{HTTP_REFERER} =~ /$ENV{SCRIPT_NAME}/) { # get/post to self
-   if ($dropboxmode) { $checkin_override_date = $dropboxdate->output(); }
+if ($ENV{HTTP_REFERER} =~ /$ENV{SCRIPT_NAME}/ && !$dotransfer && !$canceltransfer) {
+   if ($dropboxmode) {
+       $checkin_override_date = $dropboxdate->output();
+   }
    $session->param('circ_ci_exemptfine', $exemptfine);
    $session->param('circ_ci_dropboxmode',$dropboxmode);
    $session->param('circ_ci_backdate',   $checkin_override_date);
