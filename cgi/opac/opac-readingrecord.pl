@@ -71,32 +71,36 @@ else {
     $limit = 50;
 }
 
-my ( $count, $issues ) = GetAllIssues( $borrowernumber, $order2, $limit );
-
 my $borr = GetMemberDetails( $borrowernumber );
-my @bordat;
-$bordat[0] = $borr;
-$template->param( BORROWER_INFO => \@bordat );
 
+my ($count, $issues);
 my @loop_reading;
 
-for ( my $i = 0 ; $i < $count ; $i++ ) {
-    my %line;
-	
+unless ($borr->{disable_reading_history}) {
+    ( $count, $issues ) = GetAllIssues( $borrowernumber, $order2, $limit );
+
+    my @bordat;
+    $bordat[0] = $borr;
+    $template->param( BORROWER_INFO => \@bordat );
+
+    for ( my $i = 0 ; $i < $count ; $i++ ) {
+        my %line;
+
 	# XISBN Stuff
 	my $isbn = GetNormalizedISBN($issues->[$i]->{'isbn'});
 	$line{normalized_isbn} = $isbn;
-    $line{biblionumber}   = $issues->[$i]->{'biblionumber'};
-    $line{title}          = $issues->[$i]->{'title'};
-    $line{author}         = $issues->[$i]->{'author'};
-    $line{itemcallnumber} = $issues->[$i]->{'itemcallnumber'};
-    $line{date_due}       = format_date( $issues->[$i]->{'date_due'} );
-    $line{returndate}     = format_date( $issues->[$i]->{'returndate'} );
-    $line{volumeddesc}    = $issues->[$i]->{'volumeddesc'};
-    $line{counter}        = $i + 1;
-    $line{'description'} = $itemtypes->{ $issues->[$i]->{'itemtype'} }->{'description'};
-    $line{imageurl}       = getitemtypeimagelocation( 'opac', $itemtypes->{ $issues->[$i]->{'itemtype'}  }->{'imageurl'} );
-    push( @loop_reading, \%line );
+        $line{biblionumber}   = $issues->[$i]->{'biblionumber'};
+        $line{title}          = $issues->[$i]->{'title'};
+        $line{author}         = $issues->[$i]->{'author'};
+        $line{itemcallnumber} = $issues->[$i]->{'itemcallnumber'};
+        $line{date_due}       = format_date( $issues->[$i]->{'date_due'} );
+        $line{returndate}     = format_date( $issues->[$i]->{'returndate'} );
+        $line{volumeddesc}    = $issues->[$i]->{'volumeddesc'};
+        $line{counter}        = $i + 1;
+        $line{'description'} = $itemtypes->{ $issues->[$i]->{'itemtype'} }->{'description'};
+        $line{imageurl}       = getitemtypeimagelocation( 'opac', $itemtypes->{ $issues->[$i]->{'itemtype'}  }->{'imageurl'} );
+        push( @loop_reading, \%line );
+    }
 }
 
 $template->param( AllowReadingHistoryAnonymizing => C4::Context->preference('AllowReadingHistoryAnonymizing') );
