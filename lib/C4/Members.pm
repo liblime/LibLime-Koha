@@ -676,7 +676,7 @@ sub ModMember {
     }
 
     my ($oldval,$newval);
-    my $staffnumber = C4::Context->userenv->{'number'};
+    my $staffnumber = (C4::Context->userenv) ? C4::Context->userenv->{'number'} : 0;
     delete $data{'staffnumber'};
     my $worklibraries = $data{worklibrary};
     delete $data{worklibrary};
