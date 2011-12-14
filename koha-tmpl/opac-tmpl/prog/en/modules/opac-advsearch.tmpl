@@ -2,6 +2,34 @@
 <!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF -->
     Catalog &rsaquo; Advanced Search
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript"> 
+//expand or collapse search limit options
+
+function expand_itemtype(){
+  $("div#advsearch-itemtype").toggle('slow');
+}
+function expand_pubrange(){
+  $("div#pubrange").toggle('slow');
+}
+function expand_ccode(){
+  $("div#advsearch-ccode").toggle('slow');
+}
+function expand_shelvingloc(){
+  $("div#xadvsearch-shelvingloc").toggle('slow');
+}
+function expand_subtypes(){
+  $("div#subtypes").toggle('slow');
+}
+function expand_language(){
+  $("div#language").toggle('slow');
+}
+function expand_location(){
+  $("div#location").toggle('slow');
+}
+function expand_sortby(){
+  $("div#sortby").toggle('slow');
+}
+</script>
 </head>
 <body id="advsearch"><div id="doc3" class="yui-t7">
    <div id="bd">
@@ -110,6 +138,33 @@
 <div class="yui-g"><div class="container" style="text-align: center;"><!-- SEARCH BUTTONS -->
 
     <input class="submit" type="submit" accesskey="s" name="do" title="Search" value="Search" />
+    <!-- TMPL_IF NAME="ItemTypeLimit" -->
+    <a href="#" onclick=expand_itemtype()>[+/- Item Types]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CCodeLimit" -->
+    <a href="#" onclick=expand_ccode()>[+/- Collection Codes]</a>
+    <!-- /TMPL_IF -->
+
+    <!-- TMPL_IF NAME="ShelvingLocationLimit" -->
+    <a href="#" onclick=expand_shelvingloc()>[+/- Shelving Locations]</a>
+    <!-- /TMPL_IF -->
+
+    <!-- TMPL_IF NAME="SubtypeLimit" -->
+    <a href="#" onclick=expand_subtypes()>[+/- Subtypes]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="LanguageLimit" -->
+    <a href="#" onclick=expand_language()>[+/- Language]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="DateRangeLimit" -->
+    <a href="#" onclick=expand_pubrange()>[+/- Date]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="LocationLimit" -->
+    <a href="#" onclick=expand_location()>[+/- Location]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="SortByLimit" -->
+    <a href="#" onclick=expand_sortby()>[+/- Sort By]</a>
+    <!-- /TMPL_IF -->
+
     <!-- TMPL_IF NAME="expanded_options" -->
         <a href="/cgi-bin/koha/opac-search.pl?expanded_options=0">[Fewer Options]</a>
     <!-- TMPL_ELSE -->
@@ -118,21 +173,14 @@
     <a href="/cgi-bin/koha/opac-search.pl?do=Clear">[New Search]</a>
 
 <!-- /SEARCH BUTTONS --></div></div>
-<div id="pubrange" class="container">
-<fieldset>
-<!-- PUB RANGE OPTION -->
-<legend>Publication Date Range:</legend>
-<span>For example:  1999-2001.  You could also use "-1987" for everything published before 1987 or "2008-" for everything published after 2008.</span>
-<input type="text" size="30" name="limit-yr" title="Enter search terms" value="" />
-</fieldset>
-<!-- /PUB RANGE OPTION -->
-</div>
+
 	<div class="yui-g">
 <!-- /BOOLEAN SEARCH OPTIONS -->
     <!-- TMPL_IF NAME="DisplayAdvancedSearchLimits" -->
+      <!-- TMPL_IF NAME="ItemTypeLimit" -->
     <div id="advsearch-itemtype" class="container">
 	<fieldset>
-    <legend>Limit to any of the following:</legend>
+    <legend>Item Types:</legend>
     <table>
         <tr>
       <!--TMPL_LOOP Name="itemtypeloop"-->
@@ -146,9 +194,26 @@
     </div>
     <!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="expanded_options" -->
-    <div id="advsearch-shelvingloc" class="container">
+ <!-- TMPL_IF NAME="CCodeLimit" -->
+
+    <div id="advsearch-ccode" class="container">
 	<fieldset>
-    <legend>Limit to any of the following shelving locations:</legend>
+    <legend>Collection Codes:</legend>
+    <table>
+        <tr>
+      <!--TMPL_LOOP Name="ccodeloop"-->
+        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->" name="limit" value="mc-<!-- TMPL_VAR NAME="ccl" -->:<!--TMPL_VAR Name="code" -->"/><label for="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->"><!-- TMPL_IF name="imageurl"--><img border="0" src="<!--TMPL_VAR Name="imageurl" -->" alt="<!--TMPL_VAR Name="description" -->" /><!-- /TMPL_IF -->&nbsp;
+        <!--TMPL_VAR Name="description" --></label></td>
+        <!-- TMPL_UNLESS name="count5" --><!-- TMPL_UNLESS name="__last__" --></tr><tr><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
+      <!--/TMPL_LOOP-->
+		</tr>
+    </table>
+	</fieldset>
+    </div>
+      <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="ShelvingLocationLimit" -->    <div id="xadvsearch-shelvingloc" class="container">
+	<fieldset>
+    <legend>Shelving locations:</legend>
     <table>
         <tr>
       <!--TMPL_LOOP Name="shelvinglocsloop"-->
@@ -160,10 +225,12 @@
     </table>
 	</fieldset>
     </div>
+      <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="SubtypeLimit" -->
     <!--TMPL_IF Name="usmarc"-->
         <!-- SUBTYPE LIMITS -->
             <div id="subtypes" class="container"><fieldset>
-            <legend>Subtype limits</legend>
+            <legend>Subtypes</legend>
             <select name="limit" class="subtype">
                   <option value="" selected="selected" class="menuheader">Any audience</option>
                   <option value="(aud:a or aud:b or aud:c or aud:j)">Children</option>
@@ -241,9 +308,46 @@
 <!--/TMPL_IF-->
         
 </div>
-<div class="yui-g">
 
+
+    <!--/TMPL_IF -->
+
+     <!-- TMPL_IF NAME="LanguageLimit" -->
+        <div id="language" class="container">
+        <fieldset>
+        <!-- LANGUAGE LIMIT -->   
+              <legend>Language:</legend>                                    
+		<select name="limit">
+		<option value="">No Limit</option>
+		<!-- TMPL_LOOP NAME="search_languages_loop" -->
+		<!-- TMPL_IF NAME="selected" -->
+		<option value="ln:<!-- TMPL_VAR NAME="iso639_2_code" -->" selected="selected"><!-- TMPL_VAR NAME="language_description" --></option>
+		<!-- TMPL_ELSE -->
+		<option value="ln:<!-- TMPL_VAR NAME="iso639_2_code" -->"><!-- TMPL_VAR NAME="language_description" --></option>
+		<!-- /TMPL_IF -->		
+		<!-- /TMPL_LOOP -->
+		</select></p><!-- <a href="">Show all languages</a>-->
+       <!-- /LANGUAGE LIMIT -->
+       </fieldset>
+       </div>
+    <!--/TMPL_IF-->
+
+     <!-- TMPL_IF NAME="DateRangeLimit" -->
+<div id="pubrange" class="container">
+<fieldset>
+<!-- PUB RANGE OPTION -->
+<legend>Publication Date Range:</legend>
+<span>For example:  1999-2001.  You could also use "-1987" for everything published before 1987 or "2008-" for everything published after 2008.</span>
+<input type="text" size="30" name="limit-yr" title="Enter search terms" value="" />
+</fieldset>
+<!-- /PUB RANGE OPTION -->
+</div>
+
+      <!-- /TMPL_IF -->
+
+<div class="yui-g">
 <div class="yui-u first">
+ <!--TMPL_IF NAME="LocationLimit" -->
 <!-- AVAILABILITY LIMITS -->
 	<!-- TMPL_UNLESS NAME="singleBranchMode" -->
     <div id="location" class="container"><fieldset><legend>Location and availability: </legend>
@@ -274,8 +378,10 @@
     </fieldset></div>
 	<!-- /TMPL_UNLESS -->
 <!-- /AVAILABILITY LIMITS -->
+    <!-- /TMPL_IF -->
 </div>
 <div class="yui-u">
+<!--TMPL_IF NAME="SortByLimit" -->
 <!-- RANK LIMITS -->
     <div id="sortby" class="container"><fieldset><legend>Sort by: </legend>
         <select id="sort_by" name="sort_by">
@@ -284,10 +390,41 @@
 <!-- RANK LIMITS -->
 </div>
 </div>
+    <!-- /TMPL_IF -->
+
+
+    <!-- /TMPL_IF -->
 
 <div class="yui-g"><div class="container" style="text-align: center;"><!-- SEARCH BUTTONS -->
 
     <input class="submit" type="submit" accesskey="s" name="do" title="Search" value="Search" />
+
+    <!-- TMPL_IF NAME="ItemTypeLimit" -->
+    <a href="#" onclick=expand_itemtype()>[+/- Item Types]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CCodeLimit" -->
+    <a href="#" onclick=expand_ccode()>[+/- Collection Codes]</a>
+    <!-- /TMPL_IF -->
+
+    <!-- TMPL_IF NAME="ShelvingLocationLimit" -->
+    <a href="#" onclick=expand_shelvingloc()>[+/- Shelving Locations]</a>
+    <!-- /TMPL_IF -->
+
+    <!-- TMPL_IF NAME="SubtypeLimit" -->
+    <a href="#" onclick=expand_subtypes()>[+/- Subtypes]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="LanguageLimit" -->
+    <a href="#" onclick=expand_language()>[+/- Language]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="DateRangeLimit" -->
+    <a href="#" onclick=expand_pubrange()>[+/- Date]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="LocationLimit" -->
+    <a href="#" onclick=expand_location()>[+/- Location]</a>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="SortByLimit" -->
+    <a href="#" onclick=expand_sortby()>[+/- Sort By]</a>
+    <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="expanded_options" -->
         <a href="/cgi-bin/koha/opac-search.pl?expanded_options=0">[Fewer Options]</a>
     <!-- TMPL_ELSE -->

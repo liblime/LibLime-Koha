@@ -180,6 +180,9 @@ else {
 if (C4::Context->preference("marcflavour") eq "UNIMARC" ) {
     $template->param('UNIMARC' => 1);
 }
+elsif (C4::Context->preference("marcflavour") eq "MARC21" ) {
+    $template->param('usmarc' => 1);
+}
 
 my $last_borrower_show_button = 0;
 if ( $cgi->cookie('last_borrower_borrowernumber') && $cgi->param('last_borrower_show_button') ) {
@@ -235,11 +238,15 @@ my $itemtypes = GetItemTypes;
 # the index parameter is different for item-level itemtypes
 my $itype_or_itemtype = (C4::Context->preference("item-level_itypes"))?'itype':'itemtype';
 my @itemtypesloop;
+my @ccodesloop;
 my $selected=1;
 my $cnt;
 my $advanced_search_types = C4::Context->preference("AdvancedSearchTypes");
-
-if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {                                                                 foreach my $thisitemtype ( sort {$itemtypes->{$a}->{'description'} cmp $itemtypes->{$b}->{'description'} } keys %$itemtypes ) {
+my $advanced_search_limits = C4::Context->preference("AdvancedSearchLimits");
+my @advanced_search_limits = split(/\|/,$advanced_search_limits);
+if ($#advanced_search_limits >= 0 && grep(/ItemTypes/i,@advanced_search_limits) ) {
+    $selected=1;
+   	foreach my $thisitemtype ( sort {$itemtypes->{$a}->{'description'} cmp $itemtypes->{$b}->{'description'} } keys %$itemtypes ) {
     my %row =(  number=>$cnt++,
                 ccl => $itype_or_itemtype,
                 code => $thisitemtype,
@@ -251,9 +258,12 @@ if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {         
         $selected = 0 if ($selected) ;
         push @itemtypesloop, \%row;
     }
-    $template->param(itemtypeloop => \@itemtypesloop,DisplayAdvancedSearchLimits => 1);
-} elsif ($advanced_search_types eq 'ccode') {
-    my $advsearchtypes = GetAuthorisedValues($advanced_search_types);
+    $template->param(itemtypeloop => \@itemtypesloop,DisplayAdvancedSearchLimits => 1,ItemTypeLimit => 'ItemTypes');
+} 
+
+if ( $#advanced_search_limits >= 0 && grep(/CCodes/i,@advanced_search_limits)  ) {
+    my $advsearchtypes = GetAuthorisedValues('CCODE');
+
     for my $thisitemtype (sort {$a->{'lib'} cmp $b->{'lib'}} @$advsearchtypes) {
         my %row =(
                 number=>$cnt++,
@@ -264,12 +274,49 @@ if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {         
                 count5 => $cnt % 4,
                 imageurl=> getitemtypeimagelocation( 'intranet', $thisitemtype->{'imageurl'} ),
             );
-        push @itemtypesloop, \%row;
+        push @ccodesloop, \%row;
     }
-    $template->param(itemtypeloop => \@itemtypesloop,DisplayAdvancedSearchLimits => 1);
-} else {
-    # Don't enable DisplayAdvancedSearchLimits
+    $template->param(ccodeloop => \@ccodesloop, DisplayAdvancedSearchLimits => 1,CCodeLimit => 'CCodes');
 }
+if ( $#advanced_search_limits >= 0 && grep(/ShelvingLocations/i,@advanced_search_limits)  ) {
+
+# add support for searching by shelving location
+my @shelvinglocsloop;
+$selected=1;
+my $cnt2;
+my $shelflocations =GetAuthorisedValues("LOC");
+  for my $thisloc (sort {$a->{'lib'} cmp $b->{'lib'}} @$shelflocations) {
+    my %row =(
+                number => $cnt2++,
+                ccl => 'loc',
+                code => $thisloc->{authorised_value},
+                selected => $selected,
+                description => $thisloc->{'lib'},
+                count5 => $cnt2 % 4,
+              );
+    	$selected = 0; # set to zero after first pass through
+    push @shelvinglocsloop, \%row;
+  }
+$template->param(shelvinglocsloop => \@shelvinglocsloop,DisplayAdvancedSearchLimits => 1,ShelvingLocationLimit => 'ShelvingLocations');
+}
+if ( $#advanced_search_limits >= 0 && grep(/Language/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,LanguageLimit => 'Language');
+} 
+if ( $#advanced_search_limits >= 0 && grep(/DateRange/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,DateRangeLimit => 'DateRange');
+}
+if ( $#advanced_search_limits >= 0 && grep(/Subtypes/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,SubtypeLimit => 'Subtypes');
+}
+if ( $#advanced_search_limits >= 0 && grep(/LocationAvailability/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,LocationLimit => 'LocationAvailability');
+}
+if ( $#advanced_search_limits >= 0 && grep(/SortBy/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,SortByLimit => 'SortBy');
+}
+
+
+
 
 # The following should only be loaded if we're bringing up the advanced search template
 if ( $template_type eq 'advsearch' ) {

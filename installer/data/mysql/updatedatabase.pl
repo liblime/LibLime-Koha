@@ -4738,6 +4738,16 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add session_defaults_id to sesstion defaults table and make it the primary key )\n";
 }
 
+$DBversion = '4.09.00.004';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {    
+   $dbh->do(q/INSERT INTO systempreferences (variable,value,options,explanation,type) VALUES 
+        ('AdvancedSearchLimits','ItemTypes|CCodes|ShelvingLocations|DateRange|LocationAvailability|Subtypes|SortBy','ItemTypes|CCodes|ShelvingLocations|LocationAvailability|DateRange|Subtype|SortBy','Add or remove the limits you would like to display in the Staff Advanced Search screen.  All options will be selected by default.  If this field is blank, no limits will be set.','Textarea'),
+        ('OPACAdvancedSearchLimits','ItemTypes|CCodes|ShelvingLocations|DateRange|LocationAvailability|Subtypes|SortBy','ItemTypes|CCodes|ShelvingLocations|LocationAvailability|DateRange|Subtype|SortBy','Add or remove the limits you would like to display in the OPAC Advanced Search screen.  All options will be selected by default.  If this field is blank, no limits will be set.','Textarea')
+        /);    
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Added AdvancedSearchLimits sysprefs )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
