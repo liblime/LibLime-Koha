@@ -418,30 +418,23 @@ sub DelBiblio {
 }
 
 sub GetAvailableItemsCount {
-  my ( $biblionumber, $branchcode ) = @_;
-#  warn "GetAvailableItemsCount( $biblionumber, $branchcode )";
-  my $dbh = C4::Context->dbh;
-  my @params;
+    my ($biblionumber, $branchcode) = @_;
   
-  my $query = "SELECT COUNT( * ) AS ItemsAvailableCount
-              FROM items
-              LEFT JOIN issues ON issues.itemnumber = items.itemnumber
-              WHERE issues.timestamp IS NULL
-              AND items.biblionumber = ?";
-  push( @params, $biblionumber );
+    my $query = 'SELECT COUNT(*)
+                 FROM items
+                 LEFT JOIN issues ON issues.itemnumber = items.itemnumber
+                 WHERE issues.timestamp IS NULL
+                 AND items.notforloan = 0
+                 AND items.biblionumber = ?';
+    my @params = ($biblionumber);
               
-  if ( $branchcode ) {
-    $query .= " AND items.holdingbranch = ?";
-    push( @params, $branchcode ) if ( $branchcode );
-  }
-  
-  my $sth = $dbh->prepare( $query );
-  $sth->execute( @params );
-  
-  my $row = $sth->fetchrow_hashref();
-  my $items_available_count = $row->{'ItemsAvailableCount'};
-  
-  return $items_available_count;
+    if ($branchcode) {
+        $query .= ' AND items.holdingbranch = ?';
+        push( @params, $branchcode );
+    }
+
+    my ($count) = C4::Context->dbh->selectrow_array($query, undef, @params);
+    return $count;
 }
 
 =head2 LinkBibHeadingsToAuthorities
