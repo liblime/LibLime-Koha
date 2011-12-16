@@ -15,9 +15,9 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
+use Koha;
 use CGI;
+use List::Util qw/first/;
 use C4::Biblio;
 use C4::Items;
 use C4::Auth;    # checkauth, getborrowernumber.
@@ -26,7 +26,6 @@ use C4::Circulation;
 use C4::Reserves;
 use C4::Output;
 use C4::Dates qw/format_date/;
-use Koha;
 use C4::Context;
 use C4::Members;
 use C4::Branch; # GetBranches
@@ -235,6 +234,8 @@ if ( $query->param('place_reserve') ) {
 #
 my $noreserves = 0;
 $template->param( noreserve => 1 ) unless $$cat{holds_block_threshold};
+$borr->{amountoutstanding} //= 0;
+$cat->{holds_block_threshold} //= 0;
 if ( ($borr->{'amountoutstanding'}>0) 
   && ($borr->{'amountoutstanding'} > $$cat{holds_block_threshold})
   && ($$cat{holds_block_threshold} > 0) ) {
@@ -572,22 +573,25 @@ foreach my $biblioNum (@biblionumbers) {
 
         if (IsAvailableForItemLevelRequest($itemNum) and not $itemInfo->{noresstatus}) {
             if ($policy_holdallowed) {
-              if ($no_on_shelf_holds_in_library &&
-                  ((defined $itemLoopIter->{dateDue} &&
-                  ($inBranchcode eq $itemInfo->{'holdingbranch'})) ||
-                  ($inBranchcode ne $itemInfo->{'holdingbranch'}) ||
-                  ($itemLoopIter->{reserve_status} eq 'W') ||
-                  ($itemLoopIter->{reserve_status} eq 'T') ||
-                  ($itemInfo->{'damaged'}) ||
-                  ($itemLoopIter->{nocancel}))) {
-                $template->param( message => undef);
-                $template->param( no_on_shelf_holds_in_library => undef);
-                $itemLoopIter->{available} = 1;
-                $numCopiesAvailable++;
-              } elsif (!$no_on_shelf_holds_in_library) {
-                $itemLoopIter->{available} = 1;
-                $numCopiesAvailable++;
-              }
+                if ($no_on_shelf_holds_in_library && !BranchHasACopy($biblioData, $inBranchcode)
+                        && (
+                               (defined $itemLoopIter->{dateDue} && $inBranchcode eq $itemInfo->{holdingbranch})
+                            || $inBranchcode ne $itemInfo->{holdingbranch}
+                            || $itemLoopIter->{reserve_status} ~~ [qw(W T)]
+                            || $itemInfo->{damaged}
+                            || $itemLoopIter->{nocancel}
+                        )
+                )
+                    {
+                        $template->param( message => undef);
+                        $template->param( no_on_shelf_holds_in_library => undef);
+                        $itemLoopIter->{available} = 1;
+                        $numCopiesAvailable++;
+                    }
+                elsif (!$no_on_shelf_holds_in_library) {
+                    $itemLoopIter->{available} = 1;
+                    $numCopiesAvailable++;
+                }
             } else {
                 $numPolicyBlocked++;
             }
@@ -672,4 +676,13 @@ if (
 }
 
 output_html_with_http_headers $query, $cookie, $template->output;
+exit;
+
+sub BranchHasACopy {
+    my ($record, $branchcode) = @_;
+
+    return 0 if $record->{serial};
+
+    return first {$_->{homebranch} ~~ $branchcode} @{$record->{itemInfos}};
+}
 
