@@ -25,11 +25,9 @@ script to execute returns of books
 
 =cut
 
-use strict;
-# use warnings; # FIXME
+use Koha;
 
 use CGI;
-use Koha;
 use Carp;
 use C4::Context;
 use C4::Auth qw/:DEFAULT get_session/;
@@ -390,6 +388,7 @@ if ( $messages->{'WrongTransfer'} and not $messages->{'WasTransfered'}) {
     ## reroute for intransit reserve
     $template->param(
             TransferWaitingAtBranchname => $$branches{$$messages{WrongTransfer}}{branchname},
+            TransferWaitingAtBranchcode => $$messages{WrongTransfer},
             wname           => $name,
             wborfirstname   => $borr->{'firstname'},
             wborsurname     => $borr->{'surname'},

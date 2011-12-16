@@ -199,14 +199,14 @@ function HaltReturns() {
 <TMPL_IF NAME="WrongTransfer">
     <div class="dialog message">
     <p class="error">Already scheduled to be in transit
-    <TMPL_IF NAME="TransferWaitingAtBranchname">to <TMPL_VAR NAME="TransferWaitingAtBranchname">
+    <TMPL_IF NAME="TransferWaitingAtBranchname">to <TMPL_VAR NAME="TransferWaitingAtBranchname"> (<!-- TMPL_VAR NAME="TransferWaitingAtBranchcode" -->)
     <TMPL_ELSE><!-- do nothing here -->
     </TMPL_IF>
     </p>
     <TMPL_UNLESS NAME="reserved">
         <h3>Please send <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR Name="title" escape="html" --></a> to 
-        <TMPL_IF NAME="wborcnum"><br><TMPL_VAR NAME="wpickbranchname"></h3>
-        <TMPL_ELSE><br><TMPL_VAR NAME="TransferWaitingAtBranchname"></h3>
+        <TMPL_IF NAME="wborcnum"><br><TMPL_VAR NAME="wpickbranchname"> (<!-- TMPL_VAR NAME="wpickbranch" -->)</h3>
+        <TMPL_ELSE><br><TMPL_VAR NAME="TransferWaitingAtBranchname"> (<!-- TMPL_VAR NAME="TransferWaitingAtBranchcode" -->)</h3>
             <form method=post action="returns.pl" name="alreadytransf">
             <input type=hidden name="cancelTransfer" value="0">
             <input type=hidden name="lost_item_id"       value="">
@@ -508,7 +508,7 @@ function HaltReturns() {
 
     <!-- deprecated: TMPL_UNLESS NAME="lostreturned" -->
     <!-- TMPL_IF Name="needstransfer" -->
-	<div class="dialog message"><h3> This item needs to be transfered to <!-- TMPL_VAR Name="homebranch" --></h3>
+	<div class="dialog message"><h3> This item needs to be transfered to <!-- TMPL_VAR Name="homebranch" --> (<!-- TMPL_VAR NAME="branchcode" -->)</h3>
 	Transfer Now?<br />
    <form method="post" action="returns.pl" name="mainform" id="mainform">              
 	<input type="submit" name="dotransfer" value="Yes" class="submit" />
