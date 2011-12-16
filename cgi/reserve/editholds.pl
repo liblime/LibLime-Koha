@@ -59,6 +59,7 @@ $template->param(
    mode          => $mode,
    DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar($dformat),
    SessionStorage => C4::Context->preference('SessionStorage'),
+   C4::Search::enabled_staff_search_views(),
 );
     
 output_html_with_http_headers $cgi, $cookie, $template->output;
