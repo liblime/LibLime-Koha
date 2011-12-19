@@ -165,8 +165,8 @@ melm 600$t      Name-and-title,Title,Subject
 melm 600$9      Koha-Auth-Number
 #melm 600       Name,Personal-name,Subject-heading,Subject-name-personal
 melm 600        Name,Personal-name,Subject-name-personal,Subject
-melm 610$a      Name-and-title
-melm 610$t      Name-and-title,Title
+melm 610$a      Name-and-title,Subject
+melm 610$t      Name-and-title,Title,Subject
 melm 610$9      Koha-Auth-Number
 melm 610        Name,Subject,Corporate-name
 melm 611        Conference-name
