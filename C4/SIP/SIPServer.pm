@@ -149,6 +149,7 @@ sub raw_transport {
     eval {
 		local $SIG{ALRM} = sub { die "raw_transport Timed Out!\n"; };
 		syslog("LOG_DEBUG", "raw_transport: timeout is %d", $service->{timeout});
+                $/ = "\015";  # Internet Record Separator (lax version)
 		while ($strikes--) {
 		    alarm $service->{timeout};
 		    $input = Sip::read_SIP_packet(*STDIN);
