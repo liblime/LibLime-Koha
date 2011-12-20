@@ -218,7 +218,7 @@ my $calendar    = C4::Calendar->new( branchcode => $userenv_branch );
 my $today       = C4::Dates->new();
 my $today_iso   = $today->output('iso');
 my $dropboxdate = $calendar->addDate($today, -1);
-$barcode =~ s/^\s*|\s+//g;
+$barcode =~ s/^\s+|\s+$//g;
 
 if ($ENV{HTTP_REFERER} =~ /$ENV{SCRIPT_NAME}/ && !$dotransfer && !$canceltransfer) {
    if ($dropboxmode) {
