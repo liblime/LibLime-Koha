@@ -4738,6 +4738,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add session_defaults_id to sesstion defaults table and make it the primary key )\n";
 }
 
+$DBversion = '4.09.00.004';
+if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do(q{UPDATE systempreferences SET options = ? WHERE variable LIKE ?}, undef,
+         '|whitespace|trim|T-prefix|cuecat', 'itemBarcodeInputFilter');
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( Add 'trim' barcode filter option )\n";
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

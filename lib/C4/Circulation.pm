@@ -167,6 +167,7 @@ sub barcodedecode
                             $g{barcode} =~ s/\s//g;
                             return $g{barcode};
                         },
+        'trim' => sub { $g{barcode} =~ s/^\s+|\s+$//g; return $g{barcode}},
         'T-prefix'  =>  sub {
                             if ($g{barcode} =~ /^[Tt]\D*(\d+)/) {
                                 my $t = $1;

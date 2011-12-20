@@ -1273,7 +1273,7 @@
    },
    "itemBarcodeInputFilter" : {
       "explanation" : "If set, allows specification of a item barcode input filter",
-      "options" : "|whitespace|T-prefix|cuecat",
+      "options" : "|whitespace|trim|T-prefix|cuecat",
       "value" : null,
       "type" : "Choice"
    },

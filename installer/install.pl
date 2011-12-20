@@ -390,7 +390,7 @@ elsif ( $step && $step == 3 ) {
         # Not 1st install, the only sub-step : update database
         #
         #Do updatedatabase And report
-        my $cmd = C4::Context->config("intranetdir") . "/installer/data/$info{dbms}/updatedatabase.pl";
+        my $cmd = C4::Context->config('basedir') . "/installer/data/$info{dbms}/updatedatabase.pl";
         my ($success, $error_code, $full_buf, $stdout_buf, $stderr_buf) = IPC::Cmd::run(command => $cmd, verbose => 0);
 
         if (@$stdout_buf) {
