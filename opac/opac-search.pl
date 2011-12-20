@@ -45,6 +45,9 @@ sub MRXcached {
         $xml = shift;
     }
     my $matchme = substr($xml, 0, 1024);
+    # Very similar records may not have differentiable data within
+    # the first 1k, so tack on a bit from the record's tail, too.
+    $matchme .= substr($xml, -255);
     my $key = Digest::SHA1::sha1($matchme);
 
     my $frozen = $cache->get($key);
