@@ -108,8 +108,8 @@ jQuery.fn.sortAll = function() {
    else if ('<TMPL_VAR NAME="sortf">' != '') { p = '<TMPL_VAR NAME="sortf">' }
    var arr = p.split(/:/); var type=arr[0]; var sortf=arr[1];
    var reverse = false;
-   if (document.myf.sortRev) { reverse = ($('select#sortRev').val()=='ASC')? true:false; }
-   else if ('<TMPL_VAR NAME="sortRev">'=='ASC') { reverse = true }
+   if (document.myf.sortRev) { reverse = ($('select#sortRev').val()=='DESC')? true:false; }
+   else if ('<TMPL_VAR NAME="sortRev">'=='DESC') { reverse = true }
    this.sort(function(a,b){
       var left = a[sortf]; var right=b[sortf];
       if (type=='int') { left=parseInt(left.replace(/[^\d]/g,''));right=parseInt(right.replace(/[^\d]/g,'')); }
