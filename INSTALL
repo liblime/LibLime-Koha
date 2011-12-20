@@ -1,23 +1,41 @@
-LibLime Koha 4.8 - the next-generation release of the award-winning Koha open-source
-integrated library system.
+LibLime Koha 4 - The next-generation release of the award-winning Koha
+open-source integrated library system.
 
-Koha is the first open-source Integrated Library System. Developed initially in
-New Zealand by Katipo Communications, Ltd and first deployed in January of 2000
-for the Horowhenua Library Trust, it is currently maintained by a team of
-software providers and library technology staff from around the globe. Learn
-more about the Koha project at http://koha.org.
+Koha is the first open-source Integrated Library System. Developed
+initially in New Zealand by Katipo Communications, Ltd and first
+deployed in January of 2000 for the Horowhenua Library Trust, it is
+currently maintained by a team of software providers and library
+technology staff from around the globe. Learn more about the Koha
+project at http://koha.org/.
 
 INSTALLATION
 ============
 
-LibLime Koha 4 comes with a new installer, based on MakeMaker, the tool that
-is usually used to install CPAN modules.  This means that if you know
-how to customise CPAN-installed modules, the same things should work
-for you with Koha.  If not, don't worry.  If you want to customise the
-installation more than described below, run "man ExtUtils::MakeMaker"
+Koha runs on many Un*x-style systems, including a variety of Linux
+distributions and Mac OS X.
 
-You need to have a server running Perl 5.10, MySQL 5, Zebra2.0.22 or greater
-and a webserver (preferably Apache2) before installing Koha.
+Koha depends on a number of configuration dependencies provided by the
+system.  Most notably, these include MySQL, IndexData's YAZ/Zebra
+tools for MARC indexing, and Perl to tie all of these
+together. Recommended versions are:
+
+MySQL: >= 5.1.59
+YAZ: >= 4.2.15
+Zebra: >= 2.0.49
+Perl: >= 5.10.1
+
+Lesser versions may suffice in many cases. Higher versions are nearly
+always better.
+
+It's advisable to use your system's package manager to install the
+MySQL, YAZ, and Zebra. However, it is *not* advisable to fuss about
+too much--if at all--with the system-installed Perl. Installing the
+hundreds of packages required by Koha can give rise to oddities in
+version dependency chains and break system-level tools. Instead, using
+a tool like Perlbrew enables you to create a whole separate Perl
+instance and install all the of CPAN modules that Koha needs into
+there. These instructions will assume a Perlbrew-based Perl
+installation.
 
 MySQL 5: Create a database called 'koha,' owned by 'kohaadmin'
 user, with a password set. Note: kohaadmin must have at least the
@@ -27,95 +45,61 @@ ALTER, and LOCK TABLES.
 Default installation instructions:
 
 1. perl Makefile.PL
-  (you will be prompted to answer a number of questions and you will
-  need to install some Perl dependencies)
-2. make
-3.(optional) make test 
-4. sudo make install
-5. sudo ln -s /etc/koha/koha-httpd.conf /etc/apache2/sites-available/koha
-  (note that the path to koha-httpd.conf may be different depending on your
-  installation choices)
-6. sudo a2enmod rewrite
-7. sudo a2ensite koha && /etc/init.d/apache2 reload
-8. sudo zebrasrv -f /etc/koha/koha-conf.xml
-  (note that you will want to run Zebra in daemon mode for a production
-  system)
-9. Browse to http://servername:8080/ and answer the questions
+   (you will be prompted to answer a number of questions)
+2. (Install any missing dependencies indicated by make.)
+3. make
+4. make test 
+5. make install
+6. KOHA_CONF=~/koha-dev/etc/koha-conf.xml plackup app.psgi
 
-OR if you want to install all dependencies from CPAN and are root, you can
-replace steps 1-3 with "perl install-CPAN.pl" but this is non-standard and
-may not be safe.  Nevertheless, it's pretty cool when it works.
+Finally, browse to http://servername-staff:5000/ and answer the
+questions to complete the installation.
 
-The defaults will install Koha to places that follow relevant standards,
-such as the File Hierarchy Standard.  If you want to install Koha to a
-different directory like /opt/koha, then replace step 1 with (for example):
+The defaults will install Koha to places that follow relevant
+standards, such as the File Hierarchy Standard. If you want to install
+Koha to a different directory like /opt/koha, then replace step 1 with
+(for example):
 
 1. perl Makefile.PL INTRANET_CGI_DIR=/www/cgi-bin
 
 You can change most of the defaults in a similar way, such as DB_HOST.
-For full instructions on how to override the default settings, run
+For full instructions on how to override the default settings, run:
 
-$ perldoc rewrite-config.PL
-
-
-UPGRADE
-=======
-If you are upgrading from a previous installation of LibLime Koha 4, you can
-use the following:
-
- perl Makefile.PL --prev-install-log /path/to/koha-install-log
- make
- make test
- sudo make upgrade
+$ perldoc installer/rewrite-config.PL
 
 WHAT NEXT?
+==========
 
-1. Running the Web Installer allows you to install sample data for libraries, patrons, etc.
-    but you may want to install additional data such as bibliographic and authorities.
+1. Running the Web Installer allows you to install sample data for
+    libraries, patrons, etc. You may want to install additional data
+    such as bibliographic and authorities records.
 
-    Once the installer has completed, you can import and index MARC records from the
-    command line thusly (Note: you can also use the 'Stage MARC records for import' from
-    the Tools area of Koha's Staff Client to import a batch of MARC records):
-
-    $ export KOHA_CONF=/usr/share/koha/etc/koha-conf.xml
-      (note: use the correct path to your koha-conf.xml)
+    Note: you can also use the 'Stage MARC records for import' from
+    the Tools area of Koha's Staff Client to import a batch of MARC
+    records.
 
 2. Import:
     Bibliographic data in MARC21 format
-    $ misc/migration-tools/bulkmarcimport.pl -file /path/to/marc.iso2709
+    $ ./misc/migration-tools/bulkmarcimport.pl -file /path/to/marc.iso2709
     Authority data in MARC21 format
-    $ misc/migration-tools/bulkauthimport.pl -file /path/to/auth.iso2709
+    $ ./misc/migration-tools/bulkauthimport.pl -file /path/to/auth.iso2709
 
-3. Fast Index:
-    $ misc/migration-tools/rebuild_zebra.pl -b -w
+3. Zebra Index:
+    $ ./misc/migration-tools/rebuild_zebra.pl -b -w
 
-    Once the indexing has completed, you will be able to search for records in your
-    system.
+    Once the indexing has completed, you will be able to search for
+    records in your system.
 
 4. Schedule regular index updates
-    run rebuild_zebra.pl -b -a -z as a regular cron job, check misc/cronjobs/crontab.example
-    for usage examples
+    run "rebuild_zebra.pl -b -a -z" as a regular cron job, check
+    misc/cronjobs/crontab.example for usage examples
 
-5. To enable public Z39.50/SRU servers, you'll need to edit your koha-conf.xml and
-    change the <listen> options to listen on a TCP port; then restart the zebra daemon.
+5. To enable public Z39.50/SRU servers, you'll need to edit your
+    koha-conf.xml and change the <listen> options to listen on a TCP
+    port, then restart the zebra daemon.
 
 
 IF YOU HAVE PROBLEMS
 ====================
 
-IF THIS IS A PRE-RELEASE TREE: please contact developers by email via
-http://lists.nongnu.org/mailman/listinfo/koha-devel
-or
-http://dir.gmane.org/gmane.education.libraries.koha.devel
-
-IF THIS IS A RELEASED VERSION: please see the support pages at
-http://www.koha.org/
-
-Released versions usually have three-digit numbers, like 3.00.01,
-while other version number styles are usually snapshots or previews.
-
-
-DEVELOPER NOTES
-===============
-
-For instructions on how to package releases, run perldoc Makefile.PL
+Please see the support pages at http://koha.org/.
