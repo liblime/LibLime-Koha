@@ -22,6 +22,7 @@ use vars qw($VERSION $AUTOLOAD $context @context_stack);
 
 use CHI;
 use DBI;
+use DBIx::Connector;
 use ZOOM;
 use Carp;
 use XML::Simple;
@@ -154,11 +155,8 @@ environment variable to the pathname of a configuration file to use.
 #    A reference-to-hash whose keys and values are the
 #    configuration variables and values specified in the config
 #    file (/etc/koha/koha-conf.xml).
-# dbh
-#    A handle to the appropriate database for this context.
-# dbh_stack
-#    Used by &set_dbh and &restore_dbh to hold other database
-#    handles for this context.
+# dbconn
+#    A DBIx::Connector for the appropriate database for this context.
 # Zconn
 #     A connection object for the Zebra server
 
@@ -317,7 +315,7 @@ sub new {
     return undef if !defined($self->{"config"});
 
     $ENV{TZ} = $self->{config}{timezone} || $ENV{TZ};
-    $self->{"dbh"} = undef;        # Database handle
+    $self->{dbconn} = undef;        # Database handle
     $self->{"Zconn"} = undef;    # Zebra Connections
     $self->{"stopwords"} = undef; # stopwords list
     $self->{"marcfromkohafield"} = undef; # the hash with relations between koha table fields and MARC field/subfield
@@ -690,49 +688,6 @@ sub _new_Zconn {
     return $Zconn;
 }
 
-# _new_dbh
-# Internal helper function (not a method!). This creates a new
-# database connection from the data given in the current context, and
-# returns it.
-sub _new_dbh
-{
-
-    ## $context
-    ## correct name for db_schme        
-    my $db_driver;
-    if ($context->config("db_scheme")){
-        $db_driver=db_scheme2dbi($context->config("db_scheme"));
-    }else{
-        $db_driver="mysql";
-    }
-
-    my $db_name   = $context->config("database");
-    my $db_host   = $context->config("hostname");
-    my $db_port   = $context->config("port") || '';
-    my $db_socket = $context->config('socket');
-    my $db_user   = $context->config("user");
-    my $db_passwd = $context->config("pass");
-
-    my $dsn = "DBI:$db_driver:dbname=$db_name;";
-    $dsn .= ($db_socket) ? "mysql_socket=$db_socket" : "host=$db_host;port=$db_port";
-
-    my $dbh = DBI->connect($dsn, $db_user, $db_passwd) or die $DBI::errstr;
-    $dbh->{RaiseError} = 1;
-	my $tz = $ENV{TZ};
-    if ( $db_driver eq 'mysql' ) { 
-        # Koha 3.0 is utf-8, so force utf8 communication between mySQL and koha, whatever the mysql default config.
-        # this is better than modifying my.cnf (and forcing all communications to be in utf8)
-        $dbh->{'mysql_enable_utf8'}=1; #enable
-        $dbh->do("set NAMES 'utf8'");
-        ($tz) and $dbh->do(qq(SET time_zone = "$tz"));
-    }
-    elsif ( $db_driver eq 'Pg' ) {
-	    $dbh->do( "set client_encoding = 'UTF8';" );
-        ($tz) and $dbh->do(qq(SET TIME ZONE = "$tz"));
-    }
-    return $dbh;
-}
-
 =item dbh
 
   $dbh = C4::Context->dbh;
@@ -743,206 +698,70 @@ creates one, and connects to the database.
 
 This database handle is cached for future use: if you call
 C<C4::Context-E<gt>dbh> twice, you will get the same handle both
-times. If you need a second database handle, use C<&new_dbh> and
-possibly C<&set_dbh>.
+times.
 
 =cut
 
-sub dbh
-{
-    my $self = shift;
-    if ( ! defined($context->{'dbh'}) || ( $context->{'database_paranoia_mode'} && ! $context->{'dbh'}->ping() )) {
-        $context->{'dbh'} = &_new_dbh();
-    }
-    return $context->{'dbh'};
+sub _db_connect {
+    my ($dsn, $db_user, $db_pass) = @_;
+
+    my $conn = DBIx::Connector->new($dsn, $db_user, $db_pass,
+                                    {
+                                        RaiseError => 1,
+                                        AutoCommit => 1,
+                                    });
+
+    $conn->mode('fixup');
+    $conn->dbh->{mysql_enable_utf8} = 1;
+    $conn->dbh->do(q{set NAMES 'utf8'});
+
+	my $tz = $ENV{TZ};
+    $conn->dbh->do(qq{SET time_zone = '$tz'}) if $tz;
+
+    return $conn;
 }
 
-# _new_replica_dbh
-# Internal helper function (not a method!). This creates a new
-# database connection from the data given in the current context, and
-# returns it.
-sub _new_replica_dbh
-{
-    warn "Using replica_dbh\n";
-    ## $context
-    ## correct name for db_schme
-    my $db_driver;
-    if ($context->config("db_scheme")){
-        $db_driver=db_scheme2dbi($context->config("db_scheme"));
-    }else{
-        $db_driver="mysql";
-    }
+sub dbconn {
+    return $context->{dbconn} if $context->{dbconn};
 
-    my $dbh;
-    if ($context -> preference("Replica_DSN")){
-      my $db_user   = $context->preference("Replica_user") || $context->config("user");
-      my $db_passwd = $context->preference("Replica_pass") || $context->config("pass");
-      $dbh = DBI ->connect($context -> preference("Replica_DSN"), $db_user, $db_passwd) or die $DBI::errstr;
-    } else {
-      my $db_name   = $context->config("database");
-      my $db_host   = $context->config("hostname");
-      my $db_port   = $context->config("port") || '';
-      my $db_user   = $context->config("user");
-      my $db_passwd = $context->config("pass");
-      # MJR added or die here, as we can't work without dbh
-      $dbh= DBI->connect("DBI:$db_driver:dbname=$db_name;host=$db_host;port=$db_port",
-       $db_user, $db_passwd) or die $DBI::errstr;
-    }
+    my $db_name = $context->config('database');
+    my $db_host = $context->config('hostname');
+    my $db_port = $context->config('port') || '';
+    my $db_sock = $context->config('socket');
+    my $db_user = $context->config('user');
+    my $db_pass = $context->config('pass');
 
-    # Find the time zone
-    my $sth = $dbh->prepare("SELECT value FROM systempreferences WHERE variable='TZ'");
-    $sth->execute();
-    my $timezone = $sth->fetchrow_hashref;
-    my $tz;
-    if ($timezone and $timezone->{value}) {
-        $tz = $timezone->{value};
-        # Set the Perl System environment's timezone
-        $ENV{TZ} = $tz;
-        POSIX::tzset;
+    my $dsn = "DBI:mysql:dbname=$db_name;";
+    $dsn .= ($db_sock)
+        ? "mysql_socket=$db_sock"
+        : "host=$db_host;port=$db_port";
+
+    return $context->{dbconn} = _db_connect($dsn, $db_user, $db_pass);
+}
+
+sub dbh {
+    return dbconn()->dbh;
+}
+
+sub replica_dbconn {
+    return $context->{replica_dbconn} if $context->{replica_dbconn};
+
+    my $conn;
+    if (my $dsn = C4::Context->preference('Replica_DSN') ) {
+        my $db_user = C4::Context->preference('Replica_user');
+        my $db_pass = C4::Context->preference('Replica_pass');
+        $conn = _db_connect($dsn, $db_user, $db_pass);
     }
     else {
-        # Fall back to the system environment
-        $tz = $ENV{TZ};
-    }
-    if ( $db_driver eq 'mysql' ) {
-        # Koha 3.0 is utf-8, so force utf8 communication between mySQL and koha, whatever the mysql default config.
-        # this is better than modifying my.cnf (and forcing all communications to be in utf8)
-        $dbh->{'mysql_enable_utf8'}=1; #enable
-        $dbh->do("set NAMES 'utf8'");
-        ($tz) and $dbh->do(qq(SET time_zone = "$tz"));
-    }
-    elsif ( $db_driver eq 'Pg' ) {
-           $dbh->do( "set client_encoding = 'UTF8';" );
-        ($tz) and $dbh->do(qq(SET TIME ZONE = "$tz"));
-    }
-    return $dbh;
-}
-
-=item replica_dbh
-
-  $dbh = C4::Context->replica_dbh;
-
-Returns a database handle connected to the Koha database for the
-current context. If no connection has yet been made, this method
-creates one, and connects to the database.
-
-This database handle is cached for future use: if you call
-C<C4::Context-E<gt>dbh> twice, you will get the same handle both
-times. If you need a second database handle, use C<&new_dbh> and
-possibly C<&set_dbh>.
-
-=cut
-
-#'
-sub replica_dbh
-{
-    my $self = shift;
-    if( ! defined($context->{"replica_dbh"}) || ( $context->{'database_paranoia_mode'} && ! $context->{"replica_dbh"}->ping())){
-        $context->{"replica_dbh"} = &_new_replica_dbh();
-    }
-    return $context->{"replica_dbh"};
-}
-
-=item new_dbh
-
-  $dbh = C4::Context->new_dbh;
-
-Creates a new connection to the Koha database for the current context,
-and returns the database handle (a C<DBI::db> object).
-
-The handle is not saved anywhere: this method is strictly a
-convenience function; the point is that it knows which database to
-connect to so that the caller doesn't have to know.
-
-=cut
-
-#'
-sub new_dbh
-{
-    my $self = shift;
-
-    return &_new_dbh();
-}
-
-=item set_dbh
-
-  $my_dbh = C4::Connect->new_dbh;
-  C4::Connect->set_dbh($my_dbh);
-  ...
-  C4::Connect->restore_dbh;
-
-C<&set_dbh> and C<&restore_dbh> work in a manner analogous to
-C<&set_context> and C<&restore_context>.
-
-C<&set_dbh> saves the current database handle on a stack, then sets
-the current database handle to C<$my_dbh>.
-
-C<$my_dbh> is assumed to be a good database handle.
-
-=cut
-
-#'
-sub set_dbh
-{
-    my $self = shift;
-    my $new_dbh = shift;
-
-    # Save the current database handle on the handle stack.
-    # We assume that $new_dbh is all good: if the caller wants to
-    # screw himself by passing an invalid handle, that's fine by
-    # us.
-    push @{$context->{"dbh_stack"}}, $context->{"dbh"};
-    $context->{"dbh"} = $new_dbh;
-}
-
-=item restore_dbh
-
-  C4::Context->restore_dbh;
-
-Restores the database handle saved by an earlier call to
-C<C4::Context-E<gt>set_dbh>.
-
-=cut
-
-#'
-sub restore_dbh
-{
-    my $self = shift;
-
-    if ($#{$context->{"dbh_stack"}} < 0)
-    {
-        # Stack underflow
-        die "DBH stack underflow";
+        $conn = dbconn();
     }
 
-    # Pop the old database handle and set it.
-    $context->{"dbh"} = pop @{$context->{"dbh_stack"}};
-
-    # FIXME - If it is determined that restore_context should
-    # return something, then this function should, too.
-}
- 
-=item database_paranoia_mode
-
-  C4::Context->database_paranoia_mode(1);
-
-get or set 'database_paranoia_mode' for current $context.
-This setting causes any calls to C4::Context->dbh
-to first ping the database server to ensure that
-the dbh is still valid.  Useful for long-running
-scripts where the dbh may actually expire during
-the life of the script.
-
-=cut
-
-sub database_paranoia_mode
-{
-    my $self = shift;
-    my $set = shift;
-    $context->{'database_paranoia_mode'} = $set if(defined $set);
-    return $context->{'database_paranoia_mode'} || 0;
+    return $context->{replica_dbconn} = $conn;
 }
 
+sub replica_dbh {
+    return replica_dbconn->dbh;
+}
 
 =item marcfromkohafield
 

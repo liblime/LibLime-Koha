@@ -138,4 +138,5 @@ $template->param(
     recycle_loop=> \@recycle_loop,
 );
 
+$session->flush();
 output_html_with_http_headers $query, $cookie, $template->output;

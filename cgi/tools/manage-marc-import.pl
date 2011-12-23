@@ -17,8 +17,7 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
+use Koha;
 no warnings qw(redefine);
 
 # standard or CPAN modules used
@@ -27,7 +26,6 @@ use CGI::Cookie;
 use MARC::File::USMARC;
 
 # Koha modules used
-use Koha;
 use C4::Context;
 use C4::Auth;
 use C4::Output;
@@ -228,16 +226,13 @@ sub commit_batch {
     my ($template, $import_batch_id, $runinbackground, $sessionID) = @_;
 
     my $job = undef;
-    my $dbh = C4::Context->dbh;
-    $dbh->{AutoCommit} = 0;
     my $callback = sub {};
     if ($runinbackground) {
         $job = put_in_background($import_batch_id, $sessionID);
-        $callback = progress_callback($job, $dbh);
+        $callback = progress_callback($job);
     }
     my ($num_added, $num_updated, $num_items_added, $num_items_errored, $num_ignored) = 
         BatchCommitBibRecords($import_batch_id, 50, $callback);
-    $dbh->commit();
 
     my $results = {
         did_commit => 1,
@@ -257,17 +252,14 @@ sub commit_batch {
 sub revert_batch {
     my ($template, $import_batch_id, $runinbackground, $sessionID) = @_;
 
-    my $dbh = C4::Context->dbh;
-    $dbh->{AutoCommit} = 0;
     my $job = undef;
     my $callback = sub {};
     if ($runinbackground) {
         $job = put_in_background($import_batch_id, $sessionID);
-        $callback = progress_callback($job, $dbh);
+        $callback = progress_callback($job);
     }
     my ($num_deleted, $num_errors, $num_reverted, $num_items_deleted, $num_ignored) = 
         BatchRevertBibRecords($import_batch_id, 50, $callback);
-    $dbh->commit();
 
     my $results = {
         did_revert => 1,
@@ -288,7 +280,6 @@ sub put_in_background {
     my $import_batch_id = shift;
     my $sessionID = shift;
 
-    my $dbh = C4::Context->dbh;
     my $batch = GetImportBatch($import_batch_id);
     my $job = C4::BackgroundJob->new($sessionID, $batch->{'file_name'}, $ENV{'SCRIPT_NAME'}, $batch->{'num_biblios'});
     my $jobID = $job->id();
@@ -298,35 +289,24 @@ sub put_in_background {
         # parent
         # return job ID as JSON
 
-        # prevent parent exiting from
-        # destroying the kid's database handle
-        # FIXME: according to DBI doc, this may not work for Oracle
-        $dbh->{InactiveDestroy}  = 1;
-
         my $reply = CGI->new("");
-        print $reply->header(-type => 'text/html');
+        print $reply->header(-type => 'application/json');
         print "{ jobID: '$jobID' }";
         exit 0;
     } elsif (defined $pid) {
         # child
-        # close STDOUT to signal to Apache that
-        # we're now running in the background
-        close STDOUT;
     } else {
         # fork failed, so exit immediately
-        warn "fork failed while attempting to run $ENV{'SCRIPT_NAME'} as a background job";
-        exit 0;
+        die "fork failed while attempting to run $ENV{'SCRIPT_NAME'} as a background job";
     }
     return $job;
 }
 
 sub progress_callback {
     my $job = shift;
-    my $dbh = shift;
     return sub {
         my $progress = shift;
         $job->progress($progress);
-        $dbh->commit();
     }
 }
 

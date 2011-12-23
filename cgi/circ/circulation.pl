@@ -724,7 +724,7 @@ $template->param(
 if ($stickyduedate) {
     $session->param( 'stickyduedate', $duedatespec );
 }
-
+$session->flush();
 
 my ($picture, $dberror) = GetPatronImage($borrower->{'cardnumber'});
 $template->param( picture => 1 ) if $picture;

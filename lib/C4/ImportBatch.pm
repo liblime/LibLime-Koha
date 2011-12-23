@@ -703,6 +703,8 @@ sub BatchRevertBibRecords {
     my $overlay_action = GetImportBatchOverlayAction($batch_id);
     my $nomatch_action = GetImportBatchNoMatchAction($batch_id);
     my $dbh = C4::Context->dbh;
+    local $dbh->{AutoCommit};
+    $dbh->{AutoCommit} = 0;
     my $sth = $dbh->prepare("SELECT import_record_id, status, overlay_status, marcxml_old, encoding, matched_biblionumber
                              FROM import_records
                              JOIN import_biblios USING (import_record_id)
@@ -743,6 +745,7 @@ sub BatchRevertBibRecords {
     }
 
     $sth->finish();
+    $dbh->commit();
     SetImportBatchStatus($batch_id, 'reverted');
     return ($num_deleted, $num_errors, $num_reverted, $num_items_deleted, $num_ignored);
 }
@@ -761,6 +764,8 @@ sub BatchRevertItems {
     my ($import_record_id, $biblionumber) = @_;
 
     my $dbh = C4::Context->dbh;
+    local $dbh->{AutoCommit};
+    $dbh->{AutoCommit} = 0;
     my $num_items_deleted = 0;
 
     my $sth = $dbh->prepare_cached("SELECT import_items_id, itemnumber
@@ -779,6 +784,7 @@ sub BatchRevertItems {
         $num_items_deleted++;
     }
     $sth->finish();
+    $dbh->commit();
     return $num_items_deleted;
 }
 

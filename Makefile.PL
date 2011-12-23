@@ -554,6 +554,7 @@ WriteMakefile(
                             'DBD::mysql'                       => 4.004,
                             'DBD::SQLite'                      => 0.33, # optional, used for offline circulation
                             'DBI'                              => 1.53,
+                            'DBIx::Connector'                  => 0.47,
                             'Data::Dumper'                     => 2.121,
                             'Data::ICal'                       => 0.13,
                             'Date::Calc'                       => 5.4,
