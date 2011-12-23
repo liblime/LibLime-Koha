@@ -112,7 +112,6 @@ my $biblioserverdir = C4::Context->zebraconfig('biblioserver')->{directory};
 my $authorityserverdir = C4::Context->zebraconfig('authorityserver')->{directory};
 
 my $kohadir = C4::Context->config('intranetdir');
-C4::Context->database_paranoia_mode(1);
 my $dbh = C4::Context->dbh;
 my ($biblionumbertagfield,$biblionumbertagsubfield) = &GetMarcFromKohaField("biblio.biblionumber","");
 my ($biblioitemnumbertagfield,$biblioitemnumbertagsubfield) = &GetMarcFromKohaField("biblioitems.biblioitemnumber","");
