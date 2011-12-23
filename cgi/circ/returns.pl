@@ -231,6 +231,7 @@ else { # initial page load
    $dropboxmode = $session->param('circ_ci_dropboxmode');
    $checkin_override_date = $session->param('circ_ci_backdate');
 }
+$session->flush();
 
 if ($dotransfer && ($notransfer==0)){
    # An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
@@ -737,5 +738,4 @@ $template->param(
 
 # actually print the page!
 output_html_with_http_headers $query, $cookie, $template->output;
-exit;
 __END__

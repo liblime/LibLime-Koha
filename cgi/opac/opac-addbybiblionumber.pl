@@ -30,7 +30,6 @@ use CGI;
 use C4::VirtualShelves qw/:DEFAULT GetRecentShelves RefreshShelvesSummary/;
 use C4::Auth;
 use C4::Output;
-use C4::Auth qw/get_session/;
 use C4::Debug;
 
 #splits incoming biblionumber(s) to array and adds each to shelf.
