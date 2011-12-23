@@ -47,6 +47,10 @@ sub call {
         port     => C4::Context->config('port'),
         username => C4::Context->config('user'),
         password => C4::Context->config('pass'),
+        connect_options => {
+            RaiseError => 1,
+            AutoCommit => 1,
+        },
         );
 
     my $retval = $self->app->($env);

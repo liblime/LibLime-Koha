@@ -219,7 +219,7 @@ sub SearchMember {
 
     # this is used by circulation everytime a new borrowers cardnumber is scanned
     # so we can check an exact match first, if that works return, otherwise do the rest
-    if (($searchstring !~ /\D/) && C4::Context->preference('patronbarcodelength')) {
+    if (C4::Context->preference('patronbarcodelength')) {
         ## this handles the edge case of multiple barcodes with same right-hand 
         ## significant digits, different branch prefixes.
         my @in = @{_prefix_cardnum_multibranch($searchstring)};
