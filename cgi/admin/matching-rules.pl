@@ -29,7 +29,7 @@ use C4::Matcher;
 
 my $script_name = "/cgi-bin/koha/admin/matching-rules.pl";
 
-my $input = new CGI;
+our $input = CGI->new();
 my $op = $input->param('op');
 
 
