@@ -33,6 +33,8 @@ BEGIN {
 	@EXPORT_OK = qw(handle);
 }
 
+C4::Context->db_check_mode(1);
+
 # Predeclare handler subroutines
 use subs qw(handle_patron_status handle_checkout handle_checkin
 	    handle_block_patron handle_sc_status handle_request_acs_resend

@@ -20,9 +20,9 @@ use strict;
 use warnings;
 use vars qw($VERSION $AUTOLOAD $context @context_stack);
 
+use Try::Tiny;
 use CHI;
 use DBI;
-use DBIx::Connector;
 use ZOOM;
 use Carp;
 use XML::Simple;
@@ -32,6 +32,7 @@ use C4::Debug;
 use POSIX ();
 use JSON qw(from_json);
 use Koha;
+require Koha::RoseDB;
 
 $VERSION = '4.09.00.004';
 
@@ -156,7 +157,7 @@ environment variable to the pathname of a configuration file to use.
 #    configuration variables and values specified in the config
 #    file (/etc/koha/koha-conf.xml).
 # dbconn
-#    A DBIx::Connector for the appropriate database for this context.
+#    A Koha::RoseDB for the appropriate database for this context.
 # Zconn
 #     A connection object for the Zebra server
 
@@ -703,64 +704,81 @@ times.
 =cut
 
 sub _db_connect {
-    my ($dsn, $db_user, $db_pass) = @_;
+    my $type = shift;
 
-    my $conn = DBIx::Connector->new($dsn, $db_user, $db_pass,
-                                    {
-                                        RaiseError => 1,
-                                        AutoCommit => 1,
-                                    });
+    my $db = Koha::RoseDB->new( type => $type );
 
-    $conn->mode('fixup');
-    $conn->dbh->{mysql_enable_utf8} = 1;
-    $conn->dbh->do(q{set NAMES 'utf8'});
+    $db->dbh->{mysql_enable_utf8} = 1;
+    $db->dbh->do(q{set NAMES 'utf8'});
+    $db->dbh->do(q{SET time_zone = ?}, undef, $ENV{tz}) if $ENV{tz};
 
-	my $tz = $ENV{TZ};
-    $conn->dbh->do(qq{SET time_zone = '$tz'}) if $tz;
-
-    return $conn;
+    return $db;
 }
 
 sub dbconn {
     return $context->{dbconn} if $context->{dbconn};
 
-    my $db_name = $context->config('database');
-    my $db_host = $context->config('hostname');
-    my $db_port = $context->config('port') || '';
-    my $db_sock = $context->config('socket');
-    my $db_user = $context->config('user');
-    my $db_pass = $context->config('pass');
+    Koha::RoseDB->register_db(
+        domain   => Koha::RoseDB->default_domain,
+        type     => Koha::RoseDB->default_type,
+        driver   => 'mysql',
+        database => C4::Context->config('database'),
+        host     => C4::Context->config('hostname'),
+        port     => C4::Context->config('port'),
+        username => C4::Context->config('user'),
+        password => C4::Context->config('pass'),
+        connect_options => {
+            RaiseError => 1,
+            AutoCommit => 1,
+        },
+    );
 
-    my $dsn = "DBI:mysql:dbname=$db_name;";
-    $dsn .= ($db_sock)
-        ? "mysql_socket=$db_sock"
-        : "host=$db_host;port=$db_port";
-
-    return $context->{dbconn} = _db_connect($dsn, $db_user, $db_pass);
-}
-
-sub dbh {
-    return dbconn()->dbh;
+    return $context->{dbconn} = _db_connect('default');
 }
 
 sub replica_dbconn {
     return $context->{replica_dbconn} if $context->{replica_dbconn};
+    return $context->{replica_dbconn} = dbconn()
+        unless C4::Context->preference('Replica_DSN');
 
-    my $conn;
-    if (my $dsn = C4::Context->preference('Replica_DSN') ) {
-        my $db_user = C4::Context->preference('Replica_user');
-        my $db_pass = C4::Context->preference('Replica_pass');
-        $conn = _db_connect($dsn, $db_user, $db_pass);
-    }
-    else {
-        $conn = dbconn();
-    }
+    Koha::RoseDB->register_db(
+        domain   => Koha::RoseDB->default_domain,
+        type     => 'report',
+        driver   => 'mysql',
+        dsn      => C4::Context->preference('Replica_DSN'),
+        username => C4::Context->preference('Replica_user'),
+        password => C4::Context->preference('Replica_pass'),
+        connect_options => {
+            RaiseError => 1,
+            AutoCommit => 1,
+        },
+    );
 
-    return $context->{replica_dbconn} = $conn;
+    return $context->{replica_dbconn} = _db_connect('report');
+}
+
+sub db_check_mode {
+    shift if $_[0] ~~ __PACKAGE__;
+    $context->{db_check_mode} = shift if @_;
+    return $context->{db_check_mode} ? 1 : 0;
+}
+
+sub _dbh_maybe_check {
+    my $db = shift;
+
+    no strict qw/refs/;
+    delete $context->{$db}
+        if (db_check_mode() && ! &{$db}()->dbh->ping);
+
+    return &{$db}()->dbh;
+}
+
+sub dbh {
+    return _dbh_maybe_check('dbconn');
 }
 
 sub replica_dbh {
-    return replica_dbconn->dbh;
+    return _dbh_maybe_check('replica_dbconn');
 }
 
 =item marcfromkohafield

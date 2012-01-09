@@ -18,6 +18,8 @@ sub regex_mapper {
 sub call {
     my ($self, $env) = @_;
 
+    local %ENV = %ENV;
+
     my $config;
     if ($self->host_mapper) {
         $config = $self->host_mapper->($env);
@@ -30,32 +32,13 @@ sub call {
         $config = $ENV{KOHA_CONF};
     }
 
-    local %ENV = %ENV;
     require C4::Context;
     local $C4::Context::context;
-
     $C4::Context::context = C4::Context->new($config);
 
-    require Koha::RoseDB;
-
-    Koha::RoseDB->register_db(
-        domain   => Koha::RoseDB->default_domain,
-        type     => Koha::RoseDB->default_type,
-        driver   => 'mysql',
-        database => C4::Context->config('database'),
-        host     => C4::Context->config('hostname'),
-        port     => C4::Context->config('port'),
-        username => C4::Context->config('user'),
-        password => C4::Context->config('pass'),
-        connect_options => {
-            RaiseError => 1,
-            AutoCommit => 1,
-        },
-        );
-
+    C4::Context->dbh->begin_work();
     my $retval = $self->app->($env);
-
-    Koha::RoseDB->unregister_db(domain=>Koha::RoseDB->default_domain, type=>Koha::RoseDB->default_type);
+    C4::Context->dbh->commit();
 
     return $retval;
 }
