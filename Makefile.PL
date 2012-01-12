@@ -595,7 +595,7 @@ WriteMakefile(
                             'Modern::Perl'                     => 1.03,
                             'Moose'                            => 2.0006,
                             'MooseX::Role::Parameterized'      => 0.26,
-                            'Net::CIDR::Compare'               => 0.03,
+                            'Net::IP'                          => 1.25,
                             'Net::LDAP'                        => 0.33, # optional
                             'Net::LDAP::Filter'                => 0.14, # optional
                             'Net::Server::PreFork'             => 0.97,

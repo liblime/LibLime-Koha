@@ -20,7 +20,6 @@ package C4::Auth;
 use strict;
 use warnings;
 use Carp;
-use Net::CIDR::Compare;
 use Digest::MD5 qw(md5_base64);
 use CGI::Session;
 
@@ -1592,26 +1591,11 @@ sub getborrowernumber {
 =cut
 
 sub IsIpInLibrary {
-    my ( $params ) = @_;
-
-    my $collection = Net::CIDR::Compare->new();
-
-    # Seed a list of CIDR blocks with the requestor's IP
+    my $params = shift;
     my $client_ip = $params->{ip}
                     // $ENV{HTTP_X_FORWARDED_FOR}
                     // $ENV{REMOTE_ADDR};
-    my $client_cidr = $collection->new_list();
-    $collection->add_range($client_cidr, $client_ip, 0);
-
-    # Seed a list of CIDR blocks with branch details
-    my $branch = GetBranchDetail($params->{branchcode});
-    croak "Cannot retrieve details for branch '$params->{branchcode}'" if not $branch;
-    my $library_cidr = $collection->new_list();
-    map {$collection->add_range($library_cidr, $_, 0)} split(/\n/, $branch->{branchip});
-
-    # Finally find the (possibly null) intersection and return our answer
-    $collection->process_intersection();
-    return ($collection->get_next_intersection_range()) ? 1 : 0;
+    return (C4::Branch::GetBranchByIp($client_ip) eq $params->{branchcode}) ? 1 : 0;
 }
 
 sub _uniq {
