@@ -20,7 +20,7 @@ use strict;
 use warnings;
 use Carp;
 use List::MoreUtils qw(uniq);
-use Net::CIDR::Compare;
+use Net::IP;
 
 require Exporter;
 
@@ -607,24 +607,25 @@ sub GetBranchCodeFromName {
 # 
 # Returns the branches.branchcode for the first match or undef if no match.
 sub GetBranchByIp {
-    my ($ip) = shift
+    my $client_ip = Net::IP->new(shift
                // $ENV{HTTP_X_FORWARDED_FOR}
-               // $ENV{REMOTE_ADDR};
-
-    my $collection = Net::CIDR::Compare->new();
-
-    my $client_cidr = $collection->new_list();
-    $collection->add_range($client_cidr, $ip, 0);
+               // $ENV{REMOTE_ADDR});
     
-    foreach my $branch (values %{GetBranches()}) {
-        my $library_cidr = $collection->new_list();
-        map {$collection->add_range($library_cidr, $_, 0)} split(/\n/, $branch->{branchip});
-        $collection->process_intersection();
-        return $branch->{branchcode} if ($collection->get_next_intersection_range());
-        $collection->remove_list($library_cidr);
+    for my $branch (values %{GetBranches()}) {
+        next unless $branch->{branchip};
+        my $raw = $branch->{branchip};
+        $raw =~ s{[^0-9./*]+}{\n}g;
+        for my $ip (split /\n/, $raw) {
+            $ip =~ s{^\*$}{0.0.0.0/0};
+            $ip =~ s{^(\d+)\.\*$}{$1.0.0.0/8};
+            $ip =~ s{^(\d+\.\d+)\.\*$}{$1.0.0/16};
+            $ip =~ s{^(\d+\.\d+\.\d+)\.\*$}{$1.0/24};
+            my $branch_ip = Net::IP->new($ip);
+            next unless $branch_ip;
+            return $branch->{branchcode} if $branch_ip->overlaps($client_ip);
+        }
     }
-
-    return;
+    return undef;
 }
 
 1;
