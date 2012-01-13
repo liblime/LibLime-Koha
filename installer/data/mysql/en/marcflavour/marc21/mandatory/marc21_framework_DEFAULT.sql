@@ -50,8 +50,8 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('999', 'a', 'Item type [OBSOLETE]', 'Item type [OBSOLETE]', 0, 0, NULL, -1, NULL, NULL, '', NULL, -5, '', '', '', NULL),
 		('999', 'b', 'Koha Dewey Subclass [OBSOLETE]', 'Koha Dewey Subclass [OBSOLETE]', 0, 0, NULL, 0, NULL, NULL, '', NULL, -5, '', '', '', NULL),
 		('999', 'c', 'Koha biblionumber', 'Koha biblionumber', 0, 0, 'biblio.biblionumber', -1, NULL, NULL, '', NULL, -5, '', '', '', NULL),
-		('999', 'd', 'Koha biblioitemnumber', 'Koha biblioitemnumber', 0, 0, 'biblioitems.biblioitemnumber', -1, NULL, NULL, '', NULL, -5, '', '', '', NULL);
-                ('999', 'e', 'ISBN-10/ISBN-13', 'ISBN-10/ISBN-13', 1, 0, '', -1, NULL, NULL, '', NULL, 0, '', '', '', NULL);
+		('999', 'd', 'Koha biblioitemnumber', 'Koha biblioitemnumber', 0, 0, 'biblioitems.biblioitemnumber', -1, NULL, NULL, '', NULL, -5, '', '', '', NULL),
+      ('999', 'e', 'ISBN-10/ISBN-13', 'ISBN-10/ISBN-13', 1, 0, '', -1, NULL, NULL, '', NULL, 0, '', '', '', NULL);
 
 
 -- ******************************************************
