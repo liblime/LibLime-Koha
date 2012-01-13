@@ -678,8 +678,8 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
             $ri{borrowernumber} = $riborrowernumber{$_};
         }
 
-        #        my %ri;
         my $biblio = GetBiblioFromItemNumber(GetItemnumberFromBarcode($barcode));
+        my $item = GetItem(undef,$barcode,undef);
         # fix up item type for display
         $biblio->{'itemtype'} = C4::Context->preference('item-level_itypes') ? $biblio->{'itype'} : $biblio->{'itemtype'};
         $ri{itembiblionumber} = $biblio->{'biblionumber'};
@@ -687,10 +687,16 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
         $ri{itemauthor}       = $biblio->{'author'};
         $ri{itemtype}         = $biblio->{'itemtype'};
         $ri{itemnote}         = $biblio->{'itemnotes'};
-        $ri{havecheckinnotes} = $biblio->{'checkinnotes'} || undef;
         $ri{ccode}            = $biblio->{'ccode'};
         $ri{itemnumber}       = $biblio->{'itemnumber'};
         $ri{barcode}          = $barcode;
+        # Only show checkin note if item was the most recent to be checked in
+        if ($count-1) {
+          $ri{havecheckinnotes} = undef;
+        }
+        else {
+          $ri{havecheckinnotes} = $item->{'checkinnotes'} || undef;
+        }
     }
     else {
         last;
