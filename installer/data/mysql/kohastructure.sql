@@ -1304,7 +1304,7 @@ CREATE TABLE `labels_layouts` (
   `guidebox` int(1) default '0',
   `font` char(10) character set utf8 collate utf8_unicode_ci NOT NULL default 'TR',
   `font_size` int(4) NOT NULL default '10',
-  `callnum_split` int(1) default '0',
+  `callnum_split` varchar(8),
   `text_justify` char(1) character set utf8 collate utf8_unicode_ci NOT NULL default 'L',
   `format_string` varchar(210) NOT NULL default 'barcode',
   `break_rule_string` varchar(255) NOT NULL DEFAULT '',
