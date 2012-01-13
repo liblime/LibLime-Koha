@@ -17,12 +17,10 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
+use Koha;
 use CGI;
 
 use C4::Auth;
-use Koha;
 use C4::Context;
 use C4::Output;
 use C4::Dates;
@@ -245,7 +243,7 @@ sub _get_returns_data {
     my @tables = ( 'biblio', 'biblioitems', 'items', 'borrowers', 'issues' );
     my $columns = MuxColumnsForSQL( GetTableColumnsFor(@tables) );
 
-    my $barcodes = join( ',', @barcodes );
+    my $barcode_places = join( ',', split(//, '?' x @barcodes) );
 
     my $sql = "
         SELECT $columns FROM items
@@ -253,12 +251,12 @@ sub _get_returns_data {
         LEFT JOIN borrowers ON borrowers.borrowernumber = issues.borrowernumber
         LEFT JOIN biblioitems ON biblioitems.biblioitemnumber = items.biblioitemnumber
         LEFT JOIN biblio on biblio.biblionumber = items.biblionumber
-        WHERE items.barcode IN ( $barcodes )
+        WHERE items.barcode IN ( $barcode_places )
         GROUP BY issues.itemnumber
         ORDER BY issuedate DESC;
     ";
 
-    return C4::Context->dbh->selectall_arrayref( $sql, { Slice => {} }, );
+    return C4::Context->dbh->selectall_arrayref( $sql, { Slice => {} }, @barcodes );
 
 }
 
