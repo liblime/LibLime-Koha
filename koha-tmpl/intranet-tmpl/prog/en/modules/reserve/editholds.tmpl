@@ -80,7 +80,7 @@ function searchAll() {
       return;
    }
    document.myf.sortf.selectedIndex   = 4;
-   document.myf.sortRev.selectedIndex = 0;
+   document.myf.sortRev.selectedIndex = 1; // descending: matches on top
    reserves.sortAll();
    pager(1);
    var es = (matches.length==1)? '':'es';
