@@ -285,16 +285,18 @@ if ( $borr->{debarred} && ($borr->{debarred} eq 1) ) {
 my $userenv = C4::Context->userenv; 
 my @reserves = GetReservesFromBorrowernumber( $borrowernumber );
 $template->param( RESERVES => \@reserves );
+foreach my $biblionumber (@biblionumbers) {
+  # Determine if patron already has a hold on this bib record
+  my ($count,$bib_reserve) = GetReservesFromBiblionumber($biblionumber);
+  foreach my $res (@$bib_reserve) {
+    if ($res->{borrowernumber} eq $borrowernumber) {
+      $template->param( message => 1, hold_already_exists => 1 );
+    }
+  }
+}
 if ( C4::Context->preference('UseGranularMaxHolds') ) {
     $noreserves = 1;
     foreach my $biblionumber (@biblionumbers) {
-        # Determine if patron already has a hold on this bib record
-        my ($count,$bib_reserve) = GetReservesFromBiblionumber($biblionumber);
-        foreach my $res (@$bib_reserve) {
-          if ($res->{borrowernumber} eq $borrowernumber) {
-            $template->param( message => 1, hold_already_exists => 1 );
-          }
-        }
         ## Since we can't limit by branchcode in the opac, we use the * rule for branch
         ## Get the reserves for the borrower, limited by itemtype
         ## If the borrower is over the limit for their borrower.categorycode and the given itemtype
