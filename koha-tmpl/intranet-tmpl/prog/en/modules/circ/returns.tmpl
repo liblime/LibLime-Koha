@@ -55,6 +55,10 @@ function Dopop(link) {
 		});<!-- /TMPL_IF -->
 	 });
 //]]>
+function clearBackdate() {
+   $('#f_checkin_override_date').val('');
+   document.myf.submit();
+}
 </script>
 
 <script type="text/javascript">
@@ -771,7 +775,7 @@ function HaltReturns() {
                         <script>
                         var odate = document.myf.f_checkin_override_date.value;
                         if (odate != '') {
-                           document.write('<input type=button value="Clear Date" onclick="$(\'#f_checkin_override_date\').val(\'\');">');
+                           document.write('<input type=button value="Clear Date" onclick="clearBackdate()">');
                         }
                         </script>
                         </label>
