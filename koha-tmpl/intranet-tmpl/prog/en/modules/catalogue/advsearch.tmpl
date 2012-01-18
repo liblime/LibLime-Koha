@@ -22,7 +22,7 @@
          var val = idxs[i].options[idxs[i].selectedIndex].value;
          if (val=='biblionumber' || val=='nb') {
             var q = document.myf.q[i].value;
-            q = q.replace(/[^0-9]/g,'');
+            q = q.replace(/[^0-9a-z]/gi,'');
             document.myf.q[i].value = q;
          }
       }
