@@ -685,6 +685,12 @@ sub BranchHasACopy {
 
     return 0 if $record->{serial};
 
-    return first {$_->{homebranch} ~~ $branchcode} @{$record->{itemInfos}};
+    return first {
+           $_->{holdingbranch} ~~ $branchcode
+        && ! $_->{active_reserve_count}
+        && ! $_->{damaged}
+        && ! $_->{itemlost}
+        && ! $_->{otherstatus}
+        && ! C4::Circulation::GetTransfers($_->{itemnumber})
+    } @{$record->{itemInfos}};
 }
-
