@@ -480,7 +480,7 @@ function HaltReturns() {
 	<div class="dialog message">
       <p class=error>No holds pending; item needs to be returned to its homebranch.</p>
 	  <h3>Please return <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" DEFAULT="item" --></a> 
-        <br>to <TMPL_VAR NAME="homebranchname"></h3>
+        <br>to <TMPL_VAR NAME="homebranchname"> (<TMPL_VAR NAME="homebranch">)</h3>
     <form method=post action="returns.pl" name="transferf">
         <input type=hidden name="lost_item_id" value="">
         <input type=hidden name="lostbarcode"  value="">
@@ -512,11 +512,13 @@ function HaltReturns() {
 
     <!-- deprecated: TMPL_UNLESS NAME="lostreturned" -->
     <!-- TMPL_IF Name="needstransfer" -->
-	<div class="dialog message"><h3> This item needs to be transfered to <!-- TMPL_VAR NAME="homebranchname" --> (<!-- TMPL_VAR NAME="homebranch" -->)</h3>
-	Transfer Now?<br />
+	<div class="dialog message">
+          <p class=error>No holds pending; item needs to be returned to its homebranch.</p>
+	  <h3>Please return <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=<!-- TMPL_VAR NAME="itembiblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" DEFAULT="item" --></a> 
+            <br>to <TMPL_VAR NAME="homebranchname"> (<TMPL_VAR NAME="homebranch">)</h3>
    <form method="post" action="returns.pl" name="mainform" id="mainform">              
-	<input type="submit" name="dotransfer" value="Yes" class="approve" />
-	<input type="submit" name="notransfer" value="No" class="deny" />
+	<input type="submit" name="dotransfer" value="Confirm transfer" class="approve" />
+	<input type="submit" name="notransfer" value="Keep here" class="deny" />
 	<input type="hidden" name="tobranch" value="<!-- TMPL_VAR NAME="homebranch" -->" />
 	<input type="hidden" name="transferitem" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
    <input type="hidden" name="exemptfine" value="<!-- TMPL_VAR Name="exemptfine" -->" />
