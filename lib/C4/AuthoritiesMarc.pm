@@ -460,7 +460,7 @@ sub AddAuthority {
 		my $date=POSIX::strftime("%y%m%d",localtime);
 		if (!$record->field('008')) {
 			$record->insert_fields_ordered(
-				MARC::Field->new('008',$date."|||a||||||           | |||     d")
+				MARC::Field->new('008',$date."|||a|a||aaa          | |||     d")
 			);
 		}
 		if (!$record->field('040')) {
