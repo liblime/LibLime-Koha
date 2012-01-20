@@ -76,7 +76,7 @@ for (my $i=0;$i<$count;$i++){
 	$line{issuedate}=C4::Dates->new($issues->[$i]->{'issuedate'},'iso')->output;
 	( $line{charge} ) = sprintf( "%.2f", C4::Circulation::GetIssuingCharges( $issues->[$i]->{'itemnumber'}, $borrowernumber ) );
 	$line{replacementprice}=$issues->[$i]->{'replacementprice'};
-	$line{itemtype}=$issues->[$i]->{'itemtype'};
+	$line{itemtype}=$issues->[$i]->{'itype'};
 	push(@loop_reading,\%line);
 }
 
