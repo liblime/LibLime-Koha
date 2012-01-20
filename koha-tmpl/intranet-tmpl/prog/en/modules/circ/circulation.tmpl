@@ -495,13 +495,6 @@ Checkout anyway?<br>
 <p><input type="submit" value="Select" /></p>
 </fieldset>
 </form>
-<!-- TMPL_ELSE --> <!-- CGIselectborrower -->
-   <TMPL_UNLESS NAME="borrowernumber">
-      <!-- TMPL_INCLUDE NAME="patron-toolbar.inc" -->
-      <h4>
-      No patron matched <span class="ex"><!-- TMPL_VAR name="findborrower" --></span>
-      </h4>
-   </TMPL_UNLESS>
 <!-- /TMPL_IF -->
 
 <!-- BARCODE ENTRY -->
