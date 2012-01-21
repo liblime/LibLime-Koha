@@ -298,7 +298,7 @@ Returns an arraref to hashrefs suitable for using in a tmpl_loop. With the crite
 
 sub get_criteria {
     my ($area,$cgi) = @_;
-    my $dbh    = C4::Context->dbh();
+    my $dbh    = C4::Context->replica_dbh();
     my $crit   = $criteria{$area};
 	my $column_defs = _get_column_defs($cgi);
     my @criteria_array;
@@ -362,7 +362,7 @@ sub select_2_select_count_value ($) {
     my $sql = shift or return;
     my $countsql = select_2_select_count($sql);
     $debug and warn "original query: $sql\ncount query: $countsql\n";
-    my $sth1 = C4::Context->dbh->prepare($countsql);
+    my $sth1 = C4::Context->replica_dbh->prepare($countsql);
     $sth1->execute();
     my $total = $sth1->fetchrow();
     $debug and warn "total records for this query: $total\n";
@@ -602,7 +602,7 @@ with the distinct values of the column
 sub get_distinct_values {
 	my ($tablecolumn) = @_;
 	my ($table,$column) = split(/\./,$tablecolumn);
-	my $dbh = C4::Context->dbh();
+	my $dbh = C4::Context->replica_dbh();
 	my $query =
 	  "SELECT distinct($column) as availablevalues FROM $table";
 	my $sth = $dbh->prepare($query);
