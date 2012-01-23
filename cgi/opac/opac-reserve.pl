@@ -601,6 +601,9 @@ foreach my $biblioNum (@biblionumbers) {
                 $itemLoopIter->{available} = undef;
                 $numCopiesAvailable--;
             }
+            if (CanHoldMultipleItems($itemInfo->{itype},'opac')) {
+              $template->param( message => undef, hold_already_exists => undef );
+            }
         }
 
 	# FIXME: move this to a pm
