@@ -285,15 +285,7 @@ if ( $borr->{debarred} && ($borr->{debarred} eq 1) ) {
 my $userenv = C4::Context->userenv; 
 my @reserves = GetReservesFromBorrowernumber( $borrowernumber );
 $template->param( RESERVES => \@reserves );
-foreach my $biblionumber (@biblionumbers) {
-  # Determine if patron already has a hold on this bib record
-  my ($count,$bib_reserve) = GetReservesFromBiblionumber($biblionumber);
-  foreach my $res (@$bib_reserve) {
-    if ($res->{borrowernumber} eq $borrowernumber) {
-      $template->param( message => 1, hold_already_exists => 1 );
-    }
-  }
-}
+
 if ( C4::Context->preference('UseGranularMaxHolds') ) {
     $noreserves = 1;
     foreach my $biblionumber (@biblionumbers) {
@@ -676,6 +668,9 @@ if (
 	DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
 	);
 }
+
+$template->param(message=>1, hold_already_exists=>1, none_available=>0)
+    unless (grep {!defined $_->{already_reserved}} values %biblioDataHash);
 
 output_html_with_http_headers $query, $cookie, $template->output;
 exit;
