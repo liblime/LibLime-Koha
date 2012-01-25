@@ -690,10 +690,11 @@ sub BranchHasACopy {
 
     return first {
            $_->{holdingbranch} ~~ $branchcode
-        && ! $_->{active_reserve_count}
         && ! $_->{damaged}
         && ! $_->{itemlost}
         && ! $_->{otherstatus}
         && ! C4::Circulation::GetTransfers($_->{itemnumber})
+        && !(   $_->{active_reserve_count}
+             && C4::Reserves::GetReservesFromItemnumber($_->{itemnumber}))
     } @{$record->{itemInfos}};
 }
