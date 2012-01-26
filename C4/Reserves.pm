@@ -393,6 +393,7 @@ sub GetItemForBibPrefill
       SELECT biblio.title,
              items.itemnumber,
              items.biblionumber,
+             items.itype itemtype,
              items.itemcallnumber,
              items.barcode,
              items.holdingbranch,
@@ -444,6 +445,7 @@ sub GetItemForQueue
       SELECT biblio.title,
              items.itemnumber,
              items.biblionumber,
+             items.itype itemtype,
              items.itemcallnumber,
              items.barcode,
              items.holdingbranch,
@@ -504,26 +506,25 @@ sub _itemfillbib
    return if (defined $$item{holdsfilled} && !$$item{holdsfilled});
 
    ## check with issuing rules
-   $sth = $dbh->prepare("
-      SELECT biblioitems.itemtype
-        FROM biblioitems,items
-       WHERE biblioitems.biblionumber = ?
-         AND items.biblioitemnumber = biblioitems.biblioitemnumber
-         AND items.itemnumber = ?");
-   $sth->execute($$item{biblionumber},$$item{itemnumber});
-   $$item{itemtype} = ($sth->fetchrow_array)[0];
+   unless ($item->{itemtype}) {
+       $sth = $dbh->prepare(q{
+           SELECT biblioitems.itemtype
+           FROM biblioitems,items
+           WHERE biblioitems.biblionumber = ?
+             AND items.biblioitemnumber = biblioitems.biblioitemnumber
+             AND items.itemnumber = ?});
+       $sth->execute($$item{biblionumber},$$item{itemnumber});
+       $$item{itemtype} = ($sth->fetchrow_array)[0];
+   }
    my $ir = C4::Circulation::GetIssuingRule(
       $$item{borrowercategory},
       $$item{itemtype},
       $$item{holdingbranch},
    );
-   
-   ## unfortunately, itemtype is not always set, so $ir could be undef
-   if (exists $$ir{holdallowed}) {
-      return if !$$ir{holdallowed};
-      return if ( ($$ir{holdallowed} == 1) 
-               && ($$item{holdingbranch} ne $$item{borrowerbranch}) );
-   }
+
+   return undef unless $ir && $ir->{holdallowed};
+   return undef if ( $ir->{holdallowed} == 1
+                         && ($item->{holdingbranch} ne $item->{borrowerbranch}) );
 
    ## is this item already waiting or in transit for somebody else?
    $sth = $dbh->prepare("SELECT 1 FROM reserves
@@ -550,7 +551,7 @@ sub GetReservesForQueue
     else { # shallow skimming across the bib
       $groupby = 'GROUP BY reserves.biblionumber HAVING MIN(priority)';
     }
-    return C4::Context->dbh->selectall_hashref(qq|
+    return C4::Context->dbh->selectall_hashref(qq{
       SELECT reserves.reservenumber,
              reserves.biblionumber,
              reserves.itemnumber,
@@ -572,7 +573,7 @@ sub GetReservesForQueue
          AND reserves.reservedate <= NOW()
          AND reserves.borrowernumber = borrowers.borrowernumber
          $bybib $groupby
-    |,'biblionumber',{},@vals);
+    },'biblionumber',{},@vals);
 }
 
 sub GetHoldsQueueItems 
