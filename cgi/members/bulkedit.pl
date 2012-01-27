@@ -15,22 +15,17 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-# pragma
-use strict;
-use warnings;
-
-# external modules
-use CGI;
-# use Digest::MD5 qw(md5_base64);
-
-# internal modules
-use C4::Auth;
 use Koha;
+
+use CGI;
+
+use C4::Auth;
 use C4::Context;
 use C4::Output;
 use C4::Members;
 use C4::Members::Attributes;
 use C4::Members::AttributeTypes;
+use C4::Accounts;
 use C4::Koha;
 use C4::Dates qw/format_date format_date_in_iso/;
 use C4::Input;
@@ -110,9 +105,9 @@ if ( $input->param('update') ) { ## Update the borrowers
   my @modded_members;
   foreach my $borrowernumber ( @borrowernumbers ) {
     $data{ 'borrowernumber' } = $borrowernumber;
-    my $success = ModMember( %data );
+    my $success = C4::Members::ModMember( %data );
     
-    my $member = GetMember( $borrowernumber, 'borrowernumber' );
+    my $member = C4::Members::GetMember( $borrowernumber, 'borrowernumber' );
     if ( $success ) { $member->{'updated'} = 1; }
     
     push( @modded_members, $member );
@@ -124,9 +119,9 @@ if ( $input->param('update') ) { ## Update the borrowers
 } elsif ( $input->param('delete') ) { ## Delete the borrowers 
   my @modded_members;
   foreach my $borrowernumber ( @borrowernumbers ) {
-    my $member = GetMember( $borrowernumber, 'borrowernumber' );
+    my $member = C4::Members::GetMember( $borrowernumber, 'borrowernumber' );
 
-    my ($overdue_count, $issue_count, $total_fines) = GetMemberIssuesAndFines( $borrowernumber );
+    my ($overdue_count, $issue_count, $total_fines) = C4::Members::GetMemberIssuesAndFines( $borrowernumber );
     
     my $delete_member = 1;
     
@@ -151,7 +146,7 @@ if ( $input->param('update') ) { ## Update the borrowers
     }
     
     if ( C4::Context->preference('BatchMemberDeletePaidDebtCollections') ) {
-      if ( MemberOwesOnDebtCollection( $borrowernumber ) ) {
+      if ( C4::Accounts::MemberOwesOnDebtCollection( $borrowernumber ) ) {
         $delete_member = 0;
         $member->{'DELETE_FAILED'} = 1;
         $member->{'DEBT_COLLECTIONS'} = 1;       
@@ -159,8 +154,8 @@ if ( $input->param('update') ) { ## Update the borrowers
     }
     
     if ( $delete_member ) {
-      MoveMemberToDeleted( $borrowernumber ); ## Inserts borrower into deletedborrowers table
-      DelMember( $borrowernumber ); ## Deletes borrower and cancels reserves
+      C4::Members::MoveMemberToDeleted( $borrowernumber ); ## Inserts borrower into deletedborrowers table
+      C4::Members::DelMember( $borrowernumber ); ## Deletes borrower and cancels reserves
     }
     
     push( @modded_members, $member );
