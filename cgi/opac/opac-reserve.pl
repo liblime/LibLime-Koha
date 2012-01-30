@@ -328,7 +328,7 @@ if ( C4::Context->preference('UseGranularMaxHolds') ) {
             } 
         }
     }
-    if ($noreserves && ! $template->param('too_many_reserves') && ! $template->param('hold_already_exists')) {
+    if ($noreserves && ! $template->param('too_many_reserves')) {
         $template->param( message => 1, none_available => 1 );
     }
 }
@@ -371,7 +371,13 @@ foreach my $res (@reserves) {
 #            $template->param( message => 1 );
 #            $noreserves = 1;
 #            $template->param( already_reserved => 1 );
-            $biblioDataHash{$biblionumber}->{already_reserved} = 1;
+#           $biblioDataHash{$biblionumber}->{already_reserved} = 1;
+             my $biblioData = $biblioDataHash{$biblionumber};
+             foreach my $itemInfo (@{$biblioData->{itemInfos}}) {
+               if (!CanHoldMultipleItems($itemInfo->{itype},'opac')) {
+                 $biblioDataHash{$biblionumber}->{already_reserved} = 1;
+               }
+             }
         }
     }
 }
