@@ -472,7 +472,6 @@ Calendar.calDragIt = function (ev) {
 		posX = ev.pageX;
 		posY = ev.pageY;
 	}
-	cal.hideShowCovered();
 	var st = cal.element.style;
 	st.left = (posX - cal.xOffs) + "px";
 	st.top = (posY - cal.yOffs) + "px";
@@ -490,7 +489,6 @@ Calendar.calDragEnd = function (ev) {
 		removeEvent(document, "mouseup", calDragEnd);
 		tableMouseUp(ev);
 	}
-	cal.hideShowCovered();
 };
 
 Calendar.dayMouseDown = function(ev) {
@@ -1200,7 +1198,6 @@ Calendar.prototype.callCloseHandler = function () {
 	if (this.onClose) {
 		this.onClose(this);
 	}
-	this.hideShowCovered();
 };
 
 /** Removes the calendar object from the DOM tree and destroys it. */
@@ -1258,7 +1255,6 @@ Calendar.prototype.show = function () {
 		Calendar.addEvent(document, "keypress", Calendar._keyEvent);
 		Calendar.addEvent(document, "mousedown", Calendar._checkCalendar);
 	}
-	this.hideShowCovered();
 };
 
 /**
@@ -1273,7 +1269,6 @@ Calendar.prototype.hide = function () {
 	}
 	this.element.style.display = "none";
 	this.hidden = true;
-	this.hideShowCovered();
 };
 
 /**
