@@ -358,33 +358,66 @@ elsif ($phase eq 'Run this report'){
     unless ($sql) {
         push @errors, {no_sql_for_id=>$report};   
     } 
-    my @rows = ();
-    my ($sth, $errors) = execute_query($sql, $offset, $limit);
-    my $total = select_2_select_count_value($sql) || 0;
-    unless ($sth) {
-        die "execute_query failed to return sth for report $report: $sql";
-    } else {
-        my $headref = $sth->{NAME} || [];
-        my @headers = map { +{ cell => $_ } } @$headref;
-        $template->param(header_row => \@headers);
-        while (my $row = $sth->fetchrow_arrayref()) {
-            my @cells = map { +{ cell => $_ } } @$row;
-            push @rows, { cells => \@cells };
-        }
+    # Derive the list of valid parameters for this SQL
+    my @parameters_list;
+    while ($sql =~/__([A-Z]+)__/g) {
+        my $parameter = $&;
+        $parameter =~ s/__//g;
+        push @parameters_list, {'param_to_specify' => $parameter, length => length($parameter)+15};
     }
-
-    my $totpages = int($total/$limit) + (($total % $limit) > 0 ? 1 : 0);
-    my $url = "/cgi-bin/koha/reports/guided_reports.pl?reports=$report&phase=Run%20this%20report";
-    $template->param(
-        'results' => \@rows,
-        'sql'     => $sql,
-        'execute' => 1,
-        'name'    => $name,
-        'notes'   => $notes,
-        'errors'  => $errors,
-        'pagination_bar'  => pagination_bar($url, $totpages, $input->param('page')),
-        'unlimited_total' => $total,
-    );
+    # Force the user to specify the parameters
+    if ($input->param('specify_parameters')) {
+        $template->param(
+            id => $report,
+            specify_parameters => 1,
+            parameters_to_specify => \@parameters_list
+        );
+    }
+    # Execute the report
+    else {
+        my $specified_params;
+        my $params = $input->Vars;
+        my @incoming_specified_params = split("\0",$params->{'specified_param'}) if $params->{'specified_param'};
+        for my $param_value (@incoming_specified_params) {
+            if ($param_value =~ m/=/) {
+                my ($param, $value) = ($`,$');
+                $specified_params->{$param} = $value;
+                my $regex_param = "__".$param."__";
+                $sql =~ s/$regex_param/$specified_params->{$param}/g;
+            }
+        }
+        # Make sure all parameters have been specified, if not, redirect the user to specify them
+        if ($sql =~ /__/) {
+            print $input->redirect("/cgi-bin/koha/reports/guided_reports.pl?phase=Run%20this%20report&amp;reports=$report&amp;specify_parameters=1");
+            exit;
+        }
+        my @rows = ();
+        my ($sth, $errors) = execute_query($sql, $offset, $limit);
+        my $total = select_2_select_count_value($sql) || 0;
+        unless ($sth) {
+            die "execute_query failed to return sth for report $report: $sql";
+        } else {
+            my $headref = $sth->{NAME} || [];
+            my @headers = map { +{ cell => $_ } } @$headref;
+            $template->param(header_row => \@headers);
+            while (my $row = $sth->fetchrow_arrayref()) {
+                my @cells = map { +{ cell => $_ } } @$row;
+                push @rows, { cells => \@cells };
+            }
+        }
+        my $totpages = int($total/$limit) + (($total % $limit) > 0 ? 1 : 0);
+        my $url = "/cgi-bin/koha/reports/guided_reports.pl?reports=$report&phase=Run%20this%20report";
+        $template->param(
+            'results' => \@rows,
+            'sql'     => $sql,
+            'execute' => 1,
+            'name'    => $name,
+            'notes'   => $notes,
+            'errors'  => $errors,
+            'pagination_bar'  => pagination_bar($url, $totpages, $input->param('page')),
+            'unlimited_total' => $total,
+        );
+    }
 }	
 
 elsif ($phase eq 'Export'){
