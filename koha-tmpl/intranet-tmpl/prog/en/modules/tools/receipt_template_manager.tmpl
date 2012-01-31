@@ -134,7 +134,8 @@ $(document).ready(function() {
 			<li><a id="assigntemplates" href="/cgi-bin/koha/tools/receipt_template_assignments.pl">Assign Receipt Templates</a></li>
 		</ul>
 	</div>
-		
+
+	<div id="rec-help">See the <a target="_blank" href="http://www.koha.org/library/resources/Documentation/HowToLKReceipt_Templates_Manual.pdf">Receipts Template manual</a> for help in formatting the template.<p /><p /></div>
 		<!-- TMPL_IF NAME="search" -->
 		<p>You Searched for <b><!-- TMPL_VAR NAME="searchfield" --></b></p>
 		<!-- /TMPL_IF -->
@@ -184,6 +185,7 @@ $(document).ready(function() {
 		<!-- TMPL_ELSE -->
 		<input type="hidden" name="add" value="1" />
 		<!-- /TMPL_IF -->
+	<div id="rec-help">See the <a target="_blank" href="http://www.koha.org/library/resources/Documentation/HowToLKReceipt_Templates_Manual.pdf">Receipts Template manual</a> for help in formatting the template.<p /></div>
 		<fieldset class="rows">
 		<legend><!-- TMPL_IF name="modify" -->Modify Receipt Template<!-- TMPL_ELSE -->Add Receipt Template<!-- /TMPL_IF --></legend>
 		<ol>
