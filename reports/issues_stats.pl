@@ -51,7 +51,7 @@ my $fullreportname = "reports/issues_stats.tmpl";
 my $do_it    = $input->param('do_it');
 my $line     = $input->param("Line");
 my $column   = $input->param("Column");
-my @filters  = $input->param("Filter");
+our @filters  = $input->param("Filter");
 $filters[0]=format_date_in_iso($filters[0]);
 $filters[1]=format_date_in_iso($filters[1]);
 my $podsp    = $input->param("DisplayBy");
@@ -76,14 +76,14 @@ $template->param(do_it => $do_it,
 	DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
 );
 
-my $itemtypes = GetItemTypes();
-my $categoryloop = GetBorrowercategoryList;
+our $itemtypes = GetItemTypes();
+our $categoryloop = GetBorrowercategoryList;
 
-my $ccodes    = GetKohaAuthorisedValues("items.ccode");
-my $locations = GetKohaAuthorisedValues("items.location");
+our $ccodes    = GetKohaAuthorisedValues("items.ccode");
+our $locations = GetKohaAuthorisedValues("items.location");
 
-my $Bsort1 = GetAuthorisedValues("Bsort1");
-my $Bsort2 = GetAuthorisedValues("Bsort2");
+our $Bsort1 = GetAuthorisedValues("Bsort1");
+our $Bsort2 = GetAuthorisedValues("Bsort2");
 my ($hassort1,$hassort2);
 $hassort1=1 if $Bsort1;
 $hassort2=1 if $Bsort2;
