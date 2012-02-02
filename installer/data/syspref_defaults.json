@@ -191,6 +191,12 @@
       "value" : null,
       "type" : "Textarea"
    },
+   "IntranetUserCSS" : {
+      "explanation" : "Add CSS to be included in the staff client in an embedded <style> tag.",
+      "options" : "70|10",
+      "value" : null,
+      "type" : "Textarea"
+   },
    "SyndeticsExcerpt" : {
       "explanation" : "Display Excerpts and first chapters on OPAC from Syndetics",
       "options" : null,
