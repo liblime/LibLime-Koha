@@ -621,6 +621,7 @@ sub GetBranchByIp {
             $ip =~ s{^(\d+)\.\*$}{$1.0.0.0/8};
             $ip =~ s{^(\d+\.\d+)\.\*$}{$1.0.0/16};
             $ip =~ s{^(\d+\.\d+\.\d+)\.\*$}{$1.0/24};
+            next unless $ip;
             my $branch_ip = Net::IP->new($ip);
             next unless $branch_ip;
             return $branch->{branchcode} if $branch_ip->overlaps($client_ip);
