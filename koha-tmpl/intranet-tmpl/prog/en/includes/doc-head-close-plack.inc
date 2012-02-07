@@ -44,6 +44,7 @@
 <!-- TMPL_IF name="intranetcolorstylesheet" -->
     <link rel="stylesheet" type="text/css" href="<!-- TMPL_VAR NAME="themelang" -->/css/<!-- TMPL_VAR NAME="intranetcolorstylesheet" -->" />
 <!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="IntranetUserCSS" --><style type="text/css"><!-- TMPL_VAR NAME="IntranetUserCSS" --></style><!-- /TMPL_IF -->
 
 <!-- yui js --> 
 <script type="text/javascript" src="<!-- TMPL_VAR NAME="yuipath" -->/utilities/utilities.js"></script> 
