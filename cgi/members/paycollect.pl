@@ -100,6 +100,7 @@ if ( $individual || $writeoff ) {
     );
 }
 $total_due = sprintf('%.2f',$total_due);
+$total_paid = sprintf('%.2f',$total_paid);
 
 if ( $total_paid and $total_paid ne '0.00' ) {
     if (( $total_paid <= 0) or ($total_paid > $total_due )) {
