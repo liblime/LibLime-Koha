@@ -31,6 +31,7 @@ sub call {
     else {
         $config = $ENV{KOHA_CONF};
     }
+    $ENV{KOHA_CONF} = $config;
 
     require C4::Context;
     local $C4::Context::context;
