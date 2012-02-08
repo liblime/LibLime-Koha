@@ -39,7 +39,7 @@
 <p>You entered an incorrect username or password. Please try again! And remember, usernames and passwords are case sensitive.</p>
 <!-- /TMPL_IF -->
 
-<form action="opac-user.pl" name="auth" id="auth" method="post">
+<form action="<!-- TMPL_VAR NAME="url" -->" name="auth" id="auth" method="post">
   <input type="hidden" name="koha_login_context" value="opac" />
 <fieldset class="brief"><!-- TMPL_LOOP NAME="INPUTS" -->
   <input type="hidden" name="<!-- TMPL_VAR NAME="name" -->" value="<!-- TMPL_VAR NAME="value" -->" />
