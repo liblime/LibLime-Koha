@@ -710,7 +710,7 @@ sub _db_connect {
 
     $db->dbh->{mysql_enable_utf8} = 1;
     $db->dbh->do(q{set NAMES 'utf8'});
-    $db->dbh->do(q{SET time_zone = ?}, undef, $ENV{tz}) if $ENV{tz};
+    $db->dbh->do(q{SET time_zone = ?}, undef, $ENV{TZ}) if $ENV{TZ};
 
     return $db;
 }
