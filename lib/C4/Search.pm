@@ -841,14 +841,18 @@ sub _build_weighted_query {
 # FIELD WEIGHTING - This is largely experimental stuff. What I'm committing works
 # pretty well but could work much better if we had a smarter query parser
     my ( $operand, $stemmed_operand, $index ) = @_;
+    $index ||= 'kw';
     my $stemming      = C4::Context->preference("QueryStemming")     || 0;
     my $weight_fields = C4::Context->preference("QueryWeightFields") || 0;
     my $fuzzy_enabled = C4::Context->preference("QueryFuzzy")        || 0;
+    my $adj_rel_rank  = C4::Context->preference("AdjustRelevancyRanking");
 
     my $weighted_query .= "(rk=(";    # Specifies that we're applying rank
 
     # Keyword, or, no index specified
-    if ( ( $index eq 'kw' ) || ( !$index ) ) {
+    if ( $index eq 'kw' ) {
+        $weighted_query .= qq/ (Title-cover,r1="$operand" and $adj_rel_rank ) or /
+            if ( $adj_rel_rank );
         $weighted_query .=
           "Title-cover,ext,r1=\"$operand\"";    # exact title-cover
         $weighted_query .= " or ti,ext,r2=\"$operand\"";    # exact title
@@ -889,9 +893,18 @@ sub _build_weighted_query {
     elsif ( $index =~ ',' ) {
         $weighted_query .= " $index=\"$operand\"";
     }
-
+    elsif ( $index eq 'ti' ){
+        $weighted_query .= qq/ (Title-cover,r1="$operand" and $adj_rel_rank ) or /
+            if ( $adj_rel_rank );
+        $weighted_query .= "(Title-cover,r2=\"$operand\")";
+        $weighted_query .= " or ti,r7=\"$operand\"";
+        $weighted_query .= " or ti,phr,r7=\"$operand\"";
+        $weighted_query .= " or ti,wrdl,r7=\"$operand\"";
+    }
     #TODO: build better cases based on specific search indexes
     else {
+        $weighted_query .= qq/ (Title-cover,r1="$operand" and $adj_rel_rank ) or /
+            if ( $adj_rel_rank );
         $weighted_query .= " $index,ext,r1=\"$operand\"";    # exact index
           #$weighted_query .= " or (title-sort-az=0 or $index,startswithnt,st-word,r3=$operand #)";
         $weighted_query .= " or $index,phr,r3=\"$operand\"";    # phrase index
