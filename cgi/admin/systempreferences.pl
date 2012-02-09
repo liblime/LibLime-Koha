@@ -301,6 +301,7 @@ $tabsysprefs{DisplayMultiPlaceHold}   = "Searching";
 $tabsysprefs{OPACAdvancedSearchTypes} = "Searching";
 $tabsysprefs{maxItemsinSearchResults} = "Searching";
 $tabsysprefs{OPACShowActiveBranchFirstInResults} = "Searching";
+$tabsysprefs{AdjustRelevancyRanking}  = "Searching";
 
 # EnhancedContent
 $tabsysprefs{AmazonEnabled}          = "EnhancedContent";
