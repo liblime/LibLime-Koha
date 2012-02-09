@@ -366,7 +366,7 @@ sub GetItemForBibPrefill
    my $starti     = 0;
    my $idx        = 0;
 
-   if (!!$$res{_pass}) {
+   if ($res->{_pass}) {
       IDX:
       for my $i(0..$#branches) {
          if ($branches[$i] ~~ $$res{holdingbranch}) {
@@ -423,7 +423,7 @@ sub GetItemForBibPrefill
          if ($$_{holdingbranch} ~~ $branches[$i]) {
             $$_{found}            = $$res{found};
             $$_{borrowerbranch}   = $$res{borrowerbranch};
-            $$_{borrowercategory} = $$res{categorycode};
+            $$_{borrowercategory} = $$res{borrowercategory} // $$res{categorycode};
             $$_{reservenumber}    = $$res{reservenumber};
             $item = _itemfillbib($_);
             last BRANCHITEM if $item;

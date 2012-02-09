@@ -22,25 +22,20 @@ This script displays items in the tmp_holdsqueue and hold_fill_targets tables
 
 =cut
 
-use strict;
-use warnings;
+use Koha;
 use CGI;
 use C4::Auth;
 use C4::Output;
-#use C4::Items;
-#use C4::Koha;   # GetItemTypes
 use C4::Branch;
 use C4::Reserves;
 
-my $query          = new CGI;
+my $query          = CGI->new;
 my $run_report     = $query->param('run_report');
 my $run_pass       = $query->param('run_pass');
 my $branchlimit    = $query->param('branchlimit')  // '';
-#my $limit          = $query->param('limit')        // 20;
 my $limit          = 0;
 my $currPage       = $query->param('currPage')     // 1;
 my $orderby        = $query->param('orderby')      // 'tmp_holdsqueue.title';
-#my $offset         = ($currPage -1)*$limit;
 my $offset         = 0;
 my $total          = 0;
 my $qitems         = [];
@@ -114,7 +109,7 @@ if ($run_report || $run_pass) {
       total       => $total,
       from        => ($offset+1),
       to          => ($total< ($offset+$limit))? $total: ($offset+$limit),
-      pager       => _pager(),
+      pager       => _pager($total, $limit, $currPage),
       branch      => $branchlimit || '',
       branchlimit => $branchlimit || '',
       branchname  => $branchlimit? C4::Branch::GetBranchName($branchlimit) : 'ALL',
@@ -131,6 +126,7 @@ exit;
 
 sub _pager
 {
+   my ($total, $limit, $currPage) = @_;
    my $out = '';
    return '' unless ($limit && $total);
    my $totalPages = $total%$limit? int($total/$limit)+1 : $total/$limit;
