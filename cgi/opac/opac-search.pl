@@ -169,7 +169,7 @@ if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {
                 selected => $selected,
                 description => $itemtypes->{$thisitemtype}->{'description'},
                 count5 => $cnt % 4,
-#                imageurl=> getitemtypeimagelocation( 'opac', $itemtypes->{$thisitemtype}->{'imageurl'} ),
+                imageurl=> getitemtypeimagelocation( 'opac', $itemtypes->{$thisitemtype}->{'imageurl'} ),
             );
     	$selected = 0; # set to zero after first pass through
     	push @itemtypesloop, \%row;
