@@ -168,27 +168,6 @@ if (nodename =="barcodes[]"){
 
 </div>
 
-<!-- TMPL_IF NAME="lost_summary" -->
-<div id="lost-summary">
-    <ol>
-        <!-- unless __last__ below intentionally duplicated, to prevent whitespace problems -->
-        <!-- TMPL_LOOP NAME="lost_summary" -->
-        <li>
-            <span class="label"><!-- TMPL_VAR NAME="description" -->:</span>
-            <!-- TMPL_LOOP NAME="items" -->
-            <!-- TMPL_IF NAME="itemnumber" -->
-            <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a><!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
-            <!-- TMPL_ELSE -->
-            &lt;deleted item&gt;<!-- TMPL_UNLESS NAME="__last__" -->,<!-- /TMPL_UNLESS -->
-            <!-- /TMPL_IF -->
-            <!-- /TMPL_LOOP -->
-            (total: $<!-- TMPL_VAR NAME="total_amount" -->)
-        </li>
-        <!-- /TMPL_LOOP -->
-    </ol>
-</div>
-<!-- /TMPL_IF -->
-
 <!-- Begin Upload Patron Image Section -->
 
 <div id="manage-patron-image">
