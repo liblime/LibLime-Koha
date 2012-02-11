@@ -244,8 +244,6 @@ $$data{_worklibraries} ||= '(none)';
 $$data{_worklibraries}   = '(none, not staff)' if $$data{category_type} ne 'S';
 $template->param($data);
 
-$template->param( lost_summary => GetLostStats( $borrowernumber, 1 ) );
-
 if (C4::Context->preference('ExtendedPatronAttributes')) {
     $template->param(ExtendedPatronAttributes => 1);
     $template->param(patron_attributes => C4::Members::Attributes::GetBorrowerAttributes($borrowernumber));
