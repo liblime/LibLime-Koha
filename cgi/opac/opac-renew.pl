@@ -25,7 +25,6 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 	}
 ); 
 my @items       = $query->param('item');
-$borrowernumber = $query->param('borrowernumber') || $query->param('bornum');
 my $opacrenew   = C4::Context->preference("OpacRenewalAllowed");
 my $borrower    = GetMember($borrowernumber);
 for my $itemnumber ( @items ) {
