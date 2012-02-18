@@ -608,10 +608,12 @@ sub GetBranchCodeFromName {
 # Returns the branches.branchcode for the first match or undef if no match.
 
 sub GetBranchByIp {
-    my $client_ip = Net::IP->new(shift
+    my $raw = shift
                // $ENV{HTTP_X_FORWARDED_FOR}
-               // $ENV{REMOTE_ADDR});
-    
+               // $ENV{REMOTE_ADDR};
+    $raw =~ s/([0-9.]+).*/$1/;
+    my $client_ip = Net::IP->new($raw);
+
     for my $branch (values %{GetBranches()}) {
         next unless $branch->{branchip};
         my $raw = $branch->{branchip};
