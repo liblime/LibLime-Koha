@@ -168,10 +168,6 @@ if ($completedJobID) {
             exit 0;
         } elsif (defined $pid) {
             # child
-            # close STDOUT to signal to Apache that
-            # we're now running in the background
-            close STDOUT;
-            close STDERR;
         } else {
             # fork failed, so exit immediately
             warn "fork failed while attempting to run $ENV{'SCRIPT_NAME'} as a background job";
