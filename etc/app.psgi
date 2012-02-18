@@ -40,6 +40,7 @@ builder {
             ];
 
     enable 'Header', unset => ['Status'];
+    enable '+Koha::Plack::CatchErrors';
     enable '+Koha::Plack::Localize';
 
     mount '/branches/' => sub {Koha::Squatting::Branch->psgi(shift)};
