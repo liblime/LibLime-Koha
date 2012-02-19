@@ -405,6 +405,7 @@ $template->param('item-level_itypes' => $itemLevelTypes);
 foreach my $biblioNum (@biblionumbers) {
 
     my $record = GetMarcBiblio($biblioNum);
+    next unless $record;
     my $subtitle = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 'subtitle', $record, '');
 
     # Init the bib item with the choices for branch pickup
