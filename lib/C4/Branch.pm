@@ -19,6 +19,7 @@ package C4::Branch;
 use strict;
 use warnings;
 use Carp;
+use List::Util qw(first);
 use List::MoreUtils qw(uniq);
 use Net::IP;
 
@@ -611,8 +612,9 @@ sub GetBranchByIp {
     my $raw = shift
                // $ENV{HTTP_X_FORWARDED_FOR}
                // $ENV{REMOTE_ADDR};
-    $raw =~ s/([0-9.]+).*/$1/;
+    $raw = first {/^[0-9]/} split /[^0-9.]+/, $raw;
     my $client_ip = Net::IP->new($raw);
+    return undef unless $client_ip;
 
     for my $branch (values %{GetBranches()}) {
         next unless $branch->{branchip};
