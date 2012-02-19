@@ -66,6 +66,11 @@ $template->param( 'AllowOnShelfHolds' => C4::Context->preference('AllowOnShelfHo
 $template->param( 'ItemsIssued' => CountItemsIssued( $biblionumber ) );
 
 my $record       = GetMarcBiblio($biblionumber);
+unless ($record) {
+    print $query->header( -status => 404);
+    exit 0;
+}
+
 $template->param( biblionumber => $biblionumber );
 # XSLT processing of some stuff
 if (C4::Context->preference("OPACXSLTDetailsDisplay") ) {

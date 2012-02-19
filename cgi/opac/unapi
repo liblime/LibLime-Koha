@@ -44,7 +44,7 @@ use C4::Biblio;
 use XML::LibXML;
 use XML::LibXSLT;
 
-my $cgi = CGI->new();
+our $cgi = CGI->new();
 binmode(STDOUT, "utf8"); #output as utf8
 
 =head1 VARIABLES
