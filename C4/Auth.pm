@@ -1593,10 +1593,7 @@ sub getborrowernumber {
 
 sub IsIpInLibrary {
     my $params = shift;
-    my $client_ip = $params->{ip}
-                    // $ENV{HTTP_X_FORWARDED_FOR}
-                    // $ENV{REMOTE_ADDR};
-    return (C4::Branch::GetBranchByIp($client_ip) eq $params->{branchcode}) ? 1 : 0;
+    return (C4::Branch::GetBranchByIp($params->{ip}) eq $params->{branchcode}) ? 1 : 0;
 }
 
 sub _uniq {

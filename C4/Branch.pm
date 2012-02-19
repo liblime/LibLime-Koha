@@ -19,6 +19,7 @@ package C4::Branch;
 use strict;
 use warnings;
 use Carp;
+use List::Util qw(first);
 use List::MoreUtils qw(uniq);
 use Net::IP;
 
@@ -607,10 +608,13 @@ sub GetBranchCodeFromName {
 # 
 # Returns the branches.branchcode for the first match or undef if no match.
 sub GetBranchByIp {
-    my $client_ip = Net::IP->new(shift
+    my $raw = shift
                // $ENV{HTTP_X_FORWARDED_FOR}
-               // $ENV{REMOTE_ADDR});
-    
+               // $ENV{REMOTE_ADDR};
+    $raw = first {/^[0-9]/} split /[^0-9.]+/, $raw;
+    my $client_ip = Net::IP->new($raw);
+    return undef unless $client_ip;
+
     for my $branch (values %{GetBranches()}) {
         next unless $branch->{branchip};
         my $raw = $branch->{branchip};
