@@ -19,10 +19,10 @@
 
 use strict;
 use warnings;
+use feature qw(switch);
 
 use CGI;
 use Encode qw(encode);
-use Switch;
 
 use C4::Auth;
 use C4::Biblio;
@@ -67,19 +67,19 @@ if ($shelfid && $format) {
             push @biblios, $_->{biblionumber};
         }
         $output = marc2csv(\@biblios, $format);
-            
+
     # Other formats
     } else {
 	foreach my $biblio (@$items) {
 	    my $biblionumber = $biblio->{biblionumber};
 
 	    my $record = GetMarcBiblio($biblionumber);
-        next unless $record;
+            next unless $record;
 
-	    switch ($format) {
-		case "iso2709" { $output .= $record->as_usmarc(); }
-		case "ris"     { $output .= marc2ris($record); }
-		case "bibtex"  { $output .= marc2bibtex($record, $biblionumber); }
+	    given ($format) {
+		when ('iso2709') { $output .= $record->as_usmarc(); }
+		when ('ris')     { $output .= marc2ris($record); }
+		when ('bibtex')  { $output .= marc2bibtex($record, $biblionumber); }
 	    }
 	}
     }
