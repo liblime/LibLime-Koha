@@ -867,7 +867,7 @@ sub GetReservesFromItemnumber {
     $borrowerreserv = GetReservesFromBorrowernumber($borrowernumber,$status);
     
     TODO :: Description
-    
+
 =cut
 
 sub GetReservesFromBorrowernumber {
@@ -1755,12 +1755,14 @@ sub ModReservePass
       SET itemnumber    = ?,
           barcode       = ?,
           holdingbranch = ?,
+          itemcallnumber = ?,
           queue_sofar   = ?
     WHERE reservenumber = ?');
    $sth->execute(
       $$item{itemnumber},
       $$item{barcode},
       $$item{holdingbranch},
+      $$item{itemcallnumber},
       $$res{queue_sofar},
       $$res{reservenumber}
    );
