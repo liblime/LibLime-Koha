@@ -22,6 +22,7 @@ use Carp;
 use List::Util qw(first);
 use List::MoreUtils qw(uniq);
 use Net::IP;
+use Clone qw(clone);
 
 require Exporter;
 
@@ -525,7 +526,7 @@ if $branchcode, just this branch, with associated categories.
 sub GetBranchInfo {
     my $branchcode = shift;
 
-    my @branches = values %{GetBranches(undef, $branchcode)};
+    my @branches = values %{clone(GetBranches(undef, $branchcode))};
     for my $branch (@branches) {
         $branch->{categories} = [map {$_} keys %{$branch->{category}}];
         delete $branch->{category};
