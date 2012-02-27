@@ -1334,6 +1334,14 @@ sub searchResults {
             warn "could not read marcxml. $@";
             next;
         }
+
+        if (my $limit_to_branches = C4::XSLT::LimitItemsToTheseBranches()) {
+            my @deletable_items
+                = grep {!($_->subfield('a') ~~ $limit_to_branches)} $marcrecord->field('952');
+
+            $marcrecord->delete_fields(@deletable_items);
+        }
+
         my $oldbiblio = TransformMarcToKoha( $dbh, $marcrecord, '' );
         $oldbiblio->{subtitle} = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 'subtitle', $marcrecord, '');
         $oldbiblio->{result_number} = $i + 1;

@@ -344,9 +344,21 @@ sub get_template_and_user {
         # variables passed from CGI: opac_css_override and opac_search_limits.
         my $opacconf
             = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
+        if (my $group = $opacconf->{default_search_limit}{group}) {
+            my $branches = C4::Branch::GetBranchesInCategory($group);
+            my $search_string = join ' or ', map {"branch:$_"} @$branches;
+            $opacconf->{default_search_limit}{content} = $search_string;
+        }
+        my $searchdomainoptions = C4::View::Util::BuildSearchDomainList(
+            $in->{query}->param('multibranchlimit') // $opacconf->{default_search_limit}{group});
 
-        my $opac_search_limit = $opacconf->{default_search_limit}{content} || $ENV{'OPAC_SEARCH_LIMIT'} // '';
-        my $opac_limit_override = $opacconf->{default_search_limit}{override} || $ENV{'OPAC_LIMIT_OVERRIDE'};
+        my $opac_search_limit
+            = $opacconf->{default_search_limit}{content}
+                // $ENV{OPAC_SEARCH_LIMIT}
+                // '';
+        my $opac_limit_override
+            = $opacconf->{default_search_limit}{override}
+                // $ENV{'OPAC_LIMIT_OVERRIDE'};
         my $mylibraryfirst = C4::Context->preference("SearchMyLibraryFirst");
         my $opac_name;
         if($opac_limit_override && ($opac_search_limit =~ /branch:(\w+)/) ){
@@ -424,7 +436,7 @@ sub get_template_and_user {
             ResetOpacInactivityTimeout => C4::Context->preference("ResetOpacInactivityTimeout"),
             GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),
             BibliosCataloging => C4::Context->preference("BibliosCataloging"),
-            searchdomainoptions       => C4::View::Util::BuildSearchDomainList($in->{query}->param('multibranchlimit')),
+            searchdomainoptions       => $searchdomainoptions,
         );
     }
     return ( $template, $borrowernumber, $cookie, $flags);
