@@ -470,7 +470,7 @@ sub GetItemForQueue
    my $item = $sth->fetchrow_hashref();
    return unless $item;
    $$item{found}            = $$res{found};
-   $$item{borrowercategory} = $$res{borrowercategory};
+   $$item{borrowercategory} = $$res{borrowercategory} // $$res{categorycode};
    $$item{borrowerbranch}   = $$res{borrowerbranch};
    $$item{reservenumber}    = $$res{reservenumber};
    return _itemfillbib($item);
