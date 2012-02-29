@@ -89,6 +89,9 @@ if ($run_report) {
     my $c = 0;
     foreach my $item(@$qitems) {
        $$item{action_cnt} = $c;
+       $$item{is_damaged} = $$item{damaged} ? 1 : 0;
+       $$item{is_otherstatus} = $$item{otherstatus} ? 1 : 0;
+
        my @qbranches = split(/\,/,$$item{queue_sofar});
        @qbranches    = reverse @qbranches;
        $qbranches[0] = "<i><b>$qbranches[0]</b></i>";

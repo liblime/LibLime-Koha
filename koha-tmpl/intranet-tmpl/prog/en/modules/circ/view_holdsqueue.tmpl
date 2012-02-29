@@ -92,7 +92,15 @@ function Xport(barcode) {
                                         <!-- TMPL_IF name="size" --><!-- TMPL_VAR name="size" --><!-- /TMPL_IF --> <!-- TMPL_IF NAME="isbn" -->ISBN: <!-- TMPL_VAR NAME="isbn" --><!-- /TMPL_IF --></p>
 			</td>
             <td><!-- TMPL_VAR NAME="ccode" --></td>
-            <td><!-- TMPL_VAR NAME="location" --></td>
+            <td><!-- TMPL_VAR NAME="location" -->
+              <!-- TMPL_IF name="is_otherstatus" -->
+              </br>
+              <span class="q_otherstatuslabel"> Status: </span>
+              <span class="q_otherstatus">
+                 <!-- TMPL_VAR NAME="otherstatus" -->
+              </span>
+              <!-- /TMPL_IF -->
+            </td>
             <td><!-- TMPL_VAR NAME="itemcallnumber"-->
                <!-- TMPL_VAR NAME="enumchron" -->
                <!-- TMPL_VAR NAME="copynumber" --></td>
@@ -102,6 +110,7 @@ function Xport(barcode) {
                     <em>Selected copy:<br></em>
                 <!-- /TMPL_IF -->
                 <a href="/cgi-bin/koha/catalogue/moredetail.pl?itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->&biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&bi=<!-- TMPL_VAR NAME="biblionumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a>
+            <!-- TMPL_IF name="is_damaged" -->(Damaged)<!-- /TMPL_IF -->
             </td>
 			   <td><p><a href="/cgi-bin/koha/circ/circulation.pl?findborrower=<!-- TMPL_VAR NAME="cardnumber" -->#reserves"><!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR NAME="firstname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)</a></p> <p><!-- TMPL_VAR NAME="phone" --></p></td>
             <td><!-- TMPL_VAR NAME="pickbranch" --></td>

@@ -602,6 +602,8 @@ sub GetHoldsQueueItems
          items.enumchron, 
          items.cn_sort, 
          items.copynumber,
+         items.otherstatus,
+         items.damaged,
          biblioitems.publishercode,
          biblio.copyrightdate,
          biblioitems.publicationyear,
