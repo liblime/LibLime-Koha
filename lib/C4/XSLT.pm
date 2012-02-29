@@ -173,9 +173,22 @@ sub XSLTParse4Display {
     return $newxmlrecord;
 }
 
+sub LimitItemsToThisGroup {
+    my $opacconf
+        = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
+    return ($opacconf && $opacconf->{default_search_limit}{hide_other_items})
+        ? $opacconf->{default_search_limit}{group}
+        : undef;
+}
+
+sub LimitItemsToTheseBranches {
+    my $group = LimitItemsToThisGroup();
+    return ($group) ? C4::Branch::GetBranchesInCategory($group) : undef;
+}
+
 sub buildKohaItemsNamespace {
     my ($biblionumber) = @_;
-    my @items = C4::Items::GetItemsInfo($biblionumber);
+    my @items = C4::Items::GetItemsInfo( $biblionumber,  LimitItemsToThisGroup());
     my $branches = GetBranches();
     my $itemtypes = GetItemTypes();
     my $xml = '';

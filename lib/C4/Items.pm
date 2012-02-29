@@ -1406,7 +1406,7 @@ If this is set, it is set to C<One Order>.
 =cut
 
 sub GetItemsInfo {
-    my ( $biblionumber ) = @_;
+    my ( $biblionumber, $limit_group ) = @_;
 
     my %restype;
     my $attached_count = 0;
@@ -1419,6 +1419,11 @@ sub GetItemsInfo {
       }
     }
     my ($suspended_rescount,$suspended_reserves) = C4::Reserves::GetSuspendedReservesFromBiblionumber($biblionumber);
+
+    my @limit_to_branches;
+    if ($limit_group) {
+        @limit_to_branches = @{C4::Branch::GetBranchesInCategory($limit_group)};
+    }
 
     my $dbh   = C4::Context->dbh;
     my $itemcount;
@@ -1447,9 +1452,13 @@ sub GetItemsInfo {
      LEFT JOIN biblioitems ON biblioitems.biblioitemnumber = items.biblioitemnumber
      LEFT JOIN itemtypes   ON   itemtypes.itemtype         = "
      . (C4::Context->preference('item-level_itypes') ? 'items.itype' : 'biblioitems.itemtype');
-    $query .= " WHERE items.biblionumber = ? ORDER BY branches.branchname,items.dateaccessioned desc" ;
+    $query .= ' WHERE items.biblionumber = ? ';
+    if (@limit_to_branches) {
+        $query .= sprintf 'AND homebranch IN (%s)', join(',', map {'?'} @limit_to_branches);
+    }
+    $query .= ' ORDER BY branches.branchname,items.dateaccessioned desc';
     my $sth = $dbh->prepare($query);
-    $sth->execute($biblionumber);
+    $sth->execute($biblionumber, @limit_to_branches);
     my $i = 0;
     my @results;
     my $serial;

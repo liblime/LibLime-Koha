@@ -130,7 +130,7 @@ my $itemstatuses = GetOtherItemStatus();
 my $dbh = C4::Context->dbh;
 
 # change back when ive fixed request.pl
-my @items = &GetItemsInfo( $biblionumber, 'intra' );
+my @items = &GetItemsInfo( $biblionumber, C4::XSLT::LimitItemsToThisGroup());
 my $dat = &GetBiblioData($biblionumber);
 
 # Get number of holds place on bib and/or items

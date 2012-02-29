@@ -1287,14 +1287,14 @@ sub searchResults {
     #find itemtype & itemtype image
     my %itemtypes;
     $bsth =
-      $dbh->prepare(
-        "SELECT itemtype,description,imageurl,summary,notforloan FROM itemtypes"
-      );
+        $dbh->prepare(
+            "SELECT itemtype,description,imageurl,summary,notforloan FROM itemtypes"
+        );
     $bsth->execute();
     while ( my $bdata = $bsth->fetchrow_hashref ) {
-		foreach (qw(description imageurl summary notforloan)) {
-        	$itemtypes{ $bdata->{'itemtype'} }->{$_} = $bdata->{$_};
-		}
+        foreach (qw(description imageurl summary notforloan)) {
+            $itemtypes{ $bdata->{'itemtype'} }->{$_} = $bdata->{$_};
+        }
     }
 
     #search item field code
@@ -1334,11 +1334,16 @@ sub searchResults {
             warn "could not read marcxml. $@";
             next;
         }
+
+        if (my $limit_to_branches = C4::XSLT::LimitItemsToTheseBranches()) {
+            my @deletable_items
+                = grep {!($_->subfield('a') ~~ $limit_to_branches)} $marcrecord->field($itemtag);
+            $marcrecord->delete_fields(@deletable_items);
+        }
+
         my $oldbiblio = TransformMarcToKoha( $dbh, $marcrecord, '' );
         $oldbiblio->{subtitle} = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 'subtitle', $marcrecord, '');
         $oldbiblio->{result_number} = $i + 1;
-# Grab item information
-#       my $marcitems = C4::Items::GetMarcWithItems($oldbiblio->{biblionumber},$marcresults[$i]);
 
         # add imageurl to itemtype if there is one
         $oldbiblio->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $oldbiblio->{itemtype} }->{imageurl} );
@@ -1357,41 +1362,15 @@ sub searchResults {
         # edition information, if any
         $oldbiblio->{edition} = $oldbiblio->{editionstatement};
         $oldbiblio->{description} = $itemtypes{ $oldbiblio->{itemtype} }->{description};
- # Build summary if there is one (the summary is defined in the itemtypes table)
- # FIXME: is this used anywhere, I think it can be commented out? -- JF
-        if ( $itemtypes{ $oldbiblio->{itemtype} }->{summary} ) {
-            my $summary = $itemtypes{ $oldbiblio->{itemtype} }->{summary};
-            my @fields  = $marcrecord->fields();
-            foreach my $field (@fields) {
-                my $tag      = $field->tag();
-                my $tagvalue = $field->as_string();
-                $summary =~
-                  s/\[(.?.?.?.?)$tag\*(.*?)]/$1$tagvalue$2\[$1$tag$2]/g;
-                unless ( $tag < 10 ) {
-                    my @subf = $field->subfields;
-                    for my $i ( 0 .. $#subf ) {
-                        my $subfieldcode  = $subf[$i][0];
-                        my $subfieldvalue = $subf[$i][1];
-                        my $tagsubf       = $tag . $subfieldcode;
-                        $summary =~
-s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
-                    }
-                }
-            }
-            # FIXME: yuk
-            $summary =~ s/\[(.*?)]//g;
-            $summary =~ s/\n/<br\/>/g;
-            $oldbiblio->{summary} = $summary;
-        }
 
         my %restype;
         my ($rescount,$reserves) = C4::Reserves::GetReservesFromBiblionumber($oldbiblio->{biblionumber});
         my $total_rescount = $rescount;
         foreach my $res (@$reserves) {
-          if ($res->{itemnumber}) {
-            $restype{$res->{itemnumber}} = "Attached";
-            $rescount--;
-          }
+            if ($res->{itemnumber}) {
+                $restype{$res->{itemnumber}} = "Attached";
+                $rescount--;
+            }
         }
         my ($suspended_rescount,$suspended_reserves) = C4::Reserves::GetSuspendedReservesFromBiblionumber($oldbiblio->{biblionumber});
 
@@ -1399,7 +1378,6 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 
         # Pull out the items fields
         my @fields = $marcrecord->field($itemtag);
-#       my @fields = $marcitems->field($itemtag);
 
         # Setting item statuses for display
         my @available_items_loop;
@@ -1459,13 +1437,13 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
             my @statusvalue = $sth->fetchrow;
             my ($otherstatus,$holdsallowed,$OPACstatusdisplay);
             if (@statusvalue) {
-              ($otherstatus,$holdsallowed) = @statusvalue;
-              $OPACstatusdisplay = 1;
+                ($otherstatus,$holdsallowed) = @statusvalue;
+                $OPACstatusdisplay = 1;
             }
             else {
-              $otherstatus = '';
-              $holdsallowed = 1;
-              $OPACstatusdisplay = 0;
+                $otherstatus = '';
+                $holdsallowed = 1;
+                $OPACstatusdisplay = 0;
             }
 
             my $prefix = $item->{$hbranch} . '--' . $item->{location} . $item->{itype} . $item->{itemcallnumber};
@@ -1499,7 +1477,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                 # is item in transit?
                 my $transfertwhen = '';
                 my ($transfertfrom, $transfertto);
-                
+
                 unless ($item->{wthdrawn}
                         || $item->{itemlost}
                         || $item->{damaged}
@@ -1549,45 +1527,45 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
                     $item->{status} = $item->{wthdrawn} . "-" . $item->{itemlost} . "-" . $item->{damaged} . "-" . $item->{suppress} . "-" . $item->{notforloan};
                     $other_count++;
                     if ($holdsallowed == 0) {
-                      $other_otherstatus_count++;
-                      if ($other_otherstatus eq '') {
-                        $other_otherstatus = $otherstatus;
-                      }
-                      else {
-                        $other_otherstatus .= ', ' . $otherstatus;
-                      }
+                        $other_otherstatus_count++;
+                        if ($other_otherstatus eq '') {
+                            $other_otherstatus = $otherstatus;
+                        }
+                        else {
+                            $other_otherstatus .= ', ' . $otherstatus;
+                        }
                     }
 
-					my $key = $prefix . $item->{status};
-					foreach (qw(wthdrawn itemlost damaged suppress branchname itemcallnumber)) {
+                    my $key = $prefix . $item->{status};
+                    foreach (qw(wthdrawn itemlost damaged suppress branchname itemcallnumber)) {
                     	$other_items->{$key}->{$_} = $item->{$_};
-					}
+                    }
                     $other_items->{$key}->{intransit} = ($transfertwhen ne '') ? 1 : 0;
                     $other_items->{$key}->{reserved} = (($restype{$item->{itemnumber}} eq "Attached") || ($restype{$item->{itemnumber}} eq "Reserved")) ? 1 : 0;
-					$other_items->{$key}->{notforloan} = GetAuthorisedValueDesc('','',$item->{notforloan},'','',$notforloan_authorised_value,$opac) if $notforloan_authorised_value;
-					$other_items->{$key}->{count}++ if $item->{$hbranch};
-					$other_items->{$key}->{location} = $shelflocations->{ $item->{location} };
-					$other_items->{$key}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
-                                        $other_items->{$key}->{OPACstatusdisplay} = $OPACstatusdisplay;
-                                        if (!defined($other_items->{$key}->{otherstatus})) {
-                                          $other_items->{$key}->{otherstatus} = $otherstatus;
-                                        }
-                                        else {
-                                          $other_items->{$key}->{otherstatus} .=', ' . $otherstatus;
-                                        }
+                    $other_items->{$key}->{notforloan} = GetAuthorisedValueDesc('','',$item->{notforloan},'','',$notforloan_authorised_value,$opac) if $notforloan_authorised_value;
+                    $other_items->{$key}->{count}++ if $item->{$hbranch};
+                    $other_items->{$key}->{location} = $shelflocations->{ $item->{location} };
+                    $other_items->{$key}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
+                    $other_items->{$key}->{OPACstatusdisplay} = $OPACstatusdisplay;
+                    if (!defined($other_items->{$key}->{otherstatus})) {
+                        $other_items->{$key}->{otherstatus} = $otherstatus;
+                    }
+                    else {
+                        $other_items->{$key}->{otherstatus} .=', ' . $otherstatus;
+                    }
                 }
                 # item is available
                 else {
                     $can_place_holds = 1;
                     $available_count++;
-					$available_items->{$prefix}->{count}++ if $item->{$hbranch};
-					foreach (qw(branchname itemcallnumber)) {
+                    $available_items->{$prefix}->{count}++ if $item->{$hbranch};
+                    foreach (qw(branchname itemcallnumber)) {
                     	$available_items->{$prefix}->{$_} = $item->{$_};
-					}
-					$available_items->{$prefix}->{location} = $shelflocations->{ $item->{location} };
-					$available_items->{$prefix}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
-                                        $available_items->{$prefix}->{OPACstatusdisplay} = $OPACstatusdisplay;
-                                        $available_items->{$prefix}->{otherstatus} = $otherstatus;
+                    }
+                    $available_items->{$prefix}->{location} = $shelflocations->{ $item->{location} };
+                    $available_items->{$prefix}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
+                    $available_items->{$prefix}->{OPACstatusdisplay} = $OPACstatusdisplay;
+                    $available_items->{$prefix}->{otherstatus} = $otherstatus;
                 }
             }
         }    # notforloan, item level and biblioitem level
@@ -1619,7 +1597,7 @@ s/\[(.?.?.?.?)$tagsubf(.*?)]/$1$subfieldvalue$2\[$1$tagsubf$2]/g;
 
         # last check for norequest : if itemtype is notforloan, it can't be reserved either, whatever the items
         $can_place_holds = 0
-          if $itemtypes{ $oldbiblio->{itemtype} }->{notforloan};
+            if $itemtypes{ $oldbiblio->{itemtype} }->{notforloan};
         $oldbiblio->{norequests} = 1 unless $can_place_holds;
         $oldbiblio->{itemsplural}          = 1 if $items_count > 1;
         $oldbiblio->{items_count}          = $items_count;
