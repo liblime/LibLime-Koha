@@ -301,6 +301,12 @@ function confirmCancelWaiting(that) {
           <td><!-- TMPL_VAR NAME="itemtype" --></td>
           <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
           <td>
+	    <!-- TMPL_IF EXPR="!waiting && !transfered && barcodereserv" -->
+            Only item
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF EXPR="waiting || tranferred" -->
+            Selected item
+            <!-- /TMPL_IF -->
             <!-- TMPL_IF name="barcodereserv" -->
             <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><!-- TMPL_VAR NAME="barcodereserv" --></a>
             <!-- /TMPL_IF -->

@@ -307,7 +307,12 @@ function showReserve(res,allLen,idx) {
             }
             listPriority += '<option value="del" '+(urank=='del'?'selected':'')+'>cancel';
             if (res.itemnumber) {
-               if (res.priority==0) { details = 'only item<br>'; }
+               if (res.priority!=0) {
+                 details = 'Only item ';
+               }
+               else {
+                 details = 'Selected item ';
+               }
                details += '<a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber='+res.biblionumber+'&itemnumber='+res.itemnumber+'#item'+res.itemnumber+'">'+res.itembarcode+'</a>';
             }
             else {
