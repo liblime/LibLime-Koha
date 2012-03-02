@@ -655,7 +655,7 @@ function HaltReturns() {
                     <TMPL_IF NAME="queue_branchlimit">parent.parent.GB_hide();
                     </TMPL_IF>
                     // don't autoset reserve to Waiting, leave alone
-                    document.foundf.dotransfer          = 0;
+                    document.foundf.dotransfer.value    = 0;
                     document.foundf.reservenumber.value = 0;
                     document.foundf.resbarcode.value    = '';
                     document.foundf.cancelTransfer.value= 1;
