@@ -95,6 +95,8 @@ sub new {
     $item->{'collection_code'} = $item->{ccode};
     $item->{  'call_number'  } = $item->{itemcallnumber};
     # $item->{'destination_loc'}  =  ?
+    my $lostvals = C4::Koha::GetKohaAuthorisedValues('items.itemlost');
+    $item->{'sip_item_properties'} = $lostvals->{$item->{itemlost}};
 
 	# check if its on issue and if so get the borrower
 	my $issue = GetItemIssue($item->{'itemnumber'});
