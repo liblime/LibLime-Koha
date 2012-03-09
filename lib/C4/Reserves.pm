@@ -1392,6 +1392,10 @@ sub _GetNextReserve {
     my $exact;
     my $nohold = 0;
 
+    # Awful, terrible, no good, very bad hack...
+    # Turn off patron categories here.
+    local *C4::Branch::CategoryTypeIsUsed = sub {0};
+
     foreach my $res (@$reserves) {
         $res->{dbitemnumber} = $res->{itemnumber};
         $res->{itemnumber} = $itemnumber; # Some callers require this be set
