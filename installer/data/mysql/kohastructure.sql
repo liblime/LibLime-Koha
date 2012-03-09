@@ -2532,6 +2532,7 @@ CREATE TABLE IF NOT EXISTS `subscription_defaults` (
   `enumchron` varchar(80) default NULL,
   `copynumber` varchar(32) default NULL,
   `permanent_location` varchar(80) default NULL,
+  `catstat` varchar(80) default NULL,
   `otherstatus` varchar(10) default NULL,
   `coded_location_qualifier` varchar(25) NOT NULL,
   PRIMARY KEY  (`subscriptionid`)

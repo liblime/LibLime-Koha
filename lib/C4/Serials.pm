@@ -2511,29 +2511,18 @@ sub GetNextDate(@) {
 }
 
 sub SetSubscriptionDefaults {
-  my ( $subscriptionid, $defaults ) = @_;
-
-  $defaults->{'subscriptionid'} = $subscriptionid;
+    my ( $subscriptionid, $defaults ) = @_;
+    $defaults->{'subscriptionid'} = $subscriptionid;
     
-  my @columns;
-  my @values;
-  my @placeholders;
-  foreach my $k ( keys %$defaults ) {
-    if ( $defaults->{ $k } ) {
-      push( @columns, $k );
-      push( @values, "'$defaults->{ $k }'" );
-      push( @placeholders, '?' );
-    }
-  }
-  
-  my $columns = join( ',', @columns );
-  my $placeholders = join( ',', @placeholders );
-  my $values = join( ',', @values );
-
-  my $sql = "REPLACE INTO subscription_defaults ( $columns ) VALUES ( $values )";
-  my $dbh = C4::Context->dbh;
-  my $sth = $dbh->prepare( $sql );
-  $sth->execute();
+    my @cols = grep { $defaults->{$_} } keys %$defaults;
+    my $columns = join ',', @cols;
+    my $binds = '?' . ',?' x (@cols - 1);
+    
+    my $sql = "REPLACE INTO subscription_defaults ( $columns ) VALUES ( $binds )";
+    
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare( $sql );
+    $sth->execute(@$defaults{@cols});
 }
 
 sub GetSubscriptionDefaults {
