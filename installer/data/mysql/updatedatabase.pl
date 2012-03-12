@@ -4741,6 +4741,19 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( Add 'trim' barcode filter option )\n";
 }
 
+$DBversion = 4.09.00.005; 
+if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    my $sql = qq{
+        ALTER TABLE subscription_defaults
+        ADD COLUMN catstat varchar(80) default NULL
+    };
+    $dbh->do($sql);
+
+    SetVersion ($DBversion);
+    print "Upgrade to $DBversion done ( added catstat to subscription_defaults table )\n";
+}
+
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
