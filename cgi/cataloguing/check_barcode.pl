@@ -73,6 +73,7 @@ if ($btype eq 'item') {
             $params->{'medium'} = $field_245->subfield('h') || '';
             $params->{'field245n'} = $field_245->subfield('n') || '';
             $params->{'field245p'} = $field_245->subfield('p') || '';
+            $params->{'field245b'} = $field_245->subfield('b') || '';
          }
   
          if ( $issue ) {

@@ -132,7 +132,13 @@ function _checkbarcode() {
          if (data.itemnumber) {
 				var itemData = '<table border=0 cellspacing=0 cellpadding=2>';
 				itemData += '<tr><td>Title: </td><td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber='
-            +data.biblionumber + '">' + data.title + ' ' + data.subtitle + "</a></td></tr>";
+            +data.biblionumber + '">' + data.title + ' ' + data.subtitle ;
+
+				if ( data.field245b ) {
+					itemData +=  "<br/>" + data.field245b ;
+				}
+
+                                itemData +=  "</a></td></tr>";
 
 				if ( data.medium ) {
 					itemData += "<tr><td>Medium: </td><td>" + data.medium + "</td></tr>";
@@ -140,8 +146,8 @@ function _checkbarcode() {
 				if ( data.field245n || data.field245p ) {
 					itemData += "<tr><td>Part/Section: </td><td>" + data.field245n + ' ' + data.field245p + "</td></tr>";
 				}
-				itemData += "<tr><td>Holding Location: </td><td>" + data.holdingbranch + "</td></tr>";
-				itemData += "<tr><td>Home Location: </td><td>" + data.homebranch + "</td></tr>";
+				itemData += "<tr><td>Current library: </td><td>" + data.holdingbranch + "</td></tr>";
+				itemData += "<tr><td>Home library: </td><td>" + data.homebranch + "</td></tr>";
 				if ( data.date_due ) {
 					itemData += "<tr><td colspan=2>Currently checked out.<br>";
 					itemData += "Due back on " + data.date_due + "</td></tr>";
