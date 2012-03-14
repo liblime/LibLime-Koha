@@ -1,4 +1,17 @@
 {
+   "AdvancedSearchLimits" : {
+      "explanation" : "Add or remove the limits you would like to display in the Staff Advanced Search screen.  All options will be selected by default.  If this field is blank, no limits will be set",
+      "options" : null,
+      "value" : "ItemTypes|CCodes|ShelvingLocations|Language|DateRange|LocationAvailability|Subtypes|SortBy",
+      "type" : "Textarea"
+   },
+   "OPACAdvancedSearchLimits" : {
+         "explanation" : "Add or remove the limits you would like to display in the OPAC Advanced Search screen.  All options will be selected by default.  If this field is blank, no limits will be set.",
+         "options" : null,
+         "value" : "ItemTypes|CCodes|ShelvingLocations|Language|DateRange|LocationAvailability|Subtypes|SortBy",
+         "type" : "Textarea"
+   },
+
    "KeepPreviousBorrowerInterval" : {
       "explanation" : "Number of days that must pass before the previous borrower is expunged from old issues if that item has not since been checked out.",
       "options" : null,

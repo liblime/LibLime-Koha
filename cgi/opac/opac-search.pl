@@ -15,6 +15,7 @@ use C4::Search;
 use C4::Biblio;  # GetBiblioData
 use C4::Koha;
 use C4::Tags qw(get_tags);
+use C4::Languages qw(getAllLanguages);
 use POSIX qw(ceil floor strftime);
 use C4::Branch; # GetBranches
 use Text::Aspell;
@@ -133,35 +134,24 @@ $template->param(
     branchloop       => GetBranchesLoop($mybranch, 0),
     searchdomainloop => GetBranchCategories(undef,'searchdomain'),
 );
-
-# add support for searching by shelving location
-my @shelvinglocsloop;
-my $selected=1;
-my $cnt2;
-my $shelflocations =GetAuthorisedValues("LOC");
-for my $thisloc (sort {$a->{'lib'} cmp $b->{'lib'}} @$shelflocations) {
-    my %row =(
-                number => $cnt2++,
-                ccl => 'loc',
-                code => $thisloc->{authorised_value},
-                selected => $selected,
-                description => $thisloc->{'lib'},
-                count5 => $cnt2 % 4,
-              );
-    	$selected = 0; # set to zero after first pass through
-    push @shelvinglocsloop, \%row;
-}
-$template->param(shelvinglocsloop => \@shelvinglocsloop);
+# load the language limits (for search)
+    my $languages_limit_loop = getAllLanguages();
+    $template->param(search_languages_loop => $languages_limit_loop,);
 # load the Type stuff
 my $itemtypes = GetItemTypes;
 # the index parameter is different for item-level itemtypes
 my $itype_or_itemtype = (C4::Context->preference("item-level_itypes"))?'itype':'itemtype';
 my @itemtypesloop;
-$selected=1;
+my @ccodesloop;
+
+my $selected=1;
 my $cnt;
 my $advanced_search_types = C4::Context->preference("OPACAdvancedSearchTypes");
+my $advanced_search_limits = C4::Context->preference("OPACAdvancedSearchLimits");
+my @advanced_search_limits = split(/\|/,$advanced_search_limits);
 
-if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {
+if ($#advanced_search_limits >= 0 && grep(/ItemTypes/i,@advanced_search_limits) ) {
+$selected=1;
 	foreach my $thisitemtype ( sort {$itemtypes->{$a}->{'description'} cmp $itemtypes->{$b}->{'description'} } keys %$itemtypes ) {
         my %row =(  number=>$cnt++,
 				ccl => $itype_or_itemtype,
@@ -174,24 +164,64 @@ if (!$advanced_search_types or $advanced_search_types eq 'itemtypes') {
     	$selected = 0; # set to zero after first pass through
     	push @itemtypesloop, \%row;
 	}
-        $template->param(itemtypeloop => \@itemtypesloop, DisplayAdvancedSearchLimits => 1);
-} elsif ($advanced_search_types eq 'ccode') {
-    my $advsearchtypes = GetAuthorisedValues($advanced_search_types);
+        $template->param(itemtypeloop => \@itemtypesloop, DisplayAdvancedSearchLimits => 1,ItemTypeLimit => 'ItemTypes');
+} if ( $#advanced_search_limits >= 0 && grep(/CCodes/i,@advanced_search_limits)  ) {
+ #  my $advsearchtypes = GetAuthorisedValues($advanced_search_types);
+ my $advsearchtypes = GetAuthorisedValues('CCODE');
+
 	for my $thisitemtype (sort {$a->{'lib'} cmp $b->{'lib'}} @$advsearchtypes) {
 		my %row =(
 				number=>$cnt++,
-				ccl => $advanced_search_types,
+                ccl => 'ccode',
                 code => $thisitemtype->{authorised_value},
                 selected => $selected,
                 description => $thisitemtype->{'lib'},
                 count5 => $cnt % 4,
                 imageurl=> getitemtypeimagelocation( 'opac', $thisitemtype->{'imageurl'} ),
             );
-		push @itemtypesloop, \%row;
-        $template->param(itemtypeloop => \@itemtypesloop, DisplayAdvancedSearchLimits => 1);
+        $selected = 0; # set to zero after first pass through
+        push @ccodesloop, \%row;
+        $template->param(ccodeloop => \@ccodesloop, DisplayAdvancedSearchLimits => 1,CCodeLimit => 'CCodes');
+        #$template->param(advancedsearchlimits2 => Dumper(\@ccodesloop));
+
 	}
-} else {
-    #$template->param(DisplayAdvancedSearchLimits => 0);
+
+} if ( $#advanced_search_limits >= 0 && grep(/ShelvingLocations/i,@advanced_search_limits)  ) {
+
+# add support for searching by shelving location
+my @shelvinglocsloop;
+$selected=1;
+my $cnt2;
+my $shelflocations =GetAuthorisedValues("LOC");
+  for my $thisloc (sort {$a->{'lib'} cmp $b->{'lib'}} @$shelflocations) {
+    my %row =(
+                number => $cnt2++,
+                ccl => 'loc',
+                code => $thisloc->{authorised_value},
+                selected => $selected,
+                description => $thisloc->{'lib'},
+                count5 => $cnt2 % 4,
+              );
+    	$selected = 0; # set to zero after first pass through
+    push @shelvinglocsloop, \%row;
+  }
+$template->param(shelvinglocsloop => \@shelvinglocsloop,DisplayAdvancedSearchLimits => 1,ShelvingLocationLimit => 'ShelvingLocations');
+}
+
+if ( $#advanced_search_limits >= 0 && grep(/DateRange/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,DateRangeLimit => 'DateRange');
+}
+if ( $#advanced_search_limits >= 0 && grep(/Subtypes/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,SubtypeLimit => 'Subtypes');
+}
+if ( $#advanced_search_limits >= 0 && grep(/Language/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,LanguageLimit => 'Language');
+}  
+if ( $#advanced_search_limits >= 0 && grep(/LocationAvailability/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,LocationLimit => 'LocationAvailability');
+}
+if ( $#advanced_search_limits >= 0 && grep(/SortBy/i,@advanced_search_limits)  ) {
+  $template->param(DisplayAdvancedSearchLimits => 1,SortByLimit => 'SortBy');
 }
 
 # # load the itypes (Called item types in the template -- just authorized values for searching)

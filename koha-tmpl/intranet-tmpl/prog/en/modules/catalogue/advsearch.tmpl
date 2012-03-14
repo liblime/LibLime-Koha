@@ -29,6 +29,34 @@
       return true;
    }
 </script>
+<script type="text/javascript"> 
+//expand or collapse search limit options
+
+function expand_itemtype(){
+  $("div#advsearch-itemtype").toggle('slow');
+}
+function expand_pubrange(){
+  $("div#pubrange").toggle('slow');
+}
+function expand_ccode(){
+  $("div#advsearch-ccode").toggle('slow');
+}
+function expand_shelvingloc(){
+  $("div#advsearch-shelvingloc").toggle('slow');
+}
+function expand_subtypes(){
+  $("div#subtypes").toggle('slow');
+}
+function expand_location(){
+  $("div#location").toggle('slow');
+}
+function expand_language(){
+  $("div#language").toggle('slow');
+}
+function expand_sortby(){
+  $("div#sortby").toggle('slow');
+}
+</script>
 </head>
 <body>
 
@@ -97,6 +125,34 @@
 <!-- /BOOLEAN SEARCH OPTIONS -->
 <!-- SEARCH BUTTONS -->
             <p><input class="submit" type="submit" accesskey="s" value="Search" />
+            <!-- TMPL_IF NAME="ItemTypeLimit" -->
+            <a href="javascript:;" onclick=expand_itemtype()>[+/- Item Types]</a>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="CCodeLimit" -->
+            <a href="javascript:;" onclick=expand_ccode()>[+/- Collection Codes]</a>
+            <!-- /TMPL_IF -->
+
+            <!-- TMPL_IF NAME="ShelvingLocationLimit" -->
+            <a href="javascript:;" onclick=expand_shelvingloc()>[+/- Shelving Locations]</a>
+            <!-- /TMPL_IF -->
+
+            <!-- TMPL_IF NAME="SubtypeLimit" -->
+            <a href="javascript:;" onclick=expand_subtypes()>[+/- Subtypes]</a>
+            <!-- /TMPL_IF -->
+
+            <!-- TMPL_IF NAME="LanguageLimit" -->
+            <a href="javascript:;" onclick=expand_language()>[+/- Language]</a>
+            <!-- /TMPL_IF -->
+
+            <!-- TMPL_IF NAME="DateRangeLimit" -->
+            <a href="javascript:;" onclick=expand_pubrange()>[+/- Date]</a>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="LocationLimit" -->
+            <a href="javascript:;" onclick=expand_location()>[+/- Location]</a>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="SortByLimit" -->
+            <a href="javascript:;" onclick=expand_sortby()>[+/- Sort By]</a>
+            <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="expanded_options" -->
             <a href="/cgi-bin/koha/catalogue/search.pl?expanded_options=0">[Fewer Options]</a>
             <!-- TMPL_ELSE -->
@@ -106,110 +162,110 @@
             </p>
 <!-- /SEARCH BUTTONS -->
 
-<!-- ITEMTYPE LIMITS -->
-<!-- TMPL_IF NAME="DisplayAdvancedSearchLimits" -->
-    <div id="itemtypelist">
+
+</div>
+
+</div>
+
+<div class="yui-g">
+  <!-- TMPL_IF NAME="DisplayAdvancedSearchLimits" -->
+    <!-- TMPL_IF NAME="ItemTypeLimit" -->
+    <div id="advsearch-itemtype" class="container">
 	<fieldset>
-     <legend>Limit to any of the following:</legend>
+    <legend>Item Types:</legend>
     <table>
         <tr>
-      <!--TMPL_LOOP Name="itemtypeloop"-->
-        <td>
-        <!-- TMPL_IF name="imageurl"--><img border="0" src="<!--TMPL_VAR Name="imageurl" -->" alt="<!--TMPL_VAR Name="description" -->" /><!-- /TMPL_IF -->
-		<input type="checkbox" id="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->" name="limit" value="mc-<!-- TMPL_VAR NAME="ccl" -->:<!--TMPL_VAR Name="code" -->" />&nbsp;
-        <label for="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->"><!--TMPL_VAR Name="description" --></label></td>
-        <!-- TMPL_UNLESS name="count5" --></tr><tr><!-- /TMPL_UNLESS -->
-      <!--/TMPL_LOOP-->
-	  <!-- FIXME: for validation, avoid generating empty row -->
-      </tr>
+       <!--TMPL_LOOP Name="itemtypeloop"-->
+        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->" name="limit" value="mc-<!-- TMPL_VAR NAME="ccl" -->:<!--TMPL_VAR Name="code" -->"/><label for="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->"><!-- TMPL_IF name="imageurl"--><img border="0" src="<!--TMPL_VAR Name="imageurl" -->" alt="<!--TMPL_VAR Name="description" -->" /><!-- /TMPL_IF -->&nbsp;
+        <!--TMPL_VAR Name="description" --></label></td>
+        <!-- TMPL_UNLESS name="count5" --><!-- TMPL_UNLESS name="__last__" --></tr><tr><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
+       <!--/TMPL_LOOP-->
+		</tr>
     </table>
 	</fieldset>
     </div>
-<!-- /ITEMTYPE LIMITS -->
-<!-- /TMPL_IF -->
+   <!-- /TMPL_IF -->
 
-<!-- TMPL_IF NAME="expanded_options" -->
-<div id="basiclimits" class="container">
-<!-- BASIC LIMITS -->
- <fieldset>
-	<legend>Limits:</legend>
-<div id="pubrange" class="container">
-<!-- PUB / COPY YEAR LIMIT --><!-- FIXME: add publication,copyright,acquisition options -->
-	<p><label for="limit-yr">Year: </label>
-		<input size="15" name="limit-yr" id="" value=""/>&nbsp;&nbsp;(format: yyyy-yyyy)</p>
-<!-- /PUB / COPY YEAR LIMIT -->
-</div>
-<div id="language" class="container">
-<!-- LANGUAGE LIMIT -->
-		<p><label for="language-limit">Language: </label>                                        
-		<select name="limit">
-		<option value="">No Limit</option>
-		<!-- TMPL_LOOP NAME="search_languages_loop" -->
-		<!-- TMPL_IF NAME="selected" -->
-		<option value="ln:<!-- TMPL_VAR NAME="iso639_2_code" -->" selected="selected"><!-- TMPL_VAR NAME="language_description" --></option>
-		<!-- TMPL_ELSE -->
-		<option value="ln:<!-- TMPL_VAR NAME="iso639_2_code" -->"><!-- TMPL_VAR NAME="language_description" --></option>
-		<!-- /TMPL_IF -->
-		
-		<!-- /TMPL_LOOP -->
-		</select></p><!-- <a href="">Show all languages</a>-->
-<!-- /LANGUAGE LIMIT -->
-</div>
-</fieldset>
-<!-- /BASIC LIMITS -->
-</div>
-<!-- /TMPL_IF -->
+   <!-- TMPL_IF NAME="CCodeLimit" -->
 
+    <div id="advsearch-ccode" class="container">
+	<fieldset>
+    <legend>Collection Codes:</legend>
+    <table>
+        <tr>
+      <!--TMPL_LOOP Name="ccodeloop"-->
+        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->" name="limit" value="mc-<!-- TMPL_VAR NAME="ccl" -->:<!--TMPL_VAR Name="code" -->"/><label for="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->"><!-- TMPL_IF name="imageurl"--><img border="0" src="<!--TMPL_VAR Name="imageurl" -->" alt="<!--TMPL_VAR Name="description" -->" /><!-- /TMPL_IF -->&nbsp;
+        <!--TMPL_VAR Name="description" --></label></td>
+        <!-- TMPL_UNLESS name="count5" --><!-- TMPL_UNLESS name="__last__" --></tr><tr><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
+      <!--/TMPL_LOOP-->
+		</tr>
+    </table>
+	</fieldset>
+    </div>
+    <!-- /TMPL_IF -->
 
-<!-- TMPL_IF NAME="UNIMARC" -->
-<!-- TMPL_INCLUDE NAME="subtypes_unimarc.inc" -->
-<!-- TMPL_ELSE -->
-<div id="subtype" class="container">
-<!-- SUBTYPE LIMITS -->
-        <fieldset>
-        <legend>Subtype limits:</legend><p>
-        
-        <select name="limit" class="subtype">
-            <option value="" selected="selected" class="menuheader">Any audience</option>
-            <option value="(aud:a or aud:b or aud:c or aud:j)">Children</option>
-			<option value="aud:a">Preschool</option>
-			<option value="aud:b">Primary</option>
-			<option value="aud:c">Pre-teen</option>
-			<option value="aud:d">Teen</option>
-        </select>
+     <!-- TMPL_IF NAME="ShelvingLocationLimit" -->
+    <div id="advsearch-shelvingloc" class="container">
+	<fieldset>
+    <legend>Shelving Locations:</legend>
+    <table>
+        <tr>
+      <!--TMPL_LOOP Name="shelvinglocsloop"-->
+        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->" name="limit" value="mc-<!-- TMPL_VAR NAME="ccl" -->:<!--TMPL_VAR Name="code" -->"/><label for="<!-- TMPL_VAR NAME="ccl" -->-<!--TMPL_VAR Name="number" -->">
+        <!--TMPL_VAR Name="description" --></label></td>
+        <!-- TMPL_UNLESS name="count5" --><!-- TMPL_UNLESS name="__last__" --></tr><tr><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
+      <!--/TMPL_LOOP-->
+		</tr>
+    </table>
+	</fieldset>
+    </div>
+      <!-- /TMPL_IF -->
+
+     <!-- TMPL_IF NAME="SubtypeLimit" -->
+    <!--TMPL_IF Name="usmarc"-->
+        <!-- SUBTYPE LIMITS -->
+            <div id="subtypes" class="container"><fieldset>
+            <legend>Subtypes:</legend>
+            <select name="limit" class="subtype">
+                  <option value="" selected="selected" class="menuheader">Any audience</option>
+                  <option value="(aud:a or aud:b or aud:c or aud:j)">Children</option>
+		    <option value="aud:a">Preschool</option>
+		    <option value="aud:b">Primary</option>
+		    <option value="aud:c">Pre-teen</option>
+		    <option value="aud:d">Teen</option>
+            </select>
         
             <select name="limit" class="subtype">
-                <option value="" selected="selected" class="menuheader">Any Content</option>
-                    <option value="(rtype:a and (fic:1 or fic:c or fic:f or fic:j))">Fiction books</option>
-                    <option value="(rtype:a and (fic:0 or fic:d or fic:e or fic:h or fic:i or fic:m or fic:s))">Non-fiction books</option>
-                    <option value="(rtype:a and fic:p)">Poetry</option>
-                    <option value="rtype:a and fic:j">Short stories</option>
-                    <option value="(rtype:a and (bio:b or bio:c))">Biographies</option>
-                    <option value="(rtype:a and bio:a)">Autobiographies</option>
-                </select>
+                  <option value="" selected="selected" class="menuheader">Any Content</option>
+                  <option value="(rtype:a and (fic:1 or fic:c or fic:f or fic:j))">Fiction books</option>
+                  <option value="(rtype:a and (fic:0 or fic:d or fic:e or fic:h or fic:i or fic:m or fic:s))">Non-fiction books</option>
+                  <option value="(rtype:a and fic:p)">Poetry</option>
+                  <option value="rtype:a and fic:j">Short stories</option>
+                  <option value="(rtype:a and (bio:b or bio:c))">Biographies</option>
+                  <option value="(rtype:a and bio:a)">Autobiographies</option>
+            </select>
 
-        
-                <select name="limit" class="subtype">
-                    <option value="" selected="selected" class="menuheader">Any Format</option>
-                    <option value="ff8-23:d">Large print books</option>
-                    <option value="ff8-23:f">Braille books</option>
-                    <option value="g-format:6">Graphic novels</option>
-                    <option value="">-----------</option>
-                    <option value="(dt-vis:v and v-format:v)">DVDs</option>
-                    <option value="(dt-vis:v and v-format:s)">Blu-ray DVDs</option> 
-                    <option value="l-format:vf">Videocassettes</option>
-                    <option value="">-----------</option>
-                    <option value="l-format:sd">Compact discs</option>
-                    <option value="l-format:sz">Digital audio players</option>
-                    <option value="l-format:ss">Cassettes</option>
-                    <option value="">-----------</option>
-                    <option value="l-format:co">Software</option>
-                    <option value="(dt-cf:c and e-format:g)">Video games</option>
-                    <option value="l-format:cr">Websites and downloadables</option>
-                    <option value="">-----------</option>
-                    <option value="mus:j">Music</option>
-                    <option value="mus:i">Audiobooks</option>
-                </select>
+            <select name="limit" class="subtype">
+                  <option value="" selected="selected" class="menuheader">Any Format</option>
+                  <option value="ff8-23:d">Large print books</option>
+                  <option value="ff8-23:f">Braille books</option>
+                  <option value="g-format:6">Graphic novels</option>
+                  <option value="">-----------</option>
+                  <option value="(dt-vis:v and v-format:v)">DVDs</option>
+                  <option value="(dt-vis:v and v-format:s)">Blu-ray DVDs</option> 
+                  <option value="l-format:vf">Videocassettes</option>
+                  <option value="">-----------</option>
+                  <option value="l-format:sd">Compact discs</option>
+                  <option value="l-format:sz">Digital audio players</option>
+                  <option value="l-format:ss">Cassettes</option>
+                  <option value="">-----------</option>
+                  <option value="l-format:co">Software</option>
+                  <option value="(dt-cf:c and e-format:g)">Video games</option>
+                  <option value="l-format:cr">Websites and downloadables</option>
+                  <option value="">-----------</option>
+                  <option value="mus:j">Music</option>
+                  <option value="mus:i">Audiobooks</option>
+             </select>
         
        <!-- <select name="limit" class="subtype">
             <option value="" >Additional content types</option>
@@ -237,107 +293,133 @@
             <option value="ctype:z" >Treaties </option>
         </select> -->
 
-       </p>
+    
+    </fieldset></div>
+    <!--/TMPL_IF -->
 
-</fieldset>
+    <!--TMPL_IF Name="UNIMARC" -->
+        <div id="subtypes_unimarc" class="container"><!-- SUBTYPE LIMITS -->
+    <!-- TMPL_INCLUDE NAME="subtypes_unimarc.inc" --></div>
+    <!--/TMPL_IF-->
+
+<!--/TMPL_IF-->
 </div>
-<!-- /TMPL_IF -->
 
-<!-- TMPL_IF NAME="template-defined-limits" -->
-<div id="advsearch-itemtype" class="container">
-<!-- TYPE LIMITS -->
-    <fieldset>
-
-    <legend>Limit to any of the following</legend>
-    <table class="itemtypes">
-            <tr>
-            <td><input type="checkbox" id="mc-bks" name="limit" value="mc:t" />
-			<label for="mc-bks" title="Books, Pamphlets, Technical reports, Manuscripts, Legal papers, Theses and dissertations">
-			<img border="0" src="/intranet-tmpl/prog/img/AF.gif" alt="Books" />Books</label></td>
-			<td><input type="checkbox" id="mc-vis" name="limit" value="mc:v" />
-			<label for="mc-vis" title="Motion pictures, Videorecordings, Filmstrips, Slides, Transparencies, Photos, Cards, Charts, Drawings">
-			<img border="0" src="/intranet-tmpl/prog/en/images/AV Aids.gif" alt="Visual Materials" />Visual Materials</label></td>
-            <td><input type="checkbox" id="mc-sr" name="limit" value="mc-rtype:i" />
-			<label for="mc-sr" title="Spoken, Books on CD and Cassette">
-			<img border="0" src="/intranet-tmpl/prog/en/images/AF.gif" alt="Books on Tape" />Books on Tape</label></td>
-            </tr>
-
-            <tr>
-            <td><input type="checkbox" id="mc-cf" name="limit" value="mc:c" />
-			<label for="mc-cf" title="Computer files, Data, Software">
-			<img border="0" src="/intranet-tmpl/prog/en/images/CD-ROM software.gif" alt="Computer Files" />Computer Files</label></td>
-            <td><input type="checkbox" id="mc-lh" name="limit" value="mc-collection:LH" />
-			<label for="mc-lh" title="Local History Materials">
-			<img border="0" src="/intranet-tmpl/prog/en/images/Local history.gif" alt="Local History Materials" />Local History Materials</label></td>
-            <td><input type="checkbox" id="mc-map" name="limit" value="mc:a" />
-			<label for="mc-map" title="Maps, Globes">
-			<img border="0" src="/intranet-tmpl/prog/en/images/PF.gif " alt="Maps" />Maps</label></td>
-            </tr>
-
-            <tr>
-            <td><input type="checkbox" id="mc-mus" name="limit" value="mc-rtype:j" />
-			<label for="mc-mus" title="Music">
-			<img border="0" src="/intranet-tmpl/prog/en/images/CDM.gif" alt="Music" />Music</label></td>
-            <td><input type="checkbox" id="mc-kit" name="limit" value="mc-rtype:o" />
-			<label for="mc-kit" title="Kits"><img border="0" src="/intranet-tmpl/prog/en/images/KIT.gif" alt="Kits" />Kits</label></td>
-            <td><input type="checkbox" id="mc-ref" name="limit" value="mc-collection:REF" />
-			<label for="mc-ref" title="Reference">
-			<img border="0" src="/intranet-tmpl/prog/en/images/REF.gif" alt="Reference" />Reference</label></td>
-            </tr>
-            
-            </table>
+    <!--/TMPL_IF -->
+     <!-- TMPL_IF NAME="LanguageLimit" -->
+        <div id="language" class="container">
+        <fieldset>
+        <!-- LANGUAGE LIMIT -->   
+              <legend>Language:</legend>                                    
+		<select name="limit">
+		<option value="">No Limit</option>
+		<!-- TMPL_LOOP NAME="search_languages_loop" -->
+		<!-- TMPL_IF NAME="selected" -->
+		<option value="ln:<!-- TMPL_VAR NAME="iso639_2_code" -->" selected="selected"><!-- TMPL_VAR NAME="language_description" --></option>
+		<!-- TMPL_ELSE -->
+		<option value="ln:<!-- TMPL_VAR NAME="iso639_2_code" -->"><!-- TMPL_VAR NAME="language_description" --></option>
+		<!-- /TMPL_IF -->		
+		<!-- /TMPL_LOOP -->
+		</select></p><!-- <a href="">Show all languages</a>-->
+       <!-- /LANGUAGE LIMIT -->
+       </fieldset>
+       </div>
+    <!--/TMPL_IF-->
+     <!-- TMPL_IF NAME="DateRangeLimit" -->
+<div id="pubrange" class="container">
+<fieldset>
+<!-- PUB RANGE OPTION -->
+<legend>Publication Date Range:</legend>
+<span>For example:  1999-2001.  You could also use "-1987" for everything published before 1987 or "2008-" for everything published after 2008.</span>
+<input type="text" size="30" name="limit-yr" title="Enter search terms" value="" />
 </fieldset>
+<!-- /PUB RANGE OPTION -->
 </div>
-<!-- /TMPL_IF -->
-<!-- /TYPE LIMITS -->
 
-<div id="availability" class="container">
+      <!-- /TMPL_IF -->
+
+<div class="yui-g">
+<div class="yui-u first">
+ <!--TMPL_IF NAME="LocationLimit" -->
 <!-- AVAILABILITY LIMITS -->
-    <fieldset><legend>Location and availability: </legend>
-<div id="currently-avail" class="container">
-        <label for="available-items">Only items currently available</label> <input type="checkbox" id="available-items" name="limit" value="available" />
-</div>
-<p />
-<div id="select-libs" class="container">
-        <label for="branchloop">Individual Libraries:</label><select name="limit" id="branchloop" onchange='if(this.value != ""){document.getElementById("categoryloop").disabled=true;} else {document.getElementById("categoryloop").disabled=false;}'>
-        <option value="">All Libraries</option>
-        <!-- TMPL_LOOP NAME="branchloop" -->
+	<!-- TMPL_UNLESS NAME="singleBranchMode" -->
+    <div id="location" class="container"><fieldset><legend>Location and availability: </legend>
+        
+        <select name="limit" id="branchloop">
+        <option value="">All libraries</option>
+
+
+       <!-- TMPL_LOOP NAME="branchloop" -->
+        <!--TMPL_IF Name="selected"-->
+        <option value="branch:<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="branchname" --></option>
+        <!--TMPL_ELSE-->    
         <option value="branch:<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="branchname" --></option>
+        <!--/TMPL_IF-->    
         <!-- /TMPL_LOOP -->
         </select>
-    <!-- <input type="hidden" name="limit" value="branch: MAIN" /> -->
-        <!-- TMPL_IF NAME="searchdomainloop" -->
-    <p>OR</p> <!-- should addjs to grey out group pulldown if a library is selected. -->
-        <label for="categoryloop">Groups of Libraries</label><select name="multibranchlimit" id="categoryloop">
-        <option value=""> -- none -- </option>
-        <!-- TMPL_LOOP NAME="searchdomainloop" -->
-        <option value="<!-- TMPL_VAR NAME="categorycode" -->"><!-- TMPL_VAR NAME="categoryname" --></option>
-        <!-- /TMPL_LOOP -->
-        </select>
+
+        <!--TMPL_IF NAME="searchdomainoptions" -->
+        <div id="searchcategories">
+          <select name="multibranchlimit">
+            <option value="">All categories</option>
+            <!-- TMPL_LOOP NAME="searchdomainoptions" -->
+            <option value="<TMPL_VAR NAME="categorycode">" <TMPL_IF NAME="selected">selected="selected"</TMPL_IF>><TMPL_VAR NAME="categoryname"></option>
+            <!-- /TMPL_LOOP -->
+          </select>
+        </div>
+        <!-- /TMPL_IF -->
+        
+        <div style="margin-top:.4em"><label for="available-items"><input type="checkbox" id="available-items" name="limit" value="available" /> Only items currently available for loan or reference</label></div>
+    </fieldset></div>
+	<!-- /TMPL_UNLESS -->
+<!-- /AVAILABILITY LIMITS -->
     <!-- /TMPL_IF -->
 </div>
-    </fieldset>
-<!-- /AVAILABILITY LIMITS -->
-</div>
+<div class="yui-u">
+<!--TMPL_IF NAME="SortByLimit" -->
 
 <!-- RANK LIMITS -->
-
-<div id="sortby" class="container">
-<fieldset><legend>Sort by: </legend>
-    <p><select id="sort_by" name="sort_by">
-  <!-- TMPL_INCLUDE NAME="resort_form.inc" -->
-    </select>
-        </p>
-</fieldset>
-</div>
+    <div id="sortby" class="container"><fieldset><legend>Sort by: </legend>
+        <select id="sort_by" name="sort_by">
+<!--TMPL_INCLUDE NAME="resort_form.inc" -->
+</select></fieldset></div>
 <!-- RANK LIMITS -->
 
+    <!-- /TMPL_IF -->
 </div>
+    <!-- /TMPL_IF -->
 
+</div>
 <input type="hidden" name="last_borrower_show_button" id="last_borrower_show_button" value="<!-- TMPL_VAR NAME="last_borrower_show_button" -->" />
 
 <!-- SEARCH BUTTONS -->
             <p><input class="submit" type="submit" accesskey="s" value="Search" />
+            <!-- TMPL_IF NAME="ItemTypeLimit" -->
+            <a href="javascript:;" onclick=expand_itemtype()>[+/- Item Types]</a>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="CCodeLimit" -->
+            <a href="javascript:;" onclick=expand_ccode()>[+/- Collection Codes]</a>
+            <!-- /TMPL_IF -->
+
+            <!-- TMPL_IF NAME="ShelvingLocationLimit" -->
+            <a href="javascript:;" onclick=expand_shelvingloc()>[+/- Shelving Locations]</a>
+            <!-- /TMPL_IF -->
+
+            <!-- TMPL_IF NAME="SubtypeLimit" -->
+            <a href="javascript:;" onclick=expand_subtypes()>[+/- Subtypes]</a>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="LanguageLimit" -->
+            <a href="javascript:;" onclick=expand_language()>[+/- Language]</a>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="DateRangeLimit" -->
+            <a href="javascript:;" onclick=expand_pubrange()>[+/- Date]</a>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="LocationLimit" -->
+            <a href="javascript:;" onclick=expand_location()>[+/- Location]</a>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="SortByLimit" -->
+            <a href="javascript:;" onclick=expand_sortby()>[+/- Sort By]</a>
+            <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="expanded_options" -->
             <a href="/cgi-bin/koha/catalogue/search.pl?expanded_options=0">[Fewer Options]</a>
             <!-- TMPL_ELSE -->
