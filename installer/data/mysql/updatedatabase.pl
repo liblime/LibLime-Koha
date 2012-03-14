@@ -4761,6 +4761,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.007';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do("INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'BOR_NOTES', 'Address', 'Need to verify patron address' );");
+    $dbh->do("INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'MANUAL_INV', 'Copicard', '10.00' );");
+
+	print "Upgrade to $DBversion done ( Authorized value for borrower notes and manual invoices )\n";
+    SetVersion ($DBversion);
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
