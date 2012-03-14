@@ -20,15 +20,17 @@
 <div class="searchresults">
     <!-- TMPL_IF NAME="issues" -->
         <p><b>Has been checked out <!-- TMPL_VAR NAME="total" --> times</b></p>
-        <table>
-            <tr><th>Date</th>
+	<div id="checkouthist">
+        <table id="checkouthistt">
+            <thead><tr><th>Date</th>
             <th>Name</th>
             <th>Barcode</th>
-            <th>Library</th>
+            <th>Owning Library</th>
             <th>Issuing Library</th>
             <th>Renew</th>
             <th>Date due</th>
-            <th>Return date</th></tr>
+            <th>Return date</th></tr></thead>
+		<tbody>
         <!-- TMPL_LOOP NAME="issues" -->
             <tr>
                 <td><!-- TMPL_IF NAME="issuedate" -->
@@ -74,7 +76,9 @@
                     <!-- /TMPL_IF --></td>
            </tr>
         <!-- /TMPL_LOOP -->
+		</tbody>
 		</table>
+		</div>
     <!-- TMPL_ELSE -->
         <p>
         <b><!-- TMPL_VAR NAME="title" escape="html" -->(<!-- TMPL_VAR NAME="author" -->)</b> <span class="problem">has never been checked out.</span></p>
