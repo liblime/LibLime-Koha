@@ -1394,7 +1394,9 @@ sub _GetNextReserve {
 
     # Awful, terrible, no good, very bad hack...
     # Turn off patron categories here.
+    no warnings qw(redefine);
     local *C4::Branch::CategoryTypeIsUsed = sub {0};
+    use warnings;
 
     foreach my $res (@$reserves) {
         $res->{dbitemnumber} = $res->{itemnumber};
