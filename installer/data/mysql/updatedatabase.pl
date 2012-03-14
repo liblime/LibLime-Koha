@@ -4753,6 +4753,13 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     print "Upgrade to $DBversion done ( added catstat to subscription_defaults table )\n";
 }
 
+$DBversion = '4.09.00.006';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh -> do("INSERT INTO letter (module,code,name,title,content) VALUES ('circulation','BILLING','Billing Notice','Billing Notice','Dear <<borrowers.firstname>> <<borrowers.surname>>,\n\nLibrary records show that you have an outstanding balance higher than library policy allows.  Please resolve these charges as soon as possible.  If your account is not paid, you may be referred to a collection agency within 30 days.  You may log in to your library account to verify how much you owe.\n\nPlease do not reply to this email message, it has been sent from an information only mailbox.\n\nThank you for your prompt attention to this matter.\n\n<<branches.branchname>> Staff\n');");
+
+	print "Upgrade to $DBversion done ( Billing notice letter template )\n";
+    SetVersion ($DBversion);
+}
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
