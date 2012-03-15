@@ -187,6 +187,30 @@ if ($op eq 'insert' || $op eq 'modify' || $op eq 'save') {
     my $dateobject = C4::Dates->new();
     my $syspref = $dateobject->regexp();		# same syspref format for all 3 dates
     my $iso     = $dateobject->regexp('iso');	#
+
+    # If dateexpiry was blank - set it to default value, with
+    # format specified per $syspref for Koha variable "dateformat".
+    $newdata{'categorycode'} = $categorycode;
+    if (! defined $newdata{'dateexpiry'} or ! $newdata{'dateexpiry'}) {
+        my $denr;
+
+        $denr = $newdata{'dateenrolled'} // "";
+        #warn ("Calling GetExpiryDate for dateexpiry." );
+
+        if ( $denr ) {
+            if ($denr =~ /$syspref/) {
+                # if match syspref format, then convert to ISO, as required
+                # by GetExipryDate()
+                $denr= format_date_in_iso($denr);
+            }
+        } else {
+            # no date enrolled yet, so use today, in iso format
+            $denr = C4::Dates->today('iso');
+        }
+#       warn ("Using denr(iso)='" . $denr . ", new categorycode=" . $newdata{'categorycode'} . "\n");
+        $newdata{'dateexpiry'} = GetExpiryDate($newdata{'categorycode'},$denr);
+    }
+
     foreach (qw(dateenrolled dateexpiry dateofbirth)) {
         my $userdate = $newdata{$_} or next;
         if ($userdate =~ /$syspref/) {
@@ -348,15 +372,6 @@ if ($op eq 'save' || $op eq 'insert'){
   }
 }
 
-if ($op eq 'modify' || $op eq 'insert' || $op eq 'save' ){
-    unless ($newdata{'dateexpiry'}){
-      if ($step == 3) {
-        my $arg2 = $newdata{'dateenrolled'} || C4::Dates->today('iso');
-        $newdata{'dateexpiry'} = GetExpiryDate($newdata{'categorycode'},$arg2);
-      }
-    }
-}
-
 if ( ( defined $input->param('SMSnumber') ) && ( $input->param('SMSnumber') ne $newdata{'mobile'} ) ) {
     $newdata{smsalertnumber} = $input->param('SMSnumber');
 }
@@ -450,8 +465,6 @@ if (C4::Context->preference("IndependantBranches")) {
     }
 }
 if ($op eq 'add'){
-    my $arg2 = $newdata{'dateenrolled'} || C4::Dates->today('iso');
-    $data{'dateexpiry'} = GetExpiryDate($newdata{'categorycode'},$arg2);
     $template->param( updtype => 'I', step_1=>1, step_2=>1, step_3=>1, step_4=>1, step_5 => 1, step_6 => 1);
 }
 if ($op eq "modify")  {
