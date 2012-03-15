@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#!/usr/bin/env perl
 #
 # Copyright 2007 LibLime
 #
@@ -18,10 +18,9 @@
 # Suite 330, Boston, MA  02111-1307 USA
 #
 
-use strict;
+use Koha;
 use CGI;
 use C4::Auth;
-use Koha;
 use C4::Context;
 use C4::Output;
 use C4::Koha;
@@ -126,7 +125,7 @@ sub add_update_matching_rule {
 
     # match checks
     my @mc_nums = sort map { /^mc_(\d+)_id/ ? int($1): () } $input->param;
-    foreach my $mc_num (@mp_nums) {
+    foreach my $mc_num (@mc_nums) {
         # source components
         my $src_components = [];
         my @src_comp_nums = sort map { /^mc_${mc_num}_src_c_(\d+)_tag/ ? int($1): () } $input->param;
