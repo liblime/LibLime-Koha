@@ -175,13 +175,16 @@ C<$count> is the number of elements in C<$borrowers>.
 
 =cut
 
+sub ConstrainPatronSearch {
+    return (C4::Branch::CategoryTypeIsUsed('patrons')
+        && $ENV{REQUEST_METHOD} # need a nicer way to do this, but check if we're command line vs. CGI
+        && !C4::Auth::haspermission(undef, {superlibrarian => 1})) ? 1 : 0;
+}
+
 sub _constrain_sql_by_branchcategory {
     my ($query, @bind) = @_;
 
-    if (   C4::Branch::CategoryTypeIsUsed('patrons')
-        && $ENV{REQUEST_METHOD} # need a nicer way to do this, but check if we're command line vs. CGI
-        && !C4::Auth::haspermission(undef, {superlibrarian => 1})
-        )
+    if (ConstrainPatronSearch())
     {
         my $mybranch = (C4::Context->userenv) ? C4::Context->userenv->{branch} : undef;
         confess 'Unable to determine selected branch' if not $mybranch;
