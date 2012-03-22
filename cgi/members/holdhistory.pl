@@ -47,6 +47,20 @@ my ($template, $loggedinuser, $cookie) = get_template_and_user({template_name =>
 
 #get borrower details
 my $data=GetMember($borrowernumber,'borrowernumber');
+if (   $data
+    && C4::Branch::CategoryTypeIsUsed('patrons')
+    && C4::Members::ConstrainPatronSearch())
+{
+    my $agent = C4::Members::GetMember($loggedinuser);
+    $data = undef
+        unless C4::Branch::BranchesAreSiblings(
+            $data->{branchcode}, $agent->{branchcode}, 'patrons');
+}
+unless (defined $data) {
+    output_html_with_http_headers $input, $cookie, $template->output;
+    exit;
+}
+
 $template->param( 
    borrowernumber => $data->{'borrowernumber'},
    firstname      => $data->{'firstname'},
