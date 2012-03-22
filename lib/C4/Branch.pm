@@ -428,6 +428,12 @@ sub GetSiblingBranchesOfType {
     return @branchcodes;
 }
 
+sub BranchesAreSiblings {
+    my ($b1code, $b2code, $categorytype) = @_;
+    my @b1_group = GetSiblingBranchesOfType($b1code, $categorytype);
+    return $b2code ~~ @b1_group;
+}
+
 =head2 GetBranch
 
 $branch = GetBranch( $query, $branches );
