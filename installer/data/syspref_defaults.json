@@ -11,7 +11,12 @@
          "value" : "ItemTypes|CCodes|ShelvingLocations|Language|DateRange|LocationAvailability|Subtypes|SortBy",
          "type" : "Textarea"
    },
-
+   "ConstrainPatronsDeeply" : {
+      "explanation" : "When using patron categories, hide non-local patrons not only from search but from access within Koha modules. Has no effect unless patron groups are enabled.",
+      "options" : null,
+      "value" : "1",
+      "type" : "YesNo"
+   },
    "KeepPreviousBorrowerInterval" : {
       "explanation" : "Number of days that must pass before the previous borrower is expunged from old issues if that item has not since been checked out.",
       "options" : null,

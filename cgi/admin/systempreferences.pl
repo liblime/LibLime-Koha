@@ -274,6 +274,7 @@ $tabsysprefs{OwedNotificationValue}        = "Patrons";
 $tabsysprefs{MaxShelfHoldsPerDay}          = "Patrons";
 $tabsysprefs{EnableOwedNotification}       = "Patrons";
 $tabsysprefs{UsePatronBranchForPatronInfo} = "Patrons";
+$tabsysprefs{ConstrainPatronsDeeply}       = "Patrons";
 
 # I18N/L10N
 $tabsysprefs{dateformat}    = "I18N/L10N";

@@ -376,8 +376,9 @@ sub GetMemberDetails {
     else {
         return;
     }
-    ($sql, @params) = _constrain_sql_by_branchcategory($sql, @params);
-    
+    ($sql, @params) = _constrain_sql_by_branchcategory($sql, @params)
+        if C4::Context->preference('ConstrainPatronsDeeply');
+
     my $borrower = $dbh->selectrow_hashref($sql, undef, @params);
     return if !$borrower;
 
@@ -580,7 +581,8 @@ sub GetMember {
         WHERE  $type = ?
         };
     my @params = ($information);
-    ($select, @params) = _constrain_sql_by_branchcategory($select, @params);
+    ($select, @params) = _constrain_sql_by_branchcategory($select, @params)
+        if C4::Context->preference('ConstrainPatronsDeeply');
     my $borrower = C4::Context->dbh->selectrow_hashref($select, undef, @params);
     return undef if !$borrower;
 
