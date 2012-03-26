@@ -2864,13 +2864,21 @@ sub AddRenewal {
         $datedue =  CalcDateDue(C4::Dates->new(),$loanlength,$branch,$borrower);
     }
     die "Invalid date passed to AddRenewal." if ($datedue && ! $datedue->output('iso'));
-    die "Date due can't be prior to today"   if ($datedue->output('iso') lt C4::Dates->new()->output('iso'));
+    my $today = C4::Dates->new->output('iso');
+    if ($datedue->output('iso') lt $today) {
+        warn <<EOF;
+Date due can't be prior to today.
+Setting date due = $today for borrower: $borrowernumber
+item number: $itemnumber.
+EOF
+        $datedue = C4::Dates->new;
+    }
 
     # Update the issues record to have the new due date, and a new count
     # of how many times it has been renewed.
-    my $dbh = C4::Context->dbh; my $sth;
+    my $dbh = C4::Context->dbh;
     my $renews = ($issue->{'renewals'} // 0) + 1;
-    $sth = $dbh->prepare("UPDATE issues SET date_due = ?, renewals = ?, lastreneweddate = ?, branchcode=?
+    my $sth = $dbh->prepare("UPDATE issues SET date_due = ?, renewals = ?, lastreneweddate = ?, branchcode=?
                             WHERE borrowernumber=? 
                             AND itemnumber=?"
     );
