@@ -276,31 +276,35 @@ sub CalcFine {
 	);
     my $dbh = C4::Context->dbh;
     my $amount = 0;
-	 my $daystocharge;
+    my $daystocharge = 0;
     my $data = C4::Circulation::GetIssuingRule($bortype, $$item{itype} || $$item{itemtype}, $branchcode);
-	if($difference) {
-		# if $difference is supplied, the difference has already been calculated, but we still need to adjust for the calendar.
+    if($difference) {
+	# if $difference is supplied, the difference has already been calculated, but we still need to adjust for the calendar.
     	# use copy-pasted functions from calendar module.  (deprecated -- these functions will be removed from C4::Overdues ).
-	    my $countspecialday    =    &GetSpecialHolidays($dues,$item->{itemnumber});
-	    my $countrepeatableday = &GetRepeatableHolidays($dues,$item->{itemnumber},$difference);    
-	    my $countalldayclosed  = $countspecialday + $countrepeatableday;
-	    $daystocharge = $difference - $countalldayclosed;
-	} else {
-		# if $difference is not supplied, we have C4::Dates objects giving us the date range, and we use the calendar module.
-		if(C4::Context->preference('finesCalendar') eq 'noFinesWhenClosed') {
-			my $calendar = C4::Calendar->new( branchcode => $branchcode );
-			$daystocharge = $calendar->daysBetween( $start_date, $end_date );
-		} else {
-			$daystocharge = Date_to_Days(split('-',$end_date->output('iso'))) - Date_to_Days(split('-',$start_date->output('iso')));
-		}
+	my $countspecialday    = &GetSpecialHolidays($dues,$item->{itemnumber});
+	my $countrepeatableday = &GetRepeatableHolidays($dues,$item->{itemnumber},$difference);    
+	my $countalldayclosed  = $countspecialday + $countrepeatableday;
+	$daystocharge = $difference - $countalldayclosed;
+    } else {
+	# if $difference is not supplied, we have C4::Dates objects giving us the date range, and we use the calendar module.
+	if(C4::Context->preference('finesCalendar') eq 'noFinesWhenClosed') {
+	    my $calendar = C4::Calendar->new( branchcode => $branchcode );
+	    $daystocharge = $calendar->daysBetween( $start_date, $end_date );
+        } else {
+	    $daystocharge = Date_to_Days(split('-',$end_date->output('iso'))) - Date_to_Days(split('-',$start_date->output('iso')));
 	}
+    }
 	
    # correct for grace period.
-	my $days_minus_grace = $daystocharge - $data->{'firstremind'};
-    if ($data->{'chargeperiod'} > 0 && $days_minus_grace > 0 ) { 
-        $amount = int($daystocharge / $data->{'chargeperiod'}) * $data->{'fine'};
-    } else {
-        # a zero (or null)  chargeperiod means no charge.
+    my $days_minus_grace = 0;
+    {
+        no warnings 'uninitialized';
+        $days_minus_grace = $daystocharge - $data->{'firstremind'};
+        
+        if ($data->{'chargeperiod'} > 0 && $days_minus_grace > 0 ) { 
+            $amount = int($daystocharge / $data->{'chargeperiod'}) * $data->{'fine'};
+        }
+        #else { a zero (or null)  chargeperiod means no charge.}
     }
     my $ismax   = 0;
     my $MaxFine = C4::Context->preference('MaxFine') || 0;

@@ -36,7 +36,7 @@ Expired can occur two ways:
 (2) Filled holds that exceed ReservesMaxPickupDelay.
 
 =cut
-
+use 5.010;
 use strict;
 BEGIN {
     # find Koha's Perl modules
@@ -73,7 +73,7 @@ while (my $expref = $sth->fetchrow_hashref) {
     borrowernumber => $borrowernumber,
     message_name   => 'Hold Expired'
   } );
-  if ( $mprefs->{'transports'} && ($$mprefs{letter_code} eq 'HOLD_EXPIRED')) {
+  if ( $mprefs->{transports} && ($mprefs->{letter_code} ~~ 'HOLD_EXPIRED')) {
     my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
     my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
     my $letter = C4::Letters::getletter( 'reserves', 'HOLD_EXPIRED');
