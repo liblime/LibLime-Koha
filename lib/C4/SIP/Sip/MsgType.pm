@@ -700,7 +700,7 @@ sub handle_checkin {
     }
 
     if ($protocol_version >= 2) {
-        $resp .= maybe_add(FID_SORT_BIN, $status->sort_bin);
+        $resp .= maybe_add(FID_SORT_BIN, $item->location) if ($item);
         if ($patron) {
             $resp .= add_field(FID_PATRON_ID, $patron->id);
         }
