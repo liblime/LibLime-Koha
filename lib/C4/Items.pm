@@ -212,6 +212,7 @@ sub CartToShelf {
     }
 
     my $item = GetItem($itemnumber);
+    return unless $item->{permanent_location};
     $item->{location} = $item->{permanent_location};
     ModItem($item, undef, $itemnumber);
 }
