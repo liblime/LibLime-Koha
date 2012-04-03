@@ -339,10 +339,25 @@ if ($borrowernumber) {
     }
 
     $borrower = GetMemberDetails( $borrowernumber, 0, $circ_session );
+
+    if (   $borrower
+        && C4::Branch::CategoryTypeIsUsed('patrons')
+        && C4::Members::ConstrainPatronSearch())
+    {
+        my $agent = C4::Members::GetMember($loggedinuser);
+        $borrower = undef
+            unless C4::Branch::BranchesAreSiblings(
+                $borrower->{branchcode}, $agent->{branchcode}, 'patrons');
+    }
+    unless (defined $borrower) {
+        output_html_with_http_headers $query, $cookie, $template->output;
+        exit;
+    }
+
     if ( $circ_session->{'override_user'} ) {
         $template->param( flagged => 1 );
     }
-    
+
     ## Store data for last scanned borrower in cookies for future use.
     my $lbb = $query->cookie(-name=>'last_borrower_borrowernumber', -value=>"$borrowernumber", -expires=>'+1y');
     my $lbc = $query->cookie(-name=>'last_borrower_cardnumber', -value=>"$borrower->{'cardnumber'}", -expires=>'+1y');
