@@ -2080,5 +2080,11 @@
       "options" : null,
       "value" : "0",
       "type" : "Integer"
+   },
+   "ClearNotForLoan" : {
+      "explanation" : "If ON, then negative notforloan values will be cleared upon check-in.",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
    }
 }

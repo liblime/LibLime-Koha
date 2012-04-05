@@ -329,6 +329,7 @@ sub get_template_and_user {
             StaffSerialIssueDisplayCount => C4::Context->preference("StaffSerialIssueDisplayCount"),
             LinkLostItemsToPatron       => C4::Context->preference('LinkLostItemsToPatron'),
             RefundReturnedLostItem      => C4::Context->preference('RefundReturnedLostItem'),
+            ClearNotForLoan             => C4::Context->preference('ClearNotForLoan'),
             GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),
             BibliosCataloging => C4::Context->preference("BibliosCataloging"),
         );
