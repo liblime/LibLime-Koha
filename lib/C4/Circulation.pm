@@ -1666,6 +1666,9 @@ sub AddReturn {
     C4::Items::ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
     C4::Items::ModItem({ onloan      => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
 
+    # Clear the notforloan status if syspref is turned ON and value is negative
+    C4::Items::ModItem({ notforloan => 0 }, $item->{'biblionumber'}, $item->{'itemnumber'}) if (C4::Context->preference('ClearNotForLoan') && ($item->{'notforloan'} < 0));
+
     # case of a return of document (deal with issues and holdingbranch)
     if ($doreturn) {
         # $borrower or warn "AddReturn without current borrower";
