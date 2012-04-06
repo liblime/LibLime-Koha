@@ -214,6 +214,7 @@ $tabsysprefs{SIPItemDisplay}                 = "Circulation";
 $tabsysprefs{KeepPreviousBorrower}           = "Circulation";
 $tabsysprefs{KeepPreviousBorrowerInterval}   = "Circulation";
 $tabsysprefs{SplitStatistics}                = "Circulation";
+$tabsysprefs{ClearNotForLoan}                = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}            = "StaffClient";
