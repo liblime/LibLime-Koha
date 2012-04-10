@@ -29,7 +29,7 @@ use C4::Branch;
 use C4::Letters;
 use C4::Members;
 
-my $input = new CGI;
+our $input = CGI->new();
 my $dbh = C4::Context->dbh;
 
 my @categories = @{$dbh->selectall_arrayref(
@@ -43,7 +43,7 @@ my @itemtypes = @{$dbh->selectall_arrayref(
     { Slice => {} }
 )};
 my @item_types  = map { $_->{itemtype} } @itemtypes;
-my @rule_params     = qw(delay letter debarred);
+our @rule_params = qw(delay letter debarred);
 
 # blank_row($category_code) - return true if the entire row is blank.
 sub blank_row {
