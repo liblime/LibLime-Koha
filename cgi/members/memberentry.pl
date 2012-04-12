@@ -192,23 +192,13 @@ if ($op eq 'insert' || $op eq 'modify' || $op eq 'save') {
     # format specified per $syspref for Koha variable "dateformat".
     $newdata{'categorycode'} = $categorycode;
     if (! defined $newdata{'dateexpiry'} or ! $newdata{'dateexpiry'}) {
-        my $denr;
+        my $denr = $newdata{'dateenrolled'} // C4::Dates->today('iso');
 
-        $denr = $newdata{'dateenrolled'} // "";
-        #warn ("Calling GetExpiryDate for dateexpiry." );
-
-        if ( $denr ) {
-            if ($denr =~ /$syspref/) {
-                # if match syspref format, then convert to ISO, as required
-                # by GetExipryDate()
-                $denr= format_date_in_iso($denr);
-            }
-        } else {
-            # no date enrolled yet, so use today, in iso format
-            $denr = C4::Dates->today('iso');
+        if ($denr =~ /$syspref/) {
+            # if match syspref format, then convert to ISO
+            $denr = format_date_in_iso($denr);
         }
-#       warn ("Using denr(iso)='" . $denr . ", new categorycode=" . $newdata{'categorycode'} . "\n");
-        $newdata{'dateexpiry'} = GetExpiryDate($newdata{'categorycode'},$denr);
+        $newdata{dateexpiry} = GetExpiryDate($newdata{categorycode}, $denr);
     }
 
     foreach (qw(dateenrolled dateexpiry dateofbirth)) {
