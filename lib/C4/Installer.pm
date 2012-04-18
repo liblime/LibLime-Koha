@@ -107,7 +107,7 @@ sub marcflavour_list {
     my $self = shift;
     my $lang = shift;
 
-    my $dir = C4::Context->config('intranetdir') . "/installer/data/$self->{dbms}/$lang/marcflavour";
+    my $dir = C4::Context->config('basedir') . "/installer/data/$self->{dbms}/$lang/marcflavour";
     opendir(MYDIR, $dir) or return;
     my @list = grep { !/^\.|CVS/ && -d "$dir/$_" } readdir(MYDIR);
     closedir MYDIR;
@@ -139,14 +139,14 @@ sub marc_framework_sql_list {
     my $defaulted_to_en = 0;
 
     undef $/;
-    my $dir = C4::Context->config('intranetdir') . "/installer/data/$self->{dbms}/$lang/marcflavour/".lc($marcflavour);
+    my $dir = C4::Context->config('basedir') . "/installer/data/$self->{dbms}/$lang/marcflavour/".lc($marcflavour);
     unless (opendir( MYDIR, $dir )) {
         if ($lang eq 'en') {
             warn "cannot open MARC frameworks directory $dir";
         } else {
             # if no translated MARC framework is available,
             # default to English
-            $dir = C4::Context->config('intranetdir') . "/installer/data/$self->{dbms}/en/marcflavour/".lc($marcflavour);
+            $dir = C4::Context->config('basedir') . "/installer/data/$self->{dbms}/en/marcflavour/".lc($marcflavour);
             opendir(MYDIR, $dir) or warn "cannot open English MARC frameworks directory $dir";
             $defaulted_to_en = 1;
         }
@@ -221,14 +221,14 @@ sub sample_data_sql_list {
     my $defaulted_to_en = 0;
 
     undef $/;
-    my $dir = C4::Context->config('intranetdir') . "/installer/data/$self->{dbms}/$lang";
+    my $dir = C4::Context->config('basedir') . "/installer/data/$self->{dbms}/$lang";
     unless (opendir( MYDIR, $dir )) {
         if ($lang eq 'en') {
             warn "cannot open sample data directory $dir";
         } else {
             # if no sample data is available,
             # default to English
-            $dir = C4::Context->config('intranetdir') . "/installer/data/$self->{dbms}/en";
+            $dir = C4::Context->config('basedir') . "/installer/data/$self->{dbms}/en";
             opendir(MYDIR, $dir) or warn "cannot open English sample data directory $dir";
             $defaulted_to_en = 1;
         }
@@ -336,7 +336,7 @@ load.
 sub load_db_schema {
     my $self = shift;
 
-    my $datadir = C4::Context->config('intranetdir') . "/installer/data/$self->{dbms}";
+    my $datadir = C4::Context->config('basedir') . "/installer/data/$self->{dbms}";
     my $error = $self->load_sql("$datadir/kohastructure.sql");
     return $error;
 
@@ -523,7 +523,7 @@ sub load_sql {
     my $self = shift;
     my $filename = shift;
 
-    my $datadir = C4::Context->config('intranetdir') . "/installer/data/$self->{dbms}";
+    my $datadir = C4::Context->config('basedir') . "/installer/data/$self->{dbms}";
     my $error;
     my $strcmd;
     if ( $self->{dbms} eq 'mysql' ) {
