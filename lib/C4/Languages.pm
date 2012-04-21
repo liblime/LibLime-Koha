@@ -19,8 +19,6 @@ package C4::Languages;
 # Suite 330, Boston, MA  02111-1307 USA
 
 
-use strict; 
-use warnings;
 use Carp;
 use Koha;
 use C4::Context;
@@ -31,11 +29,10 @@ BEGIN {
     require Exporter;
     @ISA    = qw(Exporter);
     @EXPORT = qw(
-        &getFrameworkLanguages
         &getTranslatedLanguages
         &getAllLanguages
     );
-    @EXPORT_OK = qw(getFrameworkLanguages getTranslatedLanguages getAllLanguages get_bidi regex_lang_subtags language_get_description accept_language);
+    @EXPORT_OK = qw(getTranslatedLanguages getAllLanguages get_bidi regex_lang_subtags language_get_description accept_language);
     $DEBUG = 0;
 }
 
@@ -50,45 +47,6 @@ use C4::Languages;
 =head1 DESCRIPTION
 
 =head1 FUNCTIONS
-
-=head2 getFrameworkLanguages
-
-Returns a reference to an array of hashes:
-
- my $languages = getFrameworkLanguages();
- for my $language(@$languages) {
-    print "$language->{language_code}\n"; # language code in iso 639-2
-    print "$language->{language_name}\n"; # language name in native script
-    print "$language->{language_locale_name}\n"; # language name in current locale
- }
-
-=cut
-
-sub getFrameworkLanguages {
-    # get a hash with all language codes, names, and locale names
-    my $all_languages = getAllLanguages();
-    my @languages;
-    
-    # find the available directory names
-    my $dir=C4::Context->config('intranetdir')."/installer/data/";
-    opendir (MYDIR,$dir);
-    my @listdir= grep { !/^\.|CVS/ && -d "$dir/$_"} readdir(MYDIR);    
-    closedir MYDIR;
-
-    # pull out all data for the dir names that exist
-    for my $dirname (@listdir) {
-        for my $language_set (@$all_languages) {
-
-            if ($dirname eq $language_set->{language_code}) {
-                push @languages, {
-                    'language_code'=>$dirname, 
-                    'language_description'=>$language_set->{language_description}, 
-                    'native_descrition'=>$language_set->{language_native_description} }
-            }
-        }
-    }
-    return \@languages;
-}
 
 =head2 getTranslatedLanguages
 
@@ -166,42 +124,39 @@ Returns a reference to an array of hashes:
 
 =cut
 
-sub getAllLanguages {
-    my $current_language = shift // 'en';
+sub _seed_languages_cache {
+    my $current_language = shift;
 
-    my $query = q{
-        SELECT lrti.iso639_2_code,
-               lsr.added,
-               lsr.id,
-               lsr.type,
-               ld.subtag,
-               ld.description,
-               ld.lang
-        FROM language_descriptions ld
-        JOIN language_subtag_registry lsr
-          ON ld.subtag = lsr.subtag
-        JOIN language_rfc4646_to_iso639 lrti
-          ON lrti.rfc4646_subtag = lsr.subtag
-        WHERE ld.type = 'language'
-        ORDER BY lsr.description
+    my $langs_query =
+        q{SELECT lsr.subtag, lsr.added, lsr.type, lsr.description, lrti.iso639_2_code, lsr.id,
+            CONCAT(ld1.description, ' (', ld2.description, ')') language_description
+          FROM language_subtag_registry lsr
+            LEFT JOIN language_rfc4646_to_iso639 lrti
+              ON (lsr.subtag = lrti.rfc4646_subtag)
+            LEFT JOIN language_descriptions ld1
+              ON (ld1.subtag = lsr.subtag)
+            LEFT JOIN language_descriptions ld2
+              ON (ld2.subtag = lsr.subtag)
+          WHERE lsr.type = 'language'
+            AND ld1.type = 'language'
+            AND ld2.type = 'language'
+            AND ld1.lang = lsr.subtag
+            AND ld2.lang = ?
     };
-    my $langhash
-        = C4::Context->dbh->selectall_hashref($query, ['subtag', 'lang']);
+    my $langs = C4::Context->dbh->selectall_arrayref(
+        $langs_query, { Slice=>{} }, $current_language);
 
-    my @langlist;
-    for my $subtag (keys %$langhash) {
-        delete $langhash->{$subtag}{$current_language}{lang}; # only needed for initial grouping
+    return $langs;
+}
 
-        my $native_description  = $langhash->{$subtag}{$subtag}{description};
-        my $current_description = $langhash->{$subtag}{$current_language}{description};
-
-        $langhash->{$subtag}{$current_language}{language_description}
-            = sprintf '%s (%s)', $native_description, $current_description;
-
-        push @langlist, $langhash->{$subtag}{$current_language};
-    }
-    @langlist = sort {$a->{description} cmp $b->{description}} @langlist;
-    return \@langlist;
+sub getAllLanguages {
+    my $current_language = shift || 'en';
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                       datastore => C4::Context->cachehash});
+    return $cache->compute(
+        'all_languages:$current_language', '5m',
+        sub {_seed_languages_cache($current_language)});
 }
 
 =head2 _get_themes
@@ -318,27 +273,24 @@ sub _build_languages_arrayref {
         return \@languages_loop;
 }
 
-sub language_get_description {
-    my ($script,$lang,$type) = @_;
-    return unless $script && $lang && $type;
-
-    my $dbh = C4::Context->dbh;
-    my $desc;
-    my $sth = $dbh->prepare("SELECT description FROM language_descriptions WHERE subtag=? AND lang=? AND type=?");
-    #warn "QUERY: SELECT description FROM language_descriptions WHERE subtag=$script AND lang=$lang AND type=$type";
-    $sth->execute($script,$lang,$type);
-    while (my $descriptions = $sth->fetchrow_hashref) {
-        $desc = $descriptions->{'description'};
-    }
-    unless ($desc) {
-        $sth = $dbh->prepare("SELECT description FROM language_descriptions WHERE subtag=? AND lang=? AND type=?");
-        $sth->execute($script,'en',$type);
-        while (my $descriptions = $sth->fetchrow_hashref) {
-            $desc = $descriptions->{'description'};
-        }
-    }
-    return $desc;
+sub _seed_language_description_cache {
+    return C4::Context->dbh->selectall_hashref(
+        'SELECT description, subtag, lang, type FROM language_descriptions',
+        [qw(subtag lang type)], { Slice=>{} });
 }
+
+sub language_get_description {
+    my ($subtag,$lang,$type) = @_;
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                       datastore => C4::Context->cachehash});
+    my $descriptions = $cache->compute(
+        'language_descriptions', '5m',
+        \&_seed_language_description_cache);
+    my $lang_desc = $descriptions->{$subtag}{$lang}{$type};
+    return ($lang_desc) ? $lang_desc->{description} : 'English';
+}
+
 =head2 regex_lang_subtags
 
 This internal sub takes a string composed according to RFC 4646 as
