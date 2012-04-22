@@ -1500,18 +1500,24 @@ of the subpermission.
 
 =cut
 
-sub get_all_subpermissions {
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT flag, code, description
-                             FROM permissions
-                             JOIN userflags ON (module_bit = bit)");
-    $sth->execute();
+sub _seed_subpermissions_cache {
+    my $rawperms = C4::Context->dbh->selectall_arrayref(
+        q{ SELECT flag, code, description
+           FROM permissions
+             JOIN userflags ON (module_bit = bit) });
+    my %perms;
+    $perms{$_->[0]}{$_->[1]} = $_->[2] for @$rawperms;
 
-    my $all_perms = {};
-    while (my $perm = $sth->fetchrow_hashref) {
-        $all_perms->{$perm->{'flag'}}->{$perm->{'code'}} = $perm->{'description'};
-    }
-    return $all_perms;
+    return \%perms;
+}
+
+sub get_all_subpermissions {
+    my $cache = C4::Context->getcache(
+        __PACKAGE__, {driver => 'RawMemory',
+                      datastore => C4::Context->cachehash});
+    my $perms = $cache->compute(
+        'subpermissions', '5m', \&_seed_subpermissions_cache);
+    return $perms;
 }
 
 =item haspermission 
