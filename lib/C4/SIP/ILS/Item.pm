@@ -200,7 +200,7 @@ sub hold_patron_bcode {
 sub destination_loc {
     my $self = shift or return;
     my $hold = $self->next_hold();
-    return ($hold ? $hold->{branchcode} : '');
+    return ($hold ? $hold->{branchcode} : ($self->{holdingbranch} ne $self->{homebranch}) ? $self->{homebranch} : '');
 }
 
 our $AUTOLOAD;
