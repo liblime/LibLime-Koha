@@ -149,7 +149,7 @@ function isValidDate(theFieldName){
             <!-- TMPL_IF NAME="amountlessthanzero" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-fines">Credits</a></li><!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="waiting_count" --><!-- TMPL_IF NAME="atdestination" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-waiting">Waiting</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
-            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-holds">Holds</a></li>
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-holds"><div id="summaryholdstab">Holds</div></a></li>
         </ul>
         
 <!-- TMPL_IF NAME="OPACFinesTab" -->
@@ -189,11 +189,11 @@ function isValidDate(theFieldName){
     <!-- TMPL_IF NAME="atdestination" -->
     <div id="opac-user-waiting">
         <table id="waitingt">
-            <caption>Holds Waiting</caption>
+            <caption><span class="HoldsLabel">Holds </span>Waiting</caption>
            <thead> <tr>
                 <th colspan="2">Title</th>
                 <th>Hold date</th>
-                <th>Pick Up Library</th>
+                <th><span class="PickupLabel">Pick Up Location</span></th>
             </tr></thead>
             <tbody><!-- TMPL_LOOP NAME="WAITING" -->
                 <tr>
@@ -215,6 +215,7 @@ function isValidDate(theFieldName){
     <!-- /TMPL_IF -->
 
     <div id="opac-user-checkouts"><!-- TMPL_IF NAME="issues_count" -->
+	<div id="CheckoutsTabMsg"></div>
         <table id="checkoutst">
         <caption><!-- TMPL_VAR NAME="issues_count" --> Items Checked Out</caption>
        <thead><tr>
@@ -296,7 +297,7 @@ function isValidDate(theFieldName){
     
     
 <!-- TMPL_IF NAME="overdues_count" -->
-<div id="opac-user-overdues"><table id="overduest">
+<div id="opac-user-overdues"><div id="OverdueTabMsg"></div><table id="overduest">
 <caption>Overdues <span class="count">(<!-- TMPL_VAR NAME="overdues_count" --> total)</span></caption>
 <!-- OVERDUES TABLE ROWS -->
 <thead><tr>
@@ -351,6 +352,7 @@ function isValidDate(theFieldName){
     
 
         <div id="opac-user-holds">
+	<div id="HoldsTabMsg"></div>
         <form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
            <!-- TMPL_LOOP NAME="RESERVES" -->
              <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
@@ -362,13 +364,13 @@ function isValidDate(theFieldName){
            <label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
         </form>
         <table id="holdst">
-        <caption>Holds <span class="count">(<!-- TMPL_VAR NAME="reserves_count" --> total)</span></caption>
+        <caption><span class="HoldsLabel">Holds </span><span class="count">(<!-- TMPL_VAR NAME="reserves_count" --> total)</span></caption>
             <!-- RESERVES TABLE ROWS -->
             <thead><tr>
                 <th>Title</th>
                 <th>Placed On</th>
                 <th>Expires On</th>
-                <th>Pick Up Location</th>
+                <th><span class="PickupLabel">Pick Up Location</span></th>
 				<!-- TMPL_IF NAME="showpriority" -->
 				<th>Priority</th>
 				<!-- /TMPL_IF -->
@@ -465,12 +467,12 @@ function isValidDate(theFieldName){
            <input type="submit" name="submit" class="icon delete cancel" value="Resume All" />
         </form>
        <table id="holdst"> 
-        <caption>Suspended Holds <span class="count">(<!-- TMPL_VAR NAME="suspended_reserves_count" --> total)</span></caption>
+        <caption>Suspended <span class="HoldsLabel">Holds </span><span class="count">(<!-- TMPL_VAR NAME="suspended_reserves_count" --> total)</span></caption>
             <!-- RESERVES TABLE ROWS -->
             <thead><tr>
                 <th>Title</th>
                 <th>Placed On</th>
-                <th>Pick Up Location</th>
+                <th><span class="PickupLabel">Pick Up Location</span></th>
 				<!-- TMPL_IF NAME="showpriority" -->
 				<th>Priority</th>
 				<!-- /TMPL_IF -->

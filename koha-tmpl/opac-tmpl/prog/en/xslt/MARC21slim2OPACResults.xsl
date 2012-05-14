@@ -434,14 +434,14 @@
       <xsl:call-template name="m880Select">
       <xsl:with-param name="basetags">100,110,111,700,710,711</xsl:with-param>
       <xsl:with-param name="codes">abc</xsl:with-param>
-      <xsl:with-param name="class">term</xsl:with-param>
       </xsl:call-template>
     </xsl:if>
 
     <xsl:choose>
     <xsl:when test="marc:datafield[@tag=100] or marc:datafield[@tag=110] or marc:datafield[@tag=111] or marc:datafield[@tag=700] or marc:datafield[@tag=710] or marc:datafield[@tag=711]">
 
-    by 
+    <span class="resultsauthorlabel label">by </span> 
+<span class="resultsauthor">
         <xsl:for-each select="marc:datafield[@tag=100 or @tag=700]">
             <xsl:choose>
             <xsl:when test="position()=last()">
@@ -452,7 +452,7 @@
             </xsl:otherwise>
             </xsl:choose>
         </xsl:for-each>
-
+</span>
         <xsl:for-each select="marc:datafield[@tag=110 or @tag=710]">
             <xsl:choose>
             <xsl:when test="position()=1">
@@ -499,12 +499,14 @@
 
     <xsl:if test="marc:datafield[@tag=250]">
 	<span class="results_summary">
-    <span class="label">Edition: </span>
+     <span class="resultseditionlabel label">Edition: </span>
+       <span class="resultsedition">
             <xsl:for-each select="marc:datafield[@tag=250]">
                     <xsl:call-template name="subfieldSelect">
                         <xsl:with-param name="codes">ab</xsl:with-param>
                     </xsl:call-template>
             </xsl:for-each>
+	</span>
 	</span>
     </xsl:if>
 
@@ -861,12 +863,14 @@
         
     <xsl:if test="marc:datafield[@tag=260]">
 	<span class="results_summary">
-    <span class="label">Publisher: </span> 
+    <span class="resultspublabel label">Publisher: </span> 
+	<span class="resultspub">
             <xsl:for-each select="marc:datafield[@tag=260]">
                     <xsl:call-template name="subfieldSelect">
                         <xsl:with-param name="codes">bcg</xsl:with-param>
                     </xsl:call-template>
             </xsl:for-each>
+	</span>
 	</span>
     </xsl:if>
 
@@ -882,7 +886,8 @@
         
     <xsl:if test="marc:datafield[@tag=246]">
 	<span class="results_summary">
-    <span class="label">Other title: </span>
+    <span class="resultsOTlabel label">Other title: </span>
+        <span class="resultsOT">
             <xsl:for-each select="marc:datafield[@tag=246]">
                     <xsl:call-template name="subfieldSelect">
                         <xsl:with-param name="codes">ab</xsl:with-param>
@@ -890,12 +895,13 @@
                     <xsl:choose><xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
             </xsl:for-each>
 	</span>
+	</span>
     </xsl:if>
 
     <xsl:if test="$OPACXSLTResultsAvailabilityDisplay='1'">
         <xsl:if test="marc:datafield[@tag=856]">
         <span class="results_summary">
-			   <span class="label">Online Access: </span>
+			   <span class="resultsURLlabel label">Online Access: </span>
 			        <xsl:choose>
                         <xsl:when test="marc:datafield[@tag=856]">
                             <xsl:for-each select="marc:datafield[@tag=856]">
@@ -953,14 +959,14 @@
 
 
         <span class="results_summary">
-			   <span class="label">Availability: </span>
+			   <span class="resultsavailabilitylabel label">Availability: </span>
 			        <xsl:choose>
 
-				   <xsl:when test="count(key('item-by-status', 'available'))=0 and count(key('item-by-status', 'reference'))=0">No copies available
+				   <xsl:when test="count(key('item-by-status', 'available'))=0 and count(key('item-by-status', 'reference'))=0"><span class="resultsnocopies">No copies available</span>
 				   </xsl:when>
                    <xsl:when test="count(key('item-by-status', 'available'))>0">
                    <span class="available">
-                       <b><xsl:text>Copies available for loan: </xsl:text></b>
+                       <span class="resultscopies"><b><xsl:text>Copies available for loan: </xsl:text></b></span>
                        <xsl:variable name="available_items"
                            select="key('item-by-status', 'available')"/>
                        <xsl:for-each select="$available_items[generate-id() = generate-id(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch))[1])]">
@@ -978,7 +984,7 @@
                    <xsl:choose>
                    <xsl:when test="count(key('item-by-status', 'reference'))>0">
                    <span class="available">
-                       <b><xsl:text>Copies available for reference: </xsl:text></b>
+                       <span class="resultsref"><b><xsl:text>Copies available for reference: </xsl:text></b></span>
                        <xsl:variable name="reference_items"
                            select="key('item-by-status', 'reference')"/>
                        <xsl:for-each select="$reference_items[generate-id() = generate-id(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch))[1])]">
@@ -995,44 +1001,44 @@
 
                    <xsl:if test="count(key('item-by-status', 'Checked out'))>0">
                    <span class="unavailable">
-                       <xsl:text>Checked out (</xsl:text>
+                       <span class="resultscheckedout"><xsl:text>Checked out (</xsl:text></span>
                        <xsl:value-of select="count(key('item-by-status', 'Checked out'))"/>
                        <xsl:text>). </xsl:text>
 				   </span>
                    </xsl:if>
                    <xsl:if test="count(key('item-by-status', 'Withdrawn'))>0">
                    <span class="unavailable">
-                       <xsl:text>Withdrawn (</xsl:text>
+                       <span class="resultswithdrawn"><xsl:text>Withdrawn (</xsl:text></span>
                        <xsl:value-of select="count(key('item-by-status', 'Withdrawn'))"/>
                        <xsl:text>). </xsl:text>                   </span>
 				   </xsl:if>
                     <xsl:if test="count(key('item-by-status', 'Lost'))>0">
                    <span class="unavailable">
-                       <xsl:text>Lost (</xsl:text>
+                       <span class="resultslost"><xsl:text>Lost (</xsl:text></span>
                        <xsl:value-of select="count(key('item-by-status', 'Lost'))"/>
                        <xsl:text>). </xsl:text>                   </span>
 				   </xsl:if>
                     <xsl:if test="count(key('item-by-status', 'Damaged'))>0">
                    <span class="unavailable">
-                       <xsl:text>Damaged (</xsl:text>
+                       <span class="resultsdamaged"><xsl:text>Damaged (</xsl:text></span>
                        <xsl:value-of select="count(key('item-by-status', 'Damaged'))"/>
                        <xsl:text>). </xsl:text>                   </span>
                    </xsl:if>
                     <xsl:if test="count(key('item-by-status', 'On order'))>0">
                    <span class="unavailable">
-                       <xsl:text>On order (</xsl:text>
+                       <span class="resultsorder"><xsl:text>On order (</xsl:text></span>
                        <xsl:value-of select="count(key('item-by-status', 'On order'))"/>
                        <xsl:text>). </xsl:text>                   </span>
                    </xsl:if>
                     <xsl:if test="count(key('item-by-status', 'On hold'))>0">
                    <span class="unavailable">
-                       <xsl:text>On hold (</xsl:text>
+                       <span class="resultshold"><xsl:text>On hold (</xsl:text></span>
                        <xsl:value-of select="count(key('item-by-status', 'On hold'))"/>
                        <xsl:text>). </xsl:text>                   </span>
                    </xsl:if>
                     <xsl:if test="count(key('item-by-status', 'In transit'))>0">
                    <span class="unavailable">
-                       <xsl:text>In transit (</xsl:text>
+                       <span class="resultstransit"><xsl:text>In transit (</xsl:text></span>
                        <xsl:value-of select="count(key('item-by-status', 'In transit'))"/>
                        <xsl:text>). </xsl:text>                   </span>
                    </xsl:if>

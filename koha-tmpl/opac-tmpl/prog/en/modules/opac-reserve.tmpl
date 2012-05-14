@@ -166,47 +166,47 @@
 
             <!-- TMPL_IF NAME="GNA" -->
               <div class="dialog alert">
-                <strong>Sorry</strong>, you cannot place holds because the library doesn't have up-to-date <a href="/cgi-bin/koha/opac-userdetails.pl">contact information</a> on file.
+                <strong>Sorry</strong>, you cannot place <span class="HoldsLabel">holds</span> because the library doesn't have up-to-date <a href="/cgi-bin/koha/opac-userdetails.pl">contact information</a> on file.
               </div>
               <div class="dialog alert">Please contact your librarian, or use the <a href="/cgi-bin/koha/opac-userupdate.pl">online update form</a> to submit current information (<em>Please note:</em> there may be a delay in restoring your account if you submit online)
               </div>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="lost" -->
               <div class="dialog alert">
-                <strong>Sorry</strong>, you cannot place holds because your library card has been marked as lost or stolen.
+                <strong>Sorry</strong>, you cannot place <span class="HoldsLabel">holds</span> because your library card has been marked as lost or stolen.
               </div>
               <div class="dialog alert">If this is an error, please take your card to the circulation desk at your local library and the error will be corrected.
               </div>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="debarred" -->
               <div class="dialog alert">
-                <strong>Sorry</strong>, you cannot place holds because your account has been frozen.
+                <strong>Sorry</strong>, you cannot place <span class="HoldsLabel">holds</span> because your account has been frozen.
               </div>
               <div class="dialog alert">Usually the reason for freezing an account is old overdues or damage fees.   If <a href="/cgi-bin/koha/opac-user.pl">your account page</a> shows your account to be clear, please consult a librarian.
               </div>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="too_much_oweing" -->
               <div class="dialog alert"><!-- amountoutstanding -->
-                Sorry, you cannot place holds because you owe <!-- TMPL_VAR NAME="too_much_oweing" -->.
+                Sorry, you cannot place <span class="HoldsLabel">holds</span> because you owe <!-- TMPL_VAR NAME="too_much_oweing" -->.
               </div>
             <!-- TMPL_ELSE -->
                <!-- TMPL_IF NAME="too_much_owed" -->
                <div class="dialog alert"><!-- flag msg -->
-               Sorry, you cannot place holds because you owe <!-- TMPL_VAR NAME="too_much_owed" -->.
+               Sorry, you cannot place <span class="HoldsLabel">holds</span> because you owe <!-- TMPL_VAR NAME="too_much_owed" -->.
                </div>
                <!-- /TMPL_IF -->
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="too_many_reserves" -->
               <div class="dialog alert"><!-- too_many_reserves -->
-              Sorry, you cannot place more than <!-- TMPL_VAR NAME="too_many_reserves" --> holds.
+              Sorry, you cannot place more than <!-- TMPL_VAR NAME="too_many_reserves" --> <span class="HoldsLabel">holds</span>.
               </div>
             <!-- /TMPL_IF -->
 	    <!-- TMPL_IF NAME="too_many_shelf_holds_per_day" -->
-        	<div class="dialog alert">Sorry, you cannot place more than <!-- TMPL_VAR NAME="too_many_shelf_holds_per_day" --> holds on available items in a single day.
+        	<div class="dialog alert">Sorry, you cannot place more than <!-- TMPL_VAR NAME="too_many_shelf_holds_per_day" --> <span class="HoldsLabel">holds</span> on available items in a single day.
 	        </div>
 	    <!-- /TMPL_IF -->            
 	    <!-- TMPL_IF NAME="no_on_shelf_holds_in_library" -->
-        	<div class="dialog alert">Sorry, you cannot place holds on available items while inside the library.
+        	<div class="dialog alert">Sorry, you cannot place <span class="HoldsLabel">holds</span> on available items while inside the library.
 	        </div>
 	    <!-- /TMPL_IF -->            
 	    <!-- TMPL_IF NAME="bad_biblionumber" -->
@@ -226,28 +226,28 @@
               <div class="dialog alert">ERROR: No biblionumber received.</div>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="bad_data" -->
-              <div class="dialog alert">ERROR: Internal error: incomplete hold request.</div>
+              <div class="dialog alert">ERROR: Internal error: incomplete <span class="HoldsLabel">hold</span> request.</div>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="hold_already_exists" -->
               <div class="dialog alert">
-                You already have a hold on this title so no additional hold was placed.  Please contact your library if you require assistance.
+                You already have a <span class="HoldsLabel">hold</span> on this title so no additional <span class="HoldsLabel">hold</span> was placed.  Please contact your library if you require assistance.
               </div>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="none_available" -->
               <div class="dialog alert">
-                <strong>Sorry</strong>, none of these items can be placed on hold.
-                <!-- TMPL_IF NAME="num_policy_blocked" -->Some of them can't be placed on hold because your library's rules for your patron category prevent it.<!-- /TMPL_IF -->
+                <strong>Sorry</strong>, none of these items can be placed on <span class="HoldsLabel">hold</span>.
+                <!-- TMPL_IF NAME="num_policy_blocked" -->Some of them can't be placed on <span class="HoldsLabel">hold</span> because your library's rules for your patron category prevent it.<!-- /TMPL_IF -->
               </div>
             <!-- /TMPL_IF -->
           <!-- /TMPL_IF --><!-- NAME="message" -->
 
           <!-- TMPL_UNLESS NAME="message" -->
-              <h3>Confirm holds for:
+              <h3>Confirm <span class="HoldsLabel">holds</span> for:
                 <!-- TMPL_LOOP NAME="USER_INFO" -->
                   <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)
                 <!-- /TMPL_LOOP -->
               </h3>
-
+		<div id="HoldsConfirmMsg"></div>
             <form action="/cgi-bin/koha/opac-reserve.pl" method="post">
             <input type="hidden" name="place_reserve" value="1"/>
 
@@ -258,7 +258,7 @@
             <div id="bigloop">
               <table id="bibitemloop">
                 <tr>
-                  <th colspan="2">Hold</th>
+                  <th colspan="2"><span class="HoldsLabel">Hold</span></th>
                   <th>Title</th>
                   <!-- TMPL_UNLESS NAME="HideItypeInOPAC" -->
                   <!-- TMPL_UNLESS NAME="item-level_itypes" -->
@@ -267,13 +267,13 @@
                   <!-- /TMPL_UNLESS -->
                   <th>Priority</th>
 		  <!-- TMPL_IF NAME="reserve_in_future" -->
-		  <th>Hold Starts on Date</th>
+		  <th><span class="HoldsLabel">Hold</span> Starts on Date</th>
 		  <!-- /TMPL_IF -->
                   <!-- TMPL_IF NAME="OPACItemHolds" -->
                     <th id="place_on_hdr" style="display:none">Place On</th>
                   <!-- /TMPL_IF -->
                   <!-- TMPL_UNLESS NAME="singleBranchMode" -->
-                    <th>Pickup Location</th>
+                    <th><span class="PickupLabel">Pickup Location</span></th>
                   <!-- /TMPL_UNLESS -->
                 </tr>
 
@@ -558,13 +558,13 @@
                                   <span class="noresstatus">Current status can't be held.</span>
                                 <!-- /TMPL_IF -->
                                 <!-- TMPL_IF NAME="reservedate"-->
-                                  <span class="waiting"><!-- TMPL_IF NAME="waitingdate" -->Waiting<!-- TMPL_ELSE -->On hold<!-- /TMPL_IF --> for patron 
+                                  <span class="waiting"><!-- TMPL_IF NAME="waitingdate" -->Waiting<!-- TMPL_ELSE -->On <span class="HoldsLabel">hold</span><!-- /TMPL_IF --> for patron 
                                     <!-- TMPL_IF NAME="waitingdate" -->at<!-- TMPL_ELSE -->expected at<!-- /TMPL_IF --> <!-- TMPL_VAR NAME="ExpectedAtLibrary" -->
                                     since
                                     <!-- TMPL_IF NAME="waitingdate" --><!-- TMPL_VAR NAME="waitingdate" --><!-- TMPL_ELSE --><!-- TMPL_IF name="reservedate" --><!-- TMPL_VAR NAME="reservedate" --><!-- /TMPL_IF --><!-- /TMPL_IF -->.
                                   </span>
                                 <!-- TMPL_ELSE -->
-                                  <span class="notonhold">Not on hold</span>
+                                  <span class="notonhold">Not on <span class="HoldsLabel">hold</span></span>
                                 <!-- /TMPL_IF -->&nbsp;
                               </td>
                             </tr>
@@ -579,9 +579,9 @@
             </div><!-- bigloop -->
 
             <!-- TMPL_IF NAME="none_available" -->
-            <input type="submit" disabled="disabled" value="Place Hold" />
+            <input type="submit" disabled="disabled" value="Submit" />
             <!-- TMPL_ELSE -->
-            <input type="submit" value="Place Hold" class="placehold" />
+            <input type="submit" value="Submit" class="placehold" />
             <!-- /TMPL_IF -->
 
             </form>
