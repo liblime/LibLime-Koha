@@ -78,19 +78,19 @@ $.tablesorter.addParser({
     <div class="yui-b"><div class="yui-g">
 	<div id="holdhistory" class="container">
 
-<h3><a href="/cgi-bin/koha/opac-user.pl"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" -->'s account</a> <img src="<!-- TMPL_VAR NAME="themelang" -->../../images/caret.gif" width="16" height="16" alt="&gt;" border="0" /> Hold History</h3>
+<h3><a href="/cgi-bin/koha/opac-user.pl"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" -->'s account</a> <img src="<!-- TMPL_VAR NAME="themelang" -->../../images/caret.gif" width="16" height="16" alt="&gt;" border="0" /> <span class="HoldsLabel">Hold </span>History</h3>
 
 <div id="opac-user-views" class="toptabs">
         <ul>
-            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-filled-holds">Filled Holds</a></li>
-            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-expired-holds">Expired Holds</a></li>
-            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-cancelled-holds">Cancelled Holds</a></li>
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-filled-holds">Filled<br /><span class="HoldsLabel">Holds</span></a></li>
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-expired-holds">Expired<br /><span class="HoldsLabel">Holds</span></a></li>
+            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-cancelled-holds">Cancelled<br /><span class="HoldsLabel">Holds</span></a></li>
         </ul>
         
         <div id="opac-user-filled-holds">
         <!-- TMPL_IF NAME="FILLEDRESERVES" -->
         <table id="filledholdst">
-        <caption>Filled Holds <span class="count">(<!-- TMPL_VAR NAME="filledreserves_count" --> total)</span></caption>
+        <caption>Filled <span class="HoldsLabel">Holds </span><span class="count">(<!-- TMPL_VAR NAME="filledreserves_count" --> total)</span></caption>
             <!-- FILLEDRESERVES TABLE ROWS -->
             <thead><tr>
                 <th>Title</th>
@@ -110,7 +110,7 @@ $.tablesorter.addParser({
             </tbody>
         </table>
         <!-- TMPL_ELSE -->
-          <p>You have no filled holds!</p>
+          <p>You have no filled <span class="HoldsLabel">holds</span></p>
         <!-- /TMPL_IF -->
         </div>
 
@@ -118,7 +118,7 @@ $.tablesorter.addParser({
         <!-- TMPL_IF NAME="EXPIREDRESERVES" -->
         <form name="modifyExpiredReservesForm" action="/cgi-bin/koha/opac-moddisplay.pl" method="post" >
         <table id="expiredholdst">
-        <caption>Expired Holds <span class="count">(<!-- TMPL_VAR NAME="expiredreserves_count" --> total)</span></caption>
+        <caption>Expired <span class="HoldsLabel">Holds </span><span class="count">(<!-- TMPL_VAR NAME="expiredreserves_count" --> total)</span></caption>
             <!-- EXPIREDRESERVES TABLE ROWS -->
             <thead><tr>
                 <th>Title</th>
@@ -149,17 +149,17 @@ $.tablesorter.addParser({
             <!-- /TMPL_LOOP -->
             </tbody>
         </table>
-        <fieldset class="action"><input type="submit" class="cancel" name="submit" value="Update Expired Holds" /></fieldset>
+        <fieldset class="action"><input type="submit" class="cancel" name="submit" value="Update Expired <span class="HoldsLabel">Holds" </span>/></fieldset>
         </form>
         <!-- TMPL_ELSE -->
-          <p>You have no expired holds!</p>
+          <p>You have no expired <span class="HoldsLabel">holds</span></p>
         <!-- /TMPL_IF -->
         </div>
 
         <div id="opac-user-cancelled-holds">
         <!-- TMPL_IF NAME="CANCELLEDRESERVES" -->
         <table id="cancelledholdst">
-        <caption>Cancelled Holds <span class="count">(<!-- TMPL_VAR NAME="cancelledreserves_count" --> total)</span></caption>
+        <caption>Cancelled <span class="HoldsLabel">Holds </span><span class="count">(<!-- TMPL_VAR NAME="cancelledreserves_count" --> total)</span></caption>
             <!-- CANCELLEDRESERVES TABLE ROWS -->
             <thead><tr>
                 <th>Title</th>
@@ -183,7 +183,7 @@ $.tablesorter.addParser({
             </tbody>
         </table>
         <!-- TMPL_ELSE -->
-          <p>You have no cancelled holds!</p>
+          <p>You have no cancelled <span class="HoldsLabel">holds</span></p>
         <!-- /TMPL_IF -->
         </div>
 

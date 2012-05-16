@@ -415,7 +415,7 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 	</table>
     <!-- TMPL_IF NAME="totalreserves" -->
       <div class="dialogue alert">
-         <b> Total holds: <!-- TMPL_VAR NAME="totalreserves" --> <p> Items with "On hold" status are item specific holds. </b>
+         <b> Total <span class="HoldsLabel">holds</span>: <!-- TMPL_VAR NAME="totalreserves" --> <p> Items with "<span class="HoldsLabel">On hold</span>" status are item specific <span class="HoldsLabel">holds</span>. </b>
       </div>
     <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
@@ -780,13 +780,15 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 <!-- TMPL_UNLESS NAME="norequests" -->
         <!-- TMPL_IF NAME="opacuserlogin" -->
 		<!-- TMPL_IF NAME="RequestOnOpac" -->
+		<span id="detailshold">
 			<!-- TMPL_IF NAME="AllowOnShelfHolds" -->
-                            <li><a class="reserve" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Place Hold <!-- TMPL_IF NAME="totalreserves" --> (<!-- TMPL_VAR NAME="totalreserves" --> holds, <!-- TMPL_VAR NAME="activereserves" --> active) <!-- TMPL_ELSE --> (0 holds, 0 active) <!-- /TMPL_IF --></a></li>
+                            <li><a class="reserve" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><span class="hold">Place Hold </span><!-- TMPL_IF NAME="totalreserves" --> (<!-- TMPL_VAR NAME="totalreserves" --> <span class="HoldsLabel">holds</span>, <!-- TMPL_VAR NAME="activereserves" --> active) <!-- TMPL_ELSE --> (0 <span class="HoldsLabel">holds</span>, 0 active) <!-- /TMPL_IF --></a></li>
 			<!-- TMPL_ELSE -->
 				<!-- TMPL_IF NAME="ItemsIssued" -->
-	                    <li><a class="reserve" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Place Hold <!-- TMPL_IF NAME="totalreserves" --> (<!-- TMPL_VAR NAME="totalreserves" --> holds, <!-- TMPL_VAR NAME="activereserves" --> active) <!-- TMPL_ELSE --> (0 holds, 0 active) <!-- /TMPL_IF --></a></li>
+	                    <li><a class="reserve" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><span class="hold">Place Hold </span> <!-- TMPL_IF NAME="totalreserves" --> (<!-- TMPL_VAR NAME="totalreserves" --> <span class="HoldsLabel">holds</span>, <!-- TMPL_VAR NAME="activereserves" --> active) <!-- TMPL_ELSE --> (0 <span class="HoldsLabel">holds</span>, 0 active) <!-- /TMPL_IF --></a></li>
 				<!-- /TMPL_IF -->
 			<!-- /TMPL_IF -->
+		</span>
         	<!-- /TMPL_IF -->
 	<!-- /TMPL_IF -->
 <!-- /TMPL_UNLESS -->
