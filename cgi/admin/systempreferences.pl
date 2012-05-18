@@ -440,6 +440,7 @@ $tabsysprefs{OPACAdvSearchInputCount}            = "OPAC";
 $tabsysprefs{OPACShowCompletedHolds}             = "OPAC";
 $tabsysprefs{OPACShowCancelledHolds}             = "OPAC";
 $tabsysprefs{OPACShowExpiredHolds}               = "OPAC";
+$tabsysprefs{OPACQuickSearchFilter}              = "OPAC";
 
 # Serials
 $tabsysprefs{OPACSerialIssueDisplayCount}  = "Serials";

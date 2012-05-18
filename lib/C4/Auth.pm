@@ -438,6 +438,7 @@ sub get_template_and_user {
             GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),
             BibliosCataloging => C4::Context->preference("BibliosCataloging"),
             searchdomainoptions       => $searchdomainoptions,
+            OPACQuickSearchFilter => C4::Koha::GetOpacSearchFilters(),
         );
     }
     return ( $template, $borrowernumber, $cookie, $flags);

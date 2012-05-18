@@ -1217,6 +1217,70 @@ sub GetOpacConfigByHostname {
     return $opacconf // {};
 }
 
+=head2 @filterloop = GetOpacSearchFilters
+
+=over 4
+
+Returns an array of hashes with keys 'label', 'value'
+suitable for building an html option element in templates.
+
+=back
+
+=cut
+
+sub GetOpacSearchFilters {
+    # TODO: If C4::Context::preference could handle extended data types,
+    # we could cache the results of this function in the sysprefs cache itself.
+    my $filter_string = C4::Context->preference('OPACQuickSearchFilter');
+    $filter_string =~ s/[\n\s]*$//;
+    return unless $filter_string;
+    my @filters = split('\n',$filter_string);
+    my $any_string = "Any format";
+
+    if(scalar(@filters) == 1){
+        if($filters[0] =~ /^i(tem)?type/){
+            my $itemtypes = GetItemTypes();
+            @filters =  map({label => $itemtypes->{$_}->{'description'}, value => "mc-itype:$_"}, keys %$itemtypes);
+            $any_string = "Any type";
+        } elsif($filters[0] =~ /^ccode/){
+            my $ccodes = GetAuthorisedValues('CCODE');
+            @filters =  map({label => $_->{'opaclib'}||$_->{lib}||$_->{'authorised_value'}, value => "mc-ccode:$_->{'authorised_value'}"}, @$ccodes);
+            $any_string = "Any collection";
+        } elsif($filters[0] =~ /^loc/){
+            my $ccodes = GetAuthorisedValues('LOC');
+            @filters = sort map({label => $_->{'opaclib'}||$_->{lib}||$_->{'authorised_value'}, value => "mc-loc:$_->{'authorised_value'}"}, @$ccodes);
+            $any_string = "Any location";
+        } else {
+            return;
+        }
+        @filters = sort {$a->{label} cmp $b->{label}} @filters;
+    } else {
+        # user-specified queries.
+        my @select_html;
+        foreach my $fline (@filters){
+            my ($label,$query) = split('\|',$fline);
+            $label =~ s/^\s*(.*)\s*$/$1/;
+            $query =~ s/^\s*(.*)\s*$/$1/;
+            $query =~ s/:\s+/:/g;
+            next unless $label;
+            # It would be nice if C4::Search provided a test for valid indexes.
+            # We skip query parsing here, and assume the user has entered valid ccl query clauses.
+            #TODO: Test for valid queries.
+            my $option = { label => $label, value => $query || '' };
+            if($label =~ /^---/){
+                $option->{'separator'} = 1;
+            }
+            push @select_html, $option;
+        }
+        @filters = @select_html;
+    }
+    if($filters[0]->{value} ne ''){
+        #Fixme: translatable string?
+        unshift(@filters,{label => $any_string, value => ''});
+    }
+    return \@filters;
+}
+
 1;
 
 __END__

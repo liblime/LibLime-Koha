@@ -55,6 +55,18 @@
         <option value="callnum">Call Number</option>
 		<!-- /TMPL_IF --></select>
 
+        <!-- TMPL_IF NAME="OPACQuickSearchFilter" -->
+        <select name="limit" class="left">
+          <!-- TMPL_LOOP NAME="OPACQuickSearchFilter" -->
+          <!-- TMPL_IF NAME="separator" -->
+          <option disabled="disabled" class="separator">------</option>
+          <!-- TMPL_ELSE -->
+          <option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="label" --></option>
+          <!-- /TMPL_IF -->
+          <!-- /TMPL_LOOP -->
+        </select>
+        <!-- /TMPL_IF -->
+
     <!-- TMPL_IF NAME="searchdomainoptions" -->
     <div id="searchcategories_masthead">
       <select name="multibranchlimit" class="left">
