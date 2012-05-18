@@ -287,6 +287,7 @@ sub language_get_description {
     my $descriptions = $cache->compute(
         'language_descriptions', '5m',
         \&_seed_language_description_cache);
+    no warnings qw(uninitialized);
     my $lang_desc = $descriptions->{$subtag}{$lang}{$type};
     return ($lang_desc) ? $lang_desc->{description} : 'English';
 }
