@@ -233,6 +233,7 @@ function expand_sortby(){
             <legend>Subtypes</legend>
             <select name="limit" class="subtype">
                   <option value="" selected="selected" class="menuheader">Any audience</option>
+                  <option value="(allrecords,AlwaysMatches='' not (aud:a or aud:b or aud:c or aud:j) )">Adult</option>
                   <option value="(aud:a or aud:b or aud:c or aud:j)">Children</option>
 		    <option value="aud:a">Preschool</option>
 		    <option value="aud:b">Primary</option>
@@ -252,6 +253,7 @@ function expand_sortby(){
 
             <select name="limit" class="subtype">
                   <option value="" selected="selected" class="menuheader">Any Format</option>
+                  <option value="(rtype:a and Bib-level=m)">Books</option>
                   <option value="ff8-23:d">Large print books</option>
                   <option value="ff8-23:f">Braille books</option>
                   <option value="g-format:6">Graphic novels</option>
