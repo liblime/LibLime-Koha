@@ -4770,6 +4770,28 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.008';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(q{
+CREATE TABLE `ttech_message_queue` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `borrowernumber` int(11) NOT NULL,
+  `itemnumber` int(11) NOT NULL,
+  `code` varchar(16) NOT NULL,
+  `content` tinytext NOT NULL,
+  `added_at` datetime NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `status` enum('waiting','sent','dropped','delivered') NOT NULL DEFAULT 'waiting',
+  PRIMARY KEY (`id`),
+  KEY `status` (`status`),
+  KEY `code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    });
+
+    print "Upgrade to $DBversion done ( Create TalkingTech message queue table )\n";
+    SetVersion ($DBversion);
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

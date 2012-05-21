@@ -766,7 +766,7 @@ ENDSQL
 
 =over 4
 
-CreateTALKINGtechMESSAGE($borrowernumber,$items,$code);
+CreateTALKINGtechMESSAGE($borrowernumber, $items, $code, $notelevel);
 
 Given the $borrowernumber an arrayref of hashrefs $items, append a new
 line of data in the TALKINGtech MESSAGE notice file. The $code is i-tiva's
@@ -777,52 +777,111 @@ notice type.
 =cut
 
 sub CreateTALKINGtechMESSAGE {
-  my ($borrowernumber,$items,$code,$notelevel) = @_;
-  my $borrower = C4::Members::GetMemberDetails($borrowernumber);
+    my ( $borrowernumber, $items, $code, $notelevel ) = @_;
+    my $borrower = C4::Members::GetMember( $borrowernumber );
+    croak "Unable to find borrower ($borrowernumber)" unless $borrower;
 
-  # If the home phone number is preceded by an asterisk or doesn't exist,
-  # don't add to MESSAGE file
-  return 0 if (($borrower->{'phone'} =~ /^\s*\*/) ||
-               (!defined($borrower->{'phone'})) ||
-               ($borrower->{'phone'} eq ''));
+    return 0
+        unless ( $borrower->{phone} && $borrower->{phone} !~ /^\s*\*/ );
 
-  $notelevel = 0 if ($code eq "FINE");
-  my $due_date;
-  foreach my $item (@$items) {
-    my $branch = C4::Branch::GetBranchDetail($item->{holdingbranch});
-    my $temppath = C4::Context->preference('TalkingTechMessagePath')
-                   // $ENV{TTMESSAGE}
-                   // "/tmp";
-    $temppath .= "/";
-    my ($tmpfh,$tmpname);
-    eval { ($tmpfh,$tmpname) = tempfile( DIR => $temppath, SUFFIX => '-' . $branch->{branchcode} . '.ttech' ) };
-    if ($@) { warn "Error trying to create TalkingTech temp file : $@"; }
-    # Reformat due date field for i-tiva, if applicable
-    if (defined($item->{onloan})) {
-      my ($yyyy,$mm,$dd) = split(/-/,$item->{onloan});
-      $due_date = sprintf "%02d/%02d/%4d",$dd,$mm,$yyyy;
-    }
-    elsif (defined($item->{date_due})) {
-      my ($yyyy,$mm,$dd) = split(/-/,$item->{date_due});
-      $due_date = sprintf "%02d/%02d/%4d",$dd,$mm,$yyyy;
-    }
-    else {
-      $due_date = '';
-    }
-    $branch->{branchname} =~ s/Public Library/PL/;
-    if (defined $tmpfh) {
-      no warnings qw(uninitialized);
-      printf $tmpfh "\"V\",\"EN\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"\",\"%s\",\"%12.12s\",\"%s\",\"%s\",\"%s\",\"\"\r\n",
-      $code,$notelevel,$borrower->{cardnumber},$borrower->{title},
-      $borrower->{firstname},$borrower->{surname},$borrower->{phone},
-      $borrower->{email},$item->{holdingbranch},$branch->{branchname},
-      $item->{barcode},$due_date,$item->{title};
-      chmod(0644,$tmpfh);
-      close($tmpfh);
-    }
-  }
+    $notelevel = 0
+        if ( $code eq 'FINE' );
 
-  return 1;
+    for $_ (@$items) {
+        my $msg = _ttech_compose_message( $borrower, $_, $code, $notelevel );
+        _ttech_enqueue_message( $borrower, $_, $code, $msg );
+    }
+
+    return 1;
+}
+
+sub _ttech_compose_message {
+    my ( $borrower, $item, $code, $notelevel ) = @_;
+    my $branchname = C4::Branch::GetBranchName( $item->{holdingbranch} );
+
+    my $due_date = '';
+    if ( my $date = ($item->{onloan} || $item->{date_due}) ) {
+        $due_date = sprintf(
+            '%02d/%02d/%4d', reverse split(/-/, $date) );
+    }
+
+    no warnings qw(uninitialized);
+    my $msg = sprintf(
+        q{"V","EN","%s","%s","%s","%s","%s","%s","%s","%s","","%s","%12.12s","%s","%s","%s",""},
+        $code,                   $notelevel,
+        $borrower->{cardnumber}, $borrower->{title},
+        $borrower->{firstname},  $borrower->{surname},
+        $borrower->{phone},      $borrower->{email},
+        $item->{holdingbranch},  $branchname,
+        $item->{barcode},        $due_date,
+        $item->{title} );
+
+    return $msg;
+}
+
+sub _ttech_enqueue_message {
+    my ( $borrower, $item, $code, $msg ) = @_;
+    C4::Context->dbh->do(
+        q{INSERT INTO ttech_message_queue
+            (borrowernumber, itemnumber, code, content, added_at)
+          VALUES (?, ?, ?, ?, NOW())}, undef,
+        $borrower->{borrowernumber}, $item->{itemnumber}, $code, $msg );
+
+    return;
+}
+
+sub ttech_get_pending_queue {
+    return C4::Context->dbh->selectall_arrayref(
+        q{SELECT * FROM ttech_message_queue WHERE status = 'waiting'},
+        { Slice => {} } );
+}
+
+sub ttech_update_message_status {
+    my ( $id, $status ) = @_;
+    croak "Bad message status '$status'"
+        unless $status ~~ [ qw(sent dropped waiting delivered) ];
+    C4::Context->dbh->do(
+        q{UPDATE ttech_message_queue SET status = ? WHERE id = ?},
+        undef, $status, $id );
+
+    return;
+}
+
+=head2 ttech_compose_todo_file
+
+=over 4
+
+$output = ttech_compose_todo_file( $message_queue, $prune_function );
+
+Returns a TalkingTech server-formatted string comprised of the
+contents of $message_queue. $prune_function is an optional coderef
+that can be used to mark unwanted messages as "dropped". If
+$message_queue is undefined it will be defaulted to the output of
+ttech_get_pending_queue();
+
+=back
+
+=cut
+
+sub ttech_compose_todo_file {
+    my ( $msg_queue, $pruner ) = @_;
+
+    $msg_queue //= ttech_get_pending_queue();
+
+    my $output = q{};
+    for (@$msg_queue) {
+        my $status;
+        if ( defined $pruner && $pruner->($_) ) {
+            $status = 'dropped';
+        }
+        else {
+            $status = 'sent';
+            $output .= "$_->{content}\r\n";
+        }
+        ttech_update_message_status( $_->{id}, $status );
+    }
+
+    return $output;
 }
 
 =head2 _add_attachements

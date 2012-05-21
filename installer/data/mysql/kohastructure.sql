@@ -2797,6 +2797,20 @@ CREATE TABLE IF NOT EXISTS `receipt_template_assignments` (
   PRIMARY KEY  (`action`,`branchcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `ttech_message_queue` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `borrowernumber` int(11) NOT NULL,
+  `itemnumber` int(11) NOT NULL,
+  `code` varchar(16) NOT NULL,
+  `content` tinytext NOT NULL,
+  `added_at` datetime NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `status` enum('waiting','sent','dropped','delivered') NOT NULL DEFAULT 'waiting',
+  PRIMARY KEY (`id`),
+  KEY `status` (`status`),
+  KEY `code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
