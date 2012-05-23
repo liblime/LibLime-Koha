@@ -647,17 +647,6 @@ sub checkauth {
             $userid    = undef;
             $sessionID = undef;
         }
-        elsif ( 0 ) {
-#        elsif ( $ip ne $ENV{'REMOTE_ADDR'} ) {
-            # Different ip than originally logged in from
-            $info{'oldip'}        = $ip;
-            $info{'newip'}        = $ENV{'REMOTE_ADDR'};
-            $info{'different_ip'} = 1;
-            $session->delete();
-            C4::Context->_unset_userenv($sessionID);
-            $sessionID = undef;
-            $userid    = undef;
-        }
         else {
             $cookie = $query->cookie( CGISESSID => $session->id );
             $session->param('lasttime',time());
@@ -1053,26 +1042,12 @@ sub check_api_auth {
                 $userid    = undef;
                 $sessionID = undef;
                 return ("expired", undef, undef);
-            } elsif ( $ip ne $ENV{'REMOTE_ADDR'} ) {
-                # IP address changed
-                $session->delete();
-                C4::Context->_unset_userenv($sessionID);
-                $userid    = undef;
-                $sessionID = undef;
-                return ("expired", undef, undef);
             } else {
                 my $cookie = $query->cookie( CGISESSID => $session->id );
                 $session->param('lasttime',time());
-                my $flags = haspermission($userid, $flagsrequired);
-                if ($flags) {
-                    return ("ok", $cookie, $sessionID);
-                } else {
-                    $session->delete();
-                    C4::Context->_unset_userenv($sessionID);
-                    $userid    = undef;
-                    $sessionID = undef;
-                    return ("failed", undef, undef);
-                }
+                return ( haspermission($userid, $flagsrequired) )
+                    ? ('ok', $cookie, $sessionID)
+                    : ('failed', undef, undef);
             }
         } else {
             return ("expired", undef, undef);
@@ -1216,77 +1191,54 @@ Possible return values in C<$status> are:
 =cut
 
 sub check_cookie_auth {
-    my $cookie = shift;
+    my $sessionID = shift;
     my $flagsrequired = shift;
 
-    my $dbh     = C4::Context->dbh;
-    my $timeout = C4::Context->preference('timeout') // 600;
+    return ('failed', undef)
+        unless $sessionID;
 
-    unless (C4::Context->preference('Version')) {
-        # database has not been installed yet
-        return ("maintenance", undef);
-    }
-    my $kohaversion=C4::Context::KOHAVERSION;
+    return ('maintenance', undef)
+        # Database has not been installed yet.
+        unless (C4::Context->preference('Version'));
+
+    my $kohaversion = C4::Context::KOHAVERSION;
     $kohaversion =~ s/(.*\..*)\.(.*)\.(.*)/$1$2$3/;
-    if (C4::Context->preference('Version') < $kohaversion) {
-        # database in need of version update; assume that
-        # no API should be called while databsae is in
-        # this condition.
-        return ("maintenance", undef);
-    }
+    return ('maintenance', undef)
+        # Database schema out of sync with code revision.
+        if (C4::Context->preference('Version') < $kohaversion);
 
-    # FIXME -- most of what follows is a copy-and-paste
-    # of code from checkauth.  There is an obvious need
-    # for refactoring to separate the various parts of
-    # the authentication code, but as of 2007-11-23 this
-    # is deferred so as to not introduce bugs into the
-    # regular authentication code for Koha 3.0.
-
-    # see if we have a valid session cookie already
-    # however, if a userid parameter is present (i.e., from
-    # a form submission, assume that any current cookie
-    # is to be ignored
-    unless (defined $cookie and $cookie) {
-        return ("failed", undef);
-    }
-    my $sessionID = $cookie;
     my $session = get_session($sessionID);
+    return ('expired', undef)
+        # Can't find session.
+        unless $session;
+
+    my $lasttime = $session->param('lasttime');
+    my $timeout = C4::Context->preference('timeout') // 600;
+    if ( $lasttime < time() - $timeout ) {
+        # Session timed out.
+        $session->delete();
+        C4::Context->_unset_userenv($sessionID);
+        return ('expired', undef);
+    }
+
     C4::Context->_new_userenv($sessionID);
-    if ($session) {
-        C4::Context::set_userenv(
-            $session->param('number'),       $session->param('id'),
-            $session->param('cardnumber'),   $session->param('firstname'),
-            $session->param('surname'),      $session->param('branch'),
-            $session->param('branchname'),   $session->param('flags'),
-            $session->param('emailaddress'), $session->param('branchprinter')
+    C4::Context::set_userenv(
+        $session->param('number'),       $session->param('id'),
+        $session->param('cardnumber'),   $session->param('firstname'),
+        $session->param('surname'),      $session->param('branch'),
+        $session->param('branchname'),   $session->param('flags'),
+        $session->param('emailaddress'), $session->param('branchprinter')
         );
 
-        my $ip = $session->param('ip');
-        my $lasttime = $session->param('lasttime');
-        my $userid = $session->param('id');
-        if ( $lasttime < time() - $timeout ) {
-            # time out
-            $session->delete();
-            C4::Context->_unset_userenv($sessionID);
-            $userid    = undef;
-            $sessionID = undef;
-            return ("expired", undef);
-        } else {
-            $session->param('lasttime',time());
-            my $flags = haspermission($userid, $flagsrequired);
-            if ($flags) {
-                return ("ok", $sessionID);
-            } else {
-                $session->delete();
-                C4::Context->_unset_userenv($sessionID);
-                $userid    = undef;
-                $sessionID = undef;
-                return ("failed", undef);
-            }
-        }
-    } else {
-        return ("expired", undef);
-    }
+    my $userid = $session->param('id');
+    $session->param('lasttime',time());
+
+    return ('failed', undef)
+        # User has insufficient permission.
+        unless haspermission( $userid, $flagsrequired );
+
+    # We've run the gauntlet. All systems go.
+    return ('ok', $sessionID);
 }
 
 =item get_session
