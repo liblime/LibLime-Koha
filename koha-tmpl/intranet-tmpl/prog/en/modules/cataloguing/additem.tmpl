@@ -128,7 +128,7 @@ function _checkbarcode() {
       var id = '<!-- TMPL_VAR NAME="itemnumber" -->';
       // dupecheck if adding
       if (id == '') { dupecheck = 1; }
-      $.getJSON('check_barcode.pl', {'barcode':$('#<!-- TMPL_VAR NAME="barcode_id" -->').val(),'barcodetype':'item2','branchcode':branchcode,'dupecheck':dupecheck,'itemnumber':itemnumber},function(data) {
+      $.getJSON('check_barcode.pl', {'barcode':$('#<!-- TMPL_VAR NAME="barcode_id" -->').val(),'barcodetype':'item','branchcode':branchcode,'dupecheck':dupecheck,'itemnumber':itemnumber},function(data) {
          if (data.itemnumber) {
 				var itemData = '<table border=0 cellspacing=0 cellpadding=2>';
 				itemData += '<tr><td>Title: </td><td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber='

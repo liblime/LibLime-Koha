@@ -1073,7 +1073,7 @@
 <!-- /TMPL_IF --> <!-- /TMPL_IF -->
 
     <fieldset class="action">
-        <input type="submit" name="save" onclick="return check_entryform();" value="Save" />
+        <input type="submit" name="save" onclick="return check_form_borrowers();" value="Save" />
       <!-- TMPL_IF NAME="opadd" -->
          <!-- TMPL_IF NAME="copy" -->
 	   <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a>
@@ -1132,8 +1132,6 @@
       checkBarcode();
    });
 
-var CheckBarcodeOK = false;
-
    function checkBarcode() {
       var docheck    = '<TMPL_VAR NAME="barcodeCheckFunc">';
       if (docheck=='') { return }
@@ -1154,7 +1152,6 @@ var CheckBarcodeOK = false;
    }
    function processCheckBarcode(data) {
       if (data.error) {
-         CheckBarcodeOK = false;
          alert('Invalid barcode: '
          +data.error + '\n'
          +'Cannot save record.\n'
@@ -1164,43 +1161,10 @@ var CheckBarcodeOK = false;
          return false;
       }
       else {
-         CheckBarcodeOK = true;
+         // do nothing
          return true;
       }
    }
-
-function check_entryform() {
-    "use strict";
-    var barcode    = document.getElementById('cardnumber').value;
-    var branchcode = document.getElementById('branchcode').value;
-    var dupecheck  = 0;
-
-    <!-- TMPL_IF NAME="opadd" -->
-    // We are adding a new patron, so do a cardnumber/barcode dupecheck.
-    var dupecheck  = 1;
-    <!-- TMPL_ELSE -->
-    // We are editing an extant patron, so do not do a dupecheck.
-    var dupecheck  = 0;
-    <!-- /TMPL_IF -->
-
-// make a synchronous call so we can prevent calling check_form_borrowers until
-// we know no prior errors are encountered, because it submits the form.
-    $.ajax({
-        type: 'GET',
-        url: '/cgi-bin/koha/cataloguing/check_barcode.pl',
-        dataType: 'json',
-        success: processCheckBarcode,
-        data: {'barcode': barcode, 'barcodetype': 'patron2',
-            'branchcode': branchcode, 'dupecheck': dupecheck},
-        async: false
-    });
-    if (CheckBarcodeOK == true) {
-         // Call to check_barcode.pl shows valid barcode so far.
-         // Now call legacy validation function too, and it will submit if OK.
-        return check_form_borrowers();
-    }
-    return false;
-}
 
 </script>
 </div>

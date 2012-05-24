@@ -106,33 +106,21 @@ sub validate
 {
    my($barcode,$barcodetype,$branchcode,$dupecheck) = @_;
    $barcodetype ||= 'patron'; # patron|item
-   unless (grep /^$barcodetype$/, qw(patron item patron2 item2)) {
+   unless (grep /^$barcodetype$/, qw(patron item)) {
       return 0,"Acceptable barcodetype: 'patron' or 'item'";
    }
-# Also support barcodetypes item2, patron2.
-# item2 has additional check of barcode vs patron cardnumber.
-# patron2 has additional check of cardnumber vs item barcode.
-
-
-   my $basetype = ( $barcodetype eq "item" or $barcodetype eq "item2")
-                ? 'item' : 'patron';
-
-   # the 'other' object (patron vs item) has dibs on the checked barcode.
-   my $otherdibs = ($barcodetype eq "item2" or $barcodetype eq "patron2")
-                 ? 1 : 0;
-
    ## get prefix from db
    my $sth;
    my $dbh = C4::Context->dbh;
    my $dbPrefix = '';
-   $sth = $dbh->prepare("SELECT ${basetype}barcodeprefix FROM branches
+   $sth = $dbh->prepare("SELECT ${barcodetype}barcodeprefix FROM branches
       WHERE branchcode = ?") || die $dbh->errstr();
    $sth->execute($branchcode) || die $dbh->errstr();
    $dbPrefix = ($sth->fetchrow_array())[0];
    ## soft return: if it's not set, don't do checking
    return 1 unless $dbPrefix;
 
-   my $len = C4::Context->preference("${basetype}barcodelength");
+   my $len = C4::Context->preference("${barcodetype}barcodelength");
    if (length($barcode) != $len) {
       return 0,"Expected barcode length of $len characters";
    }
@@ -146,35 +134,18 @@ sub validate
 
    # dupecheck
    if ($dupecheck) {
-      my ($sql, $err);
-      if ($basetype eq 'patron') {
+      my $sql;
+      if ($barcodetype eq 'patron') {
          $sql = "SELECT 1 FROM borrowers WHERE cardnumber = ?";
-         $err = "Duplicate patron cardnumber.";
       }
       else { # item
          $sql = "SELECT 1 FROM items WHERE barcode = ?";
-         $err = "Duplicate item barcode.";
       }
       $sth = $dbh->prepare($sql) || die $dbh->errstr();
       $sth->execute($barcode) || die $dbh->errstr();
       my($dupe) = ($sth->fetchrow_array)[0];
-      return 0,$err if $dupe;
+      return 0,'Duplicate barcode' if $dupe;
    }
-   if ($otherdibs) {
-      my ($sql,$err);
-      if ($basetype eq 'patron') {
-         $sql = "SELECT 1 FROM items WHERE barcode = ?";
-         $err = "A catalogued item barcode already uses this cardnumber.";
-      }
-      else { #basetype item2
-         $sql = "SELECT 1 FROM borrowers WHERE cardnumber = ?";
-         $err = "A patron cardnumber already uses this barcode.";
-      }
-      $sth = $dbh->prepare($sql) || die $dbh->errstr();
-      $sth->execute($barcode) || die $dbh->errstr();
-      my($hit) = ($sth->fetchrow_array)[0];
-      return 0, $err if $hit;
-    }
 
    # digit 14: check digit
    # start with the total set to zero and scan the 13 digits from left to right.
