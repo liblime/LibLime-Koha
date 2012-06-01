@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<config>
+  <abortOnConfigurationError>${solr.abortOnConfigurationError:true}</abortOnConfigurationError>
+  <luceneMatchVersion>LUCENE_36</luceneMatchVersion>
+
+  <lib dir="${com.liblime.lk.luceneLibraryBase:../..}/contrib/analysis-extras/lib"/>
+  <lib dir="${com.liblime.lk.luceneLibraryBase:../..}/contrib/analysis-extras/lucene-libs"/>
+  <lib dir="${com.liblime.lk.luceneLibraryBase:../..}/dist"/>
+
+  <dataDir>${solr.data.dir:}</dataDir>
+  <directoryFactory name="DirectoryFactory" 
+                    class="${solr.directoryFactory:solr.StandardDirectoryFactory}"/>
+
+  <indexDefaults>
+    <useCompoundFile>false</useCompoundFile>
+    <mergeFactor>10</mergeFactor>
+    <ramBufferSizeMB>32</ramBufferSizeMB>
+    <maxFieldLength>10000</maxFieldLength>
+    <writeLockTimeout>1000</writeLockTimeout>
+    <lockType>native</lockType>
+  </indexDefaults>
+  <mainIndex>
+    <useCompoundFile>false</useCompoundFile>
+    <ramBufferSizeMB>32</ramBufferSizeMB>
+    <mergeFactor>10</mergeFactor>
+    <unlockOnStartup>false</unlockOnStartup>
+    <reopenReaders>true</reopenReaders>
+    <deletionPolicy class="solr.SolrDeletionPolicy">
+      <str name="maxCommitsToKeep">1</str>
+      <str name="maxOptimizedCommitsToKeep">0</str>
+    </deletionPolicy>
+    <infoStream file="INFOSTREAM.txt">false</infoStream> 
+  </mainIndex>
+
+  <jmx />
+
+  <updateHandler class="solr.DirectUpdateHandler2">
+  </updateHandler>
+  
+  <query>
+    <maxBooleanClauses>1024</maxBooleanClauses>
+    <filterCache class="solr.FastLRUCache"
+                 size="512"
+                 initialSize="512"
+                 autowarmCount="0"/>
+    <queryResultCache class="solr.LRUCache"
+                     size="512"
+                     initialSize="512"
+                     autowarmCount="0"/>
+    <documentCache class="solr.LRUCache"
+                   size="512"
+                   initialSize="512"
+                   autowarmCount="0"/>
+    <enableLazyFieldLoading>true</enableLazyFieldLoading>
+    <queryResultWindowSize>20</queryResultWindowSize>
+    <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
+
+    <listener event="newSearcher" class="solr.QuerySenderListener">
+      <arr name="queries">
+      </arr>
+    </listener>
+    <listener event="firstSearcher" class="solr.QuerySenderListener">
+      <arr name="queries">
+        <lst>
+          <str name="q">static firstSearcher warming in solrconfig.xml</str>
+        </lst>
+      </arr>
+    </listener>
+
+    <useColdSearcher>false</useColdSearcher>
+    <maxWarmingSearchers>2</maxWarmingSearchers>
+  </query>
+
+  <requestDispatcher handleSelect="true" >
+    <requestParsers enableRemoteStreaming="true" 
+                    multipartUploadLimitInKB="2048000" />
+    <httpCaching never304="true" />
+  </requestDispatcher>
+
+  <requestHandler name="search" class="solr.SearchHandler" default="true">
+     <lst name="defaults">
+       <str name="defType">edismax</str>
+       <str name="echoParams">none</str>
+       <int name="rows">20</int>
+       <str name="df">text</str>
+       <str name="q.alt">*:*</str>
+       <str name="f.title.qf">title_t</str>
+       <str name="f.author.qf">author-full_mt</str>
+       <str name="f.subject.qf">subject_ms</str>
+
+       <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
+
+       <str name="qf">
+         title_t^25000
+         subject_ms^500
+         author_t^100
+         author-full_mt^50
+         isbn_ms
+         text
+       </str>
+       <str name="pf">
+         title_t^250000
+         subject_ms^5000
+         author_t^1000
+         author-full_mt^500
+         text^10
+       </str>
+       
+       <int name="ps">3</int>
+       <float name="tie">0.01</float>
+
+       <str name="fl">
+         id,
+         score,
+         author_display,
+         title_display,
+         format_s,
+         isbn_ms,
+         format_facet,
+         ln_facet,
+         subject-era_facet,
+         subject-geo_facet,
+         subject-topic_facet,
+         subject-genre_facet,
+       </str>
+
+       <str name="facet">false</str>
+       <str name="facet.mincount">1</str>
+       <str name="facet.limit">10</str>
+       <str name="facet.field">format_facet</str>
+       <str name="facet.field">ln_facet</str>
+       <str name="facet.field">subject-era_facet</str>
+       <str name="facet.field">subject-geo_facet</str>
+       <str name="facet.field">subject-topic_facet</str>
+       <str name="facet.field">subject-genre_facet</str>
+       
+       <str name="spellcheck">false</str>
+       <str name="spellcheck.dictionary">default</str>
+       <str name="spellcheck.onlyMorePopular">true</str>
+       <str name="spellcheck.extendedResults">true</str>
+       <str name="spellcheck.collate">false</str>
+       <str name="spellcheck.count">5</str>
+     </lst>
+
+    <!--
+       <lst name="appends">
+         <str name="fq">rtype:bib</str>
+       </lst>
+      -->
+    <arr name="last-components">
+      <str>spellcheck</str>
+    </arr>
+  </requestHandler>
+
+  <requestHandler name="document" class="solr.SearchHandler" >
+    <lst name="defaults">
+      <str name="echoParams">all</str>
+      <str name="fl">*</str>
+      <str name="rows">1</str>
+      <str name="q">{!raw f=id v=$id}</str> <!-- use id=666 instead of q=id:666 -->
+    </lst>
+  </requestHandler>
+
+  <requestHandler name="advanced" class="solr.SearchHandler" >
+    <lst name="defaults">
+      <str name="defType">lucene</str>
+      <str name="echoParams">explicit</str>
+      <str name="sort">score desc, pub_date_sort desc, title_sort asc</str>   
+      <str name="df">text</str> 
+      <str name="q.op">AND</str> 
+      <str name="qs">1</str>
+
+      <str name="mm">1</str> 
+      <str name="ps">3</str> 
+      <float name="tie">0.01</float>
+      
+      <!-- for user query terms in author text box -->
+      <str name="qf_author">
+        author_unstem_search^200
+        author_addl_unstem_search^50
+        author_t^20
+        author_addl_t
+      </str>
+      <str name="pf_author">
+        author_unstem_search^2000
+        author_addl_unstem_search^500
+        author_t^200
+        author_addl_t^10
+      </str>
+      
+      <!-- for user query terms in title text box -->
+      <str name="qf_title">
+        title_unstem_search^50000
+        subtitle_unstem_search^25000
+        title_addl_unstem_search^10000
+        title_t^5000
+        subtitle_t^2500
+        title_addl_t^100
+        title_added_entry_unstem_search^50
+        title_added_entry_t^10
+        title_series_unstem_search^5
+        title_series_t
+      </str>
+      <str name="pf_title">
+        title_unstem_search^500000
+        subtitle_unstem_search^250000
+        title_addl_unstem_search^100000
+        title_t^50000
+        subtitle_t^25000
+        title_addl_t^1000
+        title_added_entry_unstem_search^500
+        title_added_entry_t^100
+        title_series_t^50
+        title_series_unstem_search^10
+      </str>
+      
+      <str name="qf_subject">
+        subject_topic_unstem_search^200
+        subject_unstem_search^125
+        subject_topic_facet^100
+        subject_t^50
+        subject_addl_unstem_search^10
+        subject_addl_t
+      </str>
+      <str name="pf_subject">
+        subject_topic_unstem_search^2000
+        subject_unstem_search^1250
+        subject_t^1000
+        subject_topic_facet^500
+        subject_addl_unstem_search^100
+        subject_addl_t^10
+      </str>
+      
+      <str name="qf_number">isbn_t</str>
+      
+      <str name="qf_keyword">text</str>
+      <str name="pf_keyword">text^10</str>
+      
+      <str name="fl">
+        id, 
+        score,
+        author_display,
+        author_vern_display, 
+        format, 
+        isbn_t, 
+        language_facet, 
+        lc_callnum_display,
+        material_type_display, 
+        published_display,
+        published_vern_display,
+        pub_date,
+        title_display,
+        title_vern_display,
+        subject_topic_facet,
+        subject_geo_facet,
+        subject_era_facet,
+        subtitle_display,
+        subtitle_vern_display,
+        url_fulltext_display,
+        url_suppl_display,
+      </str>
+      
+      <str name="facet">false</str>
+      <str name="facet.mincount">1</str>
+      <str name="facet.limit">10</str>
+      <str name="facet.field">format</str>
+      <str name="facet.field">lc_1letter_facet</str>
+      <str name="facet.field">lc_alpha_facet</str>
+      <str name="facet.field">lc_b4cutter_facet</str>
+      <str name="facet.field">language_facet</str>
+      <str name="facet.field">pub_date</str>
+      <str name="facet.field">subject_era_facet</str>
+      <str name="facet.field">subject_geo_facet</str>
+      <str name="facet.field">subject_topic_facet</str>
+      
+      <str name="spellcheck">false</str>
+      <str name="spellcheck.dictionary">subject</str>
+      <str name="spellcheck.onlyMorePopular">true</str>
+      <str name="spellcheck.extendedResults">true</str>
+      <str name="spellcheck.collate">false</str>
+      <str name="spellcheck.count">5</str>
+    </lst>
+    <arr name="last-components">
+      <str>spellcheck</str>
+    </arr>
+  </requestHandler>
+
+  <requestHandler name="/update" 
+                  class="solr.XmlUpdateRequestHandler">
+  </requestHandler>
+
+  <requestHandler name="/update/javabin" 
+                  class="solr.BinaryUpdateRequestHandler" />
+
+  <requestHandler name="/update/csv" 
+                  class="solr.CSVRequestHandler" 
+                  startup="lazy" />
+
+  <requestHandler name="/update/json" 
+                  class="solr.JsonUpdateRequestHandler" 
+                  startup="lazy" />
+
+  <requestHandler name="/update/extract" 
+                  startup="lazy"
+                  class="solr.extraction.ExtractingRequestHandler" >
+    <lst name="defaults">
+      <str name="fmap.content">text</str>
+      <str name="lowernames">true</str>
+      <str name="uprefix">ignored_</str>
+      <str name="captureAttr">true</str>
+      <str name="fmap.a">links</str>
+      <str name="fmap.div">ignored_</str>
+    </lst>
+  </requestHandler>
+
+  <requestHandler name="/analysis/field" 
+                  startup="lazy"
+                  class="solr.FieldAnalysisRequestHandler" />
+
+  <requestHandler name="/analysis/document" 
+                  class="solr.DocumentAnalysisRequestHandler" 
+                  startup="lazy" />
+
+  <requestHandler name="/admin/" 
+                  class="solr.admin.AdminHandlers" />
+
+  <requestHandler name="/admin/ping" class="solr.PingRequestHandler">
+    <lst name="defaults">
+      <str name="qt">search</str>
+      <str name="q">solrpingquery</str>
+      <str name="echoParams">all</str>
+    </lst>
+  </requestHandler>
+
+  <requestHandler name="/debug/dump" class="solr.DumpRequestHandler" >
+    <lst name="defaults">
+     <str name="echoParams">explicit</str> 
+     <str name="echoHandler">true</str>
+    </lst>
+  </requestHandler>
+  
+  <searchComponent name="spellcheck" class="solr.SpellCheckComponent">
+
+    <str name="queryAnalyzerFieldType">textSpell</str>
+    <lst name="spellchecker">
+      <str name="name">default</str>
+      <str name="field">spell</str>
+      <str name="spellcheckIndexDir">./spell</str>
+      <str name="buildOnOptimize">true</str>
+    </lst>
+    <lst name="spellchecker">
+      <str name="name">author</str>
+      <str name="field">author_spell</str>
+      <str name="spellcheckIndexDir">./spell_author</str>
+      <str name="accuracy">0.7</str>
+      <str name="buildOnOptimize">true</str>
+    </lst>
+    <lst name="spellchecker">
+      <str name="name">subject</str>
+      <str name="field">subject_spell</str>
+      <str name="spellcheckIndexDir">./spell_subject</str>
+      <str name="accuracy">0.7</str>
+      <str name="buildOnOptimize">true</str>
+    </lst>
+    <lst name="spellchecker">
+      <str name="name">title</str>
+      <str name="field">title_spell</str>
+      <str name="spellcheckIndexDir">./spell_title</str>
+      <str name="accuracy">0.7</str>
+      <str name="buildOnOptimize">true</str>
+    </lst>
+  </searchComponent>
+
+  <searchComponent class="solr.HighlightComponent" name="highlight">
+    <highlighting>
+      <fragmenter name="gap" 
+                  default="true"
+                  class="solr.highlight.GapFragmenter">
+        <lst name="defaults">
+          <int name="hl.fragsize">100</int>
+        </lst>
+      </fragmenter>
+
+      <fragmenter name="regex" 
+                  class="solr.highlight.RegexFragmenter">
+        <lst name="defaults">
+          <int name="hl.fragsize">70</int>
+          <float name="hl.regex.slop">0.5</float>
+          <str name="hl.regex.pattern">[-\w ,/\n\&quot;&apos;]{20,200}</str>
+        </lst>
+      </fragmenter>
+
+      <formatter name="html" 
+                 default="true"
+                 class="solr.highlight.HtmlFormatter">
+        <lst name="defaults">
+          <str name="hl.simple.pre"><![CDATA[<em>]]></str>
+          <str name="hl.simple.post"><![CDATA[</em>]]></str>
+        </lst>
+      </formatter>
+
+      <encoder name="html" 
+               class="solr.highlight.HtmlEncoder" />
+
+      <fragListBuilder name="simple" 
+                       default="true"
+                       class="solr.highlight.SimpleFragListBuilder"/>
+
+      <fragListBuilder name="single" 
+                       class="solr.highlight.SingleFragListBuilder"/>
+
+      <fragmentsBuilder name="default" 
+                        default="true"
+                        class="solr.highlight.ScoreOrderFragmentsBuilder">
+      </fragmentsBuilder>
+
+      <fragmentsBuilder name="colored" 
+                        class="solr.highlight.ScoreOrderFragmentsBuilder">
+        <lst name="defaults">
+          <str name="hl.tag.pre"><![CDATA[
+               <b style="background:yellow">,<b style="background:lawgreen">,
+               <b style="background:aquamarine">,<b style="background:magenta">,
+               <b style="background:palegreen">,<b style="background:coral">,
+               <b style="background:wheat">,<b style="background:khaki">,
+               <b style="background:lime">,<b style="background:deepskyblue">]]></str>
+          <str name="hl.tag.post"><![CDATA[</b>]]></str>
+        </lst>
+      </fragmentsBuilder>
+      
+      <boundaryScanner name="default" 
+                       default="true"
+                       class="solr.highlight.SimpleBoundaryScanner">
+        <lst name="defaults">
+          <str name="hl.bs.maxScan">10</str>
+          <str name="hl.bs.chars">.,!? &#9;&#10;&#13;</str>
+        </lst>
+      </boundaryScanner>
+      
+      <boundaryScanner name="breakIterator" 
+                       class="solr.highlight.BreakIteratorBoundaryScanner">
+        <lst name="defaults">
+          <str name="hl.bs.type">WORD</str>
+          <str name="hl.bs.language">en</str>
+          <str name="hl.bs.country">US</str>
+        </lst>
+      </boundaryScanner>
+    </highlighting>
+  </searchComponent>
+
+  <queryResponseWriter name="velocity" class="solr.VelocityResponseWriter" startup="lazy"/>
+
+  <queryResponseWriter name="xslt" class="solr.XSLTResponseWriter">
+    <int name="xsltCacheLifetimeSeconds">5</int>
+  </queryResponseWriter>
+
+  <admin>
+    <defaultQuery>*:*</defaultQuery>
+  </admin>
+
+</config>
