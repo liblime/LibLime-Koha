@@ -84,30 +84,45 @@
   <requestHandler name="biblio" class="solr.SearchHandler" default="true">
      <lst name="defaults">
        <str name="defType">edismax</str>
-       <str name="echoParams">none</str>
+       <str name="echoParams">explicit</str>
        <int name="rows">20</int>
        <str name="df">text</str>
        <str name="q.op">AND</str>
        <str name="q.alt">*:*</str>
-       <str name="f.title.qf">title_t</str>
-       <str name="f.author.qf">author-full_mt</str>
-       <str name="f.subject.qf">subject_ms</str>
+       <str name="f.title.qf">title-nostem^100 title-full^10 title-alt^10 series-title uniform-title</str>
+       <str name="f.author.qf">author-exact^100 author-full</str>
+       <!-- <str name="f.subject.qf">subject</str> -->
 
        <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
 
        <str name="qf">
-         title_t^25000
-         subject_ms^500
-         author_t^100
-         author-full_mt^50
-         isbn_ms
+         title-nostem^250
+         title-full^25
+         subject^50
+         author-exact^100
+         author-full^50
+         isbn^100
          text
        </str>
+<!--
+       <str name="qf">
+         title_nostem^25000
+         title-full^250
+         subject_ms^500
+         author_nostem^1000
+         author-full_nostem^500
+         isbn_ms^100
+         text^100
+         title_ph^1
+         author_ph^1
+         text_ph
+       </str>
+-->
        <str name="pf">
-         title_t^250000
-         subject_ms^5000
-         author_t^1000
-         author-full_mt^500
+         title-nostem^250
+         subject^50
+         author-nostem^100
+         author-full^50
          text^10
        </str>
        
@@ -116,37 +131,34 @@
 
        <str name="fl">
          id,
+         biblionumber,
          score,
          author_display,
          title_display,
-         format_s,
-         isbn_ms,
-         format_facet,
-         ln_facet,
-         subject-era_facet,
-         subject-geo_facet,
-         subject-topic_facet,
-         subject-genre_facet,
+         format
        </str>
 
-       <str name="facet">false</str>
+       <str name="facet">true</str>
        <str name="facet.mincount">1</str>
-       <str name="facet.limit">10</str>
-       <str name="facet.field">format_facet</str>
-       <str name="facet.field">content_facet</str>
-       <str name="facet.field">audience_facet</str>
-       <str name="facet.field">ln_facet</str>
-       <str name="facet.field">subject-era_facet</str>
-       <str name="facet.field">subject-geo_facet</str>
-       <str name="facet.field">subject-topic_facet</str>
-       <str name="facet.field">subject-genre_facet</str>
+       <str name="facet.query">on-shelf-at:*</str>
+       <str name="facet.limit">12</str>
+       <str name="facet.field">on-shelf-at</str>
+       <str name="facet.field">author-exact</str>
+       <str name="facet.field">format</str>
+       <str name="facet.field">collection</str>
+       <str name="facet.field">itemtype</str>
+       <str name="facet.field">language</str>
+       <str name="facet.field">era</str>
+       <str name="facet.field">geo</str>
+       <str name="facet.field">topic</str>
+       <str name="facet.field">genre</str>
        
-       <str name="spellcheck">false</str>
+       <str name="spellcheck">true</str>
        <str name="spellcheck.dictionary">default</str>
        <str name="spellcheck.onlyMorePopular">true</str>
        <str name="spellcheck.extendedResults">true</str>
-       <str name="spellcheck.collate">false</str>
-       <str name="spellcheck.count">5</str>
+       <str name="spellcheck.collate">true</str>
+       <str name="spellcheck.count">7</str>
      </lst>
 
      <lst name="appends">
@@ -391,9 +403,10 @@
     <str name="queryAnalyzerFieldType">textSpell</str>
     <lst name="spellchecker">
       <str name="name">default</str>
-      <str name="field">spell</str>
+      <str name="field">all_spell</str>
       <str name="spellcheckIndexDir">./spell</str>
       <str name="buildOnOptimize">true</str>
+      <!-- <float name="thresholdTokenFrequency">.0001</float> -->
     </lst>
     <lst name="spellchecker">
       <str name="name">author</str>

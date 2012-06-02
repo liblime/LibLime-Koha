@@ -2,60 +2,79 @@ id | record | emit_id
 rtype | record | emit_bib_rtype
 biblionumber | 999c
 
-author_t | 100abcd | concat | first
-author-full_mt | 100abcd 110ab 111ab 700abcd 710ab 711ab | concat
-author_mph | 100a 110a 111a 700a 710a 711a
-author_sort | 100abcd | concat | first
+text | record | fullmarc
 
-title_t | 245ab | concat | first
-title_ph | 245ab | concat | first
-title-full_t | 245 | cat_alpha_subfields | first
-title-alt_mt | 130adfgklnpst 240a 246a 247a 730adfgklnpst 740a | concat
-series-title_t | 490a | | first
-uniform-title_t | 240 | cat_alpha_subfields | first
+author-exact | 100a |
+author-full | 100abcd 110ab 111ab 700abcd 710ab 711ab | concat
+author-sort | 100a 110a 111a | | first
 
-format_s | record | emit_format | first
-content_s | record | emit_content
-audience_s | record | emit_audience
+title-nostem | 245ab | concat | first
+title-sort | 245 | title_sort
+title-full | 245 | cat_alpha_subfields | first
+title-alt | 130adfgklnpst 240a 246a 247a 730adfgklnpst 740a | concat
+series-title | 490a | | first
+uniform-title | 240 | cat_alpha_subfields | first
 
-language_ms | 008[35-37] 041a 041d 041h 041j | map_language
-ln_ms | 008[35-37] 041a 041d 041h 041j
+subject | 600at 610at 650a 651a 652a 653a 654a 655a 656a 657a 690a | concat
+subject-full | 600 610 611 630 650 | cat_alpha_subfields
+topic | 650a
+geo | 651a
+era | 648a
+genre | 655a
 
-lccn_ms | 010az
-ctrlnum_s | 035a | | first
+publisher | 260b
+# Which date ?
+date | 260c 008[7-10] | | first
 
-subject_ms | 610at 650a 651a 652a 653a 654a 655a 656a 657a 690a | concat
-subject-era_ms | 648a
-subject-topic_ms | 650a
-subject-geo_ms | 651a
-subject-genre_ms | 655 | cat_alpha_subfields
-topic_ms | 600 610 611 630 650 | cat_alpha_subfields
+url | 856u
 
-callnumber_ms | 099ab 090ab 050ab | concat
-callnumber-sort_ms | 9526
+format | record | emit_format | first
+content | record | emit_content
+audience | record | emit_audience
+language | 008[35-37] | map_language
+ln | 008[35-37] 041a 041d 041h 041j
 
-publisher_ms | 260b
-pub-date_s | 008[7-10]
-isbn_ms | 020a
-issn_ms | 022a 440x 490x 730x 776x 780x 785x
-url_mt | 856u
+itemtype | 952y | itemtype_display | unique
+collection | 9528 | ccode_authval | unique
+location | 952c | loc_authval | unique
+#barcode | 952p | extract_barcode
 
-on_order_count_i | 942t
-in_process_count_i | 942u
+isbn | 020a
+issn | 022a 440x 490x 730x 776x 780x 785x
+callnumber | 099ab 090ab 050ab | concat
+callnumber-a | 099a 090a 050a
 
-item | 952 | itemify
-on-shelf-at_ms | 952 | on_shelf_at | unique
-owned-by_ms | 952b | | unique
-itemtype_ms | 952y | | unique
-barcode_ms | 952p
-ccode_ms | 9528 | | unique
+lccn | 010az
+ctrlnum | 035a | | first
+
+# cn-sort -- some catalogs seem to have no cn_sort at bib level, so fall back on first item cn.
+cn-sort | 9426 9526 | | first
+
+suppress | 942n | | dne_to_zero
+# could use filter here like 'coerce_int'
+
+koha-tag | 999c | emit_tags
+
+popularity | 9420
+acqdate | 952d | most_recent
+
+item-json | 952 | itemify
+on-shelf-at | 952 | on_shelf_at | unique
+owned-by | 952 | owned_by | unique
+lost | 9521
+
+on_order_count | 942t
+in_process_count | 942u
 #for_ref-at_ms | 952 | for_ref_at | unique
-#checked_out_count_i | 952 | is_checked_out | count
-#on_hold_count_i | 952 | is_on_hold | count
-#in_transit_count_i | 952 | is_in_transit | count
+#checked_out_count | 952 | is_checked_out | count
+#on_hold_count | 952 | is_on_hold | count
+#in_transit_count | 952 | is_in_transit | count
+#on_order_count | 952 | is_on_order | count
 
 authid_mi | record | emit_authids
 
 marcxml | record | as_marcxml
 #opac_result_html | record | emit_opac_result_html
 #staff_result_html | record | emit_staff_result_html
+
+

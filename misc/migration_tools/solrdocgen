@@ -14,14 +14,14 @@ my %jump = (
     auths => {
         rules_file =>
             (C4::Context->config('basedir') . '/etc/solr/auth-index.rules'),
-        export => 1,
+        export => 0,
         get_record => \&GetAuthority,
         get_list => \&pull_auths_list,
     },
     bibs => {
         rules_file =>
             (C4::Context->config('basedir') . '/etc/solr/biblio-index.rules'),
-        export => 1,
+        export => 0,
         get_record => \&GetMarcWithItems,
         get_list => \&pull_bibs_list,
     },

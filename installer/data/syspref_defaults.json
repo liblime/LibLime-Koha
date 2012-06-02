@@ -1031,12 +1031,6 @@
       "value" : "holdingbranch",
       "type" : "Choice"
    },
-   "QueryStemming" : {
-      "explanation" : "If ON, enables query stemming",
-      "options" : null,
-      "value" : "1",
-      "type" : "YesNo"
-   },
    "SubscriptionLog" : {
       "explanation" : "If ON, enables subscriptions log",
       "options" : null,
@@ -1259,12 +1253,6 @@
       "value" : "0",
       "type" : "YesNo"
    },
-   "QueryWeightFields" : {
-      "explanation" : "If ON, enables field weighting",
-      "options" : null,
-      "value" : "1",
-      "type" : "YesNo"
-   },
    "viewMARC" : {
       "explanation" : "Allow display of MARC view of bibiographic records",
       "options" : null,
@@ -1354,12 +1342,6 @@
       "options" : null,
       "value" : "3",
       "type" : "free"
-   },
-   "QueryRemoveStopwords" : {
-      "explanation" : "If ON, stopwords listed in the Administration area will be removed from queries",
-      "options" : null,
-      "value" : "0",
-      "type" : "YesNo"
    },
    "intranetstylesheet" : {
       "explanation" : "Enter a complete URL to use an alternate layout stylesheet in Intranet",
@@ -1459,7 +1441,7 @@
    },
    "defaultSortField" : {
       "explanation" : "Specify the default field used for sorting",
-      "options" : "relevance|popularity|call_number|pubdate|acqdate|title|author",
+      "options" : "score|popularity|cn-sort|date|acqdate|title-sort|author-sort",
       "value" : "relevance",
       "type" : "Choice"
    },
@@ -1571,11 +1553,11 @@
       "value" : null,
       "type" : "Textarea"
    },
-   "ShowOPACAvailabilityFacetSearch" : {
-      "explanation" : "If ON, show the availability search option in the OPAC Refine your search.",
-      "options" : null,
-      "value" : "1",
-      "type" : "YesNo"
+   "OPACFacets" : {
+      "explanation" : "List of facets to display in OPAC 'Refine your search', separated by commas.  A label for the facet may be specified for each field.  Valid fields include: [ on-shelf-at, format, author-exact, topic, date, language,geo, collection, itemtype ]",
+      "options" : "",
+      "value" : "on-shelf-at:Availability, format:Format, author-exact:Author, topic:Topic, date:Pub date, language:Language, geo:Region, collection:Collection, itemtype:Itemtype",
+      "type" : "free"
    },
    "autoBarcode" : {
       "explanation" : "Used to autogenerate a barcode: incremental will be of the form 1, 2, 3; annual of the form 2007-0001, 2007-0002; hbyymmincr of the form HB08010001 where HB=Home Branch",
@@ -1823,12 +1805,6 @@
       "value" : null,
       "type" : "Free"
    },
-   "QueryAutoTruncate" : {
-      "explanation" : "If ON, query truncation is enabled by default",
-      "options" : null,
-      "value" : "1",
-      "type" : "YesNo"
-   },
    "printcirculationslips" : {
       "explanation" : "If ON, enable printing circulation receipts",
       "options" : null,
@@ -1945,7 +1921,7 @@
    },
    "OPACdefaultSortField" : {
       "explanation" : "Specify the default field used for sorting",
-      "options" : "relevance|popularity|call_number|pubdate|acqdate|title|author",
+      "options" : "score|popularity|cn-sort|date|acqdate|title-sort|author-sort",
       "value" : null,
       "type" : "Choice"
    },
@@ -2049,12 +2025,6 @@
       "explanation" : "Enable the use of the Receipt Templates system.",
       "options" : null,
       "value" : "0",
-      "type" : "YesNo"
-   },
-   "QueryFuzzy" : {
-      "explanation" : "If ON, enables fuzzy option for searches",
-      "options" : null,
-      "value" : "1",
       "type" : "YesNo"
    },
    "UseGranularMaxHolds" : {

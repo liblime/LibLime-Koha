@@ -9,6 +9,10 @@ use MARC::Field;
 use MARC::File::XML;
 use Locale::Language qw( code2language );
 use C4::Heading::MARC21;
+use C4::Koha;
+use C4::Tags;
+use File::Slurp;
+use JSON;
 
 func emit_id( MARC::Record $record ) {
     my $leader = $record->leader;
@@ -104,8 +108,8 @@ func emit_content( MARC::Record $record ) {
     my $rtype = substr $record->leader, 6, 1;
     my $f008 = $record->field('008');
     return unless $f008;
-    my $fic = substr $f008->data, 33, 1;
-    my $content = "$rtype$fic";
+    my $fic_bio = substr $f008->data, 33, 2;
+    my $content = "$rtype$fic_bio";
     $content =~ s/ /#/g;
     return $content;
 }
@@ -127,16 +131,14 @@ func cat_alpha_subfields( MARC::Field @fields ) {
     return @values;
 }
 
-func on_shelf_at( MARC::Field @f952s ) {
-    return map { $_->subfield('b') }
-        grep { ! $_->subfield('q') } @f952s;
-}
-
 func itemify( MARC::Field @f952s ) {
+    # emit item records as json.
     my @values;
     for my $f952 (@f952s) {
-        my $value = join q{ }, map {"$_->[0]:$_->[1]"} $f952->subfields();
-        push @values, $value;
+        my $item = C4::Items::GetItem($f952->subfield('9'));
+        push @values, encode_json($item);
+        #my $value = join q{ }, map {"$_->[0]:$_->[1]"} $f952->subfields();
+        #push @values, $value;
     }
     return @values;
 }
@@ -146,6 +148,92 @@ func emit_authids( MARC::Record $record ) {
         grep { $_->subfield('9') }
         map { $record->field($_) }
         keys %{$C4::Heading::MARC21::bib_heading_fields};
+}
+
+#func kv_file(Str $filename){
+#    # read key=value file and return a hash.
+#    my %hash = ();
+#    foreach my $line ( @{[read_file($filename)]} ){
+#        next if $line =~ /^\s*#/;
+#        my ($k,$v) = split(/\s*=\s*/, $line);
+#        if(defined $v){
+#            $v =~ s/\r+\n+//g;
+#            $hash{$k} = $v;
+#        }
+#    }
+#    return \%hash;
+#}
+#
+## TODO: Move translation maps into another module which
+## loads all hashes on initialization.
+#our $map_dir = C4::Context->config('basedir') . '/etc/solr/translation_map';
+#our $translation_map = {
+#    # FIXME: Some report that File::Slurp may not handle unicode well.
+#    # To support multiple languages, we'll need a dir structure.
+#    language => kv_file($map_dir.'/language.map'),
+#    callnum => kv_file($map_dir.'/callnum.map'),
+#    country => kv_file($map_dir.'/country.map'),
+#    composition_era => kv_file($map_dir.'/composition_era.map'),
+#    instrument => kv_file($map_dir.'/instrument.map'),
+#    formatgroups => kv_file($map_dir.'/formatgroups.map'),
+#};
+
+
+func on_shelf_at( MARC::Field @f952s ) {
+    return map { $_->subfield('b') }
+        grep { ! $_->subfield('q') && ! $_->subfield('1') } @f952s; # i.e. not onloan and not itemlost.
+}
+
+func for_loan_at( MARC::Field @f952s ){
+    return map { $_->subfield('b') }
+        grep { ! $_->subfield('q') && ! $_->subfield('1') && ! $_->subfield('7') } @f952s; # ! onloan, ! itemlost, ! notforloan
+}
+
+func owned_by( MARC::Field @f952s ) {
+    return map { $_->subfield('b') } @f952s;
+}
+
+func dne_to_zero( Str @strings ) {
+    return @strings || (0);
+}
+
+func fullmarc( MARC::Record $record ) {
+    #FIXME: Exclude some coded fields and private notes and such.
+    my @values;
+    for my $f ($record->fields()){
+        next if($f->tag() < '010');
+        for my $sf ($f->subfields()){
+            push @values, $sf->[1];
+        }
+    }
+    return @values;
+}
+
+func title_sort( MARC::Field $f ){
+    my $nonfiling = $f->indicator(2) || 0;
+    return substr($f->subfield('a'), $nonfiling);
+}
+
+func ccode_authval( Str @strings ){
+    my $ccodes = C4::Koha::GetKohaAuthorisedValues('items.ccode','',undef,1);
+    return map { $ccodes->{$_} } @strings;
+}
+func loc_authval( Str @strings ){
+    my $locs = C4::Koha::GetKohaAuthorisedValues('items.loc','',undef,1);
+    return map { $locs->{$_} } @strings;
+}
+func itemtype_display( Str @strings ){
+    my $itemtypes = C4::Koha::GetItemTypes();
+    return map { $itemtypes->{$_}->{'description'} } @strings;
+}
+
+func most_recent( Str @strings ){
+    return List::Util::maxstr(@strings) // ();
+}
+
+func emit_tags( Str $biblionumber ){
+    my $tags = C4::Tags::get_tags({biblionumber=>$biblionumber, approved=>1});
+    return map( $_->{term}, @$tags);
 }
 
 func as_marcxml( MARC::Record $record ) {

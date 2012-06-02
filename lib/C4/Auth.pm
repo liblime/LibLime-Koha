@@ -347,7 +347,7 @@ sub get_template_and_user {
             = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
         if (my $group = $opacconf->{default_search_limit}{group}) {
             my $branches = C4::Branch::GetBranchesInCategory($group);
-            my $search_string = join ' or ', map {"branch:$_"} @$branches;
+            my $search_string = join ' or ', map {"owned-by:$_"} @$branches;
             $opacconf->{default_search_limit}{content} = $search_string;
         }
         my $searchdomainoptions = C4::View::Util::BuildSearchDomainList(
@@ -361,7 +361,7 @@ sub get_template_and_user {
                 // $ENV{'OPAC_LIMIT_OVERRIDE'};
         my $mylibraryfirst = C4::Context->preference("SearchMyLibraryFirst");
         my $opac_name;
-        if($opac_limit_override && ($opac_search_limit =~ /branch:(\w+)/) ){
+        if($opac_limit_override && ($opac_search_limit =~ /owned-by:(\w+)/) ){
              $opac_name = C4::Branch::GetBranchName($1)   # opac_search_limit is a branch, so we use it.
         }
         elsif($mylibraryfirst) {

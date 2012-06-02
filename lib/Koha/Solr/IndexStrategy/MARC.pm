@@ -16,13 +16,19 @@ method _build_source_handlers(Str @sources) {
 
             when (/^\d\d\d[a-z0-9]+$/) {
                 # one or more subfields
+                # Returns one element for each occurrence of a subfield in each field.
                 my $fieldname = substr( $source, 0, 3 );
                 my @subfieldnames = split '', substr( $source, 3 );
-                my @subhandlers = map {
-                    func( MARC::Record $record )
-                        { return $record->subfield( $fieldname, $_ ) }
-                } @subfieldnames;
-                push @handlers, \@subhandlers;
+                my $handler = func( MARC::Record $record ){
+                                my @data;
+                                for my $f ($record->field($fieldname)){
+                                    for my $sf (@subfieldnames){
+                                        push @data, $f->subfield($sf);
+                                     }
+                                 }
+                                 return @data;
+                             };
+                push @handlers, [$handler];
             }
 
             when (/^\d\d\d$/) {
@@ -65,6 +71,15 @@ method _build_source_handlers(Str @sources) {
                     return $record;
                 };
                 push @handlers, [$handler];
+            }
+
+            when (/^string:.+$/) {
+                # the term itself is the data to store.
+                my $handler = func(MARC::Record $record){
+                    return substr($source,7);
+                };
+                push @handlers, [$handler];
+            
             }
 
             default {

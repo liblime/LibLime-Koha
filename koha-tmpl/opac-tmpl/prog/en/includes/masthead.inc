@@ -1,3 +1,10 @@
+<!-- TMPL_IF ms_idx -->
+<script>
+    $(document).ready(function(){
+        $("#masthead_search").val('<!-- TMPL_VAR ms_idx ESCAPE="JS" -->');
+    });
+</script>
+<!-- /TMPL_IF -->
 <div id="header-wrapper"><div id="members">
   <!-- TMPL_IF NAME="opacuserlogin" -->
 	<ul><!-- TMPL_IF NAME="loggedinusername" --><li><span class="members">Welcome, <a href="/cgi-bin/koha/opac-user.pl"><span class="loggedinusername"><!-- TMPL_LOOP NAME="USER_INFO" --><!-- TMPL_VAR NAME="title" --> <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --><!-- /TMPL_LOOP --></span></a></span></li><li><a class="logout" id="logout" href="/cgi-bin/koha/opac-main.pl?logout.x=1">Log Out</a></li><!-- TMPL_ELSE --><li><a href="/cgi-bin/koha/opac-user.pl">Log in to Your Account</a></li><!-- /TMPL_IF -->
@@ -19,42 +26,14 @@
 <!-- TMPL_UNLESS NAME="advsearch" --><form name="searchform" method="get" action="/cgi-bin/koha/opac-search.pl" id="searchform">
     <label for="masthead_search" class="left"> Search <!-- TMPL_IF name="mylibraryfirst" --> (in <!-- TMPL_VAR name="mylibraryfirst" --> only)<!-- /TMPL_IF --></label>
 	<select name="idx" id="masthead_search" class="left" style="max-width:10em;width:10em;">
-	<!-- TMPL_IF NAME="ms_kw" -->
-        <option selected="selected" value="">Library Catalog</option>
-		<!-- TMPL_ELSE -->
         <option value="">Library Catalog</option>
-		<!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="ms_ti" -->
-        <option selected="selected" value="ti">Title</option>
-		<!-- TMPL_ELSE -->
-        <option value="ti">Title</option>
-		<!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="ms_au" -->
-        <option selected="selected" value="au">Author</option>
-		<!-- TMPL_ELSE -->
-        <option value="au">Author</option>
-		<!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="ms_su" -->
-        <option selected="selected" value="su">Subject</option>
-		<!-- TMPL_ELSE -->
-        <option value="su">Subject</option>
-		<!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="ms_nb" -->
-		<option selected="selected" value="nb">ISBN</option>
-		<!-- TMPL_ELSE -->
-		<option value="nb">ISBN</option>
-		<!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="ms_se" -->
-        <option selected="selected" value="se">Series</option>
-		<!-- TMPL_ELSE -->
-        <option value="se">Series</option>
-		<!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="ms_callnum" -->
-        <option selected="selected" value="callnum">Call Number</option>
-		<!-- TMPL_ELSE -->
-        <option value="callnum">Call Number</option>
-		<!-- /TMPL_IF --></select>
-
+        <option value="title">Title</option>
+        <option value="author">Author</option>
+        <option value="subject">Subject</option>
+		<option value="isbn">ISBN</option>
+        <option value="series-title">Series</option>
+        <option value="callnumber">Call Number</option>
+    </select>
         <!-- TMPL_IF NAME="OPACQuickSearchFilter" -->
         <select name="limit" class="left">
           <!-- TMPL_LOOP NAME="OPACQuickSearchFilter" -->
@@ -78,8 +57,8 @@
     </div>
     <!-- /TMPL_IF --> <!-- NAME="searchdomainoptions" -->
 
-<!-- TMPL_IF NAME="ms_value" -->
-        <input type="text" id = "transl1" name="q" value="<!-- TMPL_VAR ESCAPE="HTML" NAME="ms_value" -->" class="left" style="width: 35%; font-size: 111%;"/><div id="translControl"></div>
+<!-- TMPL_IF NAME="ms_query" -->
+        <input type="text" id = "transl1" name="q" value="<!-- TMPL_VAR ESCAPE="HTML" NAME="ms_query" -->" class="left" style="width: 35%; font-size: 111%;"/><div id="translControl"></div>
 <!-- TMPL_ELSE -->
         <input type="text" id = "transl1" name="q" class="left" style="width: 35%; font-size: 111%;"/><div id="translControl"></div>
 <!-- /TMPL_IF -->
@@ -169,16 +148,16 @@
 </div>
 </div>
 <div id="breadcrumbs" class="yui-g">
-<!-- TMPL_IF NAME="searchdesc" --><p><!-- TMPL_IF name="total" --><strong>&ldquo;<!-- TMPL_VAR NAME="query_desc" ESCAPE="HTML"--> <!-- TMPL_VAR NAME="limit_desc" ESCAPE="HTML"-->&rdquo; </strong>returned <!-- TMPL_VAR NAME="total" ESCAPE="HTML"--> results. <!-- TMPL_IF NAME="related" --> (related searches: <!-- TMPL_LOOP NAME="related" --><!-- TMPL_VAR NAME="related_search" --><!-- /TMPL_LOOP -->). <!-- /TMPL_IF -->
-<a href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" ESCAPE="HTML" --><!-- TMPL_VAR NAME="limit_cgi"  ESCAPE="HTML" -->&amp;format=rss2"><img src="/opac-tmpl/prog/images/feed-icon-16x16.png" alt="Subscribe to this search" title="Subscribe to this search" border="0" /></a>
+<!-- TMPL_IF NAME="searchdesc" --><div id="search_desc">
+    <span class="search_desc">Your search:</span> <ul><li class="searchTerm">&ldquo;<!-- TMPL_VAR NAME="user_query" ESCAPE="HTML"-->&rdquo;</li></ul>
+    <!-- TMPL_IF "user_limit" --><span class="search_desc">Limited to:</span> <ul><!-- TMPL_LOOP user_limit --><li class="limit"><!-- TMPL_VAR "limit_desc" ESCAPE="HTML"--></li><!-- /TMPL_LOOP --> </ul><!-- /TMPL_IF -->
+    <p class="resultscount">Returned <span class="numresults"><!-- TMPL_VAR NAME="total" --></span> results.
+    <span class="rssfeed"><a href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="user_query" -->&amp;format=rss2"><img src="/opac-tmpl/prog/images/feed-icon-16x16.png" alt="Subscribe to this search" title="Subscribe to this search" border="0" /></a></span></p>
+    </div>
 <!-- TMPL_ELSE -->
-<strong>No Result found!</strong>
-<p>
-    <!-- TMPL_IF NAME="searchdesc" -->
-    No results match your search for <span style="font-weight: bold;">&ldquo;<!-- TMPL_VAR NAME="query_desc" ESCAPE="HTML" --> <!-- TMPL_VAR NAME="limit_desc" ESCAPE="HTML"-->&rdquo;</span> in <!-- TMPL_VAR NAME="LibraryName" --> Catalog. <a href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" ESCAPE="HTML" --><!-- TMPL_VAR NAME="limit_cgi" ESCAPE="HTML" -->&amp;format=rss2"><img src="/opac-tmpl/prog/images/feed-icon-16x16.png" alt="Subscribe to this search" title="Subscribe to this search" border="0" /></a>
-    <!-- TMPL_ELSE -->
-    You did not specify any search criteria.
-    <!-- /TMPL_IF -->
-</p>
+  <!-- TMPL_UNLESS search_form -->
+    <!-- <p>You did not specify any search criteria. </p> -->
+  <!-- /TMPL_UNLESS -->
+<!-- /TMPL_IF -->
 </div>
 <!-- /TMPL_IF --></p><!-- /TMPL_IF --></div>

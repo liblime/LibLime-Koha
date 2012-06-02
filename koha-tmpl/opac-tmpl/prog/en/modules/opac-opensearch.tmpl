@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'  ?>
 <!-- TMPL_IF NAME="opensearchdescription" -->
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
-   <ShortName><!-- TMPL_VAR NAME="LibraryName" ESCAPE="html" --> Search</ShortName>
-   <Description>Search the <!-- TMPL_VAR NAME="LibraryName" ESCAPE="html" --></Description>
-   <Tags>koha opac <!-- TMPL_VAR NAME="LibraryName" ESCAPE="html" --></Tags>
-   <Contact><!-- TMPL_VAR NAME="KohaAdminEmailAddress" ESCAPE="html" --></Contact>
+   <ShortName><!-- TMPL_VAR NAME="LibraryName" ESCAPE="HTML" --> Search</ShortName>
+   <Description>Search the <!-- TMPL_VAR NAME="LibraryName" ESCAPE="HTML" --></Description>
+   <Tags>koha opac <!-- TMPL_VAR NAME="LibraryName" ESCAPE="HTML" --></Tags>
+   <Contact><!-- TMPL_VAR NAME="KohaAdminEmailAddress" ESCAPE="HTML" --></Contact>
    <Url type="application/rss+xml" 
         template="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?q={searchTerms}&amp;pw={startPage?}&amp;format=rss2"/>
 </OpenSearchDescription>
@@ -16,11 +16,11 @@
       xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/"
       xmlns:atom="http://www.w3.org/2005/Atom">
    <channel>
-     <title><!-- TMPL_VAR NAME="LibraryName" ESCAPE="html" --> Search <!-- TMPL_IF NAME="query_desc" -->for '<!-- TMPL_VAR NAME="query_desc" ESCAPE="html" -->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" --> with limit(s): '<!-- TMPL_VAR NAME="limit_desc" ESCAPE="html" -->'<!-- /TMPL_IF --></title>
-     <link><!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" ESCAPE="HTML" --><!-- TMPL_VAR NAME="limit_cgi"  ESCAPE="HTML" -->&amp;format=rss2</link>
-     <atom:link rel="self" type="application/rss+xml" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" ESCAPE="HTML" --><!-- TMPL_VAR NAME="limit_cgi"  ESCAPE="HTML" -->&amp;format=rss2" />
-     <description> Search results <!-- TMPL_IF NAME="query_desc" -->for '<!-- TMPL_VAR NAME="query_desc" ESCAPE="html" -->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" --> with limit(s): '<!-- TMPL_VAR NAME="limit_desc" ESCAPE="html" -->'<!-- /TMPL_IF --> at <!-- TMPL_VAR NAME="LibraryName" ESCAPE="html" --></description>
-     <opensearch:totalResults><!-- TMPL_VAR NAME="total" --></opensearch:totalResults>
+     <title><!-- TMPL_VAR NAME="LibraryName" ESCAPE="HTML" --> Search <!-- TMPL_IF NAME="user_query" -->for '<!-- TMPL_VAR NAME="user_query" ESCAPE="HTML" -->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" --> with limit(s): '<!-- TMPL_VAR NAME="limit_desc" ESCAPE="HTML" -->'<!-- /TMPL_IF --></title>
+     <link><!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" ESCAPE="URL" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->&amp;format=rss2</link>
+     <atom:link rel="self" type="application/rss+xml" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" ESCAPE="URL" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->&amp;format=rss2" />
+     <description> Search results <!-- TMPL_IF NAME="user_query" -->for '<!-- TMPL_VAR NAME="user_query" ESCAPE="HTML" -->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" --> with limit(s): '<!-- TMPL_VAR NAME="limit_desc" ESCAPE="HTML" -->'<!-- /TMPL_IF --> at <!-- TMPL_VAR NAME="LibraryName" ESCAPE="HTML" --></description>
+     <opensearch:totalResults><!-- TMPL_VAR NAME="hits" --></opensearch:totalResults>
      <opensearch:startIndex><!-- TMPL_VAR NAME="offset" --></opensearch:startIndex>
      <!-- TMPL_IF NAME="results_per_page" -->
        <opensearch:itemsPerPage><!-- TMPL_VAR NAME="results_per_page" --></opensearch:itemsPerPage>
@@ -28,23 +28,23 @@
        <opensearch:itemsPerPage>20</opensearch:itemsPerPage>
      <!-- /TMPL_IF -->
      <atom:link rel="search" type="application/opensearchdescription+xml" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?format=opensearchdescription"/>
-     <opensearch:Query role="request" searchTerms="<!-- TMPL_VAR NAME="query_desc" ESCAPE="html" --> <!-- TMPL_VAR NAME="limit_desc" ESCAPE="html" -->" startPage="<!-- TMPL_VAR NAME="page" -->" />
+     <opensearch:Query role="request" searchTerms="<!-- TMPL_VAR NAME="user_query" ESCAPE="HTML" --> <!-- TMPL_VAR NAME="limit_desc" ESCAPE="HTML" -->" startPage="<!-- TMPL_VAR NAME="page" -->" />
 	 <!-- TMPL_LOOP NAME="SEARCH_RESULTS" -->
      <item>
-       <title><!-- TMPL_VAR NAME="title" ESCAPE="html" --> <!-- TMPL_VAR NAME="subtitle"  ESCAPE="html" --></title>
-       <isbn><!-- TMPL_VAR NAME="isbn" ESCAPE="html" --></isbn>
+       <title><!-- TMPL_VAR NAME="title" ESCAPE="HTML" --> <!-- TMPL_VAR NAME="subtitle"  ESCAPE="HTML" --></title>
+       <isbn><!-- TMPL_VAR NAME="isbn" ESCAPE="HTML" --></isbn>
        <link><!-- TMPL_IF name="BiblioDefaultViewmarc" --><!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-MARCdetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" --><!-- TMPL_ELSE --><!-- TMPL_IF name="BiblioDefaultViewisbd" --><!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-ISBDdetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" --><!-- TMPL_ELSE --><!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" --><!-- /TMPL_IF --><!-- /TMPL_IF --></link>
        <description><![CDATA[
 <!-- TMPL_IF NAME="OPACAmazonEnabled" --><!-- TMPL_IF NAME="OPACAmazonCoverImages" --><!-- TMPL_IF NAME="normalized_isbn" --><img src="http://images.amazon.com/images/P/<!-- TMPL_VAR NAME="normalized_isbn" -->.01.TZZZZZZZ.jpg" alt="" /><!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="SyndeticsEnabled" --><!-- TMPL_IF NAME="SyndeticsCoverImages" --><!-- TMPL_IF NAME="content_identifier_exists" --><!-- TMPL_IF NAME="using_https" --><img src="https://secure.syndetics.com/index.aspx?isbn=<!-- TMPL_ELSE --><img src="http://www.syndetics.com/index.aspx?isbn=<!-- /TMPL_IF --><!-- TMPL_VAR NAME="normalized_isbn" -->/SC.GIF&amp;client=<!-- TMPL_VAR NAME="SyndeticsClientCode" -->&amp;type=xw10<!-- TMPL_IF NAME="normalized_upc" -->&amp;upc=<!-- TMPL_VAR NAME="normalized_upc" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="normalized_oclc" -->&amp;oclc=<!-- TMPL_VAR NAME="normalized_oclc" --><!-- /TMPL_IF -->" alt="" /><!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="BakerTaylorEnabled" --><!-- TMPL_IF NAME="normalized_isbn" --><a href="https://<!-- TMPL_VAR name="BakerTaylorBookstoreURL" ESCAPE="HTML" --><!-- TMPL_VAR name="normalized_isbn" -->"><img alt="See Baker &amp; Taylor" src="<!-- TMPL_VAR name="BakerTaylorImageURL" ESCAPE="HTML" --><!-- TMPL_VAR name="normalized_isbn" -->" /></a><!-- /TMPL_IF --><!-- /TMPL_IF -->
-	   <p><!-- TMPL_IF NAME="author" -->By <!-- TMPL_VAR NAME="author"  ESCAPE="html" -->. <!-- /TMPL_IF -->
-	   <!-- TMPL_IF name="place" --><!-- TMPL_VAR name="place"  ESCAPE="html" --> <!-- /TMPL_IF --><!-- TMPL_IF name="publishercode" --><!-- TMPL_VAR name="publishercode"  ESCAPE="html" --><!-- /TMPL_IF --><!-- TMPL_IF name="publicationyear" --> <!-- TMPL_VAR name="publicationyear"  ESCAPE="html" -->
-                    <!-- TMPL_ELSE --><!-- TMPL_IF name="copyrightdate" --> <!-- TMPL_VAR name="copyrightdate"  ESCAPE="html" --><!-- /TMPL_IF --><!-- /TMPL_IF -->
-                        <!-- TMPL_IF name="pages" -->. <!-- TMPL_VAR name="pages"  ESCAPE="html" --><!-- /TMPL_IF -->
-                        <!-- TMPL_IF name="notes" -->, <!-- TMPL_VAR name="notes"  ESCAPE="html" --><!-- /TMPL_IF -->
-                        <!-- TMPL_IF name="size" --> <!-- TMPL_VAR name="size"  ESCAPE="html" -->. <!-- /TMPL_IF -->
-                        <!-- TMPL_IF name="isbn" --> <!-- TMPL_VAR name="isbn"  ESCAPE="html" --><!-- /TMPL_IF --> </p><p>
+	   <p><!-- TMPL_IF NAME="author" -->By <!-- TMPL_VAR NAME="author"  ESCAPE="HTML" -->. <!-- /TMPL_IF -->
+	   <!-- TMPL_IF name="place" --><!-- TMPL_VAR name="place"  ESCAPE="HTML" --> <!-- /TMPL_IF --><!-- TMPL_IF name="publishercode" --><!-- TMPL_VAR name="publishercode"  ESCAPE="HTML" --><!-- /TMPL_IF --><!-- TMPL_IF name="publicationyear" --> <!-- TMPL_VAR name="publicationyear"  ESCAPE="HTML" -->
+                    <!-- TMPL_ELSE --><!-- TMPL_IF name="copyrightdate" --> <!-- TMPL_VAR name="copyrightdate"  ESCAPE="HTML" --><!-- /TMPL_IF --><!-- /TMPL_IF -->
+                        <!-- TMPL_IF name="pages" -->. <!-- TMPL_VAR name="pages"  ESCAPE="HTML" --><!-- /TMPL_IF -->
+                        <!-- TMPL_IF name="notes" -->, <!-- TMPL_VAR name="notes"  ESCAPE="HTML" --><!-- /TMPL_IF -->
+                        <!-- TMPL_IF name="size" --> <!-- TMPL_VAR name="size"  ESCAPE="HTML" -->. <!-- /TMPL_IF -->
+                        <!-- TMPL_IF name="isbn" --> <!-- TMPL_VAR name="isbn"  ESCAPE="HTML" --><!-- /TMPL_IF --> </p><p>
 <!-- TMPL_IF NAME="RequestOnOpac" -->
 <a href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><span class="hold">Place Hold on </span><i><!-- TMPL_VAR NAME="title" --></i></a></p>
 <!-- /TMPL_IF -->
@@ -59,33 +59,33 @@
 <!-- TMPL_IF NAME="atom" -->
 <feed xmlns="http://www.w3.org/2005/Atom" 
        xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
-   <id><!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" ESCAPE="html" --><!-- TMPL_VAR NAME="limit_cgi" ESCAPE="html" -->&amp;format=atom</id>
-   <title><!-- TMPL_VAR NAME="LibraryName" ESCAPE="html" --> Search <!-- TMPL_IF NAME="query_desc" -->for '<!-- TMPL_VAR NAME="query_desc" ESCAPE="html" -->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" -->&nbsp;with limit(s):&nbsp;'<!-- TMPL_VAR NAME="limit_desc" ESCAPE="html" -->'<!-- /TMPL_IF --></title>
-    <link href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" ESCAPE="HTML" --><!-- TMPL_VAR NAME="limit_cgi"  ESCAPE="HTML" -->&amp;format=rss2"/>
+   <id><!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="user_query" ESCAPE="HTML" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->&amp;format=atom</id>
+   <title><!-- TMPL_VAR NAME="LibraryName" ESCAPE="HTML" --> Search <!-- TMPL_IF NAME="user_query" -->for '<!-- TMPL_VAR NAME="user_query" ESCAPE="HTML" -->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" -->&nbsp;with limit(s):&nbsp;'<!-- TMPL_VAR NAME="limit_desc" ESCAPE="HTML" -->'<!-- /TMPL_IF --></title>
+    <link href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="user_query" ESCAPE="URL" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->&amp;format=rss2"/>
    <updated><!-- TMPL_VAR NAME="timestamp" --></updated>
    <author> 
-     <name><!-- TMPL_VAR NAME="LibraryName" ESCAPE="html" --></name>
+     <name><!-- TMPL_VAR NAME="LibraryName" ESCAPE="HTML" --></name>
    </author> 
    <!-- <id>urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6</id> -->
-   <opensearch:totalResults><!-- TMPL_VAR NAME="total" --></opensearch:totalResults>
+   <opensearch:totalResults><!-- TMPL_VAR NAME="hits" --></opensearch:totalResults>
    <opensearch:startIndex><!-- TMPL_VAR NAME="page" --></opensearch:startIndex>
    <!-- TMPL_IF NAME="results_per_page" -->
      <opensearch:itemsPerPage><!-- TMPL_VAR NAME="results_per_page" --></opensearch:itemsPerPage>
    <!-- TMPL_ELSE -->
      <opensearch:itemsPerPage>20</opensearch:itemsPerPage>
    <!-- /TMPL_IF -->
-   <opensearch:Query role="request" searchTerms="<!-- TMPL_VAR NAME="query_desc" ESCAPE="html" --> <!-- TMPL_VAR NAME="limit_desc" ESCAPE="html" -->" startPage="<!-- TMPL_VAR NAME="page" ESCAPE="html" -->" />
-   <link rel="alternate" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" ESCAPE="HTML" --><!-- TMPL_VAR NAME="limit_cgi"  ESCAPE="HTML" -->pw=<!-- TMPL_VAR NAME="page" -->" type="text/html"/>
-   <link rel="self" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" --><!-- TMPL_VAR NAME="limit_cgi" -->&amp;format=atom" type="application/atom+xml"/>
-   <link rel="first" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" --><!-- TMPL_VAR NAME="limit_cgi" -->pw=1&amp;format=atom" type="application/atom+xml"/>
-   <link rel="previous" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" --><!-- TMPL_VAR NAME="limit_cgi" -->pw=2&amp;format=atom" type="application/atom+xml"/>
-   <link rel="next" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" --><!-- TMPL_VAR NAME="limit_cgi" -->pw=4&amp;format=atom" type="application/atom+xml"/>
-   <link rel="last" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" ESCAPE="HTML" --><!-- TMPL_VAR NAME="limit_cgi"  ESCAPE="HTML" -->pw=42299&amp;format=atom" type="application/atom+xml"/>
+   <opensearch:Query role="request" searchTerms="<!-- TMPL_VAR NAME="user_query" ESCAPE="HTML" --> <!-- TMPL_VAR NAME="limit_desc" ESCAPE="HTML" -->" startPage="<!-- TMPL_VAR NAME="page" ESCAPE="HTML" -->" />
+   <link rel="alternate" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" ESCAPE="URL" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->pw=<!-- TMPL_VAR NAME="page" -->" type="text/html"/>
+   <link rel="self" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->&amp;format=atom" type="application/atom+xml"/>
+   <link rel="first" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->pw=1&amp;format=atom" type="application/atom+xml"/>
+   <link rel="previous" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->pw=2&amp;format=atom" type="application/atom+xml"/>
+   <link rel="next" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->pw=4&amp;format=atom" type="application/atom+xml"/>
+   <link rel="last" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" ESCAPE="URL" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->pw=42299&amp;format=atom" type="application/atom+xml"/>
    <link rel="search" type="application/opensearchdescription+xml" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?format=opensearchdescription"/>
 
    <!-- TMPL_LOOP NAME="SEARCH_RESULTS" -->
    <entry>
-     <title><!-- TMPL_VAR NAME="title" ESCAPE="html" --></title>
+     <title><!-- TMPL_VAR NAME="title" ESCAPE="HTML" --></title>
      <link href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"/>
      <!-- <id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a</id> -->
      <updated><!-- TMPL_VAR NAME="timestamp" --></updated>
