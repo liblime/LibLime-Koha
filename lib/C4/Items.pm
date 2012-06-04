@@ -1236,7 +1236,7 @@ END_SQL
     }
     
     if ( $itemtype ) {
-        push @where_strings, 'biblioitems.itemtype = ?';
+        push @where_strings, 'items.itype = ?';
         push @bind_params, $itemtype;
     }
 
