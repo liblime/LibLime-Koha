@@ -1275,7 +1275,7 @@ sub get_auth_type_location {
     my $auth_type_code = @_ ? shift : '';
 
     my ($tag, $subfield) = GetAuthMARCFromKohaField('auth_header.authtypecode', $auth_type_code);
-    if (defined $tag and defined $subfield and $tag != 0 and $subfield != 0) {
+    if (defined $tag and defined $subfield and $tag != 0 and $subfield ne '0') {
         return ($tag, $subfield);
     } else {
         if (C4::Context->preference('marcflavour') eq "MARC21")  {

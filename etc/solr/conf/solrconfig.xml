@@ -35,6 +35,10 @@
   <jmx />
 
   <updateHandler class="solr.DirectUpdateHandler2">
+    <autoCommit>
+      <maxDocs>10000</maxDocs>
+      <maxTime>1000</maxTime>
+    </autoCommit>
   </updateHandler>
   
   <query>
@@ -52,7 +56,7 @@
                    initialSize="512"
                    autowarmCount="0"/>
     <enableLazyFieldLoading>true</enableLazyFieldLoading>
-    <queryResultWindowSize>20</queryResultWindowSize>
+    <queryResultWindowSize>40</queryResultWindowSize>
     <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
 
     <listener event="newSearcher" class="solr.QuerySenderListener">
@@ -77,12 +81,13 @@
     <httpCaching never304="true" />
   </requestDispatcher>
 
-  <requestHandler name="search" class="solr.SearchHandler" default="true">
+  <requestHandler name="biblio" class="solr.SearchHandler" default="true">
      <lst name="defaults">
        <str name="defType">edismax</str>
        <str name="echoParams">none</str>
        <int name="rows">20</int>
        <str name="df">text</str>
+       <str name="q.op">AND</str>
        <str name="q.alt">*:*</str>
        <str name="f.title.qf">title_t</str>
        <str name="f.author.qf">author-full_mt</str>
@@ -128,6 +133,8 @@
        <str name="facet.mincount">1</str>
        <str name="facet.limit">10</str>
        <str name="facet.field">format_facet</str>
+       <str name="facet.field">content_facet</str>
+       <str name="facet.field">audience_facet</str>
        <str name="facet.field">ln_facet</str>
        <str name="facet.field">subject-era_facet</str>
        <str name="facet.field">subject-geo_facet</str>
@@ -142,14 +149,54 @@
        <str name="spellcheck.count">5</str>
      </lst>
 
-    <!--
-       <lst name="appends">
-         <str name="fq">rtype:bib</str>
-       </lst>
-      -->
+     <lst name="appends">
+       <str name="fq">rtype:bib</str>
+     </lst>
     <arr name="last-components">
       <str>spellcheck</str>
     </arr>
+  </requestHandler>
+
+  <requestHandler name="authority" class="solr.SearchHandler">
+     <lst name="defaults">
+       <str name="defType">edismax</str>
+       <str name="echoParams">none</str>
+       <int name="rows">20</int>
+       <str name="df">headings_t</str>
+       <str name="q.op">AND</str>
+       <str name="q.alt">*:*</str>
+       <str name="f.header.qf">headings_t</str>
+       <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
+       <str name="qf">
+         headings_s^25000
+         headings_t^500
+       </str>
+       <str name="pf">
+         headings_s^25000
+         headings_t^500
+       </str>
+       
+       <int name="ps">3</int>
+       <float name="tie">0.01</float>
+
+       <str name="fl">
+         id,
+         score,
+         personal-name_auths,
+         corporate-name_auths,
+         meeting-name_auths,
+         uniform-title_auths,
+         chronological-term_auths,
+         topical-term_auths,
+         geographic-name_auths,
+         genre-form_auths,
+         headings_s,
+       </str>
+
+     </lst>
+     <lst name="appends">
+       <str name="fq">rtype:auth</str>
+     </lst>
   </requestHandler>
 
   <requestHandler name="document" class="solr.SearchHandler" >

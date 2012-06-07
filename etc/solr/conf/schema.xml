@@ -202,13 +202,17 @@
 
   <fields>
     <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false"/>
+    <field name="rtype" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="authid" type="int" indexed="true" stored="true" multiValued="false"/>
+    <field name="biblionumber" type="int" indexed="true" stored="true" multiValued="false"/>
     <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>
 
-    <field name="text" type="text" indexed="true" stored="true" multiValued="true"/>
+    <field name="text" type="text" indexed="true" stored="false" multiValued="true"/>
     <field name="marcxml" type="string" indexed="false" stored="true" multiValued="false"/>
-    <field name="item" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="item" type="string" indexed="true" stored="true" multiValued="true"/>
    
     <dynamicField name="*_i" type="int" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="*_mi" type="int" indexed="true" stored="true" multiValued="true"/>
     <dynamicField name="*_s" type="string" indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="*_ms" type="string" indexed="true" stored="true" multiValued="true"/>
     <dynamicField name="*_t" type="text" indexed="true" stored="true" multiValued="false"/>
@@ -229,6 +233,10 @@
     <dynamicField name="*_facet" type="string" indexed="true" stored="true" multiValued="true" />
     <dynamicField name="*_sort" type="alphaOnlySort" indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="*_spell" type="textSpell" indexed="true" stored="true" multiValued="true" />
+
+    <dynamicField name="*_auths" type="string" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="*_autht" type="text" indexed="true" stored="false" multiValued="false"/>
+
   </fields>
 
   <uniqueKey>id</uniqueKey>
@@ -248,10 +256,25 @@
 
   <copyField source="ln_ms" dest="ln_facet"/>
   <copyField source="format_s" dest="format_facet"/>
+  <copyField source="audience_s" dest="audience_facet"/>
+  <copyField source="content_s" dest="content_facet"/>
   <copyField source="subject-topic_ms" dest="subject-topic_facet"/>
   <copyField source="subject-era_ms" dest="subject-ero_facet"/>
   <copyField source="subject-geo_ms" dest="subject-geo_facet"/>
   <copyField source="subject-genre_ms" dest="subject-genre_facet"/>
+
+  <copyField source="personal-name_auths" dest="personal-name_autht"/>
+  <copyField source="corporate-name_auths" dest="corporate-name_autht"/>
+  <copyField source="meeting-name_auths" dest="meeting-name_autht"/>
+  <copyField source="uniform-title_auths" dest="uniform-title_autht"/>
+  <copyField source="chronological-term_auths" dest="chronological-term_autht"/>
+  <copyField source="topical-term_auths" dest="topical-term_autht"/>
+  <copyField source="geographic-name_auths" dest="geographic-name_autht"/>
+  <copyField source="genre-form_auths" dest="genre-form_autht"/>
+
+  <copyField source="*_auths" dest="headings_s" maxChars="2048"/>
+  <copyField source="*_auths" dest="headings_t" maxChars="2048"/>
+  <copyField source="*_auths" dest="text" maxChars="2048"/>
 
   <!-- copy name to alphaNameSort, a field designed for sorting by name -->
   <!-- <copyField source="name" dest="alphaNameSort"/> -->
