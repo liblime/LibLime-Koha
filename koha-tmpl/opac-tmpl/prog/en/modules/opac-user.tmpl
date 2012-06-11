@@ -15,7 +15,7 @@ $.tablesorter.addParser({
     type: 'text' 
 });
             $(function() {
-            $('#opac-user-views > ul').tabs();
+            $('#opac-user-views').tabs();
 			$("#holdst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
 		dateFormat: 'uk',<!-- /TMPL_IF -->
 				widgets : ['zebra'],
@@ -139,17 +139,17 @@ function isValidDate(theFieldName){
         </ul></div>
         <!-- /TMPL_IF -->
         
-<div id="opac-user-views" class="toptabs">
+<div id="opac-user-views">
         <ul>
-            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-checkouts">Checked Out</a></li>
-            <!-- TMPL_IF NAME="overdues_count" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-overdues">Overdue</a></li><!-- /TMPL_IF -->
+            <li><a href="#opac-user-checkouts">Checked Out</a></li>
+            <!-- TMPL_IF NAME="overdues_count" --><li><a href="#opac-user-overdues">Overdue</a></li><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="OPACFinesTab" -->
-            <!-- TMPL_IF NAME="amountoverfive" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-fines">Fines</a></li><!-- /TMPL_IF -->
-            <!-- TMPL_IF NAME="amountoverzero" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-fines">Fines</a></li><!-- /TMPL_IF -->
-            <!-- TMPL_IF NAME="amountlessthanzero" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-fines">Credits</a></li><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="amountoverfive" --><li><a href="#opac-user-fines">Fines</a></li><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="amountoverzero" --><li><a href="#opac-user-fines">Fines</a></li><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="amountlessthanzero" --><li><a href="#opac-user-fines">Credits</a></li><!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
-            <!-- TMPL_IF NAME="waiting_count" --><!-- TMPL_IF NAME="atdestination" --><li><a href="/cgi-bin/koha/opac-user.pl#opac-user-waiting">Waiting</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
-            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-holds"><div id="summaryholdstab">Holds</div></a></li>
+            <!-- TMPL_IF NAME="waiting_count" --><!-- TMPL_IF NAME="atdestination" --><li><a href="#opac-user-waiting">Waiting</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
+            <li><a href="#opac-user-holds"><div id="summaryholdstab">Holds</div></a></li>
         </ul>
         
 <!-- TMPL_IF NAME="OPACFinesTab" -->

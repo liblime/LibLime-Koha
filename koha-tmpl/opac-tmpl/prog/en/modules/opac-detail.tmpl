@@ -6,7 +6,7 @@
      $(document).ready(function() { 
         $("#tagform").hide();
         $("#addtagl").show();
-        $('#bibliodescriptions > ul').tabs();
+        $('#bibliodescriptions').tabs();
         $("#addtagl a").click(function(){
             $("#addtagl").hide();
             $("#tagform, #tagform a").show();
@@ -324,42 +324,36 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 <div id="bibliodescriptions" class="toptabs">
 
 <ul>   
-<li> <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#holdings">Holdings
-    ( <!-- TMPL_VAR NAME="count" --> )</a>
-   </li>
- <li> <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#descriptions">Title Notes</a></li>
-<!-- TMPL_IF NAME="SYNDETICS_TOC" -->
- <li> <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#toc">TOC</a></li>
-<!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="SyndeticsEnabled" -->
-<!-- TMPL_IF NAME="SyndeticsExcerpt" --><!-- TMPL_IF NAME="SYNDETICS_EXCERPT" -->
- <li> <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#excerpt">Excerpt</a></li>
-<!-- /TMPL_IF --><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="SyndeticsReviews" --><!-- TMPL_IF NAME="SYNDETICS_REVIEWS" -->
- <li> <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#reviews">Reviews</a></li>
-<li> <!-- TMPL_IF NAME="using_https" --><script src="https://www.librarything.com/forlibraries/widget.js?id=<!-- TMPL_ELSE --><script src="http://www.librarything.com/forlibraries/widget.js?id=<!-- /TMPL_IF --><!-- TMPL_VAR NAME="LibraryThingForLibrariesID" -->" type="text/javascript"></script><noscript>This page contains enriched content visible when JavaScript is enabled or by clicking <!-- TMPL_IF NAME="using_https" --><a href="https://www.librarything.com/forlibraries/noscript.php?id=99-274208589&amp;accessibility=1"><!-- TMPL_ELSE --><a href="http://www.librarything.com/forlibraries/noscript.php?id=99-274208589&amp;accessibility=1"><!-- /TMPL_IF -->here</a>.</noscript></li>
-<!-- /TMPL_IF --><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="SyndeticsAuthorNotes" --><!-- TMPL_IF NAME="SYNDETICS_ANOTES" -->
- <li> <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#anotes">About the Author</a></li>
-<!-- /TMPL_IF --><!-- /TMPL_IF -->
-<!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="LibraryThingForLibrariesID" --> 
-<!-- TMPL_IF NAME="LibraryThingForLibrariesTabbedView" -->
-<li> <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#LFTLSimilarItems">Similar Items</a></li>
-<li> <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#LTFLTagBrowse">Tag Browser</a></li>
-<!-- /TMPL_IF -->
-<!-- /TMPL_IF -->
-<!-- TMPL_IF name="subscriptionsnumber" --><li>
-            <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#subscriptions">Subscriptions</a>
-    </li><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="reviewson" --><li><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#comments">Comments</a></li><!-- /TMPL_IF -->
-
-<!-- TMPL_IF NAME="OPACAmazonEnabled" --><!-- TMPL_IF NAME="OPACAmazonSimilarItems" --><!-- TMPL_IF NAME="AMAZON_SIMILAR_PRODUCTS" --><li><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#similars">Related</a></li><!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_IF -->
-
-    <!-- TMPL_IF NAME="OPACFRBRizeEditions" --><!-- TMPL_IF NAME="XISBNS" --><li><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#editions">Editions</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
+    <li> <a href="#holdings">Holdings ( <!-- TMPL_VAR NAME="count" --> )</a> </li>
+    <li> <a href="#descriptions">Title Notes</a></li>
+    <!-- TMPL_IF NAME="SYNDETICS_TOC" -->
+      <li> <a href="#toc">TOC</a></li>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="SyndeticsEnabled" -->
+    <!-- TMPL_IF NAME="SyndeticsExcerpt" --><!-- TMPL_IF NAME="SYNDETICS_EXCERPT" -->
+      <li> <a href="#excerpt">Excerpt</a></li>
+    <!-- /TMPL_IF --><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="SyndeticsReviews" --><!-- TMPL_IF NAME="SYNDETICS_REVIEWS" -->
+      <li> <a href="#reviews">Reviews</a></li>
+      <li> <!-- TMPL_IF NAME="using_https" --><script src="https://www.librarything.com/forlibraries/widget.js?id=<!-- TMPL_ELSE --><script src="http://www.librarything.com/forlibraries/widget.js?id=<!-- /TMPL_IF --><!-- TMPL_VAR NAME="LibraryThingForLibrariesID" -->" type="text/javascript"></script><noscript>This page contains enriched content visible when JavaScript is enabled or by clicking <!-- TMPL_IF NAME="using_https" --><a href="https://www.librarything.com/forlibraries/noscript.php?id=99-274208589&amp;accessibility=1"><!-- TMPL_ELSE --><a href="http://www.librarything.com/forlibraries/noscript.php?id=99-274208589&amp;accessibility=1"><!-- /TMPL_IF -->here</a>.</noscript></li>
+    <!-- /TMPL_IF --><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="SyndeticsAuthorNotes" --><!-- TMPL_IF NAME="SYNDETICS_ANOTES" -->
+      <li> <a href="#anotes">About the Author</a></li>
+    <!-- /TMPL_IF --><!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="LibraryThingForLibrariesID" --> 
+    <!-- TMPL_IF NAME="LibraryThingForLibrariesTabbedView" -->
+      <li> <a href="#LFTLSimilarItems">Similar Items</a></li>
+      <li> <a href="#LTFLTagBrowse">Tag Browser</a></li>
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF name="subscriptionsnumber" --><li>  <a href="#subscriptions">Subscriptions</a> </li><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="reviewson" --><li><a href="#comments">Comments</a></li><!-- /TMPL_IF -->
     
-    <!-- TMPL_IF NAME="OPACAmazonEnabled" --><!-- TMPL_IF NAME="OPACAmazonReviews" --><li><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#amazonreviews">Amazon Reviews</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
-    <!-- TMPL_IF NAME="Babeltheque" --><li><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#babeltheque">Babelthèque</a></li><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="OPACAmazonEnabled" --><!-- TMPL_IF NAME="OPACAmazonSimilarItems" --><!-- TMPL_IF NAME="AMAZON_SIMILAR_PRODUCTS" --><li><a href="#similars">Related</a></li><!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="OPACFRBRizeEditions" --><!-- TMPL_IF NAME="XISBNS" --><li><a href="#editions">Editions</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="OPACAmazonEnabled" --><!-- TMPL_IF NAME="OPACAmazonReviews" --><li><a href="#amazonreviews">Amazon Reviews</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="Babeltheque" --><li><a href="#babeltheque">Babelthèque</a></li><!-- /TMPL_IF -->
 
 </ul>
 
