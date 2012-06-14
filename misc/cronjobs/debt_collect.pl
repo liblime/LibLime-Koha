@@ -295,7 +295,7 @@ foreach my $email ( @to ) {
     print "sending reports to $email\n" if ( $verbose );
 
     C4::Letters::EnqueueLetter( {
-        borrowernumber => 1,
+        borrowernumber => undef,
         to_address => $email,
         from_address => $admin_email,
         letter => $letter,
