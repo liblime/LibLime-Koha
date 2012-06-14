@@ -82,7 +82,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('942', 'i', 'Item part', 'Item part', 1, 0, 'biblioitems.cn_item', 9, '', '', '', NULL, 0, '', '', '', NULL),
 		('942', 'k', 'Call number prefix', 'Call number prefix', 0, 0, 'biblioitems.cn_prefix', 9, '', '', '', NULL, 0, '', '', '', NULL),
 		('942', 'm', 'Call number suffix', 'Call number suffix', 0, 0, 'biblioitems.cn_suffix', 9, '', '', '', 0, 0, '', '', '', NULL),
-		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, '', '', '', 0, 0, '', '', '', NULL),
+		('942', 'n', 'Suppress in OPAC', 'Suppress in OPAC', 0, 0, NULL, 9, 'SUPPRESSED', '', '', 0, 0, '', '', '', NULL),
                 ('942', 'r', 'Hold Type','Hold Type',0,0,'',9,'HOLD_TYPE','','',0,0,'',NULL,'','itemtitle'),
         ('942', 't', 'On Order Count', 'On Order Count', 0, 0, 'biblioitems.on_order_count', 9, '', '', '', NULL, 0, '', '', '', NULL),
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, '', '', '', NULL),
