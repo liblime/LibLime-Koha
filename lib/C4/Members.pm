@@ -1341,7 +1341,7 @@ sub MarkMemberReported {
 
     my $dbh = C4::Context->dbh;
     my $sth;
-    if ($amount == 0) {
+    if ($amount < 0.01) {
       $sth = $dbh->prepare( "
           UPDATE borrowers
             SET last_reported_date = CURRENT_DATE,

@@ -185,26 +185,30 @@ foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignore
     my $sent_fine = GetFineByDescription( $borrower->{'borrowernumber'}, 'A', "Sent to collections agency" );
     $sent_fine = GetFineByDescription( $borrower->{'borrowernumber'}, 'A', $once ) if ( !($sent_fine || $sent_fine->{'amountoutstanding'}) && $once && $once ne '1' ); # Since $once might be a string
     my ($total,$acctlines) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrower->{'borrowernumber'});
+    my $total_cents = sprintf('%d', $total*100);
+    my $last_reported_cents
+        = sprintf('%d', $borrower->{last_reported_amount}*100);
 
-    if ( $borrower->{'last_reported_date'} && $borrower->{'last_reported_amount'} > 0 ) {
+    if ( $borrower->{'last_reported_date'} && $last_reported_cents > 0 )
+    {
         if ( $borrower->{'last_reported_date'} eq $today ) {
             print "skipping, already reported today\n" if ( $verbose );
             next;
         }
 
-        if ( $borrower->{'last_reported_amount'} < $minimum ) {
+        if ( $last_reported_cents < $minimum*100 ) {
             MarkMemberReported( $borrower->{'borrowernumber'}, 0 ) if ( $confirm );
             next;
         }
 
-        if ( $borrower->{'last_reported_amount'} == $total ) {
+        if ( $last_reported_cents == $total_cents ) {
             print "skipping, no difference\n" if ( $verbose );
             next;
         }
 
         print "updating\n" if ( $verbose );
 
-        my $diff = $total - $borrower->{'last_reported_amount'}; # Amount we have to reconcile
+        my $diff = ($total_cents - $last_reported_cents) / 100; # Amount we have to reconcile
         my ( $additional, $waived, $paid, $returned ) = ( 0, 0, 0, 0 );
 
         foreach my $acctline ( @$acctlines ) {
@@ -227,9 +231,9 @@ foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignore
             }
         }
         
-        if ( $diff < 0 ) {
+        if ( $diff < -0.009 ) {
             $paid += $diff;
-        } elsif ( $diff > 0 ) {
+        } elsif ( $diff > 0.009 ) {
             $additional += $diff;
         }
 
