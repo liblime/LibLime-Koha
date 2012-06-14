@@ -289,7 +289,8 @@ if ($add_op) {
 }
 $query->param('hidemytags') and $template->param(hidemytags => 1);
 (scalar @errors  ) and $template->param(ERRORS  => \@errors);
-(scalar @$results) and $template->param(TAGLOOP => $results);
+my @orderedresult = sort { uc($a->{'term'}) cmp uc($b->{'term'}) } @$results;
+(scalar @$results) and $template->param(TAGLOOP => \@orderedresult);
 (scalar @$my_tags) and $template->param(MY_TAGS => $my_tags);
 
 output_html_with_http_headers $query, $cookie, $template->output;
