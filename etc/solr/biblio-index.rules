@@ -1,0 +1,61 @@
+id | record | emit_id
+rtype | record | emit_bib_rtype
+biblionumber | 999c
+
+author_t | 100abcd | concat | first
+author-full_mt | 100abcd 110ab 111ab 700abcd 710ab 711ab | concat
+author_mph | 100a 110a 111a 700a 710a 711a
+author_sort | 100abcd | concat | first
+
+title_t | 245ab | concat | first
+title_ph | 245ab | concat | first
+title-full_t | 245 | cat_alpha_subfields | first
+title-alt_mt | 130adfgklnpst 240a 246a 247a 730adfgklnpst 740a | concat
+series-title_t | 490a | | first
+uniform-title_t | 240 | cat_alpha_subfields | first
+
+format_s | record | emit_format | first
+content_s | record | emit_content
+audience_s | record | emit_audience
+
+language_ms | 008[35-37] 041a 041d 041h 041j | map_language
+ln_ms | 008[35-37] 041a 041d 041h 041j
+
+lccn_ms | 010az
+ctrlnum_s | 035a | | first
+
+subject_ms | 610at 650a 651a 652a 653a 654a 655a 656a 657a 690a | concat
+subject-era_ms | 648a
+subject-topic_ms | 650a
+subject-geo_ms | 651a
+subject-genre_ms | 655 | cat_alpha_subfields
+topic_ms | 600 610 611 630 650 | cat_alpha_subfields
+
+callnumber_ms | 099ab 090ab 050ab | concat
+callnumber-sort_ms | 9526
+
+publisher_ms | 260b
+pub-date_s | 008[7-10]
+isbn_ms | 020a
+issn_ms | 022a 440x 490x 730x 776x 780x 785x
+url_mt | 856u
+
+on_order_count_i | 942t
+in_process_count_i | 942u
+
+item | 952 | itemify
+on-shelf-at_ms | 952 | on_shelf_at | unique
+owned-by_ms | 952b | | unique
+itemtype_ms | 952y | | unique
+barcode_ms | 952p
+ccode_ms | 9528 | | unique
+#for_ref-at_ms | 952 | for_ref_at | unique
+#checked_out_count_i | 952 | is_checked_out | count
+#on_hold_count_i | 952 | is_on_hold | count
+#in_transit_count_i | 952 | is_in_transit | count
+
+authid_mi | record | emit_authids
+
+marcxml | record | as_marcxml
+#opac_result_html | record | emit_opac_result_html
+#staff_result_html | record | emit_staff_result_html

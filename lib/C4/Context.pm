@@ -34,7 +34,7 @@ use JSON qw(from_json);
 use Koha;
 require Koha::RoseDB;
 
-$VERSION = '4.09.00.008';
+$VERSION = '4.09.00.009';
 
 if ($ENV{'HTTP_USER_AGENT'})	{
     require CGI::Carp;
@@ -458,9 +458,6 @@ sub config {
 }
 sub zebraconfig {
 	return _common_config($_[1],'server');
-}
-sub ModZebrations {
-	return _common_config($_[1],'serverinfo');
 }
 
 =item preference

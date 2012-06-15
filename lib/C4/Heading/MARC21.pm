@@ -47,7 +47,7 @@ FIXME - this should be moved to a configuration file.
 
 =cut
 
-my $bib_heading_fields = {
+our $bib_heading_fields = {
     '100' => { auth_type => 'PERSO_NAME', subfields => 'abcdefghjklmnopqrst', main_entry => 1 },
     '110' => { auth_type => 'CORPO_NAME', subfields => 'abcdefghklmnoprst', main_entry => 1 },
     '111' => { auth_type => 'MEETI_NAME', subfields => 'acdefghjklnpqst', main_entry => 1 },

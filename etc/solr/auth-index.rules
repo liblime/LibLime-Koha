@@ -1,0 +1,15 @@
+id | record | emit_id
+rtype | record | emit_auth_rtype
+authid | record | emit_authid
+kauthtype_s | 942a
+
+personal-name_auths | 100 | cat_alpha_subfields
+corporate-name_auths | 110 | cat_alpha_subfields
+meeting-name_auths | 111 | cat_alpha_subfields
+uniform-title_auths | 130 | cat_alpha_subfields
+chronological-term_auths | 148 | cat_alpha_subfields
+topical-term_auths | 150 | cat_alpha_subfields
+geographic-name_auths | 151 | cat_alpha_subfields
+genre-form_auths | 155 | cat_alpha_subfields
+
+marcxml | record | as_marcxml
