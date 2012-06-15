@@ -1,6 +1,4 @@
-# $Id: Simple2ZOOM.pm,v 1.68 2009-04-08 12:27:51 mike Exp $
-
-package Net::Z3950::Simple2ZOOM;
+package Koha::Solr::Z3950Service;
 
 use 5.008;
 use strict;
@@ -20,22 +18,22 @@ use Time::HiRes qw(gettimeofday tv_interval);
 
 our @ISA = qw();
 our $VERSION = '1.04';
-our $TIME = 1;
+our $TIME = 0;
 
 
 =head1 NAME
 
-Net::Z3950::Simple2ZOOM - Gateway between Z39.50 and SRU/SRW
+Koha::Solr::Z3950Service - Gateway between Z39.50 and Solr
 
 =head1 SYNOPSIS
 
- use Net::Z3950::Simple2ZOOM;
- $s2z = new Net::Z3950::Simple2ZOOM("somefile.xml");
+ use Koha::Solr::Z3950Service;
+ $s2z = new Koha::Solr::Z3950Service("somefile.xml");
  $s2z->launch_server("someServer", @ARGV);
 
 =head1 DESCRIPTION
 
-The C<Net::Z3950::Simple2ZOOM> module provides all the application
+The C<Koha::Solr::Z3950Service> module provides all the application
 logic of a generic "Swiss Army Gateway" between Z39.50 and SRU.  It is
 used by the C<simple2zoom> program, and there is probably no good
 reason to make any other program to use it.  For that reason, this
@@ -43,7 +41,7 @@ library-level documentation is more than usually terse.
 
 The library has only two public entry points: the C<new()> constructor
 and the C<launch_server()> method.  The synopsis above shows how they
-are used: a Simple2ZOOM object is created using C<new()>, then the
+are used: a Z3950Service object is created using C<new()>, then the
 C<launch_server()> method is invoked on it to -- get ready for a big
 surprise here -- launch the server.  (In fact, this synopsis is
 essentially the whole of the code of the C<simple2zoom> program.  All
@@ -53,11 +51,11 @@ the work happens inside the library.)
 
 =head2 new($configFile)
 
- $s2z = new Net::Z3950::Simple2ZOOM("somefile.xml");
+ $s2z = new Koha::Solr::Z3950Service("somefile.xml");
 
-Creates and returns a new Simple2ZOOM object, configured according to
+Creates and returns a new Z3950Service object, configured according to
 the XML file C<$configFile> that is the only argument.  The format of
-this file is described in C<Net::Z3950::Simple2ZOOM::Config>.
+this file is described in C<Koha::Solr::Z3950Service::Config>.
 
 =cut
 
@@ -98,7 +96,7 @@ sub new {
 
  $s2z->launch_server("someServer", @ARGV);
 
-Launches the Simple2ZOOM server: this method never returns.  The
+Launches the Z3950Service server: this method never returns.  The
 C<$label> string is used in logging, and the C<@ARGV> vector of
 command-line arguments is interpreted by the YAZ backend server as
 described at
@@ -184,7 +182,7 @@ sub _real_init_handler {
     my $user = $args->{USER};
     my $pass = $args->{PASS};
     # Initialise session data.  This data structure should probably be
-    # a private data structure, Net::Z3950::Simple2ZOOM::Session or
+    # a private data structure, Koha::Solr::Z3950Service::Session or
     # similar.
     $args->{HANDLE} = {
 	connections => {}, # maps dbname to ZOOM::Connection
@@ -194,8 +192,8 @@ sub _real_init_handler {
     };
 
     $args->{IMP_ID} = '81';
-    $args->{IMP_VER} = $Net::Z3950::Simple2ZOOM::VERSION;
-    $args->{IMP_NAME} = 'Simple2ZOOM Universal Gateway';
+    $args->{IMP_VER} = $Koha::Solr::Z3950Service::VERSION;
+    $args->{IMP_NAME} = 'Koha Koha::Solr::Z3950Service Universal Gateway';
 
     my $auth = $gh->{cfg}->{authentication};
     if (defined $auth) {
@@ -207,7 +205,7 @@ sub _real_init_handler {
 
 	#warn "Authenticating at $auth";
 	my $ua = new LWP::UserAgent();
-	$ua->agent("Simple2ZOOM $VERSION");
+	$ua->agent("Koha::Solr::Z3950Service $VERSION");
 	my $req = new HTTP::Request(GET => $auth);
 	my $res = $ua->request($req);
 	_throw(1014, "credentials are bad")
@@ -232,6 +230,11 @@ sub _real_search_handler {
     if ($dbconfig->{search} && $dbconfig->{search}->{querytype} eq 'cql') {
 	my $type1 = $args->{RPN}->{query};
 	$qtext = $type1->_toCQL($args, $args->{RPN}->{attributeSet});
+	warn "search: translated '" . $args->{QUERY} . "' to '$qtext'\n";
+	$query = new ZOOM::Query::CQL($qtext);
+    } elsif ($dbconfig->{search} && $dbconfig->{search}->{querytype} eq 'solr') {
+	my $type1 = $args->{RPN}->{query};
+	$qtext = $type1->_toSolr($args, $args->{RPN}->{attributeSet});
 	warn "search: translated '" . $args->{QUERY} . "' to '$qtext'\n";
 	$query = new ZOOM::Query::CQL($qtext);
     } else {
@@ -354,6 +357,9 @@ sub _nsxpath {
 
 sub _format {
     my($xml, $recsyn, $dbconfig) = @_;
+
+    my $node = XML::LibXML->new->parse_string($xml);
+    $xml = $node->findvalue(q{/doc/str[@name='marcxml']});
 
     my %formats = (
 	Net::Z3950::OID::xml =>    [ "xml",   0, undef ],
@@ -714,7 +720,7 @@ sub _do_search {
     my($session, $zdbname, $dbconfig, $setname, $qtext, $query) = @_;
 
     # This should probably be an object of some application-specific
-    # class such as Net::Z3950::Simple2ZOOM::ResultSet
+    # class such as Koha::Solr::Z3950Service::ResultSet
     my $search = {
 	dbName => $zdbname,
 	dbConfig => $dbconfig,
@@ -786,6 +792,11 @@ sub _format_marc {
 	next if !defined $data || $data eq "";
 
 	my($tag, $i1, $i2, $subtag) = ($field->{content}, "", "");
+
+        if ($tag eq 'full') {
+            my $rec = MARC::Record->new_from_xml($xml, 'UTF-8');
+            return $rec->as_usmarc();
+        }
 	if ($tag =~ s/\$(.*)//) {
 	    $subtag = $1;
 	}
@@ -917,7 +928,7 @@ sub _trim_nl {
 package Net::Z3950::RPN::Term;
 
 sub _throw {
-    return Net::Z3950::Simple2ZOOM::_throw(@_);
+    return Koha::Solr::Z3950Service::_throw(@_);
 }
 
 sub _toCQL {
@@ -942,7 +953,7 @@ sub _toCQL {
 	_throw(121, $set) if $set ne '1.2.840.10003.3.1';
 	if ($attr->{attributeType} == 1) {
 	    my $val = $attr->{attributeValue};
-	    $field = Net::Z3950::Simple2ZOOM::_ap2index($dbconfig, $val);
+	    $field = Koha::Solr::Z3950Service::_ap2index($dbconfig, $val);
 	}
     }
 
@@ -1040,6 +1051,96 @@ sub _toCQL {
     return $term;
 }
 
+sub _toSolr {
+    my $self = shift;
+    my($args, $defaultSet) = @_;
+    my $gh = $args->{GHANDLE};
+    my $field;
+    my($left_anchor, $right_anchor) = (0, 0);
+    my($left_truncation, $right_truncation) = (0, 0);
+    my $term = $self->{term};
+    my $dbconfig = $gh->{cfg}->{database}->{$args->{DATABASES}->[0]};
+
+    my $atts = $self->{attributes};
+    untie $atts;
+
+    # First we determine USE attribute
+    foreach my $attr (@$atts) {
+	my $set = $attr->{attributeSet};
+	$set = $defaultSet if !defined $set;
+	# Unknown attribute set (anything except BIB-1)
+	_throw(121, $set) if $set ne '1.2.840.10003.3.1';
+	if ($attr->{attributeType} == 1) {
+	    my $val = $attr->{attributeValue};
+	    $field = Koha::Solr::Z3950Service::_ap2index($dbconfig, $val);
+	}
+    }
+
+    # Then we can handle any other attributes
+    my $expr;
+    foreach my $attr (@$atts) {
+        my $type = $attr->{attributeType};
+        my $value = $attr->{attributeValue};
+
+        if ($type == 2) {
+	    if ($value == 1) {
+                $expr = "{* TO $term}";
+	    } elsif ($value == 2) {
+                $expr = "[* TO $term]";
+	    } elsif ($value == 3) {
+	    } elsif ($value == 4) {
+                $expr = "[$term TO *]";
+	    } elsif ($value == 5) {
+                $expr = "{$term TO *}";
+	    } else {
+		_throw(117, $value);
+	    }
+        }
+
+        elsif ($type == 3) { # Position
+        }
+
+        elsif ($type == 4) { # Structure -- we ignore it
+        }
+
+        elsif ($type == 5) { # Truncation
+            if ($value == 1) {
+                $right_truncation = 1;
+            } elsif ($value == 2) {
+                $left_truncation = 1;
+            } elsif ($value == 3) {
+                $right_truncation = 1;
+                $left_truncation = 1;
+            } elsif ($value == 101) {
+		# Process # in search term
+		$term =~ s/#/?/g;
+            } elsif ($value == 104) {
+		# Z39.58-style (CCL) truncation: #=single char, ?=multiple
+		$term =~ s/#/?/g;
+		$term =~ s/\?\d?/*/g;
+            } elsif ($value != 100) {
+                _throw(120, $value);
+            }
+        }
+
+        elsif ($type != 1) { # Unknown attribute type
+            _throw(113, $type);
+        }
+    }
+
+    $term = "*$term" if $left_truncation;
+    $term = "$term*" if $right_truncation;
+
+    $term = qq{"$term"} if $term =~ /[\s""\/=]/;
+
+    if (defined $field && defined $expr) {
+       $term = "$field:$expr";
+    } elsif (defined $field) {
+       $term = "$field:$term";
+    }
+
+    return $term;
+}
 
 package Net::Z3950::RPN::RSID;
 sub _toCQL {
@@ -1052,7 +1153,7 @@ sub _toCQL {
     _throw(128, $zid) if !defined $rs; # "Illegal result set name"
 
     my($zdbname, $dbconfig) =
-	Net::Z3950::Simple2ZOOM::_extract_database($args);
+	Koha::Solr::Z3950Service::_extract_database($args);
     my $method = $dbconfig->{resultsetid} || "fallback";
 
     my $sid = $rs->{rsid};
@@ -1063,10 +1164,41 @@ sub _toCQL {
 	if $method ne "id";
 
     # Error 18 is "Result set not supported as a search term"
-    Net::Z3950::Simple2ZOOM::_throw(18, $zid);
+    Koha::Solr::Z3950Service::_throw(18, $zid);
+}
+
+sub _toSolr {
+    my $self = shift;
+    my($args, $defaultSet) = @_;
+    my $session = $args->{HANDLE};
+
+    my $zid = $self->{id};
+    my $rs = $session->{resultsets}->{$zid};
+    _throw(128, $zid) if !defined $rs; # "Illegal result set name"
+
+    my($zdbname, $dbconfig) =
+	Koha::Solr::Z3950Service::_extract_database($args);
+    my $method = $dbconfig->{resultsetid} || "fallback";
+
+    my $sid = $rs->{rsid};
+    return qq[solr.resultSetId="$sid"]
+	if defined $sid && $method ne "search";
+
+    return '(' . $rs->{qtext} . ')'
+	if $method ne "id";
+
+    # Error 18 is "Result set not supported as a search term"
+    Koha::Solr::Z3950Service::_throw(18, $zid);
 }
 
 package Net::Z3950::RPN::And;
+sub _toSolr {
+    my $self = shift;
+    my $left = $self->[0]->_toSolr(@_);
+    my $right = $self->[1]->_toSolr(@_);
+    return "($left AND $right)";
+}
+
 sub _toCQL {
     my $self = shift;
     my $left = $self->[0]->_toCQL(@_);
@@ -1075,6 +1207,13 @@ sub _toCQL {
 }
 
 package Net::Z3950::RPN::Or;
+sub _toSolr {
+    my $self = shift;
+    my $left = $self->[0]->_toSolr(@_);
+    my $right = $self->[1]->_toSolr(@_);
+    return "($left OR $right)";
+}
+
 sub _toCQL {
     my $self = shift;
     my $left = $self->[0]->_toCQL(@_);
@@ -1090,12 +1229,19 @@ sub _toCQL {
     return "($left not $right)";
 }
 
+sub _toSolr {
+    my $self = shift;
+    my $left = $self->[0]->_toSolr(@_);
+    my $right = $self->[1]->_toSolr(@_);
+    return "($left NOT $right)";
+}
+
 
 =head1 SEE ALSO
 
 The C<simple2zoom> program.
 
-The C<Net::Z3950::Simple2ZOOM::Config> manual for the
+The C<Koha::Solr::Z3950Service::Config> manual for the
 configuration-file format.
 
 The C<Net::Z3950::SimpleServer> module.

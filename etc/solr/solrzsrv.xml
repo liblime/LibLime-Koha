@@ -1,0 +1,23 @@
+<client>
+  <database name="koha">
+    <zurl>http://localhost:8983/solr</zurl>
+    <option name="sru">solr</option>
+    <option name="schema">marcxml</option>
+    <option name="extraArgs">defType=lucene</option>
+    <charset>marc-8</charset>
+    <search>
+      <querytype>solr</querytype>
+      <map use="4"><index>title_t</index></map>
+      <map use="7"><index>isbn_ms</index></map>
+      <map use="8"><index>issn_ms</index></map>
+      <map use="9"><index>lccn_ms</index></map>
+      <map use="21"><index>subject_ms</index></map>
+      <map use="1003"><index>author_t</index></map>
+      <map use="1016"><index>text</index></map>
+    </search>
+    <usmarc-record>
+      <field><xpath>/</xpath><content>full</content></field>
+      <field></field>
+    </usmarc-record>
+  </database>
+</client>

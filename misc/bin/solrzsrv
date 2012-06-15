@@ -1,0 +1,147 @@
+#!/usr/bin/env perl
+
+########################
+# simple2zoom -- Swiss-army simpleserver-->zoom gateway
+# Copyright (c) 2006 Index Data
+# Written by Sebastian Hammer and Mike Taylor
+# $Id: simple2zoom,v 1.18 2007-09-07 11:43:19 mike Exp $
+#
+# Run like this:
+#	perl -I../lib ./simple2zoom -c ../etc/test.xml @:9998
+#
+# Dynamically configurable using virtual database-name like:
+#	cfg:key1=val1&key2=val2...
+# For example:
+#	cfg:preferredRecordSyntax=xml&address=localhost:8018//IR-Explain---1
+# But PLEASE BE AWARE that, like Unix filenames with spaces in,
+# complex "database names" like these often get parsed when you don't
+# want them to.  Neither yaz-client nor zoomsh handles Z-target
+# strings with database-names like these "correctly" (i.e. in the way
+# we want them to).
+#
+# To run the server from its source, use:
+#	cd /usr/local/src/cvs/simple2zoom/bin && perl -I../lib ./simple2zoom -c ../etc/test.xml -- -S -f ../etc/yazgfs.xml
+# For a simple regression-test, use:
+#	cd /usr/local/src/cvs/simple2zoom/bin && perl -I../lib ./simple2zoom -c ../etc/test.xml -- -1 -f ../etc/yazgfs.xml & (sleep 1; ( echo "find mineral"; echo "format sutrs"; echo "show 1") | yaz-client localhost:9998/gils )
+
+use Getopt::Std;
+use Koha::Solr::Z3950Service;
+
+use strict;
+use warnings;
+
+my %opts;
+if (!getopts("c:", \%opts)) {
+    print STDERR "Usage: $0 [-c <config-file>] [-- YAZ-options]\n";
+    exit 1;
+}
+
+my $s2z = new Koha::Solr::Z3950Service($opts{c});
+$s2z->launch_server("simple2zoom", @ARGV);
+
+
+=head1 NAME
+
+simple2zoom - generic Swiss Army Server for proxying between IR standards
+
+=head1 SYNOPSIS
+
+C<simple2zoom>
+[
+C<-c>
+I<configFile>
+]
+[
+C<-->
+I<YAZ-options>
+]
+[
+I<listener-address>
+...
+]
+
+=head1 DESCRIPTION
+
+C<simple2zoom> provides a generic gateway between the Z39.50 and
+SRU/SRW Information Retrieval protocols.  Because it relies on the
+C<Net::Z3950::SimpleServer> and C<ZOOM> modules for the server and
+client funcationality respectively, because both of these modules are
+based on the YAZ toolkit, and because YAZ transparently handles all
+three standard IR protocols (ANDI/NISO Z39.50, SRU and SRW), it can
+function as a gateway from any and to any of these protocols.
+However, its principle purpose is as a Z39.50 server that proxies
+requests through to a backend by acting as an SRU client.
+
+The following command-line options govern how the gateway functions:
+
+=over 4
+
+=item -c configFile
+
+Specifies that the named I<configFile> should be used to configure the
+functionality of the gateway: if this option is not specified, then
+the file C<client.xml> is used.  The format of the configuration file
+is described separately in C<Net::Z3950::Simple2ZOOM::Config>, and a
+sample configuration file, C<test.xml>, is supplied in the C<etc>
+directory of the distribution.
+
+=item --
+
+Indicates the end of C<simple2zoom>-specific options.  This is
+required if YAZ options are to be specified, so that C<simple2zoom>
+doesn't try to interpret them itself.
+
+=item I<YAZ-options>
+
+Command-line arguments subsequent to the C<--> option are interpreted
+by the YAZ backend server as described at
+http://www.indexdata.dk/yaz/doc/server.invocation.tkl
+
+These options provide the means to control many aspects of the
+gateway's functioning: for example, whether the server forks a new
+process for each client or runs a single process using C<select()>;
+how (if at all) to interpret incoming SRU requests; whether and how to
+log protocol packets for debugging.
+
+=item I<listener-address>
+
+One or more YAZ-style listener addresses may be specified, and the
+server will accept connections on those addresses: for example,
+C<@:9998>, C<unix:/tmp/somesocket> or C<ssl:myhost.com:210>.  If
+no explicit listener addresses are provided, the server listens on
+port 9999.
+
+=back
+
+=head1 SEE ALSO
+
+The C<Net::Z3950::Simple2ZOOM> module.
+
+The C<Net::Z3950::Simple2ZOOM::Config> manual for the
+configuration-file format.
+
+The C<Net::Z3950::SimpleServer> module.
+
+The C<ZOOM> module (in the C<Net::Z3950::ZOOM> distribution).
+
+=head1 AUTHOR
+
+Sebastian Hammer E<lt>quinn@miketaylor.org.ukE<gt>
+
+Mike Taylor E<lt>mike@indexdata.comE<gt>
+
+The development of C<simple2zoom>, and the C<Net::Z3950::Simple2ZOOM>
+library that provides its functionality, has been partially sponsored
+by the National Library of Australia, whose contribution we gratefully
+acknowledge.
+
+=head1 COPYRIGHT AND LICENCE
+
+Copyright (C) 2007 by Index Data.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.8 or,
+at your option, any later version of Perl 5 you may have available.
+
+=cut
+
