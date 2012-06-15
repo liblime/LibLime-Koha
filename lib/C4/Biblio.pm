@@ -85,7 +85,6 @@ BEGIN {
 	push @EXPORT, qw(
 		&ModBiblio
 		&ModBiblioframework
-		&ModZebra
 	);
 	# To delete something
 	push @EXPORT, qw(
@@ -392,7 +391,7 @@ sub DelBiblio {
     # for at least 2 reasons :
     # - if something goes wrong, the biblio may be deleted from Koha but not from zebra
     #   and we would have no way to remove it (except manually in zebra, but I bet it would be very hard to handle the problem)
-    ModZebra($biblionumber, "recordDelete", "biblioserver", undef, undef);
+    _update_changelog(GetMarcBiblio($biblionumber), 'delete');
 
     # delete biblioitems and items from Koha tables and save in deletedbiblioitems,deleteditems
     $sth =
@@ -2426,74 +2425,6 @@ sub PrepareItemrecordDisplay {
         'iteminformation' => \@loop_data
     };
 }
-#"
-
-#
-# true ModZebra commented until indexdata fixes zebraDB crashes (it seems they occur on multiple updates
-# at the same time
-# replaced by a zebraqueue table, that is filled with ModZebra to run.
-# the table is emptied by misc/cronjobs/zebraqueue_start.pl script
-# =head2 ModZebrafiles
-# 
-# &ModZebrafiles( $dbh, $biblionumber, $record, $folder, $server );
-# 
-# =cut
-# 
-# sub ModZebrafiles {
-# 
-#     my ( $dbh, $biblionumber, $record, $folder, $server ) = @_;
-# 
-#     my $op;
-#     my $zebradir =
-#       C4::Context->zebraconfig($server)->{directory} . "/" . $folder . "/";
-#     unless ( opendir( DIR, "$zebradir" ) ) {
-#         warn "$zebradir not found";
-#         return;
-#     }
-#     closedir DIR;
-#     my $filename = $zebradir . $biblionumber;
-# 
-#     if ($record) {
-#         open( OUTPUT, ">", $filename . ".xml" );
-#         print OUTPUT $record;
-#         close OUTPUT;
-#     }
-# }
-
-=head2 ModZebra
-
-=over 4
-
-ModZebra( $biblionumber, $op, $server, $oldRecord, $newRecord );
-
-    $biblionumber is the biblionumber we want to index
-    $op is specialUpdate or delete, and is used to know what we want to do
-    $server is the server that we want to update
-    
-=back
-
-=cut
-
-sub ModZebra {
-###Accepts a $server variable thus we can use it for biblios authorities or other zebra dbs
-    my ( $biblionumber, $op, $server ) = @_;
-    my $dbh=C4::Context->dbh;
-
-    my $check_sql = "SELECT COUNT(*) FROM zebraqueue 
-                         WHERE server = ?
-                         AND   biblio_auth_number = ?
-                         AND   operation = ?
-                         AND   done = 0";
-    my $check_sth = $dbh->prepare_cached($check_sql);
-    $check_sth->execute($server, $biblionumber, $op);
-    my ($count) = $check_sth->fetchrow_array;
-    $check_sth->finish();
-    if ($count == 0) {
-        my $sth=$dbh->prepare("INSERT INTO zebraqueue  (biblio_auth_number,server,operation) VALUES(?,?,?)");
-        $sth->execute($biblionumber,$server,$op);
-        $sth->finish;
-    }
-}
 
 =head2 _find_value
 
@@ -3122,7 +3053,7 @@ sub ModBiblioMarc {
     # gets stored as NULL in the DB
     if($marcxml){
         $sth->execute( $marc, $marcxml, $biblionumber );
-        ModZebra($biblionumber,"specialUpdate","biblioserver",undef,$record);
+        _update_changelog( $record, 'update');
         return $biblionumber;
     } else {
         warn "WARNING: CORRUPT BIB: $biblionumber";
@@ -3299,6 +3230,13 @@ sub get_biblio_authorised_values {
     return $authorised_values;
 }
 
+use Koha::Changelog::DBLog;
+sub _update_changelog {
+    my ( $record, $action ) = @_;
+
+    my $db = Koha::Changelog::DBLog->new(rtype => 'biblio');
+    return $db->update( $record, $action );
+}
 
 1;
 

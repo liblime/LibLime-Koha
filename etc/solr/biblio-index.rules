@@ -5,6 +5,7 @@ biblionumber | 999c
 author_t | 100abcd | concat | first
 author-full_mt | 100abcd 110ab 111ab 700abcd 710ab 711ab | concat
 author_mph | 100a 110a 111a 700a 710a 711a
+author_sort | 100abcd | concat | first
 
 title_t | 245ab | concat | first
 title_ph | 245ab | concat | first

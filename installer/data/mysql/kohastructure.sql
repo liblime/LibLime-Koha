@@ -2183,20 +2183,14 @@ CREATE TABLE `z3950servers` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Table structure for table `zebraqueue`
---
-
-DROP TABLE IF EXISTS `zebraqueue`;
-CREATE TABLE `zebraqueue` (
-  `id` int(11) NOT NULL auto_increment,
-  `biblio_auth_number` bigint(20) unsigned NOT NULL default '0',
-  `operation` char(20) NOT NULL default '',
-  `server` char(20) NOT NULL default '',
-  `done` int(11) NOT NULL default '0',
-  `time` timestamp NOT NULL default CURRENT_TIMESTAMP,
-  PRIMARY KEY  (`id`),
-  KEY `zebraqueue_lookup` (`server`, `biblio_auth_number`, `operation`, `done`)
+CREATE TABLE `changelog` (
+  `rtype` varchar(16) NOT NULL,
+  `action` enum('add','update','delete') NOT NULL,
+  `id` varchar(16) NOT NULL,
+  `stamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY `rtype` (`rtype`),
+  KEY `action` (`action`),
+  KEY `stamp` (`stamp`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `services_throttle`;

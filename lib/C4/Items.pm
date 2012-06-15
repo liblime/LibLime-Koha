@@ -297,7 +297,8 @@ sub AddItem {
 	my ( $itemnumber, $error ) = _koha_new_item( $item, $item->{barcode} );
     $item->{'itemnumber'} = $itemnumber;
 
-    ModZebra($biblionumber,"specialUpdate","biblioserver");
+    C4::Biblio::_update_changelog(GetMarcBiblio($biblionumber), 'update');
+
     logaction("CATALOGUING", "ADD", $itemnumber, "item") if C4::Context->preference("CataloguingLog");
     
     return ($item->{biblionumber}, $item->{biblioitemnumber}, $itemnumber);
@@ -580,7 +581,8 @@ sub ModItem {
                 copynumber| ){
         $reindex = 1 if( exists($item->{$_}) && !($item->{$_} ~~ $orig_item->{$_}));
     }
-    ModZebra($biblionumber,"specialUpdate","biblioserver") if $reindex;
+    C4::Biblio::_update_changelog(GetMarcBiblio($biblionumber), 'update')
+        if $reindex;
 
     # TODO: Separate Item data modification from Cataloguing Log.
     logaction("CATALOGUING", "MODIFY", $itemnumber, Data::Dumper->Dump( [$item],['item'] )) if C4::Context->preference("CataloguingLog");
@@ -618,8 +620,10 @@ sub MoveItemToAnotherBiblio {
   $sth = $dbh->prepare( $sql );
   $sth->execute( $new_bib->{'biblionumber'}, $itemnumber );
   
-  ModZebra($old_bib->{'biblionumber'},"specialUpdate","biblioserver");
-  ModZebra($new_bib->{'biblionumber'},"specialUpdate","biblioserver");
+  C4::Biblio::_update_changelog(
+      GetMarcBiblio($old_bib->{biblionumber}), 'update');
+  C4::Biblio::_update_changelog(
+      GetMarcBiblio($new_bib->{biblionumber}), 'update');
   logaction('CATALOGUING','MODIFY',$$new_bib{biblionumber}, 
   "moved itemnumber=$itemnumber, barcode=$$item{barcode}, oldbib=$$old_bib{biblionumber}, "
  ."newbib=$$new_bib{biblionumber}") if C4::Context->preference("CataloguingLog");
@@ -759,7 +763,7 @@ sub DelItem {
 #        }
 #    }
 #    &ModBiblioMarc( $record, $biblionumber, $frameworkcode );
-    ModZebra($biblionumber,"specialUpdate","biblioserver");
+    C4::Biblio::_update_changelog(GetMarcBiblio($biblionumber), 'update');
     logaction("CATALOGUING", "DELETE", $itemnumber, "item") if C4::Context->preference("CataloguingLog");
 }
 

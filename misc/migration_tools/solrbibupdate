@@ -1,0 +1,84 @@
+#!/usr/bin/env perl
+
+use Koha;
+use C4::Context;
+use C4::Items qw(GetMarcWithItems);
+use WebService::Solr;
+use Koha::Solr::IndexStrategy::MARC;
+use Koha::Solr::Document::MARC;
+use Koha::Changelog::DBLog;
+use File::Slurp;
+use Carp;
+
+my $solr = WebService::Solr->new( C4::Context->config('solr')->{url} );
+my $metadoc = get_metadoc($solr);
+my $log = Koha::Changelog::DBLog->new( rtype => 'biblio' );
+my $todos = $log->get_todos( $metadoc->value_for('timestamp') );
+
+my $youngest_ts = process_list($solr, $todos);
+update_metadoc($solr, $youngest_ts);
+
+exit;
+
+
+sub process_list {
+    my ($solr, $todos) = @_;
+    return unless @$todos;
+
+    my $youngest_ts = $todos->[$#$todos]->{stamp};
+    $youngest_ts =~ s/ /T/;
+    $youngest_ts .= '.000Z';
+
+    my %deletes = map { $_->{id} => 1} grep { $_->{action} ~~ 'delete' } @$todos;
+    my %updates = map { $_->{id} => 1} grep { $_->{action} ~~ 'update' } @$todos;
+
+    # Remove deleted items from updates list
+    %updates = map { $_ => 1 } grep { ! exists $deletes{$_} } keys %updates;
+
+    my @delete_ids = map { 'bib_'.$_} keys %deletes;
+    $solr->delete( {id => \@delete_ids} );
+
+    my $rules_text = read_file( C4::Context->config('solr')->{biblio_rules} );
+    my $r = Koha::Solr::IndexStrategy::MARC->new( rules_text => $rules_text );
+    my @update_docs;
+    for ( keys %updates ) {
+        my $record = GetMarcWithItems($_);
+        next unless $record;
+        push @update_docs, Koha::Solr::Document::MARC->new(
+            record => $record, strategy => $r );
+    }
+    $solr->add( \@update_docs );
+
+    return $youngest_ts;
+}
+
+sub update_metadoc {
+    my ($solr, $youngest_ts) = @_;
+    return unless $youngest_ts;
+
+    $metadoc = WebService::Solr::Document->new(
+        id => 'bibupdate', rtype => 'meta',
+        timestamp => $youngest_ts );
+    $solr->update($metadoc);
+}
+
+sub get_metadoc {
+    my $solr = shift;
+
+    my $tsres = $solr->search(
+        'rtype:meta AND id:bibupdate', {qt => 'advanced', fl => 'timestamp,id'});
+    croak 'Failure to query Solr service' unless $tsres->ok;
+
+    my $response = $tsres->content->{response};
+    my $metadoc;
+    if ($response->{numFound} == 0) {
+        # No meta document found, so create one.
+        $metadoc = WebService::Solr::Document->new(
+            id => 'bibupdate', rtype => 'meta',
+            timestamp => '1970-01-01T00:00:00.000Z' );
+    }
+    else {
+        ($metadoc) = $tsres->docs;
+    }
+    return $metadoc;
+}

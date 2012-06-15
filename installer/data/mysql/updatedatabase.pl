@@ -4792,6 +4792,23 @@ CREATE TABLE `ttech_message_queue` (
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.009';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do('DROP TABLE zebraqueue');
+    $dbh->do(q{CREATE TABLE `changelog` (
+  `rtype` varchar(16) NOT NULL,
+  `action` enum('add','update','delete') NOT NULL,
+  `id` varchar(16) NOT NULL,
+  `stamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY `rtype` (`rtype`),
+  KEY `action` (`action`),
+  KEY `stamp` (`stamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8});
+
+     print "Upgrade to $DBversion done ( Replace 'zebraqueue' with 'changelog' )\n";
+    SetVersion ($DBversion);
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

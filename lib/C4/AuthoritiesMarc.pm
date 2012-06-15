@@ -526,7 +526,9 @@ sub AddAuthority {
     $sth->execute($authid,$authtypecode,$record->as_usmarc,$record->as_xml_record($format));
     $sth->finish;
   }
-  ModZebra($authid,'specialUpdate',"authorityserver",$oldRecord,$record);
+
+  _update_solr_index($record);
+
   return ($authid);
 }
 
@@ -545,10 +547,11 @@ Deletes $authid
 
 sub DelAuthority {
     my ($authid) = @_;
-    my $dbh=C4::Context->dbh;
 
-    ModZebra($authid,"recordDelete","authorityserver",GetAuthority($authid),undef);
-    $dbh->do("delete from auth_header where authid=$authid") ;
+    my $record = GetAuthority($authid);
+    _delete_solr_index($record);
+
+    C4::Context->dbh->do("delete from auth_header where authid=$authid") ;
 
 }
 
@@ -1285,6 +1288,36 @@ sub get_auth_type_location {
         }
     }
 }
+
+use Koha::Solr::Changelog;
+use Koha::Solr::IndexStrategy::MARC;
+use Koha::Solr::Document::MARC;
+use File::Slurp;
+
+sub _make_solr_doc {
+    my $record = shift;
+    my $rules_text = read_file(C4::Context->config('solr')->{auth_rules});
+    my $r = Koha::Solr::IndexStrategy::MARC->new( rules_text => $rules_text );
+    my $doc = Koha::Solr::Document::MARC->new(
+        record => $record, strategy => $r );
+
+    return $doc;
+}
+
+sub _update_solr_index {
+    my $record = shift;
+    my $doc = _make_solr_doc( $record );
+    return unless $doc;
+    return Koha::Solr::Changelog->new->update( $doc );
+}
+
+sub _delete_solr_index {
+    my $record = shift;
+    my $doc = _make_solr_doc($record);
+    return unless $doc;
+    return Koha::Solr::Changelog->new->delete_by_id( $doc->value_for('id') );
+}
+
 
 END { }       # module clean-up code here (global destructor)
 
