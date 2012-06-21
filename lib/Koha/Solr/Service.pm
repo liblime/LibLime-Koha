@@ -15,7 +15,7 @@ around BUILDARGS => sub {
     my $class = shift;
     
     if ( @_ == 0 ) {
-        my $server = C4::Context->config('solrserver');
+        my $server = C4::Context->config('solr')->{url};
         return $class->$orig($server);
     } else {
         return $class->$orig(@_);
