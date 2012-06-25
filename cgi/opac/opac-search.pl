@@ -22,6 +22,7 @@ use Encode;
 use C4::XSLT;
 use MARC::Record;
 use URI::Escape;
+use Koha::Pager;
 
 my $DisplayMultiPlaceHold = C4::Context->preference("DisplayMultiPlaceHold");
 # create a new CGI object
@@ -37,8 +38,6 @@ use vars qw($cache $MRXorig);
 # This is not intended to be a long-term cache, but one that persists for
 # only the duration one might expect to page around some search results.
 # The max_size may need to be increased for very busy sites.
-
-#FIXME: Moved to module. TODO: move this caching to module.
 
 no warnings qw(redefine);
 $cache = CHI->new(driver => 'RawMemory', global => 1,
@@ -254,13 +253,7 @@ if(!$rs->is_error){
         }
         $template->param( didyoumean => \@didyoumean );
     }
-    my $perpage = $rs->pageset->entries_per_page();
 
-    #TODO: This should be a part of the pageset module.
-    my @page_numbers = map { pg => $_ , pg_offset => ($_-1)*$perpage, current_page => ($_==$rs->pageset->current_page)?1:0 }, @{$rs->pageset->pages_in_set()} ;
-
-    # At this point, each server has given us a result set
-    # now we build that set for template display
     my $hits = $results->{'response'}->{'numFound'};
     my $maxscore = $results->{'response'}->{'maxScore'};
     # If maxScore < 1 (or 0.2), say, offer 'did you mean'.
@@ -297,14 +290,11 @@ if(!$rs->is_error){
                         searchdesc => 1,
                         SEARCH_RESULTS => \@newresults,
                         OPACItemsResultsDisplay => (C4::Context->preference("OPACItemsResultsDisplay") eq "itemdetails"?1:0),
-                        PAGE_NUMBERS => \@page_numbers,
                         facets_loop => $rs->koha_facets(),
                         last_query => $solr_query->query(),
                         offset => $offset,  # for rss
+                        pager => Koha::Pager->new({pageset => $rs->pageset})->tmpl_loop(),
                         );
-        my $results_per_page = $rs->pageset->entries_per_page;
-        $template->param(previous_page_offset =>  $results_per_page * ($rs->pageset->previous_page - 1)) if $rs->pageset->previous_page;
-        $template->param(next_page_offset =>  $results_per_page * ($rs->pageset->next_page - 1)) if $rs->pageset->next_page;
     } else {
         # no hits
         # Offer a fuzzy search, perhaps.
