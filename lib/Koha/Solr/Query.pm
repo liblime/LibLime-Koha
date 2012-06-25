@@ -12,6 +12,7 @@ package Koha::Solr::Query;
 # without having to create a WS::Solr::Query object, possibly TODO
 #
 
+use Koha;
 use Moose;
 use Method::Signatures;
 use WebService::Solr::Query;
@@ -50,12 +51,16 @@ sub BUILD {
     if($self->cgi()){
         #TODO: Split this depending on rtype.
         $self->_build_query_from_cgi();
-    } elsif($self->url()){
+    } elsif($self->uri()){
         $self->_build_query_from_url();  # This may not be necessary; parameterized uri can be parsed by CGI.
     } elsif($self->query()){
         #$self->_add_search_limits();  # TODO: implement this.
+        # for now, we just allow user to pass in well-formed query.
+        my $options = $self->options;
+        $options->{qt} = ($self->rtype eq 'bib') ? 'biblio' : 'authority';
+        $self->options($options);
     } else {
-        die "__PACKAGE__ Must be instantiated with a cgi object or url-encoded search query";
+        die "__PACKAGE__ Must be instantiated with a cgi object or search query";
     }
 }
 
@@ -165,7 +170,7 @@ sub _build_query_from_cgi{
     if($self->opac()){
         push @systemlimits, 'suppress:0';
     } else {
-        push(@systemlimits, 'suppress:[0 TO 1]') if(grep(/^suppress:/, @userlimits));
+        push(@systemlimits, 'suppress:[0 TO 1]') unless(grep(/^suppress:/, @userlimits));
     }
 
     my @fq = (@userlimits, @systemlimits);
@@ -205,12 +210,9 @@ sub _build_query_from_cgi{
 
 #}
 
-#method _parse_query_string ($query){
+method _parse_query_string ($query){
 # This method was meant to allow us to add phrase slop to quoted
-# queries and possibly add fuzzy operators.  Not working currently, so commented out.
-sub _parse_query_string {
-    my $self = shift;
-    my $query = shift;
+# queries and possibly add fuzzy operators.  Not currently used.
     my $munge = 0;
     ### for testing.
     if($munge){
@@ -222,74 +224,65 @@ sub _parse_query_string {
     }
 }
 
-##method _munge_query (HashRef $Q){
-### This method causes a syntax error.  I don't understand why; the same code ran fine when it lived in the cgi script.  Now that it's in a module, it breaks.
-#sub _munge_query {
-#    my $self = shift;
-#    my $Q = shift;
-#    #my $fuzzy = '~0.6';
-#    my $fuzzy = 0;
-#    for my $op (keys(%$Q)){
-#        for my $subQ (@{$Q->{$op}}){
-#            given($subQ->{'op'}){
-#                when('='){
-#                    $subQ->{op} = ':';
-#                    continue;
-#                }
-#                when(/>=?/){
-#                    unless($subQ->{quote}){
-#                        $subQ->{op} = ':';
-#                        my $bracket = (/=/) ? "{" : "[";
-#                        $subQ->{value} = $bracket . $subQ->{value} . " TO *]";
-#                    }
-#                }
-#                when(/<=?/){
-#                    unless($subQ->{quote}){
-#                        $subQ->{op} = ':';
-#                        my $bracket = (/=/) ? "}" : "]";
-#                        $subQ->{value} = "[* TO " . $subQ->{value} . $bracket;
-#                    }
-#                }
-#                when("()"){
-#                    $self->_munge_query($subQ->{value});
-#                }
-#                when(/[=:]/){
-#                    $subQ->{op} = ':' if(/=/);
-#
-#                    if(!$subQ->{quote} && $fuzzy && length($subQ->{value}) > 4) {
-#                        $subQ->{value} .= $fuzzy;
-#                    }
-#                }
-#            }
-#        }
-#    }
-#}
-## Search::QueryParser::unparse (copied to override default behavior of including the operator even if there's no field)
-# i.e. query `brown bag` would unparse to `:brown :bag`.
+method _munge_query (HashRef $Q){
+    #my $fuzzy = '~0.6';
+    my $fuzzy = 0;
+    for my $op (keys(%$Q)){
+        for my $subQ (@{$Q->{$op}}){
+            given($subQ->{'op'}){
+                when('='){
+                    $subQ->{op} = ':';
+                    continue;
+                }
+                when(/>=?/){
+                    unless($subQ->{quote}){
+                        $subQ->{op} = ':';
+                        my $bracket = (/=/) ? "{" : "[";
+                        $subQ->{value} = $bracket . $subQ->{value} . " TO *]";
+                    }
+                }
+                when(/<=?/){
+                    unless($subQ->{quote}){
+                        $subQ->{op} = ':';
+                        my $bracket = (/=/) ? "}" : "]";
+                        $subQ->{value} = "[* TO " . $subQ->{value} . $bracket;
+                    }
+                }
+                when("()"){
+                    $self->_munge_query($subQ->{value});
+                }
+                when(/[=:]/){
+                    $subQ->{op} = ':' if(/=/);
 
-##method _unparse (){
-#sub _unparse{
-#  my $self = shift;
-#  my $q = $self->parsed_query();
-#
-#  my @subQ;
-#  foreach my $prefix ('+', '', '-') {
-#    next if not $q->{$prefix};
-#    push @subQ, $prefix . $self->_unparse_subQ($_) foreach @{$q->{$prefix}};
-#  }
-#  return join " ", @subQ;
-#}
-#
-##method _unparse_subQ (Str $subQ) {
-#sub _unparse_subQ {
-#  my $self = shift;
-#  my $subQ = shift;
-#
-#  return  "(" . $self->unparse($subQ->{value}) . ")"  if $subQ->{op} eq '()';
-#  my $quote = $subQ->{quote} || "";
-#  my $unparsed = ($subQ->{field}) ? $subQ->{field} . $subQ->{op} : '';
-#  return  $unparsed . "$quote$subQ->{value}$quote";
-#}
+                    if(!$subQ->{quote} && $fuzzy && length($subQ->{value}) > 4) {
+                        $subQ->{value} .= $fuzzy;
+                    }
+                }
+            }
+        }
+    }
+}
+# Search::QueryParser::unparse (copied to override default behavior of including the operator even if there's no field)
+#  e.g. query `brown bag` would unparse to `:brown :bag`.
+
+method _unparse (){
+  my $q = $self->parsed_query();
+
+  my @subQ;
+  foreach my $prefix ('+', '', '-') {
+    next if not $q->{$prefix};
+    push @subQ, $prefix . $self->_unparse_subQ($_) foreach @{$q->{$prefix}};
+  }
+  return join " ", @subQ;
+}
+
+method _unparse_subQ (Str $subQ) {
+
+  return  "(" . $self->unparse($subQ->{value}) . ")"  if $subQ->{op} eq '()';
+  my $quote = $subQ->{quote} || "";
+  my $unparsed = ($subQ->{field}) ? $subQ->{field} . $subQ->{op} : '';
+  return  $unparsed . "$quote$subQ->{value}$quote";
+}
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

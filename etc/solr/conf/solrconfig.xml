@@ -193,6 +193,7 @@
 
        <str name="fl">
          id,
+         authid,
          score,
          personal-name_auths,
          corporate-name_auths,
@@ -203,6 +204,7 @@
          geographic-name_auths,
          genre-form_auths,
          headings_s,
+         marcxml,
        </str>
 
      </lst>

@@ -74,11 +74,13 @@ func emit_format( MARC::Record $record ) {
 
     my $f007 = $record->field('007');
     my $f008 = $record->field('008');
+    my $f007_str = ($f007) ? sprintf( "%-23s",$f007->data) : '';
+    my $f008_str = ($f008) ? sprintf( "%-40s",$f008->data) : '';
 
     if ($f008) {
-        my $e_format = substr $f008->data, 26, 1;
-        my $ff8_23 = substr $f008->data, 23, 1;
-        my $g_format = substr $f008->data, 24, 3;
+        my $e_format = substr $f008_str, 26, 1;
+        my $ff8_23 = substr $f008_str, 23, 1;
+        my $g_format = substr $f008_str, 24, 3;
 
         push @formats, 'large-print-book' if ($ff8_23 eq 'd');
         push @formats, 'braille-book' if ($ff8_23 eq 'f');
@@ -86,16 +88,16 @@ func emit_format( MARC::Record $record ) {
     }
 
     if ($f007 && length $f007->data > 4) {
-        my $v_format = substr $f007->data, 4, 1;
-        my $dt_vis = substr $f007->data, 0, 1;
+        my $v_format = substr $f007_str, 4, 1;
+        my $dt_vis = substr $f007_str, 0, 1;
 
         push @formats, 'dvd' if ($dt_vis eq 'v' && $v_format eq 'v');
         push @formats, 'blue-ray' if ($dt_vis eq 'v' && $v_format eq 's');
     }
 
     if ($f007 && $f008) {
-        my $dt_vis = substr $f007->data, 0, 1;
-        my $e_format = substr $f008->data, 26, 1;
+        my $dt_vis = substr $f007_str, 0, 1;
+        my $e_format = substr $f008_str, 26, 1;
         push @formats, 'video-game' if ($dt_vis eq 'c' && $e_format eq 'g');
     }
 
@@ -107,8 +109,9 @@ func emit_format( MARC::Record $record ) {
 func emit_content( MARC::Record $record ) {
     my $rtype = substr $record->leader, 6, 1;
     my $f008 = $record->field('008');
-    return unless $f008;
-    my $fic_bio = substr $f008->data, 33, 2;
+    my $f008_str = sprintf( "%-40s", ($f008) ? $f008->data : '');
+    my $fic_bio = substr $f008_str, 33, 2;
+    return unless $fic_bio;
     my $content = "$rtype$fic_bio";
     $content =~ s/ /#/g;
     return $content;
@@ -116,7 +119,7 @@ func emit_content( MARC::Record $record ) {
 
 func emit_audience( MARC::Record $record ) {
     my $f008 = $record->field('008');
-    return undef unless $f008;
+    return undef unless $f008 && length($f008->data)>22;
     my $aud = substr $f008->data, 22, 1;
     return $aud eq ' ' ? '#' : $aud;
 }
@@ -210,7 +213,8 @@ func fullmarc( MARC::Record $record ) {
 }
 
 func title_sort( MARC::Field $f ){
-    my $nonfiling = $f->indicator(2) || 0;
+    my $nonfiling = $f->indicator(2);
+    $nonfiling = 0 unless $nonfiling =~ /\d/;
     return substr($f->subfield('a'), $nonfiling);
 }
 

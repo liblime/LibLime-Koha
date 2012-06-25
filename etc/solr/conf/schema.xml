@@ -305,6 +305,11 @@
     <field name="koha-tag" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="barcode" type="string" indexed="true" stored="false" multiValued="true"/>
 
+    <field name="koha-auth-number" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="auth-heading" type="text_en" indexed="true" stored="false" multiValued="true"/>
+    <field name="auth-heading-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
+    <field name="auth-full" type="text_en" indexed="true" stored="false" multiValued="true"/>
+
     <dynamicField name="*_i" type="int" indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="*_mi" type="int" indexed="true" stored="true" multiValued="true"/>
 
@@ -351,7 +356,7 @@
   <copyField source="title-nostem" dest="title_ph"/>
   <copyField source="title-nostem" dest="title_spell"/>
   <copyField source="title-nostem" dest="all_spell"/>
-  <copyField source="author-exact" dest="author_display"/>
+  <copyField source="author-exact" dest="author_mdisplay"/>
   <copyField source="author-exact" dest="author_spell"/>
   <copyField source="author-exact" dest="all_spell"/>
   <copyField source="author-full" dest="author_ph"/>

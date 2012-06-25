@@ -16,7 +16,7 @@ use Try::Tiny;
 use bytes;
 use File::Slurp;
 
-use WebService::Solr;
+use Koha::Solr::Service;
 use Koha::Solr::IndexStrategy::MARC;
 use Koha::Solr::Document::MARC;
 
@@ -31,6 +31,7 @@ my $use_solrqueue;
 my $verbose;
 my $export_dir;
 my $test;
+my $do_not_clear;
 
 my $kb_per_post = 200;
 
@@ -43,6 +44,7 @@ my $result = GetOptions(
     'e:s'           => \$export_dir,
     's'             => \$kb_per_post,
     't|test'        => \$test,
+    'k|keep'        => \$do_not_clear,
 );
 
 if (not $result or $want_help) {
@@ -62,6 +64,8 @@ my $SOFTDELETE = 'softDelete';
 
 # We can write out to a file or just post to solr server.
 
+my $solr = new Koha::Solr::Service;
+
 if($biblios){
     # Get all updates. 
     # Note this script does not handle deletes or soft-deletes.
@@ -76,8 +80,8 @@ if($biblios){
         $sth->execute($UPDATE);
     } else {
         # full reindex; delete all.
-        !$test && clear_bibs();
-        $sth = $dbh->prepare("SELECT biblionumber from biblio"); # TODO: Add deleted records.
+        !$test && !$do_not_clear && clear_bibs();
+        $sth = $dbh->prepare("SELECT biblionumber from biblio where biblionumber>=28692"); # TODO: Add deleted records.
         $sth->execute();
     }
 
@@ -124,15 +128,13 @@ if($biblios){
 sub post_to_solr{
     my $docs = shift;
     $verbose && warn "Posting to solr.";
-    my $solr = WebService::Solr->new(C4::Context->config('solrserver'));
     my $rv = $solr->add($docs);
     warn $rv;
 
 }
 
 sub clear_bibs {
-    my $solr = WebService::Solr->new(C4::Context->config('solrserver'));
-    my $rs = $solr->delete({ query => "*:*",fq => "rtype:bib" });
+    my $rs = $solr->delete({ query => "*:*" });
 }
 
 1;

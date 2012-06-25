@@ -52,7 +52,10 @@ method _build_source_handlers(Str @sources) {
                         return;
                     }
                     my $data = $field->data;
-                        return substr( $data, $position, $length );
+                    # pad with spaces if request is longer than field.
+                    my $requested_length = $position + $length;
+                    $data = sprintf( "%-${requested_length}s", $data);
+                    return substr( $data, $position, $length );
                 };
                 push @handlers, [$handler];
             }
