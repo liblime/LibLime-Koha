@@ -182,10 +182,14 @@
        <str name="qf">
          headings_s^25000
          headings_t^500
+         auth-heading^500
+         auth-full
        </str>
        <str name="pf">
          headings_s^25000
          headings_t^500
+         auth-heading
+         auth-full
        </str>
        
        <int name="ps">3</int>
@@ -205,6 +209,7 @@
          genre-form_auths,
          headings_s,
          marcxml,
+         kauthtype_s,
        </str>
 
      </lst>

@@ -30,23 +30,35 @@ use C4::Auth;
 use C4::Output;
 use C4::AuthoritiesMarc;
 use C4::Koha;    # XXX subfield_is_koha_internal_p
+use Koha::Solr::Service;
+use Koha::Solr::Query;
+use Koha::Pager;
 
 my $query        = new CGI;
 my $op           = $query->param('op') || '';
 my $authtypecode = $query->param('authtypecode') || '';
 my $dbh          = C4::Context->dbh;
 
-my $startfrom = $query->param('startfrom');
+my $start = $query->param('start') // 0;
 my $authid    = $query->param('authid');
-$startfrom = 0 if ( !defined $startfrom );
-my ( $template, $loggedinuser, $cookie );
+my $template_file = ($op eq 'do_search') ? "opac-authoritiessearchresultlist.tmpl" : "opac-authorities-home.tmpl";
+my ( $template, $loggedinuser, $cookie )= get_template_and_user(
+        {
+            template_name   => $template_file,
+            query           => $query,
+            type            => 'opac',
+            authnotrequired => 1,
+            debug           => 1,
+        }
+    );
 my $resultsperpage;
 
 my $authtypes = getauthtypes;
 my @authtypesloop;
-foreach my $thisauthtype ( sort { $authtypes->{$a}{'authtypetext'} cmp $authtypes->{$b}{'authtypetext'} }
-    keys %$authtypes )
-{
+$authtypecode = 'TOPIC_TERM' unless $authtypecode; # default search type.
+
+foreach my $thisauthtype ( sort { $authtypes->{$a}{'authtypetext'} cmp $authtypes->{$b}{'authtypetext'} } keys %$authtypes ){
+    next unless $thisauthtype; # There should be no default authority types.
     my $selected = 1 if $thisauthtype eq $authtypecode;
     my %row = (
         value        => $thisauthtype,
@@ -57,103 +69,44 @@ foreach my $thisauthtype ( sort { $authtypes->{$a}{'authtypetext'} cmp $authtype
 }
 
 if ( $op eq "do_search" ) {
-    my @marclist = ($query->param('marclista'),$query->param('marclistb'),$query->param('marclistc'));
-    my @and_or = ($query->param('and_ora'),$query->param('and_orb'),$query->param('and_orc'));
-    my @excluding = ($query->param('excludinga'),$query->param('excludingb'),$query->param('excludingc'),);
-    my @operator = ($query->param('operatora'),$query->param('operatorb'),$query->param('operatorc'));
-    my $orderby = $query->param('orderby');
-    my @value = ($query->param('valuea'),$query->param('valueb'),$query->param('valuec'),);
 
-    $resultsperpage = $query->param('resultsperpage');
-    $resultsperpage = 20 if ( !defined $resultsperpage );
-    my @tags;
-    my ( $results, $total ) =
-      SearchAuthorities( \@marclist, \@and_or, \@excluding, \@operator,
-        \@value, $startfrom * $resultsperpage,
-        $resultsperpage, $authtypecode, $orderby );
-    ( $template, $loggedinuser, $cookie ) = get_template_and_user(
-        {
-            template_name   => "opac-authoritiessearchresultlist.tmpl",
-            query           => $query,
-            type            => 'opac',
-            authnotrequired => 1,
-            debug           => 1,
-        }
-    );
+    my $idx = $query->param('idx');
+    my $q = $query->param('q');
+    my $sortby = $query->param('orderby');
+    my $query_string = ($idx eq 'auth-heading')? 'auth-heading:' : 'auth-full:';
+    $query_string .= $q;
+    my $options = { 'sort' => $sortby, 'fq' => "kauthtype_s:$authtypecode" };
+    $options->{start} = $start if $start;
+    my $solr = Koha::Solr::Service->new();
+    my $solr_query = Koha::Solr::Query->new( {query => $query_string, options => $options, rtype => 'auth', opac => 1} );
 
-    # multi page display gestion
-    my $displaynext = 0;
-    my $displayprev = $startfrom;
-    $total ||= 0;
-    if ( ( $total - ( ( $startfrom + 1 ) * ($resultsperpage) ) ) > 0 ) {
-        $displaynext = 1;
+    my $rs = $solr->search($solr_query->query,$solr_query->options);
+
+    my $resultset = ($rs->is_error) ? '' : $rs->content;
+    my $results = [];
+
+    for my $doc (@{$resultset->{response}->{docs}}){
+        my $record = MARC::Record->new_from_xml($doc->{marcxml},'utf8','MARC21'); 
+        my $summary = C4::AuthoritiesMarc::BuildSummary($record,undef,$authtypecode);
+        push @$results, {   summary => $summary,
+                            authid => $doc->{authid},
+                            authtype => $doc->{kauthtype_s},
+                            used => C4::AuthoritiesMarc::CountUsage($doc->{authid}),
+
+                        };
     }
+    my $resultsperpage;
+    my $total = $resultset->{'response'}->{'numFound'};
 
-    my @field_data = ();
+    my $pager = Koha::Pager->new({pageset => $rs->pageset, offset_param => 'start'});
 
-    foreach my $letter (qw/a b c/){
-        push @field_data, { term => "marclist$letter" , val => $query->param("marclist$letter") || ''};
-        push @field_data, { term => "and_or$letter" , val => $query->param("and_or$letter") || ''};
-        push @field_data, { term => "excluding$letter" , val => $query->param("excluding$letter") || ''};
-        push @field_data, { term => "operator$letter" , val => $query->param("operator$letter") || ''};
-        push @field_data, { term => "value$letter" , val => $query->param("value$letter") || ''};
-    }
-
-    my @numbers = ();
-
-    if ( $total > $resultsperpage ) {
-        for ( my $i = 1 ; $i < $total / $resultsperpage + 1 ; $i++ ) {
-            if ( $i < 16 ) {
-                my $highlight = 0;
-                ( $startfrom == ( $i - 1 ) ) && ( $highlight = 1 );
-                push @numbers,
-                  {
-                    number     => $i,
-                    highlight  => $highlight,
-                    searchdata => \@field_data,
-                    startfrom  => ( $i - 1 )
-                  };
-            }
-        }
-    }
-
-    my $from = $startfrom * $resultsperpage + 1;
-    my $to;
-
-    if ( $total < ( ( $startfrom + 1 ) * $resultsperpage ) ) {
-        $to = $total;
-    }
-    else {
-        $to = ( ( $startfrom + 1 ) * $resultsperpage );
-    }
-    $template->param( result => $results ) if $results;
-    $template->param( orderby => $orderby );
-    $template->param(
-        startfrom      => $startfrom,
-        displaynext    => $displaynext,
-        displayprev    => $displayprev,
-        resultsperpage => $resultsperpage,
-        startfromnext  => $startfrom + 1,
-        startfromprev  => $startfrom - 1,
-        searchdata     => \@field_data,
-        total          => $total,
-        from           => $from,
-        to             => $to,
-        numbers        => \@numbers,
-        authtypecode   => $authtypecode,
-        isEDITORS      => $authtypecode eq 'EDITORS',
-    );
-
-}
-else {
-    ( $template, $loggedinuser, $cookie ) = get_template_and_user(
-        {
-            template_name   => "opac-authorities-home.tmpl",
-            query           => $query,
-            type            => 'opac',
-            authnotrequired => 1,
-            debug           => 1,
-        }
+    $template->param(   result          => $results,
+                        orderby         => $sortby,
+                        total           => $total,
+                        authtypecode    => $authtypecode,
+                        pager           => $pager->tmpl_loop(),
+                        from            => $pager->first,
+                        to              => $pager->last(),
     );
 
 }

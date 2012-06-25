@@ -5,9 +5,10 @@ use Method::Signatures;
 use Moose;
 use namespace::autoclean;
 use CGI;
+use Data::Pageset;
 
 
-has pageset => ( is => 'rw', isa => 'Data::Pageset' );
+has pageset => ( is => 'rw', isa => 'Data::Pageset', handles => [qw( first last )] );
 has offset_param => ( is => 'rw', isa => 'Str', default => 'offset' );
 has url => ( is => 'rw', isa => 'Str', builder => '_get_url' );
 has mode => ( is => 'rw', isa => 'Str', default => 'offset' ); # governs whether to page by pageset increment or by 1.
@@ -49,7 +50,6 @@ method tmpl_loop {
                      url => $self->url,
                      offset_param => $self->offset_param,
                      };
-    #$pageloop->{previous_page_offset} =  $self->increment * ($self->pageset->previous_page - 1)) 
     if (defined $self->pageset->previous_page){
         $pageloop->{has_previous} = 1;
         if($self->mode eq 'offset'){
@@ -65,7 +65,6 @@ method tmpl_loop {
             $pageloop->{next_page_offset} = $self->pageset->next_page;
         }
     }
-    #$pageloop->{next_page_offset} =  $self->increment * ($self->pageset->next_page - 1)) if $self->pageset->next_page;
 
     return [ $pageloop ];
 }
