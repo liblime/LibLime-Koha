@@ -1233,7 +1233,7 @@ sub GetOpacSearchFilters {
     # we could cache the results of this function in the sysprefs cache itself.
     my $filter_string = C4::Context->preference('OPACQuickSearchFilter');
     $filter_string =~ s/[\n\s]*$//;
-    return unless $filter_string;
+    return undef unless $filter_string;
     my @filters = split('\n',$filter_string);
     my $any_string = "Any format";
 
@@ -1251,7 +1251,7 @@ sub GetOpacSearchFilters {
             @filters = sort map({label => $_->{'opaclib'}||$_->{lib}||$_->{'authorised_value'}, value => "mc-loc:$_->{'authorised_value'}"}, @$ccodes);
             $any_string = "Any location";
         } else {
-            return;
+            return undef;
         }
         @filters = sort {$a->{label} cmp $b->{label}} @filters;
     } else {

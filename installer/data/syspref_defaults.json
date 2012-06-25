@@ -605,12 +605,6 @@
       "value" : "0",
       "type" : "YesNo"
    },
-   "sortbynonfiling" : {
-      "explanation" : "Sort search results by MARC nonfiling characters (deprecated)",
-      "options" : null,
-      "value" : "0",
-      "type" : "YesNo"
-   },
    "timeout" : {
       "explanation" : "Inactivity timeout for cookies authentication (in seconds)",
       "options" : null,
@@ -766,6 +760,12 @@
       "options" : "local|http://yui.yahooapis.com/2.5.1/build",
       "value" : "local",
       "type" : "Choice"
+   },
+   "localJQuery" : {
+      "explanation" : "Use locally hosted jQuery & jQuery UI instead of CDN.  Using CDN-hosted media will almost always yield better performance (i.e. you should probably leave this OFF).",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
    },
    "barcodeValidationRoutine" : {
       "explanation" : "The type of barcode and routine against which barcodes will be checked for well-formed syntax.  Leave blank to allow any barcode string.",

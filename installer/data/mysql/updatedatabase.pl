@@ -4815,6 +4815,8 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $dbh->do("UPDATE systempreferences SET value= 'score' where variable like '%sortfield' and value='relevance'");
     $dbh->do("DELETE FROM systempreferences WHERE variable='ShowOPACAvailabilityFacetSearch'");
     $dbh->do("DELETE FROM systempreferences WHERE variable like 'query%'");
+    $dbh->do("DELETE FROM systempreferences WHERE variable='AdjustRelevancyRanking'");
+    $dbh->do("DELETE FROM systempreferences WHERE variable='sortbynonfiling'");
 
     print "Upgrade to $DBversion done ( Update System Prefs for Solr. )\n";
     SetVersion ($DBversion);
