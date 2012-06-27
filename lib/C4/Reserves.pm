@@ -1603,7 +1603,8 @@ sub _sendReserveCancellationLetter {
           = GetBiblioData($reserve->{biblionumber})
           or die sprintf "BIBLIONUMBER: %d\n", $reserve->{biblionumber};
       my $letter = C4::Letters::getletter( 'reserves', 'HOLD_CANCELLED');
-      my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');                
+      my $branch_details = GetBranchDetail( $reserve->{'branchcode'} );
+      my $admin_email_address = $branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');
 
       C4::Letters::parseletter( $letter, 'branches', $reserve->{branchcode} );
       C4::Letters::parseletter( $letter, 'borrowers', $reserve->{borrowernumber} );

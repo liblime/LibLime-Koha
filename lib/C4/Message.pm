@@ -6,6 +6,7 @@ use C4::Context;
 use C4::Letters;
 use YAML::Syck;
 use Carp;
+use C4::Branch qw( GetBranchDetail );
 
 =head1 NAME
 
@@ -133,6 +134,8 @@ sub enqueue {
     my ($class, $letter, $borrower, $transport) = @_;
     my $metadata   = _metadata($letter);
     my $to_address = _to_address($borrower, $transport);
+    my $branch_details = GetBranchDetail( $borrower->{branchcode} );
+    my $from_address = $branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');
     $letter->{metadata} = Dump($metadata);
     #carp "enqueuing... to $to_address";
     C4::Letters::EnqueueLetter({
@@ -140,6 +143,7 @@ sub enqueue {
         borrowernumber         => $borrower->{borrowernumber},
         message_transport_type => $transport,
         to_address             => $to_address,
+        from_address           => $from_address,
     });
 }
 
