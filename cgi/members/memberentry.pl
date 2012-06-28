@@ -313,28 +313,26 @@ if ( (defined $newdata{'userid'}) && ($newdata{'userid'} eq '')){
   
 $debug and warn join "\t", map {"$_: $newdata{$_}"} qw(dateofbirth dateenrolled dateexpiry);
 my $extended_patron_attributes = ();
-if ($op eq 'save' || $op eq 'insert'){
-  if (checkcardnumber($newdata{cardnumber},$newdata{borrowernumber})){ 
-    push @errors, 'ERROR_cardnumber';
-  } 
-  my $dateofbirthmandatory = (scalar grep {$_ eq "dateofbirth"} @field_check) ? 1 : 0;
-  if ($newdata{dateofbirth} && $dateofbirthmandatory) {
-    my $age = GetAge($newdata{dateofbirth});
-    my $borrowercategory=GetBorrowercategory($newdata{'categorycode'});   
-	 my ($min,$max) = ($borrowercategory->{'dateofbirthrequired'}, $borrowercategory->{'upperagelimit'});
-    $min ||= 0;
-    $max ||= 0;
-   
-      if (($max && ($age <= $max)) || ($age < $min)) {
-         push @errors, 'ERROR_age_limitations';
-         my $atLeast = $max+1;
-	      $template->param('ERROR_age_limitations' => "at least $atLeast"); # 18
-      }
-      elsif ($min && ($age > $max)) { # child only, not adult
-         push @errors, 'ERROR_age_limitations';
-         $template->param('ERROR_age_limitations' => "$min to $max"); # 0 to 17
-      }
-   }
+if ($op eq 'save' || $op eq 'insert') {
+    if (checkcardnumber($newdata{cardnumber},$newdata{borrowernumber})){
+        push @errors, 'ERROR_cardnumber';
+    }
+
+    my $dateofbirthmandatory = (scalar grep {$_ eq "dateofbirth"} @field_check) ? 1 : 0;
+    if ($newdata{dateofbirth} && $dateofbirthmandatory) {
+        my $age = GetAge($newdata{dateofbirth});
+        my $borrowercategory = GetBorrowercategory($newdata{categorycode});
+        my $min = $borrowercategory->{dateofbirthrequired} // 0;
+        my $max = $borrowercategory->{upperagelimit} // 0;
+
+        if ( ($max && $age > $max) || ($age < $min) ) {
+            push @errors, 'ERROR_age_limitations';
+
+            $template->param(
+                ERROR_age_limitations => 
+                ($max ? "between $min and $max" : "at least $min"));
+        }
+    }
   if (C4::Context->preference("IndependantBranches")) {
     if ($userenv && $userenv->{flags} % 2 != 1){
       $debug and print STDERR "  $newdata{'branchcode'} : ".$userenv->{flags}.":".$userenv->{branch};
