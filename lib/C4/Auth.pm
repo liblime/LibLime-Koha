@@ -354,9 +354,8 @@ sub get_template_and_user {
             $in->{query}->param('multibranchlimit') // $opacconf->{default_search_limit}{group});
 
         my $opac_search_limit
-            = $opacconf->{default_search_limit}{content}
-                // $ENV{OPAC_SEARCH_LIMIT}
-                // '';
+            = ($opacconf->{default_search_limit}{group}) ? '' :
+               $opacconf->{default_search_limit}{content} // $ENV{OPAC_SEARCH_LIMIT} // '';
         my $opac_limit_override
             = $opacconf->{default_search_limit}{override}
                 // $ENV{'OPAC_LIMIT_OVERRIDE'};
