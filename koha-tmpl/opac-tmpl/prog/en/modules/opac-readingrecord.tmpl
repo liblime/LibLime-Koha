@@ -58,12 +58,10 @@ function show_confirm() {
 </ul>
 <div class="tabs-container"><table id="readingrec">
 <tr>
-<th colspan="2"><!-- TMPL_UNLESS NAME="orderbytitle" --><a
-href="/cgi-bin/koha/opac-readingrecord.pl?order=title">Title</a><!--
-TMPL_ELSE -->Title<!-- /TMPL_UNLESS --></th>
+<th colspan="2"><!-- TMPL_UNLESS NAME="orderbytitle" --><!-- TMPL_IF NAME="showfulllink" --><!-- TMPL_IF NAME="limit" --><a href="/cgi-bin/koha/opac-readingrecord.pl?order=title&limit=50"><!-- TMPL_ELSE --><a href="/cgi-bin/koha/opac-readingrecord.pl?order=title&limit=full"><!-- /TMPL_IF --><!-- /TMPL_IF -->Title</a><!-- TMPL_ELSE -->Title<!-- /TMPL_UNLESS --></th>
 <!-- TMPL_UNLESS NAME="item-level_itypes" --><th>Item Type</th><!-- /TMPL_UNLESS -->
 <th>Call No.</th>
-<th><!-- TMPL_UNLESS NAME="orderbydate" --><a href="/cgi-bin/koha/opac-readingrecord.pl">Date</a><!-- TMPL_ELSE -->Date<!-- /TMPL_UNLESS --></th>
+<th><!-- TMPL_UNLESS NAME="orderbydate" --><!-- TMPL_IF NAME="showfulllink" --><!-- TMPL_IF NAME="limit" --><a href="/cgi-bin/koha/opac-readingrecord.pl?limit=50"><!-- TMPL_ELSE --><a href="/cgi-bin/koha/opac-readingrecord.pl?limit=full"><!-- /TMPL_IF --><!-- /TMPL_IF -->Date</a><!-- TMPL_ELSE -->Date<!-- /TMPL_UNLESS --></th>
 </tr>
 
 <!-- TMPL_LOOP NAME="READING_RECORD" -->
