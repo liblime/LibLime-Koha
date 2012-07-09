@@ -68,7 +68,7 @@ if ( $input->param('update') ) { ## Update the borrowers
                   'email', 'emailpro', 'fax', 'B_address', 'B_city', 'B_zipcode', 'B_phone', 'B_email',
                   'contactnote', 'altcontactfirstname', 'altcontactsurname', 'altcontactaddress1', 'altcontactaddress2',
                   'altcontactaddress3', 'altcontactzipcode', 'altcontactphone', 'branchcode', 'categorycode', 'sort1',
-                  'sort2', 'dateenrolled', 'dateexpiry', 'opacnote', 'borrowernotes', 'gonenoaddress', 'debarred', 'lost'
+                  'sort2', 'dateenrolled', 'dateexpiry', 'opacnote', 'borrowernotes', 'gonenoaddress', 'debarred', 'lost', 'disable_reading_history', 'exclude_from_collection'
                 );
    
   foreach my $field ( @fields ) {
@@ -94,6 +94,16 @@ if ( $input->param('update') ) { ## Update the borrowers
     $data{'lost'} = $input->param( 'lost' ); 
   } else {
     delete $data{'lost'};
+  }
+  if ( $input->param( 'disable_reading_history' ) >= 0 ) {
+    $data{'disable_reading_history'} = $input->param( 'disable_reading_history' ); 
+  } else {
+    delete $data{'disable_reading_history'};
+  }
+  if ( $input->param( 'exclude_from_collection' ) >= 0 ) {
+    $data{'exclude_from_collection'} = $input->param( 'exclude_from_collection' ); 
+  } else {
+    delete $data{'exclude_from_collection'};
   }
 
   if ( $data{'dateofbirth'} ) { $data{'dateofbirth'} =  format_date_in_iso( $data{'dateofbirth'} ); }
