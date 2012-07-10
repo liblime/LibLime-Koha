@@ -1,0 +1,1 @@
+Defines the Archetypes for Clubs and services.
