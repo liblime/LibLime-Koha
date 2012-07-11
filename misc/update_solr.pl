@@ -48,7 +48,7 @@ my $result = GetOptions(
 );
 
 if (not $result or $want_help) {
-    print_usage();
+    #print_usage();
     exit 0;
 }
 if (not $biblios and not $authorities) {
@@ -81,7 +81,7 @@ if($biblios){
     } else {
         # full reindex; delete all.
         !$test && !$do_not_clear && clear_bibs();
-        $sth = $dbh->prepare("SELECT biblionumber from biblio where biblionumber>=28692"); # TODO: Add deleted records.
+        $sth = $dbh->prepare("SELECT biblionumber from biblio"); # TODO: Add deleted records.
         $sth->execute();
     }
 
@@ -134,6 +134,7 @@ sub post_to_solr{
 }
 
 sub clear_bibs {
+    # delete won't take an fq or a qt.
     my $rs = $solr->delete({ query => "*:*" });
 }
 

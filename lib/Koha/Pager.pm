@@ -12,6 +12,7 @@ has pageset => ( is => 'rw', isa => 'Data::Pageset', handles => [qw( first last 
 has offset_param => ( is => 'rw', isa => 'Str', default => 'offset' );
 has url => ( is => 'rw', isa => 'Str', builder => '_get_url' );
 has mode => ( is => 'rw', isa => 'Str', default => 'offset' ); # governs whether to page by pageset increment or by 1.
+has extra_param => ( is => 'rw', isa => 'Str' );  # extra uri parameters.
 
 # instantiate a Koha::Pager object with a Data::Pageset object or
 # the params required for one, and get back an arrayref suitable
@@ -21,6 +22,7 @@ has mode => ( is => 'rw', isa => 'Str', default => 'offset' ); # governs whether
 
 # usage example:
 #
+
 
 method BUILD ($args) {
     # If we didn't get a pageset object, try to build it from other args.
@@ -42,13 +44,12 @@ method tmpl_loop {
         push @pager,  { pg => $_ ,
                     pg_offset => ($self->mode eq 'offset') ? ($_-1)*$self->pageset->entries_per_page : $_,
                     current_page => ($_==$self->pageset->current_page)?1:0,
-                   # offset_param => $self->offset_param,
-                   # url => $self->url,
                   }
     }
     my $pageloop = { page_numbers => \@pager,
                      url => $self->url,
                      offset_param => $self->offset_param,
+                     extra_param => $self->extra_param,
                      };
     if (defined $self->pageset->previous_page){
         $pageloop->{has_previous} = 1;

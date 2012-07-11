@@ -31,11 +31,11 @@ use DDP;
 
 my $koha_facets = sub {
     my $self = shift;
-    return unless C4::Context->preference('OpacFacets');
-    my $facet_spec = C4::Context->preference('OpacFacets');
+    return unless C4::Context->preference('SearchFacets');
+    my $facet_spec = C4::Context->preference('SearchFacets');
     my @facets;
     my $hits = $self->content->{response}->{numFound};
-    for my $facetspec (split(/\s*,\s*/,C4::Context->preference('OpacFacets'))){
+    for my $facetspec (split(/\s*,\s*/,C4::Context->preference('SearchFacets'))){
         my ($field, $display) = split(':',$facetspec);
         $display = $field unless $display;
         my $facet = $self->facet_counts->{facet_fields}->{$field};

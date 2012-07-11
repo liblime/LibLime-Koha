@@ -37,11 +37,11 @@ ln | 008[35-37] 041a 041d 041h 041j
 itemtype | 952y | itemtype_display | unique
 collection | 9528 | ccode_authval | unique
 location | 952c | loc_authval | unique
-#barcode | 952p | extract_barcode
+barcode | 952p
 
 isbn | 020a
 issn | 022a 440x 490x 730x 776x 780x 785x
-callnumber | 099ab 090ab 050ab | concat
+callnumber | 099ab 090ab 050ab 952o |
 callnumber-a | 099a 090a 050a
 
 lccn | 010az
@@ -64,6 +64,7 @@ item-json | 952 | itemify
 on-shelf-at | 952 | on_shelf_at | unique
 owned-by | 952 | owned_by | unique
 lost | 9521
+# record must have at least one item with lost value < 1.
 
 on_order_count | 942t
 in_process_count | 942u

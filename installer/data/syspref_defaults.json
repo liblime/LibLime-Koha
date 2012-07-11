@@ -1553,8 +1553,8 @@
       "value" : null,
       "type" : "Textarea"
    },
-   "OPACFacets" : {
-      "explanation" : "List of facets to display in OPAC 'Refine your search', separated by commas.  A label for the facet may be specified for each field.  Valid fields include: [ on-shelf-at, format, author-exact, topic, date, language,geo, collection, itemtype ]",
+   "SearchFacets" : {
+      "explanation" : "List of facets to display in search results, separated by commas.  A label for the facet may be specified for each field.  Valid fields include: [ on-shelf-at, format, author-exact, topic, date, language, geo, collection, itemtype ]",
       "options" : "",
       "value" : "on-shelf-at:Availability, format:Format, author-exact:Author, topic:Topic, date:Pub date, language:Language, geo:Region, collection:Collection, itemtype:Itemtype",
       "type" : "free"
