@@ -1,5 +1,5 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
-<title>Koha &rsaquo; Authorities &rsaquo; Authority search results</title>
+<title>Koha &rsaquo; Authorities &rsaquo; Authority search</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" >
 //<![CDATA[
@@ -30,7 +30,7 @@ function searchauthority() {
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="authorities-search.inc" -->
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/authorities/authorities-home.pl">Authorities</a> &rsaquo; Authority search results</div>
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/authorities/authorities-home.pl">Authorities</a><!-- TMPL_IF q --> &rsaquo; Authority search results<!-- /TMPL_IF --></div>
 
 <div id="doc" class="yui-t7">
    
@@ -39,10 +39,12 @@ function searchauthority() {
     <div class="yui-g">
     
     <!-- TMPL_INCLUDE NAME="authorities-toolbar.inc" -->
-<h1>Authority search results</h1>
 
 <!-- TMPL_IF name="total" -->
-<div class="paginationBar"><!-- TMPL_VAR NAME="pagination_bar" --></div>
+<h1>Authority search results</h1>
+    <div class="pager">
+        <!-- TMPL_INCLUDE page-numbers.inc -->
+    </div>
 
 <p id="authorities_searchresultlist_current_page_info">
   Results <!-- TMPL_VAR NAME="from" --> to <!-- TMPL_VAR NAME="to" --> of <!-- TMPL_VAR NAME="total" -->
@@ -52,9 +54,7 @@ function searchauthority() {
   <table>
     <tr>
       <th>Summary</th>
-<!-- TMPL_UNLESS name="isEDITORS" -->
       <th>Used in</th>
-<!-- /TMPL_UNLESS -->
       <th>Delete</th>
     </tr>
 <!-- TMPL_LOOP NAME="result" -->
@@ -66,7 +66,7 @@ function searchauthority() {
       <td><a href="detail.pl?authid=<!-- TMPL_VAR NAME="authid" -->"><!-- TMPL_VAR NAME="summary" --></a></td>
   <!-- TMPL_UNLESS name="isEDITORS" -->
       <td>
-        <a href="../catalogue/search.pl?type=intranet&amp;op=do_search&amp;idx=an&amp;q=<!--TMPL_VAR Name="authid" -->" class="button"><!-- TMPL_VAR NAME="used" --> biblio(s)</a>
+        <a href="../catalogue/search.pl?type=intranet&amp;op=do_search&amp;q=koha-auth-number:<!--TMPL_VAR Name="authid" -->" class="button"><!-- TMPL_VAR NAME="used" --> biblio(s)</a>
       </td>
   <!-- /TMPL_UNLESS -->
       <td>
@@ -79,10 +79,14 @@ function searchauthority() {
   </table>
 </div>
 
-<div class="paginationBar"><!-- TMPL_VAR NAME="pagination_bar" --></div>
+<div class="pager">
+    <!-- TMPL_INCLUDE page-numbers.inc -->
+</div>
 
 <!-- TMPL_ELSE -->
-  No results found
+  <!-- TMPL_IF q -->
+  <span class="noresults">No results found</span>
+  <!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 </div>
 </div>

@@ -4,20 +4,69 @@
 <style type="text/css">
 #custom-doc { width:51.46em;*width:50.17em;min-width:675px; margin:auto; text-align:left; } 
 </style>
+<script type="text/javascript">
+
+function jumpfull(page)
+{	
+    window.open(page,'','fullscreen,scrollbars');
+}
+</script>
 </head>
 <body>
 <div id="custom-doc" class="yui-t7">
-   
+
    <div id="bd">
-	<div id="yui-main">
-	<div class="yui-b"><div class="yui-g">
+           <div id="yui-main">
+	           <div class="yui-b"><div class="yui-g">
 
-<h1>Authority search</h1>
-<!-- TMPL_INCLUDE NAME="auth-finder-search.inc" -->
-
-	</div>
-	</div>
-   </div>
+    	<h1>Authority search<!-- TMPL_IF q --> results<!-- /TMPL_IF --></h1>
+    	<!-- TMPL_INCLUDE NAME="auth-finder-search.inc" -->
+    	<!-- TMPL_IF name="total" -->
+            <div class="pager">
+                <!-- TMPL_INCLUDE page-numbers.inc -->
+            <p><b>Results <!-- TMPL_VAR NAME="from" --> to <!-- TMPL_VAR NAME="to" --> of <!-- TMPL_VAR NAME="total" --></b></p>
+        <!-- TMPL_ELSE -->
+            <!-- TMPL_IF q -->
+                <p class="noresults">No results found</p>
+            <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="result" --><div id="resultlist">
+            <table>
+                <tr>
+                    <th>Summary</th>
+                    <th>Used</th>
+                    <th>Get It!</th>
+                    <th>Other action</th>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>
+                        <a href="javascript:jumpfull('blinddetail-biblio-search.pl?authid=0&amp;index=<!-- TMPL_VAR NAME="index" -->')" class="button">
+                            Clear
+                        </a>
+                    </td>
+                    <td>&nbsp;</td>
+                </tr>
+                <!-- TMPL_LOOP NAME="result" -->
+                    <tr>
+                        <td><!-- TMPL_VAR NAME="summary" --></td>
+                        <td><!-- TMPL_VAR NAME="used" --> times</td>
+                        <td>
+                            <a href="javascript:jumpfull('blinddetail-biblio-search.pl?authid=<!-- TMPL_VAR NAME="authid" -->&amp;index=<!-- TMPL_VAR NAME="index" -->')">choose</a>
+                        </td>
+                        <td><a href="authorities.pl?authid=<!-- TMPL_VAR NAME="authid" -->">Edit authority</a></td>
+                    </tr>
+                <!-- /TMPL_LOOP -->
+            </table>
+    
+        </div>
+        <div class="pager">
+            <!-- TMPL_INCLUDE page-numbers.inc -->
+        </div><!-- /TMPL_IF -->
+</div>
+</div>
+</div>
 </div>
 </div>
 <!-- TMPL_INCLUDE NAME="popup-bottom.inc" -->

@@ -1,55 +1,33 @@
-<form name="f" method="get" action="auth_finder.pl">
+<form name="f" method="get" action="authorities-home.pl">
             <input type="hidden" name="op" value="do_search" />
             <input type="hidden" name="type" value="intranet" />
-            <input type="hidden" name="nbstatements" value="<!-- TMPL_VAR NAME="nbstatements" -->" />
             <input type="hidden" name="index" value="<!-- TMPL_VAR NAME="index" -->" />
+
                 <fieldset class="rows"><ol><li>
                     <span class="label">Authority type</span>
                     <!-- TMPL_VAR NAME="authtypecode" -->
                     <input type="hidden" name="authtypecode" value="<!-- TMPL_VAR NAME="authtypecode" -->" />
                 </li>
+
                 <li>
-                    <label for="mainmainentry">Main entry ($a only)</label>
-                    <input type="hidden" name="marclist" value="mainmainentry" />
-                    <input type="hidden" name="and_or" value="and" />
-                    <input type="hidden" name="excluding" value="" />
-                    <select name="operator" id="mainmainentry">
+                    <label for="mainentry">Search </label>
+                <select name="idx">
+                    <option value="auth-heading">Main heading</option>
+                    <option value="auth-full">Full record</option>
+                </select>
+                <!--    <select name="operator" id="mainentry">
                         <option value="contains">contains</option>
                         <option value="start">starts with</option>
                         <option value="is">is exactly</option>
-                    </select>
-                    <input type="text" name="value_mainstr" value="<!-- TMPL_VAR ESCAPE="HTML" name="value_mainstr" -->" />
-                </li>
-                <li>
-                    <label for="mainentry">Main entry</label>
-                    <input type="hidden" name="marclist" value="mainentry" />
-                    <input type="hidden" name="and_or" value="and" />
-                    <input type="hidden" name="excluding" value="" />
-                    <select name="operator" id="mainentry">
-                        <option value="contains">contains</option>
-                        <option value="start">starts with</option>
-                        <option value="is">is exactly</option>
-                    </select>
-                    <input type="text" name="value_main" value="<!-- TMPL_VAR ESCAPE="HTML" name="value_main" -->" />
-                </li>
-                <li>
-                    <label for="marclist">Anywhere</label>
-                    <input type="hidden" name="marclist" value="" />
-                    <input type="hidden" name="and_or" value="and" />
-                    <input type="hidden" name="excluding" value="" />
-                    <select name="operator" id="marclist">
-                        <option value="contains">contains</option>
-                        <option value="start">starts with</option>
-                        <option value="is">is exactly</option>
-                    </select>
-                    <input type="text" name="value_any" value="<!-- TMPL_VAR ESCAPE="HTML" name="value_any" -->" />
+                    </select> -->
+                    <input type="text" name="q" id="search_terms" value="<!-- TMPL_VAR ESCAPE="HTML" name="q" -->" />
                 </li>
 		<li>
 		<label for="orderby">Sort by </label>
 		<select name="orderby" id="orderby">
 		    <option value="">No order</option>
-            <option value="HeadingAsc" selected="selected">Heading Ascendant</option>
-            <option value="HeadingDsc">Heading Descendant</option>
+            <option value="auth-heading-sort asc" selected="selected">Heading Ascendant</option>
+            <option value="auth-heading-sort desc">Heading Descendant</option>
         </select>
 		</li></ol></fieldset>
             <fieldset class="action"> <input type="submit" value="Start search" class="submit" /> <a class="cancel close" href="#">Cancel</a></fieldset>
