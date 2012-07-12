@@ -6,14 +6,14 @@
       "type" : "Textarea"
    },
    "AdvancedSearchLimits" : {
+      "options" : "70|10",
       "explanation" : "Add or remove the limits you would like to display in the Staff Advanced Search screen.  All options will be selected by default.  If this field is blank, no limits will be set",
-      "options" : null,
       "value" : "ItemTypes|CCodes|ShelvingLocations|Language|DateRange|LocationAvailability|Subtypes|SortBy",
       "type" : "Textarea"
    },
    "OPACAdvancedSearchLimits" : {
          "explanation" : "Add or remove the limits you would like to display in the OPAC Advanced Search screen.  All options will be selected by default.  If this field is blank, no limits will be set.",
-         "options" : null,
+      "options" : "70|10",
          "value" : "ItemTypes|CCodes|ShelvingLocations|Language|DateRange|LocationAvailability|Subtypes|SortBy",
          "type" : "Textarea"
    },
