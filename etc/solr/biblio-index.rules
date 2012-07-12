@@ -63,8 +63,8 @@ acqdate | 952d | most_recent
 item-json | 952 | itemify
 on-shelf-at | 952 | on_shelf_at | unique
 owned-by | 952 | owned_by | unique
-lost | 9521
-# record must have at least one item with lost value < 1.
+lost | 9521 | | dne_to_zero
+# record must have at least one item with lost value < 1, or no items at all.
 
 on_order_count | 942t
 in_process_count | 942u
