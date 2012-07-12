@@ -210,7 +210,7 @@ sub calculate {
     my $colorder;
     if ($column){
         $column = "old_issues.".$column if (($column=~/branchcode/) or ($column=~/timestamp/));
-        $column = "biblioitems.".$column if $column=~/itemtype/;
+        $column = "items.".$column if $column=~/itemtype/;
         $column = "borrowers.".$column if $column=~/categorycode/;
         my @colfilter ;
         $colfilter[0] = @$filters[0] if ($column =~ /timestamp/ )  ;
@@ -326,7 +326,7 @@ sub calculate {
     @$filters[3]=~ s/\*/%/g if (@$filters[3]);
     $strcalc .= " AND old_issues.returndate < '" . @$filters[3] ."'" if ( @$filters[3] );
     $strcalc = AddCondition( $strcalc, "old_issues.branchcode", @$filters[4], 0 ) if ( @$filters[4] );
-    $strcalc = AddCondition( $strcalc, "biblioitems.itemtype", @$filters[5], 0 ) if ( @$filters[5] );
+    $strcalc = AddCondition( $strcalc, "items.itype", @$filters[5], 0 ) if ( @$filters[5] );
     $strcalc = AddCondition( $strcalc, "borrowers.categorycode", @$filters[6], 0 ) if ( @$filters[6] );
     @$filters[7]=~ s/\*/%/g if (@$filters[7]);
     $strcalc .= " AND dayname(old_issues.timestamp) like '" . @$filters[7]."'" if (@$filters[7]);
