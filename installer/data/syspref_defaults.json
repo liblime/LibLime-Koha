@@ -164,7 +164,7 @@
    "EnableHoldOnShelfNotice" : {
       "explanation" : "If ON, allow hold awaiting pickup (holds shelf) notices to be sent.",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "PatronsPerPage" : {
@@ -338,7 +338,7 @@
    "BiblioAddsAuthorities" : {
       "explanation" : "If ON, adding a new biblio will check for an existing authority record and create one on the fly if one doesn't exist",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "OPACURLOpenInNewWindow" : {
@@ -362,7 +362,7 @@
    "BorrowerMandatoryField" : {
       "explanation" : "Choose the mandatory fields for a patron's account",
       "options" : null,
-      "value" : "zipcode|surname|cardnumber",
+      "value" : "surname|cardnumber",
       "type" : "free"
    },
    "AmazonCoverImages" : {
@@ -404,7 +404,7 @@
    "MarkLostItemsReturned" : {
       "explanation" : "If ON,will check in items (removing them from a patron list of checked out items) when they are marked as lost",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "CircAutocompl" : {
@@ -488,7 +488,7 @@
    "dontmerge" : {
       "explanation" : "If ON, modifying an authority record will not update all associated bibliographic records immediately, ask your system administrator to enable the merge_authorities.pl cron job",
       "options" : null,
-      "value" : "1",
+      "value" : "0",
       "type" : "YesNo"
    },
    "AmazonAssocTag" : {
@@ -500,7 +500,7 @@
    "EnableHoldExpiredNotice" : {
       "explanation" : "If ON, allow hold expiration notices to be sent.",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "AllowMultipleHoldsPerBib" : {
@@ -626,7 +626,7 @@
    "soundon" : {
       "explanation" : "Enable to turn on circulation sounds. Not available on all browsers.",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "Replica_user" : {
@@ -902,7 +902,7 @@
    "EnableHoldCancelledNotice" : {
       "explanation" : "If ON, allow hold cancellation notices to be sent.",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "PINESISBN" : {
@@ -1100,7 +1100,7 @@
    "XSLTResultsDisplay" : {
       "explanation" : "Enable XSL stylesheet control over results page display on OPAC WARNING: MARC21 Only",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "SessionStorage" : {
@@ -1328,7 +1328,7 @@
    "LinkLostItemsToPatron" : {
       "explanation" : "If set, items marked lost will be listed in the patron Lost Items list",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "OPACXSLTResultsDisplay" : {
@@ -1406,7 +1406,7 @@
    "XSLTDetailsDisplay" : {
       "explanation" : "Enable XSL stylesheet control over details page display on OPAC WARNING: MARC21 Only",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "SubscriptionHistory" : {
@@ -1694,7 +1694,7 @@
    "useDaysMode" : {
       "explanation" : "Choose the method for calculating due date: select Calendar to use the holidays module, and Days to ignore the holidays module",
       "options" : "Calendar|Days|Datedue",
-      "value" : "Calendar",
+      "value" : "Datedue",
       "type" : "Choice"
    },
    "PatronDisplayReturn" : {
@@ -1796,7 +1796,7 @@
    "EnhancedMessagingPreferences" : {
       "explanation" : "If ON, allows patrons to select to receive additional messages about items due or nearly due.",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "HideItypeInOPAC" : {
@@ -1862,7 +1862,7 @@
    "WarnOnlyOnMaxFine" : {
       "explanation" : "If UseGranularMaxFines and WarnOnlyOnMaxFine are both enabled,fine warnings will only occur when the fine for an item hits the max_fine attribute set in issuingrules.",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "OpacMainUserBlock" : {
@@ -1904,7 +1904,7 @@
    "TagsEnabled" : {
       "explanation" : "Enables or disables all tagging features.  This is the main switch for tags.",
       "options" : null,
-      "value" : "1",
+      "value" : "0",
       "type" : "YesNo"
    },
    "ThingISBN" : {
@@ -1964,7 +1964,7 @@
    "autoMemberNum" : {
       "explanation" : "If ON, patron number is auto-calculated",
       "options" : null,
-      "value" : "1",
+      "value" : "0",
       "type" : "YesNo"
    },
    "OAI-PMH:Subset" : {
@@ -1988,7 +1988,7 @@
    "UseGranularMaxFines" : {
       "explanation" : "If enabled,this allows you to define the max for an item by a combination of itemtype & patroncategory.",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "authoritysep" : {
@@ -2000,7 +2000,7 @@
    "GranularPermissions" : {
       "explanation" : "Use detailed staff user permissions",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "OwedNotificationValue" : {
@@ -2060,7 +2060,7 @@
    "UseGranularMaxHolds" : {
       "explanation" : "If enabled,this allows you to define the maximum number of holds by a combination of itemtype & patroncategory.",
       "options" : null,
-      "value" : "0",
+      "value" : "1",
       "type" : "YesNo"
    },
    "SyndeticsClientCode" : {
