@@ -144,6 +144,7 @@ my $norequests = 1;
 my $branches = GetBranches();
 my %itemfields;
 my $item_count = 0;
+my $other_count = 0;
 my $prefloc = C4::Context->preference("ItemLocation");
 
 foreach my $itm (@items) {
@@ -211,13 +212,20 @@ foreach my $itm (@items) {
        foreach my $istatus (@$itemstatuses) {
          if ($istatus->{'statuscode'} eq $itm->{'otherstatus'}) {
            $itm->{'otherstatus_description'} = $istatus->{'description'};
-           $norequests = 1 if (!$istatus->{'holdsallowed'});
+           if (!$istatus->{'holdsallowed'}) {
+              $other_count++;
+	   }
            last;
          }
        }
      }
      $items[$item_count] = $itm;
      $item_count++;
+}
+#allow holds if are available copies apart from items with non-holdable otherstatus settings; deny if aren't any other copies
+if ($other_count >= $item_count) 
+{
+	$norequests = 1;
 }
 ## get a more or less accurate count of reserves for this bib
 my($cnt,$toss) = C4::Reserves::GetReservesFromBiblionumber($biblionumber);
