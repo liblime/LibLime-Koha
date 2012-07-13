@@ -1816,6 +1816,7 @@ CREATE TABLE saved_sql (
    `report_name` varchar(255) default NULL,
    `type` varchar(255) default NULL,
    `notes` text,
+   `metadata` text(255),
    PRIMARY KEY  (`id`),
    KEY boridx (`borrowernumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -2795,6 +2796,20 @@ CREATE TABLE IF NOT EXISTS `receipt_template_assignments` (
   `code` varchar(20) default NULL,
   PRIMARY KEY  (`action`,`branchcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `xtags` (
+`id` int(11) NOT NULL auto_increment,
+`name` varchar(255) NOT NULL,
+PRIMARY KEY (`id`)
+)
+
+CREATE TABLE IF NOT EXISTS `xtags_and_saved_sql` (
+`id` int(11) NOT NULL auto_increment,
+`xtag_id` int(11) NOT NULL,
+`saved_sql_id` int(11) NOT NULL,
+UNIQUE (`xtag_id`, `saved_sql_id`),
+PRIMARY KEY (`id`)
+)
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

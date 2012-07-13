@@ -22,6 +22,7 @@ use warnings;
 use C4::Auth;
 use CGI;
 use C4::Output;
+use C4::Report;
 use C4::Reports::Guided;
 use C4::Dates;
 
@@ -52,6 +53,10 @@ my 	( $template, $borrowernumber, $cookie ) = get_template_and_user(
         debug           => 1,
     }
 	);
+
+my @tag_frequency = C4::Report->tag_frequency;
+$template->param(tag_frequency => \@tag_frequency);
+$template->param(redirect_to   => $ENV{REQUEST_URI});
 
 if ($phase eq 'View Dictionary'){
 	# view the dictionary we use to set up abstract variables such as all borrowers over fifty who live in a certain town
