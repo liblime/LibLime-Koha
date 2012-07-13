@@ -266,13 +266,14 @@ sub editbranchform {
 
     my $catinfo = GetBranchCategory();
     my @categoryloop = ();
+    my @rawcategoryloop = ();
     foreach my $cat (@$catinfo) {
         my $checked = "";
         my $tmp     = quotemeta( $cat->{'categorycode'} );
         if ( grep { /^$tmp$/ } @{ $data->{'categories'} } ) {
             $checked = "checked=\"checked\"";
         }
-        push @categoryloop, {
+        push @rawcategoryloop, {
             categoryname    => $cat->{'categoryname'},
             categorycode    => $cat->{'categorycode'},
             categorytype    => $cat->{'categorytype'},
@@ -280,6 +281,7 @@ sub editbranchform {
             checked         => $checked,
         };
     }
+    @categoryloop = sort  { uc($a->{'codedescription'}) cmp uc($b->{'codedescription'}) } @rawcategoryloop;
     $innertemplate->param( categoryloop => \@categoryloop );
 
     for my $obsolete ( 'categoryname', 'categorycode', 'codedescription' ) {
