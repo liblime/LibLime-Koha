@@ -29,6 +29,9 @@ use C4::XSLT;
 use C4::Branch;
 use URI::Escape;
 
+use Koha::Solr::Service;
+use Koha::Solr::Query;
+
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $DEBUG);
 
 # set the version for version checking
@@ -92,7 +95,7 @@ sub FindDuplicate {
     if ( $result->{isbn} ) {
         $result->{isbn} =~ s/\(.*$//;
         $result->{isbn} =~ s/\s+$//;
-        $query = "isbn=$result->{isbn}";
+        $query = "isbn:$result->{isbn}";
     }
     else {
         $result->{title} =~ s /\\//g;
@@ -100,12 +103,8 @@ sub FindDuplicate {
         $result->{title} =~ s /\(//g;
         $result->{title} =~ s /\)//g;
 
-        # FIXME: instead of removing operators, could just do
-        # quotes around the value
-        $result->{title} =~ s/(and|or|not)//g;
-        $query = "ti,ext=$result->{title}";
-        $query .= " and itemtype=$result->{itemtype}"
-          if ( $result->{itemtype} );
+        $query = "title:($result->{title})";
+        # $query .= " AND itemtype:$result->{itemtype}"  if ( $result->{itemtype} );
         if   ( $result->{author} ) {
             $result->{author} =~ s /\\//g;
             $result->{author} =~ s /\"//g;
@@ -114,22 +113,28 @@ sub FindDuplicate {
 
             # remove valid operators
             $result->{author} =~ s/(and|or|not)//g;
-            $query .= " and au,ext=$result->{author}";
+            $query .= " AND author-exact:($result->{author})";
         }
     }
 
     # FIXME: add error handling
-    my ( $error, $searchresults ) = SimpleSearch($query); # FIXME :: hardcoded !
-    my @results;
-    foreach my $possible_duplicate_record (@$searchresults) {
-        my $marcrecord =
-          MARC::Record->new_from_xml($possible_duplicate_record);
-        my $result = TransformMarcToKoha( $dbh, $marcrecord, '' );
+    my $solr = new Koha::Solr::Service;
+    my $solr_query = Koha::Solr::Query->new({query => $query, rtype => 'bib'});
+    my $rs = $solr->search($solr_query->query,$solr_query->options);
 
-        # FIXME :: why 2 $biblionumber ?
-        if ($result) {
-            push @results, $result->{'biblionumber'};
-            push @results, $result->{'title'};
+    my @results;
+    my $searchresults = $rs->content;
+    if(!$rs->is_error){
+        my $hits = $searchresults->{'response'}->{'numFound'};
+        if($hits){
+            for my $doc (@{$searchresults->{response}->{docs}}) {
+                my $marcrecord = MARC::Record->new_from_xml($doc->{marcxml});
+                my $result = TransformMarcToKoha( $dbh, $marcrecord, '' );
+                if ($result) {
+                    push @results, $result->{'biblionumber'};
+                    push @results, $result->{'title'};
+                }
+            }
         }
     }
     return @results;

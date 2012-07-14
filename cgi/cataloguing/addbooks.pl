@@ -73,29 +73,25 @@ if ($query) {
    if (C4::Context->preference('itembarcodelength') && $query !~ /\D/) {
       my $originalQ = $query;
       $expandedBarcode = C4::Circulation::barcodedecode(barcode=>$originalQ);
-      $query = "bc=$expandedBarcode or biblionumber=$query";
+      $query = "barcode:$expandedBarcode OR biblionumber:$query";
       if ((length($originalQ)==13) || (length($originalQ)==10)) {
-         $query .= " or isbn=$originalQ";
+         $query .= " OR isbn:$originalQ";
       }
    }
     # find results
     my $offset = $results_per_page * ($page - 1);
-    my ( $error, $marcresults, $total_hits ) = SimpleSearch($query, $offset, $results_per_page);
-
-    if ( defined $error ) {
-        $template->param( error => $error );
-        warn "error: " . $error;
-        output_html_with_http_headers $input, $cookie, $template->output;
-        exit;
-    }
+    #my ( $error, $marcresults, $total_hits ) = SimpleSearch($query, $offset, $results_per_page);
+    my $solr = Koha::Solr::Service->new();
+    my $q_param = {query => $query, rtype => 'bib'};
+    $q_param->{options} = { start => $offset } if $offset;
+    my ($results,$hits) = $solr->simpleSearch(Koha::Solr::Query->new($q_param), display => 1);
 
     # format output
     # SimpleSearch() give the results per page we want, so 0 offet here
-    my $total = scalar @$marcresults;
-    my @newresults = searchResults( $query, $total, $results_per_page, 0, 0, 0, @$marcresults );
+    my $total = scalar @$results;
 
    # try to find exact match and warp speed to Edit Items
-   foreach my $result(@newresults) {
+   foreach my $result(@$results) {
       my(@barcodes) = split(/\s*\|\s*/,$$result{barcode});
       foreach my $i(0..$#barcodes) {
          if ($barcodes[$i] eq $expandedBarcode) { # exact search match on barcode
@@ -110,10 +106,11 @@ if ($query) {
    }
 
     $template->param(
-        total          => $total_hits,
+        total          => $hits,
         query          => $query,
-        resultsloop    => \@newresults,
-        pagination_bar => pagination_bar( "/cgi-bin/koha/cataloguing/addbooks.pl?q=$query&", getnbpages( $total_hits, $results_per_page ), $page, 'page' ),
+        resultsloop    => $results,
+        #TODO: replace pagination_bar with Koha::Pager
+        pagination_bar => pagination_bar( "/cgi-bin/koha/cataloguing/addbooks.pl?q=$query&", getnbpages( $hits, $results_per_page ), $page, 'page' ),
     );
 
 }

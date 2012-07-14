@@ -310,6 +310,13 @@
     <field name="auth-heading-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
     <field name="auth-full" type="text_en" indexed="true" stored="false" multiValued="true"/>
 
+    <field name="Match-heading-see-from" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="Subject-heading-thesaurus" type="string" indexed="true" stored="false" multiValued="false"/>
+    <field name="Heading-use-subject-added-entry" type="string" indexed="true" stored="false" multiValued="false"/>
+    <field name="Heading-use-main-or-added-entry" type="string" indexed="true" stored="false" multiValued="false"/>
+    <field name="Heading-use-series-added-entry" type="string" indexed="true" stored="false" multiValued="false"/>
+
+
     <dynamicField name="*_i" type="int" indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="*_mi" type="int" indexed="true" stored="true" multiValued="true"/>
 

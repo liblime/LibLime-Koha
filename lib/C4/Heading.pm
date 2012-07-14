@@ -118,10 +118,13 @@ heading.
 
 sub authorities {
     my $self = shift;
-    my $query = qq(Match-heading,ext="$self->{'search_form'}");
+    my $query = qq(auth-heading:"$self->{'search_form'}");
     $query .= $self->_query_limiters();
-    my ($error, $results, $total_hits) = SimpleSearch( $query, undef, undef, [ "authorityserver" ] );
-    return $results;
+
+    my $solr = Koha::Solr::Service->new();
+    my ($results,$hits) = $solr->simpleSearch(Koha::Solr::Query->new({query => $query, rtype => 'auth'}) );
+    my @xmlresults = map($_->{marcxml}, @$results);
+    return \@xmlresults;
 }
 
 =head2 preferred_authorities
@@ -139,10 +142,12 @@ that are a preferred form of the heading.
 
 sub preferred_authorities {
     my $self = shift;
-    my $query = "Match-heading-see-from,ext='$self->{'search_form'}'";
+    my $query = "Match-heading-see-from:'$self->{'search_form'}'";
     $query .= $self->_query_limiters();
-    my ($error, $results, $total_hits) = SimpleSearch( $query, undef, undef, [ "authorityserver" ] );
-    return $results;
+    my $solr = Koha::Solr::Service->new();
+    my ($results,$hits) = $solr->simpleSearch(Koha::Solr::Query->new({query => $query, rtype => 'auth'}) );
+    my @xmlresults = map($_->{marcxml}, @$results);
+    return \@xmlresults;
 }
 
 =head1 INTERNAL METHODS
@@ -154,16 +159,16 @@ sub preferred_authorities {
 sub _query_limiters {
     my $self = shift;
 
-    my $limiters = " AND at='$self->{'auth_type'}'";
+    my $limiters = " AND kauthtype_s:'$self->{'auth_type'}'";
     if ($self->{'subject_added_entry'}) {
-        $limiters .= " AND Heading-use-subject-added-entry=a"; # FIXME -- is this properly in C4::Heading::MARC21?
-        $limiters .= " AND Subject-heading-thesaurus=$self->{'thesaurus'}";
+        $limiters .= " AND Heading-use-subject-added-entry:a"; # FIXME -- is this properly in C4::Heading::MARC21?
+        $limiters .= " AND Subject-heading-thesaurus:$self->{'thesaurus'}";
     }
     if ($self->{'series_added_entry'}) {
-        $limiters .= " AND Heading-use-series-added-entry=a"; # FIXME -- is this properly in C4::Heading::MARC21?
+        $limiters .= " AND Heading-use-series-added-entry:a"; # FIXME -- is this properly in C4::Heading::MARC21?
     }
     if (not $self->{'subject_added_entry'} and not $self->{'series_added_entry'}) {
-        $limiters .= " AND Heading-use-main-or-added-entry=a" # FIXME -- is this properly in C4::Heading::MARC21?
+        $limiters .= " AND Heading-use-main-or-added-entry:a" # FIXME -- is this properly in C4::Heading::MARC21?
     }
     return $limiters;
 }

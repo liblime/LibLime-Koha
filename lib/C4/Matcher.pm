@@ -26,6 +26,8 @@ use MARC::Record;
 use MARC::File::XML;
 use C4::Search;
 use C4::Biblio;
+use Koha::Solr::Service;
+use Koha::Solr::Query;
 
 use vars qw($VERSION);
 
@@ -663,12 +665,14 @@ sub get_matches {
         my @source_keys = _get_match_keys($source_record, $matchpoint);
         next if scalar(@source_keys) == 0;
         # build query
-        my $query = join(" or ", map { "$matchpoint->{'index'}=$_" } @source_keys);
+        my $query = join(" OR ", map { "$matchpoint->{'index'}:$_" } @source_keys);
         # FIXME only searching biblio index at the moment
-        my ($error, $searchresults, $total_hits) = SimpleSearch($query, 0, $max_matches);
+        #my ($error, $searchresults, $total_hits) = SimpleSearch($query, 0, $max_matches);
+        my $solr = Koha::Solr::Service->new();
+        my ($searchresults,$hits) = $solr->simpleSearch(Koha::Solr::Query->new({query => $query, rtype => 'bib', options => { fl => 'marcxml' }}));
+        
 
-        warn "search failed ($query) $error" if $error;
-        foreach my $matched (@$searchresults) {
+        foreach my $matched ( map($_->{marcxml}, @$searchresults)) {
             $matches{$matched} += $matchpoint->{'score'};
         }
     }

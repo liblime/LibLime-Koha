@@ -23,7 +23,6 @@
         </select>
         <input id="value_mainentry" type="text" name="q" value="<!-- TMPL_VAR NAME="q" -->" />
         <select name="orderby">
-            <option value="">None</option>
             <option value="auth-heading-sort asc" selected="selected">Heading A-Z</option>
             <option value="auth-heading-sort desc">Heading Z-A</option>
         </select>
@@ -52,7 +51,6 @@
         </select>
         <input id="value_mainmainentry" type="text" name="q" value="<!-- TMPL_VAR NAME="q" -->" />
         <select name="orderby">
-            <option value="">None</option>
             <option value="auth-heading-sort asc" selected="selected">Heading A-Z</option>
             <option value="auth-heading-sort desc">Heading Z-A</option>
         </select>

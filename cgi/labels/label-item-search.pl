@@ -30,12 +30,15 @@ use C4::Output qw(output_html_with_http_headers);
 use Koha;
 use C4::Context;
 use C4::Dates;
-use C4::Search qw(SimpleSearch);
+#use C4::Search qw(SimpleSearch);
 use C4::Biblio qw(TransformMarcToKoha);
 use C4::Items qw(GetItemInfosOf get_itemnumbers_of);
 use C4::Koha qw(GetItemTypes);    # XXX subfield_is_koha_internal_p
 use C4::Labels::Lib qw(html_table);
 use C4::Debug;
+
+use Koha::Solr::Service;
+use Koha::Solr::Query;
 
 BEGIN {
     $debug = $debug || $cgi_debug;
@@ -50,12 +53,12 @@ my $query = new CGI;
 my $type      = $query->param('type');
 my $op        = $query->param('op') || '';
 my $batch_id  = $query->param('batch_id');
-my $ccl_query = $query->param('ccl_query');
+my $user_query = $query->param('user_query');
 my $startfrom = $query->param('startfrom') || 1;
 my ($template, $loggedinuser, $cookie) = (undef, undef, undef);
 my (
     $total_hits,  $orderby, $results,  $total,  $error,
-    $marcresults, $idx,     $datefrom, $dateto, $ccl_textbox
+    $marcresults, $idx,     $datefrom, $dateto, $q
 );
 my $resultsperpage = C4::Context->preference('numSearchResults') || '20';
 my $show_results = 0;
@@ -68,10 +71,12 @@ my $display_columns = [ {_add                   => {label => "Add Item", link_fi
 
 if ( $op eq "do_search" ) {
     $idx         = $query->param('idx');
-    $ccl_textbox = $query->param('ccl_textbox');
-    if ( $ccl_textbox && $idx ) {
-        $ccl_query = "$idx=$ccl_textbox";
-    }
+    $q = $query->param('q');
+    if ( $idx ) {
+        $user_query = "$idx:($q)";
+    } elsif ($q) {
+        $user_query = $q;
+    } #else from query->param
 
     $datefrom = $query->param('datefrom');
     $dateto   = $query->param('dateto');
@@ -88,25 +93,20 @@ if ( $op eq "do_search" ) {
         }
     );
 
-    if ($datefrom) {
-        $datefrom = C4::Dates->new($datefrom);
-        $ccl_query .= ' and ' if $ccl_textbox;
-        $ccl_query .=
-          "acqdate,st-date-normalized,ge=" . $datefrom->output("iso");
-    }
-
-    if ($dateto) {
-        $dateto = C4::Dates->new($dateto);
-        $ccl_query .= ' and ' if ( $ccl_textbox || $datefrom );
-        $ccl_query .= "acqdate,st-date-normalized,le=" . $dateto->output("iso");
+    if($datefrom || $dateto){
+        $datefrom = "*" unless $datefrom;
+        $dateto = "*" unless $dateto;
+        $query .= " AND acqdate:[$datefrom TO $dateto]";
     }
 
     my $offset = $startfrom > 1 ? $startfrom - 1 : 0;
-    ( $error, $marcresults, $total_hits ) =
-      SimpleSearch( $ccl_query, $offset, $resultsperpage );
-
-    if (scalar($marcresults) > 0) {
-        $show_results = scalar @$marcresults;
+   # ( $error, $marcresults, $total_hits ) = SimpleSearch( $user_query, $offset, $resultsperpage );
+    my $solr = Koha::Solr::Service->new();
+    my $q_param = {query => $user_query, rtype => 'bib'};
+    $q_param->{options} = {start => $offset} if($offset);
+    ($results,$total_hits) = $solr->simpleSearch(Koha::Solr::Query->new($q_param) );
+    if (scalar($results) > 0) {
+        $show_results = scalar @$results;
     }
     else {
         $debug and warn "ERROR label-item-search: no results from SimpleSearch";
@@ -125,7 +125,7 @@ if ($show_results) {
    
     my $fdate = my $tdate = 0;
     my $ge = my $le = '';
-    my $cq = $query->param('ccl_query');
+    my $cq = $query->param('user_query');
     if ($cq) {
        ($fdate) = $cq =~ /ge=(\d{4}\-\d\d\-\d\d)/;
        ($tdate) = $cq =~ /le=(\d{4}\-\d\d\-\d\d)/;
@@ -138,9 +138,11 @@ if ($show_results) {
     $tdate =~ s/\D//g;
 
     for ( my $i = 0 ; $i < $hits ; $i++ ) {
+        my $marcrecord = ($results->[$i]->{marcxml}) ?
+                MARC::Record->new_from_xml($results->[$i]->{marcxml}) : C4::Biblio::GetMarcBiblio($results->[$i]->{biblionumber}) ;
         my @row_data= ();
         #DEBUG Notes: Decode the MARC record from each resulting MARC record...
-        my $marcrecord = MARC::Record->new_from_xml($marcresults->[$i],'UTF-8',C4::Context->preference('marcflavour'));
+        #my $marcrecord = MARC::Record->new_from_xml($marcresults->[$i],'UTF-8',C4::Context->preference('marcflavour'));
         #DEBUG Notes: Transform it to Koha form...
         my $biblio = TransformMarcToKoha( C4::Context->dbh, $marcrecord, '' );
         #DEBUG Notes: Stuff the bib into @biblio_data...
@@ -248,7 +250,7 @@ if ($show_results) {
         batch_id  => $batch_id,
         type      => $type,
         idx       => $idx,
-        ccl_query => $ccl_query,
+        user_query => $user_query,
     );
 }
 

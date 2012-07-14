@@ -2,11 +2,14 @@ package Koha::Solr::Service;
 
 # This is just a convenience wrapper to hide the 
 # mechanism for determining which solr server to
-# hit.  It doesn't do anything interesting now
-# beyond saving 33 keystrokes.
+# hit.  Also approximates C4::Search's old SimpleSearch interface,
+# and monkeypatches WS::Solr::Response to include koha- specific facet method.
+
 
 use Moose;
+use Method::Signatures;
 use C4::Context;
+use Koha::Solr::Query;
 
 extends 'WebService::Solr';
 
@@ -22,9 +25,19 @@ around BUILDARGS => sub {
     }
 };
 
-# Class method
-# Would be nice to subclass WS::Solr::Response and add facet handling
-# there.
+method simpleSearch ( Koha::Solr::Query $query, Bool :$display ) {
+    # analog of C4::Search::SimpleSearch.
+    # returns just an arrayref of docs, the total number of hits, and a pager object.
+    # if display => 1, then it passes results through C4::Search::searchResults adding display elements to the hashes.
+    my $rs = $self->search($query->query,$query->options);
+    if($rs->is_error){
+        return( undef, 0);
+    } else {
+        my @docs = ($display) ? map(C4::Search::searchResultDisplay($_),@{$rs->content()->{response}->{docs}}) : @{$rs->content()->{response}->{docs}};
+        return( \@docs, $rs->content->{'response'}->{'numFound'} );
+    }
+}
+
 # Hack facet handling into WS::Solr::Response...
 
 use DDP;

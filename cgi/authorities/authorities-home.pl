@@ -116,7 +116,6 @@ if ( $op eq "delete" ) {
     $template->param(   result          => $results,
                         orderby         => $sortby,
                         total           => $total,
-                        authtypecode    => $authtypecode,
                         q               => $q,
                         pager           => $pager->tmpl_loop(),
                         from            => $pager->first,
@@ -125,8 +124,9 @@ if ( $op eq "delete" ) {
 
 }
 
-$template->param( authtypesloop => \@authtypesloop,
+$template->param( authtypesloop   => \@authtypesloop,
                   index           => $query->param('index'),
+                  authtypecode    => $authtypecode,
                 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

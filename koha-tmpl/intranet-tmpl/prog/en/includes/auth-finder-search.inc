@@ -25,9 +25,8 @@
 		<li>
 		<label for="orderby">Sort by </label>
 		<select name="orderby" id="orderby">
-		    <option value="">No order</option>
-            <option value="auth-heading-sort asc" selected="selected">Heading Ascendant</option>
-            <option value="auth-heading-sort desc">Heading Descendant</option>
+            <option value="auth-heading-sort asc" selected="selected">Heading A-Z</option>
+            <option value="auth-heading-sort desc">Heading Z-A</option>
         </select>
 		</li></ol></fieldset>
             <fieldset class="action"> <input type="submit" value="Start search" class="submit" /> <a class="cancel close" href="#">Cancel</a></fieldset>

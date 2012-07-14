@@ -27,6 +27,8 @@ use Koha;
 use C4::Context;
 use C4::AuthoritiesMarc;
 use Getopt::Long;
+use Koha::Solr::Service;
+use Koha::Solr::Query;
 
 my ($test,@authtypes);
 my $want_help = 0;
@@ -60,9 +62,12 @@ my $totdeleted=0;
 my $totundeleted=0;
 while (my $data=$rqselect->fetchrow_hashref){
     my $query;
-    $query= "an=".$data->{'authid'};
+    $query= "koha-auth-number:".$data->{'authid'};
     # search for biblios mapped
-    my ($err,$res,$used) = C4::Search::SimpleSearch($query,0,10);
+    #my ($err,$res,$used) = C4::Search::SimpleSearch($query,0,10);
+    my $solr = Koha::Solr::Service->new();
+    my ($ignore,$hits) = $solr->simpleSearch(Koha::Solr::Query->new({query => $query, rtype => 'bib'}) );
+
     print ".";
     print "$counter\n" unless $counter++ % 100;
     # if found, delete, otherwise, just count
