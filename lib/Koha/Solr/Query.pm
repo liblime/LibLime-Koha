@@ -240,6 +240,10 @@ sub _build_query_from_cgi{
     #}
     my @limit_loop = map { limit_desc => $_ , limit => $_ }, @userlimits;
 
+    #explicitly request facets.
+    my @facets = map {/(\S*):/; $1;} split(/\s*,\s*/,C4::Context->preference('SearchFacets'));
+    $options->{'facet.field'} = \@facets;
+
     $self->options($options);
     $self->uri($query_uri);
     $self->limits(\@limit_loop);
