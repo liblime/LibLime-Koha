@@ -2985,6 +2985,8 @@ sub _koha_delete_biblio {
 
         # save the record in deletedbiblio
         # find the fields to save
+        # remove timestamp from list
+        delete $data->{timestamp};
         my $query = "INSERT INTO deletedbiblio SET ";
         my @bind  = ();
         foreach my $temp ( keys %$data ) {
@@ -3036,6 +3038,8 @@ sub _koha_delete_biblioitems {
 
         # save the record in deletedbiblioitems
         # find the fields to save
+        # remove timestamp from list
+        delete $data->{timestamp};
         my $query = "INSERT INTO deletedbiblioitems SET ";
         my @bind  = ();
         foreach my $temp ( keys %$data ) {
