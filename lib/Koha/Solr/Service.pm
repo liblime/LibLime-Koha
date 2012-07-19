@@ -5,10 +5,11 @@ package Koha::Solr::Service;
 # hit.  Also approximates C4::Search's old SimpleSearch interface,
 # and monkeypatches WS::Solr::Response to include koha- specific facet method.
 
-
+use Koha;
 use Moose;
 use Method::Signatures;
 use C4::Context;
+use C4::Branch;
 use Koha::Solr::Query;
 
 extends 'WebService::Solr';
@@ -55,11 +56,22 @@ my $koha_facets = sub {
         next if(!$facet || scalar(@$facet) == 0 || (scalar(@$facet) == 2 && $facet->[1] == $hits)); #i.e. facet won't reduce resultset.
         my @results;
         for(my $i=0; $i<scalar(@$facet); $i+=2){
-            push @results, { display_value => $facet->[$i], value => "\"$facet->[$i]\"", count => $facet->[$i+1] };
+            my $display_value = $facet->[$i];
+            given ($field){
+                when ('on-shelf-at'){
+                    $display_value = C4::Branch::GetBranchName($facet->[$i]);
+                } when ('itemtype'){
+                    $display_value = C4::Koha::getitemtypeinfo($facet->[$i])->{description};
+                } when ('collection'){
+                    my $ccode = C4::Koha::GetAuthorisedValue('CCODE',$facet->[$i]);
+                    $display_value = $ccode->{opaclib} || $ccode->{lib};
+                }
+            }
+            push @results, { display_value => $display_value, value => "\"$facet->[$i]\"", count => $facet->[$i+1] } if($facet->[$i]);
         }
         # artificially add wildcard on availability (it's a facet query defined in solrconfig.xml)
         # There may be a better way to do this.
-        if($field eq 'availability_facet' || $field eq 'on-shelf-at'){
+        if($field eq 'on-shelf-at'){
             unshift @results, { value => "*", count => $self->facet_counts->{facet_queries}->{"on-shelf-at:*"}, display_value => "Anywhere" };
         }
         push @facets, { field => $field, display => $display, 'values' => \@results };

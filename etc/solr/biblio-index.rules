@@ -34,9 +34,9 @@ audience | record | emit_audience
 language | 008[35-37] | map_language
 ln | 008[35-37] 041a 041d 041h 041j
 
-itemtype | 952y | itemtype_display | unique
-collection | 9528 | ccode_authval | unique
-location | 952c | loc_authval | unique
+itemtype | 952y | | unique
+collection | 9528 | | unique
+location | 952c | | unique
 barcode | 952p
 
 isbn | 020a
@@ -63,7 +63,7 @@ acqdate | 952d | most_recent
 item-json | 952 | itemify
 on-shelf-at | 952 | on_shelf_at | unique
 owned-by | 952 | owned_by | unique
-lost | 9521 | | dne_to_zero
+lost | 9521 | | min_or_zero
 # record must have at least one item with lost value < 1, or no items at all.
 
 on_order_count | 942t

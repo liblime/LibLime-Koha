@@ -153,35 +153,6 @@ func emit_authids( MARC::Record $record ) {
         keys %{$C4::Heading::MARC21::bib_heading_fields};
 }
 
-#func kv_file(Str $filename){
-#    # read key=value file and return a hash.
-#    my %hash = ();
-#    foreach my $line ( @{[read_file($filename)]} ){
-#        next if $line =~ /^\s*#/;
-#        my ($k,$v) = split(/\s*=\s*/, $line);
-#        if(defined $v){
-#            $v =~ s/\r+\n+//g;
-#            $hash{$k} = $v;
-#        }
-#    }
-#    return \%hash;
-#}
-#
-## TODO: Move translation maps into another module which
-## loads all hashes on initialization.
-#our $map_dir = C4::Context->config('basedir') . '/etc/solr/translation_map';
-#our $translation_map = {
-#    # FIXME: Some report that File::Slurp may not handle unicode well.
-#    # To support multiple languages, we'll need a dir structure.
-#    language => kv_file($map_dir.'/language.map'),
-#    callnum => kv_file($map_dir.'/callnum.map'),
-#    country => kv_file($map_dir.'/country.map'),
-#    composition_era => kv_file($map_dir.'/composition_era.map'),
-#    instrument => kv_file($map_dir.'/instrument.map'),
-#    formatgroups => kv_file($map_dir.'/formatgroups.map'),
-#};
-
-
 func on_shelf_at( MARC::Field @f952s ) {
     return map { $_->subfield('b') }
         grep { ! $_->subfield('q') && ! $_->subfield('1') } @f952s; # i.e. not onloan and not itemlost.
@@ -197,7 +168,14 @@ func owned_by( MARC::Field @f952s ) {
 }
 
 func dne_to_zero( Str @strings ) {
-    return @strings || (0);
+    if(@strings){
+        return @strings;
+    } else {
+        return 0;
+    }
+}
+func min_or_zero( Str @strings ) {
+    return List::Util::min(@strings) || 0;
 }
 
 func fullmarc( MARC::Record $record ) {
