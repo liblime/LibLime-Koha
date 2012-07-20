@@ -407,6 +407,8 @@ elsif ($phase eq 'Run this report'){
         }
         my $totpages = int($total/$limit) + (($total % $limit) > 0 ? 1 : 0);
         my $url = "/cgi-bin/koha/reports/guided_reports.pl?reports=$report&phase=Run%20this%20report";
+        if ( $params->{'specified_param'}){
+            $url .= "&specified_param=". $params->{'specified_param'};}
         $template->param(
             'results' => \@rows,
             'sql'     => $sql,
