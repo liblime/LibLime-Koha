@@ -23,6 +23,7 @@ use C4::XSLT;
 use MARC::Record;
 use URI::Escape;
 use Koha::Pager;
+use DDP;
 
 my $DisplayMultiPlaceHold = C4::Context->preference("DisplayMultiPlaceHold");
 # create a new CGI object
