@@ -72,6 +72,7 @@ my $koha_facets = sub {
         # artificially add wildcard on availability (it's a facet query defined in solrconfig.xml)
         # There may be a better way to do this.
         if($field eq 'on-shelf-at'){
+            unshift @results, { field => "url", value => "*", count => $self->facet_counts->{facet_queries}->{"url:*"}, display_value => "Online" };
             unshift @results, { value => "*", count => $self->facet_counts->{facet_queries}->{"on-shelf-at:*"}, display_value => "Anywhere" };
         }
         push @facets, { field => $field, display => $display, 'values' => \@results };

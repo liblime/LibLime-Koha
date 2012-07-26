@@ -290,6 +290,8 @@
     <field name="cn-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
 
     <field name="marcxml" type="string" indexed="false" stored="true" multiValued="false"/>
+    <field name="catdate" type="tdate" indexed="true" stored="true" multiValued="false"/>
+    <field name="has-url" type="int" indexed="true" stored="false" multiValued="false"/>
 
     <field name="item-json" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="on-shelf-at" type="string" indexed="true" stored="true" multiValued="true"/>

@@ -10,9 +10,11 @@ use MARC::File::XML;
 use Locale::Language qw( code2language );
 use C4::Heading::MARC21;
 use C4::Koha;
+use C4::Biblio;
 use C4::Tags;
 use File::Slurp;
 use JSON;
+
 
 func emit_id( MARC::Record $record ) {
     my $leader = $record->leader;
@@ -220,6 +222,16 @@ func emit_tags( Str $biblionumber ){
 
 func as_marcxml( MARC::Record $record ) {
     return $record->as_xml;
+}
+
+func clean_year( Str @strings ){
+    s/\D//g for @strings;
+    return @strings;
+}
+
+func emit_datecreated( Str $biblionumber ){
+    my ($wtf, @bib) = C4::Biblio::GetBiblio($biblionumber);
+    return $bib[0]->{datecreated} . "T00:00:00Z" ;
 }
 
 1;

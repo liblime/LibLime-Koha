@@ -141,6 +141,7 @@
        <str name="facet">true</str>
        <str name="facet.mincount">1</str>
        <str name="facet.query">on-shelf-at:*</str>
+       <str name="facet.query">url:*</str>
        <str name="facet.limit">12</str>
        <str name="facet.field">on-shelf-at</str>
        <str name="facet.field">author-exact</str>
