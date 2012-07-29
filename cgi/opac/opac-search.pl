@@ -19,6 +19,7 @@ use C4::Languages qw(getAllLanguages);
 use POSIX qw(ceil floor strftime);
 use C4::Branch; # GetBranches
 use Text::Aspell;
+use Encode;
 
 my $DisplayMultiPlaceHold = C4::Context->preference("DisplayMultiPlaceHold");
 # create a new CGI object
@@ -36,33 +37,24 @@ use vars qw($cache $MRXorig);
 # The max_size may need to be increased for very busy sites.
 
 no warnings qw(redefine);
-$cache = CHI->new(driver => 'Memory', global => 1, max_size => 3_000_000, expires_in => 120);
+$cache = CHI->new(driver => 'RawMemory', global => 1,
+                  max_size => 3_000_000, expires_in => 120);
 $MRXorig = \&MARC::Record::new_from_xml;
 local *MARC::Record::new_from_xml = \&MRXcached;
 
 sub MRXcached {
     my $xml = shift;
-    if ($xml eq 'MARC::Record') {
-        $xml = shift;
-    }
-    my $matchme = substr($xml, 0, 1024);
-    # Very similar records may not have differentiable data within
-    # the first 1k, so tack on a bit from the record's tail, too.
-    $matchme .= substr($xml, -255);
-    my $key = Digest::SHA1::sha1($matchme);
+    $xml = shift
+        if $xml eq 'MARC::Record';
+    my @args = @_;
 
-    my $frozen = $cache->get($key);
-    my $record;
-    if (!defined $frozen) {
-        $record = $MRXorig->($xml, @_);
-        $frozen = Storable::freeze($record);
-        $cache->set($key, $frozen);
-    }
-    else {
-        $record = Storable::thaw($frozen);
-    }
+    # Cat the record's top and bottom to maximize probability of uniqueness.
+    my $matchme = substr($xml, 0, 255) . substr($xml, -255);
+    my $key = Digest::SHA1::sha1( Encode::encode_utf8($matchme) );
 
-    return $record;
+    my $record = $cache->compute( $key, '1m', sub { $MRXorig->($xml, @args)} );
+
+    return ($record) ? $record->clone : undef;
 };
 
 my ($template,$borrowernumber,$cookie);
