@@ -299,7 +299,7 @@ if(!$rs->is_error){
     my $i = 0;
     foreach my $doc (@{$results->{response}->{docs}}){
         $i++;
-        my $bib = C4::Search::searchResultDisplay($doc);
+        my $bib = C4::Search::searchResultDisplay($doc, 1);
         $bib->{result_number} = $offset + $i;
         push @newresults, $bib;
     }

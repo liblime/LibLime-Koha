@@ -111,8 +111,6 @@ C4::Context - Maintain and manipulate the context of a Koha script
 
   $db_handle = C4::Context->dbh;
 
-  $Zconn = C4::Context->Zconn;
-
   $stopwordhash = C4::Context->stopwords;
 
 =head1 DESCRIPTION
@@ -158,8 +156,6 @@ environment variable to the pathname of a configuration file to use.
 #    file (/etc/koha/koha-conf.xml).
 # dbconn
 #    A Koha::RoseDB for the appropriate database for this context.
-# Zconn
-#     A connection object for the Zebra server
 
 # Koha's main configuration file koha-conf.xml
 # is searched for according to this priority list:
@@ -317,7 +313,6 @@ sub new {
 
     $ENV{TZ} = $self->{config}{timezone} || $ENV{TZ};
     $self->{dbconn} = undef;        # Database handle
-    $self->{"Zconn"} = undef;    # Zebra Connections
     $self->{"stopwords"} = undef; # stopwords list
     $self->{"marcfromkohafield"} = undef; # the hash with relations between koha table fields and MARC field/subfield
     $self->{"userenv"} = undef;        # User env
@@ -331,10 +326,6 @@ sub new {
 }
 
 sub DESTROY {
-    my $self = shift;
-    for (values %{$self->{Zconn}}) {
-        $_->destroy();
-    }
 }
 
 sub getcache {
@@ -577,113 +568,6 @@ sub AUTOLOAD
     config($self,$AUTOLOAD);
 # we are not necessarily blessed
 #    return $self->config($AUTOLOAD);
-}
-
-=item Zconn
-
-$Zconn = C4::Context->Zconn
-
-Returns a connection to the Zebra database for the current
-context. If no connection has yet been made, this method 
-creates one and connects.
-
-C<$self> 
-
-C<$server> one of the servers defined in the koha-conf.xml file
-
-C<$async> whether this is a asynchronous connection
-
-C<$auth> whether this connection has rw access (1) or just r access (0 or NULL)
-
-
-=cut
-
-sub Zconn {
-    my $self=shift;
-    my $server=shift;
-    my $async=shift;
-    my $auth=shift;
-    my $piggyback=shift;
-    my $syntax=shift;
-    my $explain=shift;
-
-    if ( defined($context->{"Zconn"}->{$server}) && (0 == $context->{"Zconn"}->{$server}->errcode()) ) {
-        return $context->{"Zconn"}->{$server};
-    # No connection object or it died. Create one.
-    }else {
-        # release resources if we're closing a connection and making a new one
-        # FIXME: this needs to be smarter -- an error due to a malformed query or
-        # a missing index does not necessarily require us to close the connection
-        # and make a new one, particularly for a batch job.  However, at
-        # first glance it does not look like there's a way to easily check
-        # the basic health of a ZOOM::Connection
-        $context->{"Zconn"}->{$server}->destroy() if defined($context->{"Zconn"}->{$server});
-
-        $context->{"Zconn"}->{$server} = &_new_Zconn($server,$async,$auth,$piggyback,$syntax,$explain);
-        return $context->{"Zconn"}->{$server};
-    }
-}
-
-=item _new_Zconn
-
-$context->{"Zconn"} = &_new_Zconn($server,$async);
-
-Internal function. Creates a new database connection from the data given in the current context and returns it.
-
-C<$server> one of the servers defined in the koha-conf.xml file
-
-C<$async> whether this is a asynchronous connection
-
-C<$auth> whether this connection has rw access (1) or just r access (0 or NULL)
-
-=cut
-
-sub _new_Zconn {
-    my ($server,$async,$auth,$piggyback,$syntax,$explain) = @_;
-
-    my $tried=0; # first attempt
-    my $Zconn; # connection object
-    $server = "biblioserver" unless $server;
-    if (!$syntax) {
-      $syntax = ($server eq 'biblioserver') ? 'xml' : 'usmarc';
-    }
-    my $host = $context->{'listen'}->{$server}->{'content'};
-    my $servername = $context->{"config"}->{$server};
-    my $user = $context->{"serverinfo"}->{$server}->{"user"};
-    my $password = $context->{"serverinfo"}->{$server}->{"password"};
-    $auth = 1 if($user && $password);
-    if ($explain) {
-      $servername = 'IR-Explain-1';
-      $syntax = 'xml';
-    }
-    retry:
-    eval {
-        # set options
-        my $o = new ZOOM::Options();
-        $o->option(user=>$user) if $auth;
-        $o->option(password=>$password) if $auth;
-        $o->option(async => 1) if $async;
-        $o->option(count => $piggyback) if $piggyback;
-        $o->option(cqlfile=> $context->{"server"}->{$server}->{"cql2rpn"});
-        $o->option(cclfile=> $context->{"serverinfo"}->{$server}->{"ccl2rpn"});
-        $o->option(preferredRecordSyntax => $syntax);
-        $o->option(maximumRecordSize => 4096000);
-        $o->option(elementSetName => "F"); # F for 'full' as opposed to B for 'brief'
-        $o->option(databaseName => ($servername?$servername:"biblios"));
-
-        # create a new connection object
-        $Zconn= create ZOOM::Connection($o);
-
-        # forge to server
-        $Zconn->connect($host, 0);
-
-        # check for errors and warn
-        if ($Zconn->errcode() !=0) {
-            warn "something wrong with the connection: ". $Zconn->errmsg();
-        }
-
-    };
-    return $Zconn;
 }
 
 =item dbh
