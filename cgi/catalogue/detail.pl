@@ -294,7 +294,6 @@ $template->param(
 	itemdata_uri        => $itemfields{uri},
 	itemdata_copynumber => $itemfields{copynumber},
 	volinfo				=> $itemfields{enumchron} || $dat->{'serial'} ,
-	z3950_search_params	=> C4::Search::z3950_search_args($dat),
 	C4::Search::enabled_staff_search_views,
    q  => $query->param('q')
 );

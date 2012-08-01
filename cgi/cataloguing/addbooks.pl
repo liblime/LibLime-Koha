@@ -153,7 +153,6 @@ $template->param(
     frameworkcodeloop => \@frameworkcodeloop,
     breeding_count    => $countbr,
     breeding_loop     => $breeding_loop,
-    z3950_search_params => C4::Search::z3950_search_args($query),
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;
