@@ -258,8 +258,8 @@
     <field name="author-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
     <field name="author-full" type="text_nostem" indexed="true" stored="false" multiValued="true"/>
 
-    <field name="subject" type="lowercase" indexed="true" stored="true" multiValued="true"/>
-    <field name="subject-full" type="text_en" indexed="true" stored="true" multiValued="true"/>
+    <field name="subject-exact" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="subject" type="text_en" indexed="true" stored="true" multiValued="true"/>
     <field name="topic" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="geo" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="era" type="string" indexed="true" stored="true" multiValued="true"/>
@@ -369,8 +369,8 @@
   <copyField source="author-exact" dest="author_spell"/>
   <copyField source="author-exact" dest="all_spell"/>
   <copyField source="author-full" dest="author_ph"/>
-  <copyField source="subject-full" dest="subject_spell"/>
-  <copyField source="subject-full" dest="all_spell"/>
+  <copyField source="subject" dest="subject_spell"/>
+  <copyField source="subject" dest="all_spell"/>
   <!-- <copyField source="subject" dest="subject_mdisplay"/>
   <copyField source="publisher_ms" dest="publisher_mdisplay"/> -->
   <!-- <copyField source="text" dest="text_ngram"/> -->
