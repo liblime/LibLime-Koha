@@ -90,8 +90,11 @@
        <str name="q.op">AND</str>
        <str name="q.alt">*:*</str>
        <str name="f.title.qf">title-nostem^100 title-full^10 title-alt^10 series-title uniform-title</str>
+       <str name="f.ti.qf">title-nostem^100 title-full^10 title-alt^10 series-title uniform-title</str>
        <str name="f.author.qf">author-exact^100 author-full</str>
+       <str name="f.au.qf">author-exact^100 author-full</str>
        <!-- <str name="f.subject.qf">subject</str> -->
+       <str name="f.su.qf">subject</str>
 
        <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
 
