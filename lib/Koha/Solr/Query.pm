@@ -18,6 +18,7 @@ use Method::Signatures;
 use WebService::Solr::Query;
 use Search::QueryParser;
 use URI::Escape;
+use List::MoreUtils qw(each_array);
 
 use C4::Context;
 use C4::Branch;
@@ -74,57 +75,63 @@ sub _build_query_from_cgi{
     my $cgi = $self->cgi();
 
     my $query = '';
-    my @q = $cgi->param('q');
-    my @idx = $cgi->param('idx');
-    my @op = $cgi->param('op');
     my $z3950_param = {};
-    for(my $i=0;$i<=$#q;$i++){
-        next if(!$q[$i]);
-        $query .= sprintf(" %s ", uc($op[$i-1])) if $query;
-        $q[$i] =~ s/^\s+|\s+$//g;
-        if(!$idx[$i]){
-            # user may have specified field.  In this case, we assume they used proper syntax. (should only happen when idx=='').
-            # TODO: Move this into the _parse_query_string method, expanding it to properly group and split on bool operators.
-            # Could then also add phrase slop to phrases.
-            $query .= $q[$i];
+    my $params = each_array(
+        @{[$cgi->param('q')]},
+        @{[$cgi->param('idx')]},
+        @{[undef, $cgi->param('op')]} # pad the ops
+        );
 
-        } else {
+    while ( my ($q, $idx, $op) = $params->() ) {
+        next unless $q;
+
+        $query .= sprintf ' %s ', uc($op)
+            if $query;
+
+        if ( !$idx ) {
+            # user may have specified field. In this case, we assume
+            # they used proper syntax. (should only happen when idx=='').
+            # TODO: Move this into the _parse_query_string method,
+            # expanding it to properly group and split on bool
+            # operators. Could then also add phrase slop to phrases.
+            $query .= $q;
+        }
+        else {
             # Add grouping for this field if not quoted and multiple terms.
-            if($q[$i] !~ /^".*"$/ && $q[$i] !~ /^(.*)$/ && $q[$i] =~ /\S+\s+\S+/){
-                $q[$i] = "(" . $q[$i] . ")";
+            if( $q !~ /^".*"$/ && $q !~ /^(.*)$/ && $q =~ /\S+\s+\S+/ ) {
+                $q = "($q)";
             }
             # If barcode search, expand with prefix.
-            if($idx[$i] eq 'barcode'){
-                my $full_bc =  C4::Circulation::barcodedecode(barcode => $q[$i]);
-                $q[$i] = $full_bc;
-                $self->looks_like_barcode($full_bc);
+            if( $idx eq 'barcode' ) {
+                $q = C4::Circulation::barcodedecode(barcode => $q);
+                $self->looks_like_barcode($q);
             }
-            $query .= "$idx[$i]:$q[$i]";
+            $query .= "$idx:$q";
         }
-        # FIXME: This would be better placed within the z3950 search script,
-        # but since we don't have a query parser in place, we stash it in the query object
-        # to prevent having to parse the query in that script.
-        if(grep($idx[$i], qw/ title lccn isbn issn title author dewey subject /)){
-            $z3950_param->{$idx[$i]} = ($z3950_param->{$idx[$i]}) ? $z3950_param->{$idx[$i]} . " " . $q[$i] : $q[$i];
-        } else {
-            my $captured_index = 0;
-            if(!$idx[$i]){
-                my ($f,$term) = split(':',$q[$i]);
-                if($term && grep($term, qw/ title lccn isbn issn title author dewey subject /)){
-                    $z3950_param->{$f} = ($z3950_param->{$f}) ? $z3950_param->{$f} . " " . $term : $term;
-                    $captured_index = 1;
-                }
-            }
-            unless($captured_index){
-                # Note any/srchany doesn't actually work in z9550_search.pl ( FIXME )
-                $z3950_param->{any} = ($z3950_param->{any}) ? $z3950_param->{any} . " " . $q[$i] : $q[$i];
-            }
+
+        # FIXME: This would be better placed within the z3950 search
+        # script, but since we don't have a query parser in place, we
+        # stash it in the query object to prevent having to parse the
+        # query in that script.
+        my @fields =  qw/ title lccn isbn issn title author dewey subject /;
+        if ( grep($idx, @fields) ) {
+            $z3950_param->{$idx} =
+                ($z3950_param->{$idx}) ? $z3950_param->{$idx} . ' ' . $q : $q;
+        }
+        elsif ( !$idx ) {
+            my ($f, $term) = split(':', $q);
+            # FIXME:Note any/srchany doesn't actually work in z3950_search.pl
+            ($f = 'any', $term = $q)
+                unless ( $f ~~ [@fields] );
+            $z3950_param->{$f} =
+                ($z3950_param->{$f}) ? $z3950_param->{$f} . ' ' . $term : $term;
         }
     }
     $self->z3950_param($z3950_param);
+
     # set simple query params so masthead can rebuild form elements.
-        #  If user has entered a multi-field query, don't do it.
-        #  FIXME: This regex won't do what we want on quoted queries.
+    # If user has entered a multi-field query, don't do it.
+    # FIXME: This regex won't do what we want on quoted queries.
     my $queried_fields = () = $query =~ /\w+:/g;
     if($queried_fields < 2){
         my ($f,$qstr) = split(/:\s*/,$query);
@@ -222,7 +229,7 @@ sub _build_query_from_cgi{
     my $options = {};
     $options->{fq} = \@fq if(@fq);
     $options->{'sort'} = $sort if $sort;
-    $options->{start} = $offset if $offset;
+    $options->{start} = $offset;
     $options->{rows} = $results_per_page;
     # $options->{echoParams} = 'explicit';  # WS::Solr needs to get rows back from solr for Data::Pageset.  (set in handler config).
     #
