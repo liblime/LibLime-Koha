@@ -63,6 +63,11 @@ sub MRXcached {
 
 my ($template,$borrowernumber,$cookie);
 
+# searching with a blank 'q' matches everything
+if (!$cgi->param('q') && defined $cgi->param('q') ) {
+    $cgi->param('q' => '*');
+}
+
 # decide which template to use
 my $template_name;
 my $search_form = 1;
