@@ -8,15 +8,44 @@ use Koha::Solr::IndexStrategy::MARC;
 use Koha::Solr::Document::MARC;
 use Koha::Changelog::DBLog;
 use File::Slurp;
+use DateTime;
+use Getopt::Long qw(GetOptions);
+use Log::Dispatch;
+use Log::Dispatch::Screen;
 use Carp;
 
-my $solr = WebService::Solr->new( C4::Context->config('solr')->{url} );
-my $metadoc = get_metadoc($solr);
-my $log = Koha::Changelog::DBLog->new( rtype => 'biblio' );
-my $todos = $log->get_todos( $metadoc->value_for('timestamp') );
+our $log = Log::Dispatch->new();
 
+my ($all) = (0);
+my $optcheck = GetOptions(
+    'a|all!' => \$all,
+    'v|verbose!' => sub {
+        $log->add( Log::Dispatch::Screen->new(
+                       min_level=>'info', newline=>1, stderr=>1))
+    },
+    );
+
+my $solr = WebService::Solr->new( C4::Context->config('solr')->{url} );
+my $timestamp = get_timestamp($solr);
+
+my $todos;
+if ( $all ) {
+    $log->info('Collecting all bibs');
+    my $bibnums = C4::Context->dbh->selectcol_arrayref(
+        'SELECT biblionumber FROM biblio');
+    my $now = DateTime->now->ymd . ' ' . DateTime->now->hms;
+    $todos = [ map { {id=>$_, action=>'update', stamp=>$now} } @{$bibnums} ];
+}
+else {
+    $log->info("Collecting bibs updated since $timestamp");
+    $todos = Koha::Changelog::DBLog
+        ->new( rtype => 'biblio' )
+        ->get_todos( $timestamp );
+}
+
+$log->info('Processing '.@$todos.' bibs');
 my $youngest_ts = process_list($solr, $todos);
-update_metadoc($solr, $youngest_ts);
+update_timestamp($solr, $youngest_ts);
 
 exit;
 
@@ -36,33 +65,45 @@ sub process_list {
     %updates = map { $_ => 1 } grep { ! exists $deletes{$_} } keys %updates;
 
     my @delete_ids = map { 'bib_'.$_} keys %deletes;
+    $log->info('Deleting '. @delete_ids .' docs');
     $solr->delete( {id => \@delete_ids} );
 
     my $rules_text = read_file( C4::Context->config('solr')->{biblio_rules} );
     my $r = Koha::Solr::IndexStrategy::MARC->new( rules_text => $rules_text );
     my @update_docs;
+    my $update_count = 0;
     for ( keys %updates ) {
         my $record = GetMarcWithItems($_);
         next unless $record;
+        $update_count++;
         push @update_docs, Koha::Solr::Document::MARC->new(
             record => $record, strategy => $r );
+        if (@update_docs >= 500) {
+            $log->info('Uploading batch');
+            $solr->add( \@update_docs );
+            @update_docs = ();
+        }
     }
-    $solr->add( \@update_docs );
+    $solr->add( \@update_docs ) if @update_docs;
+    $solr->commit;
+    $log->info("Updated $update_count docs");
 
     return $youngest_ts;
 }
 
-sub update_metadoc {
+sub update_timestamp {
     my ($solr, $youngest_ts) = @_;
+    $log->info('Updated timestamp is '.($youngest_ts ? $youngest_ts : '(undef)'));
     return unless $youngest_ts;
 
-    $metadoc = WebService::Solr::Document->new(
+    my $metadoc = WebService::Solr::Document->new(
         id => 'bibupdate', rtype => 'meta',
         timestamp => $youngest_ts );
     $solr->update($metadoc);
+    return;
 }
 
-sub get_metadoc {
+sub get_timestamp {
     my $solr = shift;
 
     my $tsres = $solr->search(
@@ -80,5 +121,5 @@ sub get_metadoc {
     else {
         ($metadoc) = $tsres->docs;
     }
-    return $metadoc;
+    return $metadoc->value_for('timestamp');
 }

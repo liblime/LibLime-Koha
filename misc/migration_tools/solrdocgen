@@ -9,6 +9,7 @@ use C4::AuthoritiesMarc qw( GetAuthority );
 use File::Slurp qw( read_file );
 use Getopt::Long qw( GetOptions );
 use Carp;
+use Encode qw(encode_utf8);
 
 my %jump = (
     auths => {
@@ -50,8 +51,8 @@ for my $j ( values %jump ) {
     for ( @$todos ) {
         my $record = $j->{get_record}($_);
         next unless $record;
-        say Koha::Solr::Document::MARC->new(
-            record => $record, strategy => $r );
+        say encode_utf8( Koha::Solr::Document::MARC->new(
+            record => $record, strategy => $r ));
     }
 }
 say '</add>' if $preamble;
