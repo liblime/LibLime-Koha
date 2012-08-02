@@ -28,9 +28,10 @@
 	<select name="idx" id="masthead_search" class="left" style="max-width:10em;width:10em;">
         <option value="">Library Catalog</option>
         <option value="title">Title</option>
+        <option value="title-browse">Title (browse)</option>
         <option value="author">Author</option>
         <option value="subject">Subject</option>
-		<option value="isbn">ISBN</option>
+        <option value="isbn">ISBN</option>
         <option value="series-title">Series</option>
         <option value="callnumber">Call Number</option>
     </select>

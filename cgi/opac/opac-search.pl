@@ -222,6 +222,28 @@ my $facets; # this object stores the faceted results that display on the left-ha
 use Koha::Solr::Service;
 use Koha::Solr::Query;
 
+# Check for a title browse query
+if ($cgi->param('idx') ~~ 'title-browse') {
+    my $offset = $cgi->param('offset');
+    unless ( defined $offset ) {
+        # determine the proper offset value
+        $cgi->param('idx' => 'title-sort');
+        $cgi->param('q' => ('[* TO '. $cgi->param('q') .']') );
+        my $solr = new Koha::Solr::Service;
+        my $solr_query
+            = Koha::Solr::Query->new({cgi => $cgi, opac => 1, rtype => 'bib'});
+        my $rs = $solr->search( $solr_query->query, $solr_query->options );
+        my $hits = $rs->content->{response}{numFound};
+        $offset = $hits - 1;
+    }
+
+    # now override with the browse parameters
+    $cgi->delete('idx');
+    $cgi->param('q' => '*');
+    $cgi->param('sort' => 'title-sort asc');
+    $cgi->param('offset' => $offset);
+}
+
 my $solr = new Koha::Solr::Service;
 
 my $solr_query = Koha::Solr::Query->new({cgi => $cgi, opac => 1, rtype => 'bib'});
