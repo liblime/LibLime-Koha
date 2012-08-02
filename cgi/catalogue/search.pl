@@ -263,16 +263,17 @@ if ($#advanced_search_limits >= 0 && grep(/ItemTypes/i,@advanced_search_limits) 
 
 if ( $#advanced_search_limits >= 0 && grep(/CCodes/i,@advanced_search_limits)  ) {
     my $advsearchtypes = GetAuthorisedValues('CCODE');
+    my $cnt1;
 
-    for my $thisitemtype (sort {$a->{'lib'} cmp $b->{'lib'}} @$advsearchtypes) {
+    for my $thisccode (sort {$a->{'lib'} cmp $b->{'lib'}} @$advsearchtypes) {
         my %row =(
-                number=>$cnt++,
-                ccl => $advanced_search_types,
-                code => $thisitemtype->{authorised_value},
+                number=>$cnt1++,
+                ccl => 'ccode',
+                code => $thisccode->{authorised_value},
                 selected => $selected,
-                description => $thisitemtype->{'lib'},
-                count5 => $cnt % 4,
-                imageurl=> getitemtypeimagelocation( 'intranet', $thisitemtype->{'imageurl'} ),
+                description => $thisccode->{'lib'},
+                count5 => $cnt1 % 4,
+                imageurl=> getitemtypeimagelocation( 'intranet', $thisccode->{'imageurl'} ),
             );
         push @ccodesloop, \%row;
     }
