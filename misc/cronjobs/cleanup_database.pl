@@ -38,30 +38,30 @@ use Getopt::Long;
 
 sub usage {
     print STDERR <<USAGE;
-Usage: $0 [-h|--help] [--sessions] [-v|--verbose] [--zebraqueue DAYS]
+Usage: $0 [-h|--help] [--sessions] [-v|--verbose] [--changelog DAYS]
    -h --help         prints this help message, and exits, ignoring all other options
    --sessions        purge the sessions table.  If you use this while users are logged
                      into Koha, they will have to reconnect.
    -v --verbose      will cause the script to give you a bit more information about the run.
-   --zebraqueue DAYS purge completed entries from the zebraqueue from more than DAYS days ago.
+   --changelog DAYS purge completed entries from the changelog from more than DAYS days ago.
 USAGE
     exit $_[0];
 }
 
-my ($help, $sessions, $verbose, $zebraqueue_days);
+my ($help, $sessions, $verbose, $changelog_days);
 
 GetOptions(
     'h|help' => \$help,
     'sessions' => \$sessions,
     'v|verbose' => \$verbose,
-    'zebraqueue:i' => \$zebraqueue_days,
+    'changelog:i' => \$changelog_days,
 ) || usage(1);
 
 if ($help) {
     usage(0);
 }
 
-if (!($sessions || $zebraqueue_days)){
+if (!($sessions || defined $changelog_days)) {
     print "You did not specify any cleanup work for the script to do.\n\n";
     usage(1);
 }
@@ -87,21 +87,17 @@ if ($sessions) {
     }
 }
 
-if ($zebraqueue_days){
-    $count = 0;
+if (defined $changelog_days){
     if ($verbose){
-        print "Zebraqueue purge triggered for $zebraqueue_days days.\n";
+        print "Changelog purge triggered for $changelog_days days.\n";
     }
-    $sth = $dbh->prepare("SELECT id,biblio_auth_number,server,time FROM zebraqueue
-                          WHERE done=1 and time < date_sub(curdate(), interval ? day)");
-    $sth->execute($zebraqueue_days) or die $dbh->errstr;
-    $sth2 = $dbh->prepare("DELETE FROM zebraqueue WHERE id=?");
-    while (my $record = $sth->fetchrow_hashref){
-        $sth2->execute($record->{id}) or die $dbh->errstr;
-        $count++;
-    }
+    my $count = int $dbh->do(
+        'DELETE FROM changelog
+         WHERE stamp < date_sub(curdate(), interval ? day)',
+        undef, $changelog_days);
     if ($verbose){
-        print "$count records were deleted.\nDone with zebraqueue purge.\n";
+        print "$count records were deleted.\nDone with changelog purge.\n";
     }
 }
+
 exit(0);

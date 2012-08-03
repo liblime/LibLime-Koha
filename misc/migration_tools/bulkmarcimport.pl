@@ -117,7 +117,6 @@ if ($delete) {
     $dbh->do("truncate biblio");
     $dbh->do("truncate biblioitems");
     $dbh->do("truncate items");
-    $dbh->do("truncate zebraqueue");
 }
 
 

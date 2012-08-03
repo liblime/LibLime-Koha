@@ -16,17 +16,19 @@ use Carp;
 
 our $log = Log::Dispatch->new();
 
-my ($all) = (0);
+my ($all, $timestamp, $to_stdout) = (undef, undef, undef);
 my $optcheck = GetOptions(
-    'a|all!' => \$all,
-    'v|verbose!' => sub {
+    'a|all' => \$all,
+    's|since:s' => \$timestamp,
+    'o' => \$to_stdout,
+    'v|verbose' => sub {
         $log->add( Log::Dispatch::Screen->new(
                        min_level=>'info', newline=>1, stderr=>1))
     },
     );
 
 my $solr = WebService::Solr->new( C4::Context->config('solr')->{url} );
-my $timestamp = get_timestamp($solr);
+$timestamp //= get_timestamp($solr);
 
 my $todos;
 if ( $all ) {
@@ -76,8 +78,10 @@ sub process_list {
         my $record = GetMarcWithItems($_);
         next unless $record;
         $update_count++;
-        push @update_docs, Koha::Solr::Document::MARC->new(
+        my $doc = Koha::Solr::Document::MARC->new(
             record => $record, strategy => $r );
+        say $doc if $to_stdout;
+        push @update_docs, $doc;
         if (@update_docs >= 500) {
             $log->info('Uploading batch');
             $solr->add( \@update_docs );
