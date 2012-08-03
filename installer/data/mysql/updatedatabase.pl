@@ -4811,7 +4811,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = '4.09.00.010';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("UPDATE systempreferences SET options = 'score|popularity|cn-sort|date|acqdate|title-sort|author-sort' where variable like '%sortfield'";);
+    $dbh->do("UPDATE systempreferences SET options = 'score|popularity|cn-sort|date|acqdate|title-sort|author-sort' where variable like '%sortfield'");
     $dbh->do("UPDATE systempreferences SET value= 'score' where variable like '%sortfield' and value='relevance'");
     $dbh->do("DELETE FROM systempreferences WHERE variable='ShowOPACAvailabilityFacetSearch'");
     $dbh->do("DELETE FROM systempreferences WHERE variable like 'query%'");
