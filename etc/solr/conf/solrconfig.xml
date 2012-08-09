@@ -3,10 +3,6 @@
   <abortOnConfigurationError>${solr.abortOnConfigurationError:true}</abortOnConfigurationError>
   <luceneMatchVersion>LUCENE_36</luceneMatchVersion>
 
-  <lib dir="${com.liblime.lk.luceneLibraryBase:../..}/contrib/analysis-extras/lib"/>
-  <lib dir="${com.liblime.lk.luceneLibraryBase:../..}/contrib/analysis-extras/lucene-libs"/>
-  <lib dir="${com.liblime.lk.luceneLibraryBase:../..}/dist"/>
-
   <dataDir>${solr.data.dir:}</dataDir>
   <directoryFactory name="DirectoryFactory" 
                     class="${solr.directoryFactory:solr.StandardDirectoryFactory}"/>

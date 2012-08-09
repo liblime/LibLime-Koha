@@ -32,7 +32,7 @@
   persistent: Save changes made via the API to this file
   sharedLib: path to a lib directory that will be shared across all cores
 -->
-<solr persistent="false">
+<solr persistent="false" sharedLib="../../dist:../../contrib/*/lib:../../contrib/analysis-extras/lucene-libs">
 
   <!--
   adminPath: RequestHandler path to manage cores.  
