@@ -76,7 +76,7 @@ in_process_count | 942u
 #in_transit_count | 952 | is_in_transit | count
 #on_order_count | 952 | is_on_order | count
 
-authid_mi | record | emit_authids
+#authid_mi | record | emit_authids
 
 marcxml | record | as_marcxml
 #opac_result_html | record | emit_opac_result_html
