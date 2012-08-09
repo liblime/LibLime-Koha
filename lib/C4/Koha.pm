@@ -252,9 +252,16 @@ build a HTML select with the following code :
 
 =cut
 
-sub GetItemTypes {
+sub _seed_item_types {
     return C4::Context->dbh->selectall_hashref(
         'SELECT * FROM itemtypes', ['itemtype']);
+}
+
+sub GetItemTypes {
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'Memory',
+                                       datastore => C4::Context->cachehash});
+    return $cache->compute( q{item_types}, '5m', sub {_seed_item_types} );
 }
 
 sub get_itemtypeinfos_of {
