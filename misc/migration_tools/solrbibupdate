@@ -9,6 +9,7 @@ use Koha::Solr::Document::MARC;
 use Koha::Changelog::DBLog;
 use File::Slurp;
 use DateTime;
+use Try::Tiny;
 use Getopt::Long qw(GetOptions);
 use Log::Dispatch;
 use Log::Dispatch::Screen;
@@ -73,24 +74,48 @@ sub process_list {
     my $rules_text = read_file( C4::Context->config('solr')->{biblio_rules} );
     my $r = Koha::Solr::IndexStrategy::MARC->new( rules_text => $rules_text );
     my @update_docs;
-    my $update_count = 0;
+    my ($update_count, $render_errors, $update_errors) = (0, 0, 0);
+
+    my $add_with_catch = sub {
+        $log->info("Uploading records: $update_count/".scalar keys %updates);
+        try {
+            $solr->add( \@update_docs );
+        }
+        catch {
+            carp "Error uploading batch into Solr: $_";
+            $update_errors++;
+            undef;
+        };
+        $solr->commit;
+        @update_docs = ();
+    };
+
+    my $doc_with_catch = sub {
+        my $bibnum = shift;
+        my $record = GetMarcWithItems($bibnum);
+        return unless $record;
+        my $doc = try {
+            Koha::Solr::Document::MARC->new(
+                record => $record, strategy => $r ); }
+        catch {
+            carp "Error rendering $bibnum into Solr doc: $_";
+            $render_errors++;
+            undef;
+        };
+        return $doc;
+    };
+
     for ( keys %updates ) {
-        my $record = GetMarcWithItems($_);
-        next unless $record;
+        my $doc = $doc_with_catch->($_);
+        next unless $doc;
         $update_count++;
-        my $doc = Koha::Solr::Document::MARC->new(
-            record => $record, strategy => $r );
         say $doc if $to_stdout;
         push @update_docs, $doc;
-        if (@update_docs >= 500) {
-            $log->info('Uploading batch');
-            $solr->add( \@update_docs );
-            @update_docs = ();
-        }
+        $add_with_catch->() if (@update_docs >= 500);
     }
-    $solr->add( \@update_docs ) if @update_docs;
-    $solr->commit;
-    $log->info("Updated $update_count docs");
+    $add_with_catch->();
+
+    $log->info("Updated $update_count records with $render_errors render errors and $update_errors update errors.");
 
     return $youngest_ts;
 }
