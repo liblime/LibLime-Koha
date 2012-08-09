@@ -14,6 +14,7 @@ use Getopt::Long qw(GetOptions);
 use Log::Dispatch;
 use Log::Dispatch::Screen;
 use Carp;
+use Time::HiRes qw(gettimeofday);
 
 our $log = Log::Dispatch->new();
 
@@ -53,6 +54,21 @@ update_timestamp($solr, $youngest_ts);
 exit;
 
 
+sub s2hms {
+    my $s = shift;
+    my $hms;
+    if ($s > 5400) {
+        $hms = sprintf '%.02fh', $s / 3600;
+    }
+    elsif ($s > 120) {
+        $hms = sprintf '%.02fm', $s / 60;
+    }
+    else {
+        $hms = sprintf '%.02fs', $s;
+    }
+    return $hms;
+}
+
 sub process_list {
     my ($solr, $todos) = @_;
     return unless @$todos;
@@ -75,9 +91,43 @@ sub process_list {
     my $r = Koha::Solr::IndexStrategy::MARC->new( rules_text => $rules_text );
     my @update_docs;
     my ($update_count, $render_errors, $update_errors) = (0, 0, 0);
+    my $batch_size = 500;
+    my $queue_size = scalar keys %updates;
+    my ($start_time, undef) = gettimeofday();
+    my $recent_time = $start_time;
+
+    my $doc_with_catch = sub {
+        my $bibnum = shift;
+        my $record = GetMarcWithItems($bibnum);
+        return unless $record;
+        my $doc = try {
+            Koha::Solr::Document::MARC->new(
+                record => $record, strategy => $r );
+        }
+        catch {
+            carp "Error rendering $bibnum into Solr doc: $_";
+            $render_errors++;
+            undef;
+        };
+        return $doc;
+    };
 
     my $add_with_catch = sub {
-        $log->info("Uploading records: $update_count/".scalar keys %updates);
+        my ($now, undef) = gettimeofday();
+        my $total_elapsed_seconds = ($now - $start_time) || 1;
+        my $dps_all = int($update_count / $total_elapsed_seconds);
+        my $docs_remaining = $queue_size - $update_count;
+        my $est_seconds_remaining = int($docs_remaining / $dps_all);
+
+        my $elapsed = s2hms($total_elapsed_seconds);
+        my $remaining = s2hms($est_seconds_remaining);
+        my $msg =
+            sprintf q{completed %d/%d, %d d/s, %s elapsed, %s remaining},
+            $update_count, $queue_size, $dps_all, $elapsed, $remaining;
+        my $recent_time = $now;
+
+        $log->info($msg);
+
         try {
             $solr->add( \@update_docs );
         }
@@ -90,28 +140,13 @@ sub process_list {
         @update_docs = ();
     };
 
-    my $doc_with_catch = sub {
-        my $bibnum = shift;
-        my $record = GetMarcWithItems($bibnum);
-        return unless $record;
-        my $doc = try {
-            Koha::Solr::Document::MARC->new(
-                record => $record, strategy => $r ); }
-        catch {
-            carp "Error rendering $bibnum into Solr doc: $_";
-            $render_errors++;
-            undef;
-        };
-        return $doc;
-    };
-
     for ( keys %updates ) {
         my $doc = $doc_with_catch->($_);
         next unless $doc;
         $update_count++;
         say $doc if $to_stdout;
         push @update_docs, $doc;
-        $add_with_catch->() if (@update_docs >= 500);
+        $add_with_catch->() if (@update_docs >= $batch_size);
     }
     $add_with_catch->();
 
