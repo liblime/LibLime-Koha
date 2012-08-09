@@ -81,6 +81,20 @@ sub searchResultDisplay {
             C4::Biblio::get_biblio_authorised_values($oldbiblio->{'biblionumber'}, $marcrecord)
             );
     }
+
+    # Tags
+    if (C4::Context->preference('TagsEnabled') and
+        my $tag_quantity = C4::Context->preference('TagsShowOnList'))
+    {
+        $oldbiblio->{TagLoop} = C4::Tags::get_tags(
+            {biblionumber=>$oldbiblio->{biblionumber},
+             approved=>1, 'sort'=>'-weight', limit=>$tag_quantity });
+    }
+
+    # CoINs
+    $oldbiblio->{coins} = try { GetCOinSBiblio($oldbiblio->{biblionumber}) };
+
+    # Identifiers
     my $marcflavour = 'MARC21';
     $oldbiblio->{normalized_upc}  = GetNormalizedUPC(       $marcrecord,$marcflavour);
     $oldbiblio->{normalized_ean}  = GetNormalizedEAN(       $marcrecord,$marcflavour);
@@ -92,6 +106,7 @@ sub searchResultDisplay {
     $oldbiblio->{edition} = $oldbiblio->{editionstatement};
     $oldbiblio->{description} = $itemtypes{ $oldbiblio->{itemtype} }->{description};
 
+    # Reserves status
     my %restype;
     my ($rescount,$reserves) = C4::Reserves::GetReservesFromBiblionumber($oldbiblio->{biblionumber});
     my $total_rescount = $rescount;
@@ -136,32 +151,27 @@ sub searchResultDisplay {
     my $itemcount = 0;
     foreach my $field (@fields) {
         $itemcount++;
-        my $item;
-
         # populate the items hash
-        if (!$opac || !C4::Context->preference('OPACXSLTResultsDisplay')) {
-            foreach my $code ( keys %subfieldstosearch ) {
-                $item->{$code} = $field->subfield( $subfieldstosearch{$code} );
-            }
-        }
+
+        my $item = {
+            map {
+                $_ => scalar $field->subfield($subfieldstosearch{$_})
+            } keys %subfieldstosearch
+        };
+
         my $hbranch     = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'homebranch'    : 'holdingbranch';
         my $otherbranch = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'holdingbranch' : 'homebranch';
         # set item's branch name, use HomeOrHoldingBranch syspref first, fall back to the other one
-        if ($item->{$hbranch}) {
-            $item->{branchname} = GetBranchName( $item->{$hbranch} );
-        }
-        elsif ($item->{$otherbranch}) {	# Last resort
-            $item->{branchname} = GetBranchName( $item->{$otherbranch} );
-        }
+        $item->{branchname} =
+            GetBranchName( $item->{$hbranch} )
+            // GetBranchName( $item->{$otherbranch} );
 
-        my $sth = $dbh->prepare(
-        "SELECT description,holdsallowed
-           FROM itemstatus
-             LEFT JOIN items ON itemstatus.statuscode=items.otherstatus
-           WHERE itemnumber = ?"
-        );
-        $sth->execute($item->{itemnumber});
-        my @statusvalue = $sth->fetchrow;
+        my @statusvalue = $dbh->selectrow_array(
+            "SELECT description, holdsallowed
+               FROM itemstatus
+                 LEFT JOIN items ON itemstatus.statuscode=items.otherstatus
+               WHERE itemnumber = ?",
+            undef, $item->{itemnumber} );
         my ($otherstatus,$holdsallowed,$OPACstatusdisplay);
         if (@statusvalue) {
             ($otherstatus,$holdsallowed) = @statusvalue;
@@ -344,16 +354,6 @@ sub searchResultDisplay {
     $oldbiblio->{active_reservecount}  = $total_rescount - $suspended_rescount;
     $oldbiblio->{other_otherstatus}    = $other_otherstatus;
     $oldbiblio->{other_otherstatuscount} = $other_otherstatus_count;
-
-    if (C4::Context->preference('TagsEnabled') and
-        my $tag_quantity = C4::Context->preference('TagsShowOnList'))
-    {
-        $oldbiblio->{TagLoop} = C4::Tags::get_tags(
-            {biblionumber=>$oldbiblio->{biblionumber},
-             approved=>1, 'sort'=>'-weight', limit=>$tag_quantity });
-    }
-
-    $oldbiblio->{coins} = try { GetCOinSBiblio($oldbiblio->{biblionumber}) };
 
     return $oldbiblio;
 }
