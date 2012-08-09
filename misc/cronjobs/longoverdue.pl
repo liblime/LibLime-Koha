@@ -160,17 +160,7 @@ foreach my $startrange (sort keys %$lost) {
             if($confirm) {
                 C4::LostItems::CreateLostItem($row->{'itemnumber'}, $row->{'borrowernumber'});
                 C4::Accounts::chargelostitem($row->{'itemnumber'}) if( $charge && $charge eq $lostvalue);
-                ## honor syspref
-                if (C4::Context->preference('MarkLostItemsReturned')) {
-                   C4::Circulation::AddReturn(
-                      $$row{barcode},
-                      $$row{holdingbranch}, # assume returned to where last checked out
-                      0,     # exemptfine
-                      0,     # dropbox
-                      undef, # returndate: will default to today
-                      1,     # tolost
-                   );
-                }
+                # item is marked returned in chargelostitem.
                 ModItemLost($row->{'biblionumber'}, $row->{'itemnumber'}, $lostvalue);
             }
             $count++;

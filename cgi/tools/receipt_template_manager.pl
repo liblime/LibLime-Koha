@@ -131,20 +131,24 @@ sub add_form {
         push @{$field_selection},
           (
             {
-                value => 'BeginFinesPaidTodayList',
-                text  => 'BeginFinesPaidTodayList',
+                value => 'TotalOwed',
+                text  => 'TotalOwed',
             },
             {
-                value => 'EndFinesPaidTodayList',
-                text  => 'EndFinesPaidTodayList',
+                value => 'BeginTodaysPaymentsList',
+                text  => 'BeginTodaysPaymentsList',
             },
             {
-                value => 'BeginFinesPaidPreviousList',
-                text  => 'BeginFinesPaidPreviousList',
+                value => 'EndTodaysPaymentsList',
+                text  => 'EndTodaysPaymentsList',
             },
             {
-                value => 'EndFinesPaidPreviousList',
-                text  => 'EndFinesPaidPreviousList',
+                value => 'BeginRecentFinesList',
+                text  => 'BeginRecentFinesList',
+            },
+            {
+                value => 'EndRecentFinesList',
+                text  => 'EndRecentFinesList',
             }
           );
     }
@@ -197,11 +201,20 @@ sub add_form {
           );
     }
     if ( $module eq 'payments' ) {
+
         push @{$field_selection},
           add_fields(
-            'branches',  'biblio', 'biblioitems', 'items',
-            'borrowers', 'accountlines'
+            'branches', 'borrowers'
           );
+        push @{$field_selection},
+           {
+                value => '',
+                text => '---FEES & PAYMENTS---',
+            };
+        push @{$field_selection},
+            map { { value=> 'fees-payments.'.$_, text=> 'fees-payments.'.$_} } ('date', 'amount','amountoutstanding','description','accounttype');
+            # fees-payments is taken from output of getcharges and getpayments in C4::Accounts.
+
     }
     else {    #if ($module eq 'circulation')
         push @{$field_selection},
@@ -324,6 +337,7 @@ sub get_columns_for {
             text  => $tlabel,
           };
     }
+
     my $sql          = "SHOW COLUMNS FROM $table";    # TODO not db agnostic
     my $table_prefix = $table . q|.|;
     $table_prefix = $name . q|.| if ($name);
@@ -334,6 +348,7 @@ sub get_columns_for {
             value => $table_prefix . $row->{Field},
             text  => $table_prefix . $row->{Field},
           };
-    }
+    }        
+
     return @fields;
 }

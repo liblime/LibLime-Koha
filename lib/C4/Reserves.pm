@@ -726,20 +726,15 @@ sub AddReserve {
     my $new_reservenumber = $dbh->last_insert_id(undef, undef, undef, undef);
 
     # Assign holds fee if applicable
-    my $fee =
-      GetReserveFee( $borrowernumber, $biblionumber );
-    if ( $fee > 0 ) {
-        my $nextacctno = &getnextacctno( $borrowernumber );
-        my $query      = qq/
-        INSERT INTO accountlines
-            (borrowernumber,accountno,date,amount,description,accounttype,amountoutstanding)
-        VALUES
-            (?,?,now(),?,?,'Res',?)
-    /;
-        my $usth = $dbh->prepare($query);
-        $usth->execute( $borrowernumber, $nextacctno, $fee,
-            "Reserve Charge", $fee );
-
+    my $fee = GetReserveFee( $borrowernumber, $biblionumber, $constraint, $bibitems );
+    if ( defined($fee) && $fee > 0 ) {
+        my $biblio = GetBiblioData($biblionumber); 
+        C4::Accounts::manualinvoice({
+            borrowernumber  => $borrowernumber,
+            amount          => $fee,
+            accounttype     => 'RESERVE',
+            description     => "Hold fee for: $biblio->{title}",
+        });  
     }
 
     UpdateStats(

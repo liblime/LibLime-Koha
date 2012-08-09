@@ -84,6 +84,7 @@ use Getopt::Long;
 use Pod::Usage;
 use Koha;
 use C4::Context;
+use C4::Accounts;
 use English qw(-no_match_vars);
 
 my $verbose  = 0;
@@ -219,11 +220,8 @@ SELECT borrowernumber,
        address,
        city,
        phone,
-       dateofbirth,
-       sum( accountlines.amountoutstanding ) as total_fines
+       dateofbirth
 FROM borrowers
-LEFT JOIN accountlines USING (borrowernumber)
-GROUP BY borrowernumber;
 END_SQL
 
     my $fields_count = $sth_mysql->execute();
@@ -232,6 +230,7 @@ END_SQL
     my $count;
     while ( my $borrower = $sth_mysql->fetchrow_hashref ) {
         $count++;
+        $borrower->{total_fines} = C4::Accounts::gettotalowed($borrower->{borrowernumber});
         if ( $verbose ) {
             print '.' unless ( $count % 10 );
             print "$count\n" unless ( $count % 1000 );
@@ -255,14 +254,15 @@ sub add_fines_to_borrowers_table {
 
     print "preparing to update borrowers\n" if $verbose;
     my $sth_mysql = $dbh_mysql->prepare(
-        "SELECT DISTINCT borrowernumber, SUM( amountoutstanding ) AS total_fines
-                                    FROM accountlines
+        "SELECT DISTINCT borrowernumber 
+                                    FROM fees
                                     GROUP BY borrowernumber"
     );
     $sth_mysql->execute();
     my $count;
     while ( my $result = $sth_mysql->fetchrow_hashref() ) {
         $count++;
+        $borrower->{total_fines} = C4::Accounts::gettotalowed($result->{borrowernumber});
         if ( $verbose ) {
             print '.' unless ( $count % 10 );
             print "$count\n" unless ( $count % 1000 );

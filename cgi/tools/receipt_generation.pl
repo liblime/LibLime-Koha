@@ -85,17 +85,14 @@ elsif ( $action eq 'payment_received' ) {
     my $borrowernumber = $cgi->param('borrowernumber');
     my $data;
 
-    $data = _get_fines_data( $borrowernumber, 'today' );
-    $content = _replace_loop( $content, $data, 'FinesPaidTodayList' );
-    $content =
-      _replace( $content, $data->[0] )
-      ;    ## In case borrower data is used outside of a loop.
+    $data = _get_fines_data( $borrowernumber, 'todayspayments' );
+    $content = _replace_loop( $content, $data, 'TodaysPaymentsList' );
 
-    $data = _get_fines_data( $borrowernumber, 'previous' );
-    $content = _replace_loop( $content, $data, 'FinesPaidPreviousList' );
-    $content =
-      _replace( $content, $data->[0] )
-      ;    ## In case borrower data is used outside of a loop.
+
+    $data = _get_fines_data( $borrowernumber, 'recentfines' );
+    $content = _replace_loop( $content, $data, 'RecentFinesList' );
+
+    $content = _replace( $content, { TotalOwed => C4::Accounts::gettotalowed($borrowernumber)} );
 }
 ## Process Hold Found Receipts
 elsif ( $action eq 'hold_found' ) {
@@ -286,39 +283,25 @@ sub _get_hold_data {
 
 sub _get_fines_data {
     my ( $borrowernumber, $when ) = @_;
-
-    my @tables =
-      ( 'biblio', 'biblioitems', 'items', 'borrowers', 'accountlines' );
-    my $columns = MuxColumnsForSQL( GetTableColumnsFor(@tables) );
-
-    my $sql = "
-        SELECT $columns FROM accountlines
-        LEFT JOIN borrowers ON borrowers.borrowernumber = accountlines.borrowernumber
-        LEFT JOIN items ON items.itemnumber = accountlines.itemnumber
-        LEFT JOIN biblioitems ON items.biblioitemnumber = biblioitems.biblioitemnumber
-        LEFT JOIN biblio on items.biblionumber = biblio.biblionumber
-        WHERE accountlines.borrowernumber = ?
-    ";
-
-    $sql .= " AND DATE(accountlines.timestamp) = CURDATE()"
-      if ( $when eq 'today' );
-    $sql .= " AND DATE(accountlines.timestamp) < CURDATE()"
-      if ( $when eq 'previous' );
-
-    $sql .= "ORDER BY accountlines.timestamp DESC";
-
-    my $data = C4::Context->dbh->selectall_arrayref( $sql, { Slice => {} },
-        $borrowernumber );
-
-    foreach my $d (@$data) {
-        ## Format Currency Fields
-        $d->{'accountlines.amount'} =
-          sprintf( "%.2f", $d->{'accountlines.amount'} );
-        $d->{'accountlines.amountoutstanding'} =
-          sprintf( "%.2f", $d->{'accountlines.amountoutstanding'} );
+    my $loopdata;
+    if($when eq 'todayspayments'){
+        # payments are negative...
+        $loopdata = C4::Accounts::getpayments($borrowernumber, since=>C4::Dates->new());
+        for my $data (@$loopdata){
+            $data->{amount} = -1* $data->{amount};
+            $data->{"fees-payments.".$_} = $data->{$_} for (keys %$data);  # fake the 'table name'
+        }
+    } elsif($when eq 'recentfines'){
+        #Include last 7 fines.
+        $loopdata = C4::Accounts::getcharges($borrowernumber, limit=>7);
+        for my $data (@$loopdata){
+            $data->{date} = $data->{timestamp};
+            $data->{"fees-payments.".$_} = $data->{$_} for (keys %$data);
+        }
+        # note date and timestamp are different in payments and fees.
     }
 
-    return $data;
+    return $loopdata;
 }
 
 sub _is_date {

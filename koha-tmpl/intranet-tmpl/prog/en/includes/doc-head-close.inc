@@ -20,9 +20,11 @@
 <!-- TMPL_IF localJQuery -->
 <script type="text/javascript" language="javascript" src="<!-- TMPL_VAR NAME="themelang" -->/lib/jquery/jquery-1.7.2.min.js"></script>
 <script type="text/javascript" language="javascript" src="<!-- TMPL_VAR NAME="themelang" -->/lib/jquery-ui/jquery-ui-1.8.21.min.js"></script>
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.validate.pack.js"></script>
 <!-- TMPL_ELSE -->
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
+<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.9/jquery.validate.min.js"></script>
 <!-- /TMPL_IF -->
 <link rel="stylesheet" type="text/css" href="<!-- TMPL_VAR NAME="themelang" -->/lib/jquery-ui/jquery-ui.css" />
 

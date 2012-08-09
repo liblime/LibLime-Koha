@@ -96,7 +96,7 @@ elsif ( $input->param('action') eq 'remove' ) {
 }
 
 my @overduesloop;
-my @getoverdues = GetOverduesForBranch( $default, $location );
+my @getoverdues = C4::Overdues::GetOverduesForBranch( $default, $location );
 use Data::Dumper;
 $debug and warn "HERE : $default / $location" . Dumper(@getoverdues);
 # search for location authorised value

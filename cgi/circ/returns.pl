@@ -243,9 +243,7 @@ elsif ($query->param('cancelTransfer')) {
    C4::Items::ModItemTransfer($query->param('itemnumber'));
 }
 
-if (C4::Context->preference('LinkLostItemsToPatron') 
-&& $query->param('lost_item_id') 
-&& $query->param('unlinkFromAccount')) {   
+if ( $query->param('lost_item_id') && $query->param('unlinkFromAccount')) {   
    ## bad legacy data: multiple lost entries for same item and patron, so this isn't going to work
    #C4::LostItems::DeleteLostItem($query->param('lost_item_id'));
    C4::LostItems::DeleteLostItemByItemnumber($query->param('itemnumber'));
@@ -279,18 +277,14 @@ if ($barcode) {
 # save the return
 #
 
-    if ($checkin_override_date ) {
-       my $backdateObj = C4::Dates->new($checkin_override_date);
-        ( $returned, $messages, $issueinformation, $borrower ) =
-        C4::Circulation::AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode, $backdateObj->output('iso'));
-    } else {
-        ( $returned, $messages, $issueinformation, $borrower ) =
-        C4::Circulation::AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $dropboxmode);
-    }
+    my $returndate = ($checkin_override_date ) ? C4::Dates->new($checkin_override_date)->output('iso') : undef;
+    ( $returned, $messages, $issueinformation, $borrower ) =
+        C4::Circulation::AddReturn( $barcode, C4::Context->userenv->{'branch'}, $exemptfine, $returndate);
+
     # get biblio description
     my $biblio = GetBiblioFromItemNumber($itemnumber);
     # fix up item type for display
-    $biblio->{'itemtype'} = C4::Context->preference('item-level_itypes') ? $biblio->{'itype'} : $biblio->{'itemtype'};
+    $biblio->{'itemtype'} = $biblio->{'itype'};
 
     $template->param(
         title            => $biblio->{'title'},
@@ -518,18 +512,16 @@ foreach my $code ( keys %$messages ) {
          lostborrowernumber => $$messages{$code}{lostborrowernumber},
          lost_item_id       => $$messages{$code}{lost_item_id},
       );
-      if (C4::Context->preference('LinkLostItemsToPatron')) {
-         my $lostbor = {};
-         if ($$messages{$code}{lostborrowernumber}) {
-            $lostbor = C4::Members::GetMember($$messages{$code}{lostborrowernumber});
-         }
-         $template->param(
-            lostreturned       => 1,
-            lostbor_surname    => $$lostbor{surname},
-            lostbor_firstname  => $$lostbor{firstname},
-            lostbor_cardnumber => $$lostbor{cardnumber},
-         );
+      my $lostbor = {};
+      if ($$messages{$code}{lostborrowernumber}) {
+         $lostbor = C4::Members::GetMember($$messages{$code}{lostborrowernumber});
       }
+      $template->param(
+         lostreturned       => 1,
+         lostbor_surname    => $$lostbor{surname},
+         lostbor_firstname  => $$lostbor{firstname},
+         lostbor_cardnumber => $$lostbor{cardnumber},
+      );
    }
    elsif ( $code eq 'ResFound' ) {
       # $err{reserve} = 1;

@@ -1,6 +1,6 @@
 package C4::Accounts;
 
-# Copyright 2000-2002 Katipo Communications
+# Copyright 2000-2009
 #
 # This file is part of Koha.
 #
@@ -19,26 +19,42 @@ package C4::Accounts;
 
 
 use strict;
-use Koha;
+use warnings;
 use C4::Context;
 use C4::Stats;
 use C4::Members;
+use C4::Biblio;
 use C4::Items;
 use C4::LostItems;
 use C4::Circulation;
+use Koha::Money;
+use List::Util qw[min max];
+use Carp qw[cluck];
+use Check::ISA;
+use Date::Calc;
 
-use vars qw($VERSION @ISA @EXPORT);
+
+use DDP filters => {
+            'DateTime'      => sub { $_[0]->ymd },
+            'Koha::Money'   => sub { $_[0]->value } };
+            
+use vars qw($VERSION @ISA @EXPORT $debug);
 
 BEGIN {
 	# set the version for version checking
 	$VERSION = 3.03;
+	$debug = $ENV{DEBUG} || 0;
 	require Exporter;
 	@ISA    = qw(Exporter);
 	@EXPORT = qw(
-		&recordpayment &makepayment
-		&getnextacctno &reconcileaccount &getcharges &getcredits
-		&ReversePayment
-		&getrefunds &chargelostitem makepartialpayment
+        &manualinvoice &manualcredit
+		&getfee &getcharges &getcredits
+        &getaccruingcharges
+        &gettotalaccruing &gettotalowed
+        &getmanualinvoicetypes
+        &CreateFee &ApplyCredit
+        &AddIssuingCharge
+
 	);
 }
 
@@ -56,676 +72,56 @@ The functions in this module deal with the monetary aspect of Koha,
 including looking up and modifying the amount of money owed by a
 patron.
 
-## FIXME: Please complete this list -hQ
-Account types (accounttype):
+The accounting system uses three tables: fees, fee_transactions and payments.
+All amounts are stored in fee_transactions.
+The fees and payments tables store only metadata about a given fine or payment.
 
-   A     ??
-   CR    credit
-   F     static fine/fee
-   FOR   fine forgiven
-   FU    fine update (periodically accessed)
-   L     ?lost ??
-   Pay   payment
-   RCR   refund owed
-   REF   refund issued
-   Rent  rental fee
-   Rep   ?replacement ??
-   Res   ??
+A fee is atomic in Koha, i.e. for each entry in the fees table, there
+is one and only one entry in fee_transactions, with an amount > 0.
+A fee should not change value; once the fee is assessed, all other transactions
+against that fee should be credits.  This is not true of payments: a payment
+may have many entries in fee_transactions linking portions of that payment
+to various fees.
+All debits to an account will have an entry in fees.
+Only credits representing actual payments or applied credits will have entries in the payments table,
+i.e. a payment entry is only necessary when further metadata about the credit is needed.
+When a fee is forgiven or written off in full, only a fee_transactions entry is made.
+A 'transaction' accounttype.class generates only a fee_transaction entry,
+while a 'payment' accounttype.class generates both.  'payment' would be better named
+'credit'; it represents a credit against the account that should persist even if it
+is unlinked from the original fine (and applied to another).
+
+Note all amounts are returned as Koha::Money objects.
+Amounts should be passed as same, but can also be passed as a number.
+
+To find the amount owed on a given fine:
+select sum(amount) from fees LEFT JOIN fee_transactions on(fees.id = fee_transactions.fee_id) where fees.id=1;
+To find the original amount due for the fine, we rely on the assumption that only one entry in fee_transactions
+per fee_id may have an accounttype of class 'fee' (not enforced):
+select amount from fees JOIN fee_transactions on(fees.id = fee_transactions.fee_id) where fees.id=1 and accounttype in (select accounttype from accounttypes where class='fee');
+To find amount owed by a patron:
+
+FIXME -- MISSING.
 
 =head1 FUNCTIONS
 
 =cut
 
-sub GetLine
-{
-   my($borrowernumber,$accountno) = @_;
-   return {} unless ($borrowernumber && $accountno);
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare('SELECT * FROM accountlines
-      WHERE borrowernumber = ?
-        AND accountno      = ?');
-   $sth->execute($borrowernumber,$accountno);
-   return $sth->fetchrow_hashref() // {};
-}
-
-=head2 recordpayment
-
-  &recordpayment($borrowernumber, $payment);
-
-Record payment by a patron. C<$borrowernumber> is the patron's
-borrower number. C<$payment> is a floating-point number, giving the
-amount that was paid. 
-
-Amounts owed are paid off oldest first. That is, if the patron has a
-$1 fine from Feb. 1, another $1 fine from Mar. 1, and makes a payment
-of $1.50, then the oldest fine will be paid off in full, and $0.50
-will be credited to the next one.
-
-=cut
-
-## This is a dispersal payment
-sub recordpayment 
-{
-
-    #here we update the account lines
-    my ( $borrowernumber, $data ) = @_;
-    my $dbh        = C4::Context->dbh;
-    my $newamtos   = 0;
-    my $accdata    = "";
-    my $branch     = C4::Context->userenv->{'branch'};
-    my $amountleft = $data;
-
-    # begin transaction
-    my $nextaccntno = getnextacctno($borrowernumber);
-
-    # get lines with outstanding amounts to offset
-    my $sth = $dbh->prepare("SELECT * FROM accountlines
-      WHERE (borrowernumber = ?) 
-        AND (amountoutstanding<>0)
-   ORDER BY accountno DESC
-    ");
-    $sth->execute($borrowernumber);
-
-    # offset transactions
-    while ( ( $accdata = $sth->fetchrow_hashref ) and ( $amountleft > 0 ) ) {
-        if ( $accdata->{'amountoutstanding'} < $amountleft ) {
-            $newamtos = 0;
-            $amountleft -= $accdata->{'amountoutstanding'};
-        }
-        else {
-            $newamtos   = $accdata->{'amountoutstanding'} - $amountleft;
-            $amountleft = 0;
-        }
-        my $thisacct = $accdata->{accountno};
-        my $paydate  = C4::Dates->new()->output;
-        my $usth     = $dbh->prepare("UPDATE accountlines 
-            SET amountoutstanding = ?,
-                description       = CONCAT(description,', paid at no.$nextaccntno $paydate')
-          WHERE borrowernumber    = ? 
-            AND accountno         = ?
-        ");
-        $usth->execute( $newamtos, $borrowernumber, $thisacct );
-        $usth->finish;
-#        $usth = $dbh->prepare(
-#            "INSERT INTO accountoffsets
-#     (borrowernumber, accountno, offsetaccount,  offsetamount)
-#     VALUES (?,?,?,?)"
-#        );
-#        $usth->execute( $borrowernumber, $accdata->{'accountno'},
-#            $nextaccntno, $newamtos );
-        $usth->finish;
-    }
-
-    # create new line
-    my $user = C4::Context->userenv->{'id'};
-    my $usth = $dbh->prepare(qq|
-      INSERT INTO accountlines
-  (borrowernumber, accountno,date,amount,description,accounttype,amountoutstanding)
-  VALUES (?,?,now(),?,"Payment, Thanks (-$user)",'Pay',?)|
-    );
-    $usth->execute( $borrowernumber, $nextaccntno, 0 - $data, 0 - $amountleft );
-    $usth->finish;
-    C4::Stats::UpdateStats( $branch, 'payment', $data, '', '', '', $borrowernumber, $nextaccntno );
-    $sth->finish;
-
-}
-
-sub MemberAllAccounts
-{
-   my %g   = @_;
-   my $dbh = C4::Context->dbh;
-   my $sth;
-
-   if ($g{total_only}) {
-      $sth = $dbh->prepare('
-         SELECT SUM(amountoutstanding)
-           FROM accountlines
-          WHERE borrowernumber = ?');
-      $sth->execute($g{borrowernumber});
-      return ($sth->fetchrow_array)[0];
-   }
-
-   my @vals  = ($g{borrowernumber});
-   my $total = 0;
-   my $sql = "
-      SELECT accountlines.*,
-             biblio.title,
-             items.biblionumber,
-             items.barcode
-        FROM accountlines
-   LEFT JOIN items ON  (accountlines.itemnumber = items.itemnumber)
-   LEFT JOIN biblio ON (items.biblionumber      = biblio.biblionumber)
-       WHERE accountlines.borrowernumber        = ?";
-   if ($g{date}) {
-      $sql .= ' AND date < ? ';
-      push @vals, $g{date};
-   }
-   $sql .= ' ORDER BY accountno DESC';
-   $sth = $dbh->prepare($sql);
-   $sth->execute(@vals);
-   my @all = ();
-   while(my $row = $sth->fetchrow_hashref()) { 
-      $total += ($$row{amountoutstanding} // 0);
-      push @all, $row;
-   }
-   return $total, \@all;
-}
-
-sub writeoff
-{
-   my %g   = @_;
-   die "No branch passed to writeoff()" unless $g{branch};
-   $g{itemnumber} ||= undef; # store as null if not there
-   if ($g{writeoff_all}) {
-      my $dbh = C4::Context->dbh;
-      my $sth = $dbh->prepare('SELECT amount,accountno
-         FROM accountlines
-        WHERE amountoutstanding >0
-          AND borrowernumber = ?');
-      $sth->execute($g{borrowernumber});
-      while(my $row = $sth->fetchrow_hashref()) {
-         $g{accountno}         = $$row{accountno};
-         $g{amountoutstanding} = $$row{amountoutstanding};
-         _writeoff_each(%g);
-      }
-      return 1;
-   }
-   return _writeoff_each(%g);
-}
-
-sub _writeoff_each
-{
-   my %g   = @_;
-   my $dbh = C4::Context->dbh;
-   my $sth;
-   return unless ($g{accountno} && $g{borrowernumber});
-   $g{itemnumber} ||= undef;
-   unless ($g{amountoutstanding}) {
-      $sth = $dbh->prepare('SELECT amountoutstanding FROM accountlines
-         WHERE borrowernumber = ?
-           AND accountno      = ?');
-      $sth->execute($g{borrowernumber},$g{accountno});
-      ($g{amountoutstanding}) = $sth->fetchrow_array;
-      return unless $g{amountoutstanding};
-   }
-   die "Amount of accountno.$g{accountno} must be positive" if ($g{amountoutstanding} <0);
-   $sth = $dbh->prepare('UPDATE accountlines 
-      SET amountoutstanding = 0
-    WHERE accountno         = ?
-      AND borrowernumber    = ?');
-   $sth->execute($g{accountno},$g{borrowernumber});
-   my $newno = getnextacctno($g{borrowernumber});
-   $g{user} ||= '';
-   $sth = $dbh->prepare("INSERT INTO accountlines (
-         borrowernumber,
-         accountno,
-         itemnumber,
-         date,
-         amount,
-         amountoutstanding,
-         description,
-         accounttype) VALUES(
-         ?,?,?,NOW(),?,0,?,'W')");
-   $sth->execute(
-      $g{borrowernumber},
-      $newno,
-      $g{itemnumber},
-      (-1 *$g{amountoutstanding}),
-      "Writeoff for no.$g{accountno} (-$g{user})"
-   );
-   my $wodate = C4::Dates->new()->output;
-   $dbh->do("UPDATE accountlines
-      SET description    = CONCAT(description,', writeoff at no.$newno $wodate')
-    WHERE borrowernumber = ?
-      AND accountno      = ?",undef,$g{borrowernumber},$g{accountno});
-
-   C4::Stats::UpdateStats($g{branch},'writeoff',(-1 *$g{amount}),'',$g{itemnumber},'',
-      $g{borrowernumber},$newno);
-   if ($g{moditem_paidfor} && ($g{accounttype} ~~ 'L')) {
-      if ($g{borrower}) {}
-      else {
-         $sth = $dbh->prepare('SELECT firstname,surname,cardnumber
-            FROM borrowers
-           WHERE borrowernumber = ?');
-         $sth->execute();
-         $g{borrower} = $sth->fetchrow_hashref();
-      }
-      foreach(qw(firstname surname cardnumber)) {
-         $g{borrower}{$_} //= '';
-      }
-      my $bor = join(' ', 
-         $g{borrower}{firstname},
-         $g{borrower}{lastname},
-         $g{borrower}{cardnumber}
-      );
-      C4::Items::ModItem({paidfor=>"Paid for by $bor " . C4::Dates->today()},
-         undef, $g{itemnumber}
-      );
-   }
-   return $newno;
-}
-
-=head2 makepayment
-
-  &makepayment($borrowernumber, $acctnumber, $amount, $branchcode);
-
-Records the fact that a patron has paid off the entire amount he or
-she owes.
-
-C<$borrowernumber> is the patron's borrower number. C<$acctnumber> is
-the account that was credited. C<$amount> is the amount paid (this is
-only used to record the payment. It is assumed to be equal to the
-amount owed). C<$branchcode> is the code of the branch where payment
-was made.
-
-=cut
-
-#'
-# FIXME - I'm not at all sure about the above, because I don't
-# understand what the acct* tables in the Koha database are for.
-sub makepayment {
-    #here we update both the accountoffsets and the account lines
-    #updated to check, if they are paying off a lost item, we return the item
-    # from their card, and put a note on the item record
-    my ( $borrowernumber, $accountno, $amount, $user, $branch ) = @_;
-    my $dbh = C4::Context->dbh;
-
-    # begin transaction
-    my $nextaccntno = getnextacctno($borrowernumber);
-    my $newamtos    = 0;
-    my $sth =
-      $dbh->prepare(
-        "SELECT * FROM accountlines WHERE  borrowernumber=? AND accountno=?");
-    $sth->execute( $borrowernumber, $accountno );
-    my $data = $sth->fetchrow_hashref;
-    $sth->finish;
-
-    my $paydate = C4::Dates->new()->output;
-    $dbh->do("UPDATE accountlines
-        SET amountoutstanding = 0,
-            description       = CONCAT(description, ', paid at no.$nextaccntno $paydate')
-      WHERE borrowernumber    = $borrowernumber
-        AND accountno         = $accountno
-        "
-    );
-
-    # create new line
-    $$data{description} //= '';
-    my $payment = 0 - $amount;
-    $sth = $dbh->prepare('INSERT INTO accountlines(
-      borrowernumber,accountno,date,amount,description,itemnumber,
-      accounttype,amountoutstanding) VALUES(
-      ?,?,NOW(),?,?,?,?,?)');
-    $sth->execute(
-      $borrowernumber, 
-      $nextaccntno,
-      $payment,
-      "Payment for no.$accountno $$data{description}, Thanks (-$user)", 
-      $data->{itemnumber} || undef,
-      'Pay', 
-      0
-    );
-
-    # FIXME - The second argument to &UpdateStats is supposed to be the
-    # branch code.
-    # UpdateStats is now being passed $accountno too. MTJ
-    C4::Stats::UpdateStats( $user, 'payment', $amount, '', '', '', $borrowernumber,
-        $accountno );
-    $sth->finish;
-}
-
-# makepayment needs to be fixed to handle partials till then this separate subroutine
-# fills in
-sub makepartialpayment {
-    my ( $borrowernumber, $accountno, $amount, $user, $branch ) = @_;
-    if (!$amount || $amount < 0) {
-        return;
-    }
-    my $dbh = C4::Context->dbh;
-
-    my $nextaccntno = getnextacctno($borrowernumber);
-    my $newamtos    = 0;
-
-    my $data = $dbh->selectrow_hashref(
-        'SELECT * FROM accountlines WHERE  borrowernumber=? AND accountno=?',undef,$borrowernumber,$accountno);
-    my $new_outstanding = $data->{amountoutstanding} - $amount;
-    my $paydate = C4::Dates->new()->output;
-    my $update = "UPDATE  accountlines 
-        SET amountoutstanding = ?,
-            description       = CONCAT(description, ', paid at no.$nextaccntno $paydate')
-      WHERE borrowernumber    = ?
-        AND accountno         = ?";
-    $dbh->do( $update, undef, $new_outstanding, $borrowernumber, $accountno);
-
-    # create new line
-    my $insert = 'INSERT INTO accountlines (borrowernumber, accountno, date, amount, '
-    .  'description, itemnumber, accounttype, amountoutstanding) '
-    . ' VALUES (?, ?, now(), ?, ?, ?, ?, 0)';
-
-    $dbh->do(  $insert, undef, $borrowernumber, $nextaccntno, (-1*$amount),
-        "Payment for no.$accountno $$data{description}, Thanks (-$user)",$data->{itemnumber},'Pay');
-
-    UpdateStats( $user, 'payment', (-1*$amount), '', '', '', $borrowernumber, $accountno );
-    return 1;
-}
-
-# returns all relevant account lines for a given borrower and itemnumber
-sub getAllAccountsByBorrowerItem
-{
-   my($borrowernumber,$itemnumber) = @_;
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("SELECT * FROM accountlines
-      WHERE borrowernumber = ?
-        AND itemnumber     = ?");
-   $sth->execute($borrowernumber,$itemnumber);
-   my @all = ();
-   while(my $row = $sth->fetchrow_hashref()) {
-      push @all, $row;
-   }
-   return \@all;
-}
-
-=head2 getnextacctno
-
-  $nextacct = &getnextacctno($borrowernumber);
-
-Returns the next unused account number for the patron with the given
-borrower number.
-
-=cut
-
-#'
-# FIXME - Okay, so what does the above actually _mean_?
-sub getnextacctno ($) {
-    my ($borrowernumber) = shift or return undef;
-    my $sth = C4::Context->dbh->prepare(
-        "SELECT accountno+1 FROM accountlines
-         WHERE    (borrowernumber = ?)
-         ORDER BY accountno DESC
-		 LIMIT 1"
-    );
-    $sth->execute($borrowernumber);
-    return ($sth->fetchrow || 1);
-}
-
-sub RCR2REF
-{
-   my %g = @_;
-   return unless ($g{borrowernumber} && $g{accountno});
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare('SELECT * FROM accountlines
-       WHERE accountno=? AND borrowernumber=?');
-   $sth->execute($g{accountno},$g{borrowernumber});
-   my $rec = $sth->fetchrow_hashref();
-   return unless $rec;
-
-   my $desc = $$rec{description};
-   $desc    =~ s/^(Refund owed)/Refund issued/;
-   $sth = $dbh->prepare(q|
-      UPDATE accountlines
-         SET accounttype       = 'REF',
-             amountoutstanding = 0,
-             description       = ?
-       WHERE accountno         = ?
-         AND borrowernumber    = ?|);
-   $sth->execute($desc,$g{accountno},$g{borrowernumber});
-   return 1;
-}
-
-sub refundBalance
-{
-   my %g = @_;
-   return unless $g{borrowernumber};
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare(q|
-      SELECT SUM(amountoutstanding)
-        FROM accountlines
-       WHERE borrowernumber = ?|);
-   $sth->execute($g{borrowernumber});
-   my $sum = ($sth->fetchrow_array)[0];
-   return if $sum >= 0;
-   my $newno = getnextacctno($g{borrowernumber});
-   $sth = $dbh->prepare(q|
-      INSERT INTO accountlines(
-         date,
-         accountno,
-         borrowernumber,
-         description,
-         amount,
-         amountoutstanding,
-         accounttype
-      ) VALUES (NOW(),?,?,?,?,?,?)|);
-   $sth->execute(
-      $newno,
-      $g{borrowernumber},
-      'Refund account total balance credit for payment(s)',
-      $sum,
-      0,
-      'REF'
-   );
-   $sth = $dbh->prepare(qq|
-      UPDATE accountlines
-         SET accounttype       = 'CR',
-             description       = CONCAT(description,', issued at no.$newno'),
-             amountoutstanding = 0
-       WHERE accounttype       = 'RCR'
-         AND amountoutstanding < 0
-         AND borrowernumber    = ?|);
-   $sth->execute($g{borrowernumber});
-   $sth = $dbh->prepare(q|
-      UPDATE accountlines
-         SET amountoutstanding = 0
-       WHERE amountoutstanding > 0
-         AND borrowernumber    = ?|);
-   $sth->execute($g{borrowernumber});
-   return 1;
-}
-
-sub makeClaimsReturned
-{
-   my $crval = C4::Context->preference('ClaimsReturnedValue');
-   die "No ClaimsReturnedValue set in syspref" unless $crval;
-   my($lost_item_id,$claims_returned,$nomoditem) = @_;
-
-   $claims_returned ||= 0;
-   $claims_returned   = 1 if $claims_returned;
-   C4::LostItems::ModLostItem(id=>$lost_item_id,claims_returned=>$claims_returned);
-   my $li = C4::LostItems::GetLostItemById($lost_item_id) // {};
-   return 1 unless $li;
-   if ($claims_returned) {
-      return 1 unless C4::Context->preference('RefundReturnedLostItem');
-   }
-   else {
-      if(!$nomoditem) {
-         ## set category LOST authorised value to 1
-         C4::Items::ModItemLost($$li{biblionumber},$$li{itemnumber},1);
-      }
-      ## possibly recharge a lost fee.  it will be recharged if it was previoulsy
-      ## forgiven
-      rechargeClaimsReturnedUndo($li);
-      return 1;
-   }
-
-   ## RefundReturnedLostItem is ON and we have claims_returned true
-   ## get the lost item in accountlines
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("SELECT * FROM accountlines
-      WHERE borrowernumber = ?
-        AND itemnumber     = ?
-        AND accounttype    = 'L'
-   ORDER BY accountno DESC");
-   $sth->execute($$li{borrowernumber},$$li{itemnumber});
-   my $data = $sth->fetchrow_hashref() // {};
-   return 0 unless $$data{accountno}; ## never lost then suddenly set to Claims Returned
-   C4::Items::ModItemLost($$li{biblionumber},$$li{itemnumber},$crval);
-
-   ## see what else has been done regarding this lost item
-   $sth = $dbh->prepare('SELECT * FROM accountlines
-      WHERE borrowernumber = ?
-        AND itemnumber     = ?
-        AND accountno      > ?
-   ORDER BY accountno DESC');
-   $sth->execute($$li{borrowernumber},$$li{itemnumber},$$data{accountno});
-
-   ## theoretically, you can't Writeoff, Pay, Lost Return, or Claims Returned
-   ## on an item twice that's lost once.  This is for most recent lost
-   my %c = ();
-   while(my $row = $sth->fetchrow_hashref()) {
-      $c{$$row{accounttype}} = $row;
-   }
-   my $cr_accountno = $c{FOR}{accountno} || getnextacctno($$li{borrowernumber});
-   if (!$c{FOR}{amount}) {
-      my $crdate = C4::Dates->new()->output;
-      $dbh->do("UPDATE accountlines
-         SET amountoutstanding = 0,
-             description       = CONCAT(description,', claims returned at no.$cr_accountno $crdate')
-       WHERE borrowernumber    = ?
-         AND itemnumber        = ?
-         AND accountno         = ?", undef,
-         $$li{borrowernumber},
-         $$li{itemnumber},
-         $$data{accountno}); # doesn't go to LR, remains L
-      $dbh->do("INSERT INTO accountlines (
-            date,
-            accountno,
-            borrowernumber,
-            itemnumber,
-            accounttype,
-            amount,
-            amountoutstanding,
-            description) VALUES(
-         NOW(),?,?,?,'FOR',?,0,?)",undef,
-         $cr_accountno,
-         $$li{borrowernumber},
-         $$li{itemnumber},
-         (-1 *$$data{amount}),
-         "Claims returned at no.$$data{accountno}"
-      );
-   }
-   return 1 if $c{RCR};
-
-   if ($$data{amountoutstanding} < $$data{amount}) {
-      return unless $$data{description} =~ /paid at no\.\d+/;
-      my $rcrAmount = -1 *($$data{amount} - $$data{amountoutstanding});
-      return 1 unless $rcrAmount;
-      my $pay_accountno = getnextacctno($$li{borrowernumber});
-      $dbh->do("INSERT INTO accountlines (
-            date,
-            accountno,
-            accounttype,
-            borrowernumber,
-            itemnumber,
-            description,
-            amount,
-            amountoutstanding
-            ) VALUES ( NOW(),?,'RCR',?,?,?,?,? )", undef,
-         $pay_accountno,
-         $$li{borrowernumber},
-         $$li{itemnumber},
-         "Refund owed at no.$$data{accountno} for payment on lost item Claims Returned",
-         $rcrAmount,
-         $rcrAmount,
-      );
-   }
-   return 1;
-}
-
-sub rechargeClaimsReturnedUndo
-{
-   my $li = shift; # lost_items hash for the lost item
-   my $dbh = C4::Context->dbh;
-   my $sth;
-   my $newnum = 0;
-
-   # first make sure the borrower hasn't already been charged for 
-   # this item
-   $sth = $dbh->prepare("SELECT * FROM accountlines
-      WHERE borrowernumber = ?
-        AND itemnumber     = ?
-        AND accounttype    = 'L'
-   ORDER BY accountno DESC LIMIT 1");
-   $sth->execute($$li{borrowernumber},$$li{itemnumber});
-   my $acct = $sth->fetchrow_hashref();
-
-   ## account was previously zero'd out
-   if ($$acct{amountoutstanding} == 0) {
-      ## get the replacement cost
-      $sth = $dbh->prepare('
-         SELECT replacementprice,
-                biblioitemnumber 
-           FROM items 
-          WHERE itemnumber = ?');
-      $sth->execute($$li{itemnumber});
-      my($replacementprice,$biblioitemnumber) = $sth->fetchrow_array;
-      if (($replacementprice == 0) || !$replacementprice) {
-         ## get the replacement price by itemtype
-         $sth = $dbh->prepare('
-         SELECT itemtypes.replacement_price 
-           FROM itemtypes,biblioitems
-          WHERE itemtypes.itemtype = biblioitems.itemtype
-            AND biblioitems.biblioitemnumber = ?');
-         $sth->execute($biblioitemnumber);
-         $replacementprice = ($sth->fetchrow_array)[0];
-      }
-
-      ## recharge the lost fee as a NEW line in the borrower's account
-      my $newnum = getnextacctno($$li{borrowernumber});
-      $sth = $dbh->prepare('INSERT INTO accountlines (
-         accountno,
-         itemnumber,
-         amountoutstanding,
-         date,
-         description,
-         accounttype,
-         amount,
-         borrowernumber)
-         VALUES(?,?,?,NOW(),?,?,?,?)');
-      $sth->execute(
-         $newnum,
-         $$li{itemnumber},
-         $replacementprice,
-         'Lost Item',
-         'L',
-         $replacementprice,
-         $$li{borrowernumber}
-      );
-
-      ## find previous claims returned
-      $sth = $dbh->prepare("SELECT accountno FROM accountlines
-         WHERE itemnumber     = ?
-           AND borrowernumber = ?
-           AND accounttype    = 'FOR'
-           AND description LIKE 'Claims returned at no.$$acct{accountno}%'
-           AND description NOT RLIKE 'recharged at no.'");
-      $sth->execute($$li{itemnumber},$$li{borrowernumber});
-      if (my($prevnum) = $sth->fetchrow_array) {
-         my $chargedate = C4::Dates->new()->output;
-         my $user       = C4::Context->userenv->{id};
-         $dbh->do("UPDATE accountlines
-            SET description    = CONCAT(description, ', recharged at no.$newnum $chargedate (-$user)')
-          WHERE accountno      = ?
-            AND borrowernumber = ?",undef,
-            $prevnum,$$li{borrowernumber}
-         );
-      }
-   }
-
-   # else do nothing: borrower's already been charged for this item
-   return $newnum;
-}
 
 sub chargelostitem{
-# http://wiki.koha.org/doku.php?id=en:development:kohastatuses
-# lost ==1 Lost, lost==2 longoverdue, lost==3 lost and paid for
-# FIXME: itemlost should be set to 3 after payment is made, should be a warning to the interface that
-# a charge has been added
-# FIXME : if no replacement price, borrower just doesn't get charged?
-
+    my %args = shift;
+    
+# lost ==1 Lost and charge, lost==2 longoverdue, lost==? trace (affects holds).
+# This sub assumes caller has modified item.
+# FIXME : If we allow user to edit authorised values for itemlost, then we shouldn't be hardcoding values.
+# FIXME : These lost statuses should be in the lost_items table, not in the items table.
+    
+    # sub can be called with either: issue_id, lost_item_id, or itemnumber.
+    
+    my %ACCT_TYPES = _get_accounttypes();
     my $dbh = C4::Context->dbh();
     my ($itemnumber) = @_;
-
-    # Pull default replacement price from itemtypes table in the event
-    # items.replacementprice is not set
+#    my $issue = C4::Circulation::GetItemIssue($itemnumber);  # returns item info even if not checked out. -- NOT in LK.
     my $sth=$dbh->prepare("SELECT lost_items.borrowernumber,
                                   lost_items.claims_returned,
                                   items.*,
@@ -737,368 +133,1342 @@ sub chargelostitem{
                               AND items.biblionumber    = biblio.biblionumber
                               AND items.itype           = itemtypes.itemtype");
     $sth->execute($itemnumber);
-    my $lost=$sth->fetchrow_hashref() || return;
-    return unless $$lost{borrowernumber};
-    my $amount = $$lost{replacementprice} || $$lost{replacement_price} || 0;
+    my $lost=$sth->fetchrow_hashref();
+    return unless $lost->{borrowernumber};
+    my $amount = $lost->{replacementprice} || $lost->{replacement_price} || 0;
     return unless $amount;
-
-    # first make sure the borrower hasn't already been charged for this item
-    $sth = $dbh->prepare("SELECT * from accountlines
-        WHERE borrowernumber= ? 
-          AND itemnumber    = ? 
-          AND accounttype   = 'L'
-     ORDER BY accountno DESC");
-    $sth->execute($$lost{borrowernumber},$itemnumber);
-    my $dat = $sth->fetchrow_hashref();
-    return if $dat;
-
-    my $accountno = getnextacctno($$lost{borrowernumber});
-    $sth = $dbh->prepare("INSERT INTO accountlines
-        (borrowernumber,accountno,date,amount,description,accounttype,amountoutstanding,itemnumber)
-        VALUES (?,?,now(),?,?,'L',?,?)");
-    return $sth->execute(
-        $$lost{borrowernumber},
-        $accountno,
-        $amount,
-        'Lost Item',
-        $amount,
-        $itemnumber
+    $amount = Koha::Money->new($amount);
+    
+    my $accounttype = 'LOSTITEM';
+    #FIXME: In LAK, this sub gets branch from issues table, and so takes into account circControl.  Can't do that here, so we use homebranch.
+    my %new_fee_info = (
+        borrowernumber => $lost->{'borrowernumber'},
+        amount         => $amount,
+        accounttype    => $accounttype,
+        branchcode     => $lost->{'homebranch'},
+        description    => $ACCT_TYPES{$accounttype}->{'description'} . ": $lost->{'title'} [$lost->{barcode}]",
+        itemnumber     => $itemnumber,
     );
-    # FIXME: Log this ?
+    _insert_new_fee( \%new_fee_info );
+
+    # mark issue returned.
+    C4::Circulation::MarkIssueReturned($lost->{'borrowernumber'},$itemnumber);
 }
 
 =head2 manualinvoice
 
-args:
+  &manualinvoice( $data );
 
-   borrowernumber req
-   accounttype    req   pseudonymn type
-   amount         req
-   itemnumber     op
-   description    op
-   user           op
-
-=cut
-
-# I am guessing $user refers to the username (userid) of the logged in librarian -hQ
-
-sub manualinvoice 
-{
-    my %g = @_;
-    foreach(qw(amount borrowernumber)) { die "$_ is required" unless $g{$_} }
-    $g{accounttype} ||= $g{type} || 'M';
-    delete ($g{type});
-    my $dbh = C4::Context->dbh;
-    my %t = (
-      'N'   ,'New Card',
-      'F'   ,'Fine',
-      'A'   ,'Account Management Fee',
-      'M'   ,'Sundry',
-      'L'   ,'Lost Item'
-    );
-   $g{notify_id} = 0;
-   if (exists $t{$g{accounttype}}) {
-      $g{description} = $t{$g{accounttype}} . ($g{description}? ", $g{description}" : '');
-      $g{notify_id}   = 1;
-   }
-   if ($g{description} && $g{user}) {
-      $g{description} .= " (-$g{user})";
-   }
-   delete $g{user};
-
-   if (!!$g{notmanual}) {
-      ## do nothing, don't alter description
-      delete $g{notmanual};
-   }
-   else {
-      if ($g{isCredit}) {
-         $g{description} = "(Manual credit) $g{description}";
-      }
-      else {
-         $g{description} = "(Manual invoice) $g{description}";
-      }
-   }
-
-   if (exists $g{isCredit}) { delete $g{isCredit} }
-   $g{accountno}         = getnextacctno($g{borrowernumber});
-   $g{amountoutstanding} = $g{amount};
-   my $sql = sprintf("INSERT INTO  accountlines (date,%s)
-      VALUES(NOW(),%s)",
-      join(',',keys %g),
-      join(',',map{'?'}keys %g)
-   );
-   my $sth = $dbh->prepare($sql);
-   $sth->execute(values %g);
-
-    UpdateStats( my $branch = '', my $stattype = 'maninvoice', $g{amount}, my $other = $g{accounttype}, my $itemnum, my $itemtype, $g{borrowernumber}, $g{accountno});
-    return 0;
-}
-
-=head2 fixcredit #### DEPRECATED
-
- $amountleft = &fixcredit($borrowernumber, $data, $barcode, $type, $user);
-
- This function is only used internally, not exported.
+C<$data> is a hashref with the following keys:
+C<borrowernumber> is the patron's borrower number.
+C<itemnumber> is the item involved, if pertinent;
+C<description> is a description of the transaction.
+C<$accounttype> may be one of C<FINE>, C<NEWCARD>, C<ACCTMANAGE> or C<SUNDRY>
+C<$amount> is the currency value of the fee
+C<$operator_id> is the operator id, i.e. the staff member who assessed the fine
+C<$branch> is the branch that is issuing the fee
 
 =cut
 
-# This function is deprecated in 3.0
+sub manualinvoice {
+    my ( $invoice ) = @_;
+    my $dbh      = C4::Context->dbh;
+    my ($fee_id, $error);
 
-sub fixcredit {
-
-    #here we update both the accountoffsets and the account lines
-    my ( $borrowernumber, $data, $barcode, $type, $user ) = @_;
-    my $dbh        = C4::Context->dbh;
-    my $newamtos   = 0;
-    my $accdata    = "";
-    my $amountleft = $data;
-    if ( $barcode ne '' ) {
-        my $item        = GetBiblioFromItemNumber( '', $barcode );
-        my $nextaccntno = getnextacctno($borrowernumber);
-        my $query       = "SELECT * FROM accountlines WHERE (borrowernumber=?
-    AND itemnumber=? AND amountoutstanding > 0)";
-        if ( $type eq 'CL' ) {
-            $query .= " AND (accounttype = 'L' OR accounttype = 'Rep')";
-        }
-        elsif ( $type eq 'CF' ) {
-            $query .= " AND (accounttype = 'F' OR accounttype = 'FU' OR
-      accounttype='Res' OR accounttype='Rent')";
-        }
-        elsif ( $type eq 'CB' ) {
-            $query .= " and accounttype='A'";
-        }
-
-        #    print $query;
-        my $sth = $dbh->prepare($query);
-        $sth->execute( $borrowernumber, $item->{'itemnumber'} );
-        $accdata = $sth->fetchrow_hashref;
-        $sth->finish;
-        if ( $accdata->{'amountoutstanding'} < $amountleft ) {
-            $newamtos = 0;
-            $amountleft -= $accdata->{'amountoutstanding'};
-        }
-        else {
-            $newamtos   = $accdata->{'amountoutstanding'} - $amountleft;
-            $amountleft = 0;
-        }
-        my $thisacct = $accdata->{accountno};
-        my $usth     = $dbh->prepare(
-            "UPDATE accountlines SET amountoutstanding= ?
-     WHERE (borrowernumber = ?) AND (accountno=?)"
-        );
-        $usth->execute( $newamtos, $borrowernumber, $thisacct );
-        $usth->finish;
-        $usth = $dbh->prepare(
-            "INSERT INTO accountoffsets
-     (borrowernumber, accountno, offsetaccount,  offsetamount)
-     VALUES (?,?,?,?)"
-        );
-        $usth->execute( $borrowernumber, $accdata->{'accountno'},
-            $nextaccntno, $newamtos );
-        $usth->finish;
+    my %ACCT_TYPES = _get_accounttypes();
+    return 'INVALID_ACCOUNT_TYPE' unless($invoice->{accounttype}
+                && $ACCT_TYPES{$invoice->{accounttype}}
+                && ( $ACCT_TYPES{$invoice->{accounttype}}->{class} eq 'fee' ||
+                    $ACCT_TYPES{$invoice->{accounttype}}->{class} eq 'invoice') );
+    # clean up data
+    if($invoice->{amount} && $invoice->{amount} > 0){
+        $invoice->{amount} = Koha::Money->new($invoice->{amount}) unless Check::ISA::obj($invoice->{amount}, 'Koha::Money');
+        ( $fee_id, $error ) = _insert_new_fee( $invoice );
+    } else {
+        $error = "INVALID_INVOICE_AMOUNT";
     }
 
-    # begin transaction
-    my $nextaccntno = getnextacctno($borrowernumber);
-
-    # get lines with outstanding amounts to offset
-    my $sth = $dbh->prepare(
-        "SELECT * FROM accountlines
-  WHERE (borrowernumber = ?) AND (amountoutstanding >0)
-  ORDER BY date"
-    );
-    $sth->execute($borrowernumber);
-
-    #  print $query;
-    # offset transactions
-    while ( ( $accdata = $sth->fetchrow_hashref ) and ( $amountleft > 0 ) ) {
-        if ( $accdata->{'amountoutstanding'} < $amountleft ) {
-            $newamtos = 0;
-            $amountleft -= $accdata->{'amountoutstanding'};
-        }
-        else {
-            $newamtos   = $accdata->{'amountoutstanding'} - $amountleft;
-            $amountleft = 0;
-        }
-        my $thisacct = $accdata->{accountno};
-        my $usth     = $dbh->prepare(
-            "UPDATE accountlines SET amountoutstanding= ?
-     WHERE (borrowernumber = ?) AND (accountno=?)"
-        );
-        $usth->execute( $newamtos, $borrowernumber, $thisacct );
-        $usth->finish;
-        $usth = $dbh->prepare(
-            "INSERT INTO accountoffsets
-     (borrowernumber, accountno, offsetaccount,  offsetamount)
-     VALUE (?,?,?,?)"
-        );
-        $usth->execute( $borrowernumber, $accdata->{'accountno'},
-            $nextaccntno, $newamtos );
-        $usth->finish;
-    }
-    $sth->finish;
-    $type = "Credit " . $type;
-    C4::Stats::UpdateStats( $user, $type, $data, $user, '', '', $borrowernumber );
-    $amountleft *= -1;
-    return ($amountleft);
+    return ( defined $error ) ? $error : 0;
 }
 
-=head2 refund
+=head2 manualcredit
 
-#FIXME : DEPRECATED SUB
- This subroutine tracks payments and/or credits against fines/charges
-   using the accountoffsets table, which is not used consistently in
-   Koha's fines management, and so is not used in 3.0 
+  &manualcredit( $data, %options );
 
-=cut 
+C<$data> is a hashref with the following keys:
+C<borrowernumber> is the patron's borrower number.
+C<description> is a description of the transaction.
+C<$accounttype> may only be type C<CREDIT>
+C<$amount> is the currency value of the credit, as Koha::Money object or as a number.
+C<$operator_id> is the staff member's borrowernumber overseeing the transaction.
 
-sub refund {
+C<$options{fees}> can optionally specify which fees to apply this credit to.
 
-    #here we update both the accountoffsets and the account lines
-    my ( $borrowernumber, $data ) = @_;
-    my $dbh        = C4::Context->dbh;
-    my $newamtos   = 0;
-    my $accdata    = "";
-    my $amountleft = $data * -1;
+This function should be called with positive amount values.
+The credit will be applied to any outstanding fees, specified
+in C<$fees_to_pay> or by chrono order.
 
-    # begin transaction
-    my $nextaccntno = getnextacctno($borrowernumber);
+Optional:  Specify noapply => 1 to prevent the credits from being automatically linked to fees.
+This is just for the upgrade script (converting from accountlines ) and is unlikely to be useful elsewhere.
 
-    # get lines with outstanding amounts to offset
-    my $sth = $dbh->prepare(
-        "SELECT * FROM accountlines
-  WHERE (borrowernumber = ?) AND (amountoutstanding<0)
-  ORDER BY date"
-    );
-    $sth->execute($borrowernumber);
 
-    #  print $amountleft;
-    # offset transactions
-    while ( ( $accdata = $sth->fetchrow_hashref ) and ( $amountleft < 0 ) ) {
-        if ( $accdata->{'amountoutstanding'} > $amountleft ) {
-            $newamtos = 0;
-            $amountleft -= $accdata->{'amountoutstanding'};
-        }
-        else {
-            $newamtos   = $accdata->{'amountoutstanding'} - $amountleft;
-            $amountleft = 0;
-        }
+=cut
 
-        #     print $amountleft;
-        my $thisacct = $accdata->{accountno};
-        my $usth     = $dbh->prepare(
-            "UPDATE accountlines SET amountoutstanding= ?
-     WHERE (borrowernumber = ?) AND (accountno=?)"
-        );
-        $usth->execute( $newamtos, $borrowernumber, $thisacct );
-        $usth->finish;
-        $usth = $dbh->prepare(
-            "INSERT INTO accountoffsets
-     (borrowernumber, accountno, offsetaccount,  offsetamount)
-     VALUES (?,?,?,?)"
-        );
-        $usth->execute( $borrowernumber, $accdata->{'accountno'},
-            $nextaccntno, $newamtos );
-        $usth->finish;
+sub manualcredit {
+    my $credit = shift;
+    my %options = @_;
+    my $fees_to_pay = $options{fees};
+    my $dbh      = C4::Context->dbh;
+    my ( $payment, $error );
+
+    my %ACCT_TYPES = _get_accounttypes();
+    return 'INVALID_ACCOUNT_TYPE' unless($ACCT_TYPES{$credit->{accounttype}}->{class} eq 'payment');
+    # clean up data
+    if($credit->{amount} && $credit->{amount} > 0){
+        $credit->{amount} = Koha::Money->new($credit->{amount}) unless Check::ISA::obj($credit->{amount}, 'Koha::Money');
+        #$credit->{'date'} = ($credit->{'date'}) ? C4::Dates->new($credit->{'date'})->output('timestamp') : C4::Dates->output('timestamp');
+        #FIXME: C4::Dates needs updates for above to work.  For now we assume the caller includes a valid date format if it exists.
+        $credit->{amount} = -1 * $credit->{amount};  # FIXME : credits are negative, but manualcredit takes positive values.
+        ( $payment, $error ) = _insert_new_payment( $credit );
+        RedistributeCredits( $credit->{'borrowernumber'}, $fees_to_pay ) unless($options{noapply});        
+    } else {
+        $error = "INVALID_CREDIT_AMOUNT";
     }
-    $sth->finish;
-    return ($amountleft);
+    # TODO: it would probably be useful to return the payment id, or even the full payment hash as well as error.
+    return ( defined $error ) ? $error : 0;
 }
+
+
+
+=head2 getcharges
+
+    my $fines = &getcharges($borrowernumber, $options);
+
+Retrieves records from the C<fees> table for the given patron.
+Adds the hashkey 'amountoutstanding' to the returned fines hash.
+C<$options> can include:
+
+=over 4
+
+=item outstanding => 1 will retrieve only fees that have not been fully paid.
+
+=item since => C<C4::Dates>|TIMESTAMP  will date-limit the results.
+    Note since C4::Dates doesn't include time in LK, this is necessarily a >=.
+    So to get today's fines, you'd do since=>C4::Dates->new()
+
+=item accounttype => 'code'  limits to fees of a given accounttype.
+
+=item limit => 10    gets the 10 most recent fines.
+
+=back
+
+Returns an arrayref of fines hashrefs.
+
+=cut
 
 sub getcharges {
-	my ( $borrowerno, $timestamp, $accountno ) = @_;
+	my $borrowernumber = shift || return undef;
+    my %options = @_ ;
 	my $dbh        = C4::Context->dbh;
-	my $timestamp2 = $timestamp - 1;
-	my $query      = "";
-	my $sth = $dbh->prepare(
-			"SELECT * FROM accountlines WHERE borrowernumber=? AND accountno = ?"
-          );
-	$sth->execute( $borrowerno, $accountno );
-	
+	my $query = " SELECT * FROM fees JOIN fee_transactions AS ft on(id = fee_id)
+                                WHERE borrowernumber = ? and accounttype in (select accounttype from accounttypes where class='fee' or class='invoice') ";
+    my @bind = ($borrowernumber);
+    if($options{since}){
+        $query .= " AND timestamp > ? ";
+        push @bind, (ref $options{since} eq 'C4::Dates') ? $options{since}->output('iso') : $options{since};
+    }
+    if($options{accounttype}){
+        $query .= " AND accounttype = ? ";
+        push @bind, $options{accounttype};
+    }
+    $query .= " ORDER BY ft.timestamp DESC";
+    if($options{limit}){
+        $query .= " LIMIT ? ";
+        push @bind, $options{limit};
+    }
+    my $sth = $dbh->prepare($query);
+	$sth->execute( @bind);
     my @results;
+    my $sth_outstanding = $dbh->prepare("select sum(amount) from fees LEFT JOIN fee_transactions on(fees.id=fee_transactions.fee_id) where fees.id = ?");
+
     while ( my $data = $sth->fetchrow_hashref ) {
+        $sth_outstanding->execute( $data->{fee_id} );
+        my ($outstanding) = $sth_outstanding->fetchrow_array;
+        if($options{'outstanding'}){
+            next unless($outstanding > 0);
+        }
+        $data->{'amountoutstanding'} = Koha::Money->new($outstanding);
+        $data->{'amount'} = Koha::Money->new($data->{amount});
 		push @results,$data;
 	}
-    return (@results);
+    return \@results;
 }
 
+=head2 getaccruingcharges
+
+    &getaccruingcharges($borrowernumber);
+
+Gets a list of estimated fees for currently overdue items by borrower.
+The fees_accruing table is populated by the fines.pl cron job.
+
+=cut
+
+sub getaccruingcharges {
+	my $borrowernumber = shift || return undef;
+	my $dbh        = C4::Context->dbh;
+	my $sth = $dbh->prepare(   "SELECT fees_accruing.*, itemnumber, date_due
+                                FROM fees_accruing
+                                    LEFT JOIN issues on ( fees_accruing.issue_id = issues.id )
+                                WHERE issues.borrowernumber=?
+                                    ORDER BY issuedate" );
+	$sth->execute( $borrowernumber );
+	my @results;
+	while(my $data = $sth->fetchrow_hashref){
+	    $data->{'amount'} = Koha::Money->new($data->{amount}) / 100.0 ; # stored as int, unlike fee_transactions.amount
+	    push @results,$data;
+	}
+    return \@results;
+}
+
+=head2 getcredits
+
+    my @credits = &getcredits( $fee_id );
+
+Gets a list of credits associated with a given fee,
+most recent first.  These are rows from fee_transactions
+table, which will show payments, as well as writeoffs & forgivens which are not
+stored in the payments table.
+
+
+=cut
 
 sub getcredits {
-	my ( $date, $date2 ) = @_;
+	my ( $fee_id ) = @_;
 	my $dbh = C4::Context->dbh;
-	my $sth = $dbh->prepare(
-			        "SELECT * FROM accountlines,borrowers
-      WHERE amount < 0 AND accounttype <> 'Pay' AND accountlines.borrowernumber = borrowers.borrowernumber
-	  AND timestamp >=TIMESTAMP(?) AND timestamp < TIMESTAMP(?)"
-      );  
-
-    $sth->execute( $date, $date2 );                                                                                                              
-    my @results;          
-    while ( my $data = $sth->fetchrow_hashref ) {
-		$data->{'date'} = $data->{'timestamp'};
-		push @results,$data;
-	}
-    return (@results);
-} 
-
-
-sub getrefunds {
-	my ( $date, $date2 ) = @_;
-	my $dbh = C4::Context->dbh;
-	
-	my $sth = $dbh->prepare(
-			        "SELECT *,timestamp AS datetime                                                                                      
-                  FROM accountlines,borrowers
-                  WHERE (accounttype = 'REF'
-					  AND accountlines.borrowernumber = borrowers.borrowernumber
-					                  AND date  >=?  AND date  <?)"
-    );
-
-    $sth->execute( $date, $date2 );
-
+    my @ptypes = _get_accounttypes('payment');
+    my @ttypes = _get_accounttypes('transaction');
+    my @accounttypes = ( @ptypes, @ttypes );
+    my $placeholders = join(',', map {'?'} @accounttypes);
+	my $sth = $dbh->prepare(   "SELECT * FROM fee_transactions LEFT JOIN payments on(fee_transactions.payment_id = payments.id)
+                                WHERE fee_id = ?
+                                AND accounttype IN ($placeholders)
+                                ORDER BY timestamp DESC"
+                           );
+    $sth->execute( $fee_id, @accounttypes );
     my @results;
-    while ( my $data = $sth->fetchrow_hashref ) {
-		push @results,$data;
-		
-	}
-    return (@results);
+    while(my $data = $sth->fetchrow_hashref){
+        $data->{'amount'} = Koha::Money->new($data->{amount});
+        $data->{date} = $data->{timestamp} unless $data->{date};  # transaction types don't have date.
+        push @results,$data;
+    }
+    return \@results;
+
 }
 
-sub ReversePayment {
-  my ( $borrowernumber, $accountno ) = @_;
-  my $dbh = C4::Context->dbh;
-  
-  my $sth = $dbh->prepare('SELECT amountoutstanding FROM accountlines WHERE borrowernumber = ? AND accountno = ?');
-  $sth->execute( $borrowernumber, $accountno );
-  my $row = $sth->fetchrow_hashref();
-  my $amount_outstanding = $row->{'amountoutstanding'};
-  
-  if ( $amount_outstanding <= 0 ) {
-    $sth = $dbh->prepare('UPDATE accountlines SET amountoutstanding = amount * -1, description = CONCAT( description, " (Reversed)" ) WHERE borrowernumber = ? AND accountno = ?');
-    $sth->execute( $borrowernumber, $accountno );
-  } else {
-    $sth = $dbh->prepare('UPDATE accountlines SET amountoutstanding = 0, description = CONCAT( description, " (Reversed)" ) WHERE borrowernumber = ? AND accountno = ?');
-    $sth->execute( $borrowernumber, $accountno );
-  }
+=head2 gettotalowed
+
+    &gettotalowed($borrowernumber);
+
+Gets the total owed for a borrower.
+Returns the currency value owed for all outstanding fines by summing every balance-altering
+transaction over the history of the account.  Includes accruing fines.
+
+=cut
+
+sub gettotalowed {
+    my $borrowernumber = shift;
+    my $dbh = C4::Context->dbh;
+    # Since borrowernumber is stored in fees and payments, not fee_transactions,
+    # this is done with two queries: the first gets all outstanding charges, the second
+    # picks up any unallocated credits.
+    my $sth = $dbh->prepare("SELECT SUM(amount) FROM fees LEFT JOIN fee_transactions on(fees.id = fee_transactions.fee_id) where fees.borrowernumber = ?" );
+    $sth->execute( $borrowernumber );
+    my ( $amountoutstanding ) = $sth->fetchrow_array;
+    $amountoutstanding = Koha::Money->new($amountoutstanding);
+    my $sth_credit = $dbh->prepare("SELECT SUM(amount) FROM payments LEFT JOIN fee_transactions on(payments.id = fee_transactions.payment_id) where payments.borrowernumber = ? and fee_id is null" );
+    $sth_credit->execute( $borrowernumber );
+    my ( $credit ) = $sth_credit->fetchrow_array;
+    $amountoutstanding += Koha::Money->new($credit) + gettotalaccruing($borrowernumber);
+    return $amountoutstanding ;
 }
 
-sub MemberOwesOnDebtCollection {
-  my ( $borrowernumber ) = @_;
-  my $dbh = C4::Context->dbh;
-  my $sql = "SELECT SUM(amountoutstanding) as stillOwing FROM accountlines, borrowers 
-              WHERE borrowers.borrowernumber = ?
-              AND borrowers.borrowernumber = accountlines.borrowernumber 
-              AND accountlines.date <= borrowers.last_reported_date";
-  my $sth = $dbh->prepare( $sql );
-  $sth->execute( $borrowernumber );
-  my $row = $sth->fetchrow_hashref;
-  my $amount = $row->{'stillOwing'};
-  
-  return $amount;
+
+=head2 gettotalaccruing
+
+    &gettotalaccruing($borrowernumber);
+
+Gets the estimated total of overdue fines for currently checked out items for a borrower.
+Relies on population of fees_accruing table by fines.pl cron job.
+
+=cut
+
+sub gettotalaccruing {
+    my $borrowernumber = shift;
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare("SELECT SUM(fees_accruing.amount) FROM fees_accruing JOIN issues on ( fees_accruing.issue_id = issues.id)  WHERE borrowernumber = ?");
+    $sth->execute( $borrowernumber );
+    my ($data) = $sth->fetchrow_array;
+    return Koha::Money->new($data) / 100.0;
 }
+
+=head2 getfee
+
+    &getfee($fee_id);
+
+Get information about a Koha fine from the fees and fee_transactions tables, including the amount outstanding
+
+=cut
+
+sub getfee {
+    my $fee_id = shift;
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM fees JOIN fee_transactions ON(fees.id = fee_transactions.fee_id)
+                                WHERE fees.id = ?
+                                AND  accounttype in (select accounttype from accounttypes where class IN ('fee', 'invoice'))");
+    $sth->execute( $fee_id );
+    my $fee = $sth->fetchrow_hashref;
+    my $sth_outstanding = $dbh->prepare("select sum(amount) from fees LEFT JOIN fee_transactions on(fees.id=fee_transactions.fee_id) where fees.id = ?");
+    $sth_outstanding->execute( $fee_id );
+    my ($outstanding) = $sth_outstanding->fetchrow_array;
+    $fee->{'amountoutstanding'} = Koha::Money->new($outstanding);
+    $fee->{'amount'} = Koha::Money->new($fee->{amount});
+    return $fee;
+}
+
+=head2 getpayment
+
+    &getpayment($payment_id, %options);
+
+Get information about a Koha credit from the payments and fee_transactions tables.
+Includes rows from payments table, plus associated fee_transactions rows
+tucked in arrayref `transactions` and hashref `unallocated`.
+There should only be one unallocated row.
+%options:
+    unallocated => 1  :  limit the returned data to the unallocated portion of the payment. 
+    db_lock => 1      :  lock in share mode. use in a transaction if reading for update.
+    
+=cut
+
+sub getpayment {
+    my $payment_id = shift;
+    my %options = @_;
+    my $dbh = C4::Context->dbh;
+    my $query = "SELECT * FROM payments JOIN fee_transactions ON(payments.id = fee_transactions.payment_id) WHERE payments.id = ? ";
+    $query .=  " AND fee_id IS NULL " if $options{unallocated};
+    $query .= " LOCK IN SHARE MODE " if $options{db_lock};
+    my $sth = $dbh->prepare($query);
+    $sth->execute( $payment_id );
+    my $payment_amount => Koha::Money->new();
+    my @trans;
+    my $unallocated;
+    while(my $paytrans = $sth->fetchrow_hashref){
+        $paytrans->{amount} = Koha::Money->new($paytrans->{amount});
+        if(defined $paytrans->{fee_id}){
+            push @trans, $paytrans;        
+        } else {
+            $unallocated = $paytrans;
+        }
+        $payment_amount += $paytrans->{amount};
+    }
+    my $payment = { id              => ($unallocated) ? $unallocated->{id} : $trans[0]->{id},
+                    borrowernumber  => ($unallocated) ? $unallocated->{borrowernumber} : $trans[0]->{borrowernumber},
+                    description     => ($unallocated) ? $unallocated->{description} : $trans[0]->{description},
+                    date            => ($unallocated) ? $unallocated->{date} : $trans[0]->{date},
+                    received_by     => ($unallocated) ? $unallocated->{received_by} : $trans[0]->{received_by},
+                    accounttype     => ($unallocated) ? $unallocated->{accounttype} : $trans[0]->{accounttype},
+                    unallocated     => $unallocated,
+        };
+    if(!$options{unallocated}){
+        $payment->{amount} = $payment_amount;
+        $payment->{transactions} = \@trans;
+    }
+    return $payment;
+}
+
+sub getpayments {
+    my $borrowernumber = shift || return undef;
+    my %options = @_;
+    my $dbh = C4::Context->dbh;
+    my $query = "SELECT id FROM payments WHERE borrowernumber=? ";
+    my @bind = ($borrowernumber);
+    if($options{since}){
+        $query .= " AND date > ? "; # Will behave like >= if C4::Dates object passed (or time-less iso date).
+        push @bind, (ref $options{since} eq 'C4::Dates') ? $options{since}->output('iso') : $options{since};
+    }
+    my $sth = $dbh->prepare($query);
+    $sth->execute(@bind);
+    my @all_payments;
+    while(my ($id) = $sth->fetchrow){
+        push @all_payments, getpayment($id);
+    }
+    return \@all_payments;
+
+}
+
+# FIXME: arguably, this should be 'can_reverse', and should test things
+# like whether any portion of the payment was refunded, etc.
+sub is_reversed {
+    my $payment = shift;
+    # $payment must be from getpayment().
+    # There will be only one transaction for a reversed payment.
+    if(exists $payment->{transactions}){
+        my $fee = getfee($payment->{transactions}->[0]->{fee_id});
+        if($payment->{accounttype} eq 'PAYMENT'){
+            return $fee->{accounttype} eq 'REVERSED_PAYMENT';            
+        } else {
+            return $fee->{accounttype} eq 'CANCELCREDIT';                        
+        }
+    } else {
+        return undef;
+    }
+}
+
+=head2 reverse_payment
+
+
+=cut
+
+sub reverse_payment {
+    my $id = shift;
+    my $dbh = C4::Context->dbh;
+
+    $dbh->begin_work();
+    my $payment = getpayment($id, dblock=>1);
+    if(is_reversed($payment)){
+        $dbh->commit();
+        return;
+    }
+    # Delete all transactions with fee_ids, and update the unallocated amount to the original payment amount.
+    # Then add a debit to link to it.
+    # FIXME: This duplicates deallocate_payment.
+    my $trans_id = (defined $payment->{unallocated}) ? $payment->{unallocated}->{transaction_id} : $payment->{transactions}->[0]->{transaction_id};
+    my $sth_del = $dbh->prepare("DELETE FROM fee_transactions WHERE payment_id=? and transaction_id != ?");
+    my $sth_up = $dbh->prepare("UPDATE fee_transactions set fee_id=?, amount=? where transaction_id=?");
+    my $fee_desc = sprintf("Payment reversed: %s  [%s]", $payment->{description}, C4::Dates->new($payment->{date}, 'iso')->output);
+    my $new_fee = { borrowernumber => $payment->{borrowernumber},
+                    amount          => -1 * $payment->{amount},
+                    accounttype     => ($payment->{accounttype} eq 'PAYMENT') ? 'REVERSED_PAYMENT' : 'CANCELCREDIT',
+                    description     => $fee_desc,
+    };
+    eval{
+        my $fee = CreateFee($new_fee, die=>1);
+        if(defined $fee){
+            $sth_del->execute($id, $trans_id);
+            $sth_up->execute($fee->{id},$payment->{amount}->value,$trans_id);
+            $dbh->commit();                        
+        }        
+    };
+    if($@){
+        $dbh->rollback();
+        return $dbh->errstr;           
+    }
+}
+
+
+=head2 AddIssuingCharge
+
+&AddIssuingCharge( $issue_id, $charge )
+
+=cut
+
+sub AddIssuingCharge {
+    # TODO: Should be by issue_id.
+    my ( $itemnumber, $borrowernumber, $charge, $isrenewal ) = @_;
+        return unless $charge && $charge > 0;
+        $charge = Koha::Money->new($charge) if(Check::ISA::obj($charge, 'Koha::Money'));
+        my $desc = ($isrenewal) ? 'Renewal fee' : 'Issuing' ;
+        my %new_fee = (
+                        borrowernumber => $borrowernumber,
+                        itemnumber     => $itemnumber,
+                        amount         => $charge,
+                        accounttype    => 'RENTAL',
+                        );
+        my $fee_rowid = CreateFee( \%new_fee );
+}
+
+
+=head2 getaccounttypes
+
+    @list_of_types = &getaccounttypes( $class );
+    $hashref_of_types = &getaccounttypes( $class );
+
+In list context, returns a list of all accounttypes of a given category.
+accounttype classes include 'fee', 'payment', 'transaction','invoice'.
+In scalar context, returns a hashref of accounttypes.
+
+=cut
+
+sub getaccounttypes {
+    my %types = _get_accounttypes(shift);
+    return wantarray ? keys %types : \%types;
+}
+
+=head2
+
+    C4::Accounts::ApplyCredit($fee_id, $action)
+ ( was    C4::Accounts::UpdateFee($fee, $action)  )
+
+Applies a credit to a given fee.
+The C<$action> hashref must contain at a minimum
+
+=over 4
+
+=item * $action->{amount}
+
+transaction amount: This is a delta value, i.e. the amount of credit to apply to this fee.
+A negative value will decrease the outstanding fee, and will create a payment record for 'PAY' accounttypes.
+Positive values will fail, since fees are atomic in Koha.  They should not be increased or edited.
+If C<$amount> is omitted, it is assumed the entire amount outstanding on the given fee should be credited.
+The following transaction types will ignore C<$action->{amount}> and generate it themselves:
+ WRITEOFF, FORGIVE, SYSTEM.
+ (you cannot currently write off or forgive a portion of a fine).
+
+=back
+
+C<$action> may specify a transaction or payment accounttype, and any fields in fee_transactions.
+
+Valid transaction accounttypes are:
+    FORGIVE, WRITEOFF, LOSTRETURNED, PAYMENT, TRANSBUS, TFORGIVE, SYSTEM
+
+These values are then used to create a new C<fee_transaction> record
+(and a payment record if the accounttype is of the 'payment' class).
+
+C<$action> may also be specified as a scalar, just
+using the transaction accounttype.  For example, to forgive
+a fine, with fee id 789, you may call C<ApplyCredit(789,'FORGIVE');>
+
+Returns dbh error on error.
+
+=cut
+
+
+sub ApplyCredit {
+    my $fee = shift or return;
+    my $action = shift;
+    # $dbh->{AutoCommit} = 0;  TODO: transaction.
+    my $dbh = C4::Context->dbh;
+    $fee = getfee($fee) unless ref $fee;
+    $action = { accounttype => $action } unless ref($action);  # allow action to be passed in as scalar accounttype.
+    $debug and warn "updating fee $fee->{'id'} . action: $action->{'accounttype'}";
+    my ( $new_pmt, $pmt_error, $trans_inserted, $trans_error );
+    my $userenv = C4::Context->userenv();
+    $action->{'operator_id'} = $userenv->{'number'} if( ! defined($action->{'operator_id'}) && $userenv);
+    $action->{'branchcode'} = $userenv->{'branch'} if( ! defined($action->{'branchcode'}) && $userenv);
+    $action->{'amount'} = Koha::Money->new($action->{amount}) if(defined $action->{amount});
+    
+    my $transaction = { fee_id          => $fee->{id},
+                        borrowernumber  => $fee->{'borrowernumber'},
+                        operator_id     => $action->{'operator_id'},
+                        branchcode      => $action->{'branchcode'},
+                        accounttype     => $action->{accounttype},
+                        notes           => $action->{'notes'},
+                        description     => $action->{description},
+                      };
+    $transaction->{timestamp} = $transaction->{'date'} = $action->{'date'} if($action->{'date'});
+    my $acct_types = getaccounttypes();
+    if($action && $action->{accounttype}){
+        if($acct_types->{$action->{accounttype}}->{class} eq 'transaction') {
+            $transaction->{amount} =  (defined $action->{amount}) ? $action->{amount} : -1 * $fee->{amountoutstanding};
+            if($transaction->{amount} >= 0 || $transaction->{amount} < -1 * $fee->{'amountoutstanding'}){
+                warn "ApplyCredit received a positive credit or excess writeoff.  Borrower $fee->{borrowernumber}, fee $fee->{id} , attempt to credit $transaction->{amount} against $fee->{'amountoutstanding'} "; # indicates bad call. 
+                return 'INVALID_TRANSACTION_AMOUNT';
+            }
+            ( $trans_inserted, $trans_error ) = _insert_fee_transaction( $transaction );
+            if ( $trans_error ) {
+                warn "Error inserting fee_transaction $trans_error";
+                return $trans_error;
+            }
+        } elsif($acct_types->{$action->{accounttype}}->{class} eq 'payment' ) {
+            my $pay_amt;
+            if(! defined $action->{'amount'} || $action->{'amount'} == -1 * $fee->{'amountoutstanding'}){
+                # Payment in full.
+                $pay_amt = -1 * $fee->{amountoutstanding};
+            } elsif($action->{amount} < 0 && $action->{amount} > -1 * $fee->{'amountoutstanding'}) {
+                # Partial payment.
+                $pay_amt = $action->{amount};
+            } else {
+                warn "ApplyCredit received a positive credit : Borrower $fee->{borrowernumber}, fee $fee->{id}"; # indicates bad call. 
+                return 'INVALID_PAYMENT_AMOUNT';
+                # We do not allow overpayment here.
+            }
+            $transaction->{amount} = $pay_amt;
+            ($new_pmt, $pmt_error) = _insert_new_payment( $transaction );
+            my ($unallocated,$unpaid) = allocate_payment( payment=>$new_pmt, fee=>$fee );
+        } else {
+            # No action specified.  Bail.
+            return 'NO_ACTION_SPECIFIED';
+        }
+    } else {
+        # nothing to do ?
+        return 'NO_ACTION_SPECIFIED';
+    }
+    return undef;
+}
+
+
+=head2 RedistributeCredits
+
+    undef = C4::Accounts::RedistributeCredits( $borrowernumber, \@fees_to_credit );
+
+Splits out or consolidates any unapplied credits to pay down outstanding
+fees for a given borrower.  If $fees_to_credit is supplied, these fees will be
+credited first, and any remaining credit will be applied to remaining fees in
+chronological order (oldest first).
+
+C<$borrowernumber> is the ID of the borrower to act upon.
+C<$fees_to_credit> is a listref of fee id's to act upon preferentially.
+
+=cut
+
+sub RedistributeCredits {
+    my $borrowernumber = shift or die;
+    my $preferred_fees = shift || ();
+    my $charges = getcharges( $borrowernumber, 'outstanding' => 1 );
+    my @outstanding_fees = sort {$a->{timestamp} cmp $b->{timestamp}} @$charges;
+    for(my $i=0;$i<=$#$preferred_fees;$i++){
+        my ($fee_index) = grep {$outstanding_fees[$_]->{fee_id} == $preferred_fees->[$i]} 0..$#outstanding_fees;
+        if(defined $fee_index){
+            $preferred_fees->[$i] = splice(@outstanding_fees, $fee_index,1);
+        } else {
+            splice(@$preferred_fees, $i,1);
+        }
+    }
+    unshift(@outstanding_fees,@$preferred_fees);
+    for my $charge (@outstanding_fees) {
+        my ($credit, $payments, $remaining_fee);
+        do {
+            ($credit, $payments) = get_unallocated_credits( $borrowernumber );
+            last if not defined @$payments[0]; # No credits left, so bail
+            # we have an unapplied credit and an unpaid fee, so let's match them up
+            (undef, $remaining_fee) = allocate_payment( payment => @$payments[0]->{id}, fee => $charge->{'fee_id'} );
+        } while ($remaining_fee > 0); # all paid up!
+        last if ($credit >= 0); # No credits, so bail
+    }
+}
+
+
+=head2 CreateFee
+
+    $row_id = C4::Accounts::CreateFee( $data, die=>0 );
+
+Adds a new fee record based on the data passed in via
+the hashref.  The hashref should contain keys that match
+columns in the C<fees> table, plus amount & accounttype for the transaction entry.
+This is just a wrapper around the internal function _insert_new_fee().
+
+C<$data> is the hash of values to be inserted for the new fee
+C<$rowid> returns the row id of the fee inserted
+
+If 'die' option is passed, the fee is created without db transaction,
+and will die on failure.  Else will return undef on failure.
+
+=cut
+
+sub CreateFee {
+    my $data = shift;
+    my %option = @_;
+    
+    # TODO: sanity checks.
+    $data->{'amount'} = Koha::Money->new($data->{amount}) unless(Check::ISA::obj($data->{amount}, 'Koha::Money'));
+    my ( $fee, $error ) = _insert_new_fee( $data, die=>$option{die});
+    if ( $error ) {
+        warn $error;
+        warn p $data;
+        return undef;
+    }
+    return $fee;
+}
+
+=head2 _insert_new_fee
+
+    ($fee_id, $error) = _insert_new_fee( \%data, die=>0 );
+
+Inserts a new fee into the C<fees> and C<fee_transactions> tables.
+
+Certain expected values are checked for presence in the hash.  IF not there, they are added for default values
+
+=cut
+
+sub _insert_new_fee {
+    my $data = shift;
+    my %option = @_;
+    
+    my $error = '';
+    my $insquery = '';
+    #FIXME : test for valid values.
+    if($data->{amount} <= 0 || ! Check::ISA::obj($data->{amount}, 'Koha::Money')){
+        return ( undef, 'INVALID FEE AMOUNT' );
+    }
+    my $transaction = {
+                borrowernumber  => $data->{borrowernumber},
+                amount          => $data->{amount},
+                accounttype     => $data->{accounttype},
+                branchcode      => $data->{branchcode},
+    };
+    $transaction->{operator_id} = $data->{operator_id} if( defined $data->{operator_id} );
+    $transaction->{timestamp} = $data->{timestamp} if( defined $data->{timestamp} );
+    $transaction->{notes} = $data->{notes} if( defined $data->{notes} );
+    
+    my $dbh = C4::Context->dbh;
+    $dbh->begin_work() unless $option{die};
+    eval {
+        my $sth=$dbh->prepare_cached("INSERT INTO fees (borrowernumber,itemnumber,description) VALUES ( ?,?,? )");
+        my @bind = ( $data->{'borrowernumber'}, $data->{'itemnumber'} , $data->{'description'} );
+        my $rowsinserted = $sth->execute( @bind );
+        # FIXME : mysql-specific.
+        # add new fee id to data.
+        $transaction->{id} = $transaction->{fee_id} = $dbh->{mysql_insertid};
+        my ( $trans_row_inserted, $trans_error ) = _insert_fee_transaction( $transaction );
+        $dbh->commit() unless $option{die};
+    };
+    if($@){
+        $error.=" ERROR in _insert_new_payment : $@ ";
+        warn "Transaction aborted because $@";
+        if($option{die}){
+            die;
+        } else {
+            $dbh->rollback;            
+        }
+    }
+    $transaction->{amountoutstanding} = $transaction->{amount};
+    return ( $transaction, $error );
+}
+
+=head2 _insert_new_payment
+
+    ($payment, $error) = _insert_new_payment( \%data );
+
+Inserts new payment records into C<payments> table.
+
+Expected values like accounttype and date are checked for
+existence.  If not present, default values are used.
+
+C<%data> is a hashref of values to use for the payment record.
+Should include:
+
+=over 4
+
+=item * accounttype (default: PAYMENT)
+
+=item * borrowernumber
+
+=item * operator_id (optional)
+
+=item * branchcode (optional)
+
+=item * description (optional)
+
+=back
+
+C<$payment> returns the payment and transaction records inserted, including the payment_id. as C<$payment->{id}>
+C<$error> is any error messages as a result of the insertion.
+It is left to the caller to associate the payment with a specific fee.
+
+=cut
+
+sub _insert_new_payment {
+    my $data = shift;
+    my $error = '';
+
+    my %ACCT_TYPES = _get_accounttypes();
+    # FIXME: Need to port over LAK's Dates module so we can handle timestamps.
+#    my $pmt_date = ( defined $data->{date} ) ? C4::Dates->new($data->{'date'},'iso') : C4::Dates->new() ;
+    if( defined $data->{accounttype}){
+        return( undef, 'INVALID ACCOUNTTYPE' ) unless( $ACCT_TYPES{$data->{accounttype}}->{class} eq 'payment');
+    } else {
+        $data->{'accounttype'} = 'PAYMENT';
+    }
+    if($data->{amount} >= 0 || ! Check::ISA::obj($data->{amount}, 'Koha::Money')){
+        return ( undef, 'INVALID PAYMENT AMOUNT' );
+    }
+    my $payment = {
+            borrowernumber  => $data->{borrowernumber},
+            description     => ($data->{description}) ? $data->{description} : $ACCT_TYPES{$data->{accounttype}}->{description},
+            received_by     => $data->{received_by} || $data->{operator_id},
+            date            => $data->{date} || undef
+    };
+    
+    my $txn = {
+            accounttype     =>  $data->{accounttype},
+            amount          => $data->{amount},
+            operator_id     => $data->{operator_id},
+            branchcode      => $data->{branchcode},
+            notes          => $data->{notes},
+        };
+    $txn->{timestamp} = $payment->{date} if(defined $payment->{date}); # FIXME: this is just for the upgrade script, or possibly to allow staff to enter payment receipt after it happens.
+
+    my $userenv = C4::Context->userenv();
+    if(ref($userenv)){
+        $payment->{received_by} = $data->{'received_by'} || $userenv->{'number'};
+        $txn->{operator_id} = $data->{'operator_id'} || $userenv->{'number'};
+        $txn->{branchcode}  = $data->{'branchcode'} || $userenv->{'branch'};
+    }
+    my @bind = ( $payment->{'borrowernumber'}, $payment->{'received_by'}, $payment->{'description'}, $payment->{date});
+    my $dbh = C4::Context->dbh;
+    $dbh->begin_work();
+    eval {
+        my $sth=$dbh->prepare_cached("INSERT INTO payments ( borrowernumber, received_by, description, date ) VALUES ( ?, ?, ?, ? )");
+        my $rows_inserted = $sth->execute( @bind );
+        $payment->{id} = $txn->{payment_id} = $dbh->{mysql_insertid};
+        my ($trans_id, $trans_error) = _insert_fee_transaction( $txn );
+        $dbh->commit();
+        $txn->{'transaction_id'} = $trans_id;
+    };
+    if($@){
+        $error.=" ERROR in _insert_new_payment : $@ ";
+        cluck "Transaction aborted because $@";
+        warn p $payment;
+        $dbh->rollback;
+    }
+    # To make this interface match that of getpayment():
+    # FIXME: This is sloppy; we need better type definition for payment.
+    $payment->{unallocated} = $txn;
+    return ( $payment, $error );
+
+}
+
+=head2 _insert_fee_transaction
+
+    ($trans_id, $error) = _insert_fee_transaction( \%data );
+
+Inserts a row into C<fee_transaction> a record consisting of values
+from the C<%data> hashref.  The only column checked for existence is
+the data field.
+Note this sub should always be called inside transaction, with $dbh->{RaiseError},
+or minimally, within an eval.  
+
+C<%data> is a hashref of column values to use for the fee_transaction
+record.
+C<$trans_id> returns the transaction_id of the row inserted into the table
+C<$error> returns any error messages that result from the table insertion.
+
+=cut
+
+sub _insert_fee_transaction {
+    my $data = shift;
+    my $error = '';
+    my $dbh = C4::Context->dbh;
+    
+    if( ! $data->{payment_id} && ! $data->{fee_id}){
+        die "INVALID TRANSACTION: Not associated to payment or fee.";
+    }
+    unless( defined($data->{'operator_id'}) &&  defined($data->{'branchcode'}) ){
+        my $userenv = C4::Context->userenv();
+        if(ref($userenv)){
+            $data->{operator_id} = $userenv->{'number'} unless $data->{'operator_id'};
+            $data->{branchcode}  = $userenv->{'branch'} unless $data->{'branchcode'};
+        }
+    }
+    my $sth=$dbh->prepare_cached("INSERT INTO fee_transactions ( payment_id, fee_id, accounttype, amount, operator_id, branchcode, notes, timestamp ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )");
+    my @bind = (    $data->{payment_id},
+                    $data->{fee_id},
+                    $data->{accounttype},
+                    $data->{amount}->value,
+                    $data->{operator_id},
+                    $data->{branchcode},
+                    $data->{notes},
+                    $data->{timestamp} || undef
+                );
+    $sth->execute( @bind );
+
+    if ( $dbh->errstr ) {
+        $error.="ERROR in _insert_fee_transaction ".$dbh->errstr;
+        warn $error;
+    }
+    my $trans_id = $dbh->{mysql_insertid};
+
+    return ( $trans_id, $error );
+}
+
+
+=head2 _get_accounttypes
+
+    @types = _get_accounttypes($trans_type);
+
+Returns a hashref of account types, with keys of accounttype code.
+There are some accounttypes with special behaviors in Koha; all of
+these should be defined in the accounttypes table in a default installation.
+At some point, we'll allow the user to add new types, but this is yet unimplemented.
+C<$trans_type> is the account class, one of ( 'fee' , 'payment', 'transaction' ).
+
+=cut
+
+sub _seed_accounttypes_cache {
+    my $types = C4::Context->dbh->selectall_hashref(
+        'SELECT * FROM accounttypes',
+        'accounttype');
+    for (values %$types) {
+        delete $_->{accounttype};
+    }
+    return $types;
+}
+
+sub _get_accounttypes {
+    my $trans_type = shift;
+
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                       datastore => C4::Context->cachehash});
+    my $types = $cache->compute('accounttypes', '1h', \&_seed_accounttypes_cache);
+    return %$types unless ($trans_type);
+
+    return map {$_ => $types->{$_}} grep {$types->{$_}{class} ~~ $trans_type} keys %$types;
+}
+
+=head2 get_unallocated_credits
+
+   ($total_credit, $payments) = get_unallocated_credits( $borrowernumber );
+
+Gets the id and unallocated amounts from the C<payments> table
+where the unallocated amount is greater than zero.
+
+C<$borrowernumber> is the borrower id to search on.
+C<@payments> is a arrayref of hashrefs of ids and amounts of payments that
+have unallocated amounts.
+
+=cut
+
+sub get_unallocated_credits {
+    my $borrowernumber = shift or return;
+    my $dbh = C4::Context->dbh;
+    my $total_credit = Koha::Money->new();
+    my @payment_ids;
+    my $sth_credit = $dbh->prepare('SELECT * FROM payments LEFT JOIN fee_transactions on(payments.id = fee_transactions.payment_id) WHERE payments.borrowernumber = ? AND fee_id IS NULL AND amount < 0');
+    $sth_credit->execute( $borrowernumber );
+    my $sth_total = $dbh->prepare("SELECT SUM(amount) FROM payments LEFT JOIN fee_transactions  on(payments.id = fee_transactions.payment_id) WHERE payments.id=?");
+    my @payments;
+    
+    while (my $data = $sth_credit->fetchrow_hashref) {
+        #$data->{'date'} = C4::Dates::format_date($data->{'timestamp'}); #wrong.
+        $data->{'amount'} = Koha::Money->new($data->{amount});
+        # FIXME: For compatibility with C4::Accounts::getpayment, the transaction data should go in the 'unallocated' hashkey instead of a straight join.
+        $sth_total->execute($data->{id});
+        my ($total) = $sth_total->fetchrow;
+        $data->{'payment_amount'} += Koha::Money->new($total);
+        push @payments, $data;
+        $total_credit += $data->{amount};
+    }
+    return ( $total_credit, \@payments);
+}
+
+=head2 allocate_payment
+
+    ($unallocated, $fee_remaining ) = allocate_payment( payment=>$payment, fee=>$fee [, amount=>$amt, preserve_date=>1 ] );
+
+Takes C<payment> as id or the output of getpayment and C<fee>, as fee_id from a C<fee> record or the C<fee> hashref (from getfee()).
+Adjusts the unallocated amount, associating the payment to the fee.
+
+Optional arguments:
+amount: amount to allocate.  Fails if this value exceeds the fee amount.
+preserve_date: bool, preserve the unallocated's timestamp when adding a new transaction. (probably only useful for upgrade script)
+
+Returns the new unallocated amount from the payment (if the payment was larger than the fee),
+and the new total owed on the fee.
+
+=cut
+
+sub allocate_payment {
+    my %args = @_;
+    if(!$args{payment} || !$args{fee}){
+        cluck "Bad call to allocate_payment." . p %args;
+        return undef;
+    }
+    my $payment = (ref $args{payment}) ? $args{payment} : getpayment($args{payment}, unallocated=>1);
+    my $fee = (ref $args{fee}) ? $args{fee} : getfee($args{fee});
+    if(!exists $payment->{id} || !exists $fee->{id}){
+        warn "Attempt to allocate payment to fee.  One/both don't exist.";
+    }
+    if(!exists $payment->{unallocated}){
+        ## ^^ FIXME: type slop. since we allow $payment to be passed in as a hashref, it might be payments join transactions rather than output of getpayment.
+        $payment = getpayment($payment->{id}, unallocated=>1);
+    }
+    my $unallocated_amt = (Check::ISA::obj($payment->{unallocated}->{amount}, 'Koha::Money')) ? $payment->{unallocated}->{amount} : Koha::Money->new($payment->{unallocated}->{amount});
+    my $amt;
+    if(exists $args{amount}){
+        $amt = (Check::ISA::obj($args{amount}, 'Koha::Money')) ? $args{amount} : Koha::Money->new($args{amount});
+        $amt = -1 * $amt unless $amt < 0;
+        if($amt < $unallocated_amt || $amt < -1 * $fee->{amountoutstanding}){
+            warn "*************Attempted overallocation of payment: $amt / $unallocated_amt";
+            warn p $payment;
+            warn p $fee;
+            return undef;
+        }
+    } else {
+        $amt = $unallocated_amt;
+    }
+    my $preserve_date = exists $args{preserve_date};
+    my $dbh = C4::Context->dbh;
+# FIXME: Rather than doing transaction in this sub, it should die on failure, and callers should do the transactions.    
+    my $remaining_credit = $unallocated_amt;
+    my $remaining_fee = $fee->{'amountoutstanding'};
+    $amt = max($amt,$remaining_credit,-1*$remaining_fee);
+    $debug and warn "Allocating payment $payment->{id}: have $unallocated_amt to apply to $remaining_fee ; applying $amt";
+    if ($unallocated_amt == $amt) {
+        # full allocation of unallocated portion..
+        $remaining_fee += $amt;
+        $remaining_credit -= $amt;
+        my $sth_trans = $dbh->prepare_cached("UPDATE fee_transactions set fee_id = ? where transaction_id = ?");
+        $sth_trans->execute( $fee->{'id'}, $payment->{unallocated}->{transaction_id} );
+    } else {
+        # If there is some remaining credit, then we adjust the fee_id=NULL fee_transaction, and we add a new one with this fee_id.
+        
+        $remaining_credit -= $amt;
+        my $pay_trans = {
+            fee_id      => $fee->{id},
+            payment_id  => $payment->{id},
+            amount      => $amt,
+            accounttype => $payment->{unallocated}->{'accounttype'},
+            notes       => $payment->{unallocated}->{notes}  # Primarily for upgrade script.
+            };
+        $pay_trans->{timestamp} = $payment->{unallocated}->{timestamp} if($preserve_date);
+        $dbh->begin_work();
+        eval{
+            
+            my ($trans_id, $trans_error) = _insert_fee_transaction( $pay_trans );
+            my $sth_trans = $dbh->prepare_cached("UPDATE fee_transactions set amount = ? where transaction_id = ?");
+            my $update_ok = $sth_trans->execute( $remaining_credit->value, $payment->{unallocated}->{transaction_id} );
+            $remaining_fee = Koha::Money->new();
+            $dbh->commit();
+        };
+        if($@){
+            warn "allocate_payment aborted : $@";
+            $dbh->rollback;
+            $remaining_credit = $unallocated_amt;
+            $remaining_fee = $fee->{'amountoutstanding'};
+        }
+    }
+    return($remaining_credit,$remaining_fee);
+}
+
+=head2 deallocate_payment
+
+    $unallocated = deallocate_payment( payment=>$payment_id [, fee=>$fee ] );
+
+Takes C<payment> as id or hash from getpayment() and optionally C<fee>, as fee_id from a C<fee> record or the C<fee> hashref (from getfee()).
+Adjusts the unallocated amount, disassociating the payment from the fee, or from all fees.
+Note that if supplying payment as hash, caller MUST call getpayment with dblock=>1 option.
+
+=cut
+
+sub deallocate_payment {
+    my %args = @_;
+    warn " deallocate_payment called with payment id : $args{payment} / fee id : $args{fee}";
+    if(!$args{payment}){
+        warn "Bad call to deallocate_payment";
+        return undef;
+    }
+    my $dbh = C4::Context->dbh;
+    
+    my $fee;
+    if( exists $args{fee}){
+        $fee = (ref $args{fee}) ? $args{fee} : getfee($args{fee});
+    }
+
+    my $sth_del = $dbh->prepare("DELETE FROM fee_transactions where transaction_id=?");
+    my $sth_upd = $dbh->prepare("UPDATE fee_transactions set fee_id=NULL, amount=? WHERE transaction_id=?");
+
+    $dbh->begin_work();
+    my $payment = getpayment($args{payment}, db_lock=>1);
+    if(!exists $payment->{id} || !exists $fee->{id}){
+        warn "Attempt to deallocate payment from fee.  One/both don't exist.";
+        $dbh->commit();  # just dropping the row lock set in getpayment.
+        return undef;
+    }
+    eval{
+        # If payment is fully allocated, convert first transaction to unallocated, else update unallocated.
+        my @transactions = (!$fee) ? @{$payment->{transactions}} : grep { $_->{fee_id} == $fee->{fee_id} } @{$payment->{transactions}};
+        my $target_row = (defined $payment->{unallocated}->{id}) ? $payment->{unallocated} : shift @transactions;
+        my $total = Koha::Money->new($target_row->{amount});
+        for my $trans (@transactions){
+            $total += $trans->{amount};
+            $sth_del->execute($trans->{transaction_id});
+        }
+        $sth_upd->execute($total->value,$target_row->{transaction_id});
+        $dbh->commit();
+        return $total;     
+    };
+    if($@){
+        warn "deallocate_payment aborted : $@";
+        $dbh->rollback;
+        return undef;
+    }
+}
+
+
+=head2 creditlostreturned
+
+formerly FixAccountForLostAndReturned
+
+    &creditlostreturned($issuedata);
+
+Credit a patron for a LOSTITEM fee against an item.  Called in C4::Circulation::AddReturn.
+
+C<$issuedata> is a hashref of issue and item info ( from GetIssueData ).
+If payments have been made, they are unlinked from the fine.
+Waivers are left in place, and any remaining amount is waived with accounttype LOSTRETURNED.
+
+=cut
+
+sub creditlostreturned {
+    my $lostitemdata = shift;
+    my $credit_type = 'LOSTRETURNED';
+## FIXME:
+# This should use the lost items id.
+    my $dbh = C4::Context->dbh;
+    unless ($lostitemdata->{'borrowernumber'}) {
+        my $lost_item = C4::LostItems::GetLostItem($lostitemdata->{'itemnumber'}) // {};
+        if($lost_item){
+            $lostitemdata->{'borrowernumber'} = $lost_item->{borrowernumber};
+        } else {
+            # Don't know who to credit.  fail silently.
+            return;
+        }
+    }
+    # check for a lost item fee and/or surcharge.
+    my $query = "SELECT id FROM fees LEFT JOIN fee_transactions ON fee_id=fees.id
+                WHERE borrowernumber = ? AND itemnumber = ? AND accounttype='LOSTITEM'";
+
+    # What happens if you lose an item twice?  We forgive both charges.
+
+    my $sth = $dbh->prepare($query);
+    $sth->execute($lostitemdata->{'borrowernumber'}, $lostitemdata->{'itemnumber'});
+    my $sth_payments = $dbh->prepare('SELECT DISTINCT payment_id FROM fee_transactions WHERE fee_id=? AND payment_id IS NOT NULL');   # AND must be payment type
+    
+    my $credited = Koha::Money->new();
+    while (my ($fee_id) = $sth->fetchrow) {
+        $sth_payments->execute($fee_id);
+        while (my ($payment_id) = $sth_payments->fetchrow){
+            $credited += deallocate_payment(fee=>$fee_id, payment=>$payment_id);
+        }
+        ApplyCredit($fee_id, {  accounttype => 'LOSTRETURNED' });
+    }
+    return;
+}
+
+=head2 prepare_fee_for_display
+
+Modify a fees hash to prepare it for template display.
+Note this modifies the hash rather than return a copy of it.
+
+=cut
+
+sub prepare_fee_for_display {
+    my $fee = shift;
+    if($fee->{'itemnumber'}){
+        my $item = GetBiblioFromItemNumber($fee->{'itemnumber'});
+        $fee->{'biblionumber'} = $item->{'biblionumber'};
+        $fee->{'title'} = $item->{'title'};
+        $fee->{'itemtype'} = $item->{'itemtype_description'};
+        $fee->{'homebranch'} = $item->{'homebranch'};
+        $fee->{'itemcallnumber'} = $item->{'itemcallnumber'};
+    }
+    $fee->{'date'} = C4::Dates::format_date($fee->{'timestamp'});
+    $fee->{'isodate'} = C4::Dates::format_date($fee->{'timestamp'}, 'iso');
+    $fee->{'amount'} = sprintf("%.2f",$fee->{'amount'}->value);
+    # accruing fees
+    # Note accruing fees table is integer math, and we assume 2 decimal places for now.
+    if(exists($fee->{'date_due'})){
+        $fee->{'accruing'} = 1;
+        $fee->{date_due} = C4::Dates::format_date($fee->{date_due});
+    } else {
+        # accruing fee does not have an accounttype.
+        my %ACCT_TYPES = _get_accounttypes();
+        $fee->{'accounttype_desc'} = $ACCT_TYPES{$fee->{'accounttype'}}->{'description'};
+        $fee->{'amountoutstanding'} = sprintf("%.2f",$fee->{'amountoutstanding'}->value);
+        $fee->{'payable'} = 1 if($fee->{'amountoutstanding'} > 0 && $fee->{'accounttype'} ne 'REFUND' && $fee->{'accounttype'} ne 'REVERSED_PAYMENT');
+            
+        
+    }
+}
+
+sub get_total_overpaid {
+    # FIXME: This is a hack and should be removed.
+    # It should not be possible to overpay.
+    # i.e. link more credits to a fine than its value.
+    # if patron overpays, he should end up with an unallocated payment.
+    my $borrowernumber= shift;
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare("select fee_id, sum(amount) as overpayment
+        from fees left join fee_transactions on (fee_id=id) where borrowernumber=? group by fee_id having sum(amount) < 0");
+    $sth->execute($borrowernumber);
+    my $total = Koha::Money->new();
+    while (my $overpayment = $sth->fetchrow_hashref) {
+        $total+=$overpayment->{overpayment}
+    }
+    warn "Overpayment!  borrower $borrowernumber" if $total;
+    return $total;
+}
+
+# Return sum of non-payment credits to an account since a given date.
+# Used only by Unique Management atm. returns a negative Koha::Money object.
+
+sub get_total_waived_amount {
+    my $borrowernumber= shift;
+    my $since = shift || return undef;
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare("select sum(amount) as waived from fees 
+        join fee_transactions on (fee_id=id)
+        join accounttypes using(accounttype)
+        where borrowernumber=?
+        and accounttypes.class='transaction'
+        and timestamp > ? ");
+    $sth->execute($borrowernumber, (ref $since eq 'C4::Dates') ? $since->output('iso') : $since);
+    my ($total) = $sth->fetchrow;
+    return Koha::Money->new($total);  
+    
+}
+
+
+# add or mod accounttype (invoice class only).
+sub mod_accounttype {
+    my $accounttype = shift;
+    return 'MISSING_CODE_OR_DESCRIPTION' unless $accounttype->{accounttype} && $accounttype->{description};
+    return 'INVALID_AMOUNT' if(exists $accounttype->{default_amt} && $accounttype->{default_amt} < 0);
+    # Later we'll allow modifying descriptions on payment & fee classes, and probably add a 'credit' class for manual credit types.
+    my %acct_types = _get_accounttypes();
+    my %invoice_types = _get_accounttypes('invoice');
+    my $sth;
+    my $dbh = C4::Context->dbh;
+
+    # ok, this is sloppy... we should probably limit chars in this field to a single case.
+    if(grep { lc($accounttype->{accounttype}) eq lc($_) } keys %invoice_types){
+        #Update
+        $sth = $dbh->prepare("UPDATE accounttypes set description=?, default_amt=? WHERE accounttype=? AND class='invoice'");
+    } else {
+        #Create
+        if(grep { lc($accounttype->{accounttype}) eq lc($_) } keys %acct_types){
+            return 'DUPLICATE_ACCOUNTTYPE';
+        }        
+        $sth = $dbh->prepare("INSERT INTO accounttypes (description,default_amt,accounttype,class) VALUES (?,?,?,'invoice')");
+    }
+
+    my $def_amt = (Check::ISA::obj( $accounttype->{default_amt}, 'Koha::Money')) ? $accounttype->{default_amt}->value : $accounttype->{default_amt};
+    $sth->execute($accounttype->{description}, $def_amt, $accounttype->{accounttype});
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                       datastore => C4::Context->cachehash});
+    $cache->remove('accounttypes');                 
+    return $dbh->errstr;
+}
+
+sub del_accounttype {
+    my $accounttype = shift;
+    $accounttype = $accounttype->{accounttype} if ref $accounttype;
+    return 'ACCOUNTTYPE_NOT_SPECIFIED' unless $accounttype;
+    my %invoice_types = _get_accounttypes('invoice');
+    if(! exists $invoice_types{$accounttype}){
+        return 'INVALID_ACCOUNTTYPE_CLASS';
+    }
+    my $dbh = C4::Context->dbh;
+    my $sth_test = $dbh->prepare("SELECT transaction_id FROM fee_transactions WHERE accounttype=? LIMIT 1");
+    $sth_test->execute($accounttype);
+    if($sth_test->fetchrow){
+        return 'IN_USE';
+    } else {
+        my $sth_del = $dbh->prepare("DELETE FROM accounttypes where accounttype=? AND class='invoice'");
+        $sth_del->execute($accounttype);        
+    }
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'RawMemory',
+                                       datastore => C4::Context->cachehash});
+    $cache->remove('accounttypes');
+    return $dbh->errstr;
+}
+
+sub can_del_accounttype {
+    my $accounttype = shift;
+    $accounttype = $accounttype->{accounttype} if ref $accounttype;
+    my %invoice_types = _get_accounttypes('invoice');
+    return if(!exists $invoice_types{$accounttype});
+    my $dbh = C4::Context->dbh;
+    my $sth_test = $dbh->prepare("SELECT transaction_id FROM fee_transactions WHERE accounttype=? LIMIT 1");
+    $sth_test->execute($accounttype);
+    if($sth_test->fetchrow){
+        return;
+    } else {
+        return 1;
+    }    
+}
+
+=head2 get_borrowers_with_fines
+
+    C4::Accounts::get_borrowers_with_fines( category => 'ADULT', branch => 'MAIN', threshold => 15.00, exclude_notified=>1, since=>365 );
+
+Returns a list of borrower hashes with an additional 'balance' hashkey,
+optionally limited by category and/or branch.  If C<since> is provided, ignore
+any patrons whose most recent fine is older than C<$since> days old.
+
+
+=cut
+
+sub get_borrowers_with_fines {
+    # returns patron records with fines.
+    # available parameters:  category, threshold, branch.
+    # FIXME: This should arguably be in C4::Borrowers since it returns borrower-ish data.  It's messy either way.
+    # FIXME: The code that this replaces ignored  fees related to debt collect.
+
+    my %param = @_;
+    my $dbh = C4::Context->dbh;
+    
+    #Sadly we must get all patrons, then test amounts since we have to look
+    # at fees, unallocated payments and estimated fees.
+    # Arguably it might be worth selecting distinct borrowers on fees and on fees_accruing.
+    
+    my $threshold = $param{'threshold'} // 0;
+    my @limits;
+    my @limit_substr;
+    my $query = "SELECT * from borrowers ";
+    if($param{'category'}){
+        push @limit_substr, " borrowers.categorycode = ? ";
+        push @limits, $param{'category'};
+    }
+    if($param{'branch'}){
+        push @limit_substr, ' borrowers.branchcode = ? ';
+        push @limits, $param{'branch'};
+    }
+    if($param{exclude_notified}){
+        push @limit_substr, ' borrowers.amount_notify_date IS NULL '
+    }
+    my $limit_clause = (scalar @limit_substr) ? " WHERE " . join(' AND ',@limit_substr) : '';
+    
+    my $sth = $dbh->prepare($query . $limit_clause);
+    $sth->execute(@limits);
+
+    my $sth_lastfine = $dbh->prepare("SELECT timestamp FROM fees JOIN fee_transactions ON(fees.id=fee_id) WHERE payment_id IS NULL 
+                                        AND borrowernumber = ? 
+                                        AND accounttype IN (SELECT accounttype FROM accounttypes WHERE class='fee' OR class='invoice')
+                                        ORDER BY timestamp DESC LIMIT 1");
+    my $sth_lastaccrual = $dbh->prepare("SELECT fees_accruing.timestamp FROM fees_accruing JOIN issues on ( fees_accruing.issue_id = issues.id)
+                                            WHERE borrowernumber = ? ORDER BY fees_accruing.timestamp DESC LIMIT 1");
+    
+    my @borrowers;
+    while (my $bor = $sth->fetchrow_hashref) {
+        $bor->{balance} = gettotalowed($bor->{borrowernumber});
+        next if($bor->{balance} < $threshold);
+        if($param{since}){
+            $sth_lastfine->execute($bor->{borrowernumber});
+            $sth_lastaccrual->execute($bor->{borrowernumber});
+            my ($lastfine_date) = $sth_lastfine->fetchrow;
+            my ($lastaccrual_date) = $sth_lastaccrual->fetchrow;
+            $lastfine_date = List::Util::maxstr($lastaccrual_date // '',$lastfine_date // '');
+            my ($y,$m,$d) = $lastfine_date =~ /(\d\d\d\d)-(\d\d)-(\d\d)/;
+            next if(Date::Calc::Date_to_Days(Date::Calc::Today()) - Date::Calc::Date_to_Days($y,$m,$d) >$param{since});                
+        }
+        push @borrowers, $bor;
+    }
+
+    return \@borrowers;
+}
+
+
 
 END { }    # module clean-up code here (global destructor)
-
 1;
 __END__
+
+=head1 SEE ALSO
+
+DBI(3)
+
+=cut
 

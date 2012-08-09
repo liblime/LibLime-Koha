@@ -53,17 +53,51 @@ use C4::Biblio;
 use C4::Letters;
 use C4::Reserves;
 use C4::Members::Messaging;
+use C4::Circulation;
+use C4::Accounts;
 my $today     = C4::Dates->new();
 my $today_iso = $today->output('iso');
 
 my $dbh = C4::Context->dbh;
-my $query = "SELECT * FROM reserves
-             WHERE expirationdate < ?";
+
+my $query;
+
+given(C4::Context->preference('CircControl')){
+    when ('PickupLibrary'){
+        $query = "SELECT reserves.*, branchcode AS controlbranch, borrowers.categorycode, items.itype FROM reserves 
+                JOIN borrowers using(borrowernumber)
+                JOIN items using(itemnumber)  WHERE expirationdate < ?";
+    } when ('PatronLibrary') {
+        $query = "SELECT reserves.*, borrowers.categorycode, borrowers.branchcode AS controlbranch, items.itype FROM reserves 
+                JOIN borrowers using(borrowernumber)
+                JOIN items using(itemnumber) WHERE expirationdate < ?";
+    } when ('ItemHomeLibrary') {
+        $query = "SELECT reserves.*, borrowers.categorycode, items.homebranch AS controlbranch, items.itype FROM reserves 
+                JOIN borrowers using(borrowernumber)
+                JOIN items using(itemnumber) WHERE expirationdate < ?";
+    }  default {
+        warn "No fees applied since no CircControl branch is set!";
+        $query = "SELECT reserves.* FROM reserves WHERE expirationdate < ?";
+    }
+}
 my $sth = $dbh->prepare($query);
 $sth->execute($today_iso);
+
+
 while (my $expref = $sth->fetchrow_hashref) {
   C4::Reserves::CancelReserve($expref->{reservenumber}, 'E');
-
+  if($expref->{itype}){
+      my $irule = C4::Circulation::GetIssuingRule($expref->{categorycode}, $expref->{itype}, $expref->{controlbranch});
+      # Charge fine, if any -- 
+      if($irule->{expired_hold_fee} > 0){
+          C4::Accounts::CreateFee({   borrowernumber => $expref->{borrowernumber},
+                        amount  => $irule->{expired_hold_fee},
+                        accounttype => 'EXPIRED_HOLD',
+                        branchcode  => $expref->{controlbranch},
+                        itemnumber  => $expref->{itemnumber}
+          });
+      }
+  }
   next if (! C4::Context->preference('EnableHoldExpiredNotice'));
   # Send expiration notice, if desired
   my $borrowernumber = $expref->{borrowernumber};

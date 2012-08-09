@@ -112,9 +112,10 @@ if (($issue || $lostitem) && $itemlost) {
       $item_data_hashref->{itemnumber},
       $$issue{borrowernumber}
    );
-   ## charge the lost item fee for LOST value 1 BEFORE checking in item
+   ## note chargelostitem also marks issue returned.
    if ($itemlost==1) {
-      C4::Accounts::chargelostitem($itemnumber);
+       use DDP; warn p $issue;
+    #  C4::Accounts::chargelostitem($itemnumber);
    }
    elsif ($crval) { ## Claims Returned
       if ($itemlost==$crval) {
@@ -133,19 +134,11 @@ if (($issue || $lostitem) && $itemlost) {
       }
    }
 
-   if (C4::Context->preference('MarkLostItemsReturned') && $issue) {
-      #C4::Circulation::MarkIssueReturned($$issue{borrowernumber},$itemnumber)
-      ## update: AddIssue() will figure out the overdue fine, using today as returndate, 
-      ## temporarily setting items.itemlost to nada
-      C4::Circulation::AddReturn(
-         $item_data_hashref->{barcode},
-         undef,  # branch
-         0,      # exemptfine
-         0,      # dropbox,
-         undef,  # returndate
-         1,      # tolost
-      );
-      ## is checked in
+   if ($issue) {
+      if( $issue->{'overdue'} ){
+        C4::Overdues::ApplyFine($issue);  # i.e. apply fine to today.  ## This should be customizable.
+      }
+
       $item_changes->{onloan} = undef;
    }
 }
@@ -167,19 +160,22 @@ elsif ($itemlost == $crval) { # not charged lost to patron, want make claims ret
    }
 }
 elsif ($itemlost && !$lostitem && !$issue && ($itemlost==1)) {
+    # For some reason, don't allow the item to be set to lost (1) unless there is a patron who can take a lost item charge.
    print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nolc_noco#item$itemnumber");
    exit;    
 }
 elsif ($lostitem && !$itemlost) {
 	## If the item is being marked found, refund the patron the lost item charge,
-	## and delete the lost item record if syspref MarkLostItemsReturned is ON
+	## and delete the lost item record
 	if ($issue) {
-		C4::Circulation::FixAccountForLostAndReturned($itemnumber,$issue,$lostitem->{id});
+		C4::Accounts::creditlostitem($issue);		
 	}
-	else { ## bad legacy data: item not currently checked out but linked as lost to patron
-		## remove from patron's Lost Items
-		C4::LostItems::DeleteLostItemByItemnumber($itemnumber);
-   }
+	## remove from patron's Lost Items
+	# FIXME: Comments in C4::Circulation suggest that staff can choose to leave a lost item linked
+	#   So which is right?
+	# And it's probably not a good idea to delete by itemnumber if itemnumber isn't guaranteed unique.
+	C4::LostItems::DeleteLostItemByItemnumber($itemnumber);
+
 }
 
 ModItem($item_changes, $biblionumber, $itemnumber) if $item_changes;

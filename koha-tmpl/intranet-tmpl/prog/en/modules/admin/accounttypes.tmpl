@@ -1,0 +1,153 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Administration &rsaquo; Accounttypes Configuration</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+<script type="text/javascript">
+$(document).ready(function() {
+
+	$("#addmod_form").dialog({
+	    autoOpen: false,
+	    title: "Update invoice account type",
+	    width: '500px',
+        buttons: { 
+            "Submit": function() { var $form = $(this).children('form');
+                                    if($form.validate({ rules:{ default_amt: 'pos_decimal', description: 'required' }, messages: { default_amt: "Enter a currency amount." }}).form()){
+                                    	$form.submit();
+                                    	return true;
+                                    } else {
+                                    	return false;
+                                    } } ,
+            "Cancel" : function() { $(this).dialog("close"); }
+          }
+	});
+	$("a.edit_accttype").click(function(){
+		$("#addmod_title").html('Edit accounttype "' + $(this).data('accounttype') + '"');
+		
+		$("#mod_accounttype").val($(this).data('accounttype')).prop('readonly', true);
+        $("#mod_description").val($(this).parents('tr').children('td.at-description').html());
+		$("#mod_default_amt").val($(this).parents('tr').children('td.at-default_amt').html());
+		$("#addmod_form").dialog('open');
+		return false;
+	});
+	$("button#add_accttype").click(function(){
+		$("#addmod_title").html("Add new invoice type");
+		$("#mod_accounttype").val('').prop('readonly', false);
+		$("#mod_description").val('');
+		$("#mod_default_amt").val('');
+		$("#addmod_form").dialog('open');
+		return false;
+	});
+	$("a.del_accttype").click(function(){
+		var $atype = $('<input>', {'name': 'accounttype', 'type': 'hidden'}).val($(this).data('accounttype'));
+		var $newForm = $('<form method="post" action="/cgi-bin/koha/admin/accounttypes.pl"><input type="hidden" name="op" value="delete" /></form>').append($atype);
+		$newForm.submit();
+		return false;
+	});
+});
+</script>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> &rsaquo;  Accounttypes</div>
+
+<div id="doc3" class="yui-t1">
+
+<div id="bd">
+    <div id="yui-main">
+    <div class="yui-b">
+    <h1>Define Account Types for Fines and Fees</h1>
+    
+    <!-- TMPL_IF error -->
+        <div class="error">
+            <span class="error"><!-- TMPL_VAR error --></span>
+        </div>
+    <!-- /TMPL_IF -->
+    <div class="help">
+        <p>Invoice types may be modified below, and deleted if not in use.</p>
+        <p>Fee types are assessed by Koha and cannot be modified.</p>
+        &nbsp;
+    </div>
+    <div id="accounttypes_main">
+
+            <h3>Invoice account types &nbsp;&nbsp;<button id="add_accttype">Add new</button></h3>
+            <table id="invoice_accounttypes">
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Default Amount</th>
+                <th>Action</th>
+            </tr>
+            <!-- TMPL_LOOP NAME="invoice_types" -->
+                <tr>
+                    <td class="at-accountttype"><!-- TMPL_VAR NAME="accounttype" --></td>
+                    <td class="at-description"><!-- TMPL_VAR NAME="description" --></td>
+                    <td class="at-default_amt"><!-- TMPL_VAR NAME="default_amt" --></td>
+                    <td>
+                        <a class="button edit_accttype" data-accounttype="<!-- TMPL_VAR accounttype ESCAPE=HTML -->" href="#">Edit</a> <!-- TMPL_IF can_delete -->| <a class="button del_accttype" data-accounttype="<!-- TMPL_VAR accounttype ESCAPE=HTML -->" href="#">Delete</a><!-- /TMPL_IF -->
+                    </td>
+                </tr>
+            <!-- /TMPL_LOOP -->
+            </table><br />
+            <h3>Fee account types</h3>
+            <table id="fee_accounttypes">
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+            </tr>
+            <!-- TMPL_LOOP NAME="fee_types" -->
+                <tr>
+                    <td><!-- TMPL_VAR NAME="accounttype" --></td>
+                    <td><!-- TMPL_VAR NAME="description" --></td>
+                </tr>
+            <!-- /TMPL_LOOP -->
+            </table><br />
+            <h3>Payment account types</h3>
+            <table id="payment_accounttypes">
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+            </tr>
+            <!-- TMPL_LOOP NAME="pay_types" -->
+                <tr>
+                    <td><!-- TMPL_VAR NAME="accounttype" --></td>
+                    <td><!-- TMPL_VAR NAME="description" --></td>
+                </tr>
+            <!-- /TMPL_LOOP -->
+            </table>
+    </div>
+    <div id="addmod_form" class="hidden">
+        <form method="post" action="/cgi-bin/koha/admin/accounttypes.pl">
+            <input type="hidden" name="op" value="mod" />
+            <h3 id="addmod_title">Add new invoice accounttype</h3>
+            <table>
+                <tr>
+                    <td><label for="mod_accounttype">Code</label></td>
+                    <td><input name="accounttype" id="mod_accounttype" maxlength="16" /></td>
+                </tr>
+                <tr>
+                    <td><label for="mod_description">Description</label></td>
+                    <td><input name="description" id="mod_description" /></td>
+                </tr>
+                <tr>
+                    <td><label for="mod_default_amt">Default charge amount</label></td>
+                    <td><input name="default_amt" id="mod_default_amt" /></td>
+                </tr>
+            </table>   
+        </form>
+    </div>
+    <form class="hidden" id="del_form" >
+        <input type="hidden" name="op" value="del" />
+        <input type="hidden" name="accounttype" value="" />
+    </form>
+
+</div>
+
+</div>
+<div class="yui-b">
+<!-- TMPL_INCLUDE NAME="admin-menu.inc" -->
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

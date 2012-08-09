@@ -78,7 +78,6 @@ BEGIN {
 		&PutPatronImage
 		&RmPatronImage
 
-		&GetBorNotifyAcctRecord
         &GetNotifiedMembers
 
 		&GetborCatFromCatType 
@@ -404,12 +403,12 @@ sub GetMemberDetails {
     my $borrower = $dbh->selectrow_hashref($sql, undef, @params);
     return if !$borrower;
 
-    my $amount = C4::Accounts::MemberAllAccounts( 
-      borrowernumber => $borrower->{borrowernumber},
-      total_only     => 1
-    );
-    $borrower->{'amountoutstanding'} = $amount;
+ # these are included in patronflags.  ## / but probably SHOULDN'T BE.
+ #    $borrower->{totalowed} = C4::Accounts::gettotalowed($borrower->{borrowernumber});
+ #    $borrower->{accruingfines}  = C4::Accounts::gettotalaccruing($borrower->{borrowernumber});
+#    $borrower->{'amountoutstanding'} = $amount;
     # FIXME - just have patronflags return $amount
+
     my $flags = patronflags( $borrower, $circ_session );
     my $accessflagshash;
 
@@ -502,10 +501,9 @@ sub patronflags {
     my ( $patroninformation, $circ_session ) = @_;
     $circ_session ||= {};
 
-    my $amount = C4::Accounts::MemberAllAccounts( 
-      borrowernumber => $patroninformation->{'borrowernumber'},
-      total_only     => 1
-    );
+    my $amount = C4::Accounts::gettotalowed($patroninformation->{borrowernumber})
+        +  C4::Accounts::gettotalaccruing($patroninformation->{borrowernumber});
+
     $amount //= 0;
     my $cat = GetCategoryInfo($$patroninformation{categorycode});
 
@@ -657,12 +655,9 @@ sub GetMemberIssuesAndFines {
     my $overdue_count = $sth->fetchrow_arrayref->[0];
     $sth->finish;
 
-    $sth = $dbh->prepare("SELECT SUM(amountoutstanding) FROM accountlines WHERE borrowernumber = ?");
-    $sth->execute($borrowernumber);
-    my $total_fines = $sth->fetchrow_arrayref->[0];
-    $sth->finish;
-
-    return ($overdue_count, $issue_count, $total_fines);
+    my $total_fines = C4::Accounts::gettotalowed( $borrowernumber );
+    my $accruing_fines = C4::Accounts::gettotalaccruing($borrowernumber);
+    return ($overdue_count, $issue_count, $total_fines, $accruing_fines);
 }
 
 sub columns(;$) {
@@ -1277,48 +1272,6 @@ sub GetEarliestDueDate {
 }
 
 
-=head2 GetBorNotifyAcctRecord
-
-  ($count, $acctlines, $total) = &GetBorNotifyAcctRecord($params,$notifyid);
-
-Looks up accounting data for the patron with the given borrowernumber per file number.
-
-(FIXME - I'm not at all sure what this is about.)
-
-C<&GetBorNotifyAcctRecord> returns a three-element array. C<$acctlines> is a
-reference-to-array, where each element is a reference-to-hash; the
-keys are the fields of the C<accountlines> table in the Koha database.
-C<$count> is the number of elements in C<$acctlines>. C<$total> is the
-total amount outstanding for all of the account lines.
-
-=cut
-
-sub GetBorNotifyAcctRecord {
-    my ( $borrowernumber, $notifyid ) = @_;
-    my $dbh = C4::Context->dbh;
-    my @acctlines;
-    my $numlines = 0;
-    my $sth = $dbh->prepare(
-            "SELECT * 
-                FROM accountlines 
-                WHERE borrowernumber=? 
-                    AND notify_id=? 
-                    AND amountoutstanding != '0' 
-                ORDER BY notify_id,accounttype
-                ");
-#                    AND (accounttype='FU' OR accounttype='N' OR accounttype='M'OR accounttype='A'OR accounttype='F'OR accounttype='L' OR accounttype='IP' OR accounttype='CH' OR accounttype='RE' OR accounttype='RL')
-
-    $sth->execute( $borrowernumber, $notifyid );
-    my $total = 0;
-    while ( my $data = $sth->fetchrow_hashref ) {
-        $acctlines[$numlines] = $data;
-        $numlines++;
-        $total += int(100 * $data->{'amountoutstanding'});
-    }
-    $total /= 100;
-    $sth->finish;
-    return ( $total, \@acctlines, $numlines );
-}
 
 sub GetNotifiedMembers {
     my ( $wait, $max_wait, $branchcode, @ignored_categories ) = @_;
@@ -1328,7 +1281,7 @@ sub GetNotifiedMembers {
         SELECT
           borrowers.borrowernumber, cardnumber,
           surname, firstname, address, address2, city, zipcode, dateofbirth,
-          phone, phonepro, contactfirstname, contactname, categorycode,
+          phone, phonepro, contactfirstname, contactname, categorycode, branchcode,
           last_reported_date, last_reported_amount, exclude_from_collection
         FROM borrowers
         WHERE
@@ -1336,7 +1289,6 @@ sub GetNotifiedMembers {
           AND CURRENT_DATE BETWEEN DATE_ADD(amount_notify_date, INTERVAL ? DAY)
           AND DATE_ADD(amount_notify_date, INTERVAL ? DAY)
     ";
-
     $query .= " AND categorycode NOT IN (" . join( ", ", map( { "?" } @ignored_categories ) ) . ")" if ( @ignored_categories );
 
     if ( $branchcode ) {

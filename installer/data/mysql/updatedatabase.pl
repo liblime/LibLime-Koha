@@ -5055,6 +5055,165 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.023';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(" DELETE FROM `issues` WHERE branchcode NOT IN ( SELECT branchcode from branches )"); 
+    $dbh->do(" DELETE FROM `old_issues` WHERE branchcode NOT IN ( SELECT branchcode from branches )");
+    $dbh->do(" ALTER TABLE `issues` DROP INDEX `bordate` ");   
+    $dbh->do(" ALTER TABLE `issues` ADD CONSTRAINT `issues_fk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
+    $dbh->do(" ALTER TABLE `old_issues` DROP INDEX `old_bordate` ");
+    $dbh->do(" ALTER TABLE `old_issues` ADD CONSTRAINT `old_issues_fk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
+
+
+    $dbh->do(" ALTER TABLE `issues` DROP COLUMN `return` ");
+    $dbh->do(" ALTER TABLE `issues` DROP COLUMN `issuingbranch` ");
+    $dbh->do(" ALTER TABLE `issues` DROP COLUMN `returndate` ");
+
+    $dbh->{AutoCommit} = 0 ;
+    $dbh->do("LOCK TABLES issues WRITE, old_issues WRITE" );
+    
+    $dbh->do(" ALTER TABLE `issues` add column id bigint PRIMARY KEY AUTO_INCREMENT FIRST  ");
+    $dbh->do(" ALTER TABLE `old_issues` add column `id` bigint PRIMARY KEY AUTO_INCREMENT FIRST   ");
+
+    my $sth_old_issues = $dbh->prepare("SELECT max(id) FROM old_issues");
+    my $sth_issues = $dbh->prepare("SELECT max(id) FROM issues");
+    
+    my $sth_issues_update = $dbh->prepare("UPDATE `issues` SET id = id + ?");
+    my $id = 0;
+    $sth_old_issues->execute();
+    my ($max_old_issues_id) = $sth_old_issues->fetchrow;
+    $sth_issues_update->execute( $max_old_issues_id + 2);
+
+    $sth_issues->execute();
+    my ($max_issues_id) = $sth_issues->fetchrow;
+    $max_issues_id += 2;
+    $dbh->do(" ALTER TABLE `issues` AUTO_INCREMENT = $max_issues_id");
+
+    $sth_old_issues->finish();
+    $dbh->do("COMMIT ");
+    $dbh->do("UNLOCK TABLES");
+
+    $dbh->{AutoCommit} = 1 ;
+
+
+    print "Upgrade to $DBversion done ( Add PK to issues and old_issues tables. )\n";
+    SetVersion ($DBversion);
+}
+
+ $DBversion = '4.09.00.024';
+ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+     for ( qw(LinkLostItemsToPatron MarkLostItemsReturned RefundLostReturnedAmount EnableOverdueAccruedAmount) ) {
+         $dbh->do('DELETE FROM systempreferences WHERE variable LIKE ?', undef, $_);
+     }
+     
+    $dbh->do("DROP TABLE IF EXISTS `fee_transactions`");
+    $dbh->do("DROP TABLE IF EXISTS `fees`");
+    $dbh->do("DROP TABLE IF EXISTS `payments`");
+    $dbh->do("DROP TABLE IF EXISTS `fees_accruing`");
+    $dbh->do("DROP TABLE IF EXISTS `accounttypes`");
+    $dbh->do("CREATE TABLE `accounttypes` (
+      `accounttype` varchar(16) NOT NULL PRIMARY KEY,
+      `description` mediumtext,
+      `default_amt` decimal(12,2),
+      `class`  enum('fee', 'payment', 'transaction', 'invoice') NOT NULL default 'fee'
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ");
+    $dbh->do(" INSERT INTO `accounttypes` (`accounttype`, `description`, `class`)
+        VALUES
+        ('ACCTMANAGE','Account Management Fee','fee'),
+        ('FINE','Overdue Fine','fee'),
+        ('LOSTITEM','Lost Item','fee'),
+        ('NEWCARD','New Card Issued','fee'),
+        ('RENEWCARD','Renew Patron Account','fee'),
+        ('RESERVE','Hold Placed','fee'),
+        ('REFUND','Refund','fee'),
+        ('REVERSED_PAYMENT','Reversed Payment','fee'),
+        ('RENTAL','Checkout fee','fee'),
+        ('LOST_SURCHARGE','Lost Item Surcharge','fee' ),
+        ('EXPIRED_HOLD','Expired Hold fee','fee'),
+        ('COLLECTIONS','Collections Agency Fee','fee'),
+        ('CANCELCREDIT','Credit Canceled','fee'),        
+        ('SUNDRY','Sundry','invoice'),
+        ('FORGIVE','Fine Forgiven','transaction'),
+        ('TFORGIVE','Threshold Fine Forgiven','transaction'),
+        ('WRITEOFF','Writeoff','transaction'),
+        ('LOSTRETURNED','Lost, Returned', 'transaction'),
+        ('CLAIMS_RETURNED','Claims Returned', 'transaction'),
+        ('SYSTEM_CREDIT','System-mediated credit','transaction'),
+        ('SYSTEM_DEBIT','System-mediated debit','fee'),
+        ('PAYMENT','Payment','payment'),
+        ('CREDIT','Credit','payment'),
+        ('TRANSBUS','Transferred to Business Office','transaction')
+    ");
+    
+    $dbh->do("CREATE TABLE `fees` (
+        id bigint NOT NULL auto_increment,
+        borrowernumber int(11) NOT NULL,
+        itemnumber int(11) default NULL,
+        description mediumtext default NULL,
+        PRIMARY KEY (id),
+        CONSTRAINT `fees_ibfk1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `fees_ibfk2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ");
+
+   $dbh->do("CREATE TABLE `payments` (
+      `id` bigint NOT NULL auto_increment,
+      `borrowernumber` int(11) NOT NULL,
+      `description` mediumtext,
+      `date` timestamp NOT NULL default CURRENT_TIMESTAMP,
+      `received_by` int(11) default NULL,
+      PRIMARY KEY  (`id`),
+      CONSTRAINT `payments_operator` FOREIGN KEY (`received_by`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE SET NULL 
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ");
+
+   $dbh->do("CREATE TABLE `fee_transactions` (
+      `transaction_id` bigint NOT NULL auto_increment,
+      `fee_id` bigint default NULL,
+      `payment_id` bigint default NULL,
+      `notes` mediumtext,
+      `amount` decimal(12,2) default '0.00',
+      `accounttype` varchar(16) NOT NULL,
+      `operator_id` int(11) default NULL,
+      `branchcode` varchar(10) default NULL,
+      `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+      PRIMARY KEY  (`transaction_id`),
+      CONSTRAINT `fee_trans_acct` FOREIGN KEY (`accounttype`) REFERENCES `accounttypes` (`accounttype`) ON DELETE RESTRICT ON UPDATE CASCADE,
+      CONSTRAINT `fee_trans_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE CASCADE,
+      CONSTRAINT `fee_trans_ibfk1` FOREIGN KEY (`fee_id`) REFERENCES `fees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT `fee_trans_ibfk2` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT `fee_trans_operator` FOREIGN KEY (`operator_id`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ");
+
+   $dbh->do("CREATE TABLE `fees_accruing` (
+       `issue_id` bigint NOT NULL,
+       `amount` int(11) NOT NULL default 0,
+       `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+       PRIMARY KEY  (`issue_id`),
+       CONSTRAINT `fees_accruing_fk_1` FOREIGN KEY (`issue_id`) REFERENCES `issues` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ");
+ 
+     say "Upgrade to $DBversion done ( Add tables for new fines/fees structure. )";
+     SetVersion ($DBversion);
+}
+
+ $DBversion = '4.09.00.025';
+ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do("ALTER TABLE `categories` ADD COLUMN fines_alert_threshold DECIMAL(13,2) DEFAULT NULL");
+    my $sth = $dbh->prepare('SELECT value from systempreferences where variable="OwedNotificationValue"');
+    $sth->execute();
+    my ($threshval) = $sth->fetchrow;
+    $dbh->do("UPDATE `categories` SET fines_alert_threshold=$threshval");
+    $dbh->do('DELETE FROM systempreferences where variable="OwedNotificationValue"');
+    $dbh->do('UPDATE systempreferences SET explanation="If ON,allows a notification to be sent on total amount owed.  The notification threshold is set in Patron Categories." where variable="EnableOwedNotification"');
+
+    $dbh->do("ALTER TABLE `issuingrules` DROP COLUMN reservecharge");
+    $dbh->do("ALTER TABLE `issuingrules` ADD COLUMN expired_hold_fee decimal(12,2) default NULL");
+
+     say "Upgrade to $DBversion done ( Add fines_alert_threshold and expired_hold_fee. )";
+     SetVersion ($DBversion);
+}
+
+
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 

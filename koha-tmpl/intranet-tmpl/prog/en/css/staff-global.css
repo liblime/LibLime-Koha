@@ -236,6 +236,7 @@ table {
     border-collapse : separate;
     border: 0 none;
 }
+table.borderless tr td { border:0 !important;}
 
 #label-search-results {
         width: 700px;
@@ -881,6 +882,19 @@ div.error {
 	background-color : #FFFF99;
 	padding : .5em;
 	margin : 1em;
+}
+
+label.error {
+    display: block;
+}
+
+#circ_policy_table label.error{
+    display: inline;
+}
+fieldset.rows label.error{
+    float: none;
+    display: inline;
+    margin-left: 1.2em;
 }
 
 input.alert {
@@ -1921,6 +1935,29 @@ a.disabled{
 .inlineSubheading{
   font-size: smaller;
   font-weight: lighter;
+}
+.credit{
+    color: #328C14;
+}
+.rightJustify{
+    text-align: right;
+}
+#selectForgiveType{
+    margin-top: 14px;
+    margin-left: 150px;
+}
+td.pay_column {
+  width: 108px;
+}
+td.payall_column button.ui-button.ui-widget{
+  width: 100%;
+}
+td.pay_column .ui-button-text{
+  padding: 0.4em 0.6em;
+}
+.htmlentlink{
+  text-decoration: none;
+  font-size: large;
 }
 /* jQuery-UI overrides */
 .ui-tabs-nav {

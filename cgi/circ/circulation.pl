@@ -27,7 +27,6 @@ use C4::Output;
 use C4::Print;
 use C4::Auth qw/:DEFAULT get_session check_override_perms/;
 use C4::Dates qw/format_date/;
-use C4::Overdues qw( GetFinesSummary );
 use List::Util qw( sum );
 use C4::Branch; # GetBranches
 use C4::Koha;   # GetPrinter
@@ -54,29 +53,24 @@ sub FormatFinesSummary {
     my ( $borrower ) = @_;
 
     my %type_map = (
-        L => 'lost_fines',
-        F => 'overdue_fines',
-        FU => 'overdue_fines',
-        Res => 'reserve_fees'
+        LOSTITEM => 'lost_fines',
+        FINE => 'overdue_fines',
+        RESERVE => 'reserve_fees'
     );
 
-    my $summary = GetFinesSummary( $borrower->{'borrowernumber'} );
-    my %params;
-    foreach my $type ( keys %type_map ) {
-        next if ( !$summary->{$type} );
-        $params{$type_map{$type} . "_total"} = ( $params{ $type_map{$type} .  "_total" } || 0 ) 
-        + $summary->{$type};
-        delete $summary->{$type};
-    }
-    foreach my $type ( keys %$summary ) {
-        next if ( $summary->{$type} > 0 );
-        $params{"credits_total"} = ( $params{"credits_total"} || 0 ) - $summary->{$type};
-        delete $summary->{$type};
-    }
+    my $fees = C4::Accounts::getcharges( $borrower->{'borrowernumber'}, outstanding=>1 );
 
-    # Since the types we care about have already been removed, all that is left is 'Other'
-    $params{'other_fees_total'} = sum( values %$summary );
-    delete($params{other_fees_total}) unless $params{other_fees_total};
+    my %params;
+    for my $fee (@$fees){
+        if(exists $type_map{$fee->{accounttype}}){
+            $params{$type_map{$fee->{accounttype}} . "_total"} += $fee->{amountoutstanding};
+        } else {
+            $params{"other_fees_total"} += $fee->{amountoutstanding};
+        }
+    }
+    # FIXME: no need to call this multiple times.
+    my $totalowed = C4::Accounts::gettotalowed($borrower->{'borrowernumber'});
+    $params{"credits_total"} = $totalowed if $totalowed < 0;
     return +{ map { $_ => sprintf('%0.2f', $params{$_} || 0) } keys %params };
 }
 
@@ -647,10 +641,7 @@ foreach my $flag ( sort keys %{$flags} ) {
 my $amountold = $borrower->{flags}->{'CHARGES'}->{'message'} || 0;
 $amountold =~ s/^.*\$//;    # remove upto the $, if any
 
-my $total = C4::Accounts::MemberAllAccounts(
-   borrowernumber => $borrowernumber,
-   total_only     => 1
-);
+my $total = C4::Accounts::gettotalowed( borrowernumber => $borrowernumber );
 
 if ( $borrower->{'category_type'} ~~ 'C') {
     my  ( $catcodes, $labels ) =  GetborCatFromCatType( 'A', 'WHERE category_type = ?' );

@@ -51,6 +51,11 @@ C4::LostItems
 =cut
 
 
+# FIXME:
+# THIS needs to be reimplemented from scratch.
+
+# Look for an overdue fine for this item against the last patron
+# who had it checked out.  
 sub tryClaimsReturned
 {
    my $item = shift;

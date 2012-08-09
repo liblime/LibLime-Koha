@@ -36,6 +36,8 @@ my $enddate   = $input->param('to')    || '';
 #my $max_bill  = $input->param('ratio') || C4::Context->preference('noissuescharge') || 20.00;
 my $max_bill = $input->param('ratio') || 20;
 
+die "This script is deprecated.";
+
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
         template_name   => "circ/billing.tmpl",

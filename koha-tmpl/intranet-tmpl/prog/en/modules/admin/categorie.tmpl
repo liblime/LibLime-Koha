@@ -127,6 +127,9 @@
    <div class=hint>Outstanding balance above which a patron may not place further hold requests</div></li>
    <li><label for="circ_block_threshold">Circ block threhshold: </label><input type=text name="circ_block_threshold" id="circ_block_threshold" size=6 value="<!-- TMPL_VAR NAME="circ_block_threshold" -->" />
    <div class=hint>Outstanding balance above which a patron may not check out</div></li>
+   <li><label for="fines_alert_threshold">Outstanding fines messaging threshold: </label><input type="text" name="fines_alert_threshold" id="fines_alert_threshold" size="6" value="<!-- TMPL_VAR NAME="fines_alert_threshold" -->" />
+   <div class=hint>Billing notice sent when balance exceeds this amount.  Requires EnableOwedNotification system pref and BILLING notices to be set up.<br />Set to zero or blank to disable billing notices for this patron category.</div></li>
+   
 	<li><label for="category_type">Category type: </label> &nbsp; <select name="category_type" id="category_type">
 						<!-- TMPL_IF NAME="type_n" --><option value="" selected="selected">Select a Category type</option><!-- TMPL_ELSE --><option value="">Select a Category type</option><!-- /TMPL_IF -->
 					<!-- TMPL_IF NAME="type_A" --><option value="A" selected="selected">Adult</option><!-- TMPL_ELSE --><option value="A">Adult</option><!-- /TMPL_IF -->
@@ -228,14 +231,14 @@ Confirm Deletion of Category <!-- TMPL_VAR NAME="categorycode" escape="html" -->
 			<th scope="col">Category name</th>
 			<th scope="col">Type</th>
 			<th scope="col">Enrollment period</th>
-			<th scope="col">Age required</th>
-			<th scope="col">Upper age limit</th>
+			<th scope="col">Age range</th>
 			<th scope="col">Enrollment fee</th>
 			<th scope="col">Overdue</th>
  			<th scope="col">Hold fee</th>
          <th scope="col">Max holds</th>
          <th scope="col">Holds<br>block<br>threshold</th>
          <th scope="col">Circ<br>block<br>threshold</th>
+         <th scope="col">Billing<br>notice<br>threshold</th>
             <!-- TMPL_IF NAME="EnhancedMessagingPreferences" -->
             <th scope="col">Messaging</th>
             <!-- /TMPL_IF -->
@@ -260,14 +263,14 @@ Confirm Deletion of Category <!-- TMPL_VAR NAME="categorycode" escape="html" -->
                             <!-- TMPL_IF NAME="type_X" -->Statistical<!-- /TMPL_IF -->
                         </td>
                         <td><!-- TMPL_VAR NAME="enrolmentperiod" --> months</td>
-                        <td><!-- TMPL_VAR NAME="dateofbirthrequired" --> years</td>
-			<td><!-- TMPL_VAR NAME="upperagelimit" --> years</td>
+                        <td><!-- TMPL_VAR NAME="dateofbirthrequired" -->-<!-- TMPL_VAR NAME="upperagelimit" --> years</td>
                         <td><!-- TMPL_VAR NAME="enrolmentfee" --></td>
                         <td><!-- TMPL_IF NAME="overduenoticerequired" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
                         <td><!-- TMPL_VAR NAME="reservefee" --></td>
                         <td><!-- TMPL_VAR NAME="maxholds" --></td>
                         <td><!-- TMPL_VAR NAME="holds_block_threshold" --></td>
                         <td><!-- TMPL_VAR NAME="circ_block_threshold" --></td>
+                        <td><!-- TMPL_VAR NAME="fines_alert_threshold" --></td>
                         <!-- TMPL_IF NAME="EnhancedMessagingPreferences" -->
                         <td>
                             <!-- TMPL_IF NAME="messaging_prefs" -->

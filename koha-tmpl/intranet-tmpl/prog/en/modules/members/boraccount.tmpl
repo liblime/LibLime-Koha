@@ -1,6 +1,200 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Patrons &rsaquo; Account for <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script language="javascript">
+//<![CDATA[
+$(document).ready(function() {
+     $('#account_tabs').tabs();
+     $("#invoice_type").change( function(){
+             var accounttype = $(this).val();
+             if(accounttype != 'FINE' && accounttype != 'LOSTITEM' && accounttype != 'LOST_SURCHARGE'){
+                 $("#invoice_barcode").val('');
+                 $("#invoice_barcode").attr('disabled','disabled');
+             } else {
+                 $("#invoice_barcode").removeAttr('disabled');
+             }
+             if($(this).children('option:selected').data('amount')){
+                 $("#invoice_amount").val($(this).children('option:selected').data('amount').toFixed(2));            	 
+             } else {
+            	 $("#invoice_amount").val('');
+             }
+     });
+     $("input[name='amount']").keypress(function(e){
+             // Allow only [.,0-9] and backspace. and return.
+             return (e.which == 46 || e.which == 44 || (e.which >= 48 && e.which <= 57) || e.which == 8 || e.which == 13 || e.which == 0);
+     });
+    $("select#allocation").change(function(){
+           if($(this).val()=='auto'){
+               $("select#fees_to_pay").val('');
+               $("div#feepicker").hide();
+           } else {
+               $("div#feepicker").show();
+           }
+    });
+    $("div#maninvoice form").validate({
+        rules:{
+                amount: {
+                                pos_decimal: true,
+                                required: true
+                },
+                desc: 'required'
+        },
+        messages: {
+                amount: { 
+                            pos_decimal: "Please enter a valid currency amount"
+                }
+        }
+});
+    $("div#mancredit form").validate({
+                        rules:{
+                                amount: {
+                                                pos_decimal: true,
+                                                required: true
+                                },
+                                desc: 'required'
+                        },
+                        messages: {
+                                amount: { 
+                                            pos_decimal: "Please enter a valid currency amount"
+                                }
+                        }
+    });
+
+    var totaldue = <!-- TMPL_VAR total -->;
+    $("#calcTotal").click(function(){
+    	if($("select#allocation").val() == 'auto'){
+    		if(totaldue > 0){
+                $("#credit_amount").val(totaldue.toFixed(2));    			
+    		} else {
+    			alert("This patron does not have an outstanding balance.");
+    		}
+    	} else {
+    		var toPay = 0.0;
+    		$("select#fees_to_pay option:selected").each(function(){ toPay += parseFloat($(this).data('amount')); });
+    		$("#credit_amount").val(toPay.toFixed(2));
+    	}
+    });
+    if(totaldue <= 0){
+    	$("select#allocation").prop('disabled', true);
+    }
+    $("a.reversepay").click(function(){
+    	return(confirm("Are you sure you want to reverse the payment?  This action cannot be undone."));
+    });
+    $("input.refundPayment").click(function(){
+    	var toRefund = 0.0;
+        $("input.refundPayment[name='id']:checked").each(function(){ toRefund += parseFloat($(this).data('amount')); });
+        $("#unallocatedLastRow").html("Amount to refund: $"+toRefund.toFixed(2));
+        $("#refundAmount").val(toRefund);
+        if(toRefund < 0.0){
+        	$("#refundSubmit").prop('disabled', false);
+        } else {
+            $("#refundSubmit").prop('disabled', true);
+        }
+    });
+    $("button.issueFullRefund").click(function(){
+    	$("#refundAmount").val(totaldue);
+        $("form#refundUnallocated").submit();
+    });
+    $("#payMany").button().click(function(){
+    	$('#account_tabs').tabs('select',3);
+    	$("select#allocation").val('manual');
+    	if($("input[name='target_fees']:checked").length){
+    		var fees_to_pay = $.map($("input[name='target_fees']:checked"), function(e,i){ return e.value; });
+    		$("div#feepicker").show();
+    		$("select#fees_to_pay").val(fees_to_pay);
+            var toPay = 0.0;
+            $("select#fees_to_pay option:selected").each(function(){ toPay += parseFloat($(this).data('amount')); });
+            $("#credit_amount").val(toPay.toFixed(2));
+        } else {
+        	$("select#fees_to_pay").val();
+            $("#credit_amount").val(totaldue);    		
+    	}
+    	return false;
+    });
+    $("#forgiveMany").button().click(function(){
+    	var forgivingAll = $("input[name='target_fees']:checked").length == 0 || $("input[name='target_fees']:checked").length == $("input[name='target_fees']").length;
+
+    	$("#selectForgiveType").show();
+        $("#payOneOp").val('forgive_many');
+    	if(forgivingAll){
+    		$("#payOneFeeId").val('');
+    		$("#payOneFeeSummary").html("ALL OUTSTANDING FEES");
+            $("#payOneFeeAmount").html("$"+totaldue.toFixed(2));
+            $("#payOneAmount").val(totaldue.toFixed(2)).prop('readonly', true);    		
+    	} else {
+    		var feesToWaive = [];
+            var amtToWaive = 0.0;
+            $("input[name='target_fees']:checked").each(function(e,i){ amtToWaive += parseFloat($(this).data('outstanding')); feesToWaive.push(this.value); console.warn(this); });
+    		$("#payOneFeeId").val(feesToWaive.join(','));
+            $("#payOneFeeSummary").html( $("input[name='target_fees']:checked").length + " selected fees");
+            $("#payOneFeeAmount").html("$"+amtToWaive.toFixed(2));
+            $("#payOneAmount").val(amtToWaive.toFixed(2)).prop('readonly', true);
+        }
+        $("#payOneDlg").dialog('option', {title: "Waive Select FINES"}).dialog('open');
+        return false;
+    });
+    KOHA.maxPayable = 1000.00;
+    $(".payOne").button().click(function(){
+    	KOHA.maxPayable = $(this).data('outstanding');
+    	// stashing this in variable instead of calling $.validate().rules('add') because validator is created at form submission.  Couldn't get rules to stick otherwise.
+        $("#payOneFeeId").val($(this).data('fee_id'));
+        $("#payOneAmount").val($(this).data('outstanding').toFixed(2)).prop('readonly', false);
+        $("#payOneOp").val('pay');
+        $("#payOneFeeAmount").html("$" + $(this).data('outstanding').toFixed(2));
+        $("#payOneFeeSummary").html($(this).parents('tr').find('span.feeDescription').html());
+        $("#selectForgiveType").hide();
+        $("#payOneDlg").dialog('option', {title: "Pay fine"}).dialog('open');
+        return false;
+    });
+    $(".forgiveOne").button().click(function(){
+        KOHA.maxPayable = $(this).data('outstanding');
+    	$("#payOneFeeId").val($(this).data('fee_id'));
+    	$("#payOneAmount").val($(this).data('outstanding').toFixed(2)).prop('readonly', false);
+    	$("#payOneOp").val('forgive');
+    	$("#payOneFeeAmount").html("$" + $(this).data('outstanding').toFixed(2));
+    	$("#payOneFeeSummary").html($(this).parents('tr').find('span.feeDescription').html());
+        $("#selectForgiveType").show();
+        $("#payOneDlg").dialog('option', {title: "Waive fine"}).dialog('open');
+        return false;
+    });
+    $("#selectForgiveType").buttonset();
+
+    $("#payOneDlg").dialog({
+        autoOpen: false,
+        title: "Pay fee",
+        width: '500px',
+        buttons: { 
+            "Submit": function() { var $form = $(this).children('form');
+                                    if($form.validate({ rules:{ amount: { pos_decimal: true, max: KOHA.maxPayable }, description: 'required' },
+                                                        messages: { amount: {pos_decimal: "Enter a currency amount.", max: "Value must be less than amount owed." }}}).form()){
+                                        $form.submit();
+                                        return true;
+                                    } else {
+                                        return false;
+                                    } } ,
+            "Cancel" : function() { $(this).dialog("close"); }
+          }
+    });
+    $("input[name='target_fees']").click(function(){
+    	if($("#payOneDlg").dialog("isOpen")){
+    		$("#payOneDlg").dialog("close");
+    	}
+    	if($("input[name='target_fees']:checked").length){
+            $("#payMany span.ui-button-text").html("Pay Selected");
+    		$("#forgiveMany span.ui-button-text").html("Waive Selected");
+    	} else {
+            $("#payMany span.ui-button-text").html("Pay All");
+            $("#forgiveMany span.ui-button-text").html("Waive All");    		
+    	}
+    });
+    $("a.fee_detail_link").click(function(){
+    	$(this).parent('td').find('div.fee_details').toggle();
+    	return false;
+    });
+
+});
+//]]>
+</script>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -14,85 +208,282 @@
 	<div id="yui-main">
 	<div class="yui-b">
 <!-- TMPL_INCLUDE NAME="members-toolbar.inc" -->
-<form action="/cgi-bin/koha/members/boraccount.pl" method="get"><input type="hidden" name="borrowernumber" id="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" /></form>
 
-<!-- The manual invoice and credit buttons -->
-<div class="toptabs">
-<ul class="ui-tabs-nav">
-	<li class="ui-tabs-selected"><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Account</a></li>
-    <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
-	<li><a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Pay Fines</a></li>
-    <!-- /TMPL_IF -->
-    <!-- TMPL_IF NAME="refundtab" -->
-	<li><a href="/cgi-bin/koha/members/refund.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Refund Charges</a></li>
-    <!-- /TMPL_IF -->
-    <!-- TMPL_IF NAME="CAN_user_updatecharges_add_charges" -->
-	<li><a href="/cgi-bin/koha/members/maninvoice.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Invoice</a></li>
-    <!-- /TMPL_IF -->
-    <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
-	<li><a href="/cgi-bin/koha/members/mancredit.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" >Create Manual Credit</a></li>
-    <!-- /TMPL_IF -->
-</ul>
-<div class="tabs-container">
-<!-- The table with the account items -->
-<table><thead>
-  <tr>
-    <th>No.</th>
-    <th>Date</th>
-    <th>Description of charges</th>
-    <th>Title</th>
-    <th>Amount</th>
-    <th>Outstanding</th>
-    <th>&nbsp;</th>
-  </tr>
-  </thead>
+<!-- TMPL_IF NAME="ERROR" -->
+    <div id="account_error">
+      <span class="error">Error: Account not updated.  Please try again.
+      <p> Error type : <!-- TMPL_VAR NAME="ERROR" --></p></span>
+    </div>
+<!-- /TMPL_IF -->
 
-  <!-- TMPL_LOOP NAME="accounts" -->
+<div id="account_tabs" class="toptabs">
+    <ul>
+        <li><a href="#boraccount">Account</a></li>
+        <li><a href="#history">Account history</a></li>
+        <li><a href="#maninvoice">Add invoice</a></li>
+        <li><a href="#mancredit">Add credit</a></li>
+    </ul>
+    <div id="boraccount">
+        <!-- TMPL_IF NAME="totalcredit" --> <p>Account has net credit.</p>
+            <h3 class="credit"><!-- TMPL_ELSE -->
+            <h3 class="debit"><!-- /TMPL_IF -->Balance:  $<!-- TMPL_VAR NAME="total" --></h3>
+      <!-- TMPL_IF NAME="has_current_fees" -->
+      <form action="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR borrowernumber -->" method="post">
+        <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+        <input type="hidden" name="op" value="pay" />
 
-   <!-- TMPL_IF NAME="toggle" --> <tr><!-- TMPL_ELSE --><tr class="highlight"><!-- /TMPL_IF -->
-      <td><TMPL_VAR NAME="accountno"></td>
-      <td><!-- TMPL_VAR NAME="date" --></td>
-      <td><TMPL_VAR NAME="description"></td>
-      <td><TMPL_IF NAME="itemnumber">
-          <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><TMPL_VAR NAME="title"></a><br>
-          <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">&itemnumber=<TMPL_VAR NAME="itemnumber">#item<TMPL_VAR NAME="itemnumber">"><TMPL_VAR NAME="barcode"></a>
-          <TMPL_ELSE>&nbsp;
-          </TMPL_IF></td>
-
-      <!-- TMPL_IF NAME="amountcredit" --><td class="credit" align=right><!-- TMPL_ELSE --><td class="debit" align=right><!-- /TMPL_IF --><!-- TMPL_VAR NAME="amount" --></td>
-      <!-- TMPL_IF NAME="amountoutstandingcredit" --><td class="credit" align=right><!-- TMPL_ELSE --><td class="debit" align=right><!-- /TMPL_IF --><!-- TMPL_VAR NAME="amountoutstanding" --></td>
-      <td>
-	<!-- TMPL_IF NAME="payment" -->
-            <!-- TMPL_IF NAME="CAN_user_updatecharges_edit_charges" -->
-		<a href="boraccount.pl?action=reverse&borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&accountno=<!-- TMPL_VAR NAME="accountno" -->">Reverse</a>
+        <table><caption>Current fines [Balance:  $<!-- TMPL_VAR NAME="total" -->]</caption>
+          <tr>
+            <th>Action</th>
+            <th>Date</th>
+            <th>Description of charges</th>
+            <th>Library</th>
+            <th>Fee type</th>
+            <th>Original amt</th>
+            <th>Outstanding</th>
+          </tr>
+        
+            <!-- FIXME: Shouldn't hardcode dollar signs, since Euro or Pound might be needed -->
+          <!-- TMPL_LOOP NAME="currentfees" -->
+           <tr>
+              <td class="pay_column">
+              <!-- TMPL_IF NAME="CAN_user_updatecharges" -->
+                <!-- TMPL_IF NAME="payable" -->
+                <input type="checkbox" name="target_fees" value="<!-- TMPL_VAR id -->" data-outstanding="<!-- TMPL_VAR NAME="amountoutstanding" -->" />
+                <button class="payOne" data-fee_id="<!-- TMPL_VAR id -->" data-outstanding="<!-- TMPL_VAR NAME="amountoutstanding" -->">Pay</button>
+                <!-- TMPL_IF NAME="CAN_user_updatecharges_writeoff_charges" -->
+                  <button class="forgiveOne" data-fee_id="<!-- TMPL_VAR id -->" data-outstanding="<!-- TMPL_VAR NAME="amountoutstanding" -->">Waive</button>
+                <!-- /TMPL_IF -->
+                <!-- /TMPL_IF -->
+              <!-- /TMPL_IF -->
+              </td>
+              <td><!-- TMPL_VAR NAME="date" --></td>
+              <td><span class="feeDescription"><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --><!-- /TMPL_IF --></span>&nbsp;
+                <!-- TMPL_IF NAME="accruing" -->Accruing overdue charge for <span class='title'><!-- TMPL_VAR NAME="title" --></span> (due <!-- TMPL_VAR NAME="date_due" -->) <!-- /TMPL_IF -->&nbsp;
+                <!-- TMPL_IF NAME="itemcallnumber" -->[cn: <!-- TMPL_VAR NAME="itemcallnumber" -->]<!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="itemnumber" --><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">View item</a>&nbsp;<!-- /TMPL_IF -->
+              </td>
+              <td><!-- TMPL_VAR NAME="branchcode" --></td>
+              <td><!-- TMPL_IF NAME="accounttype_desc" --><!-- TMPL_VAR NAME="accounttype_desc" --><!-- TMPL_ELSE -->Estimated fee<!-- /TMPL_IF --></td>
+              <td class="debit"><!-- TMPL_IF NAME="accruing" --><span class="accruingfee">[$<!-- TMPL_VAR NAME="amount" -->]</span><!-- TMPL_ELSE -->$<!-- TMPL_VAR NAME="amount" --><!-- /TMPL_IF --></td>
+              <td class="debit amountoutstanding"><!-- TMPL_IF amountoutstanding -->$<!-- TMPL_VAR NAME="amountoutstanding" --><!-- /TMPL_IF --></td>
+           </tr>
+          <!-- /TMPL_LOOP -->
+        <tfoot>
+          <tr>
+            <td class="payall_column" rowspan="2">
+               <!-- TMPL_IF has_payable -->
+	              <!-- TMPL_IF NAME="CAN_user_updatecharges" -->
+	                <button id="payMany">Pay All</button>
+	                <!-- TMPL_IF NAME="CAN_user_updatecharges_writeoff_charges" -->
+	                    <button id="forgiveMany">Waive All</button>
+	                <!-- /TMPL_IF -->
+	              <!-- /TMPL_IF -->
+               <!-- /TMPL_IF --></td>
+            <td colspan="4">Total accruing</td> <td class="debit">[ $<!-- TMPL_VAR NAME="totalaccruing" --> ]</td><td>&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan="5">Total due</td>
+            <!-- TMPL_IF NAME="totalcredit" --><td class="credit"><!-- TMPL_ELSE --><td class="debit"><!-- /TMPL_IF -->$<!-- TMPL_VAR NAME="total" --></td>
+          </tr>
+          </tfoot>
+        </table>
+        </form>
+        <!--  TMPL_ELSE -->
+            <p><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> has no outstanding fines.</p>
+        <!-- /TMPL_IF -->
+          <!-- TMPL_IF NAME="has_unallocated" -->            <br />
+          <form id="refundUnallocated" action="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR borrowernumber -->" method="post">
+          <table><caption>Unallocated credits &nbsp;&nbsp;<button class="issueFullRefund">Refund All</button></caption>
+            <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Branch</th>
+            <th>Total Amount</th>
+            <th>Unallocated</th>
+            <th>Refund</th>
+            </tr>
+            <!-- TMPL_LOOP NAME="unallocated" -->
+            <tr><td><!-- TMPL_VAR NAME="date" --></td>
+                <td><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --><!-- /TMPL_IF --></td>
+                <td><!-- TMPL_VAR branchcode --></td>
+                <td><!-- TMPL_VAR payment_amount --></td>
+                <td class="credit"><!-- TMPL_VAR NAME="amount" --></td>
+                <td><input type="checkbox" class="refundPayment" name="id" value="<!-- TMPL_VAR id -->" data-amount="<!-- TMPL_VAR amount -->" /></td>
+                </tr>
+            <!-- /TMPL_LOOP -->
+            <tr><td colspan="4" class="rightJustify" id="unallocatedLastRow">&nbsp;</td>
+            <td colspan="2"><input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR borrowernumber -->" />
+                            <input type="hidden" name="amount" id="refundAmount" />
+                            <input type="hidden" name="op" value="refund" />
+                            <input type="submit" value="Refund selected" disabled="disabled" id="refundSubmit" />
+            </td></tr>
+          </table>
+          </form>
+          
+          <!-- /TMPL_IF -->
+    </div>
+        <div id="history">
+            <!-- TMPL_IF NAME="totalcredit" --> <p>Account has net credit.</p>
+            <h3 class="credit"><!-- TMPL_ELSE -->
+            <h3 class="debit"><!-- /TMPL_IF -->Balance:  $<!-- TMPL_VAR NAME="total" --></h3>
+            <br />
+            <table class="accountHistory"><caption>Fees &amp; payments</caption>
+          <tr>
+            <!-- TODO: <th>Edit</th> -->
+            <th>Date</th>
+            <th>Description</th>
+            <th>Fee type</th>
+            <th>Amount</th>
+            <th>Payment</th>
+            <th>Outstanding</th>
+          </tr>
+          <!-- TMPL_LOOP NAME="account_history" -->
+            <!-- TMPL_IF payment -->
+              <tr class="credit">
+            <!-- TMPL_ELSE -->
+              <tr>
             <!-- /TMPL_IF -->
-	<!-- TMPL_ELSE -->
-		&nbsp;
-	<!-- /TMPL_IF -->
-      </td>
-    </tr>
+	              <td><!-- TMPL_VAR NAME="date" --></td>
+	              <td><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --><!-- /TMPL_IF -->
+	                  <!-- TMPL_IF NAME="itemnumber" -->: <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR "title" --></a>&nbsp;<!-- /TMPL_IF -->
+	                   <!-- TMPL_UNLESS payment --><!-- TMPL_IF has_credit -->
+	                       <a class="fee_detail_link htmlentlink" href="#" title="View details">&oplus;</a>
+		                   <div class="fee_details hidden">
+		                   <table><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr>
+		                   <!-- TMPL_LOOP creditloop -->
+		                       <tr><td><!-- TMPL_VAR EXPR="date(date)" --></td><td><!-- TMPL_VAR description --><span class="notes"><!-- TMPL_VAR notes --></span></td><td><!-- TMPL_VAR "accounttype_desc" --></td><td><!-- TMPL_VAR EXPR=currency(amount) --></td></tr>
+		                   <!-- /TMPL_LOOP -->
+		                   </table></div>
+                       <!-- /TMPL_UNLESS --><!-- /TMPL_IF -->
+	              </td>
+	              <td><!-- TMPL_VAR NAME="accounttype_desc" --></td>
+	              <td <!-- TMPL_UNLESS payment -->class="debit"<!-- /TMPL_UNLESS -->><!-- TMPL_IF NAME="accruing" -->(accruing)<!-- TMPL_ELSE -->$<!-- TMPL_VAR EXPR="currency(amount)" --><!-- /TMPL_IF --></td>
+	              <td class="credit">
+	                   <!-- TMPL_IF payment -->
+	                     <!-- TMPL_UNLESS is_reversed -->
+	                       <form action="/cgi-bin/koha/members/boraccount.pl?borrowernumber="<!-- TMPL_VAR borrowernumber -->" method="post">
+	                         <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+	                         <input type="hidden" name="op" value="reverse" />
+	                         <input type="hidden" name="id" value="<!-- TMPL_VAR id -->" />
+	                       <input type="submit" value="Reverse" />
+	                       </form>
+	                     <!-- /TMPL_UNLESS -->
+	                   <!-- TMPL_ELSE -->
+	                       <!-- TMPL_IF NAME="has_credit" -->
+	                           <ul class="credit_list">
+	                               <!-- TMPL_LOOP NAME="creditloop" -->
+	                                   <li><span class="currency">$<!-- TMPL_VAR EXPR=currency(amount) --></span> <!-- TMPL_VAR NAME="accounttype_desc" --> (<!-- TMPL_VAR EXPR="date(date)" -->)</li>
+	                               <!-- /TMPL_LOOP -->
+	                           </ul>
+	                       <!-- /TMPL_IF -->
+	                   <!-- /TMPL_IF --></td>
+	              <td class="debit"><!-- TMPL_UNLESS payment --><span class="currency">$<!-- TMPL_VAR EXPR=currency(amountoutstanding) --></span><!-- /TMPL_UNLESS --></td>
+           </tr>
+          <!-- /TMPL_LOOP -->
+          <!-- TMPL_IF NAME="no_history" --><td colspan="8">Patron has no account history.</td><!--/TMPL_IF -->
+          </table>
 
-  <!-- /TMPL_LOOP -->
-  <tfoot>
-  <tr>
-    <td colspan="4"><b>Total Due</b></td>
-    <!-- TMPL_IF EXPR="total <= 0" --><td colspan="2" class="credit" align=right style="color:green">(credit) <!-- TMPL_ELSE --><td colspan="2" class="debit" align=right style="color:red"><!-- /TMPL_IF --><b><TMPL_VAR NAME="total"></b></td>
-    <td>&nbsp;</td>
-  </tr>
-  </tfoot>
-</table>
-</div></div>
+    </div>
+    <div id="mancredit">
+        <!-- TMPL_IF NAME="CAN_user_updatecharges" -->
+        <form action="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR borrowernumber -->" method="post">
+            <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+            <input type="hidden" name="op" value="mancredit" />
+            <fieldset class="rows">
+            <legend>Manual Credit</legend>
+            <ol>
+                <li><label for="credit_type">Credit Type: </label><select name="accounttype" id="credit_type">
+                    <!-- TMPL_LOOP NAME="payment_types" -->
+                        <option value="<!-- TMPL_VAR NAME="accounttype" -->" <!-- TMPL_IF selected -->selected="selected"<!-- /TMPL_IF -->><!--TMPL_VAR NAME="description" --></option>
+                    <!-- /TMPL_LOOP -->
+                    </select>
+                </li>
+                <li><label for="allocation">Apply to:</label>
+                    <select id="allocation" name="allocation">
+                        <option value="auto">Automatic (oldest fees paid first)</option>
+                        <option value="manual">Select specific fee(s) to pay</option>
+                    </select>
+                    <div id="feepicker" class="hidden">
+                        <label for="fees_to_pay">Choose fee(s):</label>
+                        <select id="fees_to_pay" name="fees_to_pay" class="fee_list" multiple="multiple" size="8">
+                        <!-- TMPL_LOOP payablefees -->
+                            <option value="<!-- TMPL_VAR id -->" class="choosefee" data-amount="<!-- TMPL_VAR amountoutstanding -->"><!-- TMPL_VAR date -->: <!-- TMPL_VAR amountoutstanding -->/<!-- TMPL_VAR amount --> <!-- TMPL_VAR description --></option>
+                        <!-- /TMPL_LOOP -->
+                        </select>
+                        <div class="tip">Tip: Hold Ctl or Command to select multiple entries.</div>
+                        <div class="tip">Tip: if credit amount exceeds fee amounts chosen, remaining credit will be distributed over other fees, oldest first.</div>
+                    </div>
+                </li>
+                <li><label for="credit_desc">Description: </label><input type="text" name="desc" size="50" id="credit_desc" /></li>
+                <li><label for="credit_amount">Amount: </label><input type="text" name="amount" id="credit_amount" /> <a href="#" id="calcTotal">Calculate total due</a></li>
+            </ol></fieldset>
+            <fieldset class="action"><input type="submit" name="add" value="Add Credit" /> 
+            <input type="reset" />
+            </fieldset>
+        </form>
+        <!-- TMPL_ELSE -->
+        <p>You do not have the required privileges to credit this account.</p>
+        <!-- /TMPL_IF -->
+    </div>
+    <div id="maninvoice">
+        <!-- TMPL_IF NAME="CAN_user_updatecharges" -->
+        <form action="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR borrowernumber -->" method="post">
+            <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+            <input type="hidden" name="op" value="maninvoice" />
+            <fieldset class="rows">
+            <legend>Manual Invoice</legend>
+            <ol>
+            <li><label for="invoice_type">Type: </label><select name="accounttype" id="invoice_type">
+            <!-- TMPL_LOOP NAME="fee_types" -->
+                <option value="<!-- TMPL_VAR NAME="accounttype" -->"><!--TMPL_VAR NAME="description" --></option>
+            <!-- /TMPL_LOOP -->
+            <!-- TMPL_LOOP NAME="invoice_types" -->
+                <option value="<!-- TMPL_VAR NAME="accounttype" -->" data-amount="<!-- TMPL_VAR default_amt -->"><!--TMPL_VAR NAME="description" --></option>
+            <!-- /TMPL_LOOP -->
+
+        </select></li>
+            <li><label for="invoice_barcode">Barcode: </label><input type="text" name="barcode" id="invoice_barcode" disabled="disabled" /></li>
+            <li><label for="invoice_desc">Description: </label><input type="text" name="desc" id="invoice_desc" size="50" /></li>
+            <li><label for="invoice_amount">Amount: </label><input type="text" name="amount" id="invoice_amount" /></li>
+            </ol></fieldset>
+        <fieldset class="action">
+        <input type="submit" name="add" value="Save" />
+        <input type="reset" />
+        
+        </fieldset>
+        </form>
+        <!-- TMPL_ELSE -->
+        <p>You do not have the required privileges to invoice this account.</p>
+        <!-- /TMPL_IF -->    
+    </div>
+    <div class="hidden" id="payOneDlg">
+    <form action="/cgi-bin/koha/members/boraccount.pl" method="post" id="payForm">
+    <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
+    <input type="hidden" name="op" value="pay" id="payOneOp" />
+    <input type="hidden" name="fee_id" value='' id="payOneFeeId" />
+      <table class="borderless">
+        <tr><td>Fee Summary</td><td id="payOneFeeSummary">&nbsp;</td></tr>
+        <tr><td>Amount Owed</td><td id="payOneFeeAmount">&nbsp;</td></tr>
+        <tr><td><label for="payOneDesc">Description: </label></td><td><input type="text" name="desc" id="payOneDesc" size="50" /></td></tr>
+        <tr><td><label for="payOneAmount">Amount: </label></td><td><input type="text" name="amount" id="payOneAmount" /></td></tr>
+      </table>
+      <br />
+      <div class="hidden" id="selectForgiveType">
+        <input type="radio" id="woCredit" name="forgivetype" value="writeoff" checked="checked"><label for="woCredit">Write off</label>
+        <input type="radio" id="fgCredit" name="forgivetype" value="forgive"><label for="fgCredit">Forgive</label>
+      </div>
+    </form>
+    </div>
+</div> <!-- toptabs -->
 
 </div>
 </div>
-<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script> 
-<script type="application/javascript"> 
-$(document).ready(function() { 
-   $("table").tablesorter(); 
-}); 
-</script> 
+
 <div class="yui-b">
 <!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
 </div>
 </div>
+<!-- TMPL_IF NAME="CheckoutTimeout" --><!-- TMPL_INCLUDE NAME="circ-timeout.inc" --><!-- /TMPL_IF -->
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
+
