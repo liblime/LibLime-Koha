@@ -2080,5 +2080,11 @@
       "options" : null,
       "value" : "0",
       "type" : "YesNo"
+   },
+   "NewTitlesAge" : {
+      "explanation" : "Age, in number of days, of titles to include in OPAC masthead 'Newest titles' link.  Set to zero to disable.",
+      "options" : null,
+      "value" : "30",
+      "type" : "Integer"
    }
 }
