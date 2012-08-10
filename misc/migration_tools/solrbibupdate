@@ -14,14 +14,17 @@ use Getopt::Long qw(GetOptions);
 use Log::Dispatch;
 use Log::Dispatch::Screen;
 use Carp;
+use Parallel::ForkManager;
 use Time::HiRes qw(gettimeofday);
+use List::MoreUtils qw(natatime);
 
 our $log = Log::Dispatch->new();
 
-my ($all, $timestamp, $to_stdout) = (undef, undef, undef);
+my ($all, $timestamp, $to_stdout, $workers) = (undef, undef, undef, 1);
 my $optcheck = GetOptions(
     'a|all' => \$all,
     's|since:s' => \$timestamp,
+    'w|workers:i' => \$workers,
     'o' => \$to_stdout,
     'v|verbose' => sub {
         $log->add( Log::Dispatch::Screen->new(
@@ -48,7 +51,17 @@ else {
 }
 
 $log->info('Processing '.@$todos.' bibs');
-my $youngest_ts = process_list($solr, $todos);
+
+my $forker = Parallel::ForkManager->new($workers);
+my $todoitr = natatime scalar @$todos / $workers, @$todos;
+my $youngest_ts;# = process_list($solr, $todos);
+while (my @todo_part = $todoitr->()) {
+    next if $forker->start;
+    $youngest_ts = process_list($solr, \@todo_part);
+    $forker->finish;
+}
+$forker->wait_all_children;
+
 update_timestamp($solr, $youngest_ts);
 
 exit;

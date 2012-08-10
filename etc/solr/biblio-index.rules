@@ -55,14 +55,14 @@ suppress | 942n | | dne_to_zero
 
 koha-tag | 999c | emit_tags
 
-koha-auth-number | 1009 1109 1119 1309 2459 4009 4109 4409 4909 6009 6109 6119 6309 6509 6519 6529 6539 6549 6559 6569 6579 6909 7009 7109 7119 7309 8009 8109 8119 8309
+koha-auth-number | record | emit_authids
 
 popularity | 9420
 catdate | 999c | emit_datecreated
 
 acqdate | 952d | most_recent
 
-item-json | 952 | itemify
+#item-json | 952 | itemify
 on-shelf-at | 952 | on_shelf_at | unique
 owned-by | 952 | owned_by | unique
 lost | 9521 | | min_or_zero
@@ -75,8 +75,6 @@ in_process_count | 942u
 #on_hold_count | 952 | is_on_hold | count
 #in_transit_count | 952 | is_in_transit | count
 #on_order_count | 952 | is_on_order | count
-
-#authid_mi | record | emit_authids
 
 marcxml | record | as_marcxml
 #opac_result_html | record | emit_opac_result_html

@@ -68,7 +68,7 @@
     </listener>
 
     <useColdSearcher>false</useColdSearcher>
-    <maxWarmingSearchers>2</maxWarmingSearchers>
+    <maxWarmingSearchers>10</maxWarmingSearchers>
   </query>
 
   <requestDispatcher handleSelect="true" >
