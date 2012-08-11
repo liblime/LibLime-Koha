@@ -11,8 +11,9 @@ has 'rtype' => (
     required => 1,
     );
 
-method update( MARC::Record $record, Str $action) {
-    my $biblionumber = $record->subfield('999', 'c');
+method update( Ref|Int $record, Str $action) {
+    # FIXME: Method::Signatures fails to parse type disjunction Int|MARC::Record
+    my $biblionumber = (ref $record) ? $record->subfield('999', 'c') : $record;
     C4::Context->dbh->do(
         q{INSERT INTO changelog (rtype, action, id) VALUES (?,?,?)},
         undef, $self->rtype, $action, $biblionumber );
