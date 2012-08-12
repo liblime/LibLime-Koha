@@ -32,8 +32,8 @@ my $optcheck = GetOptions(
     },
     );
 
-my $solr = WebService::Solr->new( C4::Context->config('solr')->{url} );
-$timestamp //= get_timestamp($solr);
+my $solr = WebService::Solr->new( C4::Context->config('solr')->{url},
+    { autocommit => 0 } );
 
 my $todos;
 if ( $all ) {
@@ -44,25 +44,24 @@ if ( $all ) {
     $todos = [ map { {id=>$_, action=>'update', stamp=>$now} } @{$bibnums} ];
 }
 else {
+    $timestamp //= get_timestamp($solr);
     $log->info("Collecting bibs updated since $timestamp");
     $todos = Koha::Changelog::DBLog
         ->new( rtype => 'biblio' )
         ->get_todos( $timestamp );
 }
 
-$log->info('Processing '.@$todos.' bibs');
+$log->info('Processing '.@$todos.' changelog entries');
 
 my $forker = Parallel::ForkManager->new($workers);
-my $todoitr = natatime scalar @$todos / $workers, @$todos;
-my $youngest_ts;# = process_list($solr, $todos);
+my $todoitr = natatime(@$todos / $workers, @$todos);
 while (my @todo_part = $todoitr->()) {
     next if $forker->start;
-    $youngest_ts = process_list($solr, \@todo_part);
+    process_list($solr, \@todo_part);
     $forker->finish;
 }
 $forker->wait_all_children;
-
-update_timestamp($solr, $youngest_ts);
+update_timestamp($solr, $todos);
 
 exit;
 
@@ -86,10 +85,6 @@ sub process_list {
     my ($solr, $todos) = @_;
     return unless @$todos;
 
-    my $youngest_ts = $todos->[$#$todos]->{stamp};
-    $youngest_ts =~ s/ /T/;
-    $youngest_ts .= '.000Z';
-
     my %deletes = map { $_->{id} => 1} grep { $_->{action} ~~ 'delete' } @$todos;
     my %updates = map { $_->{id} => 1} grep { $_->{action} ~~ 'update' } @$todos;
 
@@ -98,7 +93,8 @@ sub process_list {
 
     my @delete_ids = map { 'bib_'.$_} keys %deletes;
     $log->info('Deleting '. @delete_ids .' docs');
-    $solr->delete( {id => \@delete_ids} );
+    $solr->delete( {id => \@delete_ids} ) if @delete_ids;
+    $log->info('Delete complete');
 
     my $rules_text = read_file( C4::Context->config('solr')->{biblio_rules} );
     my $r = Koha::Solr::IndexStrategy::MARC->new( rules_text => $rules_text );
@@ -109,17 +105,22 @@ sub process_list {
     my ($start_time, undef) = gettimeofday();
     my $recent_time = $start_time;
 
+    $log->info("Have $queue_size bibs in queue");
+
     my $doc_with_catch = sub {
         my $bibnum = shift;
+        $log->info("Expressing $bibnum");
         my $record = GetMarcWithItems($bibnum);
         return unless $record;
         my $doc = try {
+            $update_count++;
             Koha::Solr::Document::MARC->new(
                 record => $record, strategy => $r );
         }
         catch {
             carp "Error rendering $bibnum into Solr doc: $_";
             $render_errors++;
+            $update_count--;
             undef;
         };
         return $doc;
@@ -149,27 +150,33 @@ sub process_list {
             $update_errors++;
             undef;
         };
-        $solr->commit;
         @update_docs = ();
+        $log->info('Batch complete');
     };
 
     for ( keys %updates ) {
         my $doc = $doc_with_catch->($_);
         next unless $doc;
-        $update_count++;
         say $doc if $to_stdout;
         push @update_docs, $doc;
         $add_with_catch->() if (@update_docs >= $batch_size);
     }
     $add_with_catch->();
+    #$log->info("Committing");
+    #$solr->commit;
 
     $log->info("Updated $update_count records with $render_errors render errors and $update_errors update errors.");
-
-    return $youngest_ts;
+    return;
 }
 
 sub update_timestamp {
-    my ($solr, $youngest_ts) = @_;
+    my ($solr, $todos) = @_;
+
+    return unless @$todos;
+    my $youngest_ts = $todos->[$#$todos]->{stamp};
+    $youngest_ts =~ s/ /T/;
+    $youngest_ts .= '.000Z';
+
     $log->info('Updated timestamp is '.($youngest_ts ? $youngest_ts : '(undef)'));
     return unless $youngest_ts;
 
