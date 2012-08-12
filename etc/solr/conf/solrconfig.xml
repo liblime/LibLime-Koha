@@ -7,68 +7,78 @@
   <directoryFactory name="DirectoryFactory" 
                     class="${solr.directoryFactory:solr.StandardDirectoryFactory}"/>
 
-  <indexDefaults>
-    <useCompoundFile>false</useCompoundFile>
+  <indexConfig>
+    <ramBufferSizeMB>1024</ramBufferSizeMB>
+    <maxBufferedDocs>1000</maxBufferedDocs>
+
+    <mergePolicy class="org.apache.lucene.index.TieredMergePolicy">
+      <int name="maxMergeAtOnce">10</int>
+      <int name="segmentsPerTier">10</int>
+    </mergePolicy>
     <mergeFactor>10</mergeFactor>
-    <ramBufferSizeMB>32</ramBufferSizeMB>
-    <maxFieldLength>10000</maxFieldLength>
-    <writeLockTimeout>1000</writeLockTimeout>
+    <mergeScheduler class="org.apache.lucene.index.ConcurrentMergeScheduler"/>
+
     <lockType>native</lockType>
-  </indexDefaults>
-  <mainIndex>
-    <useCompoundFile>false</useCompoundFile>
-    <ramBufferSizeMB>32</ramBufferSizeMB>
-    <mergeFactor>10</mergeFactor>
-    <unlockOnStartup>false</unlockOnStartup>
+    <unlockOnStartup>true</unlockOnStartup>
+
     <reopenReaders>true</reopenReaders>
-    <deletionPolicy class="solr.SolrDeletionPolicy">
-      <str name="maxCommitsToKeep">1</str>
-      <str name="maxOptimizedCommitsToKeep">0</str>
-    </deletionPolicy>
-    <infoStream file="INFOSTREAM.txt">false</infoStream> 
-  </mainIndex>
+  </indexConfig>
 
   <jmx />
 
   <updateHandler class="solr.DirectUpdateHandler2">
     <autoCommit>
       <maxDocs>10000</maxDocs>
-      <maxTime>1000</maxTime>
+      <maxTime>60000</maxTime>
     </autoCommit>
   </updateHandler>
   
   <query>
     <maxBooleanClauses>1024</maxBooleanClauses>
     <filterCache class="solr.FastLRUCache"
-                 size="512"
-                 initialSize="512"
-                 autowarmCount="0"/>
+                 size="16384"
+                 initialSize="4096"
+                 autowarmCount="512"/>
     <queryResultCache class="solr.LRUCache"
-                     size="512"
-                     initialSize="512"
-                     autowarmCount="0"/>
+                     size="16384"
+                     initialSize="4096"
+                     autowarmCount="512"/>
     <documentCache class="solr.LRUCache"
-                   size="512"
-                   initialSize="512"
-                   autowarmCount="0"/>
+                   size="16384"
+                   initialSize="4096"
+                   autowarmCount="512"/>
     <enableLazyFieldLoading>true</enableLazyFieldLoading>
-    <queryResultWindowSize>40</queryResultWindowSize>
-    <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
+    <queryResultWindowSize>200</queryResultWindowSize>
+    <queryResultMaxDocsCached>500</queryResultMaxDocsCached>
 
     <listener event="newSearcher" class="solr.QuerySenderListener">
       <arr name="queries">
+        <lst>
+          <str name="q">static newSearcher warming in solrconfig.xml</str>
+        </lst>
       </arr>
     </listener>
     <listener event="firstSearcher" class="solr.QuerySenderListener">
       <arr name="queries">
         <lst>
-          <str name="q">static firstSearcher warming in solrconfig.xml</str>
+          <str name="q">*:*</str>
+          <str name="facet">true</str>
+          <str name="facet.field">on-shelf-at</str>
+          <str name="facet.field">author-exact</str>
+          <str name="facet.field">format</str>
+          <str name="facet.field">collection</str>
+          <str name="facet.field">itemtype</str>
+          <str name="facet.field">language</str>
+          <str name="facet.field">era</str>
+          <str name="facet.field">geo</str>
+          <str name="facet.field">topic</str>
+          <str name="facet.field">genre</str>
         </lst>
       </arr>
     </listener>
 
-    <useColdSearcher>false</useColdSearcher>
-    <maxWarmingSearchers>10</maxWarmingSearchers>
+    <useColdSearcher>true</useColdSearcher>
+    <maxWarmingSearchers>5</maxWarmingSearchers>
   </query>
 
   <requestDispatcher handleSelect="true" >
@@ -137,6 +147,13 @@
          format
        </str>
 
+       <str name="f.format.facet.method">enum</str>
+       <str name="f.collection.facet.method">enum</str>
+       <str name="f.itemtype.facet.method">enum</str>
+       <str name="f.on-shelf-at.facet.method">enum</str>
+       <str name="f.language.facet.method">enum</str>
+       <str name="f.geo.facet.method">enum</str>
+       <str name="f.era.facet.method">enum</str>
        <str name="facet">true</str>
        <str name="facet.mincount">1</str>
        <str name="facet.query">on-shelf-at:*</str>
