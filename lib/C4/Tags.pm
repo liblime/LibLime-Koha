@@ -29,7 +29,7 @@ BEGIN {
 	@ISA = qw(Exporter);
 	@EXPORT_OK = qw(
 		&get_tag &get_tags &get_tag_rows
-		&add_tags &add_tag
+		&add_tag
 		&delete_tag_row_by_id
 		&remove_tag
 		&delete_tag_rows_by_ids
@@ -364,6 +364,7 @@ sub whitelist {
 			add_word_lc($_);
 		}
 	}
+    my $db = Koha::Changelog::DBLog->new(rtype => 'biblio');
 	foreach (@_) {
 		my $aref = get_approval_rows({term=>$_});
 		if ($aref and scalar @$aref) {
@@ -371,6 +372,8 @@ sub whitelist {
 		} else {
 			add_tag_approval($_,$operator);
 		}
+        # mark bibs with this tag for indexing.
+        $db->update( $_->{biblionumber}, 'update' ) for @{get_tags({term => $_})};
 	}
 	return scalar @_;
 }
@@ -550,20 +553,24 @@ sub add_tag ($$;$$) {	# biblionumber,term,[borrowernumber,approvernumber]
 	my $sth = C4::Context->dbh->prepare($query);
 	$sth->execute($borrowernumber,$biblionumber,$term);
 
+    my $db = Koha::Changelog::DBLog->new(rtype => 'biblio');
+   
 	# then 
 	if (scalar @_) { 	# if arg remains, it is the borrowernumber of the approver: tag is pre-approved.
 		my $approver = shift;
 		$debug and print STDERR "term '$term' pre-approved by borrower #$approver\n";
 		add_tag_approval($term,$approver,1);
 		add_tag_index($term,$biblionumber,$approver);
+        $db->update($biblionumber, 'update' ); # mark bib for reindex.
 	} elsif (is_approved($term) >= 1) {
 		$debug and print STDERR "term '$term' approved by whitelist\n";
 		add_tag_approval($term,0,1);
 		add_tag_index($term,$biblionumber,1);
+        $db->update($biblionumber, 'update' ); # mark bib for reindex.
 	} else {
 		$debug and print STDERR "term '$term' NOT approved (yet)\n";
 		add_tag_approval($term);
-		add_tag_index($term,$biblionumber);
+		add_tag_index($term,$biblionumber); # Note this call to add_tag_index is equivalent to those above with the unused third param.
 	}
 }
 
