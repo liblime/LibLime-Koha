@@ -196,19 +196,19 @@ foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignore
             next;
         }
 
-        if ( $last_reported_cents < $minimum*100 ) {
+        if ( $borrower->{last_reported_amount} < $minimum ) {
             MarkMemberReported( $borrower->{'borrowernumber'}, 0 ) if ( $confirm );
             next;
         }
 
-        if ( $last_reported_cents == $total_cents ) {
+        my $diff = $total - $borrower->{last_reported_amount}; # Amount we have to reconcile
+        if ( abs($diff) < 0.01 ) {
             print "skipping, no difference\n" if ( $verbose );
             next;
         }
 
         print "updating\n" if ( $verbose );
 
-        my $diff = ($total_cents - $last_reported_cents) / 100; # Amount we have to reconcile
         my ( $additional, $waived, $paid, $returned ) = ( 0, 0, 0, 0 );
 
         foreach my $acctline ( @$acctlines ) {
