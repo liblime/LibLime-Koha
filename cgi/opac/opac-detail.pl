@@ -146,6 +146,8 @@ my %itemfields;
 my $item_count = 0;
 my $prefloc = C4::Context->preference("ItemLocation");
 
+my $canceled_unavailable_holds = C4::Reserves::GetCanceledOnShelfReserves($biblionumber, unavailable => 1);
+
 foreach my $itm (@items) {
     next unless $itm;
     $norequests = 0
@@ -193,13 +195,16 @@ foreach my $itm (@items) {
          $itm->{'lostimageurl'}   = $lostimageinfo->{ 'imageurl' };
          $itm->{'lostimagelabel'} = $lostimageinfo->{ 'label' };
      }
-     
+
      if ($itm->{'reserve_status'}){
-       if( $itm->{'reserve_status'} eq "Attached"){ $itm->{'waiting'} = 1; }
+       if( $itm->{'reserve_status'} eq "Attached"
+            ||  grep { $itm->{'itemnumber'} == $_->{'itemnumber'} } @$canceled_unavailable_holds){
+                $itm->{'waiting'} = 1;
+       }
        $template->param( totalreserves => $itm->{'reserve_count'});
        $template->param( activereserves => $itm->{'active_reserve_count'});
      }
-    
+
      my ( $transfertwhen, $transfertfrom, $transfertto ) = GetTransfers($itm->{itemnumber});
      if ( defined( $transfertwhen ) && $transfertwhen ne '' ) {
         $itm->{transfertwhen} = format_date($transfertwhen);

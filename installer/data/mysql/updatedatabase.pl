@@ -4809,6 +4809,25 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.010';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    my $sth = $dbh->prepare("SELECT * from old_reserves WHERE found='W' OR found IS NULL");
+    $sth->execute;
+    my $sth_update = $dbh->prepare("UPDATE old_reserves SET found=? WHERE reservenumber=?");
+    while(my $res = $sth->fetchrow_hashref){
+        # This may not be correct in all cases.  It probably doesn't really matter though; our goal here
+        # is to get rid of 'W' statuses to simplify identification of canceled or expired holds that are
+        # still on the holds shelf.  After this update, `found` should always have a value when a hold moves
+        # to old_reserves.
+        my $found = ($res->{cancellationdate}) ? 'C' : 'E';
+        next if(!$res->{priority} && $res->{found}); # still on shelf. if priority is -1, it's been removed.
+        $sth_update->execute($found, $res->{reservenumber});
+    }
+
+    print "Upgrade to $DBversion done ( Update old_reserves data with correct 'found' values to simplify identification of on-shelf canceled holds. )\n";
+    SetVersion ($DBversion);
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

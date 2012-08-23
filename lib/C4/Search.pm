@@ -1365,14 +1365,23 @@ sub searchResults {
 
         my %restype;
         my ($rescount,$reserves) = C4::Reserves::GetReservesFromBiblionumber($oldbiblio->{biblionumber});
+        my ($suspended_rescount,$suspended_reserves) = C4::Reserves::GetSuspendedReservesFromBiblionumber($oldbiblio->{biblionumber});
+            # ^^^ FIXME: This would be better implemented by just making GetReservesFromBiblionumber NOT return suspended holds.
+            # Since it does, suspended item-level holds will still appear unavailable though they should not.
+        my $canceled_unavailable_reserves = C4::Reserves::GetCanceledOnShelfReserves($oldbiblio->{biblionumber}, unavailable => 1);
         my $total_rescount = $rescount;
-        foreach my $res (@$reserves) {
+        for my $res (@$reserves) {
             if ($res->{itemnumber}) {
                 $restype{$res->{itemnumber}} = "Attached";
                 $rescount--;
             }
         }
-        my ($suspended_rescount,$suspended_reserves) = C4::Reserves::GetSuspendedReservesFromBiblionumber($oldbiblio->{biblionumber});
+        # A canceled hold that is still on the holds shelf will be considered unavailable if it has another hold on it,
+        # so we add these to the 'Attached' list  although they aren't really (but will be as soon as staff checks them in).
+        for my $res (@$canceled_unavailable_reserves) {
+            $restype{$res->{itemnumber}} = "Attached";
+            $rescount--;
+        }
 
         ($i % 2) and $oldbiblio->{'toggle'} = 1;
 
@@ -1501,8 +1510,9 @@ sub searchResults {
                     ($transfertwhen, $transfertfrom, $transfertto) = C4::Circulation::GetTransfers($item->{itemnumber});
                 }
 
-                if ($restype{$item->{itemnumber}} ne "Attached") {
-                  $restype{$item->{itemnumber}} = ($itemcount <= $rescount) ? "Reserved" : '';
+                if ($restype{$item->{itemnumber}} ne "Attached") { # Note 'Attached' is the only possible value.  
+                    # If there are as many holds as there are items, then all items are considered unavailable.
+                    $restype{$item->{itemnumber}} = ($itemcount <= $rescount) ? "Reserved" : '';
                 }
                 # item is withdrawn, lost or damaged
                 if (   $item->{wthdrawn}

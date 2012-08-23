@@ -62,7 +62,7 @@ my $query = "SELECT * FROM reserves
 my $sth = $dbh->prepare($query);
 $sth->execute($today_iso);
 while (my $expref = $sth->fetchrow_hashref) {
-  C4::Reserves::_moveToOldReserves($expref->{reservenumber});
+  C4::Reserves::CancelReserve($expref->{reservenumber}, 'E');
 
   next if (! C4::Context->preference('EnableHoldExpiredNotice'));
   # Send expiration notice, if desired
