@@ -32,7 +32,7 @@ format | record | emit_format | first
 content | record | emit_content
 audience | record | emit_audience
 language | 008[35-37] | map_language
-ln | 008[35-37] 041a 041d 041h 041j
+ln | 008[35-37] 041a 041b 041d 041h 041j
 
 itemtype | 952y | | unique
 collection | 9528 | | unique
