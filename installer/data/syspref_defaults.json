@@ -2092,5 +2092,17 @@
       "options" : null,
       "value" : null,
       "type" : "free"
+   },
+   "OPACSolrBQ" : {
+      "explanation" : "Value supplied for the 'bq' parameter in Solr select queries.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
+   },
+   "OPACSolrQF" : {
+      "explanation" : "Value supplied for the 'qf' parameter in Solr select queries.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
    }
 }

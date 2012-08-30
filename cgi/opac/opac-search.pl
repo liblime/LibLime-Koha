@@ -254,6 +254,10 @@ if($solr_query->simple_query){
                    );
 }
 
+my $options = $solr_query->options;
+$options->{bq} = C4::Context->preference('OPACSolrBQ');
+$options->{qf} = C4::Context->preference('OPACSolrQF');
+$solr_query->options( $options );
 my $rs = $solr->search($solr_query->query,$solr_query->options);
 
 if(!$rs->is_error){
