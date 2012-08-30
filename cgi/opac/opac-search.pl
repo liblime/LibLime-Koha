@@ -254,10 +254,19 @@ if($solr_query->simple_query){
                    );
 }
 
+my %syspref_opts = (
+    OPACSolrBQ => 'bq',
+    OPACSolrQF => 'qf',
+    );
+
 my $options = $solr_query->options;
-$options->{bq} = C4::Context->preference('OPACSolrBQ');
-$options->{qf} = C4::Context->preference('OPACSolrQF');
+while ( my ($pref, $opt) = each %syspref_opts ) {
+    if (my $val = C4::Context->preference($pref)) {
+        $options->{$opt} = $val;
+    }
+}
 $solr_query->options( $options );
+
 my $rs = $solr->search($solr_query->query,$solr_query->options);
 
 if(!$rs->is_error){
