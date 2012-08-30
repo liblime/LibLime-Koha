@@ -17,8 +17,9 @@ use Carp;
 use Parallel::ForkManager;
 use Time::HiRes qw(gettimeofday);
 use List::MoreUtils qw(natatime);
+use POSIX qw();
 
-our $log = Log::Dispatch->new();
+my $log = Log::Dispatch->new();
 
 my ($all, $timestamp, $to_stdout, $workers) = (undef, undef, undef, 1);
 my $optcheck = GetOptions(
@@ -32,6 +33,13 @@ my $optcheck = GetOptions(
     },
     );
 
+$SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = sub {
+    $log->warn('Caught signal. Exiting.');
+    my $todos = [ {stamp => C4::Context->preference('SolrBibUpdateTS')} ];
+    update_timestamp( $todos );
+    exit 1;
+};
+
 my $solr = WebService::Solr->new( C4::Context->config('solr')->{url},
     { autocommit => 0 } );
 
@@ -40,28 +48,30 @@ if ( $all ) {
     $log->info('Collecting all bibs');
     my $bibnums = C4::Context->dbh->selectcol_arrayref(
         'SELECT biblionumber FROM biblio');
-    my $now = DateTime->now->ymd . ' ' . DateTime->now->hms;
-    $todos = [ map { {id=>$_, action=>'update', stamp=>$now} } @{$bibnums} ];
+    $timestamp = DateTime->now->ymd . ' ' . DateTime->now->hms;
+    $todos =
+        [ map { {id=>$_, action=>'update', stamp=>$timestamp} } @{$bibnums} ];
 }
 else {
-    $timestamp //= get_timestamp($solr);
+    $timestamp //= get_timestamp();
     $log->info("Collecting bibs updated since $timestamp");
     $todos = Koha::Changelog::DBLog
         ->new( rtype => 'biblio' )
         ->get_todos( $timestamp );
 }
 
-$log->info('Processing '.@$todos.' changelog entries');
+update_timestamp($todos);
 
+$log->info('Processing '.@$todos.' changelog entries');
 my $forker = Parallel::ForkManager->new($workers);
 my $todoitr = natatime(@$todos / $workers, @$todos);
 while (my @todo_part = $todoitr->()) {
     next if $forker->start;
+    $SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = undef;
     process_list($solr, \@todo_part);
     $forker->finish;
 }
 $forker->wait_all_children;
-update_timestamp($solr, $todos);
 
 exit;
 
@@ -162,48 +172,27 @@ sub process_list {
         $add_with_catch->() if (@update_docs >= $batch_size);
     }
     $add_with_catch->();
-    #$log->info("Committing");
-    #$solr->commit;
 
     $log->info("Updated $update_count records with $render_errors render errors and $update_errors update errors.");
     return;
 }
 
-sub update_timestamp {
-    my ($solr, $todos) = @_;
+sub get_timestamp {
+    return C4::Context->preference('SolrBibUpdateTS')
+        // '1970-01-01 00:00:00';
+}
 
+sub update_timestamp {
+    my $todos = shift;
     return unless @$todos;
-    my $youngest_ts = $todos->[$#$todos]->{stamp};
-    $youngest_ts =~ s/ /T/;
-    $youngest_ts .= '.000Z';
+
+    $todos = [ sort { $a->{stamp} cmp $b->{stamp} } @$todos ];
+    my $youngest_entry = pop @$todos;
+    my $youngest_ts = $youngest_entry->{stamp};
 
     $log->info('Updated timestamp is '.($youngest_ts ? $youngest_ts : '(undef)'));
     return unless $youngest_ts;
 
-    my $metadoc = WebService::Solr::Document->new(
-        id => 'bibupdate', rtype => 'meta',
-        timestamp => $youngest_ts );
-    $solr->update($metadoc);
+    C4::Context->preference_set('SolrBibUpdateTS', $youngest_ts);
     return;
-}
-
-sub get_timestamp {
-    my $solr = shift;
-
-    my $tsres = $solr->search(
-        'rtype:meta AND id:bibupdate', {qt => 'advanced', fl => 'timestamp,id'});
-    croak 'Failure to query Solr service' unless $tsres->ok;
-
-    my $response = $tsres->content->{response};
-    my $metadoc;
-    if ($response->{numFound} == 0) {
-        # No meta document found, so create one.
-        $metadoc = WebService::Solr::Document->new(
-            id => 'bibupdate', rtype => 'meta',
-            timestamp => '1970-01-01T00:00:00.000Z' );
-    }
-    else {
-        ($metadoc) = $tsres->docs;
-    }
-    return $metadoc->value_for('timestamp');
 }

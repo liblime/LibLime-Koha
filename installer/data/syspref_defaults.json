@@ -2086,5 +2086,11 @@
       "options" : null,
       "value" : "30",
       "type" : "Integer"
+   },
+   "SolrBibUpdateTS" : {
+      "explanation" : "Timestamp of the most recent update of Solr bib documents.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
    }
 }
