@@ -502,6 +502,15 @@ sub _clear_syspref_cache {
     $cache->remove('systempreferences');
 }
 
+sub preference_set {
+    my ($class, $var, $val) = @_;
+
+    $class->_clear_syspref_cache();
+    C4::Context->dbh->do(
+        'UPDATE systempreferences SET value = ? WHERE variable LIKE ?',
+        undef, $val, $var);
+}
+
 sub preference {
     my $self = shift;
     my $var  = shift;
