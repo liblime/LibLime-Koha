@@ -249,14 +249,18 @@ my $solr = new Koha::Solr::Service;
 my $solr_query = Koha::Solr::Query->new({cgi => $cgi, opac => 1, rtype => 'bib'});
 
 if($solr_query->simple_query){
-    $template->param( ms_query => $solr_query->simple_query(),
-                     ms_idx   => $solr_query->simple_query_field(),
-                   );
+    my $q = $solr_query->simple_query();
+    my $idx = $solr_query->simple_query_field();
+    if ( $idx ) {
+        $q =~ s/^\(|\)$//g;
+    }
+    $template->param( ms_query => $q, ms_idx => $idx );
 }
 
 my %syspref_opts = (
     OPACSolrBQ => 'bq',
     OPACSolrQF => 'qf',
+    OPACSolrMM => 'mm',
     );
 
 my $options = $solr_query->options;

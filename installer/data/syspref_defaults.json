@@ -2104,5 +2104,11 @@
       "options" : null,
       "value" : null,
       "type" : "free"
+   },
+   "OPACSolrMM" : {
+      "explanation" : "Value supplied for the 'mm' parameter in Solr select queries.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
    }
 }

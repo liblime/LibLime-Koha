@@ -98,7 +98,7 @@ sub _build_query_from_cgi{
         }
         else {
             # Add grouping for this field if not quoted and multiple terms.
-            if( $q !~ /^".*"$/ && $q !~ /^(.*)$/ && $q =~ /\S+\s+\S+/ ) {
+            if( $q !~ /^".*"$/ && $q !~ /^\(.*\)$/ && $q =~ /\S+\s+\S+/ ) {
                 $q = "($q)";
             }
             # If barcode search, expand with prefix.
