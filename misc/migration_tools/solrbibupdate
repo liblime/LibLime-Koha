@@ -3,6 +3,7 @@
 use Koha;
 use C4::Context;
 use C4::Items qw(GetMarcWithItems);
+use C4::AuthoritiesMarc qw(GetAuthority);
 use WebService::Solr;
 use Koha::Solr::IndexStrategy::MARC;
 use Koha::Solr::Document::MARC;
@@ -19,62 +20,115 @@ use Time::HiRes qw(gettimeofday);
 use List::MoreUtils qw(natatime);
 use POSIX qw();
 
-my $log = Log::Dispatch->new();
+my %dispatch = (
+    biblio => {
+        name => 'biblio',
+        acquire_all_ids => sub {
+            return C4::Context->dbh->selectcol_arrayref(
+                'SELECT biblionumber FROM biblio');
+        },
+        acquire_one => \&GetMarcWithItems,
+        rules_file => C4::Context->config('solr')->{biblio_rules},
+        prefix => 'bib',
+        rtype => 'biblio',
+        tspref => 'SolrBibUpdateTS',
+    },
+    auth => {
+        name => 'auth',
+        acquire_all_ids => sub {
+            return C4::Context->dbh->selectcol_arrayref(
+                'SELECT authid FROM auth_header');
+        },
+        acquire_one => \&GetAuthority,
+        rules_file => C4::Context->config('solr')->{auth_rules},
+        prefix => 'auth',
+        rtype => 'auth',
+        tspref => 'SolrAuthUpdateTS',
+    },
+);
 
-my ($all, $timestamp, $to_stdout, $workers) = (undef, undef, undef, 1);
+my $log = Log::Dispatch->new();
+my @queues;
+my %opts = (
+    all => undef,
+    timestamp => undef,
+    to_stdout => undef,
+    workers => 1,
+    batch_size => 100,
+    );
+
 my $optcheck = GetOptions(
-    'a|all' => \$all,
-    's|since:s' => \$timestamp,
-    'w|workers:i' => \$workers,
-    'o' => \$to_stdout,
+    'bibs!' => sub { push @queues, 'biblio' },
+    'auths!' => sub { push @queues, 'auth' },
+    'a|all!' => \$opts{all},
+    's|since:s' => \$opts{timestamp},
+    'w|workers:i' => \$opts{workers},
+    'b|batch_size:i' => \$opts{batch_size},
+    'o' => \$opts{to_stdout},
     'v|verbose' => sub {
         $log->add( Log::Dispatch::Screen->new(
                        min_level=>'info', newline=>1, stderr=>1))
     },
-    );
+);
 
-$SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = sub {
-    $log->warn('Caught signal. Exiting.');
-    my $todos = [ {stamp => C4::Context->preference('SolrBibUpdateTS')} ];
-    update_timestamp( $todos );
-    exit 1;
-};
-
-my $solr = WebService::Solr->new( C4::Context->config('solr')->{url},
-    { autocommit => 0 } );
-
-my $todos;
-if ( $all ) {
-    $log->info('Collecting all bibs');
-    my $bibnums = C4::Context->dbh->selectcol_arrayref(
-        'SELECT biblionumber FROM biblio');
-    $timestamp = DateTime->now->ymd . ' ' . DateTime->now->hms;
-    $todos =
-        [ map { {id=>$_, action=>'update', stamp=>$timestamp} } @{$bibnums} ];
+for ( @queues ) {
+    my $rtype = $dispatch{$_};
+    $log->info("Dispatching $rtype->{name}");
+    $rtype->{opts} = \%opts;
+    run_queue( $rtype );
+    $log->info("Finished $rtype->{name}");
 }
-else {
-    $timestamp //= get_timestamp();
-    $log->info("Collecting bibs updated since $timestamp");
-    $todos = Koha::Changelog::DBLog
-        ->new( rtype => 'biblio' )
-        ->get_todos( $timestamp );
-}
-
-update_timestamp($todos);
-
-$log->info('Processing '.@$todos.' changelog entries');
-my $forker = Parallel::ForkManager->new($workers);
-my $todoitr = natatime(@$todos / $workers, @$todos);
-while (my @todo_part = $todoitr->()) {
-    next if $forker->start;
-    $SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = undef;
-    process_list($solr, \@todo_part);
-    $forker->finish;
-}
-$forker->wait_all_children;
 
 exit;
 
+
+sub run_queue {
+    my $rtype = shift;
+
+    $SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = sub {
+        $log->warn('Caught signal. Exiting.');
+        my $todos = [ {stamp => $rtype->{tspref}} ];
+        update_timestamp( $rtype, $todos );
+        exit 1;
+    };
+
+    my $todos = get_todos($rtype);
+
+    update_timestamp($rtype, $todos);
+
+    $log->info('Processing '.@$todos.' changelog entries');
+    my $forker = Parallel::ForkManager->new($rtype->{opts}{workers});
+    my $todoitr = natatime(@$todos / $rtype->{opts}{workers}, @$todos);
+    while (my @todo_part = $todoitr->()) {
+        next if $forker->start;
+        $SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = undef;
+        process_list($rtype, \@todo_part);
+        $forker->finish;
+    }
+    $forker->wait_all_children;
+
+    return;
+}
+
+sub get_todos {
+    my ($rtype) = @_;
+
+    my $opts = $rtype->{opts};
+    if ( $opts->{all} ) {
+        $log->info('Collecting all ids');
+        my $ids = $rtype->{acquire_all_ids}->();
+        $opts->{timestamp} = DateTime->now->ymd . ' ' . DateTime->now->hms;
+        return
+            [ map { {id=>$_, rtype=>$rtype->{name}, action=>'update', stamp=>$opts->{timestamp}} } @{$ids} ];
+    }
+    else {
+        $opts->{timestamp} //= get_timestamp($rtype);
+        $log->info("Collecting ids updated since $opts->{timestamp}");
+        return Koha::Changelog::DBLog
+            ->new( rtype => $rtype->{name} )
+            ->get_todos( $opts->{timestamp} );
+    }
+}
 
 sub s2hms {
     my $s = shift;
@@ -92,35 +146,34 @@ sub s2hms {
 }
 
 sub process_list {
-    my ($solr, $todos) = @_;
+    my ($rtype, $todos) = @_;
     return unless @$todos;
 
+    my $solr = WebService::Solr->new( C4::Context->config('solr')->{url},
+                                      { autocommit => 0 } );
     my %deletes = map { $_->{id} => 1} grep { $_->{action} ~~ 'delete' } @$todos;
     my %updates = map { $_->{id} => 1} grep { $_->{action} ~~ 'update' } @$todos;
 
     # Remove deleted items from updates list
     %updates = map { $_ => 1 } grep { ! exists $deletes{$_} } keys %updates;
 
-    my @delete_ids = map { 'bib_'.$_} keys %deletes;
+    my @delete_ids = map { $rtype->{prefix}.'_'.$_} keys %deletes;
     $log->info('Deleting '. @delete_ids .' docs');
     $solr->delete( {id => \@delete_ids} ) if @delete_ids;
     $log->info('Delete complete');
 
-    my $rules_text = read_file( C4::Context->config('solr')->{biblio_rules} );
-    my $r = Koha::Solr::IndexStrategy::MARC->new( rules_text => $rules_text );
+    my $r = Koha::Solr::IndexStrategy::MARC->new(
+        rules_text => scalar read_file($rtype->{rules_file}) );
     my @update_docs;
     my ($update_count, $render_errors, $update_errors) = (0, 0, 0);
-    my $batch_size = 500;
     my $queue_size = scalar keys %updates;
+    $log->info("Have $queue_size updates in queue");
     my ($start_time, undef) = gettimeofday();
-    my $recent_time = $start_time;
-
-    $log->info("Have $queue_size bibs in queue");
 
     my $doc_with_catch = sub {
-        my $bibnum = shift;
-        $log->info("Expressing $bibnum");
-        my $record = GetMarcWithItems($bibnum);
+        my $id = shift;
+        $log->info("Expressing $id");
+        my $record = $rtype->{acquire_one}->($id);
         return unless $record;
         my $doc = try {
             $update_count++;
@@ -128,7 +181,7 @@ sub process_list {
                 record => $record, strategy => $r );
         }
         catch {
-            carp "Error rendering $bibnum into Solr doc: $_";
+            carp "Error rendering $id into Solr doc: $_";
             $render_errors++;
             $update_count--;
             undef;
@@ -145,11 +198,8 @@ sub process_list {
 
         my $elapsed = s2hms($total_elapsed_seconds);
         my $remaining = s2hms($est_seconds_remaining);
-        my $msg =
-            sprintf q{completed %d/%d, %d d/s, %s elapsed, %s remaining},
+        my $msg = sprintf q{completed %d/%d, %d d/s, %s elapsed, %s remaining},
             $update_count, $queue_size, $dps_all, $elapsed, $remaining;
-        my $recent_time = $now;
-
         $log->info($msg);
 
         try {
@@ -164,26 +214,29 @@ sub process_list {
         $log->info('Batch complete');
     };
 
-    for ( keys %updates ) {
+    for ( sort {$a <=> $b} keys %updates ) {
         my $doc = $doc_with_catch->($_);
         next unless $doc;
-        say $doc if $to_stdout;
+        say $doc if $rtype->{opts}{to_stdout};
         push @update_docs, $doc;
-        $add_with_catch->() if (@update_docs >= $batch_size);
+        $add_with_catch->() if (@update_docs >= $rtype->{opts}{batch_size});
     }
     $add_with_catch->();
 
-    $log->info("Updated $update_count records with $render_errors render errors and $update_errors update errors.");
+    $log->info(
+        "Updated $update_count records with $render_errors render errors ".
+        "and $update_errors update errors.");
     return;
 }
 
 sub get_timestamp {
-    return C4::Context->preference('SolrBibUpdateTS')
+    my $rtype = shift;
+    return C4::Context->preference($rtype->{tspref})
         // '1970-01-01 00:00:00';
 }
 
 sub update_timestamp {
-    my $todos = shift;
+    my ($rtype, $todos) = @_;
     return unless @$todos;
 
     $todos = [ sort { $a->{stamp} cmp $b->{stamp} } @$todos ];
@@ -193,6 +246,6 @@ sub update_timestamp {
     $log->info('Updated timestamp is '.($youngest_ts ? $youngest_ts : '(undef)'));
     return unless $youngest_ts;
 
-    C4::Context->preference_set('SolrBibUpdateTS', $youngest_ts);
+    C4::Context->preference_set($rtype->{tspref}, $youngest_ts);
     return;
 }

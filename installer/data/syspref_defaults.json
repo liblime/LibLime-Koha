@@ -2093,6 +2093,12 @@
       "value" : null,
       "type" : "free"
    },
+   "SolrAuthUpdateTS" : {
+      "explanation" : "Timestamp of the most recent update of Solr auth documents.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
+   },
    "OPACSolrBQ" : {
       "explanation" : "Value supplied for the 'bq' parameter in Solr select queries.",
       "options" : null,
