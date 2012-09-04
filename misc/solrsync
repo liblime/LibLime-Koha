@@ -55,6 +55,8 @@ my %opts = (
     to_stdout => undef,
     workers => 1,
     batch_size => 100,
+    continuous => 0,
+    sleeptime => 30,
     );
 
 my $optcheck = GetOptions(
@@ -64,6 +66,8 @@ my $optcheck = GetOptions(
     's|since:s' => \$opts{timestamp},
     'w|workers:i' => \$opts{workers},
     'b|batch_size:i' => \$opts{batch_size},
+    'c|continuous!' => \$opts{continuous},
+    't|sleeptime:i' => \$opts{sleeptime},
     'o' => \$opts{to_stdout},
     'v|verbose' => sub {
         $log->add( Log::Dispatch::Screen->new(
@@ -71,12 +75,20 @@ my $optcheck = GetOptions(
     },
 );
 
-for ( @queues ) {
-    my $rtype = $dispatch{$_};
-    $log->info("Dispatching $rtype->{name}");
-    $rtype->{opts} = \%opts;
-    run_queue( $rtype );
-    $log->info("Finished $rtype->{name}");
+croak '"all" and "continuous" options are not compatible'
+    if ( $opts{continuous} && $opts{all} );
+
+
+while (1) {
+    for ( @queues ) {
+        my $rtype = $dispatch{$_};
+        $log->info("Dispatching $rtype->{name}");
+        $rtype->{opts} = \%opts;
+        run_queue( $rtype );
+        $log->info("Finished $rtype->{name}");
+    }
+    last unless $opts{continuous};
+    sleep $opts{sleeptime};
 }
 
 exit;
@@ -87,7 +99,7 @@ sub run_queue {
 
     $SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = sub {
         $log->warn('Caught signal. Exiting.');
-        my $todos = [ {stamp => $rtype->{tspref}} ];
+        my $todos = [ {stamp => C4::Context->preference( $rtype->{tspref} )} ];
         update_timestamp( $rtype, $todos );
         exit 1;
     };
@@ -106,6 +118,7 @@ sub run_queue {
         $forker->finish;
     }
     $forker->wait_all_children;
+    $SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = undef;
 
     return;
 }
