@@ -146,11 +146,11 @@ sub get_todos {
         ];
     }
     else {
-        $opts->{timestamp} //= get_timestamp($rtype);
-        $log->info("Collecting ids updated since $opts->{timestamp}");
+        my $tstamp = $opts->{timestamp} // get_timestamp($rtype);
+        $log->info("Collecting ids updated since $tstamp");
         return Koha::Changelog::DBLog
             ->new( rtype => $rtype->{name} )
-            ->get_todos( $opts->{timestamp} );
+            ->get_todos( $tstamp );
     }
 }
 
