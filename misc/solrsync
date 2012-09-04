@@ -10,6 +10,7 @@ use Koha::Solr::Document::MARC;
 use Koha::Changelog::DBLog;
 use File::Slurp;
 use DateTime;
+use DateTime::TimeZone;
 use Try::Tiny;
 use Getopt::Long qw(GetOptions);
 use Log::Dispatch;
@@ -81,7 +82,10 @@ $log->add( Log::Dispatch::Screen->new(
                min_level=>$verbosities[$opts{verbosity}] // 'debug',
                newline=>1, stderr=>1));
 
+my $ltz = DateTime::TimeZone->new(name => 'local');
+
 while (1) {
+    $log->info('Starting new queue run at '. DateTime->now(time_zone => $ltz));
     for ( @queues ) {
         my $rtype = $dispatch{$_};
         $log->info("Dispatching $rtype->{name}");
@@ -90,6 +94,7 @@ while (1) {
         $log->info("Finished $rtype->{name}");
     }
     last unless $opts{continuous};
+    $log->info('Sleeping until next run');
     sleep $opts{sleeptime};
 }
 
@@ -132,9 +137,13 @@ sub get_todos {
     if ( $opts->{all} ) {
         $log->info('Collecting all ids');
         my $ids = $rtype->{acquire_all_ids}->();
-        $opts->{timestamp} = DateTime->now->ymd . ' ' . DateTime->now->hms;
-        return
-            [ map { {id=>$_, rtype=>$rtype->{name}, action=>'update', stamp=>$opts->{timestamp}} } @{$ids} ];
+        $opts->{timestamp} = DateTime->now(time_zone => $ltz)->ymd
+            . ' ' . DateTime->now(time_zone => $ltz)->hms;
+        return [
+            map { {id=>$_, rtype=>$rtype->{name},
+                  action=>'update', stamp=>$opts->{timestamp} }
+            } @{$ids}
+        ];
     }
     else {
         $opts->{timestamp} //= get_timestamp($rtype);
