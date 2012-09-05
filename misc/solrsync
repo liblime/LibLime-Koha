@@ -192,10 +192,11 @@ sub process_list {
     # Remove deleted items from updates list
     %updates = map { $_ => 1 } grep { ! exists $deletes{$_} } keys %updates;
 
-    my @delete_ids = map { $rtype->{prefix}.'_'.$_} keys %deletes;
-    $log->info('Deleting '. @delete_ids .' docs');
-    $solr->delete( {id => \@delete_ids} ) if @delete_ids;
-    $log->info('Delete complete');
+    if ( my @delete_ids = map { $rtype->{prefix}.'_'.$_} keys %deletes ) {
+        $log->info('Deleting '. @delete_ids .' docs');
+        $solr->delete( {id => \@delete_ids} );
+        $log->info('Delete complete');
+    }
 
     my $r = Koha::Solr::IndexStrategy::MARC->new(
         rules_text => scalar read_file($rtype->{rules_file}) );
