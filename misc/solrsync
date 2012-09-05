@@ -52,6 +52,7 @@ my @verbosities = qw(warn info);
 my @queues;
 my %opts = (
     all => undef,
+    ids => undef,
     timestamp => undef,
     to_stdout => undef,
     workers => 1,
@@ -65,6 +66,7 @@ my $optcheck = GetOptions(
     'bibs!' => sub { push @queues, 'biblio' },
     'auths!' => sub { push @queues, 'auth' },
     'a|all!' => \$opts{all},
+    'ids:s' => \$opts{ids},
     's|since:s' => \$opts{timestamp},
     'w|workers:i' => \$opts{workers},
     'b|batch_size:i' => \$opts{batch_size},
@@ -134,15 +136,24 @@ sub get_todos {
     my ($rtype) = @_;
 
     my $opts = $rtype->{opts};
-    if ( $opts->{all} ) {
-        $log->info('Collecting all ids');
-        my $ids = $rtype->{acquire_all_ids}->();
-        $opts->{timestamp} = DateTime->now(time_zone => $ltz)->ymd
+    if ( $opts->{all} || $opts->{ids} ) {
+        my @ids;
+        if ( $opts->{all} ) {
+            $log->info('Collecting all ids');
+            @ids = @{$rtype->{acquire_all_ids}->()};
+        }
+        else {
+            $log->info('Collecting select ids');
+            for ( split /,/, $opts->{ids} ) {
+                push @ids, /(\d+)-(\d+)/ ? $1..$2 : $_;
+            }
+        }
+        my $tstamp = DateTime->now(time_zone => $ltz)->ymd
             . ' ' . DateTime->now(time_zone => $ltz)->hms;
         return [
             map { {id=>$_, rtype=>$rtype->{name},
-                  action=>'update', stamp=>$opts->{timestamp} }
-            } @{$ids}
+                   action=>'update', stamp=>$tstamp }
+            } @ids
         ];
     }
     else {
