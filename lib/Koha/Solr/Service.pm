@@ -26,6 +26,17 @@ around BUILDARGS => sub {
     }
 };
 
+before 'search' => method($query, $options) {
+    my @prefs = qw(bq qf mm);
+    for my $pref ( @prefs ) {
+        next if exists $options->{$pref};
+        my $syspref = 'OPACSolr'.uc($pref);
+        if (my $val = C4::Context->preference($syspref)) {
+            $options->{$pref} = $val;
+        }
+    }
+};
+
 method simpleSearch ( Koha::Solr::Query $query, Bool :$display ) {
     # analog of C4::Search::SimpleSearch.
     # returns just an arrayref of docs, the total number of hits, and a pager object.

@@ -171,20 +171,6 @@ if($solr_query->simple_query){
     $template->param( ms_query => $q, ms_idx => $idx );
 }
 
-my %syspref_opts = (
-    OPACSolrBQ => 'bq',
-    OPACSolrQF => 'qf',
-    OPACSolrMM => 'mm',
-    );
-
-my $options = $solr_query->options;
-while ( my ($pref, $opt) = each %syspref_opts ) {
-    if (my $val = C4::Context->preference($pref)) {
-        $options->{$opt} = $val;
-    }
-}
-$solr_query->options( $options );
-
 my $rs = $solr->search($solr_query->query,$solr_query->options);
 
 if(!$rs->is_error){
