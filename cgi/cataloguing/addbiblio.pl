@@ -767,7 +767,7 @@ AND (authtypecode IS NOT NULL AND authtypecode<>\"\")|);
 
     # there is only 1 result 
       if ($results && scalar(@$results)==1) {
-        my $marcrecord = MARC::File::USMARC::decode($results->[0]->{marcxml});
+        my $marcrecord = MARC::File::XML::decode($results->[0]->{marcxml});
 ## FIXME:  This crashes.  Don't have time to determine why, but somebody should fix it.
         $field->add_subfields('9' => $marcrecord->field('001')->data);
         $countlinked++;
