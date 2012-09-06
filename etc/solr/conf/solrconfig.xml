@@ -172,10 +172,12 @@
        
        <str name="spellcheck">true</str>
        <str name="spellcheck.dictionary">default</str>
-       <str name="spellcheck.onlyMorePopular">true</str>
-       <str name="spellcheck.extendedResults">true</str>
+       <str name="spellcheck.onlyMorePopular">false</str>
+       <str name="spellcheck.extendedResults">false</str>
+       <str name="spellcheck.count">10</str>
        <str name="spellcheck.collate">true</str>
-       <str name="spellcheck.count">7</str>
+       <str name="spellcheck.collateExtendedResults">true</str>
+       <str name="spellcheck.maxCollationTries">100</str>
      </lst>
 
      <lst name="appends">
@@ -429,8 +431,8 @@
       <str name="name">default</str>
       <str name="field">all_spell</str>
       <str name="spellcheckIndexDir">./spell</str>
+      <str name="accuracy">0.5</str>
       <str name="buildOnOptimize">true</str>
-      <!-- <float name="thresholdTokenFrequency">.0001</float> -->
     </lst>
     <lst name="spellchecker">
       <str name="name">author</str>

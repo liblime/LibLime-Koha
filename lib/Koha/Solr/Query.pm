@@ -258,6 +258,22 @@ sub _build_query_from_cgi{
     my @facets = map {/(\S*):/; $1;} split(/\s*,\s*/,C4::Context->preference('SearchFacets'));
     $options->{'facet.field'} = \@facets;
 
+    # DidYouMean?
+    # Solr 4.0 should yeild some better results.  For now, with Solr 3.6,
+    # we get twice as many collations back as the suggestionscount syspref,
+    # and trim and order them by hits on display.
+    my $suggest_cnt = C4::Context->preference( ($self->opac) ? 'OPACSearchSuggestionsCount' : 'StaffSearchSuggestionsCount') * 2;
+    if($suggest_cnt){
+        $options->{'spellcheck'} = 'true';
+        $options->{'spellcheck.collate'} = 'true';
+        $options->{'spellcheck.count'} = $suggest_cnt;
+        $options->{'spellcheck.maxCollations'} = $suggest_cnt;
+        #$options->{'spellcheck.collateParam.mm'}='100%'; # maybe unnecessary, maybe not escaped properly.
+        # Note that spellcheck.onlyMorePopular should be set to FALSE, else collations won't include properly spelled terms.
+    } else {
+        $options->{spellcheck} = 'false';
+    }
+
     $self->options($options);
     $self->uri($query_uri);
     $self->limits(\@limit_loop);

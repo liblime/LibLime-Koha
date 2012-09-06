@@ -263,24 +263,18 @@ if(!$rs->is_error){
 
     my $results = $rs->content;
     if($results->{spellcheck}->{suggestions}){
-        my %spell = @{$results->{spellcheck}->{suggestions}}; #comes back as an array.
-        my $correctlySpelled = $spell{correctlySpelled};
-        delete $spell{correctlySpelled};
-        my @didyoumean;
-        if($spell{collation} && scalar(keys(%spell))>2){
-            # Got a collated suggestion.
-            push @didyoumean, { term => $spell{collation} };
+
+        my %spell = ();
+        for(my $i = 0; $i<@{$results->{spellcheck}->{suggestions}}; $i=$i+2){
+            # suggestions come back as array, first individual terms, then collations.
+            # for now, we ignore the terms and just use collations.
+            next unless $results->{spellcheck}->{suggestions}[$i] ~~ 'collation';
+            $spell{$results->{spellcheck}->{suggestions}[$i+1]->[1]} = $results->{spellcheck}->{suggestions}[$i+1]->[3];
+            # i.e. collationQuery => hits  // would be safer to read the array into a hash, but this will probably change before long.
         }
-        delete $spell{collation};
-        my $suggest_per_term = 4; # For testing.
-        for my $searchterm (keys %spell){
-            # Suggestions include word and freq.  We don't do anything with freq for now.
-            my $i = 0;
-            for my $suggestion( @{$spell{$searchterm}->{suggestion}}){
-                push @didyoumean, {term => $suggestion->{word}};
-                last if $i++ == $suggest_per_term;
-            }
-        }
+        my $suggest_cnt = C4::Context->preference('OPACSearchSuggestionsCount');
+        my @didyoumean = map { term => $_ }, sort { $spell{$b} <=> $spell{$a} } keys(%spell);
+        @didyoumean = @didyoumean[0 .. $suggest_cnt-1] if(scalar(@didyoumean)>$suggest_cnt);
         $template->param( didyoumean => \@didyoumean );
     }
 
