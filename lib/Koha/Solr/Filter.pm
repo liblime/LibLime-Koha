@@ -1,7 +1,6 @@
 package Koha::Solr::Filter;
 
 use Koha;
-use Method::Signatures;
 use List::Util qw();
 use List::MoreUtils qw(uniq);
 use MARC::Record;
@@ -14,6 +13,7 @@ use C4::Biblio;
 use C4::Tags;
 use File::Slurp;
 use JSON;
+use Method::Signatures;
 
 
 func emit_id( MARC::Record $record ) {
