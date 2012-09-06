@@ -218,7 +218,7 @@
     <field name="biblionumber" type="int" indexed="true" stored="true" multiValued="false"/>
     <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>
 
-    <field name="text" type="text_en" indexed="true" stored="true" multiValued="true"/>
+    <field name="text" type="text_en" indexed="true" stored="false" multiValued="true"/>
 
     <field name="title-nostem" type="text_nostem" indexed="true" stored="true" multiValued="false"/>
     <field name="title-full" type="text_en" indexed="true" stored="true" multiValued="false"/>
@@ -227,38 +227,37 @@
     <field name="series-title" type="text_en" indexed="true" stored="false" multiValued="false"/>
     <field name="uniform-title" type="text_en" indexed="true" stored="false" multiValued="false"/>
 
-    <field name="author-exact" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="author-exact" type="lowercase" indexed="true" stored="true" multiValued="true"/>
     <field name="author-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
     <field name="author-full" type="text_nostem" indexed="true" stored="false" multiValued="true"/>
 
     <field name="subject-exact" type="lowercase" indexed="true" stored="true" multiValued="true"/>
     <field name="subject" type="text_en" indexed="true" stored="true" multiValued="true"/>
-    <field name="topic" type="string" indexed="true" stored="true" multiValued="true"/>
-    <field name="geo" type="string" indexed="true" stored="true" multiValued="true"/>
-    <field name="era" type="string" indexed="true" stored="true" multiValued="true"/>
-    <field name="genre" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="topic" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="geo" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="era" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="genre" type="lowercase" indexed="true" stored="true" multiValued="true"/>
 
     <field name="publisher" type="text_en" indexed="true" stored="false" multiValued="true"/>
     <field name="date" type="string" indexed="true" stored="true" multiValued="false"/>
-    <field name="url" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="url" type="lowercase" indexed="true" stored="false" multiValued="true"/>
 
-    <field name="format" type="string" indexed="true" stored="true" multiValued="false"/>
-    <field name="audience" type="string" indexed="true" stored="true" multiValued="false"/>
-    <field name="content" type="string" indexed="true" stored="true" multiValued="false"/>
-    <field name="language" type="string" indexed="true" stored="true" multiValued="true"/>
-    <!-- ln is coded field.  probably don't need it -->
-    <field name="ln" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="format" type="lowercase" indexed="true" stored="true" multiValued="false"/>
+    <field name="audience" type="lowercase" indexed="true" stored="true" multiValued="false"/>
+    <field name="content" type="lowercase" indexed="true" stored="true" multiValued="false"/>
+    <field name="language" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="ln" type="lowercase" indexed="true" stored="true" multiValued="true"/>
 
-    <field name="itemtype" type="string" indexed="true" stored="true" multiValued="true"/>
-    <field name="collection" type="string" indexed="true" stored="true" multiValued="true"/>
-    <field name="location" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="itemtype" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="collection" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="location" type="lowercase" indexed="true" stored="true" multiValued="true"/>
 
-    <field name="isbn" type="string" indexed="true" stored="false" multiValued="true"/>
-    <field name="issn" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="isbn" type="lowercase" indexed="true" stored="false" multiValued="true"/>
+    <field name="issn" type="lowercase" indexed="true" stored="false" multiValued="true"/>
     <field name="callnumber" type="lowercase" indexed="true" stored="true" multiValued="true"/>
     <field name="callnumber-a" type="lowercase" indexed="true" stored="true" multiValued="true"/>
-    <field name="lccn" type="string" indexed="true" stored="true" multiValued="true"/>
-    <field name="ctrlnum" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="lccn" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="ctrlnum" type="lowercase" indexed="true" stored="true" multiValued="false"/>
 
     <field name="cn-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
 
@@ -267,18 +266,18 @@
     <field name="has-url" type="int" indexed="true" stored="false" multiValued="false"/>
 
     <field name="item-json" type="string" indexed="true" stored="true" multiValued="true"/>
-    <field name="on-shelf-at" type="string" indexed="true" stored="true" multiValued="true"/>
-    <field name="owned-by" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="on-shelf-at" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="owned-by" type="lowercase" indexed="true" stored="true" multiValued="true"/>
 
-    <field name="acqdate" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="acqdate" type="lowercase" indexed="true" stored="true" multiValued="false"/>
     
     <field name="popularity" type="int" indexed="true" stored="true" multiValued="false"/>
 
     <field name="lost" type="int" indexed="true" stored="true" multiValued="true"/>
     <field name="suppress" type="int" indexed="true" stored="true" multiValued="true"/>
 
-    <field name="koha-tag" type="string" indexed="true" stored="false" multiValued="true"/>
-    <field name="barcode" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="koha-tag" type="lowercase" indexed="true" stored="false" multiValued="true"/>
+    <field name="barcode" type="lowercase" indexed="true" stored="false" multiValued="true"/>
 
     <field name="on_order_count" type="int" indexed="true" stored="false" multiValued="false"/>
     <field name="in_process_count" type="int" indexed="true" stored="false" multiValued="false"/>
