@@ -194,16 +194,14 @@ sub _build_query_from_cgi{
     # append year limits if they exist
     # Note fq format date:[1980 TO *]
     # pub-date is a string!
-    # TODO: translate limit-yr to date. (zebra ccl qualifier).
-    if ($cgi->param('date')) {
-        my $date_str = $cgi->param('date');
+    if (my $date_str = $cgi->param('date') || $cgi->param('limit-yr')) {
         $date_str =~ s/\s//g;
         if ($date_str =~ /-/) {
             my ($yr1,$yr2) = split(/-/, $date_str);
-            push @userlimits, sprintf("date:[%s TO %s]",$yr1 || '*', $yr2 || '*');
+            push @userlimits, sprintf("pubyear:[%s TO %s]",$yr1 || '*', $yr2 || '*');
         }
         elsif ($date_str =~ /\d{4}/) {
-            push @userlimits, "date:$date_str";
+            push @userlimits, "pubyear:$date_str";
         }
         else {
             #FIXME: Should return an error to the user, incorect date format specified

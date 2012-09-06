@@ -24,7 +24,7 @@ genre | 655a
 
 publisher | 260b
 # Which date ?
-date | 008[7-10] 260c | clean_year | first
+pubyear | 008[7-10] 260c | clean_year | first
 
 url | 856u
 

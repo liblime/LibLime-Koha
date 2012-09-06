@@ -1554,9 +1554,9 @@
       "type" : "Textarea"
    },
    "SearchFacets" : {
-      "explanation" : "List of facets to display in search results, separated by commas.  A label for the facet may be specified for each field.  Valid fields include: [ on-shelf-at, format, author-exact, topic, date, language, geo, collection, itemtype ]",
+      "explanation" : "List of facets to display in search results, separated by commas.  A label for the facet may be specified for each field.  Valid fields include: [ on-shelf-at, format, author-exact, topic, pubyear, language, geo, collection, itemtype ]",
       "options" : "",
-      "value" : "on-shelf-at:Availability, format:Format, author-exact:Author, topic:Topic, date:Pub date, language:Language, geo:Region, collection:Collection, itemtype:Itemtype",
+      "value" : "on-shelf-at:Availability, format:Format, author-exact:Author, topic:Topic, pubyear:Publication date, language:Language, geo:Region, collection:Collection, itemtype:Item type",
       "type" : "free"
    },
    "autoBarcode" : {
