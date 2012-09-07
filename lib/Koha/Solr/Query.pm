@@ -94,6 +94,10 @@ sub _build_query_from_cgi{
             # TODO: Move this into the _parse_query_string method,
             # expanding it to properly group and split on bool
             # operators. Could then also add phrase slop to phrases.
+
+            # Convert queries like "ti:some title phrase" to
+            # "ti:(some title phrase)".
+            $q =~ s/^(\w+):(.*)/$1:\($2\)/;
             $query .= $q;
         }
         else {
