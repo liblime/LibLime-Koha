@@ -64,15 +64,15 @@ func emit_format( MARC::Record $record ) {
     my $bib_level = substr $record->leader, 7, 1;
     my $l_format = substr $record->leader, 0, 2;
 
-    push @formats, 'book' if ($rtype eq 'a' and $bib_level eq 'm');
-    push @formats, 'cassette' if ($l_format eq 'ss');
-    push @formats, 'software' if ($l_format eq 'co');
-    push @formats, 'videocassette' if ($l_format eq 'vf');
-    push @formats, 'digital-audio-player' if ($l_format eq 'sz');
-    push @formats, 'downloadable' if ($l_format eq 'cr');
-    push @formats, 'music' if ($rtype eq 'j');
-    push @formats, 'audiobook' if ($rtype eq 'i');
-    push @formats, 'cd' if ($l_format eq 'sd');
+    push @formats, 'Book' if ($rtype eq 'a' and $bib_level eq 'm');
+    push @formats, 'Cassette' if ($l_format eq 'ss');
+    push @formats, 'Software' if ($l_format eq 'co');
+    push @formats, 'Videocassette' if ($l_format eq 'vf');
+    push @formats, 'Digital audio player' if ($l_format eq 'sz');
+    push @formats, 'Website or downloadable' if ($l_format eq 'cr');
+    push @formats, 'Music' if ($rtype eq 'j');
+    push @formats, 'Audiobook' if ($rtype eq 'i');
+    push @formats, 'Compact disc' if ($l_format eq 'sd');
 
     my $f007 = $record->field('007');
     my $f008 = $record->field('008');
@@ -84,26 +84,26 @@ func emit_format( MARC::Record $record ) {
         my $ff8_23 = substr $f008_str, 23, 1;
         my $g_format = substr $f008_str, 24, 3;
 
-        push @formats, 'large-print-book' if ($ff8_23 eq 'd');
-        push @formats, 'braille-book' if ($ff8_23 eq 'f');
-        push @formats, 'graphic-novel' if ($g_format eq '6');
+        push @formats, 'Large print book' if ($ff8_23 eq 'd');
+        push @formats, 'Braille book' if ($ff8_23 eq 'f');
+        push @formats, 'Graphic novel' if ($g_format eq '6');
     }
 
     if ($f007 && length $f007->data > 4) {
         my $v_format = substr $f007_str, 4, 1;
         my $dt_vis = substr $f007_str, 0, 1;
 
-        push @formats, 'dvd' if ($dt_vis eq 'v' && $v_format eq 'v');
-        push @formats, 'blue-ray' if ($dt_vis eq 'v' && $v_format eq 's');
+        push @formats, 'DVD' if ($dt_vis eq 'v' && $v_format eq 'v');
+        push @formats, 'Blue-ray DVD' if ($dt_vis eq 'v' && $v_format eq 's');
     }
 
     if ($f007 && $f008) {
         my $dt_vis = substr $f007_str, 0, 1;
         my $e_format = substr $f008_str, 26, 1;
-        push @formats, 'video-game' if ($dt_vis eq 'c' && $e_format eq 'g');
+        push @formats, 'Video game' if ($dt_vis eq 'c' && $e_format eq 'g');
     }
 
-    push @formats, 'unspecified' unless @formats;
+    push @formats, 'Unspecified' unless @formats;
 
     return @formats;
 }
