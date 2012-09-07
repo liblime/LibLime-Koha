@@ -19,6 +19,7 @@ use WebService::Solr::Query;
 use Search::QueryParser;
 use URI::Escape;
 use List::MoreUtils qw(each_array);
+use Business::ISBN;
 
 use C4::Context;
 use C4::Branch;
@@ -109,6 +110,10 @@ sub _build_query_from_cgi{
             if( $idx eq 'barcode' ) {
                 $q = C4::Circulation::barcodedecode(barcode => $q);
                 $self->looks_like_barcode($q);
+            }
+            elsif ( $idx eq 'isbn' ) {
+                my $isbn = Business::ISBN->new($q);
+                $q = $isbn->isbn if $isbn;
             }
             $query .= "$idx:$q";
         }

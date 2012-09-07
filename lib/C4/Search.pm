@@ -28,6 +28,7 @@ use URI::Escape;
 use Try::Tiny;
 use Koha::Solr::Service;
 use Koha::Solr::Query;
+use Business::ISBN;
 
 # THIS MODULE IS DEPRECATED.
 # ONLY THE FUNCTION searchResultDisplay
@@ -381,6 +382,55 @@ is enabled.
 $template->param ( C4::Search::enabled_staff_search_views );
 
 =cut
+
+sub FindDuplicate {
+    my ($record) = @_;
+    my $result = TransformMarcToKoha( C4::Context->dbh, $record, '' );
+    return unless $result;
+
+    # search duplicate on ISBN, easy and fast..
+    # ... normalize first
+    my $query;
+    $result->{isbn} =~ s/[^0-9\- xX].*//;
+    if ( my $isbn = Business::ISBN->new($result->{isbn}) ) {
+        $query = 'isbn:'.$isbn->isbn;
+    }
+    else {
+        $result->{title} =~ s /\\//g;
+        $result->{title} =~ s /\"//g;
+        $result->{title} =~ s /\(//g;
+        $result->{title} =~ s /\)//g;
+
+        $query = "title:($result->{title})";
+        if ( $result->{author} ) {
+            $result->{author} =~ s /\\//g;
+            $result->{author} =~ s /\"//g;
+            $result->{author} =~ s /\(//g;
+            $result->{author} =~ s /\)//g;
+
+            # remove valid operators
+            $result->{author} =~ s/(and|or|not)//g;
+            $query .= " AND author-exact:($result->{author})";
+        }
+    }
+
+    # FIXME: add error handling
+    my $solr = new Koha::Solr::Service;
+    my $solr_query = Koha::Solr::Query->new({query => $query, rtype => 'bib'});
+    my $rs = $solr->search($solr_query->query,$solr_query->options);
+    return if $rs->is_error;
+
+    my @results;
+    my $searchresults = $rs->content;
+    if ( $searchresults->{response}{numFound} ) {
+        for my $doc (@{$searchresults->{response}{docs}}) {
+            push @results, $doc->{biblionumber};
+            push @results, $doc->{title_display};
+        }
+    }
+
+    return @results;
+}
 
 sub enabled_staff_search_views {
     return (

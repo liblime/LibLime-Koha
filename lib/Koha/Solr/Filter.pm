@@ -13,6 +13,7 @@ use C4::Biblio;
 use C4::Tags;
 use File::Slurp;
 use JSON;
+use Business::ISBN;
 use Method::Signatures;
 
 
@@ -232,6 +233,19 @@ func clean_year( Str @strings ){
 func emit_datecreated( Str $biblionumber ){
     my ($wtf, @bib) = C4::Biblio::GetBiblio($biblionumber);
     return $bib[0]->{datecreated} . "T00:00:00Z" ;
+}
+
+func emit_isbn( Str @isbns ) {
+    my @nisbns;
+
+    for (@isbns) {
+        s/[^0-9\- xX].*//;
+        my $isbn = Business::ISBN->new($_);
+        next unless $isbn;
+        push @nisbns, $isbn->isbn;
+    }
+
+    return @nisbns;
 }
 
 1;

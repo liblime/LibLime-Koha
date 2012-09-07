@@ -919,8 +919,7 @@ if ( $op eq "addbiblio" ) {
     my $result = TransformMarcToKoha($dbh,$record,'');
     if ($result->{isbn}) {
      foreach my $isbn_str (split /\|/, $result->{isbn}){
-      $isbn_str =~ s/-//g;
-      $isbn_str =~ s/ //g;
+       $isbn_str =~ s/[^0-9\- xX].*//;
        my $isbn = Business::ISBN->new($isbn_str);
        $invalid_isbn = 1 if (not defined $isbn or not $isbn->is_valid());
      }

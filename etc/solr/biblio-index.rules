@@ -39,12 +39,12 @@ collection | 9528 | | unique
 location | 952c | | unique
 barcode | 952p
 
-isbn | 020a
+isbn | 020a 020z | | emit_isbn
 issn | 022a 440x 490x 730x 776x 780x 785x
 callnumber | 099ab 090ab 050ab 952o |
 callnumber-a | 099a 090a 050a
 
-lccn | 010az
+lccn | 010a 010z
 ctrlnum | 035a | | first
 
 # cn-sort -- some catalogs seem to have no cn_sort at bib level, so fall back on first item cn.
