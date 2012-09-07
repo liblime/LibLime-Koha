@@ -242,7 +242,7 @@
     <field name="pubyear" type="int" indexed="true" stored="true" multiValued="false"/>
     <field name="url" type="lowercase" indexed="true" stored="false" multiValued="true"/>
 
-    <field name="format" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="format" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="audience" type="string" indexed="true" stored="true" multiValued="false"/>
     <field name="content" type="string" indexed="true" stored="true" multiValued="false"/>
     <field name="language" type="string" indexed="true" stored="true" multiValued="true"/>
@@ -369,7 +369,7 @@
   <copyField source="geo" dest="geo_mlc"/>
   <copyField source="era" dest="era_mlc"/>
   <copyField source="genre" dest="genre_mlc"/>
-  <copyField source="format" dest="format_lc"/>
+  <copyField source="format" dest="format_mlc"/>
   <copyField source="audience" dest="audience_lc"/>
   <copyField source="content" dest="content_lc"/>
   <copyField source="language" dest="language_mlc"/>

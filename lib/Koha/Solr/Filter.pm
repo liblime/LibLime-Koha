@@ -86,7 +86,7 @@ func emit_format( MARC::Record $record ) {
 
         push @formats, 'Large print book' if ($ff8_23 eq 'd');
         push @formats, 'Braille book' if ($ff8_23 eq 'f');
-        push @formats, 'Graphic novel' if ($g_format eq '6');
+        push @formats, 'Graphic novel' if ($g_format =~ /^6/);
     }
 
     if ($f007 && length $f007->data > 4) {
@@ -94,7 +94,7 @@ func emit_format( MARC::Record $record ) {
         my $dt_vis = substr $f007_str, 0, 1;
 
         push @formats, 'DVD' if ($dt_vis eq 'v' && $v_format eq 'v');
-        push @formats, 'Blue-ray DVD' if ($dt_vis eq 'v' && $v_format eq 's');
+        push @formats, 'Blu-ray DVD' if ($dt_vis eq 'v' && $v_format eq 's');
     }
 
     if ($f007 && $f008) {

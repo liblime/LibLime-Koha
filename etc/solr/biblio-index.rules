@@ -28,7 +28,7 @@ pubyear | 008[7-10] 260c | clean_year | first
 
 url | 856u
 
-format | record | emit_format | first
+format | record | | emit_format
 content | record | emit_content
 audience | record | emit_audience
 language | 008[35-37] | map_language
