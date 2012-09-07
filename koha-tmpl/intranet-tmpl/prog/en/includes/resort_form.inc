@@ -1,4 +1,4 @@
-<option value="score">Relevance</option>
+<option value="score desc">Relevance</option>
 <optgroup label="Popularity">
 <option value="popularity desc">Popularity (Most to Least)</option>
 <option value="popularity asc">Popularity (Least to Most)</option>
@@ -12,8 +12,8 @@
 <option value="cn-sort desc">Call Number (Fiction Z-A to Non-fiction 9-0)</option>
 </optgroup>
 <optgroup label="Dates">
-<option value="date desc">Publication/Copyright Date: Newest to Oldest</option>
-<option value="date asc">Publication/Copyright Date: Oldest to Newest</option>
+<option value="pubyear desc">Publication/Copyright Date: Newest to Oldest</option>
+<option value="pubyear asc">Publication/Copyright Date: Oldest to Newest</option>
 <option value="acqdate desc">Acquisition Date: Newest to Oldest</option>
 <option value="acqdate asc">Acquisition Date: Oldest to Newest</option>
 </optgroup>
