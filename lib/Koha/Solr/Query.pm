@@ -161,7 +161,7 @@ sub _build_query_from_cgi{
 
     # Assemble options
      # for now just single sort.
-    my $sort = $cgi->param('sort');
+    my $sort = $cgi->param('sort') || $cgi->param('sort_by');
     my $sort_syspref = ($self->opac) ? 'OPACdefaultSortField' : 'defaultSortField';
     my $order_syspref = ($self->opac) ? 'OPACdefaultSortOrder' : 'defaultSortOrder';
     if(!$sort && C4::Context->preference($sort_syspref) && C4::Context->preference($sort_syspref) ne 'score'){
