@@ -227,16 +227,16 @@
     <field name="series-title" type="text_en" indexed="true" stored="false" multiValued="false"/>
     <field name="uniform-title" type="text_en" indexed="true" stored="false" multiValued="false"/>
 
-    <field name="author-exact" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="author-exact" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="author-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
     <field name="author-full" type="text_nostem" indexed="true" stored="false" multiValued="true"/>
 
-    <field name="subject-exact" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="subject-exact" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="subject" type="text_en" indexed="true" stored="true" multiValued="true"/>
-    <field name="topic" type="lowercase" indexed="true" stored="true" multiValued="true"/>
-    <field name="geo" type="lowercase" indexed="true" stored="true" multiValued="true"/>
-    <field name="era" type="lowercase" indexed="true" stored="true" multiValued="true"/>
-    <field name="genre" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <field name="topic" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="geo" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="era" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="genre" type="string" indexed="true" stored="true" multiValued="true"/>
 
     <field name="publisher" type="text_en" indexed="true" stored="false" multiValued="true"/>
     <field name="pubyear" type="int" indexed="true" stored="true" multiValued="false"/>
@@ -297,9 +297,11 @@
     <dynamicField name="*_i" type="int" indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="*_mi" type="int" indexed="true" stored="true" multiValued="true"/>
 
-    <dynamicField name="*_exact" type="lowercase" indexed="true" stored="true" multiValued="false"/>
-    <dynamicField name="*_s" type="lowercase" indexed="true" stored="true" multiValued="false"/>
-    <dynamicField name="*_ms" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="*_exact" type="string" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="*_s" type="string" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="*_ms" type="string" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="*_lc" type="lowercase" indexed="true" stored="false" multiValued="false"/>
+    <dynamicField name="*_mlc" type="lowercase" indexed="true" stored="false" multiValued="true"/>
     <dynamicField name="*_nostem" type="text_nostem" indexed="true" stored="true" multiValued="true"/>
 
     <dynamicField name="*_ngram" type="text_ngram" indexed="true" stored="false" multiValued="true" />
@@ -335,6 +337,8 @@
   <copyField source="*_ms" dest="text" maxChars="2048"/>
   <copyField source="*_t" dest="text" maxChars="2048"/>
   <copyField source="*_mt" dest="text" maxChars="2048"/>
+  <copyField source="*_lc" dest="text" maxChars="2048"/>
+  <copyField source="*_mlc" dest="text" maxChars="2048"/>
 
   <copyField source="title-nostem" dest="title_display"/>
   <copyField source="title-nostem" dest="title_ph"/>
@@ -358,6 +362,21 @@
   <copyField source="subject-genre_ms" dest="subject-genre_facet"/>
   <copyField source="on-shelf-at_ms" dest="availability_facet"/> -->
   <!-- does this really make sense to copy ?  why not just use orig field as facet? -->
+
+  <copyField source="author-exact" dest="author-exact_mlc"/>
+  <copyField source="subject-exact" dest="subject-exact_mlc"/>
+  <copyField source="topic" dest="topic_mlc"/>
+  <copyField source="geo" dest="geo_mlc"/>
+  <copyField source="era" dest="era_mlc"/>
+  <copyField source="genre" dest="genre_mlc"/>
+  <copyField source="format" dest="format_lc"/>
+  <copyField source="audience" dest="audience_lc"/>
+  <copyField source="content" dest="content_lc"/>
+  <copyField source="language" dest="language_mlc"/>
+  <copyField source="itemtype" dest="itemtype_mlc"/>
+  <copyField source="collection" dest="collection_mlc"/>
+  <copyField source="callnumber" dest="callnumber_mlc"/>
+  <copyField source="callnumber-a" dest="callnumber-a_mlc"/>
 
   <copyField source="personal-name_auths" dest="personal-name_autht"/>
   <copyField source="corporate-name_auths" dest="corporate-name_autht"/>
