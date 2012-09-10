@@ -11,6 +11,7 @@ use C4::Heading::MARC21;
 use C4::Koha;
 use C4::Biblio;
 use C4::Tags;
+use Koha::Format;
 use File::Slurp;
 use JSON;
 use Business::ISBN;
@@ -59,54 +60,57 @@ func map_language( Str $ln ) {
 }
 
 func emit_format( MARC::Record $record ) {
-    my @formats;
-
-    my $rtype = substr $record->leader, 6, 1;
-    my $bib_level = substr $record->leader, 7, 1;
-    my $l_format = substr $record->leader, 0, 2;
-
-    push @formats, 'Book' if ($rtype eq 'a' and $bib_level eq 'm');
-    push @formats, 'Cassette' if ($l_format eq 'ss');
-    push @formats, 'Software' if ($l_format eq 'co');
-    push @formats, 'Videocassette' if ($l_format eq 'vf');
-    push @formats, 'Digital audio player' if ($l_format eq 'sz');
-    push @formats, 'Website or downloadable' if ($l_format eq 'cr');
-    push @formats, 'Music' if ($rtype eq 'j');
-    push @formats, 'Audiobook' if ($rtype eq 'i');
-    push @formats, 'Compact disc' if ($l_format eq 'sd');
+    my @codes;
 
     my $f007 = $record->field('007');
     my $f008 = $record->field('008');
-    my $f007_str = ($f007) ? sprintf( "%-23s",$f007->data) : '';
-    my $f008_str = ($f008) ? sprintf( "%-40s",$f008->data) : '';
+    my $f007_str = ($f007) ? sprintf( "%-23s", $f007->data) : '';
+    my $f008_str = ($f008) ? sprintf( "%-40s", $f008->data) : '';
+
+    my $rtype = substr $record->leader, 6, 1;
+    my $bib_level = substr $record->leader, 7, 1;
+    my $l_format = substr $f007_str, 0, 2;
+
+    push @codes, 'book' if ($rtype eq 'a' and $bib_level eq 'm');
+    push @codes, 'cassette' if ($l_format eq 'ss');
+    push @codes, 'software' if ($l_format eq 'co');
+    push @codes, 'videocassette' if ($l_format eq 'vf');
+    push @codes, 'digital-audio-player' if ($l_format eq 'sz');
+    push @codes, 'website' if ($l_format eq 'cr');
+    push @codes, 'music' if ($rtype eq 'j');
+    push @codes, 'audiobook' if ($rtype eq 'i');
+    push @codes, 'compact-disc' if ($l_format eq 'sd');
 
     if ($f008) {
         my $e_format = substr $f008_str, 26, 1;
         my $ff8_23 = substr $f008_str, 23, 1;
         my $g_format = substr $f008_str, 24, 3;
 
-        push @formats, 'Large print book' if ($ff8_23 eq 'd');
-        push @formats, 'Braille book' if ($ff8_23 eq 'f');
-        push @formats, 'Graphic novel' if ($g_format =~ /^6/);
+        push @codes, 'large-print-book' if ($ff8_23 eq 'd');
+        push @codes, 'braille-book' if ($ff8_23 eq 'f');
+        push @codes, 'graphic-novel' if ($g_format =~ /^6/);
     }
 
-    if ($f007 && length $f007->data > 4) {
+    if ($f007 && length $f007_str > 4) {
         my $v_format = substr $f007_str, 4, 1;
         my $dt_vis = substr $f007_str, 0, 1;
 
-        push @formats, 'DVD' if ($dt_vis eq 'v' && $v_format eq 'v');
-        push @formats, 'Blu-ray DVD' if ($dt_vis eq 'v' && $v_format eq 's');
+        push @codes, 'dvd' if ($dt_vis eq 'v' && $v_format eq 'v');
+        push @codes, 'blu-ray' if ($dt_vis eq 'v' && $v_format eq 's');
     }
 
     if ($f007 && $f008) {
         my $dt_vis = substr $f007_str, 0, 1;
         my $e_format = substr $f008_str, 26, 1;
-        push @formats, 'Video game' if ($dt_vis eq 'c' && $e_format eq 'g');
+        push @codes, 'video-game' if ($dt_vis eq 'c' && $e_format eq 'g');
     }
 
-    push @formats, 'Unspecified' unless @formats;
+    push @codes, '' unless @codes;
 
-    return @formats;
+    my $f = Koha::Format->new;
+    my @descriptions = map {$f->lookup($_)} @codes;
+
+    return @descriptions;
 }
 
 func emit_content( MARC::Record $record ) {

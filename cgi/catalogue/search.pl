@@ -126,6 +126,20 @@ if ( $search_form ) {
         }
         $template->param(shelvinglocsloop => \@shelvinglocsloop,ShelvingLocationLimit => 'ShelvingLocations');
     }
+
+    {
+        use Koha::Format;
+        my %cat_desc = Koha::Format->new->all_descriptions_by_category;
+        my @formatsloop;
+        for ( qw(print video audio computing) ) {
+            push @formatsloop,
+                { labels =>
+                      [ map {{description=>$_}} @{$cat_desc{$_}} ]
+                };
+        }
+        $template->param( formatsloop => \@formatsloop);
+    }
+
     $template->param(DateRangeLimit => 'DateRange') if grep(/DateRange/i,@advanced_search_limits);
     $template->param(SubtypeLimit => 'Subtypes') if grep(/Subtypes/i,@advanced_search_limits);
     $template->param(LanguageLimit => 'Language') if grep(/Language/i,@advanced_search_limits);

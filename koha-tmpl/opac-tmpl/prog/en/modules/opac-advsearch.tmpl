@@ -184,7 +184,7 @@ $("document").ready(function(){
     <table>
         <tr>
       <!--TMPL_LOOP Name="itemtypeloop"-->
-        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->" name="itypelimit" value="<!--TMPL_VAR Name="description" ESCAPE="html" -->"/><label for="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->"><!-- TMPL_IF name="imageurl"--><img border="0" src="<!--TMPL_VAR Name="imageurl" -->" alt="<!--TMPL_VAR Name="description" -->" /><!-- /TMPL_IF -->&nbsp;
+        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->" name="itypelimit" value="<!--TMPL_VAR Name="code" ESCAPE="html" -->"/><label for="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->"><!-- TMPL_IF name="imageurl"--><img border="0" src="<!--TMPL_VAR Name="imageurl" -->" alt="<!--TMPL_VAR Name="description" -->" /><!-- /TMPL_IF -->&nbsp;
         <!--TMPL_VAR Name="description" --></label></td>
         <!-- TMPL_UNLESS name="count5" --><!-- TMPL_UNLESS name="__last__" --></tr><tr><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
       <!--/TMPL_LOOP-->
@@ -201,7 +201,7 @@ $("document").ready(function(){
     <table>
         <tr>
       <!--TMPL_LOOP Name="ccodeloop"-->
-        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->" name="ccodelimit" value="<!--TMPL_VAR Name="description" ESCAPE="html" -->"/><label for="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->"><!-- TMPL_IF name="imageurl"--><img border="0" src="<!--TMPL_VAR Name="imageurl" -->" alt="<!--TMPL_VAR Name="description" -->" /><!-- /TMPL_IF -->&nbsp;
+        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->" name="ccodelimit" value="<!--TMPL_VAR Name="code" ESCAPE="html" -->"/><label for="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->"><!-- TMPL_IF name="imageurl"--><img border="0" src="<!--TMPL_VAR Name="imageurl" -->" alt="<!--TMPL_VAR Name="description" -->" /><!-- /TMPL_IF -->&nbsp;
         <!--TMPL_VAR Name="description" --></label></td>
         <!-- TMPL_UNLESS name="count5" --><!-- TMPL_UNLESS name="__last__" --></tr><tr><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
       <!--/TMPL_LOOP-->
@@ -216,7 +216,7 @@ $("document").ready(function(){
     <table>
         <tr>
       <!--TMPL_LOOP Name="shelvinglocsloop"-->
-        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->" name="loclimit" value="<!--TMPL_VAR Name="description" ESCAPE="html" -->"/><label for="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->">
+        <td><input type="checkbox" id="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->" name="loclimit" value="<!--TMPL_VAR Name="code" ESCAPE="html" -->"/><label for="<!-- TMPL_VAR NAME="field" -->-<!--TMPL_VAR Name="__counter__" -->">
         <!--TMPL_VAR Name="description" --></label></td>
         <!-- TMPL_UNLESS name="count5" --><!-- TMPL_UNLESS name="__last__" --></tr><tr><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
       <!--/TMPL_LOOP-->
@@ -246,31 +246,18 @@ $("document").ready(function(){
                   <option value="content:ap?">Poetry</option>
                   <option value="content:aj?">Short stories</option>
                   <option value="content:(a?b OR a?c)">Biographies</option>
-                  <option value="content:a?a)">Autobiographies</option>
+                  <option value="content:(a?a)">Autobiographies</option>
             </select>
 
             <select name="limit" class="subtype">
-                  <option value="" selected="selected" class="menuheader">Any Format</option>
-                  <option value="format:book">Books</option>
-                  <option value="format:large-print-book">Large print books</option>
-                  <option value="format:braille-book">Braille books</option>
-                  <option value="format:graphic-novel">Graphic novels</option>
-                  <option value="">-----------</option>
-                  <option value="format:dvd">DVDs</option>
-                  <option value="format:blue-ray">Blu-ray DVDs</option> 
-                  <option value="format:videocassette">Videocassettes</option>
-                  <option value="">-----------</option>
-                  <option value="format:cd">Compact discs</option>
-                  <option value="format:digital-audio-player">Digital audio players</option>
-                  <option value="format:cassette">Cassettes</option>
-                  <option value="">-----------</option>
-                  <option value="format:software">Software</option>
-                  <option value="format:video-game">Video games</option>
-                  <option value="format:downloadable">Websites and downloadables</option>
-                  <option value="">-----------</option>
-                  <option value="format:music">Music</option>
-                  <option value="format:audiobook">Audiobooks</option>
-             </select>
+              <option value="" selected="selected" class="menuheader">Any Format</option>
+              <TMPL_LOOP NAME="formatsloop">
+                <option value="">-----------</option>
+                <TMPL_LOOP NAME="labels">
+                  <option value="format:&quot;<TMPL_VAR NAME="description">&quot;"><TMPL_VAR NAME="description"></option>
+                </TMPL_LOOP>
+              </TMPL_LOOP>
+            </select>
 
     </fieldset></div>
     <!--/TMPL_IF -->
