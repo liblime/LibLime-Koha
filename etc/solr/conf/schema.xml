@@ -239,6 +239,7 @@
     <field name="genre" type="string" indexed="true" stored="true" multiValued="true"/>
 
     <field name="publisher" type="text_en" indexed="true" stored="false" multiValued="true"/>
+    <field name="publoc" type="text_en" indexed="true" stored="false" multiValued="true"/>
     <field name="pubyear" type="int" indexed="true" stored="true" multiValued="false"/>
     <field name="url" type="lowercase" indexed="true" stored="false" multiValued="true"/>
 

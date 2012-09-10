@@ -23,6 +23,7 @@ era | 648a
 genre | 655a
 
 publisher | 260b
+publoc | 260a
 # Which date ?
 pubyear | 008[7-10] 260c | clean_year | first
 
