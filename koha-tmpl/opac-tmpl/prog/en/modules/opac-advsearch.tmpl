@@ -30,6 +30,15 @@ function expand_sortby(){
   $("div#sortby").toggle('slow');
 }
 
+function toggle_fieldlist() {
+  $(".expanded_options").toggle(KOHA.expanded_search);
+  $("a.expand_options").html((KOHA.expanded_search) ? "[ Fewer Options ]" : "[ More Options ]");
+  $("#booleansearch select[name='idx']").each(function(){
+    $(this).replaceWith( (KOHA.expanded_search)? KOHA.expanded_searchfields.clone() : KOHA.collapsed_searchfields.clone() );
+  });
+  KOHA.expanded_search = !KOHA.expanded_search;
+}
+
 $("document").ready(function(){
     var get_location_limit = function(){
         if($("#available-items").is(":checked")){
@@ -67,35 +76,33 @@ $("document").ready(function(){
             $("#locationLimit").val( get_location_limit() );
         }
     });
-    var $expanded_searchfields = $("<select name='idx'>\
+
+    KOHA.expanded_search = <!-- TMPL_IF expanded_options -->true<!-- TMPL_ELSE -->false<!-- /TMPL_IF -->;
+    KOHA.collapsed_searchfields = $("<select name='idx'>\
+            <option value=''>Keyword</option>\
+            <option value='title'>Title</option>\
+            <option value='subject'>Subject</option>\
+            <option value='author'>Author</option>\
+            <option value='publisher'>Publisher</option>\
+            <option value='isbn'>ISBN</option>\
+          </select>");
+    KOHA.expanded_searchfields = $("<select name='idx'>\
             <option value=''>Keyword</option>\
             <option value='title'>Title</option>\
             <option value='series_title'>Series Title</option>\
             <option value='callnum'>Call Number</option>\
             <option value='subject'>Subject</option>\
             <option value='author'>Author</option>\
-            <option value='pname'>&nbsp;&nbsp;&nbsp;&nbsp; Personal Name</option>\
-            <option value='cpname'>&nbsp;&nbsp;&nbsp;&nbsp; Corporate Name</option>\
-            <option value='cfname'>&nbsp;&nbsp;&nbsp;&nbsp; Conference Name</option>\
-            <option value='notes'>Notes/Comments</option>\
-            <option value='curriculum'>Curriculum</option>\
             <option value='publisher'>Publisher</option>\
             <option value='publoc'>Publisher Location</option>\
-            <option value='id'>Standard Number</option>\
-            <option value='isbn'>&nbsp;&nbsp;&nbsp;&nbsp; ISBN</option>\
-            <option value='issn'>&nbsp;&nbsp;&nbsp;&nbsp; ISSN</option>\
-            <option value='callnum'>&nbsp;&nbsp;&nbsp;&nbsp; Call Number</option>\
+            <option value='biblionumber'>Standard Number</option>\
+            <option value='isbn'>ISBN</option>\
+            <option value='issn'>ISSN</option>\
+            <option value='callnum'>Call Number</option>\
         </select>");
-    var $collapsed_searchfields = $("#booleansearch select[name='idx']").first();
-    KOHA.expanded_search = <!-- TMPL_IF expanded_options -->true<!-- TMPL_ELSE -->false<!-- /TMPL_IF -->;
-    $("a.expand_options").click(function(){
-        KOHA.expanded_search = ! KOHA.expanded_search;
-        $(".expanded_options").toggle(KOHA.expanded_search);
-        $("a.expand_options").html((KOHA.expanded_search) ? "[ Fewer Options ]" : "[ More Options ]");
-        $("#booleansearch select[name='idx']").each(function(){
-            $(this).replaceWith( (KOHA.expanded_search)?$expanded_searchfields.clone():$collapsed_searchfields.clone() );
-        });
-    });
+    toggle_fieldlist( );
+    $("a.expand_options").click( toggle_fieldlist );
+
     $(".startover").click(function(){
         $('form')[0].reset();
     });
@@ -123,15 +130,7 @@ $("document").ready(function(){
                 <option value="NOT">not</option>
             </select>
             <!-- /TMPL_UNLESS -->
-        <select name="idx">
-            <option value="">Keyword</option>
-            <option value="title">Title</option>
-            <option value="subject">Subject</option>
-            <option value="author">Author</option>
-            <option value="publisher">Publisher</option>
-            <option value="publoc">Publisher Location</option>
-            <option value="isbn">ISBN</option>
-        </select>
+        <select name="idx"/>
         <input type="text" size="30" name="q" title="Enter search terms" value="" />
             <!-- TMPL_IF __last__ --><a class="expanded_options<!-- TMPL_UNLESS expanded_options --> hidden<!-- /TMPL_UNLESS -->" href="JavaScript:add_field();" id="ButtonPlus" title="Add another field">[+]</a><!-- /TMPL_IF -->
         </p>

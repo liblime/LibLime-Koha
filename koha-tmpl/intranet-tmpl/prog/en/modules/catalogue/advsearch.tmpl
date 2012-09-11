@@ -47,22 +47,49 @@ function expand_language(){
 function expand_sortby(){
   $("div#sortby").toggle('slow');
 }
-	$(document).ready(function() {
-		$("input[name=q]:eq(0)").focus();
-        var $collapsed_searchfields = $("#booleansearch select[name='idx']").first();
-        KOHA.expanded_search = <!-- TMPL_IF expanded_options -->true<!-- TMPL_ELSE -->false<!-- /TMPL_IF -->;
-        $("a.expand_options").click(function(){
-            KOHA.expanded_search = ! KOHA.expanded_search;
-            $(".expanded_options").toggle(KOHA.expanded_search);
-            $("a.expand_options").html((KOHA.expanded_search) ? "[ Fewer Options ]" : "[ More Options ]");
-            $("#booleansearch select[name='idx']").each(function(){
-                $(this).replaceWith( (KOHA.expanded_search)?$expanded_searchfields.clone():$collapsed_searchfields.clone() );
-            });
-        });
-        $(".startover").click(function(){
-            $('form')[0].reset();
-        });
-	});
+
+function toggle_fieldlist() {
+  $(".expanded_options").toggle(KOHA.expanded_search);
+  $("a.expand_options").html((KOHA.expanded_search) ? "[ Fewer Options ]" : "[ More Options ]");
+  $("#booleansearch select[name='idx']").each(function(){
+    $(this).replaceWith( (KOHA.expanded_search)? KOHA.expanded_searchfields.clone() : KOHA.collapsed_searchfields.clone() );
+  });
+  KOHA.expanded_search = !KOHA.expanded_search;
+}
+
+$(document).ready(function() {
+    $("input[name=q]:eq(0)").focus();
+
+    KOHA.expanded_search = <!-- TMPL_IF expanded_options -->true<!-- TMPL_ELSE -->false<!-- /TMPL_IF -->;
+    var foo = $("#booleansearch select[name='idx']");
+    KOHA.collapsed_searchfields = $("<select name='idx'>\
+            <option value=''>Keyword</option>\
+            <option value='title'>Title</option>\
+            <option value='subject'>Subject</option>\
+            <option value='author'>Author</option>\
+            <option value='publisher'>Publisher</option>\
+            <option value='isbn'>ISBN</option>\
+        </select>");
+    KOHA.expanded_searchfields = $("<select name='idx'>\
+            <option value=''>Keyword</option>\
+            <option value='title'>Title</option>\
+            <option value='series_title'>Series Title</option>\
+            <option value='callnum'>Call Number</option>\
+            <option value='subject'>Subject</option>\
+            <option value='author'>Author</option>\
+            <option value='publisher'>Publisher</option>\
+            <option value='publoc'>Publisher Location</option>\
+            <option value='biblionumber'>Standard Number</option>\
+            <option value='isbn'>ISBN</option>\
+            <option value='issn'>ISSN</option>\
+        </select>");
+    toggle_fieldlist( );
+    $("a.expand_options").click( toggle_fieldlist );
+
+    $(".startover").click(function(){
+        $('form')[0].reset();
+    });
+});
 </script>
 </head>
 <body>
@@ -91,15 +118,7 @@ function expand_sortby(){
                 <option value="NOT">not</option>
             </select>
             <!-- /TMPL_UNLESS -->
-        <select name="idx">
-            <option value="">Keyword</option>
-            <option value="title">Title</option>
-            <option value="subject">Subject</option>
-            <option value="author">Author</option>
-            <option value="publisher">Publisher</option>
-            <option value="publoc">Publisher Location</option>
-            <option value="isbn">ISBN</option>
-        </select>
+        <select id="fieldlist" name="idx"/>
         <input type="text" size="30" name="q" title="Enter search terms" />
             <!-- TMPL_IF __last__ --><a class="expanded_options<!-- TMPL_UNLESS expanded_options --> hidden<!-- /TMPL_UNLESS -->" href="JavaScript:add_field();" id="ButtonPlus" title="Add another field">[+]</a><!-- /TMPL_IF -->
         </p>
