@@ -1,6 +1,6 @@
 {
    "OPACQuickSearchFilter" : {
-      "explanation" : "Enable limit dropdown in the OPAC Masthead.  This preference will shorten the quick search bar.  Valid values are:\n a) blank: No limit dropdown will appear in masthead search.\n b) a Koha authorised value-controlled index (i.e. itemtype, ccode or location), or\n c)  a list of labels and Koha search query clauses, separated by a pipe ('|') symbol, e.g. 'Video|mc-itype:DVD or mc-itype:VHS'",
+      "explanation" : "Enable limit dropdown in the OPAC Masthead.  This preference will shorten the quick search bar.  Valid values are:\n a) blank: No limit dropdown will appear in masthead search.\n b) a Koha authorised value-controlled index (i.e. itemtype, ccode, location, or format), or\n c) a list of labels and Koha search query clauses, separated by a pipe ('|') symbol, e.g. 'Video|itemtype:DVD or itemtype:VHS'",
       "options" : "70|10",
       "value" : "",
       "type" : "Textarea"
