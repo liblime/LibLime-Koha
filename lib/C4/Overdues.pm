@@ -306,11 +306,17 @@ sub CalcFine {
         }
         #else { a zero (or null)  chargeperiod means no charge.}
     }
-    my $ismax   = 0;
-    my $MaxFine = C4::Context->preference('MaxFine') || 0;
-    my $max_fine= C4::Context->preference('UseGranularMaxFines')? $$data{max_fine} : 0;
-    if    ($max_fine && ($amount >= $max_fine)) { $amount = $max_fine; $ismax = 1 }
-    elsif ($MaxFine  && ($amount >= $MaxFine )) { $amount = $MaxFine;  $ismax = 1 }
+
+    my $ismax = 0;
+    my $sys_max = C4::Context->preference('MaxFine') || 0;
+    my $rule_max =
+        C4::Context->preference('UseGranularMaxFines') ? $data->{max_fine} : 0;
+    my $max_fine = $rule_max || $sys_max;
+    if ($amount >= $max_fine) {
+        $amount = $max_fine;
+        $ismax = 1
+    }
+
     $debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
     return ($amount, $data->{'chargename'}, $days_minus_grace, $daystocharge, $ismax);
     # FIXME: chargename is NEVER populated anywhere.
