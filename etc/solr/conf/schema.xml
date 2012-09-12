@@ -221,6 +221,7 @@
     <field name="text" type="text_en" indexed="true" stored="false" multiValued="true"/>
 
     <field name="title-nostem" type="text_nostem" indexed="true" stored="true" multiValued="false"/>
+    <field name="title-short" type="text_nostem" indexed="true" stored="true" multiValued="false"/>
     <field name="title-full" type="text_en" indexed="true" stored="true" multiValued="false"/>
     <field name="title-alt" type="text_en" indexed="true" stored="false" multiValued="true"/>
     <field name="title-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>

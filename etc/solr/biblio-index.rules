@@ -9,6 +9,7 @@ author-full | 100abcd 110ab 111ab 700abcd 710ab 711ab | concat
 author-sort | 100a 110a 111a | | first
 
 title-nostem | 245ab | concat | first
+title-short | 245a | | first
 title-sort | 245 | title_sort
 title-full | 245 | cat_alpha_subfields | first
 title-alt | 130adfgklnpst 240a 246a 247a 730adfgklnpst 740a | concat
