@@ -1911,3 +1911,21 @@ h1#xml a {
 .results_summary a {
   font-weight: normal;
 }
+span.search_desc ul{
+    display: inline;
+    padding-left: 0.2em;
+}
+span.search_desc ul li{
+    display: inline;
+    padding-right: 0.5em;
+}
+#searchheader .search_desc{
+    font-size: 1.2em;
+}
+a.removeLimit{
+    padding: 0 3px;
+}
+li.searchTerm{
+    font-weight: bold;
+}
+

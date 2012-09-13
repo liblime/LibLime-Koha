@@ -1,6 +1,6 @@
 {
    "OPACQuickSearchFilter" : {
-      "explanation" : "Enable limit dropdown in the OPAC Masthead.  This preference will shorten the quick search bar.  Valid values are:\n a) blank: No limit dropdown will appear in masthead search.\n b) a Koha authorised value-controlled index (i.e. itemtype, ccode or location), or\n c)  a list of labels and Koha search query clauses, separated by a pipe ('|') symbol, e.g. 'Video|mc-itype:DVD or mc-itype:VHS'",
+      "explanation" : "Enable limit dropdown in the OPAC Masthead.  This preference will shorten the quick search bar.  Valid values are:\n a) blank: No limit dropdown will appear in masthead search.\n b) a Koha authorised value-controlled index (i.e. itemtype, ccode, location, or format), or\n c) a list of labels and Koha search query clauses, separated by a pipe ('|') symbol, e.g. 'Video|itemtype:DVD or itemtype:VHS'",
       "options" : "70|10",
       "value" : "",
       "type" : "Textarea"
@@ -605,12 +605,6 @@
       "value" : "0",
       "type" : "YesNo"
    },
-   "sortbynonfiling" : {
-      "explanation" : "Sort search results by MARC nonfiling characters (deprecated)",
-      "options" : null,
-      "value" : "0",
-      "type" : "YesNo"
-   },
    "timeout" : {
       "explanation" : "Inactivity timeout for cookies authentication (in seconds)",
       "options" : null,
@@ -766,6 +760,12 @@
       "options" : "local|http://yui.yahooapis.com/2.5.1/build",
       "value" : "local",
       "type" : "Choice"
+   },
+   "localJQuery" : {
+      "explanation" : "Use locally hosted jQuery & jQuery UI instead of CDN.  Using CDN-hosted media will almost always yield better performance (i.e. you should probably leave this OFF).",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
    },
    "barcodeValidationRoutine" : {
       "explanation" : "The type of barcode and routine against which barcodes will be checked for well-formed syntax.  Leave blank to allow any barcode string.",
@@ -1031,12 +1031,6 @@
       "value" : "holdingbranch",
       "type" : "Choice"
    },
-   "QueryStemming" : {
-      "explanation" : "If ON, enables query stemming",
-      "options" : null,
-      "value" : "1",
-      "type" : "YesNo"
-   },
    "SubscriptionLog" : {
       "explanation" : "If ON, enables subscriptions log",
       "options" : null,
@@ -1259,12 +1253,6 @@
       "value" : "0",
       "type" : "YesNo"
    },
-   "QueryWeightFields" : {
-      "explanation" : "If ON, enables field weighting",
-      "options" : null,
-      "value" : "1",
-      "type" : "YesNo"
-   },
    "viewMARC" : {
       "explanation" : "Allow display of MARC view of bibiographic records",
       "options" : null,
@@ -1354,12 +1342,6 @@
       "options" : null,
       "value" : "3",
       "type" : "free"
-   },
-   "QueryRemoveStopwords" : {
-      "explanation" : "If ON, stopwords listed in the Administration area will be removed from queries",
-      "options" : null,
-      "value" : "0",
-      "type" : "YesNo"
    },
    "intranetstylesheet" : {
       "explanation" : "Enter a complete URL to use an alternate layout stylesheet in Intranet",
@@ -1459,7 +1441,7 @@
    },
    "defaultSortField" : {
       "explanation" : "Specify the default field used for sorting",
-      "options" : "relevance|popularity|call_number|pubdate|acqdate|title|author",
+      "options" : "score|popularity|cn-sort|date|acqdate|title-sort|author-sort",
       "value" : "relevance",
       "type" : "Choice"
    },
@@ -1571,11 +1553,11 @@
       "value" : null,
       "type" : "Textarea"
    },
-   "ShowOPACAvailabilityFacetSearch" : {
-      "explanation" : "If ON, show the availability search option in the OPAC Refine your search.",
-      "options" : null,
-      "value" : "1",
-      "type" : "YesNo"
+   "SearchFacets" : {
+      "explanation" : "List of facets to display in search results, separated by commas.  A label for the facet may be specified for each field.  Valid fields include: [ on-shelf-at, format, author-exact, topic, pubyear, language, geo, collection, itemtype ]",
+      "options" : "",
+      "value" : "on-shelf-at:Availability, format:Format, author-exact:Author, topic:Topic, pubyear:Publication date, language:Language, geo:Region, collection:Collection, itemtype:Item type",
+      "type" : "free"
    },
    "autoBarcode" : {
       "explanation" : "Used to autogenerate a barcode: incremental will be of the form 1, 2, 3; annual of the form 2007-0001, 2007-0002; hbyymmincr of the form HB08010001 where HB=Home Branch",
@@ -1823,12 +1805,6 @@
       "value" : null,
       "type" : "Free"
    },
-   "QueryAutoTruncate" : {
-      "explanation" : "If ON, query truncation is enabled by default",
-      "options" : null,
-      "value" : "1",
-      "type" : "YesNo"
-   },
    "printcirculationslips" : {
       "explanation" : "If ON, enable printing circulation receipts",
       "options" : null,
@@ -1945,7 +1921,7 @@
    },
    "OPACdefaultSortField" : {
       "explanation" : "Specify the default field used for sorting",
-      "options" : "relevance|popularity|call_number|pubdate|acqdate|title|author",
+      "options" : "score|popularity|cn-sort|date|acqdate|title-sort|author-sort",
       "value" : null,
       "type" : "Choice"
    },
@@ -2051,12 +2027,6 @@
       "value" : "0",
       "type" : "YesNo"
    },
-   "QueryFuzzy" : {
-      "explanation" : "If ON, enables fuzzy option for searches",
-      "options" : null,
-      "value" : "1",
-      "type" : "YesNo"
-   },
    "UseGranularMaxHolds" : {
       "explanation" : "If enabled,this allows you to define the maximum number of holds by a combination of itemtype & patroncategory.",
       "options" : null,
@@ -2110,5 +2080,41 @@
       "options" : null,
       "value" : "0",
       "type" : "YesNo"
+   },
+   "NewTitlesAge" : {
+      "explanation" : "Age, in number of days, of titles to include in OPAC masthead 'Newest titles' link.  Set to zero to disable.",
+      "options" : null,
+      "value" : "30",
+      "type" : "Integer"
+   },
+   "SolrBibUpdateTS" : {
+      "explanation" : "Timestamp of the most recent update of Solr bib documents.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
+   },
+   "SolrAuthUpdateTS" : {
+      "explanation" : "Timestamp of the most recent update of Solr auth documents.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
+   },
+   "OPACSolrBQ" : {
+      "explanation" : "Value supplied for the 'bq' parameter in Solr select queries.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
+   },
+   "OPACSolrQF" : {
+      "explanation" : "Value supplied for the 'qf' parameter in Solr select queries.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
+   },
+   "OPACSolrMM" : {
+      "explanation" : "Value supplied for the 'mm' parameter in Solr select queries.",
+      "options" : null,
+      "value" : null,
+      "type" : "free"
    }
 }

@@ -1,4 +1,7 @@
 // staff-global.js
+if (typeof KOHA == "undefined" || !KOHA) {
+    var KOHA = {};
+}
 
 function _(s) { return s } // dummy function for gettext
 

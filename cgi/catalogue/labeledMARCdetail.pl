@@ -108,7 +108,6 @@ $template->param (
     biblionumber            => $biblionumber,
     popup                   => $popup,
 	labeledmarcview => 1,
-	z3950_search_params		=> C4::Search::z3950_search_args($biblio),
 	C4::Search::enabled_staff_search_views,
 );
 

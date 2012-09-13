@@ -1670,29 +1670,16 @@ a#cartmenulink, a#cartmenulink:hover {
 	border : 1px solid #006699;
 }
 
-ul.ui-tabs-nav li {
-	margin-right : .5em;
+/* # overrides for jquery-ui.css */
+/* You can't override tabs hover.  Will have to make custom theme if we want to do that. */
+.ui-widget {
+    font-size: 1em;
 }
-
-ul.ui-tabs-nav li a, ul.ui-tabs-nav li span.a {
-	background-color : #F3F3F3;
-	border-top : 1px solid #E8E8E8;
-	border-left : 1px solid #E8E8E8;
-	border-right : 1px solid #E8E8E8;
-	border-bottom : 0;
-	padding : .2em 1em;
-	text-align : center;
-	text-decoration : none;
+.ui-state-default a {
+    color: #069 !important;
 }
-
-ul.ui-tabs-nav li.ui-tabs-selected a, ul.ui-tabs-nav li.ui-tabs-selected span.a {
-	background-color : #FFF;
-	border-top : 1px solid #E8E8E8;
-	border-left : 1px solid #E8E8E8;
-	border-right : 1px solid #E8E8E8;
-	border-bottom : 1px solid #FFF;
-	margin-bottom : -5px;
-	text-align : center;
+.ui-state-hover a {
+    color: #903 !important;
 }
 
 #views {
@@ -1915,5 +1902,22 @@ a.p1:active {
     float:right; 
     width:50%; 
     padding-left:20px
+}
+#search_desc ul{
+    display: inline;
+    padding-left: 0.2em;
+}
+#search_desc ul li{
+    display: inline;
+    padding-right: 0.5em;
+}
+a.removeLimit{
+    padding: 0 3px;
+}
+li.searchTerm{
+    font-weight: bold;
+}
+.hidden{
+    display: none;
 }
 

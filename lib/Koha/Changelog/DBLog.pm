@@ -11,21 +11,22 @@ has 'rtype' => (
     required => 1,
     );
 
-method update( MARC::Record $record, Str $action) {
-    my $biblionumber = $record->subfield('999', 'c');
+method update( Ref|Int $record, Str $action) {
+    # FIXME: Method::Signatures fails to parse type disjunction Int|MARC::Record
+    my $biblionumber = (ref $record) ? $record->subfield('999', 'c') : $record;
     C4::Context->dbh->do(
         q{INSERT INTO changelog (rtype, action, id) VALUES (?,?,?)},
         undef, $self->rtype, $action, $biblionumber );
 }
 
-method get_todos( Str $younger_than, Int $limit = 100 ) {
+method get_todos( Str $younger_than ) {
     return C4::Context->dbh->selectall_arrayref( q{
 SELECT id, action, stamp FROM changelog
 WHERE rtype = ?
   AND stamp > ?
   AND stamp < NOW() - INTERVAL 1 SECOND
-ORDER BY stamp ASC LIMIT ?},
-        {Slice=>{}}, $self->rtype, $younger_than, $limit);
+ORDER BY stamp ASC},
+        {Slice=>{}}, $self->rtype, $younger_than);
 }
 
 with 'Koha::Changelog';

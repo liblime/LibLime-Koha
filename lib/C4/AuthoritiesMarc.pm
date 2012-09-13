@@ -267,18 +267,16 @@ counts Usage of Authid in bibliorecords.
 
 sub CountUsage {
     my ($authid) = @_;
-    my $oConnection=C4::Context->Zconn("biblioserver",1);
-    my $query;
-    $query= "an=".$authid;
-    my $oResult = $oConnection->search(new ZOOM::Query::CCL2RPN( $query, $oConnection ));
-    my $result;
-    while ((my $i = ZOOM::event([ $oConnection ])) != 0) {
-        my $ev = $oConnection->last_event();
-        if ($ev == ZOOM::Event::ZEND) {
-            $result = $oResult->size();
-        }
-    }
-    return ($result);
+    my $solr = Koha::Solr::Service->new();
+    $authid =~ s/auth_//;
+    my $query_str = "koha-auth-number:$authid";
+    my $options = { rows => 0 };
+    my $solr_query = Koha::Solr::Query->new( {query => $query_str, rtype => 'auth' } );
+    my $rs = $solr->search($solr_query->query,$solr_query->options);
+    my $resultset = ($rs->is_error) ? {} : $rs->content;
+    my $total = $resultset->{'response'}->{'numFound'};
+
+    return $total;
 }
 
 =head2 CountUsageChildren 
@@ -753,7 +751,9 @@ sub FindDuplicateAuthority {
         $_->[1]=~s/$filtervalues/ /g; $query.= " and he,wrdl=\"".$_->[1]."\"" if ($_->[0]=~/[A-z]/);
       }
     }
-    my ($error, $results, $total_hits)=SimpleSearch( $query, 0, 1, [ "authorityserver" ] );
+#    my ($error, $results, $total_hits)=SimpleSearch( $query, 0, 1, [ "authorityserver" ] );
+warn "Skipping authority search in FindDuplicateAuthority.";
+    my $results = [];
     # there is at least 1 result => return the 1st one
     if (@$results>0) {
       my $marcrecord = MARC::File::USMARC::decode($results->[0]);

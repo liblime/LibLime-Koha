@@ -42,6 +42,9 @@ use MARC::File::USMARC;
 use MARC::File::XML;
 use Business::ISBN;
 
+use Koha::Solr::Service;
+use Koha::Solr::Query;
+
 if ( C4::Context->preference('marcflavour') eq 'UNIMARC' ) {
     MARC::File::XML->default_record_format('UNIMARC');
 }
@@ -749,10 +752,6 @@ SELECT authtypecode,tagfield
 FROM marc_subfield_structure 
 WHERE frameworkcode=? 
 AND (authtypecode IS NOT NULL AND authtypecode<>\"\")|);
-# SELECT authtypecode,tagfield
-# FROM marc_subfield_structure 
-# WHERE frameworkcode=? 
-# AND (authtypecode IS NOT NULL OR authtypecode<>\"\")|);
   $query->execute($frameworkcode);
   my ($countcreated,$countlinked);
   while (my $data=$query->fetchrow_hashref){
@@ -760,19 +759,20 @@ AND (authtypecode IS NOT NULL AND authtypecode<>\"\")|);
       next if ($field->subfield('3')||$field->subfield('9'));
       # No authorities id in the tag.
       # Search if there is any authorities to link to.
-      my $query='at='.$data->{authtypecode}.' ';
-      map {$query.= ' and he,ext="'.$_->[1].'"' if ($_->[0]=~/[A-z]/)}  $field->subfields();
-      my ($error, $results, $total_hits)=SimpleSearch( $query, undef, undef, [ "authorityserver" ] );
+      my $query='kauthtype_s:'.$data->{authtypecode}.' ';
+      map {$query.= ' AND auth-heading:"'.$_->[1].'"' if ($_->[0]=~/[A-z]/)}  $field->subfields();
+      #my ($error, $results, $total_hits)=SimpleSearch( $query, undef, undef, [ "authorityserver" ] );
+      my $solr = Koha::Solr::Service->new();
+      my ($results,$hits) = $solr->simpleSearch(Koha::Solr::Query->new({query => $query, rtype => 'auth'}));
+
     # there is only 1 result 
-	  if ( $error ) {
-        warn "BIBLIOADDSAUTHORITIES: $error";
-	    return (0,0) ;
-	  }
       if ($results && scalar(@$results)==1) {
-        my $marcrecord = MARC::File::USMARC::decode($results->[0]);
-        $field->add_subfields('9'=>$marcrecord->field('001')->data);
+        my $marcrecord = MARC::File::XML::decode($results->[0]->{marcxml});
+## FIXME:  This crashes.  Don't have time to determine why, but somebody should fix it.
+        $field->add_subfields('9' => $marcrecord->field('001')->data);
         $countlinked++;
       } elsif (scalar(@$results)>1) {
+#FIXME: so just bail ?  This results in NO authority added !
    #More than One result 
    #This can comes out of a lack of a subfield.
 #         my $marcrecord = MARC::File::USMARC::decode($results->[0]);
@@ -919,8 +919,7 @@ if ( $op eq "addbiblio" ) {
     my $result = TransformMarcToKoha($dbh,$record,'');
     if ($result->{isbn}) {
      foreach my $isbn_str (split /\|/, $result->{isbn}){
-      $isbn_str =~ s/-//g;
-      $isbn_str =~ s/ //g;
+       $isbn_str =~ s/[^0-9\- xX].*//;
        my $isbn = Business::ISBN->new($isbn_str);
        $invalid_isbn = 1 if (not defined $isbn or not $isbn->is_valid());
      }
@@ -945,7 +944,7 @@ if ( $op eq "addbiblio" ) {
     }
 
     # check for a duplicate
-    my ($duplicatebiblionumber,$duplicatetitle) = FindDuplicate($record) if (!$is_a_modif);
+    my ($duplicatebiblionumber,$duplicatetitle) = C4::Search::FindDuplicate($record) if (!$is_a_modif);
     my $confirm_not_duplicate = $input->param('confirm_not_duplicate');
     # it is not a duplicate (determined either by Koha itself or by user checking it's not a duplicate)
     if ( !$duplicatebiblionumber or $confirm_not_duplicate ) {

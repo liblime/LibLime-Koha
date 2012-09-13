@@ -65,13 +65,13 @@
                 <!-- TMPL_IF EXPR="displayprev || displaynext" -->
                 <p>
                     <!-- TMPL_IF NAME="displayprev" -->
-                    <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfromprev" -->&amp;ccl_query=<!-- TMPL_VAR NAME="ccl_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->">&lt;&lt;</a>
+                    <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfromprev" -->&amp;user_query=<!-- TMPL_VAR NAME="user_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->">&lt;&lt;</a>
                     <!-- /TMPL_IF -->
                     <!-- TMPL_LOOP NAME="numbers" -->
-                    <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfrom" -->&amp;ccl_query=<!-- TMPL_VAR NAME="ccl_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->"><!-- TMPL_VAR NAME="number" --></a>
+                    <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfrom" -->&amp;user_query=<!-- TMPL_VAR NAME="user_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->"><!-- TMPL_VAR NAME="number" --></a>
                     <!-- /TMPL_LOOP -->
                     <!-- TMPL_IF NAME="displaynext" -->
-                    <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfromnext" -->&amp;ccl_query=<!-- TMPL_VAR NAME="ccl_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->">&gt;&gt;</a>
+                    <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfromnext" -->&amp;user_query=<!-- TMPL_VAR NAME="user_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->">&gt;&gt;</a>
                     <!-- /TMPL_IF -->
 		</p>
                 <!-- /TMPL_IF -->
@@ -97,7 +97,7 @@
                     <!--<a id="CheckNone" href="/cgi-bin/koha/labels/label-item-search.pl">Clear All</a>-->
                 </div>
                 <div style="padding-top: 0.7em;">
-                <input type="hidden" name="ccl_query" value="<!-- TMPL_VAR name="ccl_query" -->" />
+                <input type="hidden" name="user_query" value="<!-- TMPL_VAR name="user_query" -->" />
 	        <!-- TMPL_LOOP name="result_set" -->
 	        <table id="label-search-results" frame="border" border="2">
 		    <tr>
@@ -139,17 +139,17 @@
 	    <!-- TMPL_IF EXPR="displayprev || displaynext" -->
             <p>
                 <!-- TMPL_IF NAME="displayprev" -->
-                <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfromnext" -->&amp;ccl_query=<!-- TMPL_VAR NAME="ccl_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->">&lt;&lt;</a>
+                <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfromnext" -->&amp;user_query=<!-- TMPL_VAR NAME="user_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->">&lt;&lt;</a>
                 <!-- /TMPL_IF -->
                 <!-- TMPL_LOOP NAME="numbers" -->
                 <!-- TMPL_IF NAME="highlight" -->
                 <span class="current"><!-- TMPL_VAR NAME="number" --></span>
                 <!-- TMPL_ELSE -->
-                <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfrom" -->&amp;ccl_query=<!-- TMPL_VAR NAME="ccl_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->"><!-- TMPL_VAR NAME="number" --></a>
+                <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfrom" -->&amp;user_query=<!-- TMPL_VAR NAME="user_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->"><!-- TMPL_VAR NAME="number" --></a>
                 <!-- /TMPL_IF -->
                 <!-- /TMPL_LOOP -->
                 <!-- TMPL_IF NAME="displaynext" -->
-                <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfromnext" -->&amp;ccl_query=<!-- TMPL_VAR NAME="ccl_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->">&gt;&gt;</a>
+                <a href="label-item-search.pl?startfrom=<!-- TMPL_VAR NAME="startfromnext" -->&amp;user_query=<!-- TMPL_VAR NAME="user_query" -->&amp;resultsperpage=<!-- TMPL_VAR NAME="resultsperpage" -->&amp;op=do_search&amp;batch_id=<!-- TMPL_VAR NAME="batch_id" -->">&gt;&gt;</a>
                 <!-- /TMPL_IF -->
 	    </p>
             <!-- /TMPL_IF -->

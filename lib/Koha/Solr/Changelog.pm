@@ -11,7 +11,8 @@ has 'server' => (
     isa => 'WebService::Solr',
     handles => [ qw( update delete_by_id ) ],
     default => sub {
-        WebService::Solr->new( C4::Context->config('solr')->{url} );
+        WebService::Solr->new( C4::Context->config('solr')->{url},
+                               { autocommit => 0 } );
     },
     lazy => 1,
 );

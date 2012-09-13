@@ -3,76 +3,82 @@
   <abortOnConfigurationError>${solr.abortOnConfigurationError:true}</abortOnConfigurationError>
   <luceneMatchVersion>LUCENE_36</luceneMatchVersion>
 
-  <lib dir="${com.liblime.lk.luceneLibraryBase:../..}/contrib/analysis-extras/lib"/>
-  <lib dir="${com.liblime.lk.luceneLibraryBase:../..}/contrib/analysis-extras/lucene-libs"/>
-  <lib dir="${com.liblime.lk.luceneLibraryBase:../..}/dist"/>
-
   <dataDir>${solr.data.dir:}</dataDir>
   <directoryFactory name="DirectoryFactory" 
                     class="${solr.directoryFactory:solr.StandardDirectoryFactory}"/>
 
-  <indexDefaults>
-    <useCompoundFile>false</useCompoundFile>
+  <indexConfig>
+    <ramBufferSizeMB>1024</ramBufferSizeMB>
+    <maxBufferedDocs>1000</maxBufferedDocs>
+
+    <mergePolicy class="org.apache.lucene.index.TieredMergePolicy">
+      <int name="maxMergeAtOnce">10</int>
+      <int name="segmentsPerTier">10</int>
+    </mergePolicy>
     <mergeFactor>10</mergeFactor>
-    <ramBufferSizeMB>32</ramBufferSizeMB>
-    <maxFieldLength>10000</maxFieldLength>
-    <writeLockTimeout>1000</writeLockTimeout>
+    <mergeScheduler class="org.apache.lucene.index.ConcurrentMergeScheduler"/>
+
     <lockType>native</lockType>
-  </indexDefaults>
-  <mainIndex>
-    <useCompoundFile>false</useCompoundFile>
-    <ramBufferSizeMB>32</ramBufferSizeMB>
-    <mergeFactor>10</mergeFactor>
-    <unlockOnStartup>false</unlockOnStartup>
+    <unlockOnStartup>true</unlockOnStartup>
+
     <reopenReaders>true</reopenReaders>
-    <deletionPolicy class="solr.SolrDeletionPolicy">
-      <str name="maxCommitsToKeep">1</str>
-      <str name="maxOptimizedCommitsToKeep">0</str>
-    </deletionPolicy>
-    <infoStream file="INFOSTREAM.txt">false</infoStream> 
-  </mainIndex>
+  </indexConfig>
 
   <jmx />
 
   <updateHandler class="solr.DirectUpdateHandler2">
     <autoCommit>
       <maxDocs>10000</maxDocs>
-      <maxTime>1000</maxTime>
+      <maxTime>60000</maxTime>
     </autoCommit>
   </updateHandler>
   
   <query>
     <maxBooleanClauses>1024</maxBooleanClauses>
     <filterCache class="solr.FastLRUCache"
-                 size="512"
-                 initialSize="512"
-                 autowarmCount="0"/>
+                 size="16384"
+                 initialSize="4096"
+                 autowarmCount="512"/>
     <queryResultCache class="solr.LRUCache"
-                     size="512"
-                     initialSize="512"
-                     autowarmCount="0"/>
+                     size="16384"
+                     initialSize="4096"
+                     autowarmCount="512"/>
     <documentCache class="solr.LRUCache"
-                   size="512"
-                   initialSize="512"
-                   autowarmCount="0"/>
+                   size="16384"
+                   initialSize="4096"
+                   autowarmCount="512"/>
     <enableLazyFieldLoading>true</enableLazyFieldLoading>
-    <queryResultWindowSize>40</queryResultWindowSize>
-    <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
+    <queryResultWindowSize>200</queryResultWindowSize>
+    <queryResultMaxDocsCached>500</queryResultMaxDocsCached>
 
     <listener event="newSearcher" class="solr.QuerySenderListener">
       <arr name="queries">
+        <lst>
+          <str name="q">static newSearcher warming in solrconfig.xml</str>
+        </lst>
       </arr>
     </listener>
     <listener event="firstSearcher" class="solr.QuerySenderListener">
       <arr name="queries">
         <lst>
-          <str name="q">static firstSearcher warming in solrconfig.xml</str>
+          <str name="q">*:*</str>
+          <str name="facet">true</str>
+          <str name="facet.field">on-shelf-at</str>
+          <str name="facet.field">author-exact</str>
+          <str name="facet.field">format</str>
+          <str name="facet.field">collection</str>
+          <str name="facet.field">itemtype</str>
+          <str name="facet.field">language</str>
+          <str name="facet.field">era</str>
+          <str name="facet.field">geo</str>
+          <str name="facet.field">topic</str>
+          <str name="facet.field">genre</str>
         </lst>
       </arr>
     </listener>
 
-    <useColdSearcher>false</useColdSearcher>
-    <maxWarmingSearchers>2</maxWarmingSearchers>
+    <useColdSearcher>true</useColdSearcher>
+    <maxWarmingSearchers>5</maxWarmingSearchers>
   </query>
 
   <requestDispatcher handleSelect="true" >
@@ -84,30 +90,50 @@
   <requestHandler name="biblio" class="solr.SearchHandler" default="true">
      <lst name="defaults">
        <str name="defType">edismax</str>
-       <str name="echoParams">none</str>
+       <str name="echoParams">explicit</str>
        <int name="rows">20</int>
        <str name="df">text</str>
        <str name="q.op">AND</str>
        <str name="q.alt">*:*</str>
-       <str name="f.title.qf">title_t</str>
-       <str name="f.author.qf">author-full_mt</str>
-       <str name="f.subject.qf">subject_ms</str>
+       <str name="f.title.qf">title-short^200 title-nostem^100 title-full^10 title-alt^10 series-title uniform-title</str>
+       <str name="f.ti.qf">title-short^200 title-nostem^100 title-full^10 title-alt^10 series-title uniform-title</str>
+       <str name="f.author.qf">author-exact^100 author-full</str>
+       <str name="f.au.qf">author-exact^100 author-full</str>
+       <!-- <str name="f.subject.qf">subject</str> -->
+       <str name="f.su.qf">subject</str>
 
        <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
 
        <str name="qf">
-         title_t^25000
-         subject_ms^500
-         author_t^100
-         author-full_mt^50
-         isbn_ms
+         title-short^300
+         title-nostem^250
+         title-full^25
+         subject^50
+         author-exact^100
+         author-full^50
+         isbn^100
          text
        </str>
+<!--
+       <str name="qf">
+         title_nostem^25000
+         title-full^250
+         subject_ms^500
+         author_nostem^1000
+         author-full_nostem^500
+         isbn_ms^100
+         text^100
+         title_ph^1
+         author_ph^1
+         text_ph
+       </str>
+-->
        <str name="pf">
-         title_t^250000
-         subject_ms^5000
-         author_t^1000
-         author-full_mt^500
+         title-short^300
+         title-nostem^250
+         subject^50
+         author-nostem^100
+         author-full^50
          text^10
        </str>
        
@@ -116,37 +142,44 @@
 
        <str name="fl">
          id,
+         biblionumber,
          score,
          author_display,
          title_display,
-         format_s,
-         isbn_ms,
-         format_facet,
-         ln_facet,
-         subject-era_facet,
-         subject-geo_facet,
-         subject-topic_facet,
-         subject-genre_facet,
+         format
        </str>
 
-       <str name="facet">false</str>
+       <str name="f.format.facet.method">enum</str>
+       <str name="f.collection.facet.method">enum</str>
+       <str name="f.itemtype.facet.method">enum</str>
+       <str name="f.on-shelf-at.facet.method">enum</str>
+       <str name="f.language.facet.method">enum</str>
+       <str name="f.geo.facet.method">enum</str>
+       <str name="f.era.facet.method">enum</str>
+       <str name="facet">true</str>
        <str name="facet.mincount">1</str>
-       <str name="facet.limit">10</str>
-       <str name="facet.field">format_facet</str>
-       <str name="facet.field">content_facet</str>
-       <str name="facet.field">audience_facet</str>
-       <str name="facet.field">ln_facet</str>
-       <str name="facet.field">subject-era_facet</str>
-       <str name="facet.field">subject-geo_facet</str>
-       <str name="facet.field">subject-topic_facet</str>
-       <str name="facet.field">subject-genre_facet</str>
+       <str name="facet.query">on-shelf-at:*</str>
+       <str name="facet.query">url:*</str>
+       <str name="facet.limit">12</str>
+       <str name="facet.field">on-shelf-at</str>
+       <str name="facet.field">author-exact</str>
+       <str name="facet.field">format</str>
+       <str name="facet.field">collection</str>
+       <str name="facet.field">itemtype</str>
+       <str name="facet.field">language</str>
+       <str name="facet.field">era</str>
+       <str name="facet.field">geo</str>
+       <str name="facet.field">topic</str>
+       <str name="facet.field">genre</str>
        
-       <str name="spellcheck">false</str>
+       <str name="spellcheck">true</str>
        <str name="spellcheck.dictionary">default</str>
-       <str name="spellcheck.onlyMorePopular">true</str>
-       <str name="spellcheck.extendedResults">true</str>
-       <str name="spellcheck.collate">false</str>
-       <str name="spellcheck.count">5</str>
+       <str name="spellcheck.onlyMorePopular">false</str>
+       <str name="spellcheck.extendedResults">false</str>
+       <str name="spellcheck.count">10</str>
+       <str name="spellcheck.collate">true</str>
+       <str name="spellcheck.collateExtendedResults">true</str>
+       <str name="spellcheck.maxCollationTries">100</str>
      </lst>
 
      <lst name="appends">
@@ -170,10 +203,14 @@
        <str name="qf">
          headings_s^25000
          headings_t^500
+         auth-heading^500
+         auth-full
        </str>
        <str name="pf">
          headings_s^25000
          headings_t^500
+         auth-heading
+         auth-full
        </str>
        
        <int name="ps">3</int>
@@ -181,6 +218,7 @@
 
        <str name="fl">
          id,
+         authid,
          score,
          personal-name_auths,
          corporate-name_auths,
@@ -191,6 +229,8 @@
          geographic-name_auths,
          genre-form_auths,
          headings_s,
+         marcxml,
+         kauthtype_s,
        </str>
 
      </lst>
@@ -391,8 +431,9 @@
     <str name="queryAnalyzerFieldType">textSpell</str>
     <lst name="spellchecker">
       <str name="name">default</str>
-      <str name="field">spell</str>
+      <str name="field">all_spell</str>
       <str name="spellcheckIndexDir">./spell</str>
+      <str name="accuracy">0.5</str>
       <str name="buildOnOptimize">true</str>
     </lst>
     <lst name="spellchecker">

@@ -29,14 +29,19 @@ $(window).load(function() {
 var q_array = new Array();  // will hold search terms, if present
 
 $(document).ready(function() {
-    $('#sortbyform').find("input:submit").hide();
     $('#sort_by').change(function() {
         $('#sortbyform').submit();
     });
+    var sort_param = "<!-- TMPL_VAR user_sort -->"; // for now just one.
+    if(sort_param){
+        $("#sort_by").val(sort_param);
+    };
+
+
     $("#selection_ops").show();
     $(".selection").show();
-    <!-- TMPL_IF NAME="query_desc" -->
-        var query_desc = "<!-- TMPL_VAR NAME="query_desc" ESCAPE="JS"-->";
+    <!-- TMPL_IF NAME="user_query" -->
+        var user_query = "<!-- TMPL_VAR NAME="user_query" ESCAPE="JS"-->";
         q_array = query_desc.split(" ");
         highlightOn();
         $("#highlight_toggle_on" ).hide().click(function() {highlightOn() ;});
@@ -110,18 +115,7 @@ function addToList () {
 
 /* this function open a popup to search on z3950 server.  */
 function PopupZ3950() {
-    var strQuery = GetZ3950Terms();
-    if(strQuery){
-        window.open("/cgi-bin/koha/cataloguing/z3950_search.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"+strQuery,"z3950search",'width=740,height=450,location=yes,toolbar=no,scrollbars=yes,resize=yes');
-    }
-}
-/* provide Z3950 search points */
-function GetZ3950Terms(){
-	var strQuery="&frameworkcode=";
-	<!-- TMPL_LOOP NAME='z3950_search_params' -->
-		strQuery += "&" + "<!-- TMPL_VAR NAME="name" -->" + "=" + "<!-- TMPL_VAR NAME="encvalue" -->";
-	<!-- /TMPL_LOOP -->
-	return strQuery;
+    window.open("/cgi-bin/koha/cataloguing/z3950_search.pl?<!-- TMPL_VAR z3950_param -->","z3950search",'width=740,height=450,location=yes,toolbar=no,scrollbars=yes,resize=yes');
 }
 //]]>
 </script>
@@ -134,7 +128,7 @@ function GetZ3950Terms(){
 	<div id="breadcrumbs">
 	         <a href="/cgi-bin/koha/mainpage.pl">Home</a>
 		&rsaquo; <a href="/cgi-bin/koha/catalogue/search.pl">Catalog</a>
-		&rsaquo; Search <!-- TMPL_IF NAME="query_desc" -->for '<!-- TMPL_VAR NAME="query_desc" ESCAPE="html"-->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" -->&nbsp;with limit(s):&nbsp;'<!-- TMPL_VAR NAME="limit_desc" -->'<!-- /TMPL_IF -->
+		&rsaquo; <span class="search_desc"> Search <!-- TMPL_IF NAME="user_query" -->for '<!-- TMPL_VAR user_query -->'<!-- /TMPL_IF --><!-- TMPL_IF user_limit -->,&nbsp;&nbsp;<span class="search_desc">limited to:</span> <ul><!-- TMPL_LOOP user_limit --><li class="limit"><!-- TMPL_VAR limit_desc --></li><!-- /TMPL_LOOP --> </ul><!-- /TMPL_IF --></span>
 	</div>
 
 <!-- /TMPL_UNLESS -->
@@ -145,43 +139,29 @@ function GetZ3950Terms(){
     <div id="yui-main">
     <div class="yui-b">
 
-    <!-- TMPL_IF NAME="outer_sup_results_loop" -->
-    <div class="yui-ge">
-    <div class="yui-u first">
-    <!-- /TMPL_IF -->
 
-    <!-- TMPL_IF NAME="koha_spsuggest" -->
-        <div style="font-size: 12px;"> <i>Did you mean: </i>
-            <!-- TMPL_LOOP NAME="SPELL_SUGGEST" -->
-                <a href="/cgi-bin/koha/catalogue/search.pl?q=<!-- TMPL_VAR NAME="spsuggestion" -->"><!-- TMPL_VAR NAME="spsuggestion" --></a> &nbsp;
-            <!-- /TMPL_LOOP -->
-            </ul>
+    <!-- TMPL_IF NAME="didyoumean" -->
+        <div id="didyoumean">
+        <i>Did you mean: </i>
+        <!-- TMPL_LOOP NAME="didyoumean" -->
+            <a href="/cgi-bin/koha/catalogue/search.pl?q=<!-- TMPL_VAR "term" ESCAPE="url" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="url" --><!-- /TMPL_LOOP -->"><!-- TMPL_VAR term --></a> &nbsp;
+        <!-- /TMPL_LOOP -->
         </div>
-        <p>
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF NAME="total" -->
         <div id="searchheader">
-            <form action="/cgi-bin/koha/catalogue/search.pl" method="get" id="sortbyform">
-                <!-- TMPL_IF NAME="searchdesc" -->
-                    <!-- TMPL_LOOP NAME="QUERY_INPUTS"-->
-                    <input type="hidden" name="<!-- TMPL_VAR NAME="input_name" -->" value="<!-- TMPL_VAR NAME="input_value" -->"/>
-                    <!-- /TMPL_LOOP -->
-                    <!-- TMPL_LOOP NAME="LIMIT_INPUTS"-->
-                    <input type="hidden" name="<!-- TMPL_VAR NAME="input_name" -->" value="<!-- TMPL_VAR NAME="input_value" -->"/>
-                    <!-- /TMPL_LOOP -->
-                <!-- /TMPL_IF -->
-                <!-- RE-SORT START -->
+            <form action="/cgi-bin/koha/catalogue/search.pl?q=<!-- TMPL_VAR "user_query" ESCAPE="url" -->" method="get" id="sortbyform">
                     <label for="sort_by">Sort By: </label>
-                    <select id="sort_by" name="sort_by">
-                    <!-- TMPL_INCLUDE NAME="resort_form.inc" -->
+                    <select id="sort_by" name="sort">
+                        <!-- TMPL_INCLUDE NAME="resort_form.inc" -->
                     </select>
-                    <input type="submit" value="Go" />
-                <!-- RESORT END -->
+                    <input type="hidden" name="q" value="<!-- TMPL_VAR "user_query" ESCAPE="html" -->"/>
+                    <!-- TMPL_LOOP user_limit --><input type="hidden" name="limit" value="<!-- TMPL_VAR limit ESCAPE="html" -->"/><!-- /TMPL_LOOP -->
             </form>
-            <h3>
-                <!-- TMPL_VAR NAME="total" --> result(s) found <!-- TMPL_IF NAME="query_desc" -->for <span style="font-weight: bold;">'<!-- TMPL_VAR NAME="query_desc" ESCAPE="HTML"-->'</span><!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" -->&nbsp;with limit(s): <span style="font-weight: bold;">'<!-- TMPL_VAR NAME="limit_desc" -->'</span><!-- /TMPL_IF --><!-- TMPL_IF NAME="LibraryName" --> in <!-- TMPL_VAR NAME="LibraryName" --> Catalog<!-- /TMPL_IF -->.<br />&nbsp;
-            </h3>
+            <span class="search_desc">
+                <!-- TMPL_VAR NAME="total" --> result(s) found <!-- TMPL_IF NAME="user_query" -->for <span style="font-weight: bold;">'<!-- TMPL_VAR NAME="user_query" ESCAPE="HTML"-->'</span><!-- /TMPL_IF --><!-- TMPL_IF "user_limit" -->,&nbsp;&nbsp;limited to: <ul><!-- TMPL_LOOP user_limit --><li class="limit"><!-- TMPL_VAR limit_desc ESCAPE="html" --></li><!-- /TMPL_LOOP --> </ul><!-- /TMPL_IF --><!-- TMPL_IF NAME="LibraryName" --> in <!-- TMPL_VAR NAME="LibraryName" --> Catalog<!-- /TMPL_IF -->.<br />&nbsp;
+            </span>
             <div id="selection_ops" style="display:none">
                 <a href="#" onclick="selectAll(); return false;">Select All</a>
                 |
@@ -189,13 +169,16 @@ function GetZ3950Terms(){
                 |
                 <a href="#" class="highlight_toggle" id="highlight_toggle_off">Unhighlight</a>
                 <a href="#" class="highlight_toggle" id="highlight_toggle_on">Highlight</a>
-                <!-- TMPL_IF NAME="CAN_user_reserveforothers_add_holds" -->
-                	<!-- TMPL_IF NAME="DisplayMultiPlaceHold" -->
-                  <input type="button" onclick="placeHold(); return false;" value="Place Hold(s)<TMPL_IF NAME="last_borrower_show_button"> for <TMPL_VAR NAME="last_borrower_firstname"> <TMPL_VAR NAME="last_borrower_surname"></TMPL_IF>"/>
-                	<!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="last_borrower_show_button" -->
+                  <!-- TMPL_IF NAME="CAN_user_reserveforothers_add_holds" -->
+                  	<!-- TMPL_IF NAME="DisplayMultiPlaceHold" -->
+                    <input type="button" onclick="placeHold(); return false;" value="Place Hold(s)<TMPL_IF NAME="last_borrower_show_button"> for <TMPL_VAR NAME="last_borrower_firstname"> <TMPL_VAR NAME="last_borrower_surname"></TMPL_IF>"/>
+                  	<!-- /TMPL_IF -->
+                  <!-- /TMPL_IF -->
+                <!-- TMPL_ELSE -->
+                  <input type="button" onclick="addToList(); return false;" value="Add to List"/>
+				  <!-- TMPL_IF NAME="CAN_user_editcatalogue" --><input type="button" onclick="PopupZ3950(); return false;" value="z39.50 Search"/><!-- /TMPL_IF -->
                 <!-- /TMPL_IF -->
-                <input type="button" onclick="addToList(); return false;" value="Add to List"/>
-				<!-- TMPL_IF NAME="CAN_user_editcatalogue" --><input type="button" onclick="PopupZ3950(); return false;" value="z39.50 Search"/><!-- /TMPL_IF -->
             </div>
         </div>
     <!-- TMPL_IF NAME="stopwords_removed" --><div><p class="tip">Ignored the following common words: "<!-- TMPL_VAR NAME="stopwords_removed" -->"<p></div><!-- /TMPL_IF -->
@@ -207,7 +190,7 @@ function GetZ3950Terms(){
             <h3>No results found</h3>
         <!-- TMPL_IF NAME="searchdesc" -->
             <p>
-                No results match your search <!-- TMPL_IF NAME="query_desc" -->for <span style="font-weight: bold;">'<!-- TMPL_VAR NAME="query_desc" ESCAPE="HTML"-->'</span><!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" -->&nbsp;with limit(s): <span style="font-weight: bold;">'<!-- TMPL_VAR NAME="limit_desc" -->'</span><!-- /TMPL_IF --><!-- TMPL_IF NAME="LibraryName" --> in <!-- TMPL_VAR NAME="LibraryName" --> Catalog<!-- /TMPL_IF -->.
+                No results match your search <!-- TMPL_IF NAME="user_query" -->for <span style="font-weight: bold;">'<!-- TMPL_VAR NAME="user_query" ESCAPE="HTML"-->'</span><!-- /TMPL_IF --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP --><!-- TMPL_IF NAME="LibraryName" --> in <!-- TMPL_VAR NAME="LibraryName" --> Catalog<!-- /TMPL_IF -->.
             </p>
         <!-- TMPL_ELSE -->
             <p>You did not specify any search criteria.</p>
@@ -225,63 +208,6 @@ function GetZ3950Terms(){
     
     <!-- Search Results Table -->
     <!-- TMPL_IF NAME="total" -->
-        <!-- TMPL_IF NAME="scan" -->
-            <h1>Scan Index:</h1>
-            <form action="/cgi-bin/koha/catalogue/search.pl" method="get">
-            <table>
-                <tr>
-                    <td>
-                        Scan Index for: <input type="text" name="q" id="scan-index" size="35" value="" />
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="scan-index">Indexed in:</label>
-                        <select name="idx" id="scan-index">
-                            <option value="">Any Word</option>
-                            <option <!-- TMPL_IF NAME="ms_any,phr" --> selected="selected" <!-- /TMPL_IF --> value="any,phr">Any Phrase</option>
-                            <option <!-- TMPL_IF NAME="ms_ti" --> selected="selected" <!-- /TMPL_IF --> value="ti">Title</option>
-                            <option <!-- TMPL_IF NAME="ms_ti,phr" --> selected="selected" <!-- /TMPL_IF --> value="ti,phr">Title Phrase</option>
-                            <option <!-- TMPL_IF NAME="ms_au,phr" --> selected="selected" <!-- /TMPL_IF --> value="au,phr">Author</option>
-                            <option <!-- TMPL_IF NAME="ms_su" --> selected="selected" <!-- /TMPL_IF --> value="su">Subject</option>
-                            <option <!-- TMPL_IF NAME="ms_su,phr" --> selected="selected" <!-- /TMPL_IF --> value="su,phr">Subject Phrase</option>
-                            <option <!-- TMPL_IF NAME="ms_se" --> selected="selected" <!-- /TMPL_IF --> value="se">Series</option>
-                            <option <!-- TMPL_IF NAME="ms_pb" --> selected="selected" <!-- /TMPL_IF --> value="pb">Publisher</option>
-                            <option <!-- TMPL_IF NAME="ms_nt" --> selected="selected" <!-- /TMPL_IF --> value="nt">Notes</option>
-                            <option <!-- TMPL_IF NAME="ms_se" --> selected="selected" <!-- /TMPL_IF --> value="se">Series Title</option>
-                            <option <!-- TMPL_IF NAME="ms_sn" --> selected="selected" <!-- /TMPL_IF --> value="sn">ISBN</option>
-                            <option <!-- TMPL_IF NAME="ms_ss" --> selected="selected" <!-- /TMPL_IF --> value="ss">ISSN</option>
-                        </select>
-                        <input type="hidden" name="scan" value="1" />
-                    </td>
-                </tr>
-            </table>
-            </form>
-            
-            <form action="/cgi-bin/koha/catalogue/search.pl" method="get">
-            <table>
-                <tr>
-                    <th>Term/Phrase</th>
-                    <th>Count</th>
-                </tr>
-                <!-- TMPL_LOOP NAME="SEARCH_RESULTS" -->
-                    <!-- TMPL_IF NAME="__odd__" --><tr><!-- TMPL_ELSE --><tr class="highlight"><!-- /TMPL_IF -->
-                        <td>
-                            <a href="/cgi-bin/koha/catalogue/search.pl?idx=<!-- TMPL_VAR name="scan_index_to_use" -->&amp;q=<!-- TMPL_VAR NAME="scan_use" escape="url" -->&quot;<!-- TMPL_VAR NAME="title" -->&quot;"><!-- TMPL_VAR NAME="title" --></a>
-                        </td>
-                        <td>
-                            <!-- TMPL_VAR NAME="author" -->
-                        </td>
-                    </tr>
-                <!-- /TMPL_LOOP -->
-            </table>
-            </form>
-        <!-- TMPL_ELSE -->
-
-            <!-- ######### -->
-            <div id="facets">
-            </div>
-            <!-- ######### -->
 
             <div id="searchresults">
                     
@@ -366,7 +292,7 @@ function GetZ3950Terms(){
                                         <!-- TMPL_IF name="size" --> ; <!-- TMPL_VAR name="size" --><!-- /TMPL_IF --> <!-- TMPL_IF NAME="normalized_isbn" -->ISBN: <!-- TMPL_VAR NAME="normalized_isbn" --><!-- /TMPL_IF -->
                                         <!-- TMPL_VAR name="description" -->
                                         <!-- TMPL_IF name="timestamp" --> <i>(modified on <!-- TMPL_VAR name="timestamp" -->)</i><!-- /TMPL_IF -->
-                                        <!-- TMPL_IF name="cn_class" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnum:<!-- TMPL_VAR NAME="cn_class" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="cn_class" --></a>]<!-- /TMPL_IF -->
+                                        <!-- TMPL_IF name="cn_class" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnumber:<!-- TMPL_VAR NAME="cn_class" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="cn_class" --></a>]<!-- /TMPL_IF -->
                                     </p>
                                     <p class="searchhighlightblob"><!-- TMPL_VAR NAME="searchhighlightblob" --></p>
 
@@ -390,7 +316,7 @@ function GetZ3950Terms(){
 					<!-- /TMPL_IF -->
                                     <!-- /TMPL_IF -->
                                 </td>
-
+ <!-- ITEM td -->
                                 <td><div class="availability">
                                     <!-- TMPL_IF NAME="items_count" --><strong><!-- TMPL_VAR NAME="items_count" -->
                                     <!-- TMPL_IF NAME="itemsplural" -->items<!-- TMPL_ELSE -->item<!-- /TMPL_IF --><!-- TMPL_IF NAME="available_items_loop" -->, <!-- TMPL_IF NAME="availablecount" --><!-- TMPL_VAR NAME="availablecount" --> available:<!-- /TMPL_IF --><!-- TMPL_ELSE -->, None available<!-- /TMPL_IF --></strong>
@@ -404,7 +330,7 @@ function GetZ3950Terms(){
                                         <!-- TMPL_IF NAME="branchname" --><!-- TMPL_VAR NAME="branchname" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="location" --><!-- TMPL_VAR NAME="location" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="otherstatus" --> w/ <!-- TMPL_VAR NAME="otherstatus" --> status <!-- /TMPL_IF -->
-                                        <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnum:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
+                                        <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnumber:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
                                         (<!-- TMPL_VAR NAME="count" -->)</li>
                                     <!-- /TMPL_LOOP --></ul>
                                     <!-- /TMPL_IF -->
@@ -421,7 +347,7 @@ function GetZ3950Terms(){
 
                                         <!-- TMPL_IF NAME="branchname" --><!-- TMPL_VAR NAME="branchname" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="location" --><!-- TMPL_VAR NAME="location" --><!-- /TMPL_IF -->
-                                        <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnum:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
+                                        <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnumber:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
                                         (<!-- TMPL_VAR NAME="count" --><!-- TMPL_IF NAME="longoverdue" -->, <!-- TMPL_VAR NAME="longoverdue" --> long overdue<!-- /TMPL_IF -->) date due: <!-- TMPL_VAR NAME="due_date" --></li>
                                     <!-- /TMPL_LOOP --></ul>
                                     <!-- /TMPL_IF -->
@@ -437,7 +363,7 @@ function GetZ3950Terms(){
                                         <!-- TMPL_ELSE --><li><!-- /TMPL_IF --><!-- /TMPL_IF --> 
                                         <!-- TMPL_IF NAME="branchname" --><!-- TMPL_VAR NAME="branchname" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="location" --><!-- TMPL_VAR NAME="location" --><!-- /TMPL_IF -->
-                                        <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnum:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
+                                        <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnumber:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="wthdrawn" -->(Withdrawn)<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="itemlost" -->(Lost)<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="damaged" -->(Damaged)<!-- /TMPL_IF -->
@@ -458,27 +384,10 @@ function GetZ3950Terms(){
                         <!-- /TMPL_LOOP -->
                 </table>
                 </div>
-        <!-- /TMPL_IF -->
         <!-- TMPL_INCLUDE NAME="page-numbers.inc" -->
     <!-- TMPL_ELSE -->
     <!-- No Results Found -->
     <!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="outer_sup_results_loop" -->
-</div>
-<div class="yui-u">
-<!-- TMPL_LOOP NAME="outer_sup_results_loop" -->
-<!-- <div class="yui-b"> -->
-    <!-- TMPL_IF NAME="inner_sup_results_loop" -->
-        <!-- TMPL_VAR NAME="servername" -->
-        <!-- TMPL_LOOP NAME="inner_sup_results_loop" -->
-        <div><a href="/cgi-bin/koha/catalogue/search.pl?<!-- TMPL_VAR NAME="query_cgi" --><!-- TMPL_VAR NAME="limit_cgi" --><!-- TMPL_VAR NAME="sort_by" --><!-- TMPL_VAR NAME="link" -->"><!-- TMPL_VAR NAME="title" --></a></div>
-        <!-- /TMPL_LOOP -->
-    <!-- /TMPL_IF -->
-<!-- </div> -->
-<!-- /TMPL_LOOP -->
-</div>
-</div>
-<!-- /TMPL_IF -->
 
 <form id="hold_form" method="get" action="/cgi-bin/koha/reserve/placehold.pl">
     <!-- Value will be set here by placeHold() -->

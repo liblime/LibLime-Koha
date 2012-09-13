@@ -354,6 +354,15 @@ sub get_template_and_user {
         $LibraryNameTitle =~ s/<(?:[^<>'"]|'(?:[^']*)'|"(?:[^"]*)")*>//sg;
 
         # variables passed from CGI: opac_css_override and opac_search_limits.
+        my $opacconf
+            = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
+        if (my $group = $opacconf->{default_search_limit}{group}) {
+            my $branches = C4::Branch::GetBranchesInCategory($group);
+            my $search_string = join ' or ', map {"owned-by:$_"} @$branches;
+            $opacconf->{default_search_limit}{content} = $search_string;
+        }
+        my $searchdomainoptions = C4::View::Util::BuildSearchDomainList(
+            $in->{query}->param('multibranchlimit') // $opacconf->{default_search_limit}{group});
 
         my $opac_search_limit
             = ($opacconf->{default_search_limit}{group}) ? '' :
@@ -363,7 +372,7 @@ sub get_template_and_user {
                 // $ENV{'OPAC_LIMIT_OVERRIDE'};
         my $mylibraryfirst = C4::Context->preference("SearchMyLibraryFirst");
         my $opac_name;
-        if($opac_limit_override && ($opac_search_limit =~ /branch:(\w+)/) ){
+        if($opac_limit_override && ($opac_search_limit =~ /owned-by:(\w+)/) ){
              $opac_name = C4::Branch::GetBranchName($1)   # opac_search_limit is a branch, so we use it.
         }
         elsif($mylibraryfirst) {
@@ -440,6 +449,8 @@ sub get_template_and_user {
             BibliosCataloging => C4::Context->preference("BibliosCataloging"),
             searchdomainoptions       => $searchdomainoptions,
             OPACQuickSearchFilter => C4::Koha::GetOpacSearchFilters(),
+            localJQuery               => C4::Context->preference("localJQuery"),
+            NewTitlesAge              => C4::Context->preference("NewTitlesAge"),
         );
     }
     return ( $template, $borrowernumber, $cookie, $flags);

@@ -20,6 +20,7 @@ package C4::Koha;
 use warnings;
 use strict;
 use Koha;
+use Koha::Format;
 use C4::Context;
 use C4::Output;
 use Storable qw(freeze thaw);
@@ -252,9 +253,16 @@ build a HTML select with the following code :
 
 =cut
 
-sub GetItemTypes {
+sub _seed_item_types {
     return C4::Context->dbh->selectall_hashref(
         'SELECT * FROM itemtypes', ['itemtype']);
+}
+
+sub GetItemTypes {
+    my $cache = C4::Context->getcache(__PACKAGE__,
+                                      {driver => 'Memory',
+                                       datastore => C4::Context->cachehash});
+    return $cache->compute( q{item_types}, '5m', sub {_seed_item_types} );
 }
 
 sub get_itemtypeinfos_of {
@@ -1232,53 +1240,67 @@ sub GetOpacSearchFilters {
     # TODO: If C4::Context::preference could handle extended data types,
     # we could cache the results of this function in the sysprefs cache itself.
     my $filter_string = C4::Context->preference('OPACQuickSearchFilter');
-    $filter_string =~ s/[\n\s]*$//;
-    return unless $filter_string;
-    my @filters = split('\n',$filter_string);
+    $filter_string =~ s/[\n\s]+$//;
+    return undef
+        unless $filter_string;
+
+    my @filters = split(/\n+/, $filter_string);
     my $any_string = "Any format";
 
-    if(scalar(@filters) == 1){
+    if ( @filters == 1 ) {
         if($filters[0] =~ /^i(tem)?type/){
             my $itemtypes = GetItemTypes();
-            @filters =  map({label => $itemtypes->{$_}->{'description'}, value => "mc-itype:$_"}, keys %$itemtypes);
+            @filters =  map({label => $itemtypes->{$_}->{'description'}, value => "itemtype:$_"}, keys %$itemtypes);
             $any_string = "Any type";
-        } elsif($filters[0] =~ /^ccode/){
-            my $ccodes = GetAuthorisedValues('CCODE');
-            @filters =  map({label => $_->{'opaclib'}||$_->{lib}||$_->{'authorised_value'}, value => "mc-ccode:$_->{'authorised_value'}"}, @$ccodes);
-            $any_string = "Any collection";
-        } elsif($filters[0] =~ /^loc/){
-            my $ccodes = GetAuthorisedValues('LOC');
-            @filters = sort map({label => $_->{'opaclib'}||$_->{lib}||$_->{'authorised_value'}, value => "mc-loc:$_->{'authorised_value'}"}, @$ccodes);
-            $any_string = "Any location";
-        } else {
-            return;
+            @filters = sort {$a->{label} cmp $b->{label}} @filters;
         }
-        @filters = sort {$a->{label} cmp $b->{label}} @filters;
-    } else {
+        elsif ($filters[0] =~ /^ccode/) {
+            my $ccodes = GetAuthorisedValues('CCODE');
+            @filters =  map({label => $_->{'opaclib'}||$_->{lib}||$_->{'authorised_value'}, value => "ccode:$_->{'authorised_value'}"}, @$ccodes);
+            $any_string = "Any collection";
+            @filters = sort {$a->{label} cmp $b->{label}} @filters;
+        }
+        elsif ($filters[0] =~ /^loc/) {
+            my $ccodes = GetAuthorisedValues('LOC');
+            @filters = sort map({label => $_->{'opaclib'}||$_->{lib}||$_->{'authorised_value'}, value => "shelfloc:$_->{'authorised_value'}"}, @$ccodes);
+            $any_string = "Any location";
+            @filters = sort {$a->{label} cmp $b->{label}} @filters;
+        }
+        elsif ($filters[0] =~ /^format/) {
+            my %cats = Koha::Format->new->all_descriptions_by_category;
+            delete $cats{''};
+            @filters = map {
+                    {separator => 1},
+                    map { {label => $_, value => "format:&quot;$_&quot;"} } @$_
+                } map { [values $cats{$_}] } qw(print video audio computing);
+        }
+        else {
+            return undef;
+        }
+    }
+    else {
         # user-specified queries.
         my @select_html;
-        foreach my $fline (@filters){
-            my ($label,$query) = split('\|',$fline);
-            $label =~ s/^\s*(.*)\s*$/$1/;
-            $query =~ s/^\s*(.*)\s*$/$1/;
-            $query =~ s/:\s+/:/g;
+        for (@filters) {
+            my ($label, $query) = split(/\|/, $_);
+            $label =~ s/^\s+|\s+$//g;
             next unless $label;
-            # It would be nice if C4::Search provided a test for valid indexes.
-            # We skip query parsing here, and assume the user has entered valid ccl query clauses.
-            #TODO: Test for valid queries.
-            my $option = { label => $label, value => $query || '' };
-            if($label =~ /^---/){
-                $option->{'separator'} = 1;
-            }
-            push @select_html, $option;
+
+            $query =~ s/^\s+|\s+$//g;
+            $query =~ s/:\s+/:/g;
+
+            push @select_html, { label => $label,
+                                 value => $query,
+                                 separator => ($label =~ /^---/) // undef };
         }
         @filters = @select_html;
     }
-    if($filters[0]->{value} ne ''){
+
+    if( !($filters[0]->{value} ~~ '') || $filters[0]->{separator} ) {
         #Fixme: translatable string?
         unshift(@filters,{label => $any_string, value => ''});
     }
-    return \@filters;
+    return (@filters) ? \@filters : undef;
 }
 
 1;

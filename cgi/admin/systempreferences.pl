@@ -103,6 +103,7 @@ $tabsysprefs{UseReceiptTemplates}   = "Admin";
 $tabsysprefs{Replica_DSN}           = "Admin";
 $tabsysprefs{Replica_pass}          = "Admin";
 $tabsysprefs{Replica_user}          = "Admin";
+$tabsysprefs{localJQuery}           = "Admin";
 
 # Authorities
 $tabsysprefs{authoritysep}          = "Authorities";
@@ -291,13 +292,7 @@ $tabsysprefs{OPACdefaultSortField}    = "Searching";
 $tabsysprefs{OPACdefaultSortOrder}    = "Searching";
 $tabsysprefs{OPACItemsResultsDisplay} = "Searching";
 $tabsysprefs{OPACnumSearchResults}    = "Searching";
-$tabsysprefs{QueryFuzzy}              = "Searching";
-$tabsysprefs{QueryStemming}           = "Searching";
-$tabsysprefs{QueryWeightFields}       = "Searching";
 $tabsysprefs{expandedSearchOption}    = "Searching";
-$tabsysprefs{sortbynonfiling}         = "Searching";
-$tabsysprefs{QueryAutoTruncate}       = "Searching";
-$tabsysprefs{QueryRemoveStopwords}    = "Searching";
 $tabsysprefs{AdvancedSearchTypes}     = "Searching";
 $tabsysprefs{AdvancedSearchLimits}    = "Searching";
 $tabsysprefs{OPACAdvancedSearchLimits}= "Searching";
@@ -305,7 +300,8 @@ $tabsysprefs{DisplayMultiPlaceHold}   = "Searching";
 $tabsysprefs{OPACAdvancedSearchTypes} = "Searching";
 $tabsysprefs{maxItemsinSearchResults} = "Searching";
 $tabsysprefs{OPACShowActiveBranchFirstInResults} = "Searching";
-$tabsysprefs{AdjustRelevancyRanking}  = "Searching";
+$tabsysprefs{OpacFacets}              = "Searching";
+
 
 # EnhancedContent
 $tabsysprefs{AmazonEnabled}          = "EnhancedContent";

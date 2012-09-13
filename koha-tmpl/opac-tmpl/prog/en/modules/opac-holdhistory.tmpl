@@ -15,8 +15,8 @@ $.tablesorter.addParser({
     type: 'text'
 });
             $(function() {
-            $('#opac-user-views > ul').tabs();
-                        $("#holdst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
+            $('#opac-user-views').tabs();
+            $("#holdst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
                 dateFormat: 'uk',<!-- /TMPL_IF -->
                                 widgets : ['zebra'],
                                 sortList: [[0,0]],
@@ -80,11 +80,11 @@ $.tablesorter.addParser({
 
 <h3><a href="/cgi-bin/koha/opac-user.pl"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" -->'s account</a> <img src="<!-- TMPL_VAR NAME="themelang" -->../../images/caret.gif" width="16" height="16" alt="&gt;" border="0" /> <span class="HoldsLabel">Hold </span>History</h3>
 
-<div id="opac-user-views" class="toptabs">
+<div id="opac-user-views">
         <ul>
-            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-filled-holds">Filled<br /><span class="HoldsLabel">Holds</span></a></li>
-            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-expired-holds">Expired<br /><span class="HoldsLabel">Holds</span></a></li>
-            <li><a href="/cgi-bin/koha/opac-user.pl#opac-user-cancelled-holds">Cancelled<br /><span class="HoldsLabel">Holds</span></a></li>
+            <li><a href="#opac-user-filled-holds">Filled <span class="HoldsLabel">Holds</span></a></li>
+            <li><a href="#opac-user-expired-holds">Expired <span class="HoldsLabel">Holds</span></a></li>
+            <li><a href="#opac-user-cancelled-holds">Cancelled <span class="HoldsLabel">Holds</span></a></li>
         </ul>
         
         <div id="opac-user-filled-holds">

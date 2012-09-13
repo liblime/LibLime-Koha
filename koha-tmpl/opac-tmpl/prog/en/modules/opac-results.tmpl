@@ -1,12 +1,12 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog &rsaquo; 
 <!-- TMPL_IF NAME="searchdesc" -->
-	Results of Search <!-- TMPL_IF NAME="query_desc" -->for '<!-- TMPL_VAR NAME="query_desc" -->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" -->&nbsp;with limit(s):&nbsp;'<!-- TMPL_VAR NAME="limit_desc" -->'<!-- /TMPL_IF --> 
+	Results of Search <!-- TMPL_IF NAME="user_query" -->for '<!-- TMPL_VAR NAME="user_query" -->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" -->&nbsp;with limit(s):&nbsp;'<!-- TMPL_VAR NAME="limit_desc" -->'<!-- /TMPL_IF --> 
 <!-- TMPL_ELSE -->
     You did not specify any search criteria.
 <!-- /TMPL_IF -->
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
-<link rel="alternate" type="application/rss+xml" title="<!-- TMPL_VAR NAME="LibraryName" --> Search RSS Feed" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="query_cgi" ESCAPE="HTML" --><!-- TMPL_VAR NAME="limit_cgi"  ESCAPE="HTML" -->&amp;format=rss2" />
+<link rel="alternate" type="application/rss+xml" title="<!-- TMPL_VAR NAME="LibraryName" --> Search RSS Feed" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="user_query" ESCAPE="URL" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->&amp;format=rss2" />
 
 
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.min.js"></script>
@@ -106,10 +106,6 @@ $(document).ready(function(){
 	<!-- /TMPL_IF -->
 	<!-- /TMPL_IF -->
 	param1 += "<\/select> <input type=\"submit\" class=\"submit\" value=\""+_("Save")+"\" />";
-	$('#sortsubmit').hide();
-    $('#sort_by').change(function() {
-        $('#bookbag_form').submit();
-    });
 	$("span.clearall").html("<a id=\"CheckNone\" href=\"#\">"+_("Clear All")+"<\/a>");
 	$("span.checkall").html("<a id=\"CheckAll\" href=\"#\">"+_("Select All")+"<\/a>");
 	$("span.addto").html(param1);
@@ -162,9 +158,9 @@ $(document).ready(function(){
 <!-- /TMPL_IF -->
     $("#holdDetails").hide();
 
-    <!-- TMPL_IF NAME="query_desc" -->
-        var query_desc = "<!-- TMPL_VAR NAME="query_desc" ESCAPE="JS"-->";
-        q_array = query_desc.split(" ");
+    <!-- TMPL_IF NAME="user_query" -->
+        var user_query = "<!-- TMPL_VAR NAME="user_query" ESCAPE="JS"-->";
+        q_array = user_query.split(" ");
         <!-- TMPL_IF NAME="OpacHighlightedWords" -->
           highlightOn();
           $("#highlight_toggle_on" ).hide().click(function() {highlightOn() ;});
@@ -200,12 +196,41 @@ $(document).ready(function(){
         <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="GoogleJackets" -->KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF -->
+    
+    // Query parameters
+    var q_param = "<!-- TMPL_VAR user_query ESCAPE="URL"-->";
+    var sort_param = "<!-- TMPL_VAR user_sort -->"; // for now just one.
+    var fq = []; // TODO: replace solr fields in limits with user-friendly display labels.
+    var limit_param = '';
+    <!-- TMPL_LOOP user_limit --> limit_param += '&limit=<!-- TMPL_VAR limit ESCAPE="HTML" -->';<!-- /TMPL_LOOP -->
+    $("#search_desc li.limit").append("<a class='removeLimit' href=\"#\" title='Remove this limit'><img src='<!-- TMPL_VAR NAME="themelang" -->../../images/shelf-delete.gif' /></a>");
+    $("a.removeLimit").click(function(){
+        // rebuild query limits from this list.
+        var $this_li = $(this).parent('li');
+        var new_query_uri = "/cgi-bin/koha/opac-search.pl?q=" + q_param;
+        if(sort_param){
+            new_query_uri += "&sort=" + sort_param;
+        }
+        $(this).parents('ul').children('li').each(function(){
+            if(!$(this).is($this_li)){
+                new_query_uri += "&limit=" + $(this).text();  // TODO: Allow mapping limits to user-friendly display
+            }
+        });
+        window.location = new_query_uri;
+        return false;
+    });
+    $('#sort_by').change(function() {
+        window.location = "/cgi-bin/koha/opac-search.pl?q=" + q_param + limit_param + "&sort=" + $(this).val();
+    });
+    if(sort_param){
+        $("#sort_by").val(sort_param);
+    };
 });
 //]]>
 </script>
 </head>
 <body id="results">
-	<!-- TMPL_IF NAME="opacfacets" --><div id="doc3" class="yui-t1"><!-- TMPL_ELSE --><div id="doc3" class="yui-t7"><!-- /TMPL_IF -->
+	<!-- TMPL_IF NAME="facets_loop" --><div id="doc3" class="yui-t1"><!-- TMPL_ELSE --><div id="doc3" class="yui-t7"><!-- /TMPL_IF -->
    <div id="bd">
 
 <!--TMPL_INCLUDE NAME="masthead.inc" -->
@@ -214,12 +239,13 @@ $(document).ready(function(){
 	<div id="yui-main">
 	<div class="yui-b">
 	<div class="container">
-<!-- TMPL_IF NAME="koha_spsuggest" -->
+<!-- TMPL_IF NAME="didyoumean" -->
+    <div id="didyoumean">
     <i>Did you mean: </i>
-    <!-- TMPL_LOOP NAME="SPELL_SUGGEST" -->
-        <a href="/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR NAME="spsuggestion" --><!-- TMPL_IF NAME="opac_search_limit" -->&limit=<!-- TMPL_VAR name="opac_search_limit" --><!-- /TMPL_IF -->"><!-- TMPL_VAR NAME="spsuggestion" --></a> &nbsp;
+    <!-- TMPL_LOOP NAME="didyoumean" -->
+        <a href="/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR NAME="term" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->"><!-- TMPL_VAR NAME="term" --></a> &nbsp;
     <!-- /TMPL_LOOP -->
-    <p>
+    </div>
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="query_error" -->
@@ -231,7 +257,7 @@ $(document).ready(function(){
 	
 <!-- Search Results Table -->
 <!-- TMPL_IF NAME="total" -->
-<!-- TMPL_IF NAME="scan" -->
+<!-- TMPL_IF NAME="scan-DEPRECATED" -->
     <h1>Scan Index:</h1>
     <form action="/cgi-bin/koha/opac-search.pl" method="get">
         <table>
@@ -290,19 +316,11 @@ $(document).ready(function(){
 
     <div class="searchresults">
 	<form action="/cgi-bin/koha/opac-search.pl" method="get" name="bookbag_form" id="bookbag_form">
-		<!-- TMPL_IF NAME="searchdesc" -->
-		<!-- TMPL_LOOP NAME="QUERY_INPUTS"-->
-		<input type="hidden" name="<!-- TMPL_VAR NAME="input_name" -->" value="<!-- TMPL_VAR NAME="input_value" -->"/>
-		<!-- /TMPL_LOOP -->
-		<!-- TMPL_LOOP NAME="LIMIT_INPUTS"-->
-		<input type="hidden" name="<!-- TMPL_VAR NAME="input_name" -->" value="<!-- TMPL_VAR NAME="input_value" -->"/>
-		<!-- /TMPL_LOOP -->
-		<!-- /TMPL_IF -->
 
         <!-- TABLE RESULTS START -->
         <table>
 		<tr><td colspan="5" class="resultscontrol" style="border : 1px solid #e8e8e8;">
-		<div class="resort"> <select id="sort_by" name="sort_by"> <!--TMPL_INCLUDE NAME="resort_form.inc"--> </select> <input type="submit" class="submit clearfix" id="sortsubmit" value="Go" /></div>
+		<div class="resort"> <select id="sort_by" name="sort_by"> <!--TMPL_INCLUDE NAME="resort_form.inc"--> </select></div>
 		<div class="cartlist">
             <!-- checkall, clearall are now needed for placehold -->
             <span class="checkall"></span>
@@ -375,7 +393,7 @@ $(document).ready(function(){
                                 <!-- TMPL_ELSE --><a class="title" href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" ESCAPE="URL" -->" title="View details for this title"><!-- TMPL_IF NAME="title" --><!-- TMPL_VAR NAME="title" --><!-- TMPL_ELSE -->No title<!-- /TMPL_IF --> <!-- TMPL_VAR NAME="subtitle"  --></a>
                                 <!-- /TMPL_IF -->
                                 <!-- /TMPL_IF -->
-                                <!-- TMPL_IF NAME="author" -->by <a href="/cgi-bin/koha/opac-search.pl?q=au:<!-- TMPL_VAR NAME="author" ESCAPE="URL" -->" title="Search for works by this author"><!-- TMPL_VAR NAME="author" --></a>
+                                <!-- TMPL_IF NAME="author" -->by <a href="/cgi-bin/koha/opac-search.pl?q=author:&quot;<!-- TMPL_VAR NAME="author" ESCAPE="URL" -->&quot;" title="Search for works by this author"><!-- TMPL_VAR NAME="author" --></a>
                                 <!-- TMPL_ELSE -->&nbsp;
                                 <!-- /TMPL_IF -->
 				<span class="results_summary"><span class="label">Publication:</span>
@@ -384,7 +402,6 @@ $(document).ready(function(){
                         <!-- TMPL_IF name="pages" -->. <!-- TMPL_VAR name="pages" --><!-- /TMPL_IF -->
                         <!-- TMPL_IF name="notes" -->, <!-- TMPL_VAR name="notes" --><!-- /TMPL_IF -->
                         <!-- TMPL_IF name="size" --> <!-- TMPL_VAR name="size" --><!-- /TMPL_IF -->
-                        <!-- TMPL_IF name="timestamp" --> <i>(modified on <!-- TMPL_VAR name="timestamp" -->)</i><!-- /TMPL_IF -->
                 </span>
                 <!-- TMPL_IF NAME="summary" -->
                 <span class="result_summary">
@@ -509,7 +526,7 @@ $(document).ready(function(){
 </div>    
 </div>
 </div>
-        <!-- TMPL_IF NAME="opacfacets" -->
+        <!-- TMPL_IF NAME="facets_loop" -->
 <div class="yui-b"><div class="container">
         <!-- FACETS START -->
 		<!-- TMPL_INCLUDE NAME="opac-facets.inc" -->

@@ -83,7 +83,8 @@ method index_to_array($item) {
             # push values through filter chain
             @inputset = $_->(@inputset) for @{$rule->[2]};
 
-            push @unreduced, grep {$_} @inputset;
+            #push @unreduced, grep {$_} @inputset;
+            push @unreduced, grep {$_||length($_)} @inputset;
         }
         @unreduced = $_->(@unreduced) for @{$rule->[3]};
         push @index_fields, map { [ $rule->[0], $_ ] } @unreduced;

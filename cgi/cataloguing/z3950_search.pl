@@ -45,7 +45,7 @@ my $subject       = $input->param('subject');
 my $dewey         = $input->param('dewey');
 my $controlnumber	= $input->param('controlnumber');
 my $stdid			= $input->param('stdid');
-my $srchany			= $input->param('srchany');
+my $srchany			= $input->param('srchany') || $input->param('any');
 my $random        = $input->param('random') || rand(1000000000); # this var is not useful anymore just kept for rel2_2 compatibility
 my $op            = $input->param('op');
 my $numberpending;

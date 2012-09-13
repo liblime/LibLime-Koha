@@ -65,6 +65,8 @@ use C4::Output;
 use C4::Koha;
 use C4::Charset;
 use MARC::File::XML;
+use Koha::Solr::Service;
+use Koha::Solr::Query;
 
 my $input = new CGI;
 
@@ -92,41 +94,37 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 
 # Searching the catalog.
-my ($error, $marcresults, $total_hits) = SimpleSearch($query, $results_per_page * ($page - 1), $results_per_page);
+#my ($error, $marcresults, $total_hits) = SimpleSearch($query, $results_per_page * ($page - 1), $results_per_page);
+my $offset = $results_per_page * ($page - 1);
 
-if (defined $error) {
-    warn "error: ".$error;
-    $template->param(
-        query_error => $error,
-        basketno             => $basketno,
-        booksellerid     => $bookseller->{'id'},
-        name             => $bookseller->{'name'},
-    );
-    output_html_with_http_headers $input, $cookie, $template->output;
-    exit;
-}
+my $solr = Koha::Solr::Service->new();
+my $q_param = {query => $query, rtype => 'bib'};
+$q_param->{options} = { start => $offset } if $offset;
+my ($results,$hits) = $solr->simpleSearch(Koha::Solr::Query->new($q_param));
 
-my @results;
+my @newresults;
 
-for my $marcxml ( @$marcresults ) {
+for my $result ( @$results ) {
     my %resultsloop;
-    my $marcrecord = MARC::File::XML::decode($marcxml);
-    my $biblio = TransformMarcToKoha(C4::Context->dbh,$marcrecord,'');
-
+    #my $marcrecord = MARC::File::XML::decode($result->{marcxml});
+    #my $biblio = TransformMarcToKoha(C4::Context->dbh,$marcrecord,'');
+    my $biblio = GetBiblioData($result->{biblionumber});
     #build the hash for the template.
     %resultsloop=%$biblio;
     $resultsloop{booksellerid} = $booksellerid;
-    push @results, \%resultsloop;
+#    $result->{booksellerid} = $booksellerid;
+    push @newresults, \%resultsloop ;
 }
+
 
 $template->param(
     basketno             => $basketno,
     booksellerid     => $bookseller->{'id'},
     name             => $bookseller->{'name'},
-    resultsloop          => \@results,
-    total                => $total_hits,
+    resultsloop          => \@newresults,
+    total                => $hits,
     query                => $query,
-    pagination_bar       => pagination_bar( "$ENV{'SCRIPT_NAME'}?q=$query&booksellerid=$booksellerid&", getnbpages( $total_hits, $results_per_page ), $page, 'page' ),
+    pagination_bar       => pagination_bar( "$ENV{'SCRIPT_NAME'}?q=$query&booksellerid=$booksellerid&", getnbpages( $hits, $results_per_page ), $page, 'page' ),
 );
 
 # BUILD THE TEMPLATE

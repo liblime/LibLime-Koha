@@ -9,19 +9,20 @@ use C4::AuthoritiesMarc qw( GetAuthority );
 use File::Slurp qw( read_file );
 use Getopt::Long qw( GetOptions );
 use Carp;
+use Encode qw(encode_utf8);
 
 my %jump = (
     auths => {
         rules_file =>
             (C4::Context->config('basedir') . '/etc/solr/auth-index.rules'),
-        export => 1,
+        export => 0,
         get_record => \&GetAuthority,
         get_list => \&pull_auths_list,
     },
     bibs => {
         rules_file =>
             (C4::Context->config('basedir') . '/etc/solr/biblio-index.rules'),
-        export => 1,
+        export => 0,
         get_record => \&GetMarcWithItems,
         get_list => \&pull_bibs_list,
     },
@@ -50,8 +51,8 @@ for my $j ( values %jump ) {
     for ( @$todos ) {
         my $record = $j->{get_record}($_);
         next unless $record;
-        say Koha::Solr::Document::MARC->new(
-            record => $record, strategy => $r );
+        say encode_utf8( Koha::Solr::Document::MARC->new(
+            record => $record, strategy => $r ));
     }
 }
 say '</add>' if $preamble;
