@@ -59,11 +59,13 @@ unless (C4::Context->preference('ReservesMaxPickupDelay')) {
 }
 
 if ($go) {
-   my @reservenumbers = $cgi->param('lapsed');
-   C4::Reserves::UnshelfLapsed(@reservenumbers);
-   my @rows = @{C4::Reports::HoldsShelf(
-      branchcode  => $branchcode,
-   )};
+    my @reservenumbers = $cgi->param('lapsed');
+    for my $resnum (@reservenumbers){
+        C4::Reserves::UnshelfLapsed($resnum);
+    }
+    my @rows = @{C4::Reports::HoldsShelf(
+        branchcode  => $branchcode,
+    )};
    if ($output eq "screen") {
       # Printing results to screen
       $template->param(

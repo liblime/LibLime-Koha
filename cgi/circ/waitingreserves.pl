@@ -64,6 +64,10 @@ my $default = C4::Context->userenv->{'branch'};
 
 # if we have a return from the form we launch the subroutine CancelReserve
 if ($item) {
+    
+    # Cancel item and promote next reserve status.
+    # This script assumes staff has the item in hand and can process it accordingly.
+
     my ( $messages, $nextreservinfo ) = ModReserveCancelAll( $reservenumber, $item );
     # if we have a result
     if ($nextreservinfo) {
@@ -81,6 +85,9 @@ if ($item) {
             nextreservnumber    => $nextreservinfo,
             nextreservsurname   => $borrowerinfo->{'surname'},
             nextreservfirstname => $borrowerinfo->{'firstname'},
+            nextborrowernumber  => $borrowerinfo->{'borrowernumber'},
+            nextbiblionumber    => $iteminfo->{'biblionumber'},
+            nexttransfer        => $messages->{'transfert'},
             nextreservitem      => $item,
             nextreservtitle     => $iteminfo->{'title'},
             waiting             => ($messages->{'waiting'}) ? 1 : 0,

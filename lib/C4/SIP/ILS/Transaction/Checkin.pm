@@ -88,14 +88,9 @@ sub do_checkin {
             $self->screen_msg('Hold for patron at ' . $messages->{ResFound}->{branchcode});
         }
         C4::Reserves::ModReserveAffect($messages->{ResFound}->{itemnumber},
-            $messages->{ResFound}->{borrowernumber},
-            $do_transfer,$messages->{ResFound}->{reservenumber});
+            $messages->{ResFound}->{reservenumber},
+            $do_transfer);
         if ($do_transfer) {
-            C4::Reserves::ModReserveMinusPriority(
-                $messages->{ResFound}->{itemnumber},
-                $messages->{ResFound}->{borrowernumber},
-                $messages->{ResFound}->{biblionumber},
-                $messages->{ResFound}->{reservenumber});
             C4::Items::ModItemTransfer($messages->{ResFound}->{itemnumber},
                 $branch,
                 $messages->{ResFound}->{branchcode});

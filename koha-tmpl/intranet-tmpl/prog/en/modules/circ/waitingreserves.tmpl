@@ -1,6 +1,13 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Circulation &rsaquo; Holds awaiting pickup</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script>
+$(document).ready(function(){
+    $("#print_holdslip").click(function(){
+        window.open('hold-transfer-slip.pl?reservenumber=<!-- TMPL_VAR NAME="nextreservnumber" -->&amp;<!-- TMPL_IF nexttransfer -->transfer=1&amp;<!-- /TMPL_IF -->borrowernumber=<!-- TMPL_VAR NAME="nextborrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="nextbiblionumber" -->&amp;op=slip','width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top');
+    });
+});
+</script>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -35,7 +42,8 @@
                 Please retain this hold.
                 </p>
                 <form name="cancelReservewithwaiting" action="waitingreserves.pl" method="post">
-                    <input type="submit" />
+                    <input type="submit" value="Print Slip and Go Back" id="print_holdslip" class="print" />
+                    <input type="submit" value="Return to Holds Awaiting Pickup" />
                 </form>
             </div>
         <!-- /TMPL_IF -->

@@ -54,6 +54,9 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
    'S'   => 'Suspended',
    'T'   => 'In Transit',
    'W'   => 'Waiting',     # hold "filled" at checkin
+   'C'   => 'Canceled',
+   'E'   => 'Expired',
+   'R'   => 'Trace',
 );
 
 =head1 NAME
@@ -72,14 +75,17 @@ C4::Reserves - Koha functions for dealing with reservation.
   The following columns contains important values :
   - priority >0      : then the reserve is at 1st stage, and not yet affected to any item.
              =0      : then the reserve is being dealed
-  - found : NULL       : means the patron requested the 1st available, and we haven't choosen the item
+  - found : NULL       : the reserve is queued.  No item is ready to fill it.
             T(ransit)  : the reserve is linked to an item but is in transit to the pickup branch
             W(aiting)  : the reserve is linked to an item, is at the pickup branch, and is waiting on the hold shelf
-            F(inished) : the reserve has been completed, and is done
+            F(inished) : the reserve has been completed, the item checked out to the patron
             R(trace)   : the reserve is set to 'trace' because it apparently can't be fulfilled
             S(uspend)  : the reserve is suspended
-  - itemnumber : empty : the reserve is still unaffected to an item
+            C(anceled) : the reserve was canceled [ this value is only valid in old_reserves ]
+            E(xpired)  : the reserve expired due to either ReservesMaxPickUpDelay or HoldExpireLength [ only valid in old_reserves ]
+  - itemnumber : empty : the reserve is still unaffected to an item OR it is an item-level request
                  filled: the reserve is attached to an item
+                 
   The complete workflow is :
   ==== 1st use case ====
   patron request a document, 1st available :                      P >0, F=NULL, I=NULL
@@ -122,13 +128,8 @@ BEGIN {
         &GetReserveFee
         &GetReserveInfo
     
-        &GetOtherReserves
-        
         &ModReserveAffect
         &ModReserve
-        &ModReserveStatus
-        &ModReserveCancelAll
-        &ModReserveMinusPriority
         
         &CheckReserves
         &CancelReserve
@@ -691,8 +692,8 @@ sub AddReserve {
     $resdate = ($resdate) ? format_date_in_iso($resdate) : $timestamp;
 
     if ( C4::Context->preference( 'AllowHoldDateInFuture' ) ) {
-	# Make room in reserves for this before those of a later reserve date
-	$priority = _ShiftPriorityByDateAndPriority( $biblionumber, $resdate, $priority );
+	    # Make room in reserves for this before those of a later reserve date
+	    $priority = _ShiftPriorityByDateAndPriority( $biblionumber, $resdate, $priority );
     }
 
     my $waitingdate;
@@ -805,6 +806,7 @@ sub GetReservesFromBiblionumber {
 }
 
 sub GetSuspendedReservesFromBiblionumber {
+    # FIXME: This function should be rolled into GetReservesFromBiblionumber, with a named param .
     my ( $biblionumber ) = @_;
     my $dbh   = C4::Context->dbh;
 
@@ -819,6 +821,36 @@ sub GetSuspendedReservesFromBiblionumber {
     };
     my $reserves = $dbh->selectall_arrayref($query, {Slice => {}}, $biblionumber);
     return (scalar @$reserves, $reserves);
+}
+
+=item GetCanceledOnShelfReserves 
+
+$reserves = &GetCanceledOnShelfReserves($biblionumber [, unavailable => 1, ]);
+
+return Canceled/Expired Holds that are on the holds shelf.
+optionally only include those that don't have another hold on them.
+
+=cut
+
+sub GetCanceledOnShelfReserves{
+    my $biblionumber = shift;
+    my %options = @_;
+    my $query = q{
+        SELECT * 
+        FROM old_reserves
+        WHERE found = 'W' AND biblionumber=?
+    };
+    my $dbh   = C4::Context->dbh;
+    my $reserves = $dbh->selectall_arrayref($query, {Slice => {}}, $biblionumber);
+    if($options{unavailable}){
+        my $unavailable_reserves = [];
+        for my $res (@$reserves){
+            my ($status, $newreserves) = CheckReserves($res->{itemnumber});
+            push @$unavailable_reserves, $res if $status;
+        }
+        $reserves = $unavailable_reserves;
+    }
+    return $reserves;
 }
 
 sub ItemReservesAndOthers {
@@ -1109,58 +1141,6 @@ sub GetReserveCount {
     return $res_count;
 }
 
-=item GetOtherReserves
-
-($messages,$nextreservinfo)=$GetOtherReserves(itemnumber);
-
-Check queued list of this document and check if this document must be  transfered
-
-=cut
-
-sub GetOtherReserves {
-    my ($itemnumber) = @_;
-    $debug and warn "GetOtherReserves( $itemnumber )";
-    my $messages;
-    my $nextreservinfo;
-    my ( undef, $checkreserves ) = CheckReserves($itemnumber);
-    if ($checkreserves) {
-        my $iteminfo = GetItem($itemnumber);
-        if ( $iteminfo->{'holdingbranch'} ne $checkreserves->{'branchcode'} ) {
-            $messages->{'transfert'} = $checkreserves->{'branchcode'};
-            #minus priorities of others reservs
-            ModReserveMinusPriority(
-                $itemnumber,
-                $checkreserves->{'borrowernumber'},
-                $iteminfo->{'biblionumber'},
-                $checkreserves->{'reservenumber'}
-            );
-
-            #launch the subroutine dotransfer
-            C4::Items::ModItemTransfer(
-                $itemnumber,
-                $iteminfo->{'holdingbranch'},
-                $checkreserves->{'branchcode'},
-              ),
-              ;
-        }
-
-     #step 2b : case of a reservation on the same branch, set the waiting status
-        else {
-            $messages->{'waiting'} = 1;
-            ModReserveMinusPriority(
-                $itemnumber,
-                $checkreserves->{'borrowernumber'},
-                $iteminfo->{'biblionumber'},
-                $checkreserves->{'reservenumber'}                
-            );
-            ModReserveStatus($itemnumber,'W',$checkreserves);
-        }
-
-        $nextreservinfo = $checkreserves->{'borrowernumber'};
-    }
-
-    return ( $messages, $nextreservinfo );
-}
 
 =item GetReserveFee
 
@@ -1338,23 +1318,20 @@ sub GetPendingReserveOnItem {
 
 =item CheckReserves
 
-  ($status, $reserve) = &CheckReserves($itemnumber);
+  ($status, $reserve) = &CheckReserves($itemnumber [ ,$borrowernumber ]);
 
 Find a book in the reserves.
 
 C<$itemnumber> is the book's item number.
 
-As I understand it, C<&CheckReserves> looks for the given item in the
-reserves. If it is found, that's a match, and C<$status> is set to
-C<Waiting>.
+Attempt to fill a reserve, adhering to constraints of sysprefs
+C<HoldsTransportationReductionThreshold> and C<FillRequestsAtPickupLibraryAge>
 
-Otherwise, it finds the most important item in the reserves with the
-same biblio number as this book (I'm not clear on this) and returns it
-with C<$status> set to C<Reserved>.
 
-C<&CheckReserves> returns a two-element list:
+If C<$borrowernumber> is supplied, also check for mismatched item-level hold
+for this patron (i.e. in case the borrower has a hold on a specific item
+but is trying to check out a different item of that bib).
 
-C<$status> is either C<Waiting>, C<Reserved> (see above), or 0.
 
 C<$reserve> is the reserve item that matched. It is a
 reference-to-hash whose keys are mostly the fields of the reserves
@@ -1474,19 +1451,23 @@ sub _NextLocalReserve {
 }
 
 ## not exported.
-## flag a list of a cancelled holds as being off the holds shelf
-## by setting priority = -1
+# Complete the cancellation/expiry process for an on-shelf hold.
+# When a hold is canceled or expires while on the holds shelf, it
+# is moved to old_reserves, but keeps the 'W' `found` status until
+# removed from the shelf via cgi/reports/holdsaction.pl
+# This function sets found to 'C' or 'E' depending on whether the hold was canceled or expired.
+#  found should always be 'W' for any reserve passed to this function.
 sub UnshelfLapsed
 {
-   my @reservenumbers = @_;
-   return 0 unless @reservenumbers;
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare(sprintf('UPDATE old_reserves SET priority=-1 WHERE reservenumber IN(%s)',
-         join(',', map{'?'} @reservenumbers)
-      )
-   );
-   my $fx = $sth->execute(@reservenumbers);
-   return $fx;
+    my $resnum = shift;
+    my $dbh = C4::Context->dbh;
+    my $status_sth = $dbh->prepare("SELECT found, cancellationdate, expirationdate from old_reserves where reservenumber=?");
+    my $update_sth = $dbh->prepare('UPDATE old_reserves SET found=? WHERE reservenumber=? '),
+    $status_sth->execute($resnum);
+    my ($found, $cdate, $edate) = $status_sth->fetchrow();
+    return 1 unless $found ~~ 'W';
+    my $newfound = ($cdate) ? 'C' : 'E'; # there may be an expiry date for a canceled hold, but not a cancel date for an expired hold.
+    $update_sth->execute($newfound, $resnum);
 }
 
 =item CancelReserves
@@ -1552,34 +1533,58 @@ sub _moveToOldReserves {
 
 =item CancelReserve
 
-  &CancelReserve( $reservenumber );
+  &CancelReserve( $reservenumber [, $mode ] );
 
-Cancels a reserve.
+Cancels or expires a reserve.
 
 C<$reservenumber> is the unique key for the reserve to be canceled.
 
+If the reserve is already in Waiting status, there's an attached
+item on a hold shelf somewhere, so the reserve's 'found' status remains 'W'
+until explicitly removed from the holds shelf via cgi/reports/holdsaction.pl 
+The hold is moved to the old_reserves table.
+If the reserve is not in 'W' status, then it is updated with 'E' or 'C' status
+to indicate whether it was canceled or expired.
+
+C<$mode> should be either 'C' (default) or 'E' for Cancel or Expire,
+
 C<&CancelReserve> also adjusts the priorities of the other people
-who are waiting on the book.
+who are waiting on the book, unless the reserve status is Waiting
 
 =cut
 
 sub CancelReserve {
-    my ( $reservenumber ) = @_;
+    my $reservenumber = shift;
+    my $found = shift;
+    $found = ($found ~~ 'E') ? 'E' : 'C';
+
     my $dbh = C4::Context->dbh;
 
     my $reserve = GetReserve($reservenumber);
     croak "Unable to find reserve ($reservenumber)" if !$reserve;
 
-    $dbh->do(q{
+    my $on_hold_shelf = ($reserve->{found} ~~ 'W');
+    my $update_clause;
+    if($found ~~ 'C'){
+        $update_clause = q{
         UPDATE reserves
-        SET    cancellationdate = now(),
-               priority         = 0
-        WHERE  reservenumber    = ?
-    }, undef, $reservenumber);
+        SET    cancellationdate = now()
+               };
+        $update_clause .= ", found = 'C' " unless $on_hold_shelf;
+    } elsif(!$on_hold_shelf){
+        $update_clause = " UPDATE reserves SET found = 'E' ";
+    }
+    my $where_clause = " WHERE  reservenumber    = ? ";
+    if($update_clause){
+        # Note no update for found='E' and $on_hold_shelf.
+        $dbh->do( $update_clause . $where_clause, undef, $reservenumber);
+    }
 
     _moveToOldReserves($reservenumber);
-    _NormalizePriorities($reserve->{biblionumber});
     RmFromHoldsQueue(reservenumber => $reservenumber);
+    if(!$on_hold_shelf) {
+        _NormalizePriorities($reserve->{biblionumber});
+    }
 
     my $moduser    = C4::Context->userenv->{number};
     my $branchcode = C4::Context->userenv->{branch};
@@ -1674,7 +1679,7 @@ sub ModReserve {
     return if $priority ~~ 'n';
     return if $priority ~~ 'T';
     if ( $priority ~~ 'del' ) {
-        ModReserveCancelAll($reservenumber, $itemnumber);
+        CancelReserve($reservenumber);
     }
     elsif ($priority !~ /\D/ and $priority > 0) {
        my $expDays = C4::Context->preference('HoldExpireLength');
@@ -1857,172 +1862,62 @@ sub ModReserveTrace
    return 1;
 }
 
-=item ModReserveStatus
-
-&ModReserveStatus($itemnumber, $newstatus, $reservenumber);
-
-Update the reserve status for the active (priority=0) reserve.
-
-$itemnumber is the itemnumber the reserve is on
-
-$newstatus is the new status.
-
-$reservenumber is the reserves.reservenumber
-
-=cut
-
-sub ModReserveStatus {
-    #first : check if we have a reservation for this item .
-    my ($itemnumber, $newstatus, $res) = @_;
-    return unless ($itemnumber && $res);
-    my $setexpiration = my $setpriority = '';
-    my @in = qw(W T); 
-    if ($newstatus ~~ @in) { 
-       $setpriority = ', priority=0 ';
-       RmFromHoldsQueue(itemnumber => $itemnumber);
-    }
-    my $holdperiod = C4::Context->preference('ReservesMaxPickUpDelay');
-    if (defined($holdperiod) && ($holdperiod > 0)) {
-      # Check to see if hold expiration date falls on a closed library day.
-      # Note the useDaysMode syspref will need to be set to Calendar for
-      # the code to advance to the next non-closed day.
-      my $calendar = C4::Calendar->new( branchcode => $$res{branchcode});
-      my $holdexpdate  = $calendar->addDate(C4::Dates->new(), $holdperiod);
-      $setexpiration = sprintf(", expirationdate='%s' ",$holdexpdate->output('iso'));
-   }
-   C4::Context->dbh->do("UPDATE reserves
-      SET found         = ?,
-          waitingdate   = NOW(),
-          itemnumber    = ? $setexpiration $setpriority
-    WHERE reservenumber = ?",undef,$newstatus,$itemnumber,$$res{reservenumber});
-    _NormalizePriorities($$res{biblionumber});
-
-    if ( C4::Context->preference("ReturnToShelvingCart") && $newstatus ) {
-      CartToShelf( $itemnumber );
-    }
-}
 
 =item ModReserveAffect
 
-&ModReserveAffect($itemnumber,$borrowernumber,$diffBranchSend);
+&ModReserveAffect($itemnumber, $reservenumber, $transferToDo);
 
-This function affect an item and a status for a given reserve
-The itemnumber parameter is used to find the biblionumber.
-with the biblionumber & the borrowernumber, we can affect the itemnumber
-to the correct reserve.
+This function links a specific item to a reserve, and sets the status
+to either Waiting (if we're at the pickup branch) or inTransit, depending
+on the C<$transferToDo> param.
 
-if $transferToDo is not set, then the status is set to "Waiting" as well.
-otherwise, a transfer is on the way, and the end of the transfer will 
-take care of the waiting status
+Caller is responsible for initiating the branchtransfer if required.
+
 =cut
 
 sub ModReserveAffect {
-    my ( $itemnumber, $borrowernumber,$transferToDo, $reservenumber ) = @_;
+    my ( $itemnumber, $reservenumber, $transferToDo ) = @_;
     return unless $reservenumber;
     my $dbh = C4::Context->dbh;
-    my $sth;
     my $request = GetReserve($reservenumber);
     my $biblionumber = $request->{biblionumber};
     my $already_on_shelf = ($request && $request->{found} ~~ 'W') ? 1 : 0;
-
-    # If we affect a reserve that has to be transfered, don't set to Waiting
-    my $query;
-    if ($transferToDo) {
-        $query = q{
+    my @bind;
+    my $query = q{
             UPDATE reserves
             SET    priority = 0,
                    itemnumber = ?,
-                   found = 'T',
-                   waitingdate = NULL
+                   found = ?,
+                   waitingdate = ?,
+                   expirationdate = ?
             WHERE reservenumber = ?
         };
-    }
-    else {
-    # affect the reserve to Waiting as well.
-      my $holdperiod = C4::Context->preference('ReservesMaxPickUpDelay');
-      if ((!defined($holdperiod)) || ($holdperiod ~~ '') || ($holdperiod == 0)) {
-        $query = "
-            UPDATE reserves
-            SET     priority = 0,
-                    found = 'W',
-                    waitingdate=now(),
-                    itemnumber = ?
-            WHERE reservenumber = ?
-        ";
-      }
-      else {
-        # Check to see if hold expiration date falls on a closed library day.
-        # Note the useDaysMode syspref will need to be set to Calendar for
-        # the code to advance to the next non-closed day.
-        my $calendar = C4::Calendar->new( branchcode => $request->{branchcode});
-        my $holdexpdate  = $calendar->addDate(C4::Dates->new(), $holdperiod);
-        my $sqlexpdate = $holdexpdate->output('iso');
-        $query = "
-            UPDATE reserves
-            SET    priority = 0,
-                   found = 'W',
-                   waitingdate=now(),
-                   itemnumber = ?,
-                   expirationdate='$sqlexpdate'
-            WHERE  reservenumber = ?
-        ";
-      }
-    }
-    $sth = $dbh->prepare($query);
-    $sth->execute( $itemnumber, $reservenumber );
-    RmFromHoldsQueue(itemnumber=>$itemnumber);
-    _NormalizePriorities( $biblionumber );
-    _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber, $reservenumber ) if ( !$transferToDo && !$already_on_shelf && C4::Context->preference('EnableHoldOnShelfNotice'));
-    CartToShelf( $itemnumber ) if ( C4::Context->preference("ReturnToShelvingCart") );
 
+    if ($transferToDo) {
+        @bind = ($itemnumber, 'T', undef, undef, $reservenumber);
+    } else {
+        my $holdperiod = C4::Context->preference('ReservesMaxPickUpDelay') // '';
+        my $sqlexpdate;
+        if ($holdperiod) {
+            my $calendar = C4::Calendar->new(branchcode => $request->{branchcode});
+            my $holdexpdate  = $calendar->addDate(C4::Dates->new(), $holdperiod);
+            $sqlexpdate = $holdexpdate->output('iso');
+        }
+        @bind = ($itemnumber, 'W', C4::Dates->today('iso'), $sqlexpdate, $reservenumber);
+    }
+    my $sth = $dbh->prepare($query);
+    $sth->execute(@bind);
+
+    if($request->{priority}){
+        # Only perform following once, when priority first hits 0.
+        RmFromHoldsQueue(itemnumber=>$itemnumber);
+        _NormalizePriorities( $biblionumber );
+        CartToShelf( $itemnumber ) if ( C4::Context->preference("ReturnToShelvingCart") );
+    }
+    _koha_notify_reserve( $itemnumber, $request->{borrowernumber}, $biblionumber, $reservenumber ) if ( !$transferToDo && !$already_on_shelf && C4::Context->preference('EnableHoldOnShelfNotice'));
     return;
 }
 
-=item ModReserveCancelAll
-
-($messages,$nextreservinfo) = &ModReserveCancelAll($reservenumber,$itemnumber);
-
-    function to cancel reserv,check other reserves, and transfer document if it's necessary
-
-=cut
-
-sub ModReserveCancelAll {
-    my ( $reservenumber, $itemnumber ) = @_;
-    my $messages;
-    my $nextreservinfo;
-
-    #step 1 : cancel the reservation
-    my $CancelReserve = CancelReserve( $reservenumber );
-
-    #step 2 launch the subroutine of the others reserves
-    ( $messages, $nextreservinfo ) = GetOtherReserves($itemnumber);
-
-    return ( $messages, $nextreservinfo );
-}
-
-=item ModReserveMinusPriority
-
-&ModReserveMinusPriority($itemnumber,$borrowernumber,$biblionumber,$reservenumber)
-
-Reduce the values of queuded list     
-
-=cut
-
-sub ModReserveMinusPriority {
-    my ( $itemnumber, $borrowernumber, $biblionumber, $reservenumber ) = @_;
-    $debug and warn "ModReserveMinusPriority( $itemnumber, $borrowernumber, $biblionumber )";
-    #first step update the value of the first person on reserv
-    my $dbh   = C4::Context->dbh;
-    my $query = "
-        UPDATE reserves
-        SET    priority = 0 , itemnumber = ? 
-        WHERE  reservenumber=?
-    ";
-    my $sth_upd = $dbh->prepare($query);
-    $sth_upd->execute( $itemnumber, $reservenumber );
-    # second step update all others reservs
-    _FixPriority( $reservenumber, '0' );
-}
 
 sub GetReserve
 {
@@ -2146,19 +2041,10 @@ sub IsAvailableForItemLevelRequest {
     #         or something similar - need to be
     #         consolidated
     # ALSO - checks notforhold
-    my $notforloan_query;
-    if (C4::Context->preference('item-level_itypes')) {
-        $notforloan_query = "SELECT itemtypes.notforloan,itemtypes.notforhold
+    my $notforloan_query = "SELECT itemtypes.notforloan,itemtypes.notforhold
                              FROM items
                              JOIN itemtypes ON (itemtypes.itemtype = items.itype)
                              WHERE itemnumber = ?";
-    } else {
-        $notforloan_query = "SELECT itemtypes.notforloan,itemtypes.notforhold
-                             FROM items
-                             JOIN biblioitems USING (biblioitemnumber)
-                             JOIN itemtypes ON ( itemtypes.itemtype = biblioitems.itemtype )
-                             WHERE itemnumber = ?";
-    }
     $sth = $dbh->prepare($notforloan_query);
     $sth->execute($itemnumber);
     my $notforloan_per_itemtype = 0;
@@ -2280,56 +2166,6 @@ sub _NormalizePriorities {
     return;
 }
 
-=item _FixPriority
-
-&_FixPriority($reservenumber, $rank);
-
- This splices the given reserve into the reserves list for all competing
- reserves at the given $rank. Then it updates all the other reserves with
- the new priorities. If there are duplicate priorities it will normalize
- them into being unique and sequential.
-
-=cut 
-
-sub _FixPriority {
-    my ( $reservenumber, $rank ) = @_;
-    my $dbh = C4::Context->dbh;
-
-    if ( $rank ~~ 'del' ) {
-        CancelReserve( $reservenumber );
-        return;
-    }
-
-    my $reserve = GetReserve($reservenumber)
-        // croak "Unable to find reserve ($reservenumber)";
-
-    if ( $rank ~~ 'W' || $rank ~~ 'T' || $rank ~~ 0 ) {
-        # make sure priority for waiting or in-transit items is 0
-        $dbh->do(q{
-            UPDATE reserves
-            SET    priority = 0
-            WHERE reservenumber = ?
-        }, undef, $reservenumber);
-    }
-    else {
-        $dbh->do(q{
-            UPDATE reserves SET
-            priority = ?
-            WHERE reservenumber = ?
-        }, undef, $rank, $reservenumber);
-    }
-    _NormalizePriorities($reserve->{biblionumber});
-    return;
-}
-
-sub NextPriority
-{
-   my($biblionumber) = @_;
-   my $sth = C4::Context->dbh->prepare('SELECT MAX(priority) FROM reserves WHERE biblionumber=?');
-   $sth->execute($biblionumber);
-   my $p = ($sth->fetchrow_array())[0] // 0; $p++;
-   return $p;
-}
 
 =item _Findgroupreserve
 
@@ -2547,7 +2383,6 @@ sub SuspendReserve {
             }, undef, $resumedate, $reservenumber
         );
     RmFromHoldsQueue(reservenumber => $reservenumber);
-#    _FixPriority( $reservenumber, $reserve->{priority} );
     return;
 }
 
@@ -2566,7 +2401,10 @@ sub ResumeReserve {
             }, undef, $reservenumber
         );
 
-    _FixPriority( $reservenumber, $reserve->{priority} );
+    # When a reserve is suspended, it will continue to be promoted up the priority list
+    # until it hits 1.  It then stays at number 1 until resumed, at which point it should
+    # be first to fill.
+    _NormalizePriorities($reserve->{biblionumber});
     return;
 }
 

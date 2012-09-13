@@ -164,7 +164,6 @@ sub HoldsShelf
    LEFT JOIN items     ON (old_reserves.itemnumber     = items.itemnumber)
        WHERE old_reserves.found = 'W' $lim
          AND (old_reserves.expirationdate <= NOW() OR old_reserves.cancellationdate IS NOT NULL)
-         AND old_reserves.priority >= 0
    |;
    my $sth = $dbh->prepare($sql);
    $sth->execute(@lims);
@@ -253,6 +252,7 @@ sub ExpiredHolds
    my $f = _prepSqlHolds(%g);
    push @$f, ['old_reserves.cancellationdate IS NULL','_undef'];
    push @$f, ["(old_reserves.found != 'F' OR old_reserves.found IS NULL)",'_undef'];
+   # Any expired holds should actually have found IN ('W','E').  Leaving this as is, since this was not true before 2012/08.
    return _getSqlHolds($f);
 }
 

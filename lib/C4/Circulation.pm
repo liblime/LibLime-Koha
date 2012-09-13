@@ -1718,7 +1718,7 @@ sub AddReturn {
             ## UPDATE: hold is trapped outside of and after AddReturn()... 
             ## transfer does not have to for hold but for other reasons -hQ
             #my ($resfound,$resrec) = C4::Reserves::CheckReserves($item->{'itemnumber'});
-            #C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W', $resrec) if ($resfound);
+            #C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W', $resrec) if ($resfound); # This function is also now deprecated, so don't uncomment this.
         } else {
             $messages->{'WrongTransfer'}     = $tobranch;
             $messages->{'WrongTransferItem'} = $item->{'itemnumber'};

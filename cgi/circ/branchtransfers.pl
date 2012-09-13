@@ -89,7 +89,7 @@ if ( $request eq "KillWaiting" ) {
 }
 elsif ( $request eq "SetWaiting" ) {
     my $item = $query->param('itemnumber');
-    ModReserveAffect( $item, $borrowernumber );
+    ModReserveAffect( $item, $reservenumber );
     $ignoreRs    = 1;
     $setwaiting  = 1;
     $reqmessage  = 1;
