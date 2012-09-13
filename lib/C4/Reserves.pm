@@ -425,6 +425,10 @@ sub GetItemForBibPrefill
             $$_{borrowerbranch}   = $$res{borrowerbranch};
             $$_{borrowercategory} = $$res{borrowercategory} // $$res{categorycode};
             $$_{reservenumber}    = $$res{reservenumber};
+            $_->{controlbranch} = C4::Circulation::GetCircControlBranch(
+                borrower_branch => $res->{borrowerbranch},
+                item_homebranch => $_->{holdingbranch},
+                pickup_branch => $res->{pickbranch} );
             $item = _itemfillbib($_);
             last BRANCHITEM if $item;
          }
@@ -473,6 +477,11 @@ sub GetItemForQueue
    $$item{borrowercategory} = $$res{borrowercategory} // $$res{categorycode};
    $$item{borrowerbranch}   = $$res{borrowerbranch};
    $$item{reservenumber}    = $$res{reservenumber};
+   $item->{controlbranch} = C4::Circulation::GetCircControlBranch(
+       borrower_branch => $item->{borrowerbranch},
+       item_homebranch => $item->{holdingbranch},
+       pickup_branch => $res->{pickbranch} );
+
    return _itemfillbib($item);
 }
 
@@ -519,7 +528,7 @@ sub _itemfillbib
    my $ir = C4::Circulation::GetIssuingRule(
       $$item{borrowercategory},
       $$item{itemtype},
-      $$item{holdingbranch},
+      $$item{controlbranch},
    );
 
    return undef unless $ir && $ir->{holdallowed};
