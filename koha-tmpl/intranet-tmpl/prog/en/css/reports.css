@@ -1,0 +1,36 @@
+ql { width: 90%; height: 9em; border: 1px solid #EEE; }
+
+#tags {
+  margin-top: 1em;
+}
+
+a.tag_link {
+  text-decoration: none;
+}
+
+span.tag {
+  background: #cde;
+  color: #444;
+  padding: 1px 3px;
+  border: 1px solid #aaa;
+  -moz-border-radius: 2px;
+}
+
+#guided_report_tagger td.closer,
+#guided_report_tagger td.frequency {
+  width: 19px;
+  text-align: center;
+}
+
+#reports tbody tr:hover td {
+  background-color: #ffc;
+}
+
+#reports tbody tr.selected td {
+  background-color: #ffc;
+}
+
+#reports tbody tr.selected:hover td {
+  background-color: #ffa;
+}
+

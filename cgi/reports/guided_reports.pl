@@ -22,6 +22,7 @@ use strict;
 use CGI;
 use Text::CSV;
 use C4::Reports::Guided;
+use C4::Report;
 use C4::Auth;
 use C4::Output;
 use C4::Dates;
@@ -52,7 +53,15 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
-    my @errors = ();
+# common to all pages
+my @all_tags      = map { { name => $_ } } C4::Report->all_tags({ unused => 1 });
+my @tag_frequency = C4::Report->tag_frequency;
+$template->param(all_tags      => \@all_tags);
+$template->param(tag_frequency => \@tag_frequency);
+$template->param(redirect_to   => $ENV{REQUEST_URI});
+
+my @errors = ();
+
 my $phase = $input->param('phase');
 if ( !$phase ) {
     $template->param( 'start' => 1 );
@@ -66,8 +75,16 @@ elsif ( $phase eq 'Build new' ) {
 elsif ( $phase eq 'Use saved' ) {
     # use a saved report
     # get list of reports and display them
-    $template->param( 'saved1' => 1 );
-    $template->param( 'savedreports' => get_saved_reports() ); 
+    my @tags = $input->param('tag');
+    my @reports;
+    if (@tags) {
+        @reports = C4::Report->search_by_tags(@tags, { order_by => 'saved_sql.report_name, saved_sql.id' });
+    } else {
+        @reports = C4::Report->all({ order_by => 'saved_sql.report_name, saved_sql.id' });
+    }
+    $template->param( 'tags'         => [ map { { name => $_ } } @tags ] );
+    $template->param( 'saved1'       => 1 );
+    $template->param( 'savedreports' => \@reports );
 }
 
 elsif ( $phase eq 'Delete Saved') {

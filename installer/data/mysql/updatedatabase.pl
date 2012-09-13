@@ -4828,6 +4828,24 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.011';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do('CREATE TABLE IF NOT EXISTS xtags (
+             id int(11) NOT NULL auto_increment,
+             name varchar(255) NOT NULL,
+             PRIMARY KEY (id))');
+    $dbh->do('CREATE TABLE IF NOT EXISTS xtags_and_saved_sql (
+             id int(11) NOT NULL auto_increment,
+             xtag_id int(11) NOT NULL,
+             saved_sql_id int(11) NOT NULL,
+             UNIQUE (xtag_id, saved_sql_id),
+             PRIMARY KEY (id))');
+    $dbh->do('ALTER TABLE saved_sql ADD COLUMN metadata text(255)');
+
+    print "Upgrade to $DBversion done ( Add xtags and xtags_and_saved_sql tables. )\n";
+    SetVersion ($DBversion);
+}
+
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)
