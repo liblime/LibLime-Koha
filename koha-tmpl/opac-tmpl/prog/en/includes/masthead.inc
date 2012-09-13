@@ -70,7 +70,7 @@
     <!-- TMPL_IF NAME="searchdomainoptions" -->
     <div id="searchcategories_masthead">
       <select name="multibranchlimit" class="left">
-        <option value="">All categories</option>
+        <option value="">All libraries</option>
         <!-- TMPL_LOOP NAME="searchdomainoptions" -->
         <option value="<TMPL_VAR NAME="categorycode">" <TMPL_IF NAME="selected">selected="selected"</TMPL_IF>><TMPL_VAR NAME="categoryname"></option>
         <!-- /TMPL_LOOP -->
