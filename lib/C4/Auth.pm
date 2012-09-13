@@ -128,6 +128,16 @@ sub get_template_and_user {
         $in->{'type'}
     ) unless ($in->{'template_name'}=~/maintenance/);
 
+    my $opacconf
+        = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
+    if (my $group = $opacconf->{default_search_limit}{group}) {
+        my $branches = C4::Branch::GetBranchesInCategory($group);
+        my $search_string = join ' or ', map {"branch:$_"} @$branches;
+        $opacconf->{default_search_limit}{content} = $search_string;
+    }
+    my $searchdomainoptions = C4::View::Util::BuildSearchDomainList(
+        $in->{query}->param('multibranchlimit') // $opacconf->{default_search_limit}{group});
+
     my $borrowernumber;
     my $insecure = C4::Context->preference('insecure');
     if ($user or $insecure) {
@@ -332,6 +342,7 @@ sub get_template_and_user {
             RefundReturnedLostItem      => C4::Context->preference('RefundReturnedLostItem'),
             ClearNotForLoan             => C4::Context->preference('ClearNotForLoan'),
             GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),
+            searchdomainoptions       => $searchdomainoptions,
             BibliosCataloging => C4::Context->preference("BibliosCataloging"),
         );
     }
@@ -343,15 +354,6 @@ sub get_template_and_user {
         $LibraryNameTitle =~ s/<(?:[^<>'"]|'(?:[^']*)'|"(?:[^"]*)")*>//sg;
 
         # variables passed from CGI: opac_css_override and opac_search_limits.
-        my $opacconf
-            = C4::Koha::GetOpacConfigByHostname(\&C4::Koha::CgiOrPlackHostnameFinder);
-        if (my $group = $opacconf->{default_search_limit}{group}) {
-            my $branches = C4::Branch::GetBranchesInCategory($group);
-            my $search_string = join ' or ', map {"branch:$_"} @$branches;
-            $opacconf->{default_search_limit}{content} = $search_string;
-        }
-        my $searchdomainoptions = C4::View::Util::BuildSearchDomainList(
-            $in->{query}->param('multibranchlimit') // $opacconf->{default_search_limit}{group});
 
         my $opac_search_limit
             = ($opacconf->{default_search_limit}{group}) ? '' :
