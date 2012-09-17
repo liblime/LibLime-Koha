@@ -96,9 +96,12 @@ sub _build_query_from_cgi{
             # expanding it to properly group and split on bool
             # operators. Could then also add phrase slop to phrases.
 
-            # Convert queries like "ti:some title phrase" to
-            # "ti:(some title phrase)".
-            $q =~ s/^(\w+):(.*)/$1:\($2\)/;
+            # Convert simple queries like "ti:some title phrase" to
+            # "ti:(some title phrase)", but ignore ones like
+            # "ti:some au:(first last)" or "ti:some au:name"
+            unless ($q =~ /[()"]/ || $q =~ /:.*:/) {
+                $q =~ s/^(\w+):(.*)/$1:\($2\)/;
+            }
             $query .= $q;
         }
         else {
