@@ -221,14 +221,16 @@
     <field name="text" type="text_en" indexed="true" stored="false" multiValued="true"/>
 
     <field name="title-nostem" type="text_nostem" indexed="true" stored="true" multiValued="false"/>
-    <field name="title-short" type="text_nostem" indexed="true" stored="true" multiValued="false"/>
-    <field name="title-full" type="text_en" indexed="true" stored="true" multiValued="false"/>
+    <field name="title-exact" type="lowercase" indexed="true" stored="false" multiValued="false"/>
+    <field name="title-short" type="text_en" indexed="true" stored="false" multiValued="false"/>
+    <field name="title-full" type="text_en" indexed="true" stored="false" multiValued="false"/>
     <field name="title-alt" type="text_en" indexed="true" stored="false" multiValued="true"/>
     <field name="title-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
     <field name="series-title" type="text_en" indexed="true" stored="false" multiValued="false"/>
     <field name="uniform-title" type="text_en" indexed="true" stored="false" multiValued="false"/>
 
-    <field name="author-exact" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="author-display" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="author-exact" type="lowercase" indexed="true" stored="true" multiValued="true"/>
     <field name="author-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
     <field name="author-full" type="text_nostem" indexed="true" stored="false" multiValued="true"/>
 
@@ -343,12 +345,13 @@
   <copyField source="*_mlc" dest="text" maxChars="2048"/>
 
   <copyField source="title-nostem" dest="title_display"/>
+  <copyField source="title-nostem" dest="title-exact"/>
   <copyField source="title-nostem" dest="title_ph"/>
   <copyField source="title-nostem" dest="title_spell"/>
   <copyField source="title-nostem" dest="all_spell"/>
-  <copyField source="author-exact" dest="author_mdisplay"/>
-  <copyField source="author-exact" dest="author_spell"/>
-  <copyField source="author-exact" dest="all_spell"/>
+  <copyField source="author-display" dest="author-exact"/>
+  <copyField source="author-display" dest="author_spell"/>
+  <copyField source="author-display" dest="all_spell"/>
   <copyField source="author-full" dest="author_ph"/>
   <copyField source="subject" dest="subject_spell"/>
   <copyField source="subject" dest="all_spell"/>

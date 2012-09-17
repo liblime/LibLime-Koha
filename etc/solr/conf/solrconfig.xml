@@ -64,7 +64,7 @@
           <str name="q">*:*</str>
           <str name="facet">true</str>
           <str name="facet.field">on-shelf-at</str>
-          <str name="facet.field">author-exact</str>
+          <str name="facet.field">author-display</str>
           <str name="facet.field">format</str>
           <str name="facet.field">collection</str>
           <str name="facet.field">itemtype</str>
@@ -95,46 +95,32 @@
        <str name="df">text</str>
        <str name="q.op">AND</str>
        <str name="q.alt">*:*</str>
-       <str name="f.title.qf">title-short^200 title-nostem^100 title-full^10 title-alt^10 series-title uniform-title</str>
-       <str name="f.ti.qf">title-short^200 title-nostem^100 title-full^10 title-alt^10 series-title uniform-title</str>
-       <str name="f.author.qf">author-exact^100 author-full</str>
-       <str name="f.au.qf">author-exact^100 author-full</str>
-       <!-- <str name="f.subject.qf">subject</str> -->
+       <str name="f.title.qf">title-nostem^2 title-full title-alt^0.7 series-title^0.5 uniform-title^0.5</str>
+       <str name="f.ti.qf">title-nostem^2 title-full title-alt^0.7 series-title^0.5 uniform-title^0.5</str>
+       <str name="f.author.qf">author-display^3 author-full</str>
+       <str name="f.au.qf">author-display^3 author-full</str>
        <str name="f.su.qf">subject</str>
 
-       <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
+       <str name="mm">3&lt;-1 5&lt;-2 6&lt;90%</str>
 
        <str name="qf">
-         title-short^300
-         title-nostem^250
-         title-full^25
-         subject^50
-         author-exact^100
-         author-full^50
-         isbn^100
-         text
+         title-exact^4
+         title-short^3
+         title-nostem^2
+         title-full^0.7
+         subject
+         author-display^2
+         author-full^0.7
+         isbn^2
+         text^0.1
        </str>
-<!--
-       <str name="qf">
-         title_nostem^25000
-         title-full^250
-         subject_ms^500
-         author_nostem^1000
-         author-full_nostem^500
-         isbn_ms^100
-         text^100
-         title_ph^1
-         author_ph^1
-         text_ph
-       </str>
--->
        <str name="pf">
-         title-short^300
-         title-nostem^250
-         subject^50
-         author-nostem^100
-         author-full^50
-         text^10
+         title-short^3
+         title-nostem^2.5
+         subject^0.5
+         author-nostem
+         author-full^0.5
+         text^0.1
        </str>
        
        <int name="ps">3</int>
@@ -162,7 +148,7 @@
        <str name="facet.query">url:*</str>
        <str name="facet.limit">12</str>
        <str name="facet.field">on-shelf-at</str>
-       <str name="facet.field">author-exact</str>
+       <str name="facet.field">author-display</str>
        <str name="facet.field">format</str>
        <str name="facet.field">collection</str>
        <str name="facet.field">itemtype</str>

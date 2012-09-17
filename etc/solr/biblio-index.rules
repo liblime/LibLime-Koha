@@ -4,7 +4,7 @@ biblionumber | 999c
 
 text | record | fullmarc
 
-author-exact | 100a
+author-display | 100a |
 author-full | 100abcd 110ab 111ab 700abcd 710ab 711ab | concat
 author-sort | 100a 110a 111a | | first
 
@@ -17,7 +17,7 @@ series-title | 490a 830a | | first
 uniform-title | 240 | cat_alpha_subfields | first
 
 subject-exact | 600at 610at 650a 651a 652a 653a 654a 655a 656a 657a 690a | concat
-subject | 600 610 611 630 650 | cat_alpha_subfields
+subject | 600 610 611 630 650 651 | cat_alpha_subfields
 topic | 650a
 geo | 651a
 era | 648a
