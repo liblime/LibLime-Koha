@@ -352,33 +352,7 @@
   <copyField source="author-full" dest="author_ph"/>
   <copyField source="subject" dest="subject_spell"/>
   <copyField source="subject" dest="all_spell"/>
-  <!-- <copyField source="subject" dest="subject_mdisplay"/>
-  <copyField source="publisher_ms" dest="publisher_mdisplay"/> -->
-  <!-- <copyField source="text" dest="text_ngram"/> -->
   <copyField source="text" dest="text_ph"/>
-  <!-- <copyField source="ln_ms" dest="ln_facet"/> -->
-<!--  <copyField source="format_s" dest="format_facet"/>
-  <copyField source="subject-topic_ms" dest="subject-topic_facet"/>
-  <copyField source="subject-era_ms" dest="subject-era_facet"/>
-  <copyField source="subject-geo_ms" dest="subject-geo_facet"/>
-  <copyField source="subject-genre_ms" dest="subject-genre_facet"/>
-  <copyField source="on-shelf-at_ms" dest="availability_facet"/> -->
-  <!-- does this really make sense to copy ?  why not just use orig field as facet? -->
-
-  <copyField source="author-exact" dest="author-exact_mlc"/>
-  <copyField source="subject-exact" dest="subject-exact_mlc"/>
-  <copyField source="topic" dest="topic_mlc"/>
-  <copyField source="geo" dest="geo_mlc"/>
-  <copyField source="era" dest="era_mlc"/>
-  <copyField source="genre" dest="genre_mlc"/>
-  <copyField source="format" dest="format_mlc"/>
-  <copyField source="audience" dest="audience_lc"/>
-  <copyField source="content" dest="content_lc"/>
-  <copyField source="language" dest="language_mlc"/>
-  <copyField source="itemtype" dest="itemtype_mlc"/>
-  <copyField source="collection" dest="collection_mlc"/>
-  <copyField source="callnumber" dest="callnumber_mlc"/>
-  <copyField source="callnumber-a" dest="callnumber-a_mlc"/>
 
   <copyField source="personal-name_auths" dest="personal-name_autht"/>
   <copyField source="corporate-name_auths" dest="corporate-name_autht"/>
@@ -393,6 +367,4 @@
   <copyField source="*_auths" dest="headings_t" maxChars="2048"/>
   <copyField source="*_auths" dest="text" maxChars="2048"/>
 
-  <!-- copy name to alphaNameSort, a field designed for sorting by name -->
-  <!-- <copyField source="name" dest="alphaNameSort"/> -->
 </schema>
