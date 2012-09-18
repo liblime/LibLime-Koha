@@ -104,7 +104,6 @@
        <str name="mm">3&lt;-1 5&lt;-2 6&lt;90%</str>
 
        <str name="qf">
-         title-exact^4
          title-short^3
          title-nostem^2
          title-full^0.7
