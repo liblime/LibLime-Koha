@@ -152,11 +152,12 @@ em strong {
 }
 
 ul {
-	padding-left : 1.1em;
+   list-style : none;
+   padding-left : 1.1em;
 }
 
 ul li {
-	list-style-type : disc;
+    list-style : none;
 }
 
 ul li li {
@@ -1927,5 +1928,28 @@ a.removeLimit{
 }
 li.searchTerm{
     font-weight: bold;
+}
+.hidden{
+    display: none;
+}
+li.morefacets{
+    text-align: right;
+}
+ul#morefacets_list{
+    margin-bottom: 1em;
+}
+div.facet_pager{
+    height: 1.5em;
+    font-size: smaller;
+}
+div.facet_pager div.prevnext{
+    float: left;
+}
+div.facet_pager div.facet_sort{
+    float: right;
+}
+a.disabled{
+    cursor: default;
+    color: #aaa;
 }
 

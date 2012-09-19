@@ -198,18 +198,18 @@ $(document).ready(function(){
     <!-- TMPL_IF NAME="GoogleJackets" -->KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF -->
     
     // Query parameters
-    var q_param = "<!-- TMPL_VAR user_query ESCAPE="URL"-->";
-    var sort_param = "<!-- TMPL_VAR user_sort -->"; // for now just one.
-    var fq = []; // TODO: replace solr fields in limits with user-friendly display labels.
-    var limit_param = '';
-    <!-- TMPL_LOOP user_limit --> limit_param += '&limit=<!-- TMPL_VAR limit ESCAPE="HTML" -->';<!-- /TMPL_LOOP -->
+    KOHA.qParam = "<!-- TMPL_VAR user_query ESCAPE="URL"-->";
+    KOHA.sortParam = "<!-- TMPL_VAR user_sort -->"; // for now just one.
+    KOHA.fq = "<!-- TMPL_VAR solr_fq ESCAPE="URL" -->";
+    KOHA.limitParam = '';
+    <!-- TMPL_LOOP user_limit --> KOHA.limitParam += '&limit=<!-- TMPL_VAR limit ESCAPE="HTML" -->';<!-- /TMPL_LOOP -->
     $("#search_desc li.limit").append("<a class='removeLimit' href=\"#\" title='Remove this limit'><img src='<!-- TMPL_VAR NAME="themelang" -->../../images/shelf-delete.gif' /></a>");
     $("a.removeLimit").click(function(){
         // rebuild query limits from this list.
         var $this_li = $(this).parent('li');
-        var new_query_uri = "/cgi-bin/koha/opac-search.pl?q=" + q_param;
-        if(sort_param){
-            new_query_uri += "&sort=" + sort_param;
+        var new_query_uri = "/cgi-bin/koha/opac-search.pl?q=" + KOHA.qParam;
+        if(KOHA.sortParam){
+            new_query_uri += "&sort=" + KOHA.sortParam;
         }
         $(this).parents('ul').children('li').each(function(){
             if(!$(this).is($this_li)){
@@ -220,11 +220,80 @@ $(document).ready(function(){
         return false;
     });
     $('#sort_by').change(function() {
-        window.location = "/cgi-bin/koha/opac-search.pl?q=" + q_param + limit_param + "&sort=" + $(this).val();
+        window.location = "/cgi-bin/koha/opac-search.pl?q=" + KOHA.qParam + KOHA.limitParam + "&sort=" + $(this).val();
     });
-    if(sort_param){
-        $("#sort_by").val(sort_param);
+    if(KOHA.sortParam){
+        $("#sort_by").val(KOHA.sortParam);
     };
+
+    /* more facets */
+    KOHA.facetQuery = KOHA.qParam + KOHA.limitParam;
+    if(KOHA.sortParam){
+        KOHA.facetQuery += "&sort=" + KOHA.sortParam;
+    }
+    KOHA.morefacetsOffset = 0;
+    KOHA.morefacetsCount = 20;
+    KOHA.facetTemplate = $('<li><a href="/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR query_uri -->" class="facet_link"></a></li>');
+    KOHA.facetField = '';
+
+    $("#morefacets_dlog").dialog({
+        autoOpen: false,
+        title: "Narrow your search results",
+        width: '500px',
+    });
+
+    KOHA.updateFacets = function(json){
+        $("ul#morefacets_list").html('');
+        $.each(json, function(index, value){
+            var $line = KOHA.facetTemplate.clone();
+            var $link = $line.children('a');
+            $link.html(value.display_value);
+            $link.attr('href', $link.attr('href') + "&limit=" + KOHA.facetField + ":" + value.value).after(" ("+value.count+")");
+            $line.appendTo("ul#morefacets_list");
+        });
+        KOHA.toggleLink($("div.prevnext a.nextlink"), ($("#morefacets_list li").length == KOHA.morefacetsCount) );
+        KOHA.toggleLink($("div.prevnext a.prevlink"), ( KOHA.morefacetsOffset != 0) );
+    }
+    KOHA.toggleLink = function($link, bool){
+        if(bool){
+            $link.off('click.linktoggle', function(){ return false; }).removeClass('disabled');
+        } else {
+            $link.on('click.linktoggle', function(){ return false; }).addClass('disabled');
+        }
+    }
+    $("li.morefacets a, div.facetPager a.nextlink, div.facetPager a.prevlink").click(function(){
+        if($(this).hasClass('disabled')) { return false; } // see KOHA.toggleLink.  This handler is bound first, so toggleLink doesn't work.
+        var facetDisplayName = $(this).closest('li.facet').children('span.facetDisplayName').text();
+        if($(this).data('facet')){
+            // i.e. target is li.morefacets
+            KOHA.facetField = $(this).data('facet');
+            KOHA.morefacetsOffset = 0;
+            $("#morefacetsDisplayName").html($(this).closest('li.facet').children('span.facetDisplayName').text());
+        }
+        if($(this).hasClass('nextlink')){
+            KOHA.morefacetsOffset += KOHA.morefacetsCount;
+        } else if($(this).hasClass('prevlink') && KOHA.morefacetsOffset > 0){
+            KOHA.morefacetsOffset -= KOHA.morefacetsCount;
+        }
+                 $.ajax({
+                        url: "/cgi-bin/koha/opac-facets.pl",
+                        type: 'POST',
+                        data: { "facet": KOHA.facetField,
+                                "solr_query": KOHA.qParam,
+                                "solr_fq":    KOHA.fq,
+                                "offset":     KOHA.morefacetsOffset
+                                 } ,
+                        dataType: 'json',
+                        success: function(facets){
+                            KOHA.updateFacets(facets);
+                        },
+                        error: function(xhr, ajaxOptions, thrownError){
+                            alert('There was an error in the search.  Please reload the page and try again.');
+                        }
+                 });
+        $("#morefacets_dlog").dialog('open');
+        return false;
+    });
 });
 //]]>
 </script>
@@ -534,7 +603,18 @@ $(document).ready(function(){
 </div></div>
         <!-- /TMPL_IF -->
 </div>
-
+<div id="morefacets_dlog" class="hidden">
+  <div class="facetPager">
+    <div class="prevnext"><a class="prevlink" href="#">&laquo; Previous</a> | <a class="nextlink" href="#">Next &raquo;</a></div>
+    <div class="facet_sort hidden">Sort: <a class="azsort" href="#">A-Z</a> | <a class="fsort" href="#">Frequency</a></div>
+  </div>
+  <h4 id="morefacetsDisplayName"></h4>
+  <ul id="morefacets_list"></ul>
+  <div class="facetPager">
+    <div class="prevnext"><a class="prevlink" href="#">&laquo; Previous</a> | <a class="nextlink" href="#">Next &raquo;</a></div>
+    <div class="facet_sort hidden">Sort: <a class="azsort" href="#">A-Z</a> | <a class="fsort" href="#">Frequency</a></div>
+  </div>
+</div>
 <!-- TMPL_IF NAME="LibraryThingForLibrariesID" --> 
 <!-- TMPL_IF NAME="using_https" --><script src="https://ltfl.librarything.com/forlibraries/widget.js?id=<!-- TMPL_ELSE --><<script src="http://ltfl.librarything.com/forlibraries/widget.js?id=<!-- /TMPL_IF --><!--TMPL_VAR NAME="LibraryThingForLibrariesID" -->&systype=koha" type="text/javascript"></script> 
 <!-- /TMPL_IF --> 

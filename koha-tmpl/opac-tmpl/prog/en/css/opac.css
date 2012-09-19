@@ -325,12 +325,12 @@ tr.transfered td {
 }
 
 ul {
-	list-style : disc;
+	list-style : none;
 	padding-left : 1em;
 }
 
 li {
-	list-style : disc;
+	list-style : none;
 }
 
 p.availability {
@@ -1919,5 +1919,25 @@ li.searchTerm{
 }
 .hidden{
     display: none;
+}
+li.morefacets{
+    text-align: right;
+}
+ul#morefacets_list{
+    margin-bottom: 1em;
+}
+div.facet_pager{
+    height: 1.5em;
+    font-size: smaller;
+}
+div.facet_pager div.prevnext{
+    float: left;
+}
+div.facet_pager div.facet_sort{
+    float: right;
+}
+a.disabled{
+    cursor: default;
+    color: #aaa;
 }
 
