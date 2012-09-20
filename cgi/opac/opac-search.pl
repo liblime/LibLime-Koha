@@ -24,6 +24,7 @@ use MARC::Record;
 use URI::Escape;
 use Koha::Pager;
 use DDP;
+use Encode;
 
 my $DisplayMultiPlaceHold = C4::Context->preference("DisplayMultiPlaceHold");
 # create a new CGI object
@@ -55,7 +56,6 @@ sub MRXcached {
     # Cat the record's top and bottom to maximize probability of uniqueness.
     my $matchme = substr($xml, 0, 255) . substr($xml, -255);
     my $key = Digest::SHA1::sha1( Encode::encode_utf8($matchme) );
-
     my $record = $cache->compute( $key, '1m', sub { $MRXorig->($xml, @args)} );
 
     return ($record) ? $record->clone : undef;
