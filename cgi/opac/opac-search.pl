@@ -296,11 +296,12 @@ if(!$rs->is_error){
     my $maxscore = $results->{'response'}->{'maxScore'};
     # TODO: If maxScore < 1 (or 0.2, say), offer 'did you mean'.
     # TODO: If $hits < ~8, offer 'expand search results'.
+
     $template->param( 'user_query' => $solr_query->query,
                       'user_limit' => $solr_query->limits,  # Note this is an arrayref, not a string.
                       'user_sort'  => $solr_query->options->{'sort'},
                       'query_uri'  => $solr_query->uri,
-                      'solr_fq'    => join('&', @{$solr_query->options->{'fq'}}),
+                      'solr_fq'    => join(' ', @{$solr_query->options->{'fq'}}),
             );
 
     my @newresults = (); # @{$results->{response}->{docs}};

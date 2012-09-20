@@ -208,15 +208,12 @@ if(!$rs->is_error){
 
     my $hits = $results->{'response'}->{'numFound'};
     my $maxscore = $results->{'response'}->{'maxScore'};
-    # If maxScore < 1 (or 0.2), say, offer 'did you mean'.
-    # If $hits < 8, offer 'expand search results'.
-    # Would be nice to go ahead and do search again and just get numfound back so
-    # we can tell user how many results they will get if they click that button.
     
     $template->param( 'user_query' => $solr_query->query,
                       'user_limit' => $solr_query->limits,  # Note this is an arrayref, not a string.
                       'user_sort' => $solr_query->options->{'sort'},
                       'query_uri'  => $solr_query->uri,
+                      'solr_fq'    => join(' ', @{$solr_query->options->{'fq'}}),
             );
 
     my @newresults = ();
