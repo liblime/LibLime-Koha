@@ -37,7 +37,7 @@ if (is_ajax()) {
 
     my $solr = new Koha::Solr::Service;
     my $facet_field = $cgi->param('facet');
-    my $fq = $cgi->param('fq');
+    my $fq = $cgi->param('solr_fq');
     my $offset = $cgi->param('offset');
     # TODO: Allow facet ordering.  Will have to pull all ccode/itype/branch facets and resort here on display value,
     # which is why it's skipped it for now.
@@ -66,6 +66,9 @@ if (is_ajax()) {
     } else {
         use DDP;
         warn p $rs;
+        print $cgi->header('application/json');
+        printf "%s\n", to_json( { error => 1 }, {pretty => 0});
+
     }
 } else {
     print $cgi->redirect('/cgi-bin/koha/errors/404.pl');

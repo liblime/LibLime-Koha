@@ -198,11 +198,11 @@ $(document).ready(function(){
     <!-- TMPL_IF NAME="GoogleJackets" -->KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF -->
     
     // Query parameters
-    KOHA.qParam = "<!-- TMPL_VAR user_query ESCAPE="URL"-->";
+    KOHA.qParam = "<!-- TMPL_VAR user_query ESCAPE="js"-->";
     KOHA.sortParam = "<!-- TMPL_VAR user_sort -->"; // for now just one.
-    KOHA.fq = "<!-- TMPL_VAR solr_fq ESCAPE="URL" -->";
+    KOHA.fq = "<!-- TMPL_VAR solr_fq ESCAPE="js" -->";
     KOHA.limitParam = '';
-    <!-- TMPL_LOOP user_limit --> KOHA.limitParam += '&limit=<!-- TMPL_VAR limit ESCAPE="HTML" -->';<!-- /TMPL_LOOP -->
+    <!-- TMPL_LOOP user_limit --> KOHA.limitParam += '&limit=<!-- TMPL_VAR limit ESCAPE="js" -->';<!-- /TMPL_LOOP -->
     $("#search_desc li.limit").append("<a class='removeLimit' href=\"#\" title='Remove this limit'><img src='<!-- TMPL_VAR NAME="themelang" -->../../images/shelf-delete.gif' /></a>");
     $("a.removeLimit").click(function(){
         // rebuild query limits from this list.
@@ -227,10 +227,6 @@ $(document).ready(function(){
     };
 
     /* more facets */
-    KOHA.facetQuery = KOHA.qParam + KOHA.limitParam;
-    if(KOHA.sortParam){
-        KOHA.facetQuery += "&sort=" + KOHA.sortParam;
-    }
     KOHA.morefacetsOffset = 0;
     KOHA.morefacetsCount = 20;
     KOHA.facetTemplate = $('<li><a href="/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR query_uri -->" class="facet_link"></a></li>');
@@ -248,7 +244,7 @@ $(document).ready(function(){
             var $line = KOHA.facetTemplate.clone();
             var $link = $line.children('a');
             $link.html(value.display_value);
-            $link.attr('href', $link.attr('href') + "&limit=" + KOHA.facetField + ":" + value.value).after(" ("+value.count+")");
+            $link.attr('href', $link.attr('href') + "&limit=" + KOHA.facetField + ":" + encodeURI(value.value)).after(" ("+value.count+")");
             $line.appendTo("ul#morefacets_list");
         });
         KOHA.toggleLink($("div.prevnext a.nextlink"), ($("#morefacets_list li").length == KOHA.morefacetsCount) );

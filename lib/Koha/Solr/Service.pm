@@ -85,8 +85,9 @@ my $koha_facets = sub {
             }
             push @results, { display_value => $display_value, value => "\"$facet->[$i]\"", count => $facet->[$i+1] } if($facet->[$i]);
         }
+
         if($field ~~ 'on-shelf-at'){
-            my @sorted_branchfacet = sort { $_->{display_value} cmp $_->{display_value} } @results;
+            my @sorted_branchfacet = sort { lc($a->{display_value}) cmp lc($b->{display_value}) } @results;
             # artificially add wildcard on availability (it's a facet query defined in solrconfig.xml)
             # There may be a better way to do this.
             unshift @sorted_branchfacet, { field => "url", value => "*", count => $self->facet_counts->{facet_queries}->{"url:*"}, display_value => "Online" };
