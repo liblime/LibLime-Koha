@@ -126,7 +126,7 @@ func emit_content( MARC::Record $record ) {
 
 func emit_audience( MARC::Record $record ) {
     my $f008 = $record->field('008');
-    return undef unless $f008 && length($f008->data)>22;
+    return undef unless $f008 && length($f008->data)>22; ## no critic
     my $aud = substr $f008->data, 22, 1;
     return $aud eq ' ' ? '#' : $aud;
 }

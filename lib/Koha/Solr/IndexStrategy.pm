@@ -40,7 +40,7 @@ method _build_filter_handlers(Str @filters) {
     }
 
     my $requires = join '', (map {"require $_;"} keys %packages);
-    eval "$requires";
+    eval "$requires"; ## no critic
 
     return \@handlers;
 }
@@ -48,7 +48,7 @@ method _build_filter_handlers(Str @filters) {
 method _build_parser {
     my @raw_rules =
         grep { $_->[0] && $_->[1] }
-        map  { [ map { s/^\s+|\s+$//g; $_ } split /\|/] }
+        map  { [ map { s/^\s+|\s+$//g; $_ } split /\|/] } ## no critic
         grep { $_ !~ /^#/ }
         split /\n/, $self->rules_text;
 

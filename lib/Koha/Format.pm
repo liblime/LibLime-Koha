@@ -65,7 +65,8 @@ sub all_descriptions {
 sub all_categories {
     my $self = shift;
     my %cats = map {$_->{category} => 1} @{$self->labels};
-    return sort keys %cats;
+    my @cat_labels = sort keys %cats;
+    return @cat_labels;
 }
 
 sub all_descriptions_by_category {

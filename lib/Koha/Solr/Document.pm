@@ -1,5 +1,6 @@
 package Koha::Solr::Document;
 
+use Koha;
 use MooseX::Role::WithOverloading;
 use Method::Signatures;
 use WebService::Solr::Document;
