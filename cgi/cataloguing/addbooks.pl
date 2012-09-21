@@ -92,6 +92,7 @@ if ($query) {
 
    # try to find exact match and warp speed to Edit Items
    foreach my $result(@$results) {
+       next unless $result->{barcode};
       my(@barcodes) = split(/\s*\|\s*/,$$result{barcode});
       foreach my $i(0..$#barcodes) {
          if ($barcodes[$i] eq $expandedBarcode) { # exact search match on barcode

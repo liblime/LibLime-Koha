@@ -29,10 +29,11 @@ around BUILDARGS => sub {
 before 'search' => method($query, $options) {
     my @prefs = qw(bq qf mm);
     for my $pref ( @prefs ) {
-        next if exists $options->{$pref};
         my $syspref = 'OPACSolr'.uc($pref);
         if (my $val = C4::Context->preference($syspref)) {
-            $options->{$pref} = $val;
+            $options->{$pref} //= [];
+            push $options->{$pref}, $_
+                for split /\|/, $val;
         }
     }
     # get all branch facets so we can sort by branch display name.

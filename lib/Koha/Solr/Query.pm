@@ -26,7 +26,7 @@ use C4::Branch;
 
 has rtype => ( is => 'ro', isa => 'Str', default => 'bib' );
 has opac => ( is => 'ro', isa => 'Bool' );
-has options => ( is => 'rw', isa => 'HashRef' );
+has options => ( is => 'rw', isa => 'HashRef', default => sub { return {} } );
 has query => ( is => 'rw', isa => 'Str' );
 has cgi => ( is => 'rw', isa => 'CGI' );
 has uri => ( is => 'rw', isa => 'Str' );
@@ -58,8 +58,9 @@ sub BUILD {
     } elsif($self->uri()){
         $self->_build_query_from_url();  # This may not be necessary; parameterized uri can be parsed by CGI.
     } elsif($self->query()){
-        #$self->_add_search_limits();  # TODO: implement this.
-        # for now, we just allow user to pass in well-formed query.
+        #hack to cause "around" method mod to run
+        $self->query( $self->query );
+
         my $options = $self->options;
         $options->{qt} = ($self->rtype eq 'bib') ? 'biblio' : 'authority';
         $self->options($options);
@@ -67,6 +68,28 @@ sub BUILD {
         die "__PACKAGE__ Must be instantiated with a cgi object or search query";
     }
 }
+
+around 'query' => sub {
+    my ($orig, $self, $q) = @_;
+
+    return $self->$orig() unless $q;
+
+    # Convert simple queries like "ti:some title phrase" to
+    # "ti:(some title phrase)", but ignore ones like
+    # "ti:some au:(first last)" or "ti:some au:name"
+    unless ($q =~ /[()"]/ || $q =~ /:.*:/) {
+        $q =~ s/^(\w+):(.*)/$1:\($2\)/;
+    }
+
+    # give extra boost to phrasal matches for title searches
+    if ( $q =~ /^ti(?:tle)? : \( ([^\)]+) \)$/x ) {
+        my $options = $self->options;
+        $options->{bq} //= [];
+        push $options->{bq}, qq{title-nostem:"$1"~10^5};
+    }
+
+    return $self->$orig($q);
+};
 
 #method _build_query_from_cgi {
 sub _build_query_from_cgi{
@@ -76,6 +99,7 @@ sub _build_query_from_cgi{
     my $cgi = $self->cgi();
 
     my $query = '';
+    my $options = $self->options;
     my $z3950_param = {};
     my $params = each_array(
         @{[$cgi->param('q')]},
@@ -92,16 +116,6 @@ sub _build_query_from_cgi{
         if ( !$idx ) {
             # user may have specified field. In this case, we assume
             # they used proper syntax. (should only happen when idx=='').
-            # TODO: Move this into the _parse_query_string method,
-            # expanding it to properly group and split on bool
-            # operators. Could then also add phrase slop to phrases.
-
-            # Convert simple queries like "ti:some title phrase" to
-            # "ti:(some title phrase)", but ignore ones like
-            # "ti:some au:(first last)" or "ti:some au:name"
-            unless ($q =~ /[()"]/ || $q =~ /:.*:/) {
-                $q =~ s/^(\w+):(.*)/$1:\($2\)/;
-            }
             $query .= $q;
         }
         else {
@@ -236,7 +250,6 @@ sub _build_query_from_cgi{
     my $results_per_page = C4::Context->preference('OPACnumSearchResults');
     my $offset = $cgi->param('offset') || 0;
     my $page = $cgi->param('page') || 1;
-    my $options = {};
     $options->{fq} = \@fq if(@fq);
     $options->{'sort'} = $sort if $sort;
     $options->{start} = $offset;
