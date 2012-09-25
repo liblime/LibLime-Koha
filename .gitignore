@@ -1,4 +1,3 @@
-plugins/
 svc/proxy_auth_cookie
 svc/z3950
 svc/bibs
