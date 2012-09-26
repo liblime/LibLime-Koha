@@ -182,7 +182,7 @@ if ( $search_form ) {
         use Koha::Format;
         my %cat_desc = Koha::Format->new->all_descriptions_by_category;
         my @formatsloop;
-        for ( qw(print video audio computing) ) {
+        for ( qw(print video audio computing other) ) {
             push @formatsloop,
                 { labels =>
                       [ map {{description=>$_}} @{$cat_desc{$_}} ]

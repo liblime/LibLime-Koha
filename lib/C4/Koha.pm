@@ -1272,7 +1272,7 @@ sub GetOpacSearchFilters {
             @filters = map {
                     {separator => 1},
                     map { {label => $_, value => "format:&quot;$_&quot;"} } @$_
-                } map { [values $cats{$_}] } qw(print video audio computing);
+                } map { [values $cats{$_}] } qw(print video audio computing other);
         }
         else {
             return undef;
