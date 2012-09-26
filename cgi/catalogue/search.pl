@@ -78,8 +78,8 @@ if ( $search_form ) {
     my @ccodesloop;
     
     my $cnt = 0;
-    my $advanced_search_types = C4::Context->preference("OPACAdvancedSearchTypes");
-    my @advanced_search_limits = (C4::Context->preference("OPACAdvancedSearchLimits")) ? split(/\|/,C4::Context->preference("OPACAdvancedSearchLimits")) : ();
+    my $advanced_search_types = C4::Context->preference('AdvancedSearchTypes');
+    my @advanced_search_limits = (C4::Context->preference('AdvancedSearchLimits')) ? split(/\|/,C4::Context->preference('AdvancedSearchLimits')) : ();
     
     if ( grep(/ItemTypes/i,@advanced_search_limits) ) {
     	foreach my $thisitemtype ( sort {$itemtypes->{$a}->{'description'} cmp $itemtypes->{$b}->{'description'} } keys %$itemtypes ) {
