@@ -270,11 +270,11 @@ sub CountUsage {
     my $solr = Koha::Solr::Service->new();
     $authid =~ s/auth_//;
     my $query_str = "koha-auth-number:$authid";
-    my $options = { rows => 0 };
-    my $solr_query = Koha::Solr::Query->new( {query => $query_str, rtype => 'auth' } );
-    my $rs = $solr->search($solr_query->query,$solr_query->options);
+    my $solr_query = Koha::Solr::Query->new(
+        query => $query_str, rtype => 'bib', fl => q{}, rows => 0 );
+    my $rs = $solr->search($solr_query->query, $solr_query->options);
     my $resultset = ($rs->is_error) ? {} : $rs->content;
-    my $total = $resultset->{'response'}->{'numFound'};
+    my $total = $resultset->{response}{numFound};
 
     return $total;
 }
