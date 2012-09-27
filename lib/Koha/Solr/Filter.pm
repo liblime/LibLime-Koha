@@ -14,6 +14,7 @@ use C4::Tags;
 use Koha::Format;
 use File::Slurp;
 use JSON;
+use Try::Tiny;
 use Business::ISBN;
 use Method::Signatures;
 
@@ -247,13 +248,12 @@ func emit_isbn( Str @isbns ) {
         my $isbn = Business::ISBN->new($_);
         next unless $isbn;
 
-        my $isbn10 = $isbn->as_isbn10;
-        push @nisbns, $isbn10->isbn
-            if $isbn10;
-
-        my $isbn13 = $isbn->as_isbn13;
-        push @nisbns, $isbn13->isbn
-            if $isbn13;
+        try {
+            push @nisbns, $isbn->as_isbn10->isbn;
+        };
+        try {
+            push @nisbns, $isbn->as_isbn13->isbn;
+        };
     }
 
     return @nisbns;
