@@ -33,7 +33,6 @@
         <tokenizer class="solr.StandardTokenizerFactory"/>
         <filter class="solr.LowerCaseFilterFactory"/>
         <filter class="solr.ICUFoldingFilterFactory"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
         <filter class="solr.SnowballPorterFilterFactory" language="English" />
       </analyzer>
     </fieldType>
@@ -48,12 +47,10 @@
     <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
         <filter class="solr.LowerCaseFilterFactory"/>
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
         <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
         <filter class="solr.LowerCaseFilterFactory"/>
       </analyzer>
@@ -153,7 +150,6 @@
     <fieldType name="text_general_rev" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
         <filter class="solr.LowerCaseFilterFactory"/>
         <filter class="solr.ReversedWildcardFilterFactory" withOriginal="true"
            maxPosAsterisk="3" maxPosQuestion="2" maxFractionAsterisk="0.33"/>
@@ -161,7 +157,6 @@
       <analyzer type="query">
         <tokenizer class="solr.StandardTokenizerFactory"/>
         <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
         <filter class="solr.LowerCaseFilterFactory"/>
       </analyzer>
     </fieldType>
@@ -169,7 +164,6 @@
     <fieldType name="textSpell" class="solr.TextField" positionIncrementGap="100" >
       <analyzer>
         <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
         <filter class="solr.StandardFilterFactory"/>
         <filter class="solr.LowerCaseFilterFactory"/>
         <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
@@ -357,6 +351,9 @@
   <copyField source="subject" dest="all_spell"/>
   <copyField source="text" dest="text_ph"/>
 
+  <copyField source="auth-heading" dest="auth-heading_lc"/>
+  <copyField source="auth-full" dest="auth-full_mlc"/>
+
   <copyField source="personal-name_auths" dest="personal-name_autht"/>
   <copyField source="corporate-name_auths" dest="corporate-name_autht"/>
   <copyField source="meeting-name_auths" dest="meeting-name_autht"/>
@@ -365,6 +362,15 @@
   <copyField source="topical-term_auths" dest="topical-term_autht"/>
   <copyField source="geographic-name_auths" dest="geographic-name_autht"/>
   <copyField source="genre-form_auths" dest="genre-form_autht"/>
+
+  <copyField source="personal-name_auths" dest="personal-name_lc"/>
+  <copyField source="corporate-name_auths" dest="corporate-name_lc"/>
+  <copyField source="meeting-name_auths" dest="meeting-name_lc"/>
+  <copyField source="uniform-title_auths" dest="uniform-title_lc"/>
+  <copyField source="chronological-term_auths" dest="chronological-term_lc"/>
+  <copyField source="topical-term_auths" dest="topical-term_lc"/>
+  <copyField source="geographic-name_auths" dest="geographic-name_lc"/>
+  <copyField source="genre-form_auths" dest="genre-form_lc"/>
 
   <copyField source="*_auths" dest="headings_s" maxChars="2048"/>
   <copyField source="*_auths" dest="headings_t" maxChars="2048"/>

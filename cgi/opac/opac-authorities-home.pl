@@ -34,13 +34,10 @@ use Koha::Solr::Service;
 use Koha::Solr::Query;
 use Koha::Pager;
 
-my $query        = new CGI;
+my $query        = CGI->new;
 my $op           = $query->param('op') || '';
-my $authtypecode = $query->param('authtypecode') || '';
-my $dbh          = C4::Context->dbh;
+my $authtypecode = $query->param('authtypecode') || '*';
 
-my $start = $query->param('start') // 0;
-my $authid    = $query->param('authid');
 my $template_file = ($op eq 'do_search') ? "opac-authoritiessearchresultlist.tmpl" : "opac-authorities-home.tmpl";
 my ( $template, $loggedinuser, $cookie )= get_template_and_user(
         {
@@ -48,74 +45,70 @@ my ( $template, $loggedinuser, $cookie )= get_template_and_user(
             query           => $query,
             type            => 'opac',
             authnotrequired => 1,
-            debug           => 1,
+            debug           => 0,
         }
     );
-my $resultsperpage;
 
-my $authtypes = getauthtypes;
+our $authtypes = getauthtypes;
 my @authtypesloop;
-$authtypecode = 'TOPIC_TERM' unless $authtypecode; # default search type.
 
-foreach my $thisauthtype ( sort { $authtypes->{$a}{'authtypetext'} cmp $authtypes->{$b}{'authtypetext'} } keys %$authtypes ){
-    next unless $thisauthtype; # There should be no default authority types.
-    my $selected = 1 if $thisauthtype eq $authtypecode;
+sub _by_default_then_alpha {
+    return -1 if $a eq '';
+    $authtypes->{$a}{authtypetext} cmp $authtypes->{$b}{authtypetext};
+}
+
+for ( sort _by_default_then_alpha keys %$authtypes ){
     my %row = (
-        value        => $thisauthtype,
-        selected     => $selected,
-        authtypetext => $authtypes->{$thisauthtype}{'authtypetext'},
+        value        => $_,
+        selected     => ($_ ~~ $authtypecode),
+        authtypetext => $authtypes->{$_}{authtypetext},
     );
     push @authtypesloop, \%row;
 }
+$template->param( authtypesloop => \@authtypesloop );
 
 if ( $op eq "do_search" ) {
 
     my $idx = $query->param('idx');
     my $q = $query->param('q');
+    my $query_string = qq{$idx:($q)};
+
     my $sortby = $query->param('orderby');
-    my $query_string = ($idx eq 'auth-heading')? 'auth-heading:' : 'auth-full:';
-    $query_string .= $q;
     my $options = { 'sort' => $sortby, 'fq' => "kauthtype_s:$authtypecode" };
-    $options->{start} = $start if $start;
+    $options->{start} = $query->param('start') || 0;
+
     my $solr = Koha::Solr::Service->new();
     my $solr_query = Koha::Solr::Query->new( {query => $query_string, options => $options, rtype => 'auth', opac => 1} );
 
     my $rs = $solr->search($solr_query->query,$solr_query->options);
 
-    my $resultset = ($rs->is_error) ? '' : $rs->content;
+    my $resultset = ($rs->is_error) ? {} : $rs->content;
     my $results = [];
 
-    for my $doc (@{$resultset->{response}->{docs}}){
-        my $record = MARC::Record->new_from_xml($doc->{marcxml},'utf8','MARC21'); 
+    for my $doc (@{$resultset->{response}{docs}}) {
+        my $used = C4::AuthoritiesMarc::CountUsage($doc->{authid});
+        next unless $used;
+
+        my $record = MARC::Record->new_from_xml($doc->{marcxml}, 'UTF-8', 'MARC21');
         my $summary = C4::AuthoritiesMarc::BuildSummary($record,undef,$authtypecode);
         push @$results, {   summary => $summary,
                             authid => $doc->{authid},
-                            authtype => $doc->{kauthtype_s},
-                            used => C4::AuthoritiesMarc::CountUsage($doc->{authid}),
-
+                            used => $used,
+                            authtype =>
+                                GetAuthType( $doc->{kauthtype_s} )->{summary},
                         };
     }
-    my $resultsperpage;
-    my $total = $resultset->{'response'}->{'numFound'};
 
-    my $pager = Koha::Pager->new({pageset => $rs->pageset, offset_param => 'start'});
+    my $pager = Koha::Pager->new(pageset => $rs->pageset, offset_param => 'start');
 
     $template->param(   result          => $results,
                         orderby         => $sortby,
-                        total           => $total,
+                        total           => $resultset->{response}{numFound},
                         authtypecode    => $authtypecode,
                         pager           => $pager->tmpl_loop(),
                         from            => $pager->first,
                         to              => $pager->last(),
     );
-
 }
 
-$template->param( authtypesloop => \@authtypesloop );
-
-# Print the page
 output_html_with_http_headers $query, $cookie, $template->output;
-
-# Local Variables:
-# tab-width: 4
-# End:

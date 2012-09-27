@@ -34,11 +34,10 @@ use Koha::Solr::Query;
 use Koha::Pager;
 
 my $query        = new CGI;
-my $op           = $query->param('op') || '';
-my $authtypecode = $query->param('authtypecode') || '';
-my $dbh          = C4::Context->dbh;
+my $op           = $query->param('op') // '';
+my $authtypecode = $query->param('authtypecode') // '';
 
-my $start = $query->param('start') // 0;
+my $start = $query->param('start') || 0;
 my $authid    = $query->param('authid');
 my $template_file = ($query->param('index')) ? "auth_finder.tmpl" : "auth_search.tmpl";
 
@@ -56,17 +55,15 @@ my $resultsperpage;
 
 my $authtypes = getauthtypes;
 my @authtypesloop;
-#$authtypecode = 'TOPIC_TERM' unless $authtypecode;
 
-foreach my $thisauthtype ( sort { $authtypes->{$a}{'authtypetext'} cmp $authtypes->{$b}{'authtypetext'} } keys %$authtypes ){
+for my $thisauthtype ( sort { $authtypes->{$a}{'authtypetext'} cmp $authtypes->{$b}{'authtypetext'} } keys %$authtypes ){
 #    next unless $thisauthtype; # There should be no default authority types.
 #    FIXME: This allows a frameworkless 'default' type.
 #    It also allows a search on any authority type.
-    my $selected = 1 if $thisauthtype eq $authtypecode;
     my %row = (
         value        => $thisauthtype,
-        selected     => $selected,
-        authtypetext => $authtypes->{$thisauthtype}{'authtypetext'},
+        selected     => ($thisauthtype ~~ $authtypecode),
+        authtypetext => $authtypes->{$thisauthtype}{authtypetext},
     );
     push @authtypesloop, \%row;
 }
@@ -76,16 +73,18 @@ if ( $op eq "delete" ) {
 
 } elsif ( $op eq "do_search" ) {
 
-    my $idx = $query->param('idx');
     my $q = $query->param('q');
-    my $sortby = $query->param('orderby');
-    if($query->param('operator') eq 'is'){
-        $q = '"'.$q.'"';
-    } elsif($query->param('operator') eq 'start'){
+    if ( $query->param('operator') eq 'contains' ) {
+        $q =~ s{^|\s+|$}{*}g;
+    } elsif ($query->param('operator') eq 'start') {
+        $q =~ s{\s+}{?}g;
         $q .= '*';
     }
-    my $query_string = ($idx eq 'auth-heading')? 'auth-heading:' : 'auth-full:';
+
+    my $idx = $query->param('idx');
+    my $query_string = ($idx eq 'auth-heading')? 'auth-heading_lc:' : 'auth-full_mlc:';
     $query_string .= $q;
+    my $sortby = $query->param('orderby');
     my $options = { 'sort' => $sortby };
     $options->{fq} = "kauthtype_s:$authtypecode" if $authtypecode;
     $options->{start} = $start if $start;
@@ -95,7 +94,7 @@ if ( $op eq "delete" ) {
 
     my $rs = $solr->search($solr_query->query,$solr_query->options);
 
-    my $resultset = ($rs->is_error) ? '' : $rs->content;
+    my $resultset = ($rs->is_error) ? {} : $rs->content;
     my $results = [];
 
     for my $doc (@{$resultset->{response}->{docs}}){
@@ -116,7 +115,8 @@ if ( $op eq "delete" ) {
     $template->param(   result          => $results,
                         orderby         => $sortby,
                         total           => $total,
-                        q               => $q,
+                        q               => $query->param('q'),
+                        operator        => $query->param('operator'),
                         pager           => $pager->tmpl_loop(),
                         from            => $pager->first,
                         to              => $pager->last(),

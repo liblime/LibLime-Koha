@@ -935,6 +935,7 @@ sub BuildSummary{
               $altheading.= "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>see also:</i> ".$field->as_string();
           }
           $summary .= ": " if $summary;
+          no warnings qw(uninitialized);
           $summary.=$heading.$seeheading.$altheading;
       }
   }
