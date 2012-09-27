@@ -28,7 +28,7 @@ sub _build_labels {
         {code => 'cassette', description => 'Cassette', category => 'audio'},
         {code => 'software', description => 'Software', category => 'computing'},
         {code => 'videocassette', description => 'Videocassette', category => 'video'},
-        {code => 'digital-audio-player', description => 'Digital audio player', category => 'computing'},
+        {code => 'digital-audio-player', description => 'Digital audio player', category => 'audio'},
         {code => 'website', description => 'Website or downloadable', category => 'computing'},
         {code => 'music', description => 'Music', category => 'other'},
         {code => 'audiobook', description => 'Audiobook', category => 'other'},
