@@ -251,6 +251,7 @@
     <field name="location" type="string" indexed="true" stored="true" multiValued="true"/>
 
     <field name="isbn" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="isbn-a" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="issn" type="text_nostem" indexed="true" stored="false" multiValued="true"/>
     <field name="callnumber" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="callnumber-a" type="string" indexed="true" stored="true" multiValued="true"/>
