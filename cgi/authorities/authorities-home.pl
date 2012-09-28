@@ -74,9 +74,10 @@ if ( $op eq "delete" ) {
 } elsif ( $op eq "do_search" ) {
 
     my $q = $query->param('q');
-    if ( $query->param('operator') eq 'contains' ) {
+    my $op = $query->param('operator') // 'start';
+    if ( $op eq 'contains' ) {
         $q =~ s{^|\s+|$}{*}g;
-    } elsif ($query->param('operator') eq 'start') {
+    } elsif ($op eq 'start') {
         $q =~ s{\s+}{?}g;
         $q .= '*';
     }

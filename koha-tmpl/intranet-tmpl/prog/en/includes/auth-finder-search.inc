@@ -15,12 +15,12 @@
                     <option value="auth-heading">Main heading</option>
                     <option value="auth-full">Full record</option>
                 </select>
-                <!--    <select name="operator" id="mainentry">
-                        <option value="contains">contains</option>
-                        <option value="start">starts with</option>
-                        <option value="is">is exactly</option>
-                    </select> -->
-                    <input type="text" name="q" id="search_terms" value="<!-- TMPL_VAR ESCAPE="HTML" name="q" -->" />
+                <select name="operator" id="mainentry">
+                  <option value="contains">contains</option>
+                  <option value="start">starts with</option>
+                  <option value="is">is exactly</option>
+                </select>
+                <input type="text" name="q" id="search_terms" value="<!-- TMPL_VAR ESCAPE="HTML" name="q" -->" />
                 </li>
 		<li>
 		<label for="orderby">Sort by </label>
