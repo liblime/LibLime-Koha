@@ -96,7 +96,7 @@
 	<div id="tagcloud">
 	<!-- TMPL_LOOP NAME="TAGLOOP" -->
 	<span class="tag" id="tag<!-- TMPL_VAR NAME="__counter__" -->" title="<!-- TMPL_VAR NAME="cloudweight" -->">
-		<a href="/cgi-bin/koha/opac-search.pl?q=koha-tag:<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="term" ESCAPE="HTML" --></a>
+		<a href="/cgi-bin/koha/opac-search.pl?q=koha-tag:&quot;<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->&quot;"><!-- TMPL_VAR NAME="term" ESCAPE="HTML" --></a>
 			<span class="tagweight"><!-- TMPL_VAR NAME="weight_total" --></span>
 	</span>
 	<!-- /TMPL_LOOP -->
@@ -119,7 +119,7 @@
 		<thead><tr><th>Term</th><th>Title</th><th>Date Added</th><th>Delete</th>
 		</tr></thead>
 	<tbody><!-- TMPL_LOOP NAME="MY_TAGS" -->
-		<tr><td><a href="/cgi-bin/koha/opac-search.pl?q=koha-tag:<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="term" ESCAPE="HTML" --></a>
+		<tr><td><a href="/cgi-bin/koha/opac-search.pl?q=koha-tag:&quot;<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->&quot;"><!-- TMPL_VAR NAME="term" ESCAPE="HTML" --></a>
 			</td>
 			<td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">
 				<!-- TMPL_VAR NAME="bib_summary" ESCAPE="HTML" --></a></td>

@@ -518,7 +518,7 @@ $(document).ready(function(){
                 <!-- TMPL_IF NAME="TagLoop" -->
 					<div class="results_summary">
                         <span class="label">Tags:</span>
-                        <ul style="display: inline; list-style: none;"><!-- TMPL_LOOP NAME="TagLoop" --><li style="display: inline; list-style: none;"><a href="/cgi-bin/koha/opac-search.pl?tag=<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->&amp;q=<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="term" --></a> <span class="weight">(<!-- TMPL_VAR NAME="weight_total" -->)</span></li>
+                        <ul style="display: inline; list-style: none;"><!-- TMPL_LOOP NAME="TagLoop" --><li style="display: inline; list-style: none;"><a href="/cgi-bin/koha/opac-search.pl?q=koha-tag:&quot;<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->&quot;"><!-- TMPL_VAR NAME="term" --></a> <span class="weight">(<!-- TMPL_VAR NAME="weight_total" -->)</span></li>
                             <!-- /TMPL_LOOP -->
                         </ul>
                	<!-- /TMPL_IF -->
