@@ -74,8 +74,7 @@ if ($op eq "do_search" && $query) {
     # add the itemtype limit if applicable
     my $itemtypelimit = $input->param('itemtypelimit');
     if ( $itemtypelimit ) {
-        my $index = C4::Context->preference("item-level_itypes") ? 'itype' : 'itemtype';
-        $query .= " AND $index:$itemtypelimit";
+        $query .= " AND itemtype:$itemtypelimit";
     }
 
     $resultsperpage= $input->param('resultsperpage');
@@ -85,7 +84,7 @@ if ($op eq "do_search" && $query) {
     my $solr = Koha::Solr::Service->new();
     my $q_param = {query => $query, rtype => 'bib'};
     $q_param->{options} = { start => $startfrom } if $startfrom;
-    my ($results,$hits) = $solr->simpleSearch(Koha::Solr::Query->new($q_param), display => 1);
+    my ($results,$total_hits) = $solr->simpleSearch(Koha::Solr::Query->new($q_param), display => 1);
  
     my $total = scalar @$results;
 
@@ -135,7 +134,7 @@ if ($op eq "do_search" && $query) {
                 ($startfrom==($i-1)) && ($highlight=1);
                 push @numbers, { number => $i,
                     highlight => $highlight ,
-                    searchdata=> \@results,
+                    searchdata=> $results,
                     startfrom => ($i-1)};
             }
         }
