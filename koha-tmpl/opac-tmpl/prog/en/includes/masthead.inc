@@ -64,7 +64,7 @@
 <!-- /TMPL_IF -->
    <!-- TMPL_UNLESS NAME="opac_limit_override" -->
        <!-- TMPL_IF name="mylibraryfirst" --> 
-            <input name="limit" value="branch:<!-- TMPL_VAR name="mylibraryfirst" -->" type="hidden" />
+            <input name="limit" value="owned-by:<!-- TMPL_VAR name="mylibraryfirst" -->" type="hidden" />
        <!-- /TMPL_IF -->
     <!-- /TMPL_UNLESS -->
     <!-- TMPL_IF NAME="opac_search_limit" -->
@@ -88,7 +88,7 @@
 <!-- TMPL_IF NAME="TagsEnabled"     --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-tags.pl">Tag Cloud</a><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="OpacCloud"       --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-tags_subject.pl">Subject Cloud</a><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="OpacTopissue"    --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-topissues.pl">Most Popular</a><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="NewTitlesAge"    --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-search.pl?q=*&limit=catdate:[NOW-<!-- TMPL_VAR NewTitlesAge -->DAYS%20TO%20*]&sort=catdate%20desc" title="Show all titles added to the catalog in the last <!-- TMPL_VAR NewTitlesAge --> days">New Titles</a><!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="NewTitlesAge"    --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-search.pl?q=&limit=catdate:[NOW-<!-- TMPL_VAR NewTitlesAge -->DAYS%20TO%20*]&limit=<TMPL_VAR opac_search_limit ESCAPE=URL>&sort=catdate%20desc" title="Show all titles added to the catalog in the last <!-- TMPL_VAR NewTitlesAge --> days">New Titles</a><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="CourseReserves"     --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-coursereserves.pl">Course Reserves</a><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="suggestion" -->
   <!-- TMPL_IF NAME="AnonSuggestions" --><span class="pipe"> | </span><a href="/cgi-bin/koha/opac-suggestions.pl">Purchase Suggestions</a>
