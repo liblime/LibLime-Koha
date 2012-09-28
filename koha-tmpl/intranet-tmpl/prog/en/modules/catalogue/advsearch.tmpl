@@ -89,6 +89,43 @@ $(document).ready(function() {
     $(".startover").click(function(){
         $('form')[0].reset();
     });
+
+    var get_location_limit = function(){
+        if($("#available-items").is(":checked")){
+            var limitval = $("#branchloop").val() ? $("#branchloop").val() : '*';
+            return("on-shelf-at:" + limitval );
+        } else {
+            return(($("#branchloop").val())? "owned-by:" + $("#branchloop").val() : '');
+        }
+    }
+    $("#branchloop").change(function(){
+        $("#locationLimit").val( get_location_limit() );
+        if($(this).val()){
+            $("#multibranchlimit").val('').attr('disabled','disabled');
+        } else {
+            $("#multibranchlimit").removeAttr('disabled');
+        }
+    });
+    $("#available-items").change(function(){
+        $("#locationLimit").val( get_location_limit() );
+        $("#multibranchlimit option").each(function(){
+            if($("#available-items").is(":checked")){
+                $(this).val( $(this).val().replace('owned-by','on-shelf-at'));
+            } else {
+                $(this).val( $(this).val().replace('on-shelf-at','owned-by'));
+            }
+        });
+    });
+    // branchloop and multibranchlimit cannot both be selected.
+    $("#multibranchlimit").change(function(){
+        if($(this).val()){
+            $("#locationLimit").val('');
+            $("#branchloop").val('').attr('disabled','disabled');
+        } else {
+            $("#branchloop").removeAttr('disabled');
+            $("#locationLimit").val( get_location_limit() );
+        }
+    });
 });
 </script>
 </head>
