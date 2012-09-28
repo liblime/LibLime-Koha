@@ -119,18 +119,24 @@ sub _build_query_from_cgi{
             $query .= $q;
         }
         else {
-            # Add grouping for this field if not quoted and multiple terms.
-            if( $q !~ /^".*"$/ && $q !~ /^\(.*\)$/ && $q =~ /\S+\s+\S+/ ) {
-                $q = "($q)";
-            }
-            # If barcode search, expand with prefix.
             if( $idx eq 'barcode' ) {
+                # If barcode search, expand with prefix.
                 $q = C4::Circulation::barcodedecode(barcode => $q);
                 $self->looks_like_barcode($q);
             }
             elsif ( $idx eq 'isbn' ) {
+                # Normalize ISBN
                 my $isbn = Business::ISBN->new($q);
                 $q = $isbn->isbn if $isbn;
+            }
+            elsif ( $idx eq 'callnumber' ) {
+                # Do a left-anchored wildcard search on call numbers
+                $q =~ s/\s+/?/;
+                $q .= '*';
+            }
+            elsif( $q !~ /"/ && $q !~ /\(|\)/ && $q =~ /\S+\s+\S+/ ) {
+                # Add grouping for this field if not quoted and multiple terms.
+                $q = "($q)";
             }
             $query .= "$idx:$q";
         }
