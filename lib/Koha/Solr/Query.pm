@@ -27,12 +27,12 @@ use C4::Branch;
 has rtype => ( is => 'ro', isa => 'Str', default => 'bib' );
 has opac => ( is => 'ro', isa => 'Bool' );
 has options => ( is => 'rw', isa => 'HashRef', default => sub { return {} } );
-has query => ( is => 'rw', isa => 'Str' );
+has query => ( is => 'rw', isa => 'Str', default => '*:*' );
 has cgi => ( is => 'rw', isa => 'CGI' );
 has uri => ( is => 'rw', isa => 'Str' );
 has limits => ( is => 'rw', isa => 'ArrayRef' );
 #has _parsed_query => ( is => 'rw', isa => 'HashRef' ); # from Search::QueryParser
-has simple_query => (is => 'rw', isa => 'Str' );  # if search is only against one field.
+has simple_query => (is => 'rw', isa => 'Str', default => '*:*' );  # if search is only against one field.
 has simple_query_field => ( is => 'rw', isa => 'Str' );
 has looks_like_barcode => ( is => 'rw',
                             isa => 'Str',
@@ -167,6 +167,7 @@ sub _build_query_from_cgi{
     my $queried_fields = () = $query =~ /\w+:/g;
     if($queried_fields < 2){
         my ($f,$qstr) = split(/:\s*/,$query);
+        $f //= '';
         if($qstr){
             $self->simple_query($qstr);
             $self->simple_query_field($f);
@@ -188,7 +189,8 @@ sub _build_query_from_cgi{
         # $self->simple_query($query);
     }
     
-    #$self->_parse_query_string($query);  # sets $self->query.
+    $query =~ s/ ^\*+$ | ^[^a-z0-9]*$ /*:*/ix; # set a last-resort default
+
     $self->query($query);
 
     # Assemble options

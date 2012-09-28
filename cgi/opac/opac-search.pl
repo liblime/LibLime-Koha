@@ -63,11 +63,6 @@ sub MRXcached {
 
 my ($template,$borrowernumber,$cookie);
 
-# searching with a blank 'q' matches everything
-if (!$cgi->param('q') && defined $cgi->param('q') ) {
-    $cgi->param('q' => '*');
-}
-
 # decide which template to use
 my $template_name;
 my $search_form = 1;
@@ -75,7 +70,7 @@ my $search_form = 1;
 my $format = $cgi->param("format") || '';
 if ($format =~ /(rss|atom|opensearchdescription)/) {
 	$template_name = 'opac-opensearch.tmpl';
-} elsif ($cgi->param("q")) {
+} elsif ( defined $cgi->param("q")) {
 	$template_name = 'opac-results.tmpl';
     $search_form = 0;
 } else {
