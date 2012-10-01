@@ -1,7 +1,11 @@
 <h1 id="logo"><a href="/cgi-bin/koha/mainpage.pl"><!-- TMPL_VAR NAME="LibraryName" --></a></h1>
 <!-- Begin Authorities Resident Search Box -->
-<div id="header_search" class="residentsearch">
-    <div id="main_heading" class="residentsearch" style="display:none;">
+<div id="header_search" class="tabs-bottom">
+    <ul>
+        <li><a href="#tabs-main_heading">Search Main Heading</a></li>
+        <li><a href="#tabs-all_headings">Search All Headings</a></li>
+    </ul>
+    <div id="tabs-main_heading" class="residentsearch">
     <p class="tip">Enter authority heading:</p>
     <form action="/cgi-bin/koha/authorities/authorities-home.pl" method="get">
         <input type="hidden" name="op" value="do_search" />
@@ -29,7 +33,7 @@
         <input type="submit" class="submit" value="Submit" />
     </form>
     </div>
-    <div id="all_headings" class="residentsearch" style="display:none;">
+    <div id="tabs-all_headings" class="residentsearch">
     <p class="tip">Enter any authority field:</p>
     <form action="/cgi-bin/koha/authorities/authorities-home.pl" method="get">
         <input type="hidden" name="op" value="do_search" />
@@ -57,9 +61,5 @@
         <input type="submit" class="submit" value="Submit" />
     </form>
     </div>
-    <ul>
-        <li><a href="/cgi-bin/koha/authorities/authorities-home.pl#main_heading">Search Main Heading</a></li>
-        <li><a href="/cgi-bin/koha/authorities/authorities-home.pl#all_headings">Search All Headings</a></li>
-    </ul>
 </div>
 <!-- End Authorities Resident Search Box -->

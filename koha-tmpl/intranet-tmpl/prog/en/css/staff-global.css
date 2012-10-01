@@ -376,8 +376,14 @@ div#header_search ul.link-tabs li.off a {
 
 div#header_search div.residentsearch {
 	border : 0;
-	border-bottom : 1px solid #FF9900;
 	padding : 0 0 .2em 0;
+    overflow: visible;
+    height: 5.8em;
+}
+div.residentsearch form {
+  white-space: nowrap;
+  overflow: visible;
+  display: block;
 }
 
 div#reserves,div#checkouts {
@@ -1706,7 +1712,8 @@ span.permissiondesc {
 
 
 /* borrower autocomplete */
-#borrowerautocomplete { width: 450px; text-align:left;} /* z-index needed on top instances for ie & sf absolute inside relative issue */
+
+#borrowerautocomplete { width: 50em; text-align:left; white-space: nowrap;} /* z-index needed on top instances for ie & sf absolute inside relative issue */
 .autocomplete .yui-ac-highlight ,
 .autocomplete .yui-ac-highlight .sample-result,
 .autocomplete .yui-ac-highlight .sample-query { color:#FFF; }
@@ -1714,6 +1721,7 @@ span.permissiondesc {
 .autocomplete .sample-query { color:#000; }
 #findborrower { position:static; width:auto; }
 #yborrowercontainer { text-align:left;width:335px; }
+.withAutocomplete { float: right; white-space: nowrap; }
 
 /* patron attribues autocomplete for overdues report (pattrodue) */
 .pattrodue-autocomplete .pattrodue-result { color: black; }
@@ -1952,4 +1960,10 @@ a.disabled{
     cursor: default;
     color: #aaa;
 }
+/* jQuery-UI overrides */
+.ui-tabs-nav {
+    background: none;
+    border: none;
+}
+
 

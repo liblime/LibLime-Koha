@@ -1,6 +1,6 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Circulation &rsaquo; Holds &rsaquo; Edit holds on <!-- TMPL_VAR NAME="title" escape="html" --></title>
-<!-- TMPL_INCLUDE NAME="doc-head-close-plack.inc" -->
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <style>
 tr.hilight td {
    background-color: #ffffcc; /* pale yellow */
@@ -518,7 +518,7 @@ $(document).ready(function() {
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
-<!-- TMPL_INCLUDE NAME="circ-search-plack.inc" -->
+<!-- TMPL_INCLUDE NAME="circ-search.inc" -->
 
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/catalogue/search.pl">Catalog</a> &rsaquo; <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a> &rsaquo; Edit holds</div>
 

@@ -7,11 +7,16 @@ function _(s) { return s } // dummy function for gettext
 
  $(document).ready(function() {
  	$(".focus").focus();
-	$('#header_search > ul').tabs().bind('show.ui-tabs', function(e, ui) { $('#header_search > div:not(.ui-tabs-hide)').find('input').eq(0).focus(); });
+	$('#header_search').tabs( { show : function(e, ui) { $('#header_search > div:not(.ui-tabs-hide)').find('input[type="text"]').eq(0).focus(); } });
+    $( ".tabs-bottom .ui-tabs-nav, .tabs-bottom .ui-tabs-nav > *" ).removeClass( "ui-corner-all ui-corner-top" ).addClass( "ui-corner-bottom" );
 	$(".close").click(function(){ window.close(); });
-	if($("#header_search #checkin_search").length > 0){ $(document).bind('keydown','Alt+r',function (){ $("#header_search > ul").tabs("select","#checkin_search"); $("#ret_barcode").focus(); }); } else { $(document).bind('keydown','Alt+r',function (){ location.href="/cgi-bin/koha/circ/returns.pl"; }); }
-	if($("#header_search #circ_search").length > 0){ $(document).bind('keydown','Alt+u',function (){ $("#header_search > ul").tabs("select","#circ_search"); $("#findborrower").focus(); }); } else { $(document).bind('keydown','Alt+u',function(){ location.href="/cgi-bin/koha/circ/circulation.pl"; }); }
-	if($("#header_search #catalog_search").length > 0){ $(document).bind('keydown','Alt+q',function (){ $("#header_search > ul").tabs("select","#catalog_search"); $("#search-form").focus(); }); } else { $(document).bind('keydown','Alt+q',function(){ location.href="/cgi-bin/koha/catalogue/search.pl"; }); }
+	if($("#header_search #tabs-checkin_search").length > 0){ $(document).bind('keydown','Alt+r',function (){ $("#header_search").tabs("select","#tabs-checkin_search"); $("#ret_barcode").focus(); }); } else { $(document).bind('keydown','Alt+r',function (){ location.href="/cgi-bin/koha/circ/returns.pl"; }); }
+	if($("#header_search #tabs-circ_search").length > 0){
+        $(document).bind('keydown','Alt+u',function (){ $("#header_search").tabs("select","#tabs-circ_search"); $("#findborrower").focus(); });
+    } else {
+        $(document).bind('keydown','Alt+u',function(){ location.href="/cgi-bin/koha/circ/circulation.pl"; });
+    }
+	if($("#header_search #tabs-catalog_search").length > 0){ $(document).bind('keydown','Alt+q',function (){ $("#header_search").tabs("select","#tabs-catalog_search"); $("#search-form").focus(); }); } else { $(document).bind('keydown','Alt+q',function(){ location.href="/cgi-bin/koha/catalogue/search.pl"; }); }
  });
  
              YAHOO.util.Event.onContentReady("header", function () {

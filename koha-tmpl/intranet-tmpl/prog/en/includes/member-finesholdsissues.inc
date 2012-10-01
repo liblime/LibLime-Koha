@@ -1,6 +1,6 @@
 <script type="text/javascript">
 $(document).ready(function() {
-	$('#finesholdsissues > ul').tabs();
+	$('#finesholdsissues').tabs();
 	$.tablesorter.defaults.widgets = ['zebra'];
 	$("#issuest").tablesorter({<!-- TMPL_IF NAME="dateformat_metric" -->
 		dateFormat: 'uk',<!-- /TMPL_IF -->
@@ -77,53 +77,19 @@ function confirmCancelWaiting(that) {
 <div id="finesholdsissues" class="toptabs">
   <ul>
     <!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
-    <li><a href="#checkedout">Checked Out</a></li>
+    <li><a href="#tabs-checkedout">Checked Out</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_updatecharges_view_charges" -->
-    <li><a href="#finesandcharges">Fines &amp; Charges</a></li>
+    <li><a href="#tabs-finesandcharges">Fines &amp; Charges</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
-    <li><a href="#onhold" id="onholdlink">On Hold (<TMPL_VAR NAME="countreserv">)</a></li>
+    <li><a href="#tabs-onhold" id="onholdlink">On Hold (<TMPL_VAR NAME="countreserv">)</a></li>
     <!-- /TMPL_IF -->
-    <li><a href="#revisionhistory">Revision History</a></li>
+    <li><a href="#tabs-revisionhistory">Revision History</a></li>
   </ul>
-</div>
-
-<!-- TMPL_IF NAME="CAN_user_updatecharges_view_charges" -->
-<div id="finesandcharges">
-  <!-- TMPL_IF NAME="totaldue_raw" -->
-  <p>Total due: <!-- TMPL_VAR NAME="totaldue" --></p>
-  <!-- TMPL_ELSE -->
-  <p>No outstanding charges</p>
-  <!-- /TMPL_IF -->
-</div>
-<!-- /TMPL_IF -->
-
-<div id="revisionhistory">
-  <h2>Revision History</h2>
-  <!-- TMPL_IF NAME="revisionloop" -->
-  <table id="revisionst">
-    <thead><tr>
-        <th>Staff</th>
-        <th>Action</th>
-        <th>Date/Time</th>
-    </tr></thead>
-    <tbody><!-- TMPL_LOOP NAME="revisionloop" -->
-      <tr>
-        <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="staffnumber" -->" title="display detail for this librarian.">
-            <!-- TMPL_VAR NAME="staffnumber" --> </a></td>
-        <td><!-- TMPL_VAR NAME="staffaction" --></td>
-        <td><!-- TMPL_VAR NAME="timestamp" --></td>
-      </tr>
-      <!-- /TMPL_LOOP --></tbody>
-  </table>
-  <!-- TMPL_ELSE -->
-  <p>Patron has no revisions.</p>
-  <!-- /TMPL_IF -->
-</div>
 
 <!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
-<div id="checkedout">
+<div id="tabs-checkedout">
   <!-- TMPL_IF NAME="issueloop" -->
   <form action="/cgi-bin/koha/reserve/renewscript.pl" method="post" class="checkboxed">
     <input type="hidden" name="cardnumber"     value="<TMPL_VAR NAME="cardnumber">">
@@ -272,8 +238,18 @@ function confirmCancelWaiting(that) {
 <!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
 
+<!-- TMPL_IF NAME="CAN_user_updatecharges_view_charges" -->
+<div id="tabs-finesandcharges">
+  <!-- TMPL_IF NAME="totaldue_raw" -->
+  <p>Total due: <!-- TMPL_VAR NAME="totaldue" --></p>
+  <!-- TMPL_ELSE -->
+  <p>No outstanding charges</p>
+  <!-- /TMPL_IF -->
+</div>
+<!-- /TMPL_IF -->
+
 <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
-<div id="onhold">
+<div id="tabs-onhold">
   <!-- TMPL_IF NAME="reservloop" -->
   <form name="modifyReservesForm" action="/cgi-bin/koha/reserve/modrequest.pl" method="post" >
     <input type="hidden" name="from" value="borrower" />
@@ -367,3 +343,29 @@ function confirmCancelWaiting(that) {
   <!-- /TMPL_IF -->
 </div>
 <!-- /TMPL_IF -->
+
+<div id="tabs-revisionhistory">
+  <h2>Revision History</h2>
+  <!-- TMPL_IF NAME="revisionloop" -->
+  <table id="revisionst">
+    <thead><tr>
+        <th>Staff</th>
+        <th>Action</th>
+        <th>Date/Time</th>
+    </tr></thead>
+    <tbody><!-- TMPL_LOOP NAME="revisionloop" -->
+      <tr>
+        <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="staffnumber" -->" title="display detail for this librarian.">
+            <!-- TMPL_VAR NAME="staffnumber" --> </a></td>
+        <td><!-- TMPL_VAR NAME="staffaction" --></td>
+        <td><!-- TMPL_VAR NAME="timestamp" --></td>
+      </tr>
+      <!-- /TMPL_LOOP --></tbody>
+  </table>
+  <!-- TMPL_ELSE -->
+  <p>Patron has no revisions.</p>
+  <!-- /TMPL_IF -->
+</div>
+
+</div>
+

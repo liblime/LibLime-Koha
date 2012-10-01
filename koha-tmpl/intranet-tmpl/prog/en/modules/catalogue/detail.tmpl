@@ -36,7 +36,7 @@ function verify_images() {
         });
 }
      $(document).ready(function() {
-        $('#bibliodetails > ul').tabs();
+        $('#bibliodetails').tabs();
      });
      <!-- TMPL_IF NAME="AmazonEnabled" -->$(window).load(function() {
         verify_images();
@@ -226,13 +226,13 @@ onclick="document.location.href='/cgi-bin/koha/reserve/placehold.pl?searchtohold
 <div id="bibliodetails" class="toptabs">
 
 <ul>   
-<li><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#holdings">Holdings</a></li>
-<li><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#description">Descriptions</a></li>
-<!-- TMPL_IF NAME="FRBRizeEditions" --><!-- TMPL_IF NAME="XISBNS" --><li><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#editions">Editions</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="AmazonSimilarItems" --><li><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#related">Related Titles</a></li><!-- /TMPL_IF -->
+<li><a href="#tabs-holdings">Holdings</a></li>
+<li><a href="#tabs-description">Descriptions</a></li>
+<!-- TMPL_IF NAME="FRBRizeEditions" --><!-- TMPL_IF NAME="XISBNS" --><li><a href="#tabs-editions">Editions</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="AmazonSimilarItems" --><li><a href="#tabs-related">Related Titles</a></li><!-- /TMPL_IF -->
  </ul>
 
-<div id="holdings">
+<div id="tabs-holdings">
 <!-- TMPL_IF name="count" -->
         <table>
             <tr>
@@ -413,7 +413,7 @@ onclick="document.location.href='/cgi-bin/koha/reserve/placehold.pl?searchtohold
 <!-- /TMPL_IF -->
     </div>
     
-<div id="description">
+<div id="tabs-description">
 <div class="content_set">
 <!-- TMPL_IF NAME="AmazonEnabled" -->
 <!-- TMPL_LOOP NAME="AMAZON_EDITORIAL_REVIEWS" -->
@@ -436,7 +436,7 @@ onclick="document.location.href='/cgi-bin/koha/reserve/placehold.pl?searchtohold
 </div>
 </div>
 <!-- TMPL_IF NAME="FRBRizeEditions" --><!-- TMPL_IF NAME="XISBNS" -->
-<div id="editions"><h2>Editions</h2>
+<div id="tabs-editions"><h2>Editions</h2>
 <table>
 <!-- TMPL_LOOP NAME="XISBNS" --><tr><!-- TMPL_IF NAME="AmazonEnabled" --><td><a href="http://www.amazon.com/gp/reader/<!-- TMPL_VAR NAME="normalized_isbn" -->/ref=sib_dp_pt/002-7879865-0184864#reader-link"><img src="http://images.amazon.com/images/P/<!-- TMPL_VAR NAME="normalized_isbn" -->.01._AA75_PU_PU-5_.jpg" /></a></td><!-- /TMPL_IF --><td><!-- TMPL_IF NAME="noItemTypeImages" --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><img src="<!-- TMPL_VAR NAME="imageurl" -->" alt="<!-- TMPL_VAR NAME="description" -->" title="<!-- TMPL_VAR NAME="description" -->"><!-- /TMPL_IF --></td><td>
 <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a> by <!-- TMPL_VAR NAME="author" --> &copy;<!-- TMPL_VAR NAME="copyrightdate" -->
@@ -452,7 +452,7 @@ onclick="document.location.href='/cgi-bin/koha/reserve/placehold.pl?searchtohold
 <!-- /TMPL_IF -->
 
 <!-- TMPL_IF NAME="AmazonEnabled" --><!-- TMPL_IF NAME="AmazonSimilarItems" -->
-<div id="related">
+<div id="tabs-related">
 <h4>Similar Items</h4>
 <ul>
 <!-- TMPL_LOOP NAME="AMAZON_SIMILAR_PRODUCTS" -->
