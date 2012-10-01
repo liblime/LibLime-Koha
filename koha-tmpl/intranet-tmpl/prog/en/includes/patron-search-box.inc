@@ -42,16 +42,13 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 });    
 //]]>
 </script><!-- /TMPL_IF -->
-	<div id="circ_search" class="residentsearch" style="display:none;">
+	<div id="tabs-circ_search" class="residentsearch">
 	<p class="tip">Enter patron card number or partial name:</p>
     <form action="/cgi-bin/koha/circ/circulation.pl" method="post">
     <!-- TMPL_IF NAME="CircAutocompl" -->
-					<nobr>
 						<div class="autocomplete">
 							<div id="borrowerautocomplete" class="autocomplete">
-								<input autocomplete="off" id="findborrower" name="findborrower" type="text" />
-								<div id="yborrowercontainer"></div>
-	
+                                <div class="withAutocomplete">
 								<label for="searchfield">Search Fields:</label>
 								<select name="searchfield" id="searchfield">
 									<option value="">Standard</option>
@@ -59,19 +56,19 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 									<option value="borrowernumber">Borrower Number</option>
 									<option value="phonenumber">Phone Number</option>
 								</select>
-	
 								<label for="orderby">Order By:</label>
 								<select name="orderby" id="searchorderby">
 									<option value="surname,firstname">Surname</option>
 									<option value="cardnumber">Cardnumber</option>
 								</select>
-	
 								<input id="ysearchsubmit" type="submit" class="submit" value="Submit" />
 								<input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
 								<input name="printer" value="" type="hidden" />
+                                </div>
+								<input autocomplete="off" id="findborrower" name="findborrower" type="text" />
+								<div id="yborrowercontainer"></div>
 							</div>
 						</div>
-					</nobr>
 	<!-- TMPL_ELSE -->
             <input id="findborrower" name="findborrower" size="40" class="focus" type="text" />
             <input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />

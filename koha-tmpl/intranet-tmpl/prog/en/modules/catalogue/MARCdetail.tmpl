@@ -5,7 +5,7 @@
 //<![CDATA[
 
 	 $(document).ready(function() {
- 		$('#bibliotabs > ul').tabs();
+ 		$('#bibliotabs').tabs();
 	 });
 
 function Changefwk(FwkList) {
@@ -41,37 +41,37 @@ function Changefwk(FwkList) {
 <div id="bibliotabs" class="toptabs numbered">
 	<ul>
             <!-- TMPL_IF name="0XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab0XX">0</a></li>
+                <li><a href="#tab0XX">0</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="1XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab1XX">1</a></li>
+                <li><a href="#tab1XX">1</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="2XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab2XX">2</a></li>
+                <li><a href="#tab2XX">2</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="3XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab3XX">3</a></li>
+                <li><a href="#tab3XX">3</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="4XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab4XX">4</a></li>
+                <li><a href="#tab4XX">4</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="5XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab5XX">5</a></li>
+                <li><a href="#tab5XX">5</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="6XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab6XX">6</a></li>
+                <li><a href="#tab6XX">6</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="7XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab7XX">7</a></li>
+                <li><a href="#tab7XX">7</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="8XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab8XX">8</a></li>
+                <li><a href="#tab8XX">8</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="9XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab9XX">9</a></li>
+                <li><a href="#tab9XX">9</a></li>
             <!-- /TMPL_IF -->
             <!-- TMPL_IF name="10XX" -->
-                <li><a href="/cgi-bin/koha/catalogue/MARCdetail.pl#tab10XX">Item(s)</a></li>
+                <li><a href="#tab10XX">Item(s)</a></li>
             <!-- /TMPL_IF -->
         </ul>
     <div id="tab0XX">
