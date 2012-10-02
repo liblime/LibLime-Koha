@@ -53,6 +53,7 @@ my $sth = $dbh->prepare( $sql );
 $sth->execute("$query%", "$query%", "$query%");
 
 while ( my $rec = $sth->fetchrow_hashref ) {
+  no warnings qw(uninitialized);
   if (C4::Context->preference('DisplayInitials')) {
     print $rec->{surname} . ", " . $rec->{firstname} . " " . $rec->{initials} . "\t" .
           $rec->{cardnumber} . "\t" .
