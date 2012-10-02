@@ -367,6 +367,13 @@ sub get_template_and_user {
         my $opac_search_limit
             = ($opacconf->{default_search_limit}{group}) ? '' :
                $opacconf->{default_search_limit}{content} // $ENV{OPAC_SEARCH_LIMIT} // '';
+
+        my @cat_branches
+            = @{GetBranchesInCategory($opacconf->{default_search_limit}{group})};
+        my $group_branches = (@cat_branches)
+            ? sprintf('owned-by:(%s)', join ' OR ', @cat_branches)
+            : $opac_search_limit;
+
         my $opac_limit_override
             = $opacconf->{default_search_limit}{override}
                 // $ENV{'OPAC_LIMIT_OVERRIDE'};
@@ -412,6 +419,7 @@ sub get_template_and_user {
                    ($ENV{'SERVER_PORT'} eq ($in->{'query'}->https() ? "443" : "80") ? '' : ":$ENV{'SERVER_PORT'}"),
             opac_name             => $opac_name,
             opac_css_override           => $ENV{'OPAC_CSS_OVERRIDE'},
+            group_branches            => $group_branches,
             opac_search_limit         => $opac_search_limit,
             opac_limit_override       => $opac_limit_override,
             OpacBrowser               => C4::Context->preference("OpacBrowser"),
