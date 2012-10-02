@@ -44,8 +44,13 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 });    
 //]]>
 </script><!-- /TMPL_IF --><!-- /TMPL_IF -->
-<div id="header_search">
-	<div id="z3950_search" class="residentsearch">
+<div id="header_search" class="tabs-bottom">
+			<ul>
+			<li><a href="#tabs-z3950_search">Search z390.50 Servers</a></li>
+			<!-- TMPL_IF NAME="CAN_user_circulate" --><li><a href="#tabs-circ_search">Check Out</a></li><!-- /TMPL_IF -->
+			<!-- TMPL_IF NAME="CAN_user_catalogue" --><li><a href="#tabs-catalog_search">Search the Catalog</a></li><!-- /TMPL_IF -->
+			</ul>	
+	<div id="tabs-z3950_search" class="residentsearch">
 	<p class="tip">Z39.50 Server Search:</p>
 	<form action="/cgi-bin/koha/admin/z3950servers.pl" method="post">
                 <input type="text" name="searchfield" size="40" value="<!-- TMPL_VAR name="searchfield" -->" />
@@ -53,7 +58,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
         </form>
 	</div>
 	<!-- TMPL_IF NAME="CAN_user_circulate" -->
-<div id="circ_search" class="residentsearch" style="display:none;">
+<div id="tabs-circ_search" class="residentsearch">
 	<p class="tip">Enter patron card number or partial name:</p>
     <form action="/cgi-bin/koha/circ/circulation.pl" method="post">
  <!-- TMPL_IF NAME="CircAutocompl" -->
@@ -76,7 +81,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 </div>
 	<!-- /TMPL_IF -->
 	<!-- TMPL_IF NAME="CAN_user_catalogue" -->
-	<div id="catalog_search" class="residentsearch" style="display:none;">
+	<div id="tabs-catalog_search" class="residentsearch">
 	<p class="tip">Enter search keywords:</p>
 		<form action="/cgi-bin/koha/catalogue/search.pl"  method="get" id="cat-search-block">
 			 <input type="text" name="q" id="search-form" size="40" value="" title="Enter the terms you wish to search for." class="form-text" />
@@ -84,10 +89,5 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 		</form>
 	</div>
 	<!-- /TMPL_IF -->
-			<ul>
-			<li><a href="/cgi-bin/koha/admin/z3950servers.pl#z3950_search">Search z390.50 Servers</a></li>
-			<!-- TMPL_IF NAME="CAN_user_circulate" --><li><a href="/cgi-bin/koha/circ/circulation.pl#circ_search">Check Out</a></li><!-- /TMPL_IF -->
-			<!-- TMPL_IF NAME="CAN_user_catalogue" --><li><a href="/cgi-bin/koha/catalogue/search.pl#catalog_search">Search the Catalog</a></li><!-- /TMPL_IF -->
-			</ul>	
 </div>
 <!-- End Members Resident Search Box -->
