@@ -1,14 +1,18 @@
 
 <h1 id="logo"><a href="/cgi-bin/koha/mainpage.pl"><!-- TMPL_VAR NAME="LibraryName" --></a></h1>
 <!-- Begin Acquisitions Resident Search Box -->
-<div id="header_search">
-<div id="supplier_search" class="residentsearch" style="display:none;">
+<div id="header_search" class="tabs-bottom">
+			<ul>
+			<li><a href="#tabs-supplier_search">Vendor Search</a></li>
+			<li class="ui-tabs-selected"><a href="#tabs-orders_search">Orders Search</a></li>
+			</ul>	
+<div id="tabs-supplier_search" class="residentsearch">
 	<p class="tip">Search vendors:</p>
         <form name="findsupplier" action="/cgi-bin/koha/acqui/booksellers.pl" method="post">
            <input type="text" size="25" name="supplier" id="supplier" class="focus" />
             <input type="submit" class="submit" value="Submit" /></form>
 </div>
-	<div id="orders_search" class="residentsearch">
+	<div id="tabs-orders_search" class="residentsearch">
 	<p class="tip">Search orders:</p>
 	
 		<form action="/cgi-bin/koha/acqui/histsearch.pl" method="post">
@@ -16,9 +20,5 @@
 	<input value="Submit" class="submit" type="submit" /> <a href="/cgi-bin/koha/acqui/histsearch.pl">Advanced Search</a>
 	</form>
 	</div>	
-			<ul>
-			<li><a href="/cgi-bin/koha/acqui/booksellers.pl#supplier_search">Vendor Search</a></li>
-			<li class="ui-tabs-selected"><a href="/cgi-bin/koha/acqui/histsearch.pl#orders_search">Orders Search</a></li>
-			</ul>	
 </div>
 <!-- End Acquisitions Resident Search Box -->
