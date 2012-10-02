@@ -510,6 +510,7 @@ Returns a href:  keys %$branches eq (branchcode,branchname) .
 
 sub GetBranchesInCategory {
     my ($categorycode) = @_;
+    return [] unless $categorycode;
 
     my $branches = GetBranches();
     my @catbranches;
