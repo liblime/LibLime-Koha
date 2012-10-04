@@ -33,7 +33,6 @@ $.tablesorter.addParser({
 });
 <!-- TMPL_UNLESS NAME="borrowernumber" --><!-- TMPL_UNLESS NAME="CGIselectborrower" -->window.onload=function(){ $('#findborrower').focus(); };<!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
 	 $(document).ready(function() {
- 		$('#patronlists > ul').tabs();
 		$.tablesorter.defaults.widgets = ['zebra'];
 		$("#issuest").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
 		dateFormat: 'uk',<!-- /TMPL_IF -->
