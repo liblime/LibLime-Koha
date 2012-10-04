@@ -25,19 +25,9 @@ $(document).ready(function(){
 	<div class="yui-g">
 
         <h2>Holds awaiting pickup for your library on: <!-- TMPL_VAR NAME="show_date" --></h2>
-        <!-- TMPL_IF NAME="messagetransfert" -->
-            <div>
-                <h2>Hold find for (<!-- TMPL_VAR NAME="nextreservtitle" -->) must transfered</h2>
-                <p>This hold placed by : <b> <!-- TMPL_VAR NAME="nextreservsurname" --> <!-- TMPL_VAR NAME="nextreservfirstname" --></b> at the library : <b> <!-- TMPL_VAR NAME="branchname" --> </b>, Please transfer this hold.
-                </p>
-                <form name="cancelReservewithtransfert" action="waitingreserves.pl" method="post">
-                    <input type="submit" class="button" />
-                </form>
-            </div>
-        <!-- /TMPL_IF -->
-        <!-- TMPL_IF NAME="waiting" -->
+        <!-- TMPL_IF NAME="nextreservnumber" -->
             <div id="bloc25">
-                <h2>This hold is waiting</h2>
+                <h2>This item is on hold for another patron</h2>
                 <p>This hold (<!-- TMPL_VAR NAME="nextreservtitle" -->) was placed by <b> : <!-- TMPL_VAR NAME="nextreservsurname" --> <!-- TMPL_VAR NAME="nextreservfirstname" --></b>,
                 Please retain this hold.
                 </p>

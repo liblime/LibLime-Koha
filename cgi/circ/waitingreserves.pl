@@ -68,34 +68,31 @@ if ($item) {
     # Cancel item and promote next reserve status.
     # This script assumes staff has the item in hand and can process it accordingly.
 
-    my ( $messages, $nextreservinfo ) = ModReserveCancelAll( $reservenumber, $item );
+    CancelReserve($reservenumber);
+    my ($status, $nextreserve) = CheckReserves($item);
     # if we have a result
-    if ($nextreservinfo) {
-        my $borrowerinfo = GetMember( $nextreservinfo, 'borrowernumber' );
+    if ($nextreserve) {
+        my $borrowerinfo = GetMember( $nextreserve->{borrowernumber}, 'borrowernumber' );
         my $iteminfo = GetBiblioFromItemNumber($item);
-        if ( $messages->{'transfert'} ) {
-            $template->param(
-                messagetransfert => $messages->{'transfert'},
-                branchname       => GetBranchName($messages->{'transfert'}),
-            );
-        }
+        my $tx = ($nextreserve->{branchcode} ~~ C4::Context->userenv->{branch}) ? '' : $nextreserve->{branchcode};
 
         $template->param(
             message             => 1,
-            nextreservnumber    => $nextreservinfo,
+            messagetransfert => $tx,
+            branchname       => ($tx) ? GetBranchName($tx) : '',
+            nextreservnumber    => $nextreserve->{reservenumber},
             nextreservsurname   => $borrowerinfo->{'surname'},
             nextreservfirstname => $borrowerinfo->{'firstname'},
             nextborrowernumber  => $borrowerinfo->{'borrowernumber'},
             nextbiblionumber    => $iteminfo->{'biblionumber'},
-            nexttransfer        => $messages->{'transfert'},
+            nexttransfer        => $tx,
             nextreservitem      => $item,
             nextreservtitle     => $iteminfo->{'title'},
-            waiting             => ($messages->{'waiting'}) ? 1 : 0,
         );
     }
 
 # 	if the document is not in his homebranch location and there is not reservation after, we transfer it
-    if ($fbr ne $tbr  and not $nextreservinfo) {
+    if ($fbr ne $tbr  and not $nextreserve) {
         ModItemTransfer( $item, $fbr, $tbr );
     }
 }
