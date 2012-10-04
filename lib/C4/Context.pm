@@ -34,7 +34,7 @@ use JSON qw(from_json);
 use Koha;
 require Koha::RoseDB;
 
-$VERSION = '4.09.00.009';
+$VERSION = '4.09.00.013';
 
 if ($ENV{'HTTP_USER_AGENT'})	{
     require CGI::Carp;
