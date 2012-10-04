@@ -43,6 +43,7 @@ use C4::UploadedFile;
 use C4::BackgroundJob;
 use C4::Form::AddItem;
 use C4::Dates;
+use JSON;
 
 my $input = new CGI;
 my $dbh = C4::Context->dbh;
@@ -163,8 +164,8 @@ if ($completedJobID) {
             $dbh->{InactiveDestroy}  = 1;
 
             my $reply = CGI->new("");
-            print $reply->header(-type => 'text/html');
-            print "{ jobID: '$jobID' }";
+            print $reply->header(-type => 'application/json');
+            print encode_json({ jobID => $jobID });
             exit 0;
         } elsif (defined $pid) {
             # child

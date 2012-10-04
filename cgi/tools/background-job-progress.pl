@@ -29,14 +29,15 @@ use C4::Auth qw/check_cookie_auth/;
 use C4::BackgroundJob;
 use CGI::Cookie; # need to check cookies before
                  # having CGI parse the POST request
+use JSON;
 
 my $input = new CGI;
 my %cookies = fetch CGI::Cookie;
 my ($auth_status, $sessionID) = check_cookie_auth($cookies{'CGISESSID'}->value, { tools => '*' });
 if ($auth_status ne "ok") {
     my $reply = CGI->new("");
-    print $reply->header(-type => 'text/html');
-    print "{ progress: 0 }";
+    print $reply->header(-type => 'application/json');
+    print encode_json({ progress => 0 });
     exit 0;
 }
 

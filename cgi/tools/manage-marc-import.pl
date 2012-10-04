@@ -35,6 +35,7 @@ use C4::Matcher;
 use C4::BackgroundJob;
 use C4::Labels::Batch 1.000000;
 use C4::Branch qw(GetBranchCodeFromName);
+use JSON;
 
 my $script_name = "/cgi-bin/koha/tools/manage-marc-import.pl";
 
@@ -291,7 +292,7 @@ sub put_in_background {
 
         my $reply = CGI->new("");
         print $reply->header(-type => 'application/json');
-        print "{ jobID: '$jobID' }";
+        print encode_json({ jobID => $jobID });
         exit 0;
     } elsif (defined $pid) {
         # child

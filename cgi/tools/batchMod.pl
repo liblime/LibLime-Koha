@@ -34,6 +34,7 @@ use C4::ClassSource;
 use C4::Dates;
 use C4::Debug;
 use MARC::File::XML;
+use JSON;
 
 my $input = new CGI;
 my $dbh = C4::Context->dbh;
@@ -550,8 +551,8 @@ sub put_in_background {
         C4::Context->dbh->{InactiveDestroy}  = 1;
 
         my $reply = CGI->new("");
-        print $reply->header(-type => 'text/html');
-        print "{ jobID: '$jobID' }";
+        print $reply->header(-type => 'application/json');
+        print encode_json({ jobID => $jobID });
         exit 0;
     } elsif (defined $pid) {
         # child
