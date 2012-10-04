@@ -708,89 +708,17 @@ fieldset.rows .inputnote {
 	top : -1px;
 }
 
-.ui-tabs-nav li.ui-tabs-selected {
-
-}
-
-.ui-tabs-nav a, .ui-tabs-nav a span, .ui-tabs-nav span.a {
-   background : none;
-	display : block;
-	padding: .2em .5em .25em .5em;
-}
-
-.ui-tabs-nav a, .ui-tabs-nav span.a {
-
-}
-
-.ui-tabs-nav .ui-tabs-selected a, .ui-tabs-nav .ui-tabs-selected span.a {
-	background-color : #FFFFCC;
-	border-top: 1px solid #FFFFCC;
-	border-right: 1px solid #FF9900;
-	border-bottom: 1px solid #FF9900;
-	border-left: 1px solid #FFCC66;
-	font-weight : bold;
-	text-align : center;
-	text-decoration : none;
-
-}
-
-.ui-tabs-nav .tabs-selected a, .ui-tabs-nav a:hover, .ui-tabs-nav a:focus, .ui-tabs-nav a:active, .ui-tabs-nav span.a {
-    outline: 0; /* prevent dotted border in Firefox */
-}
-
-.ui-tabs-nav .ui-tabs-selected a:hover {
-	color : #0000CC;
-}
-
-.ui-tabs-nav li.ui-tabs-selected {
-	background-color : #FFFFCC;
-}
-
-.ui-tabs-nav .ui-tabs-selected a, .ui-tabs-nav a:hover, .ui-tabs-nav a:focus, .ui-tabs-nav a:active, .ui-tabs-nav span.a {
-	 background : none;
-    outline: 0; /* prevent dotted border in Firefox */
-}
-
-.tabs-container {
-    border-top: 0;
-    padding : inherit;
-    background: #fff; /* declare background color for container to avoid distorted fonts in IE while fading */
-}
 .tabs-loading em {
     padding: inherit;
     background: none;
 }
 
-.toptabs {
-	margin-top : 1em;
+.toptabs.numbered ul.ui-tabs-nav li{
+/*    padding: 0.4em 0.7em;
+    font-size: smaller; */
 }
-
-.toptabs .ui-tabs-nav li {
-	margin-right : .5em;
-	position : relative;
-	top : 1px;
-}
-
-.toptabs .ui-tabs-nav li a, .toptabs .ui-tabs-nav li span.a {
-	background-color : #F3F3F3;
-	border : 1px solid #E8E8E8;
-	text-align : center;
-	text-decoration : none;
-}
-
-.toptabs .ui-tabs-nav li.ui-tabs-selected  {
-
-}
-
-.toptabs .ui-tabs-nav li.ui-tabs-selected a, .toptabs .ui-tabs-nav li.ui-tabs-selected span.a {
-	background-color : #FFF;
-	border-bottom : 1px solid #FFF;
-	margin-top : 0;
-}
-
-.toptabs .tabs-container {
-	border : 1px solid #E8E8E8;
-	padding : 1em;
+.toptabs.numbered ul.ui-tabs-nav li a{
+    padding: 0.4em 0.7em;
 }
 
 .checkedout {

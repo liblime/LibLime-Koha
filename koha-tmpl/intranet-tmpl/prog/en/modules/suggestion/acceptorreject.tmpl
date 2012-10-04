@@ -16,7 +16,7 @@
 	 */
 	function displayOther(id,show,hide) {$("#"+hide+id).hide(); $("#"+show+id).show(); }
 	$(document).ready(function() {
-	    $('#suggestiontabs > ul').tabs({
+	    $('#suggestiontabs').tabs({
 			select: function(ui) {
 		        $("#loadingtab").show();
 		    },
@@ -112,10 +112,10 @@
   <div id="loadingtab" class="overlay">Loading tab...</div>
   <div id="suggestiontabs" class="toptabs">
 	<ul class="ui-tabs-nav">
-      <li><a href="/cgi-bin/koha/suggestion/acceptorreject.pl#accepted">Accepted</a></li>
-      <li class="ui-tabs-selected"><a href="/cgi-bin/koha/suggestion/acceptorreject.pl#pending">Pending</a></li>
-      <li><a href="/cgi-bin/koha/suggestion/acceptorreject.pl#rejected">Rejected</a></li>
-		</ul>
+      <li><a href="#accepted">Accepted</a></li>
+      <li class="ui-tabs-selected"><a href="#pending">Pending</a></li>
+      <li><a href="#rejected">Rejected</a></li>
+	</ul>
 	
  <!--TMPL_LOOP Name="suggestions"-->
   <div id="<!--TMPL_VAR Name="suggestiontype"-->">
