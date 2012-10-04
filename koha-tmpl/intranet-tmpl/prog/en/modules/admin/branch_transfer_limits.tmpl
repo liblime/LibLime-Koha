@@ -7,7 +7,7 @@
 		$("#CheckAll").click(function(){ $("#transferlimit_tabs").checkCheckboxes();});
 		$("#UncheckAll").click(function(){ $("#transferlimit_tabs").unCheckCheckboxes();});
 		$("#SwapAll").click(function(){ $("#transferlimit_tabs").toggleCheckboxes();});
-	    $('#transferlimit_tabs > ul').tabs();
+	    $('#transferlimit_tabs').tabs();
 
 		var checkcolumn = $(".checkcolumn");
 		var checkrow = $(".checkrow");
@@ -73,13 +73,13 @@
 
   <div id="transferlimit_tabs" class="toptabs">
 	<ul class="ui-tabs-nav">
-      <!-- TMPL_LOOP NAME="codes_loop" --><li><a href="#<!-- TMPL_VAR NAME="code" -->set"><!-- TMPL_VAR NAME="code" --></a></li><!-- /TMPL_LOOP -->
+      <!-- TMPL_LOOP NAME="codes_loop" --><li><a href="#tabs-<!-- TMPL_VAR NAME="code" -->set"><!-- TMPL_VAR NAME="code" --></a></li><!-- /TMPL_LOOP -->
 	</ul>
 
 		<form method="post" action="branch_transfer_limits.pl">
 
 	<!-- TMPL_LOOP NAME="codes_loop" -->
-	<div id="<!-- TMPL_VAR NAME="code" -->set">
+	<div id="tabs-<!-- TMPL_VAR NAME="code" -->set">
 		<h4>Limits for <!--TMPL_VAR NAME="limit_phrase" -->: <!-- TMPL_VAR NAME="code" --></h4>
 	<p><a id="CheckAll<!-- TMPL_VAR NAME="code" -->table" class="checkall" href="#">Check All</a> | <a id="UncheckAll<!-- TMPL_VAR NAME="code" -->table" class="uncheckall" href="#">Uncheck All</a> | <a id="SwapAll<!-- TMPL_VAR NAME="code" -->table" class="swapall" href="#">Toggle All</a></p>
 		<table id="<!-- TMPL_VAR NAME="code" -->table">

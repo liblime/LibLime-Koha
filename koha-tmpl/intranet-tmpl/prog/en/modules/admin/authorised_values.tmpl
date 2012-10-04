@@ -8,7 +8,7 @@
 <script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
      $(document).ready(function() {
-        $('#icons > ul').tabs();
+        $('#icons').tabs();
      });
 //]]>
 </script>
@@ -69,40 +69,41 @@
             <input type=text name="prefix" id="prefix" value="<!-- TMPL_VAR NAME="prefix" -->" />
         </li>
 		</ol>
-		<div id="icons" class="toptabs">
 		<h5 style="margin-left:10px;">Choose an Icon:</h5>
+		<div id="icons" class="toptabs">
 			<ul>
-					<li><a href="/cgi-bin/koha/admin/authorised_values.pl?op=add_form&amp;category=<!-- TMPL_VAR NAME="category" -->#none">None</a></li>
+					<li><a href="#tabs-none">None</a></li>
 				  <!-- TMPL_LOOP NAME="imagesets" -->
-				  	<li><a href="/cgi-bin/koha/admin/authorised_values.pl?op=add_form&amp;category=<!-- TMPL_VAR NAME="category" -->#<!-- TMPL_VAR NAME="imagesetname" -->"><!-- TMPL_VAR name="imagesetname" --></a></li>
+				  	<li><a href="#tabs-<!-- TMPL_VAR NAME="imagesetname" -->"><!-- TMPL_VAR name="imagesetname" --></a></li>
 				  <!-- /TMPL_LOOP -->
 			</ul>
-		</div>
-  <div id="none"><ul>
+  <div id="tabs-none"><ul>
   <li><label for="noimage">No image: </label><input type="radio" name="imageurl" id="noimage" value="removeImage" /></li>
   </ul>
-  <br class="clear" /></div>
+  <br class="clear" />
+  </div>
   <!-- TMPL_LOOP NAME="imagesets" -->
-  <div id="<!-- TMPL_VAR NAME="imagesetname" -->"><ul>
-  <!-- TMPL_LOOP NAME="images" -->
+  <div id="tabs-<!-- TMPL_VAR NAME="imagesetname" -->"><ul>
+    <!-- TMPL_LOOP NAME="images" -->
   			<li style="float: none; display: inline; clear : none; width: auto;">
             <label> <!-- TMPL_IF NAME="StaffImageUrl" -->
               <img src="<!-- TMPL_VAR name="StaffImageUrl" -->" alt="<!-- TMPL_VAR name="StaffImageUrl" -->" title="<!-- TMPL_VAR name="StaffImageUrl" -->" />
         <!-- TMPL_ELSE -->
         <!-- /TMPL_IF -->
-    <!-- TMPL_IF name="checked" -->
+        <!-- TMPL_IF name="checked" -->
               <input type="radio" name="imageurl" value="<!-- TMPL_VAR name="KohaImage" -->" checked="checked" />
-    <!-- TMPL_ELSE -->
+        <!-- TMPL_ELSE -->
               <!-- TMPL_IF NAME="KohaImage" --> <!-- to delete the radio button if there is no image after -->
               <input type="radio" name="imageurl" value="<!-- TMPL_VAR name="KohaImage" -->" />
               <!-- /TMPL_IF -->
-    <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
             </label>
 			</li>
-  <!-- /TMPL_LOOP --></ul>
+    <!-- /TMPL_LOOP --></ul>
   <br class="clear" />
   </div>
   <!-- /TMPL_LOOP -->
+  </div> <!-- /icons -->
   
         </fieldset>
        <fieldset class="action"> <input type="hidden" name="id" value="<!-- TMPL_VAR name="id" -->" />

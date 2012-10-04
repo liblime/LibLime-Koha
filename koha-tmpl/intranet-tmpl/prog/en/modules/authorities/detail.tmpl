@@ -6,7 +6,7 @@
 //<![CDATA[
 
 	 $(document).ready(function() {
- 		$('#authoritiestabs>ul').tabs();
+ 		$('#authoritiestabs').tabs();
 	 });
 
 function confirm_deletion() {
@@ -115,7 +115,7 @@ function searchauthority() {
     <ul>
         <!-- TMPL_LOOP name="BIG_LOOP" -->
             <li>
-                <a href="/cgi-bin/koha/cataloguing/addbiblio.pl#tab<!-- TMPL_VAR name="number" -->XX"><!-- TMPL_VAR name="number"--></a>
+                <a href="#tab<!-- TMPL_VAR name="number" -->XX"><!-- TMPL_VAR name="number"--></a>
             </li>
         <!-- /TMPL_LOOP -->
     </ul>
