@@ -13,6 +13,7 @@ use DateTime;
 use DateTime::TimeZone;
 use Try::Tiny;
 use Getopt::Long qw(GetOptions);
+use Pod::Usage;
 use Log::Dispatch;
 use Log::Dispatch::Screen;
 use Carp;
@@ -60,9 +61,10 @@ my %opts = (
     continuous => 0,
     sleeptime => 30,
     verbosity => 0,
+    help => undef,
     );
 
-my $optcheck = GetOptions(
+GetOptions(
     'bibs!' => sub { push @queues, 'biblio' },
     'auths!' => sub { push @queues, 'auth' },
     'a|all!' => \$opts{all},
@@ -72,9 +74,12 @@ my $optcheck = GetOptions(
     'b|batch_size:i' => \$opts{batch_size},
     'c|continuous!' => \$opts{continuous},
     't|sleeptime:i' => \$opts{sleeptime},
-    'o' => \$opts{to_stdout},
+    'o|stdout!' => \$opts{to_stdout},
     'v|verbose' => sub { $opts{verbosity}++ },
-);
+    'h|help' => \$opts{help},
+) or pod2usage(1);
+
+pod2usage(0) if $opts{help};
 
 croak '"all" and "continuous" options are not compatible'
     if ( $opts{continuous} && $opts{all} );
@@ -285,3 +290,178 @@ sub update_timestamp {
     C4::Context->preference_set($rtype->{tspref}, $youngest_ts);
     return;
 }
+
+__END__
+
+=head1 NAME
+
+solrsync - Synchronize Koha bibliographic data to Solr index
+
+=head1 SYNOPSIS
+
+solrsync [options]
+
+  Options:
+    --help | -h
+    --verbose | -v
+    --[no-]bibs
+    --[no-]auths
+    --all | -a
+    --since=T | -s T
+    --workers=N | -w N
+    --batch_size=N | -b N
+    --[no-]continuous | -c
+    --sleeptime=S | -t S
+    --ids=N,N,N-M
+    --stdout | -o
+
+=head1 TYPICAL USE CASES
+
+Sync all bibs:
+
+=over
+
+C<solrsync --bibs --all>
+
+=back
+
+Sync all auths and bibs verbosely using four worker threads:
+
+=over
+
+C<solrsync --auths --bibs --all --workers=4 -v>
+
+=back
+
+Sync only bibs updated since last sync:
+
+=over
+
+C<solrsync --bibs>
+
+=back
+
+Sync only bibs changed since date:
+
+=over
+
+C<solrsync --bibs -s 2012-10-03T10:00:00>
+
+=back
+
+Sync only auth with authid between 1234 and 2345:
+
+=over
+
+C<solrsync --auths --ids=1234-2345>
+
+=back
+
+Sync all newly modified bibs and auths every 30 seconds:
+
+=over
+
+C<solrync --bibs --auths --continuous --sleeptime=30>
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item B<--verbose>
+
+Increase verbosity. Mulitple invocations are cumulative.
+
+=back
+
+=over
+
+=item B<--bibs>
+
+Process bibliographic records. Default is --no-bibs.
+
+=back
+
+=over
+
+=item B<--auths>
+
+Process authority records. Default is --no-auths.
+
+=back
+
+=over
+
+=item B<--all>
+
+Process all bib and/or auth records in database. Default is --no-all.
+
+=back
+
+=over
+
+=item B<--since=T>
+
+Process all bib and/or auth records written to changelog since time T.
+T is an ISO formatted datetime stamp. Default is the value stored in the
+appropriate syspref, either SolrBibUpdateTS for bibs or SolrAuthUpdateTS
+for auths.
+
+=back
+
+=over
+
+=item B<--workers=N>
+
+Deploy N workers to process the queue contents in parallel. Defaults to 1.
+
+=back
+
+=over
+
+=item B<--batch_size=N>
+
+Queue up N expressed docs before uploading them to the Solr server. Defaults
+to 100.
+
+=back
+
+=over
+
+=item B<--continuous>
+
+Run as a persistent process running in a loop. Default is to run a single
+time then exit.
+
+=back
+
+=over
+
+=item B<--sleeptime=S>
+
+Sleep for S seconds between queue runs. Only effective when running in
+continuous mode. Default is 20.
+
+=back
+
+=over
+
+=item B<--ids=N,N,N-M>
+
+Process only the biblionumbers or authids given in the value of this option.
+IDs must be comma separated. A sequence can be given with dashes. For example,
+C<--ids=11,17,93-95,22> would enqueue 11, 17, 93, 94, 95, and 22.
+
+=back
+
+=over
+
+=item B<--stdout>
+
+For debugging purposes, mostly. Writes the expressed document to stdout in
+addition to sending it to the Solr server.
+
+=back
+
+=cut
