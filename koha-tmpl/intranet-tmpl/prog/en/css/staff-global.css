@@ -713,12 +713,42 @@ fieldset.rows .inputnote {
     background: none;
 }
 
-.toptabs.numbered ul.ui-tabs-nav li{
-/*    padding: 0.4em 0.7em;
-    font-size: smaller; */
-}
 .toptabs.numbered ul.ui-tabs-nav li a{
     padding: 0.4em 0.7em;
+}
+
+/* Fake tabs in patron fines pages -- remove when fines module is updated. */
+.toptabs {
+       margin-top : 1em;
+}
+
+.toptabs .ui-tabs-nav li {
+       margin-right : .5em;
+       position : relative;
+       top : 1px;
+        display: inline-block;
+}
+
+.toptabs .ui-tabs-nav li a, .toptabs .ui-tabs-nav li span.a {
+       background-color : #F3F3F3;
+       border : 1px solid #E8E8E8;
+       text-align : center;
+       text-decoration : none;
+}
+
+.toptabs .ui-tabs-nav li.ui-tabs-selected  {
+
+}
+
+.toptabs .ui-tabs-nav li.ui-tabs-selected a, .toptabs .ui-tabs-nav li.ui-tabs-selected span.a {
+       background-color : #FFF;
+       border-bottom : 1px solid #FFF;
+       margin-top : 0;
+}
+
+.toptabs .tabs-container {
+       border : 1px solid #E8E8E8;
+       padding : 1em;
 }
 
 .checkedout {
