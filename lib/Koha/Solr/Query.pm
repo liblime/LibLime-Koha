@@ -176,7 +176,8 @@ sub _build_query_from_cgi{
             # A single-field query on a numeric term will be translated into barcode / biblionumber search.
             if( !$self->opac && ($f !~ /\D/)){
                 my $expectedLen = C4::Context->preference('itembarcodelength');
-                if ((length($f)<$expectedLen) && (length($f) != 10) && (length($f) != 13)){
+                my $l = length($f);
+                if (($l < $expectedLen) && ($l != 10) && ($l != 13) && ($l > 1)) {
                     my $prefixed_bc = C4::Circulation::barcodedecode(barcode => $f);
                     $query = sprintf("barcode:%s OR biblionumber:%d",$prefixed_bc,$f); 
                     $self->looks_like_barcode($prefixed_bc);
