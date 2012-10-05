@@ -52,7 +52,10 @@ if (defined $job) {
     $job_status = $job->status();
 }
 
-my $reply = CGI->new("");
-print $reply->header(-type => 'text/html');
-# response will be sent back as JSON
-print "{ progress: $reported_progress, job_size: $job_size, job_status: '$job_status' }";
+my $reply = CGI->new(q{});
+print $reply->header(-type => 'application/json');
+print encode_json({
+    progress => $reported_progress,
+    job_size => $job_size,
+    job_status => $job_status,
+});
