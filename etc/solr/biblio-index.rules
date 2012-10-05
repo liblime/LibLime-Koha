@@ -67,7 +67,7 @@ acqdate | 952d | most_recent
 
 #item-json | 952 | itemify
 on-shelf-at | 952 | on_shelf_at | unique
-owned-by | 952 | owned_by | unique
+owned-by | 952a | | unique
 lost | 9521 | | min_or_zero
 # record must have at least one item with lost value < 1, or no items at all.
 
