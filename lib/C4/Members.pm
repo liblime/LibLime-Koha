@@ -183,10 +183,8 @@ sub ConstrainPatronSearch {
 sub _constrain_sql_by_branchcategory {
     my ($query, @bind) = @_;
 
-    if (ConstrainPatronSearch())
-    {
-        my $mybranch = (C4::Context->userenv) ? C4::Context->userenv->{branch} : undef;
-        confess 'Unable to determine selected branch' if not $mybranch;
+    my $mybranch = (C4::Context->userenv) ? C4::Context->userenv->{branch} : undef;
+    if (ConstrainPatronSearch() && $mybranch) {
         my @sibling_branchcodes = C4::Branch::GetSiblingBranchesOfType($mybranch, 'patrons');
         my $clause = sprintf ' borrowers.branchcode IN (%s) ', join(',', map {'?'} @sibling_branchcodes) ;
 
