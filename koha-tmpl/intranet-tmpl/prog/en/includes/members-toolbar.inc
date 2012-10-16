@@ -56,7 +56,7 @@ function update_child() {
 	function yuiToolbar() {
 		<!-- TMPL_IF NAME="UseReceiptTemplates" -->
 		    var printmenu = [
-		        { text: _("Print Account Reciept"), onclick: {fn: function(){printx_window("payment_received")}} },
+		        { text: _("Print Account Receipt"), onclick: {fn: function(){printx_window("payment_received")}} },
 		    ];
 		<!-- TMPL_ELSE -->
 		    var printmenu = [

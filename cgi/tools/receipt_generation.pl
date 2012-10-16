@@ -49,7 +49,7 @@ my $receipt_template =
   GetReceiptTemplate( { action => $action, branchcode => $branchcode } );
 my $content = $receipt_template->{'content'};
 
-## Process Check Out Reciepts
+## Process Check Out Receipts
 if ( $action eq 'check_out' || $action eq 'check_out_quick' ) {
     my $today_issues_data = _get_issues_data( $borrowernumber, 'today' );
 
@@ -60,7 +60,7 @@ if ( $action eq 'check_out' || $action eq 'check_out_quick' ) {
     $content =
       _replace_loop( $content, $previous_issues_data, 'PreviousIssuesList' );
 }
-## Process Check In Reciepts
+## Process Check In Receipts
 elsif ( $action eq 'check_in' ) {
     my @barcodes     = $cgi->param('barcode');
     my $returns_data = _get_returns_data(@barcodes);
@@ -97,7 +97,7 @@ elsif ( $action eq 'payment_received' ) {
       _replace( $content, $data->[0] )
       ;    ## In case borrower data is used outside of a loop.
 }
-## Process Hold Found Reciepts
+## Process Hold Found Receipts
 elsif ( $action eq 'hold_found' ) {
     my $borrowernumber = $cgi->param('borrowernumber');
     my $biblionumber   = $cgi->param('biblionumber');
@@ -108,7 +108,7 @@ elsif ( $action eq 'hold_found' ) {
     my $data = _get_hold_data($reservenumber);
     $content = _replace( $content, $data );
 }
-## Process Transit Hold Found Reciepts
+## Process Transit Hold Found Receipts
 elsif ( $action eq 'transit_hold' ) {
     my $borrowernumber = $cgi->param('borrowernumber');
     my $biblionumber   = $cgi->param('biblionumber');

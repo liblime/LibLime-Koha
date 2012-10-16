@@ -96,11 +96,11 @@ output_html_with_http_headers $input, $cookie, $template->output;
 sub add_form {
     my ( $module, $code ) = @_;
 
-    my $reciept_template;
+    my $receipt_template;
 
     # if code has been passed we can identify letter and its an update action
     if ($code) {
-        $reciept_template = GetReceiptTemplate(
+        $receipt_template = GetReceiptTemplate(
             {
                 module     => $module,
                 code       => $code,
@@ -109,10 +109,10 @@ sub add_form {
         );
 
         $template->param( modify => 1 );
-        $template->param( code   => $reciept_template->{code} );
+        $template->param( code   => $receipt_template->{code} );
     }
     else {    # initialize the new fields
-        $reciept_template = {
+        $receipt_template = {
             module  => $module,
             code    => q{},
             name    => q{},
@@ -212,9 +212,9 @@ sub add_form {
     }
 
     $template->param(
-        name         => $reciept_template->{name},
-        title        => $reciept_template->{title},
-        content      => $reciept_template->{content},
+        name         => $receipt_template->{name},
+        title        => $receipt_template->{title},
+        content      => $receipt_template->{content},
         $module      => 1,
         SQLfieldname => $field_selection,
     );
@@ -246,7 +246,7 @@ sub add_validate {
 sub delete_confirm {
     my ( $module, $code ) = @_;
 
-    my $reciept_template = GetReceiptTemplate(
+    my $receipt_template = GetReceiptTemplate(
         {
             module     => $module,
             code       => $code,
@@ -256,7 +256,7 @@ sub delete_confirm {
 
     $template->param( code   => $code );
     $template->param( module => $module );
-    $template->param( name   => $reciept_template->{name} );
+    $template->param( name   => $receipt_template->{name} );
     return;
 }
 
