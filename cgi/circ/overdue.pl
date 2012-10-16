@@ -252,7 +252,7 @@ if ($noreport) {
     $strsth.=" AND date_due               < '" . $todaysdate     . "' " unless ($showall);
     $strsth.=" AND (borrowers.firstname like '".$bornamefilter."%' or borrowers.surname like '".$bornamefilter."%' or borrowers.cardnumber like '".$bornamefilter."%')" if($bornamefilter) ;
     $strsth.=" AND borrowers.categorycode = '" . $borcatfilter   . "' " if $borcatfilter;
-    $strsth.=" AND biblioitems.itemtype   = '" . $itemtypefilter . "' " if $itemtypefilter;
+    $strsth.=" AND items.itype   = '" . $itemtypefilter . "' " if $itemtypefilter;
     $strsth.=" AND borrowers.flags        = '" . $borflagsfilter . "' " if $borflagsfilter;
     $strsth.=" AND borrowers.branchcode   = '" . $branchfilter   . "' " if $branchfilter;
     # restrict patrons (borrowers) to those matching the patron attribute filter(s), if any
