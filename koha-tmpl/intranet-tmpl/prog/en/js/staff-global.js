@@ -6,8 +6,8 @@ if (typeof KOHA == "undefined" || !KOHA) {
 function _(s) { return s } // dummy function for gettext
 
  $(document).ready(function() {
- 	$(".focus").focus();
 	$('#header_search').tabs( { show : function(e, ui) { $('#header_search > div:not(.ui-tabs-hide)').find('input[type="text"]').eq(0).focus(); } });
+ 	$(".focus").focus();
     $( ".tabs-bottom .ui-tabs-nav, .tabs-bottom .ui-tabs-nav > *" ).removeClass( "ui-corner-all ui-corner-top" ).addClass( "ui-corner-bottom" );
 	$(".close").click(function(){ window.close(); });
 	if($("#header_search #tabs-checkin_search").length > 0){ $(document).bind('keydown','Alt+r',function (){ $("#header_search").tabs("select","#tabs-checkin_search"); $("#ret_barcode").focus(); }); } else { $(document).bind('keydown','Alt+r',function (){ location.href="/cgi-bin/koha/circ/returns.pl"; }); }
