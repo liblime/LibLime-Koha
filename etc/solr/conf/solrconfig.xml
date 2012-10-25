@@ -3,9 +3,8 @@
   <abortOnConfigurationError>${solr.abortOnConfigurationError:true}</abortOnConfigurationError>
   <luceneMatchVersion>LUCENE_36</luceneMatchVersion>
 
-  <lib dir="${options.solrinst}/dist/" regex="apache-solr-analysis-extras-\d.*\.jar" />
-  <lib dir="${options.solrinst}/contrib/analysis-extras/lib" regex=".*\.jar" />
-  <lib dir="${options.solrinst}/contrib/analysis-extras/lucene-libs" regex=".*\.jar" />
+  <lib dir="${options.solrinst:../../..}/contrib/analysis-extras/lib" />
+  <lib dir="${options.solrinst:../../..}/contrib/analysis-extras/lucene-libs" />
 
   <dataDir>${solr.data.dir:}</dataDir>
   <directoryFactory name="DirectoryFactory" 
