@@ -31,7 +31,7 @@ method _build_source_handlers(Str @sources) {
                 push @handlers, [$handler];
             }
 
-            when (/^\d\d\d$/) {
+            when (/^\d[\d.]{2}$/) {
                 # a full MARC::Field object
                 my $handler = func( MARC::Record $record) {
                     return $record->field($source);
