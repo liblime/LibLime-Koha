@@ -983,12 +983,6 @@
       "value" : "0",
       "type" : "YesNo"
    },
-   "TalkingTechMessagePath" : {
-      "explanation" : "Set the file system path for the Talking Tech MESSAGE file",
-      "options" : null,
-      "value" : "/tmp",
-      "type" : "free"
-   },
    "DisplayStafficonsXSLT" : {
       "explanation" : "If ON, displays the format, audience, type icons in the staff XSLT MARC21 result and display pages.",
       "options" : null,
@@ -2063,12 +2057,6 @@
       "value" : "1",
       "type" : "YesNo"
    },
-    "AdjustRelevancyRanking" : {
-      "explanation" : "Specify CCL code to adjust the default relevancy ranking when performing a search in Zebra.",
-      "options" : null,
-      "value" : null,
-      "type" : "Textarea"
-   },
    "PrintNoticesMaxLines" : {
       "explanation" : "If greater than 0, sets the maximum number of lines an overdue notice will print. If the number of items is greater than this number, the notice will end with a warning asking the borrower to check their online account for a full list of overdue items.",
       "options" : null,
@@ -2101,12 +2089,6 @@
    },
    "OPACSolrBQ" : {
       "explanation" : "Value supplied for the 'bq' parameter in Solr select queries.",
-      "options" : null,
-      "value" : null,
-      "type" : "free"
-   },
-   "OPACSolrQF" : {
-      "explanation" : "Value supplied for the 'qf' parameter in Solr select queries.",
       "options" : null,
       "value" : null,
       "type" : "free"

@@ -4867,6 +4867,17 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.014';
+if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    for ( qw(AdjustRelevancyRanking NoZebra NoZebraIndexes OPACSolrQF TalkingTechMessagePath) ) {
+        $dbh->do('DELETE FROM systempreferences WHERE variable LIKE ?',
+                 undef, $_);
+    }
+
+    say "Upgrade to $DBversion done ( Cleanup system preferences )";
+    SetVersion ($DBversion);
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 

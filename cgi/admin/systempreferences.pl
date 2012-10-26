@@ -137,6 +137,8 @@ $tabsysprefs{SpineLabelAutoPrint}         = "Cataloging";
 $tabsysprefs{UsePeriodicals}              = "Cataloging";
 $tabsysprefs{ItemLocation}                = "Cataloging";
 $tabsysprefs{EditAllLibraries}            = "Cataloging";
+$tabsysprefs{SolrAuthUpdateTS}            = "Cataloging";
+$tabsysprefs{SolrBibUpdateTS}             = "Cataloging";
 
 # Circulation
 $tabsysprefs{UseGranularMaxHolds}            = "Circulation";
@@ -216,6 +218,7 @@ $tabsysprefs{KeepPreviousBorrower}           = "Circulation";
 $tabsysprefs{KeepPreviousBorrowerInterval}   = "Circulation";
 $tabsysprefs{SplitStatistics}                = "Circulation";
 $tabsysprefs{ClearNotForLoan}                = "Circulation";
+$tabsysprefs{PrintNoticesMaxLines}           = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}            = "StaffClient";
@@ -240,6 +243,8 @@ $tabsysprefs{soundon}                     = "StaffClient";
 $tabsysprefs{DisplayStafficonsXSLT}       = "StaffClient";
 $tabsysprefs{ShowPatronSearchBySQL}       = "StaffClient";
 $tabsysprefs{WarnOnlyOnMaxFine}           = "StaffClient";
+$tabsysprefs{IntranetUserCSS}             = "StaffClient";
+$tabsysprefs{ShowSupressStatus}           = "StaffClient";
 
 # Patrons
 $tabsysprefs{autoMemberNum}                = "Patrons";
@@ -301,6 +306,9 @@ $tabsysprefs{OPACAdvancedSearchTypes} = "Searching";
 $tabsysprefs{maxItemsinSearchResults} = "Searching";
 $tabsysprefs{OPACShowActiveBranchFirstInResults} = "Searching";
 $tabsysprefs{OpacFacets}              = "Searching";
+$tabsysprefs{SearchFacets}            = "Searching";
+$tabsysprefs{OPACSolrBQ}              = "Searching";
+$tabsysprefs{OPACSolrMM}              = "Searching";
 
 
 # EnhancedContent
@@ -437,6 +445,7 @@ $tabsysprefs{OPACShowCompletedHolds}             = "OPAC";
 $tabsysprefs{OPACShowCancelledHolds}             = "OPAC";
 $tabsysprefs{OPACShowExpiredHolds}               = "OPAC";
 $tabsysprefs{OPACQuickSearchFilter}              = "OPAC";
+$tabsysprefs{NewTitlesAge}                       = "OPAC";
 
 # Serials
 $tabsysprefs{OPACSerialIssueDisplayCount}  = "Serials";
