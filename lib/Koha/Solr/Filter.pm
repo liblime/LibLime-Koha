@@ -182,20 +182,17 @@ func dne_to_zero( Str @strings ) {
         return 0;
     }
 }
+
 func min_or_zero( Str @strings ) {
     return List::Util::min(@strings) || 0;
 }
 
 func fullmarc( MARC::Record $record ) {
-    #FIXME: Exclude some coded fields and private notes and such.
-    my @values;
-    for my $f ($record->fields()){
-        next if($f->tag() < '010');
-        for my $sf ($f->subfields()){
-            push @values, $sf->[1];
-        }
-    }
-    return @values;
+    return map {$_->[1]}
+        map {$_->subfields}
+        grep {$_->tag ge '010' || $_->tag le '001'}
+        grep {$_->tag ne '952'}
+        $record->fields;
 }
 
 func title_sort( MARC::Field $f ){

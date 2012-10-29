@@ -338,6 +338,10 @@
   <copyField source="*_mt" dest="text" maxChars="2048"/>
   <copyField source="*_lc" dest="text" maxChars="2048"/>
   <copyField source="*_mlc" dest="text" maxChars="2048"/>
+  <copyField source="callnumber" dest="text" maxChars="2048"/>
+  <copyField source="barcode" dest="text" maxChars="2048"/>
+
+  <copyField source="text" dest="text_ph"/>
 
   <copyField source="title-nostem" dest="title_display"/>
   <copyField source="title-nostem" dest="title-exact"/>
@@ -350,7 +354,6 @@
   <copyField source="author-full" dest="author_ph"/>
   <copyField source="subject" dest="subject_spell"/>
   <copyField source="subject" dest="all_spell"/>
-  <copyField source="text" dest="text_ph"/>
 
   <copyField source="auth-heading" dest="auth-heading_lc"/>
   <copyField source="auth-full" dest="auth-full_mlc"/>
