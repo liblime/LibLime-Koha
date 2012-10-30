@@ -22,7 +22,6 @@ use C4::Context;
 use C4::Debug;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-use vars qw($ext_dict $select_all @fields);
 
 BEGIN {
 	$VERSION = 0.03;
@@ -45,20 +44,11 @@ BEGIN {
 	if ($debug) {
 		require Data::Dumper;
 		import Data::Dumper qw(:DEFAULT);
-		print STDERR __PACKAGE__ . " external dictionary = " . ($ext_dict||'none') . "\n";
 	}
 }
 
-if ($ext_dict) {
-    require Lingua::Ispell;
-    import Lingua::Ispell qw(spellcheck add_word_lc save_dictionary);
-}
-
-$ext_dict = C4::Context->preference('TagsExternalDictionary');
-$ext_dict and $Lingua::Ispell::path = $ext_dict;
-$debug and print STDERR "\$Lingua::Ispell::path = $Lingua::Ispell::path\n";
-@fields = qw(tag_id borrowernumber biblionumber term language date_created);
-$select_all = "SELECT " . join(',',@fields) . "\n FROM   tags_all\n";
+our @fields = qw(tag_id borrowernumber biblionumber term language date_created);
+our $select_all = "SELECT " . join(',',@fields) . "\n FROM   tags_all\n";
 
 sub get_filters (;$) {
 	my $query = "SELECT * FROM tags_filters ";
@@ -72,9 +62,6 @@ sub get_filters (;$) {
 	}
 	return $sth->fetchall_arrayref({});
 }
-
-# 	(SELECT count(*) FROM tags_all     ) as tags_all,
-# 	(SELECT count(*) FROM tags_index   ) as tags_index,
 
 sub approval_counts () { 
 	my $query = "SELECT
@@ -331,13 +318,24 @@ sub get_approval_rows (;$) {		# i.e., from tags_approval
 	return $sth->fetchall_arrayref({});
 }
 
+sub get_ext_dict {
+    my $ext_dict = C4::Context->preference('TagsExternalDictionary');
+    return unless $ext_dict;
+
+    eval {
+        require Lingua::Ispell;
+        $Lingua::Ispell::path = $ext_dict;
+        import Lingua::Ispell qw(spellcheck add_word_lc save_dictionary);
+    };
+}
+
 sub is_approved ($) {
 	my $term = shift or return undef;
 	my $sth = C4::Context->dbh->prepare("SELECT approved FROM tags_approval WHERE term = ?");
 	$sth->execute($term);
 	unless ($sth->rows) {
-		$ext_dict and return (spellcheck($term) ? 0 : 1);	# spellcheck returns empty on OK word
-		return 0;
+            return 0 unless get_ext_dict();
+            return spellcheck($term) ? 0 : 1;
 	}
 	return $sth->fetchrow;
 }
@@ -358,7 +356,7 @@ sub get_tag_index ($;$) {
 sub whitelist {
 	my $operator = shift;
 	defined $operator or return undef; # have to test defined to allow =0 (kohaadmin)
-	if ($ext_dict) {
+	if ( get_ext_dict() ) {
 		foreach (@_) {
 			spellcheck($_) or next;
 			add_word_lc($_);
