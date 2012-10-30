@@ -23,7 +23,6 @@ use vars qw($VERSION $AUTOLOAD $context @context_stack);
 use Try::Tiny;
 use CHI;
 use DBI;
-use ZOOM;
 use Carp;
 use XML::Simple;
 use File::Slurp;

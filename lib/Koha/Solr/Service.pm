@@ -57,8 +57,6 @@ method simpleSearch ( Koha::Solr::Query $query, Bool :$display ) {
 
 # Hack facet handling into WS::Solr::Response...
 
-use DDP;
-
 my $koha_facets = sub {
     my $self = shift;
     return unless C4::Context->preference('SearchFacets');
@@ -102,7 +100,6 @@ my $koha_facets = sub {
         }
         push @facets, { field => $field, display => $display, 'values' => \@results, 'expandable' => (scalar(@results) >= $FACET_LIMIT) ? 1 : 0 };
     }
-    #warn p @facets;
     return \@facets;
 };
 use WebService::Solr::Response;

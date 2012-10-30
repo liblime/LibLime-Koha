@@ -16,7 +16,6 @@ use Koha;
 use Moose;
 use Method::Signatures;
 use WebService::Solr::Query;
-use Search::QueryParser;
 use URI::Escape;
 use List::MoreUtils qw(each_array);
 use Business::ISBN;
@@ -31,7 +30,6 @@ has query => ( is => 'rw', isa => 'Str', default => '*:*' );
 has cgi => ( is => 'rw', isa => 'CGI' );
 has uri => ( is => 'rw', isa => 'Str' );
 has limits => ( is => 'rw', isa => 'ArrayRef' );
-#has _parsed_query => ( is => 'rw', isa => 'HashRef' ); # from Search::QueryParser
 has simple_query => (is => 'rw', isa => 'Str', default => '*:*' );  # if search is only against one field.
 has simple_query_field => ( is => 'rw', isa => 'Str' );
 has looks_like_barcode => ( is => 'rw',
@@ -308,93 +306,6 @@ sub _build_query_from_cgi{
 method z3950_uri_param () {
     return join('&', map( "$_=" . uri_escape($self->z3950_param()->{$_}), keys($self->z3950_param())));
 }
-
-### query parsing methods below were intended to allow addition of fuzzy operators and phrase slop,
-# as well as offer translation of fields and/or operators (e.g. '>x' => [x TO *]) .
-# I've left it here in case any of it can be salvaged, but Search::QueryParser handles BOOL operators
-# too differently from lucene query syntax, translating 'a AND b' into '+a +b', etc.  So none of it is used.
-# Was also hoping to store the parsed query in this object for other uses.  [RH]
-
-=begin comment
-
-method _parse_query_string ($query){
-# This method was meant to allow us to add phrase slop to quoted
-# queries and possibly add fuzzy operators.  Not currently used.
-    my $munge = 0;  ### for testing.
-    if($munge){
-        my $qp = new Search::QueryParser;
-        $self->_parsed_query($self->_munge_query($qp->parse($query)));
-        $self->query($self->_unparse());
-    } else {
-        $self->query($query);
-    }
-}
-
-method _munge_query (HashRef $Q){
-    #my $fuzzy = '~0.6';
-    my $fuzzy = 0;
-    for my $op (keys(%$Q)){
-        for my $subQ (@{$Q->{$op}}){
-            given($subQ->{'op'}){
-                when('='){
-                    $subQ->{op} = ':';
-                    continue;
-                }
-                when(/>=?/){
-                    unless($subQ->{quote}){
-                        $subQ->{op} = ':';
-                        my $bracket = (/=/) ? "{" : "[";
-                        $subQ->{value} = $bracket . $subQ->{value} . " TO *]";
-                    }
-                }
-                when(/<=?/){
-                    unless($subQ->{quote}){
-                        $subQ->{op} = ':';
-                        my $bracket = (/=/) ? "}" : "]";
-                        $subQ->{value} = "[* TO " . $subQ->{value} . $bracket;
-                    }
-                }
-                when("()"){
-                    $self->_munge_query($subQ->{value});
-                }
-                when(/[=:]/){
-                    $subQ->{op} = ':' if(/=/);
-
-                    if(!$subQ->{quote} && $fuzzy && length($subQ->{value}) > 4) {
-                        $subQ->{value} .= $fuzzy;
-                    }
-                }
-            }
-        }
-    }
-    return $Q;
-}
-# Search::QueryParser::unparse (copied to override default behavior of including the operator even if there's no field)
-#  e.g. query `brown bag` would unparse to `:brown :bag`.
-
-method _unparse (){
-  my $q = $self->_parsed_query();
-
-  my @subQ;
-  for my $prefix ('+', '', '-') {
-    next if not $q->{$prefix};
-    push @subQ, $prefix . $self->_unparse_subQ($_) foreach @{$q->{$prefix}};
-  }
-  return join " ", @subQ;
-}
-
-method _unparse_subQ (HashRef $subQ) {
-
-  return  "(" . $self->unparse($subQ->{value}) . ")"  if $subQ->{op} eq '()';
-  my $quote = $subQ->{quote} || "";
-  my $unparsed = ($subQ->{field}) ? $subQ->{field} . $subQ->{op} : '';
-  return  $unparsed . "$quote$subQ->{value}$quote";
-}
-
-=end comment
-
-=cut
-
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

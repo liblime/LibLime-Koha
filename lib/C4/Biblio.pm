@@ -23,7 +23,6 @@ use Carp;
 use MARC::Record;
 use MARC::File::USMARC;
 use MARC::File::XML;
-use ZOOM;
 use POSIX qw(strftime);
 
 use C4::Koha;
