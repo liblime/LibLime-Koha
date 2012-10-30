@@ -3,6 +3,7 @@ rtype | record | emit_bib_rtype
 biblionumber | 999c
 
 text | record | fullmarc
+text | 001[0-15]
 
 author-display | 100a |
 author-full | 100abcd 100q 110ab 111ab 700abcd 700q 710ab 711ab | concat

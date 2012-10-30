@@ -190,8 +190,7 @@ func min_or_zero( Str @strings ) {
 func fullmarc( MARC::Record $record ) {
     return map {$_->[1]}
         map {$_->subfields}
-        grep {$_->tag ge '010' || $_->tag le '001'}
-        grep {$_->tag ne '952'}
+        grep {$_->tag ge '010' && $_->tag ne '952'}
         $record->fields;
 }
 
