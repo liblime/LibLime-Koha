@@ -27,7 +27,7 @@ around BUILDARGS => sub {
 };
 
 before 'search' => method($query, $options) {
-    my @prefs = qw(bq qf mm);
+    my @prefs = qw(bq mm);
     for my $pref ( @prefs ) {
         my $syspref = 'OPACSolr'.uc($pref);
         if (my $val = C4::Context->preference($syspref)) {
