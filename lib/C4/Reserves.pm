@@ -1586,8 +1586,8 @@ sub CancelReserve {
         _NormalizePriorities($reserve->{biblionumber});
     }
 
-    my $moduser    = C4::Context->userenv->{number};
-    my $branchcode = C4::Context->userenv->{branch};
+    my $moduser    = (C4::Context->userenv) ? C4::Context->userenv->{number} : 0;
+    my $branchcode = (C4::Context->userenv) ? C4::Context->userenv->{branch} : '';
     UpdateReserveCancelledStats(
       $branchcode, 'reserve_canceled', undef, $reserve->{biblionumber},
       $reserve->{itemnumber}, undef, $reserve->{borrowernumber},
@@ -1600,10 +1600,6 @@ sub CancelReserve {
 sub _sendReserveCancellationLetter {
     my $reserve = shift;
 
-    # Pull borrowernumber of the user performing the action for logging
-    my $moduser    = C4::Context->userenv->{number};
-    my $branchcode = C4::Context->userenv->{branch};
-    
     # Send cancellation notice, if desired
     my $mprefs = C4::Members::Messaging::GetMessagingPreferences( { 
       borrowernumber => $reserve->{borrowernumber},
