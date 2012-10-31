@@ -81,8 +81,10 @@ GetOptions(
 
 pod2usage(0) if $opts{help};
 
-croak '"all" and "continuous" options are not compatible'
-    if ( $opts{continuous} && $opts{all} );
+croak '"continuous" mode is incompatible with "all" or "ids"'
+    if ( $opts{continuous} && ($opts{all} || $opts{ids}) );
+croak 'only one of either "all" or "ids" may be specified'
+    if ( $opts{all} && $opts{ids} );
 
 my $log = Log::Dispatch->new();
 $log->add( Log::Dispatch::Screen->new(
@@ -295,6 +297,10 @@ sub get_timestamp {
 sub update_timestamp {
     my ($rtype, $todos) = @_;
     return unless @$todos;
+
+    return if $rtype->{opts}{all}
+           || $rtype->{opts}{ids}
+           || $rtype->{opts}{to_stdout};
 
     $todos = [ sort { $a->{stamp} cmp $b->{stamp} } @$todos ];
     my $youngest_entry = pop @$todos;
