@@ -71,7 +71,7 @@ GetOptions(
     'ids:s' => \$opts{ids},
     's|since:s' => \$opts{timestamp},
     'w|workers:i' => \$opts{workers},
-    'b|batch_size:i' => \$opts{batch_size},
+    'b|batch-size:i' => \$opts{batch_size},
     'c|continuous!' => \$opts{continuous},
     't|sleeptime:i' => \$opts{sleeptime},
     'o|stdout!' => \$opts{to_stdout},
@@ -186,10 +186,10 @@ sub s2hms {
 }
 
 sub process_list {
-    my ($rtype, $todos) = @_;
+    our ($rtype, $todos) = @_;
     return unless @$todos;
 
-    my $solr = WebService::Solr->new( C4::Context->config('solr')->{url},
+    our $solr = WebService::Solr->new( C4::Context->config('solr')->{url},
                                       { autocommit => 0 } );
     my %deletes = map { $_->{id} => 1} grep { $_->{action} ~~ 'delete' } @$todos;
     my %updates = map { $_->{id} => 1} grep { $_->{action} ~~ 'update' } @$todos;
@@ -203,15 +203,14 @@ sub process_list {
         $log->info('Delete complete');
     }
 
-    my $r = Koha::Solr::IndexStrategy::MARC->new(
+    our $r = Koha::Solr::IndexStrategy::MARC->new(
         rules_text => scalar read_file($rtype->{rules_file}) );
-    my @update_docs;
-    my ($update_count, $render_errors, $update_errors) = (0, 0, 0);
-    my $queue_size = scalar keys %updates;
+    our ($update_count, $render_errors, $update_errors) = (0, 0, 0);
+    our ($start_time, undef) = gettimeofday();
+    our $queue_size = scalar keys %updates;
     $log->info("Have $queue_size updates in queue");
-    my ($start_time, undef) = gettimeofday();
 
-    my $doc_with_catch = sub {
+    sub doc_with_catch {
         my $id = shift;
         $log->debug("Expressing $id");
         my $record = $rtype->{acquire_one}->($id);
@@ -222,7 +221,7 @@ sub process_list {
                 record => $record, strategy => $r );
         }
         catch {
-            carp "Error rendering $id into Solr doc: $_";
+            $log->warn("Error rendering $id into Solr doc: $_");
             $render_errors++;
             $update_count--;
             undef;
@@ -230,7 +229,15 @@ sub process_list {
         return $doc;
     };
 
-    my $add_with_catch = sub {
+    sub add_with_catch {
+        my $update_docs = shift;
+        return unless @$update_docs;
+
+        if ($rtype->{opts}{to_stdout}) {
+            say join('', @$update_docs);
+            return;
+        }
+
         my ($now, undef) = gettimeofday();
         my $total_elapsed_seconds = ($now - $start_time) || 1;
         my $dps_all = int($update_count / $total_elapsed_seconds);
@@ -244,25 +251,34 @@ sub process_list {
         $log->info($msg);
 
         try {
-            $solr->add( \@update_docs );
+            $solr->add( $update_docs );
         }
         catch {
-            carp "Error uploading batch into Solr: $_";
-            $update_errors++;
+            if (@$update_docs == 1) {
+                $log->warn('Unable to upload doc: ' . substr($_, 0, 255));
+                $update_errors++;
+                return;
+            }
+            $log->warn("Batch upload error. Splitting batch.");
+            my @ud2 = splice $update_docs, @$update_docs/2;
+            add_with_catch( $update_docs );
+            add_with_catch( \@ud2 );
             undef;
         };
-        @update_docs = ();
         $log->debug('Batch complete');
     };
 
+    my $update_docs = [];
     for ( sort {$a <=> $b} keys %updates ) {
-        my $doc = $doc_with_catch->($_);
+        my $doc = doc_with_catch($_);
         next unless $doc;
-        say $doc if $rtype->{opts}{to_stdout};
-        push @update_docs, $doc;
-        $add_with_catch->() if (@update_docs >= $rtype->{opts}{batch_size});
+        push $update_docs, $doc;
+        if (@$update_docs >= $rtype->{opts}{batch_size}) {
+            add_with_catch( $update_docs );
+            $update_docs = [];
+        }
     }
-    $add_with_catch->();
+    add_with_catch( $update_docs );
 
     $log->info(
         "Updated $update_count records with $render_errors render errors ".
@@ -309,7 +325,7 @@ solrsync [options]
     --all | -a
     --since=T | -s T
     --workers=N | -w N
-    --batch_size=N | -b N
+    --batch-size=N | -b N
     --[no-]continuous | -c
     --sleeptime=S | -t S
     --ids=N,N,N-M
@@ -420,7 +436,7 @@ Deploy N workers to process the queue contents in parallel. Defaults to 1.
 
 =over
 
-=item B<--batch_size=N>
+=item B<--batch-size=N>
 
 Queue up N expressed docs before uploading them to the Solr server. Defaults
 to 100.
@@ -459,8 +475,8 @@ C<--ids=11,17,93-95,22> would enqueue 11, 17, 93, 94, 95, and 22.
 
 =item B<--stdout>
 
-For debugging purposes, mostly. Writes the expressed document to stdout in
-addition to sending it to the Solr server.
+For debugging purposes, mostly. Writes the expressed document to stdout
+instead of sending it to the Solr server.
 
 =back
 
