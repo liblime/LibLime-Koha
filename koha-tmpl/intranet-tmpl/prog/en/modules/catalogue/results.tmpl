@@ -237,16 +237,13 @@ function PopupZ3950() {
                 |
                 <a href="#" class="highlight_toggle" id="highlight_toggle_off">Unhighlight</a>
                 <a href="#" class="highlight_toggle" id="highlight_toggle_on">Highlight</a>
-                <!-- TMPL_IF NAME="last_borrower_show_button" -->
                   <!-- TMPL_IF NAME="CAN_user_reserveforothers_add_holds" -->
                   	<!-- TMPL_IF NAME="DisplayMultiPlaceHold" -->
                     <input type="button" onclick="placeHold(); return false;" value="Place Hold(s)<TMPL_IF NAME="last_borrower_show_button"> for <TMPL_VAR NAME="last_borrower_firstname"> <TMPL_VAR NAME="last_borrower_surname"></TMPL_IF>"/>
                   	<!-- /TMPL_IF -->
-                  <!-- /TMPL_IF -->
-                <!-- TMPL_ELSE -->
+                <!-- /TMPL_IF -->
                   <input type="button" onclick="addToList(); return false;" value="Add to List"/>
 				  <!-- TMPL_IF NAME="CAN_user_editcatalogue" --><input type="button" onclick="PopupZ3950(); return false;" value="z39.50 Search"/><!-- /TMPL_IF -->
-                <!-- /TMPL_IF -->
             </div>
         </div>
     <!-- TMPL_IF NAME="stopwords_removed" --><div><p class="tip">Ignored the following common words: "<!-- TMPL_VAR NAME="stopwords_removed" -->"<p></div><!-- /TMPL_IF -->

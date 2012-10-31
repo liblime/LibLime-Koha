@@ -106,17 +106,18 @@ if ($type eq 'str8' && $borrowernumber ne ''){
             AddReserve($branch,$borrowernumber->{'borrowernumber'},$biblionumber,'a',[$biblionumber],
                        $bibinfo->{rank},$startdate,$notes,$bibinfo->{title},$checkitem,$found);
         } else {
-            if (($input->param('request') // '') eq 'any'){
-                # place a request on 1st available
-                AddReserve($branch,$borrowernumber->{'borrowernumber'},$biblionumber,'a',\@realbi,$rank[0],$startdate,$notes,$title,$checkitem,$found);
-            } else {
-                AddReserve($branch,$borrowernumber->{'borrowernumber'},$biblionumber,'a',\@realbi,$rank[0],$startdate,$notes,$title,$checkitem, $found);
-            }
+            AddReserve($branch,$borrowernumber->{'borrowernumber'},$biblionumber,'a',\@realbi,$rank[0],$startdate,$notes,$title,$checkitem,$found);
         }
     }
 
-    my $searchtohold = $input->param('searchtohold');
-    my $url = "editholds.pl?searchtohold=$searchtohold&close_greybox=$searchtohold&biblionumber=$biblionumber&sortRev=ASC";
+    my $url;
+    if ($multi_hold) {
+        $url = "/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrowernumber->{borrowernumber}"
+    }
+    else {
+        my $searchtohold = $input->param('searchtohold');
+        $url = "editholds.pl?searchtohold=$searchtohold&close_greybox=$searchtohold&biblionumber=$biblionumber&sortRev=ASC";
+    }
     print $input->redirect($url);
    exit;
 } elsif ($borrowernumber eq ''){
