@@ -66,7 +66,7 @@ my $koha_facets = sub {
     return unless C4::Context->preference('SearchFacets');
     my $facet_spec = C4::Context->preference('SearchFacets');
     my @facets;
-    my $FACET_LIMIT = $self->content->{responseHeader}->{params}->{'facet.limit'} // 12;  # FIXME: Set in solrconfig.
+    my $facet_limit = $self->content->{responseHeader}->{params}->{'facet.limit'} // 12;  # FIXME: Set in solrconfig.
     my $hits = $self->content->{response}->{numFound};
     for my $facetspec (split(/\s*,\s*/,C4::Context->preference('SearchFacets'))){
         my ($field, $display) = split(':',$facetspec);
@@ -100,10 +100,15 @@ my $koha_facets = sub {
             # any facet with a display value != facet value can be resorted A-Z.  Currently
             # we only sort branch facet A-Z, and do not allow resorting.
             my $start_slice = $self->content->{responseHeader}->{params}->{'facet.offset'} // 0;
-            my $end_slice = $start_slice + (scalar(@results) < $FACET_LIMIT - 2) ? scalar(@results) + 1 : $FACET_LIMIT - 1;
+            my $end_slice = $start_slice;
+            if(scalar(@sorted_branchfacet) - $start_slice < $facet_limit ){
+                $end_slice += scalar(@sorted_branchfacet) - $start_slice - 1;
+            } else {
+                $end_slice += $facet_limit - 1;
+            }
             @results = @sorted_branchfacet[$start_slice .. $end_slice];
         }
-        push @facets, { field => $field, display => $display, 'values' => \@results, 'expandable' => (scalar(@results) >= $FACET_LIMIT) ? 1 : 0 };
+        push @facets, { field => $field, display => $display, 'values' => \@results, 'expandable' => (scalar(@results) >= $facet_limit) ? 1 : 0 };
     }
     #warn p @facets;
     return \@facets;
