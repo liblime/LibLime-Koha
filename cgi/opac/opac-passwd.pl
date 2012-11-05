@@ -31,8 +31,12 @@ use C4::Circulation;
 use C4::Members;
 use C4::Output;
 
-my $query = new CGI;
-my $dbh   = C4::Context->dbh;
+my $query = CGI->new;
+
+unless (C4::Context->preference('OpacPasswordChange')) {
+    print $query->header(-status => '403');
+    exit 0;
+}
 
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     {
@@ -47,6 +51,7 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 
 # get borrower information ....
 my ( $borr ) = GetMemberDetails( $borrowernumber );
+my $dbh   = C4::Context->dbh;
 my $sth =  $dbh->prepare("UPDATE borrowers SET password = ? WHERE borrowernumber=?");
 my $minpasslen = C4::Context->preference("minPasswordLength");
 if (   $query->param('Oldkey')
