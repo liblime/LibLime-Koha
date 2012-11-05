@@ -129,7 +129,7 @@ sub _build_query_from_cgi{
             }
             elsif ( $idx eq 'callnumber' ) {
                 # Do a left-anchored wildcard search on call numbers
-                $q =~ s/\s+/?/;
+                $q =~ s/\s+/?/g;
                 $q .= '*';
             }
             elsif( $q !~ /"/ && $q !~ /\(|\)/ && $q =~ /\S+\s+\S+/ ) {
