@@ -5,8 +5,10 @@ if (typeof KOHA == "undefined" || !KOHA) {
 
 function _(s) { return s } // dummy function for gettext
 
+KOHA.focusOnTabChange = false; // Only needed until jQuery-UI 1.9
+
  $(document).ready(function() {
-	$('#header_search').tabs( { show : function(e, ui) { $('#header_search > div:not(.ui-tabs-hide)').find('input[type="text"]').eq(0).focus(); } });
+	$('#header_search').tabs( { show : function(e, ui) { KOHA.focusOnTabChange && $(ui.panel).find('input[type="text"]').eq(0).focus(); KOHA.focusOnTabChange = true; } });
  	$(".focus").focus();
     $( ".tabs-bottom .ui-tabs-nav, .tabs-bottom .ui-tabs-nav > *" ).removeClass( "ui-corner-all ui-corner-top" ).addClass( "ui-corner-bottom" );
 	$(".close").click(function(){ window.close(); });
