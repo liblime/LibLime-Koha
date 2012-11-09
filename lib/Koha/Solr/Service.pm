@@ -38,6 +38,8 @@ before 'search' => method($query, $options) {
     }
     # get all branch facets so we can sort by branch display name.
     $options->{'f.on-shelf-at.facet.limit'} = -1;
+    # note we set offset to zero, and rely on facet.offset setting when getting facets via ajax.  kinda hackish.
+    $options->{'f.on-shelf-at.facet.offset'} = 0;
 };
 
 has facet_limit => ( is => 'ro', isa => 'Int', default => 12 );
@@ -62,7 +64,7 @@ my $koha_facets = sub {
     return unless C4::Context->preference('SearchFacets');
     my $facet_spec = C4::Context->preference('SearchFacets');
     my @facets;
-    my $FACET_LIMIT = $self->content->{responseHeader}->{params}->{'facet.limit'} // 12;  # FIXME: Set in solrconfig.
+    my $facet_limit = $self->content->{responseHeader}->{params}->{'facet.limit'} // 12;  # FIXME: Set in solrconfig.
     my $hits = $self->content->{response}->{numFound};
     for my $facetspec (split(/\s*,\s*/,C4::Context->preference('SearchFacets'))){
         my ($field, $display) = split(':',$facetspec);
@@ -84,21 +86,27 @@ my $koha_facets = sub {
             }
             push @results, { display_value => $display_value, value => "\"$facet->[$i]\"", count => $facet->[$i+1] } if($facet->[$i]);
         }
-
         if($field ~~ 'on-shelf-at'){
             my @sorted_branchfacet = sort { lc($a->{display_value}) cmp lc($b->{display_value}) } @results;
             # artificially add wildcard on availability (it's a facet query defined in solrconfig.xml)
             # There may be a better way to do this.
-            unshift @sorted_branchfacet, { field => "url", value => "*", count => $self->facet_counts->{facet_queries}->{"url:*"}, display_value => "Online" };
+            if($self->facet_counts->{facet_queries}->{"url:*"}){
+                unshift @sorted_branchfacet, { field => "url", value => "*", count => $self->facet_counts->{facet_queries}->{"url:*"}, display_value => "Online" };
+            }
             unshift @sorted_branchfacet, { value => "*", count => $self->facet_counts->{facet_queries}->{"on-shelf-at:*"}, display_value => "Anywhere" };
             # FIXME: now we add offset to sorted facet.  This needs to be generalised so that
             # any facet with a display value != facet value can be resorted A-Z.  Currently
             # we only sort branch facet A-Z, and do not allow resorting.
             my $start_slice = $self->content->{responseHeader}->{params}->{'facet.offset'} // 0;
-            my $end_slice = $start_slice + (scalar(@results) < $FACET_LIMIT - 2) ? scalar(@results) + 1 : $FACET_LIMIT - 1;
+            my $end_slice = $start_slice;
+            if(scalar(@sorted_branchfacet) - $start_slice < $facet_limit ){
+                $end_slice += scalar(@sorted_branchfacet) - $start_slice - 1;
+            } else {
+                $end_slice += $facet_limit - 1;
+            }
             @results = @sorted_branchfacet[$start_slice .. $end_slice];
         }
-        push @facets, { field => $field, display => $display, 'values' => \@results, 'expandable' => (scalar(@results) >= $FACET_LIMIT) ? 1 : 0 };
+        push @facets, { field => $field, display => $display, 'values' => \@results, 'expandable' => (scalar(@results) >= $facet_limit) ? 1 : 0 };
     }
     return \@facets;
 };

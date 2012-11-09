@@ -57,7 +57,7 @@ if (is_ajax()) {
     
     if(!$rs->is_error){
         my $results = $rs->content;
-        my $facets = $rs->koha_facets($MOREFACET_COUNT); # FIXME: this value is set
+        my $facets = $rs->koha_facets();
         my $response = $facets->[0]->{'values'} // {};
         
         print $cgi->header('application/json');
