@@ -686,6 +686,7 @@ $(document).ready(function() {
 	//]]>
 	</script>
 
+                <TMPL_UNLESS invalid_isbn>
 		<ul class="toolbar">
 			<li><input id="addbiblio" type="button" value="Save" /></li>
 			<li id="z3950searchc"><input type="button" id="z3950search" value="z39.50 Search" onclick="PopupZ3950(); return false;" /></li>
@@ -700,6 +701,7 @@ $(document).ready(function() {
 			</select> 
 <input type="hidden" name="op" value="addbiblio" /></li>
 		</ul>
+                </TMPL_UNLESS>
 </div>
 
 <!--TMPL_IF Name="popup"-->
