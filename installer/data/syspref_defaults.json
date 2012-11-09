@@ -535,8 +535,8 @@
    },
    "defaultSortOrder" : {
       "explanation" : "Specify the default sort order",
-      "options" : "asc|dsc|az|za",
-      "value" : "asc",
+      "options" : "asc|desc",
+      "value" : "desc",
       "type" : "Choice"
    },
    "BorrowersLog" : {
@@ -1435,8 +1435,8 @@
    },
    "defaultSortField" : {
       "explanation" : "Specify the default field used for sorting",
-      "options" : "score|popularity|cn-sort|date|acqdate|title-sort|author-sort",
-      "value" : "relevance",
+      "options" : "score|popularity|cn-sort|pubyear|acqdate|title-sort|author-sort",
+      "value" : "score",
       "type" : "Choice"
    },
    "Replica_DSN" : {
@@ -1519,8 +1519,8 @@
    },
    "OPACdefaultSortOrder" : {
       "explanation" : "Specify the default sort order",
-      "options" : "asc|dsc|za|az",
-      "value" : null,
+      "options" : "asc|desc",
+      "value" : "desc",
       "type" : "Choice"
    },
    "advancedMARCeditor" : {
@@ -1915,8 +1915,8 @@
    },
    "OPACdefaultSortField" : {
       "explanation" : "Specify the default field used for sorting",
-      "options" : "score|popularity|cn-sort|date|acqdate|title-sort|author-sort",
-      "value" : null,
+      "options" : "score|popularity|cn-sort|pubyear|acqdate|title-sort|author-sort",
+      "value" : "score",
       "type" : "Choice"
    },
    "ReservesMaxPickUpDelay" : {
