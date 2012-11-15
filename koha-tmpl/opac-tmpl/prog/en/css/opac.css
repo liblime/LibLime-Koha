@@ -1370,6 +1370,10 @@ div#changelanguage li.yuimenuitem a.yuimenuitemlabel {
 	padding : inherit;
 }
 
+.ft {
+	clear: both;
+}
+
 #login #userid, #login #password {
 	width : 98%;	
 }
