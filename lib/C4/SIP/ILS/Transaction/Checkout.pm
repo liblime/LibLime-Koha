@@ -60,6 +60,7 @@ sub do_checkout {
     $debug and warn "do_checkout borrower: . " . Dumper $borrower;
     my ($issuingimpossible,$needsconfirmation) = CanBookBeIssued( $borrower, $barcode );
     my $noerror=1;
+    my $renew = 0;
     $self->screen_msg("Item was successfully checked out.");
     if (scalar keys %$issuingimpossible) {
         foreach (keys %$issuingimpossible) {
@@ -71,7 +72,9 @@ sub do_checkout {
         foreach my $confirmation (keys %$needsconfirmation) {
             if ($confirmation eq 'RENEW_ISSUE'){
                 $self->screen_msg("Item already checked out to you.");
-                $noerror = 0;
+                # Checkout error unless using 3M self check
+                $noerror = 0 if (!C4::Context->preference('SIP_RenewOnIssue'));
+                $renew = 1;
             } elsif ($confirmation eq 'RESERVED' or $confirmation eq 'RESERVE_WAITING') {
                 my $x = $self->{item}->available($patron_barcode);
                 if ($x) {
@@ -118,11 +121,25 @@ sub do_checkout {
     $debug and warn "do_checkout: calling AddIssue(\$borrower,$barcode, undef, 0)\n"
         # . "w/ \$borrower: " . Dumper($borrower)
         . "w/ C4::Context->userenv: " . Dumper(C4::Context->userenv);
-    my $c4due  = AddIssue(
-        borrower => $borrower, 
-        barcode => $barcode, 
-        sipmode => 1
-        );
+    my $c4due;
+    if (C4::Context->preference('SIP_RenewOnIssue') && $renew) {
+        my ($renewokay, undef) = CanBookBeRenewed( $self->{patron}{borrowernumber}, $itemnumber );
+        if ($renewokay) {
+            $c4due = AddIssue(
+                borrower => $borrower,
+                barcode => $barcode,
+                sipmode => 1
+                );
+            $self->screen_msg('Item renewed.');
+        }
+    }
+    else {
+        $c4due = AddIssue(
+            borrower => $borrower,
+            barcode => $barcode,
+            sipmode => 1
+            );
+    }
     my $due  = $c4due || undef;
     $debug and warn "Item due: $due";
     $self->{'due'} = $due;

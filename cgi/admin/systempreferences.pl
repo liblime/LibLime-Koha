@@ -219,6 +219,7 @@ $tabsysprefs{KeepPreviousBorrowerInterval}   = "Circulation";
 $tabsysprefs{SplitStatistics}                = "Circulation";
 $tabsysprefs{ClearNotForLoan}                = "Circulation";
 $tabsysprefs{PrintNoticesMaxLines}           = "Circulation";
+$tabsysprefs{SIP_RenewOnIssue}               = "Circulation";
 
 # Staff Client
 $tabsysprefs{TemplateEncoding}            = "StaffClient";
