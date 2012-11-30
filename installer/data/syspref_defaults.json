@@ -2098,5 +2098,11 @@
       "options" : null,
       "value" : null,
       "type" : "free"
+   },
+   "SIP_RenewOnIssue" : {
+      "explanation" : "If ON, a checkout by a patron with an item already issued to themselves will be treated as a renewal.",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
    }
 }
