@@ -11,6 +11,8 @@ use C4::Heading::MARC21;
 use C4::Koha;
 use C4::Biblio;
 use C4::Tags;
+use C4::Reserves qw();
+use C4::Circulation qw();
 use Koha::Format;
 use File::Slurp;
 use JSON;
@@ -163,7 +165,11 @@ func emit_authids( MARC::Record $record ) {
 
 func on_shelf_at( MARC::Field @f952s ) {
     return map { $_->subfield('b') }
-        grep { ! $_->subfield('q') && ! $_->subfield('1') } @f952s; # i.e. not onloan and not itemlost.
+        grep { ! defined C4::Reserves::GetReservesFromItemnumber($_->subfield('9')) }
+        grep { ! C4::Circulation::GetTransfers($_->subfield('9')) }
+        grep {   ! $_->subfield('q') && ! $_->subfield('1')
+              && ! $_->subfield('7') && ! $_->subfield('4') }
+        @f952s; # i.e. not onloan and not itemlost.
 }
 
 func for_loan_at( MARC::Field @f952s ){
