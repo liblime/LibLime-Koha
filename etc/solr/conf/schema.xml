@@ -62,14 +62,14 @@
         <filter class="solr.LowerCaseFilterFactory"/>
         <filter class="solr.EnglishPossessiveFilterFactory"/>
         <filter class="solr.ICUFoldingFilterFactory"/>
-        <filter class="solr.HunspellStemFilterFactory" dictionary="dict/en_US.dic" affix="dict/en_US.aff" ignoreCase="true" />
+        <filter class="solr.SnowballPorterFilterFactory" language="English" />
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.StandardTokenizerFactory"/>
         <filter class="solr.LowerCaseFilterFactory"/>
 	<filter class="solr.EnglishPossessiveFilterFactory"/>
         <filter class="solr.ICUFoldingFilterFactory"/>
-        <filter class="solr.HunspellStemFilterFactory" dictionary="dict/en_US.dic" affix="dict/en_US.aff" ignoreCase="true" />
+        <filter class="solr.SnowballPorterFilterFactory" language="English" />
       </analyzer>
     </fieldType>
 
