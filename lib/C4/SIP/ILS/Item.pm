@@ -113,8 +113,12 @@ sub new {
 	$self = $item;
 	bless $self, $type;
 
+    # Remove characters above 255 since they cause a
+    # "Wide character in syswrite" error and terminate the session
+    my $log_title = $self->{title};
+    $log_title =~ s/[^[:ascii:]]//g;
     syslog("LOG_DEBUG", "new ILS::Item('%s'): found with title '%s' due on '%s'",
-	   $item_id, $self->{title}, $self->{due_date});
+	   $item_id, $log_title, $self->{due_date});
 
     return $self;
 }
