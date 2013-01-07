@@ -200,8 +200,8 @@
         <xsl:for-each select="marc:datafield[@tag=100 or @tag=700]">
         <a>
         <xsl:choose>
-            <xsl:when test="marc:subfield[@code=9]">
-                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=koha-auth-number:<xsl:value-of select="marc:subfield[@code=9]"/></xsl:attribute>
+            <xsl:when test="marc:subfield[@code=0]">
+                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
             </xsl:when>
             <xsl:otherwise>
             <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=au:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
@@ -215,8 +215,8 @@
         <xsl:for-each select="marc:datafield[@tag=110 or @tag=710]">
         <a>
         <xsl:choose>
-            <xsl:when test="marc:subfield[@code=9]">
-                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=koha-auth-number:<xsl:value-of select="marc:subfield[@code=9]"/></xsl:attribute>
+            <xsl:when test="marc:subfield[@code=0]">
+                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
             </xsl:when>
             <xsl:otherwise>
             <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=au:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>      
@@ -229,8 +229,8 @@
         <xsl:for-each select="marc:datafield[@tag=111 or @tag=711]">
         <a>
         <xsl:choose>
-            <xsl:when test="marc:subfield[@code=9]">
-                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=koha-auth-number:<xsl:value-of select="marc:subfield[@code=9]"/></xsl:attribute>
+            <xsl:when test="marc:subfield[@code=0]">
+                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
             </xsl:when>
             <xsl:otherwise>
             <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=au:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
@@ -260,14 +260,14 @@
                 <xsl:with-param name="codes">av</xsl:with-param>
                 <xsl:with-param name="class">results_summary</xsl:with-param>
                 <xsl:with-param name="label">Series: </xsl:with-param>
-                <xsl:with-param name="index">se</xsl:with-param>
+                <xsl:with-param name="index">series-title</xsl:with-param>
             </xsl:call-template>
         </xsl:if>
         
         <xsl:if test="marc:datafield[@tag=440 or @tag=490]">
         <span class="results_summary"><span class="label">Series: </span>
         <xsl:for-each select="marc:datafield[@tag=440]">
-             <a href="/cgi-bin/koha/catalogue/search.pl?q=se:{marc:subfield[@code='a']}">
+             <a href="/cgi-bin/koha/catalogue/search.pl?q=series-title:%22{marc:subfield[@code='a']}%22">
             <xsl:call-template name="chopPunctuation">
                             <xsl:with-param name="chopString">
                                 <xsl:call-template name="subfieldSelect">
@@ -281,7 +281,7 @@
         </xsl:for-each>
 
         <xsl:for-each select="marc:datafield[@tag=490][@ind1=0]">
-             <a href="/cgi-bin/koha/catalogue/search.pl?q=se:{marc:subfield[@code='a']}">
+             <a href="/cgi-bin/koha/catalogue/search.pl?q=series-title:%22{marc:subfield[@code='a']}%22">
                         <xsl:call-template name="chopPunctuation">
                             <xsl:with-param name="chopString">
                                 <xsl:call-template name="subfieldSelect">
@@ -462,8 +462,8 @@
             <xsl:for-each select="marc:datafield[substring(@tag, 1, 1) = '6']">
             <a>
             <xsl:choose>
-            <xsl:when test="marc:subfield[@code=9]">
-                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=koha-auth-number:<xsl:value-of select="marc:subfield[@code=9]"/></xsl:attribute>
+            <xsl:when test="marc:subfield[@code=0]">
+                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=su:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>

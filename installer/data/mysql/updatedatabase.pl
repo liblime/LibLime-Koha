@@ -12,14 +12,13 @@
 
 # NOTE:  If you do something more than once in here, make it table driven.
 
-use strict;
-use warnings;
-
 # CPAN modules
 use DBI;
 use Getopt::Long;
 # Koha modules
 use Koha;
+use Koha::BareAuthority;
+use Koha::HeadingMap;
 use C4::Context;
 use C4::Installer;
 
@@ -4875,6 +4874,82 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     }
 
     say "Upgrade to $DBversion done ( Cleanup system preferences )";
+    SetVersion ($DBversion);
+}
+
+$DBversion = '4.09.00.015';
+if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do(q{ALTER TABLE auth_header
+DROP COLUMN authtrees,
+DROP COLUMN linkid,
+DROP COLUMN origincode,
+DROP COLUMN datecreated,
+ADD COLUMN rcn VARCHAR(32) NOT NULL AFTER authid,
+ADD KEY rcn (rcn),
+MODIFY datemodified TIMESTAMP NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+ADD KEY datemodified (datemodified),
+MODIFY authtypecode VARCHAR(10) NOT NULL;
+});
+
+    # fix org code
+    my $org_code = C4::Context->preference('MARCOrgCode');
+    unless ( $org_code && $org_code ne 'OSt' ) {
+        $org_code = 'local';
+        C4::Context->preference_set('MARCOrgCode', $org_code);
+    }
+
+    my $all_authids = $dbh->selectcol_arrayref('SELECT authid FROM auth_header');
+    for my $authid (@$all_authids) {
+        my $marc = Koha::BareAuthority->new(id => $authid)->marc;
+        my $c001 = $marc->field('001') // MARC::Field->new('001', $authid);
+        my $c003 = $marc->field('003') // MARC::Field->new('003', $org_code);
+        unless ($c003->data && $c003->data ne 'OSt') {
+            $c003->update($org_code);
+        }
+        my $rcn = sprintf('(%s)%s', $c003->data, $c001->data);
+
+        if ( my $f999 = $marc->field('999') ) {
+            $f999->update( 'e' => $authid );
+        }
+        else {
+            $marc->insert_fields_ordered(
+                MARC::Field->new('999', '', '', e => $authid) );
+        }
+
+        $dbh->do(
+            'UPDATE auth_header SET marc = ?, marcxml = ?, rcn = ? WHERE authid = ?',
+            undef, $marc->as_usmarc, $marc->as_xml, $rcn, $authid
+        );
+    }
+
+    for (map {$_->{authtypecode}} values %{Koha::HeadingMap->auth_types}) {
+        $dbh->do(
+            'INSERT INTO auth_tag_structure VALUES (?, ?, ?, ?, ?, ?, ?)', undef,
+            $_, '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, undef);
+        $dbh->do(
+            'INSERT INTO auth_subfield_structure VALUES (?'. q{,?}x15 .')', undef,
+            $_, '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9,
+            undef, undef, undef, 0, 8, 0, 'auth_header.authid', q{});
+        $dbh->do(
+            'INSERT INTO auth_subfield_structure VALUES (?'. q{,?}x15 .')', undef,
+            $_, '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9,
+            undef, undef, undef, 0, 8, 0, q{}, q{});
+    }
+
+    $dbh->do(
+        q{UPDATE IGNORE marc_subfield_structure
+          SET tagsubfield = '0', liblibrarian = 'Authority RCN', libopac = 'Authority RCN', hidden = '0'
+          WHERE tagsubfield = '9' AND tagfield < 900} );
+
+    $dbh->do(
+        q{CREATE TABLE auth_cache (
+            authid INT(11) NOT NULL,
+            tag CHAR(28) NOT NULL,
+            PRIMARY KEY (authid),
+            KEY tag (tag) )
+         });
+
+    say "Upgrade to $DBversion done ( New authorities schema )";
     SetVersion ($DBversion);
 }
 

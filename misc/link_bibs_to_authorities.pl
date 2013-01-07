@@ -1,16 +1,9 @@
 #!/usr/bin/env perl
 
-use strict;
-BEGIN {
-    # find Koha's Perl modules
-    # test carefully before changing this
-    use FindBin;
-    eval { require "$FindBin::Bin/kohalib.pl" };
-}
-
 use Koha;
+use Koha::Bib;
+use TryCatch;
 use C4::Context;
-use C4::Biblio;
 use Getopt::Long;
 
 $| = 1;
@@ -71,27 +64,25 @@ _SUMMARY_
 sub process_bib {
     my $biblionumber = shift;
 
-    my $bib = GetMarcBiblio($biblionumber);
-    unless (defined $bib) {
-        print "\nCould not retrieve bib $biblionumber from the database - record is corrupt.\n";
+    my $bib = Koha::Bib->new( id=>$biblionumber );
+    try {
+        $bib->marc;
+    }
+    catch {
+        print "\nCould not retrieve bib $biblionumber from the database - record is corrupt or not found.\n";
         $num_bad_bibs++;
         return;
     }
 
-    my $headings_changed = LinkBibHeadingsToAuthorities($bib);
+    my $headings_changed = $bib->relink_with_stubbing;
 
     if ($headings_changed) {   
         if ($verbose) {
-            my $title = substr($bib->title, 0, 20);
+            my $title = substr($bib->marc->title, 0, 20);
             print "Bib $biblionumber ($title): $headings_changed headings changed\n";
         }
-        if (not $test_only) {
-            # delete any item tags
-            my ($itemtag, $itemsubfield) = GetMarcFromKohaField("items.itemnumber", '');
-            foreach my $field ($bib->field($itemtag)) {
-                $bib->delete_field($field);
-            }
-            ModBiblio($bib, $biblionumber, GetFrameworkCode($biblionumber));
+        unless ($test_only) {
+            $bib->save;
             $num_bibs_modified++;
         }
     }

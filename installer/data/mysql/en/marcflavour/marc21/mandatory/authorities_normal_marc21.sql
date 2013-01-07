@@ -262,6 +262,7 @@ INSERT INTO `auth_tag_structure` (`authtypecode`, `tagfield`, `liblibrarian`, `l
 		('', '788', 'COMPLEX LINKING ENTRY DATA', 'COMPLEX LINKING ENTRY DATA', 0, 0, NULL),
 		('', '856', 'ELECTRONIC LOCATION AND ACCESS', 'ELECTRONIC LOCATION AND ACCESS', 1, 0, NULL),
 		('', '880', 'ALTERNATE GRAPHIC REPRESENTATION', 'ALTERNATE GRAPHIC REPRESENTATION', 1, 0, NULL),
+        ('', '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL),
         ('', '942', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL);
 
 
@@ -1645,6 +1646,8 @@ INSERT INTO `auth_subfield_structure` (`authtypecode`, `tagfield`, `tagsubfield`
 		('', '880', '7', '7', '7', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('', '880', '8', '8', '8', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('', '880', '9', '9', '9', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
+		('', '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, 'auth_header.authid', ''),
+		('', '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, '', ''),
 		('', '942', 'a', 'Koha auth type', 'Koha auth type', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authtypecode', '');
 
 
@@ -1748,6 +1751,7 @@ INSERT INTO `auth_tag_structure` (`authtypecode`, `tagfield`, `liblibrarian`, `l
 		('PERSO_NAME', '788', 'COMPLEX LINKING ENTRY DATA', 'COMPLEX LINKING ENTRY DATA', 0, 0, NULL),
 		('PERSO_NAME', '856', 'ELECTRONIC LOCATION AND ACCESS', 'ELECTRONIC LOCATION AND ACCESS', 1, 0, NULL),
 		('PERSO_NAME', '880', 'ALTERNATE GRAPHIC REPRESENTATION', 'ALTERNATE GRAPHIC REPRESENTATION', 1, 0, NULL),
+        ('PERSO_NAME', '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL),
         ('PERSO_NAME', '942', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL);
 
 
@@ -2558,6 +2562,8 @@ INSERT INTO `auth_subfield_structure` (`authtypecode`, `tagfield`, `tagsubfield`
 		('PERSO_NAME', '880', '7', '7', '7', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('PERSO_NAME', '880', '8', '8', '8', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('PERSO_NAME', '880', '9', '9', '9', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
+		('PERSO_NAME', '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authid', ''),
+		('PERSO_NAME', '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, '', ''),
 		('PERSO_NAME', '942', 'a', 'Koha auth type', 'Koha auth type', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authtypecode', '');
 
 
@@ -2672,6 +2678,7 @@ INSERT INTO `auth_tag_structure` (`authtypecode`, `tagfield`, `liblibrarian`, `l
 		('CORPO_NAME', '788', 'COMPLEX LINKING ENTRY DATA', 'COMPLEX LINKING ENTRY DATA', 0, 0, NULL),
 		('CORPO_NAME', '856', 'ELECTRONIC LOCATION AND ACCESS', 'ELECTRONIC LOCATION AND ACCESS', 1, 0, NULL),
 		('CORPO_NAME', '880', 'ALTERNATE GRAPHIC REPRESENTATION', 'ALTERNATE GRAPHIC REPRESENTATION', 1, 0, NULL),
+        ('CORPO_NAME', '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL),
         ('CORPO_NAME', '942', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL);
 
 
@@ -3468,6 +3475,8 @@ INSERT INTO `auth_subfield_structure` (`authtypecode`, `tagfield`, `tagsubfield`
 		('CORPO_NAME', '880', '7', '7', '7', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('CORPO_NAME', '880', '8', '8', '8', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('CORPO_NAME', '880', '9', '9', '9', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
+		('CORPO_NAME', '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authid', ''),
+		('CORPO_NAME', '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, '', ''),
 		('CORPO_NAME', '942', 'a', 'Koha auth type', 'Koha auth type', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authtypecode', '');
 
 
@@ -3572,6 +3581,7 @@ INSERT INTO `auth_tag_structure` (`authtypecode`, `tagfield`, `liblibrarian`, `l
 		('MEETI_NAME', '788', 'COMPLEX LINKING ENTRY DATA', 'COMPLEX LINKING ENTRY DATA', 0, 0, NULL),
 		('MEETI_NAME', '856', 'ELECTRONIC LOCATION AND ACCESS', 'ELECTRONIC LOCATION AND ACCESS', 1, 0, NULL),
 		('MEETI_NAME', '880', 'ALTERNATE GRAPHIC REPRESENTATION', 'ALTERNATE GRAPHIC REPRESENTATION', 1, 0, NULL),
+        ('MEETI_NAME', '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL),
         ('MEETI_NAME', '942', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL);
 
 
@@ -4383,6 +4393,8 @@ INSERT INTO `auth_subfield_structure` (`authtypecode`, `tagfield`, `tagsubfield`
 		('MEETI_NAME', '880', '7', '7', '7', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('MEETI_NAME', '880', '8', '8', '8', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('MEETI_NAME', '880', '9', '9', '9', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
+		('MEETI_NAME', '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authid', ''),
+		('MEETI_NAME', '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, '', ''),
 		('MEETI_NAME', '942', 'a', 'Koha auth type', 'Koha auth type', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authtypecode', '');
 
 
@@ -4494,6 +4506,7 @@ INSERT INTO `auth_tag_structure` (`authtypecode`, `tagfield`, `liblibrarian`, `l
 		('UNIF_TITLE', '788', 'COMPLEX LINKING ENTRY DATA', 'COMPLEX LINKING ENTRY DATA', 0, 0, NULL),
 		('UNIF_TITLE', '856', 'ELECTRONIC LOCATION AND ACCESS', 'ELECTRONIC LOCATION AND ACCESS', 1, 0, NULL),
 		('UNIF_TITLE', '880', 'ALTERNATE GRAPHIC REPRESENTATION', 'ALTERNATE GRAPHIC REPRESENTATION', 1, 0, NULL),
+        ('UNIF_TITLE', '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL),
         ('UNIF_TITLE', '942', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL);
 
 
@@ -5336,6 +5349,8 @@ INSERT INTO `auth_subfield_structure` (`authtypecode`, `tagfield`, `tagsubfield`
 		('UNIF_TITLE', '880', '7', '7', '7', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('UNIF_TITLE', '880', '8', '8', '8', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('UNIF_TITLE', '880', '9', '9', '9', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
+		('UNIF_TITLE', '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authid', ''),
+		('UNIF_TITLE', '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, '', ''),
 		('UNIF_TITLE', '942', 'a', 'Koha auth type', 'Koha auth type', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authtypecode', '');
 
 
@@ -5438,6 +5453,7 @@ INSERT INTO `auth_tag_structure` (`authtypecode`, `tagfield`, `liblibrarian`, `l
 		('CHRON_TERM', '788', 'COMPLEX LINKING ENTRY DATA', 'COMPLEX LINKING ENTRY DATA', 0, 0, NULL),
 		('CHRON_TERM', '856', 'ELECTRONIC LOCATION AND ACCESS', 'ELECTRONIC LOCATION AND ACCESS', 1, 0, NULL),
 		('CHRON_TERM', '880', 'ALTERNATE GRAPHIC REPRESENTATION', 'ALTERNATE GRAPHIC REPRESENTATION', 1, 0, NULL),
+        ('CHRON_TERM', '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL),
         ('CHRON_TERM', '942', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL);
 
 
@@ -6204,6 +6220,8 @@ INSERT INTO `auth_subfield_structure` (`authtypecode`, `tagfield`, `tagsubfield`
 		('CHRON_TERM', '880', '7', '7', '7', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('CHRON_TERM', '880', '8', '8', '8', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('CHRON_TERM', '880', '9', '9', '9', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
+		('CHRON_TERM', '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authid', ''),
+		('CHRON_TERM', '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, '', ''),
 		('CHRON_TERM', '942', 'a', 'Koha auth type', 'Koha auth type', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authtypecode', '');
 
 
@@ -6306,6 +6324,7 @@ INSERT INTO `auth_tag_structure` (`authtypecode`, `tagfield`, `liblibrarian`, `l
 		('TOPIC_TERM', '788', 'COMPLEX LINKING ENTRY DATA', 'COMPLEX LINKING ENTRY DATA', 0, 0, NULL),
 		('TOPIC_TERM', '856', 'ELECTRONIC LOCATION AND ACCESS', 'ELECTRONIC LOCATION AND ACCESS', 1, 0, NULL),
 		('TOPIC_TERM', '880', 'ALTERNATE GRAPHIC REPRESENTATION', 'ALTERNATE GRAPHIC REPRESENTATION', 1, 0, NULL),
+        ('TOPIC_TERM', '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL),
         ('TOPIC_TERM', '942', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL);
 
 
@@ -7076,6 +7095,8 @@ INSERT INTO `auth_subfield_structure` (`authtypecode`, `tagfield`, `tagsubfield`
 		('TOPIC_TERM', '880', '7', '7', '7', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('TOPIC_TERM', '880', '8', '8', '8', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('TOPIC_TERM', '880', '9', '9', '9', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
+		('TOPIC_TERM', '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authid', ''),
+		('TOPIC_TERM', '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, '', ''),
 		('TOPIC_TERM', '942', 'a', 'Koha auth type', 'Koha auth type', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authtypecode', '');
 
 
@@ -7178,6 +7199,7 @@ INSERT INTO `auth_tag_structure` (`authtypecode`, `tagfield`, `liblibrarian`, `l
 		('GEOGR_NAME', '788', 'COMPLEX LINKING ENTRY DATA', 'COMPLEX LINKING ENTRY DATA', 0, 0, NULL),
 		('GEOGR_NAME', '856', 'ELECTRONIC LOCATION AND ACCESS', 'ELECTRONIC LOCATION AND ACCESS', 1, 0, NULL),
 		('GEOGR_NAME', '880', 'ALTERNATE GRAPHIC REPRESENTATION', 'ALTERNATE GRAPHIC REPRESENTATION', 1, 0, NULL),
+        ('GEOGR_NAME', '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL),
         ('GEOGR_NAME', '942', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL);
 
 
@@ -7946,6 +7968,8 @@ INSERT INTO `auth_subfield_structure` (`authtypecode`, `tagfield`, `tagsubfield`
 		('GEOGR_NAME', '880', '7', '7', '7', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('GEOGR_NAME', '880', '8', '8', '8', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('GEOGR_NAME', '880', '9', '9', '9', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
+		('GEOGR_NAME', '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authid', ''),
+		('GEOGR_NAME', '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, '', ''),
 		('GEOGR_NAME', '942', 'a', 'Koha auth type', 'Koha auth type', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authtypecode', '');
 
 
@@ -8049,6 +8073,7 @@ INSERT INTO `auth_tag_structure` (`authtypecode`, `tagfield`, `liblibrarian`, `l
 		('GENRE/FORM', '788', 'COMPLEX LINKING ENTRY DATA', 'COMPLEX LINKING ENTRY DATA', 0, 0, NULL),
 		('GENRE/FORM', '856', 'ELECTRONIC LOCATION AND ACCESS', 'ELECTRONIC LOCATION AND ACCESS', 1, 0, NULL),
 		('GENRE/FORM', '880', 'ALTERNATE GRAPHIC REPRESENTATION', 'ALTERNATE GRAPHIC REPRESENTATION', 1, 0, NULL),
+        ('GENRE/FORM', '999', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL),
         ('GENRE/FORM', '942', 'KOHA INTERNAL USE', 'KOHA INTERNAL USE', 0, 1, NULL);
 
 
@@ -8821,6 +8846,8 @@ INSERT INTO `auth_subfield_structure` (`authtypecode`, `tagfield`, `tagsubfield`
 		('GENRE/FORM', '880', '7', '7', '7', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('GENRE/FORM', '880', '8', '8', '8', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
 		('GENRE/FORM', '880', '9', '9', '9', 1, 0, 8, NULL, NULL, NULL, 0, 0, '', '', ''),
+		('GENRE/FORM', '999', 'e', 'Koha authid', 'Koha authid', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authid', ''),
+		('GENRE/FORM', '999', 'z', 'Stub indicator', 'Stub indicator', 0, 1, 9, NULL, NULL, NULL, 0, 8, 0, '', ''),
 		('GENRE/FORM', '942', 'a', 'Koha auth type', 'Koha auth type', 0, 1, 9, NULL, NULL, NULL, 0, 8, '', 'auth_header.authtypecode', '');
 
 

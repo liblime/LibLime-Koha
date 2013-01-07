@@ -18,21 +18,20 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
-
+use Koha;
+use Koha::Authority;
+use Koha::HeadingMap;
 use CGI;
 use C4::Auth;
-
-use Koha;
 use C4::Context;
 use C4::Auth;
 use C4::Output;
-use C4::AuthoritiesMarc;
 use C4::Koha;    # XXX subfield_is_koha_internal_p
 use Koha::Solr::Service;
 use Koha::Solr::Query;
 use Koha::Pager;
+use TryCatch;
+use Carp;
 
 my $query        = CGI->new;
 my $op           = $query->param('op') || '';
@@ -49,7 +48,7 @@ my ( $template, $loggedinuser, $cookie )= get_template_and_user(
         }
     );
 
-our $authtypes = getauthtypes;
+our $authtypes = Koha::HeadingMap->auth_types;
 my @authtypesloop;
 
 sub _by_default_then_alpha {
@@ -59,7 +58,7 @@ sub _by_default_then_alpha {
 
 for ( sort _by_default_then_alpha keys %$authtypes ){
     my %row = (
-        value        => $_,
+        value        => $authtypes->{$_}{authtypecode},
         selected     => ($_ ~~ $authtypecode),
         authtypetext => $authtypes->{$_}{authtypetext},
     );
@@ -71,6 +70,7 @@ if ( $op eq "do_search" ) {
 
     my $idx = $query->param('idx');
     my $q = $query->param('q');
+    $q =~ s/^|$|\b/*/g;
     my $query_string = qq{$idx:($q)};
 
     my $sortby = $query->param('orderby');
@@ -78,25 +78,28 @@ if ( $op eq "do_search" ) {
     $options->{start} = $query->param('start') || 0;
 
     my $solr = Koha::Solr::Service->new();
-    my $solr_query = Koha::Solr::Query->new( {query => $query_string, options => $options, rtype => 'auth', opac => 1} );
-
+    my $solr_query = Koha::Solr::Query->new(query => $query_string, options => $options, rtype => 'auth', opac => 1);
     my $rs = $solr->search($solr_query->query,$solr_query->options);
-
     my $resultset = ($rs->is_error) ? {} : $rs->content;
     my $results = [];
 
     for my $doc (@{$resultset->{response}{docs}}) {
-        my $used = C4::AuthoritiesMarc::CountUsage($doc->{authid});
-        next unless $used;
+        my $authid = $doc->{authid};
+        try {
+            my $auth = Koha::Authority->new(id => $authid);
+            next unless $auth->is_linked;
 
-        my $record = MARC::Record->new_from_xml($doc->{marcxml}, 'UTF-8', 'MARC21');
-        my $summary = C4::AuthoritiesMarc::BuildSummary($record,undef,$authtypecode);
-        push @$results, {   summary => $summary,
-                            authid => $doc->{authid},
-                            used => $used,
-                            authtype =>
-                                GetAuthType( $doc->{kauthtype_s} )->{summary},
-                        };
+            push @$results, {
+                summary => [$auth->summary],
+                authid => $authid,
+                rcn => $auth->rcn,
+                used => $auth->link_count,
+                authtype => $auth->type->{summary},
+            };
+        }
+        catch ($e) {
+            carp "Error processing authority $authid: $e;";
+        }
     }
 
     my $pager = Koha::Pager->new(pageset => $rs->pageset, offset_param => 'start');

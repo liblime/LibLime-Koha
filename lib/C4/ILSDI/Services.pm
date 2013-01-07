@@ -17,9 +17,8 @@ package C4::ILSDI::Services;
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
-
+use Koha;
+use Koha::Authority;
 use C4::Members;
 use C4::Items;
 use C4::Circulation;
@@ -27,12 +26,12 @@ use C4::Branch;
 use C4::Accounts;
 use C4::Biblio;
 use C4::Reserves;
-use Koha;
 use C4::Context;
-use C4::AuthoritiesMarc;
 use C4::ILSDI::Utility;
 use XML::Simple;
 use HTML::Entities;
+use TryCatch;
+use Carp;
 use CGI;
 
 =head1 NAME
@@ -251,9 +250,16 @@ sub GetAuthorityRecords {
     foreach my $authid ( split( / /, $cgi->param('id') ) ) {
 
         # Get the record as XML string, or error code
-        my $record = GetAuthorityXML($authid) || "<record>RecordNotFound</record>";
-        $record =~ s/<\?xml version="1.0" encoding="UTF-8"\?>//go;
-        $records .= $record;
+        try {
+            my $auth = Koha::Authority->new( id => $authid );
+            my $record = $auth->marc->as_xml;
+            $record =~ s/<\?xml version="1.0" encoding="UTF-8"\?>//go;
+            $records .= $record;
+        }
+        catch {
+            carp "Unable to find authority $authid.";
+            $records .= "<record>RecordNotFound</record>";
+        }
     }
 
     return $records;

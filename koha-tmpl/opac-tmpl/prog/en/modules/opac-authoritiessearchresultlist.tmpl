@@ -32,13 +32,24 @@
 			</tr>
 			<!-- TMPL_LOOP NAME="result" -->
 				<tr>
-					<td><a href="opac-authoritiesdetail.pl?authid=<!-- TMPL_VAR NAME="authid" -->"><!-- TMPL_VAR NAME="summary" --></a></td>
-
+				  <td>
+                                    <TMPL_LOOP NAME="summary">
+                                      <a href="opac-authoritiesdetail.pl?authid=<!-- TMPL_VAR NAME="authid" -->"><!-- TMPL_VAR NAME="heading" --></a><br/>
+                                      <TMPL_IF seefrom><em>Linked from:</em><br/></TMPL_IF>
+                                      <TMPL_LOOP NAME="seefrom">
+                                        &nbsp;&nbsp;<TMPL_VAR text /><br/>
+                                      </TMPL_LOOP>
+                                      <TMPL_IF seealso><em>See also:</em><br/></TMPL_IF>
+                                      <TMPL_LOOP NAME="seealso">
+                                        &nbsp;&nbsp;<a href="?op=do_search&type=opac&authtypecode=&idx=auth-heading_lc&operator=contains&orderby=auth-heading-sort+asc&q=<TMPL_VAR text>"><TMPL_VAR text /></a><br/>
+                                      </TMPL_LOOP>
+                                    </TMPL_LOOP>
+                                        </td>
 						<td>
 					<!-- TMPL_VAR NAME="authtype" -->
 						</td>
 						<td>
-							 <a href="/cgi-bin/koha/opac-search.pl?q=koha-auth-number:<!--TMPL_VAR Name="authid" -->"><!-- TMPL_VAR NAME="used" --> biblios</a>
+							 <a href="/cgi-bin/koha/opac-search.pl?q=linked_rcn:%22<TMPL_VAR rcn>%22"><!-- TMPL_VAR NAME="used" --> biblios</a>
 						</td>
 						<td>
 							<a href="opac-authoritiesdetail.pl?authid=<!-- TMPL_VAR NAME="authid" -->">View Full Heading</a>

@@ -38,30 +38,24 @@ parameters tables.
 =cut
 
 
-use strict;
-
-use C4::AuthoritiesMarc;
-use C4::Auth;
 use Koha;
+use Koha::Authority;
+use Koha::HeadingMap;
+use C4::Auth;
 use C4::Context;
 use C4::Output;
 use CGI;
-use MARC::Record;
 use C4::Koha;
-# use C4::Biblio;
-# use C4::Catalogue;
 
-
-my $query=new CGI;
-
-my $dbh=C4::Context->dbh;
+my $query = CGI->new;
 
 my $authid = $query->param('authid');
+my $auth = Koha::Authority->new(id => $authid);
 my $index = $query->param('index');
-my $authtypecode = &GetAuthTypeCode($authid);
-my $tagslib = &GetTagsLabels(1,$authtypecode);
+my $authtypecode = $auth->typecode;
+my $tagslib = $auth->code_labels(1);
 
-my $record =GetAuthority($authid);
+my $record = $auth->marc;
 # open template
 my ($template, $loggedinuser, $cookie)
 		= get_template_and_user({template_name => "authorities/detail-biblio-search.tmpl",
@@ -119,7 +113,7 @@ my @fields = $record->fields();
 	}
 	$template->param("0XX" =>\@loop_data);
 
-my $authtypes = getauthtypes;
+my $authtypes = Koha::HeadingMap->auth_types;
 my @authtypesloop;
 foreach my $thisauthtype (keys %$authtypes) {
 	my $selected = 1 if $thisauthtype eq $authtypecode;

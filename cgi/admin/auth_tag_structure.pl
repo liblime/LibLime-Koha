@@ -18,23 +18,19 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use CGI;
+use Koha;
+use Koha::HeadingMap;
 use C4::Auth;
 use C4::Koha;
-use Koha;
 use C4::Context;
 use C4::Output;
-use Koha;
-use C4::Context;
-
+use CGI;
 
 # retrieve parameters
 my $input = new CGI;
 my $authtypecode         = $input->param('authtypecode')         || '';    # set to select framework
 my $existingauthtypecode = $input->param('existingauthtypecode') || '';    # set when we have to create a new framework (in authtype) by copying an old one (in existingauthtype)
 
-# my $authtypeinfo = getauthtypeinfo($authtype);
 my $searchfield = $input->param('searchfield') || 0;
 my $offset      = $input->param('offset') || 0;
 my $op          = $input->param('op')     || '';
@@ -56,7 +52,7 @@ my ($template, $loggedinuser, $cookie)
 			     });
 
 # get authtype list
-my $authtypes = getauthtypes;
+my $authtypes = Koha::HeadingMap->auth_types;
 my @authtypesloop;
 foreach my $thisauthtype (keys %$authtypes) {
 	my $selected = 1 if $thisauthtype eq $authtypecode;

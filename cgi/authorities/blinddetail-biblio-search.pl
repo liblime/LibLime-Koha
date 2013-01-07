@@ -37,29 +37,16 @@ parameters tables.
 
 =cut
 
-use strict;
-
-use C4::AuthoritiesMarc;
-use C4::Auth;
 use Koha;
+use Koha::Authority;
+use C4::Auth;
 use C4::Context;
 use C4::Output;
 use CGI;
 use MARC::Record;
 use C4::Koha;
 
-my $query = new CGI;
-
-my $dbh = C4::Context->dbh;
-
-my $authid       = $query->param('authid');
-my $index        = $query->param('index');
-my $tagid        = $query->param('tagid');
-my $authtypecode = &GetAuthTypeCode($authid);
-my $tagslib      = &GetTagsLabels( 1, $authtypecode );
-
-my $auth_type = GetAuthType($authtypecode);
-my $record = GetAuthority($authid) if $authid;
+my $query = CGI->new;
 
 # open template
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
@@ -73,10 +60,15 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 
 # fill arrays
-my $tag;
-my @loop_data = ();
-if ($authid) {
-    foreach my $field ( $record->field( $auth_type->{auth_tag_to_report} ) ) {
+if (my $authid = $query->param('authid') ) {
+    my $auth         = Koha::Authority->new(id => $authid);
+    my $index        = $query->param('index');
+    my $tagid        = $query->param('tagid');
+    my $tagslib      = $auth->code_labels(1);
+    my $record       = $auth->marc;
+    my @loop_data = ();
+
+    foreach my $field ( $record->field( $auth->type->{auth_tag_to_report} ) ) {
         my @subfields_data;
         my @subf = $field->subfields;
 
@@ -102,19 +94,18 @@ if ($authid) {
             push( @loop_data, \%tag_data );
         }
     }
+    $template->param(
+        authid => $authid // q{},
+        rcn => $auth->rcn,
+        index  => $index,
+        tagid  => $tagid,
+        '0XX' => \@loop_data,
+        );
+
 } else {
     # authid is empty => the user want to empty the entry.
-    $template->param( "clear" => 1 );
-#     warn Data::Dumper::Dumper(\@loop_data);
+    $template->param( clear => 1 );
 }
-
-$template->param( "0XX" => \@loop_data );
-
-$template->param(
-    authid => $authid ? $authid : "",
-    index  => $index,
-    tagid  => $tagid,
-);
 
 output_html_with_http_headers $query, $cookie, $template->output;
 

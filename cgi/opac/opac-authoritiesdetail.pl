@@ -37,10 +37,10 @@ parameters tables.
 
 =cut
 
-use strict;
-use C4::AuthoritiesMarc;
-use C4::Auth;
 use Koha;
+use Koha::Authority;
+use Koha::HeadingMap;
+use C4::Auth;
 use C4::Context;
 use C4::Output;
 use CGI;
@@ -53,8 +53,6 @@ my $query = new CGI;
 my $dbh = C4::Context->dbh;
 
 my $authid       = $query->param('authid');
-my $authtypecode = &GetAuthTypeCode( $authid );
-my $tagslib      = &GetTagsLabels( 1, $authtypecode );
 
 # open template
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
@@ -67,35 +65,10 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
-my $record;
-if (C4::Context->preference("AuthDisplayHierarchy")){
-  my $trees=BuildUnimarcHierarchies($authid);
-  my @trees = split /;/,$trees ;
-  push @trees,$trees unless (@trees);
-  my @loophierarchies;
-  foreach my $tree (@trees){
-    my @tree=split /,/,$tree;
-    push @tree,$tree unless (@tree);
-    my $cnt=0;
-    my @loophierarchy;
-    foreach my $element (@tree){
-      my $cell;
-      my $elementdata = GetAuthority($element);
-      $record= $elementdata if ($authid==$element);
-      push @loophierarchy, BuildUnimarcHierarchy($elementdata,"child".$cnt, $authid);
-      $cnt++;
-    }
-    push @loophierarchies, { 'loopelement' =>\@loophierarchy};
-  }
-  $template->param(
-    'displayhierarchy' =>C4::Context->preference("AuthDisplayHierarchy"),
-    'loophierarchies' =>\@loophierarchies,
-  );
-}
-else {
-    $record = GetAuthority( $authid );
-}
-my $count = CountUsage($authid);
+my $auth = Koha::Authority->new( id => $authid );
+my $record = $auth->marc;
+my $authtypecode = $auth->typecode;
+my $tagslib      = $auth->code_labels(0);
 
 # find the marc field/subfield used in biblio by this authority
 my $sth =
@@ -165,21 +138,22 @@ foreach my $field (@fields) {
 }
 $template->param( "0XX" => \@loop_data );
 
-my $authtypes = getauthtypes;
+my $authtypes = Koha::HeadingMap->auth_types;
 my @authtypesloop;
 foreach my $thisauthtype ( keys %$authtypes ) {
     my $selected = 1 if $thisauthtype eq $authtypecode;
     my %row = (
-        value        => $thisauthtype,
+        value        => $authtypes->{$thisauthtype}{authtypecode},
         selected     => $selected,
-        authtypetext => $authtypes->{$thisauthtype}{'authtypetext'},
+        authtypetext => $authtypes->{$thisauthtype}{authtypetext},
     );
     push @authtypesloop, \%row;
 }
 
 $template->param(
     authid               => $authid,
-    count                => $count,
+    count                => $auth->link_count,
+    rcn                  => $auth->rcn,
     biblio_fields        => $biblio_fields,
     authtypetext         => $authtypes->{$authtypecode}{'authtypetext'},
     authtypesloop        => \@authtypesloop,

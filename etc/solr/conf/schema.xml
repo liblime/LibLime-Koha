@@ -281,7 +281,8 @@
     <field name="on_order_count" type="int" indexed="true" stored="false" multiValued="false"/>
     <field name="in_process_count" type="int" indexed="true" stored="false" multiValued="false"/>
 
-    <field name="koha-auth-number" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="rcn" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="linked_rcn" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="auth-heading" type="text_en" indexed="true" stored="false" multiValued="false"/>
     <field name="auth-heading-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
     <field name="auth-full" type="text_en" indexed="true" stored="false" multiValued="true"/>

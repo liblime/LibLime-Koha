@@ -17,8 +17,6 @@ sub methods : Test( 1 ) {
       GetItemTypes
       get_itemtypeinfos_of
       GetCcodes
-      getauthtypes
-      getauthtype
       getframeworks
       getframeworkinfo
       getitemtypeinfo

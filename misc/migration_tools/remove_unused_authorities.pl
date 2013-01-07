@@ -20,15 +20,14 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
-
 use Koha;
+use Koha::Authority;
 use C4::Context;
-use C4::AuthoritiesMarc;
 use Getopt::Long;
 use Koha::Solr::Service;
 use Koha::Solr::Query;
+use TryCatch;
+use Carp;
 
 my ($test,@authtypes);
 my $want_help = 0;
@@ -50,7 +49,7 @@ my $thresholdmax=0;
 my @results;
 # prepare the request to retrieve all authorities of the requested types
 my $rqselect = $dbh->prepare(
-    qq{SELECT * from auth_header where authtypecode IN (}
+    qq{SELECT authid from auth_header where authtypecode IN (}
     . join(",",map{$dbh->quote($_)}@authtypes)
     . ")"
 );
@@ -60,27 +59,26 @@ $rqselect->execute;
 my $counter=0;
 my $totdeleted=0;
 my $totundeleted=0;
-while (my $data=$rqselect->fetchrow_hashref){
-    my $query;
-    $query= "koha-auth-number:".$data->{'authid'};
-    # search for biblios mapped
-    #my ($err,$res,$used) = C4::Search::SimpleSearch($query,0,10);
-    my $solr = Koha::Solr::Service->new();
-    my ($ignore,$hits) = $solr->simpleSearch(Koha::Solr::Query->new({query => $query, rtype => 'bib'}) );
-
-    print ".";
-    print "$counter\n" unless $counter++ % 100;
-    # if found, delete, otherwise, just count
-    if ($used>=$thresholdmin and $used<=$thresholdmax){
-        DelAuthority($data->{'authid'}) unless $test;
-        $totdeleted++;
-    } else {
-        $totundeleted++;
+while (my $data = $rqselect->fetchrow_hashref){
+    my $authid = $data->{authid};
+    try {
+        my $auth = Koha::Authority->new( id => $authid );
+        print '.';
+        print "$counter\n" unless $counter++ % 70;
+        # if found, delete, otherwise, just count
+        if ( scalar @{$auth->bibs} ) {
+            $totundeleted++;
+        } else {
+            $auth->delete unless $test;
+            $totdeleted++;
+        }
+    }
+    catch {
+        carp "Problem processing authid $authid.";
     }
 }
 
-print "$counter authorities parsed, $totdeleted deleted and $totundeleted unchanged because used\n";
-
+print "\n$counter authorities parsed, $totdeleted deleted and $totundeleted unchanged because used\n";
 
 sub print_usage {
     print <<_USAGE_;

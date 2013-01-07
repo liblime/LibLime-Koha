@@ -18,14 +18,14 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
+use Koha;
+use Koha::Authority;
+use Koha::Bib;
 use CGI;
 use C4::Output;
 use C4::Auth;
 use C4::Biblio;
 use C4::Search;
-use C4::AuthoritiesMarc;
-use Koha;
 use C4::Context;
 use MARC::Record;
 use C4::Log;
@@ -305,7 +305,7 @@ sub create_input {
 
     # if there is no value provided but a default value in parameters, get it
     unless ($value) {
-        $value = $tagslib->{$tag}->{$subfield}->{defaultvalue};
+        $value = $tagslib->{$tag}->{$subfield}->{defaultvalue} // q{};
 
         # get today date & replace YYYY, MM, DD if provided in the default value
         my ( $year, $month, $day ) = Today();
@@ -357,12 +357,12 @@ sub create_input {
           build_authorized_values_list( $tag, $subfield, $value, $dbh,
             $authorised_values_sth,$index_tag,$index_subfield );
 
-    # it's a subfield $9 linking to an authority record - see bug 2206
+    # it's a subfield $0 linking to an authority record
     }
-    elsif ($subfield eq "9" and
-           exists($tagslib->{$tag}->{'a'}->{authtypecode}) and
-           defined($tagslib->{$tag}->{'a'}->{authtypecode}) and
-           $tagslib->{$tag}->{'a'}->{authtypecode} ne '') {
+    elsif ($subfield eq '0' &&
+           exists($tagslib->{$tag}{a}{authtypecode}) &&
+           defined($tagslib->{$tag}{a}{authtypecode}) &&
+           $tagslib->{$tag}{a}{authtypecode} ne '') {
 
         $subfield_data{marc_value} =
             "<input type=\"text\"
@@ -378,36 +378,21 @@ sub create_input {
 
     # it's a thesaurus / authority field
     }
-    elsif ( $tagslib->{$tag}->{$subfield}->{authtypecode} ) {
-     if (C4::Context->preference("BiblioAddsAuthorities")) {
+    elsif ( $tagslib->{$tag}{$subfield}{authtypecode} ) {
+        my $readonly = C4::Context->preference('BiblioAddsAuthorities')
+            ? '' : q{ readonly="readonly"};
         $subfield_data{marc_value} =
-            "<input type=\"text\"
-                    id=\"".$subfield_data{id}."\"
-                    name=\"".$subfield_data{id}."\"
-                    value=\"$value\"
-                    class=\"input_marceditor\"
-                    tabindex=\"1\"
-                    size=\"67\"
-                    maxlength=\"$max_length\"
-                    \/>
-                    <a href=\"#\" class=\"buttonDot\"
-                        onclick=\"openAuth(this.parentNode.getElementsByTagName('input')[1].id,'".$tagslib->{$tag}->{$subfield}->{authtypecode}."'); return false;\" tabindex=\"1\" title=\"Tag Editor\">...</a>
-            ";
-      } else {
-        $subfield_data{marc_value} =
-            "<input type=\"text\"
-                    id=\"".$subfield_data{id}."\"
-                    name=\"".$subfield_data{id}."\"
-                    value=\"$value\"
-                    class=\"input_marceditor\"
-                    tabindex=\"1\"
-                    size=\"67\"
-                    maxlength=\"$max_length\"
-                    readonly=\"readonly\"
-                    \/><a href=\"#\" class=\"buttonDot\"
-                        onclick=\"openAuth(this.parentNode.getElementsByTagName('input')[1].id,'".$tagslib->{$tag}->{$subfield}->{authtypecode}."'); return false;\" tabindex=\"1\" title=\"Tag Editor\">...</a>
-            ";
-      }
+            qq{<input type="text"
+                id="$subfield_data{id}"
+                name="$subfield_data{id}"
+                value="$value"
+                class="input_marceditor"
+                tabindex="1"
+                size="67"
+                maxlength="$max_length"
+                $readonly />
+                <a href="#" class="buttonDot"
+                    onclick="openAuth(this.parentNode.getElementsByTagName('input')[1].id,'$tagslib->{$tag}{$subfield}{authtypecode}'); return false;" tabindex="1" title="Tag Editor">...</a>};
     # it's a plugin field
     }
     elsif ( $tagslib->{$tag}->{$subfield}->{'value_builder'} ) {
@@ -734,96 +719,10 @@ sub build_tabs ($$$$$) {
     $template->param( BIG_LOOP => \@BIG_LOOP );
 }
 
-#
-# sub that tries to find authorities linked to the biblio
-# the sub :
-#   - search in the authority DB for the same authid (in $9 of the biblio)
-#   - search in the authority DB for the same 001 (in $3 of the biblio in UNIMARC)
-#   - search in the authority DB for the same values (exactly) (in all subfields of the biblio)
-# if the authority is found, the biblio is modified accordingly to be connected to the authority.
-# if the authority is not found, it's added, and the biblio is then modified to be connected to the authority.
-#
-
-sub BiblioAddAuthorities{
-  my ( $record, $frameworkcode ) = @_;
-  my $dbh=C4::Context->dbh;
-  my $query=$dbh->prepare(qq|
-SELECT authtypecode,tagfield
-FROM marc_subfield_structure 
-WHERE frameworkcode=? 
-AND (authtypecode IS NOT NULL AND authtypecode<>\"\")|);
-  $query->execute($frameworkcode);
-  my ($countcreated,$countlinked);
-  while (my $data=$query->fetchrow_hashref){
-    foreach my $field ($record->field($data->{tagfield})){
-      next if ($field->subfield('3')||$field->subfield('9'));
-      # No authorities id in the tag.
-      # Search if there is any authorities to link to.
-      my $query='kauthtype_s:'.$data->{authtypecode}.' ';
-      map {$query.= ' AND auth-heading:"'.$_->[1].'"' if ($_->[0]=~/[A-z]/)}  $field->subfields();
-      #my ($error, $results, $total_hits)=SimpleSearch( $query, undef, undef, [ "authorityserver" ] );
-      my $solr = Koha::Solr::Service->new();
-      my ($results,$hits) = $solr->simpleSearch(Koha::Solr::Query->new({query => $query, rtype => 'auth'}));
-
-    # there is only 1 result 
-      if ($results && scalar(@$results)==1) {
-        my $marcrecord = MARC::File::XML::decode($results->[0]->{marcxml});
-## FIXME:  This crashes.  Don't have time to determine why, but somebody should fix it.
-        $field->add_subfields('9' => $marcrecord->field('001')->data);
-        $countlinked++;
-      } elsif (scalar(@$results)>1) {
-#FIXME: so just bail ?  This results in NO authority added !
-   #More than One result 
-   #This can comes out of a lack of a subfield.
-#         my $marcrecord = MARC::File::USMARC::decode($results->[0]);
-#         $record->field($data->{tagfield})->add_subfields('9'=>$marcrecord->field('001')->data);
-  $countlinked++;
-      } else {
-  #There are no results, build authority record, add it to Authorities, get authid and add it to 9
-  ###NOTICE : This is only valid if a subfield is linked to one and only one authtypecode     
-  ###NOTICE : This can be a problem. We should also look into other types and rejected forms.
-         my $authtypedata=GetAuthType($data->{authtypecode});
-         next unless $authtypedata;
-         my $marcrecordauth=MARC::Record->new();
-		if (C4::Context->preference('marcflavour') eq 'MARC21') {
-			$marcrecordauth->leader('     nz  a22     o  4500');
-			SetMarcUnicodeFlag($marcrecordauth, 'MARC21');
-			}
-         my $authfield=MARC::Field->new($authtypedata->{auth_tag_to_report},'','',"a"=>"".$field->subfield('a'));
-         map { $authfield->add_subfields($_->[0]=>$_->[1]) if ($_->[0]=~/[A-z]/ && $_->[0] ne "a" )}  $field->subfields();
-         $marcrecordauth->insert_fields_ordered($authfield);
-
-         # bug 2317: ensure new authority knows it's using UTF-8; currently
-         # only need to do this for MARC21, as MARC::Record->as_xml_record() handles
-         # automatically for UNIMARC (by not transcoding)
-         # FIXME: AddAuthority() instead should simply explicitly require that the MARC::Record
-         # use UTF-8, but as of 2008-08-05, did not want to introduce that kind
-         # of change to a core API just before the 3.0 release.
-
-				if (C4::Context->preference('marcflavour') eq 'MARC21') {
-					$marcrecordauth->insert_fields_ordered(MARC::Field->new('667','','','a'=>"Machine generated authority record."));
-					my $cite = $record->author() . ", " .  $record->title_proper() . ", " . $record->publication_date() . " "; 
-					$cite =~ s/^[\s\,]*//;
-					$cite =~ s/[\s\,]*$//;
-					$cite = "Work cat.: (" . C4::Context->preference('MARCOrgCode') . ")". $record->subfield('999','c') . ": " . $cite;
-					$marcrecordauth->insert_fields_ordered(MARC::Field->new('670','','','a'=>$cite));
-				}
-
-#          warn "AUTH RECORD ADDED : ".$marcrecordauth->as_formatted;
-
-         my $authid=AddAuthority($marcrecordauth,'',$data->{authtypecode});
-         $countcreated++;
-         $field->add_subfields('9'=>$authid);
-      }
-    }  
-  }
-  return ($countlinked,$countcreated);
-}
-
 # ========================
 #          MAIN
 #=========================
-my $input = new CGI;
+my $input = CGI->new;
 my $error = $input->param('error');
 my $biblionumber  = $input->param('biblionumber'); # if biblionumber exists, it's a modif, not a new biblio.
 my $breedingid    = $input->param('breedingid');
@@ -918,29 +817,31 @@ if ( $op eq "addbiblio" ) {
     my $invalid_isbn = 0;
     my $result = TransformMarcToKoha($dbh,$record,'');
     if ($result->{isbn}) {
-     foreach my $isbn_str (split /\|/, $result->{isbn}){
-       $isbn_str =~ s/[^0-9\- xX].*//;
-       my $isbn = Business::ISBN->new($isbn_str);
-       $invalid_isbn = 1 if (not defined $isbn or not $isbn->is_valid());
-     }
-      if ($invalid_isbn) {
-        my $oldbibnum;
-        my $oldbibitemnum;
-        if (C4::Context->preference("BiblioAddsAuthorities")){
-          my ($countlinked,$countcreated)=BiblioAddAuthorities($record,$frameworkcode);
+        foreach my $isbn_str (split /\|/, $result->{isbn}){
+            $isbn_str =~ s/[^0-9\- xX].*//;
+            my $isbn = Business::ISBN->new($isbn_str);
+            $invalid_isbn = 1 if (not defined $isbn or not $isbn->is_valid());
         }
-        if ( $is_a_modif ) {
-            ModBiblioframework( $biblionumber, $frameworkcode );
-            ModBiblio( $record, $biblionumber, $frameworkcode );
+        if ($invalid_isbn) {
+            my $oldbibnum;
+            my $oldbibitemnum;
+            if (C4::Context->preference("BiblioAddsAuthorities")){
+                my $bib = Koha::Bib->new(marc => $record);
+                $bib->relink_with_stubbing;
+                $record = $bib->marc;
+            }
+            if ( $is_a_modif ) {
+                ModBiblioframework( $biblionumber, $frameworkcode );
+                ModBiblio( $record, $biblionumber, $frameworkcode );
+            }
+            else {
+                ( $biblionumber, $oldbibitemnum ) = AddBiblio( $record, $frameworkcode );
+            }
+            $template->param( invalid_isbn => $invalid_isbn,
+                              biblionumber => $biblionumber);
+            output_html_with_http_headers $input, $cookie, $template->output;
+            exit;
         }
-        else {
-            ( $biblionumber, $oldbibitemnum ) = AddBiblio( $record, $frameworkcode );
-        }
-        $template->param( invalid_isbn => $invalid_isbn,
-                          biblionumber => $biblionumber);
-        output_html_with_http_headers $input, $cookie, $template->output;
-        exit;
-      }
     }
 
     # check for a duplicate
@@ -951,7 +852,9 @@ if ( $op eq "addbiblio" ) {
         my $oldbibnum;
         my $oldbibitemnum;
         if (C4::Context->preference("BiblioAddsAuthorities")){
-          my ($countlinked,$countcreated)=BiblioAddAuthorities($record,$frameworkcode);
+            my $bib = Koha::Bib->new(marc => $record);
+            $bib->relink_with_stubbing;
+            $record = $bib->marc;
         } 
         if ( $is_a_modif ) {
             ModBiblioframework( $biblionumber, $frameworkcode ); 
@@ -966,25 +869,25 @@ if ( $op eq "addbiblio" ) {
         if ($mode ne "popup"){
             print $input->redirect(
                 "/cgi-bin/koha/cataloguing/additem.pl?biblionumber=$biblionumber&frameworkcode=$frameworkcode"
-            );
+                );
             exit;
         } else {
-          $template->param(
-            biblionumber => $biblionumber,
-            done         =>1,
-            popup        =>1
-          );
-          $template->param( title => $record->subfield('200',"a") ) if ($record ne "-1" && C4::Context->preference('marcflavour') =~/unimarc/i);
-          $template->param( title => $record->title() ) if ($record ne "-1" && C4::Context->preference('marcflavour') eq "usmarc");
-          $template->param(
-            popup => $mode,
-            itemtype => $frameworkcode,
-          );
-          output_html_with_http_headers $input, $cookie, $template->output;
-          exit;     
+            $template->param(
+                biblionumber => $biblionumber,
+                done         =>1,
+                popup        =>1
+                );
+            $template->param( title => $record->subfield('200',"a") ) if ($record ne "-1" && C4::Context->preference('marcflavour') =~/unimarc/i);
+            $template->param( title => $record->title() ) if ($record ne "-1" && C4::Context->preference('marcflavour') eq "usmarc");
+            $template->param(
+                popup => $mode,
+                itemtype => $frameworkcode,
+                );
+            output_html_with_http_headers $input, $cookie, $template->output;
+            exit;
         }
     } else {
-    # it may be a duplicate, warn the user and do nothing
+        # it may be a duplicate, warn the user and do nothing
         build_tabs ($template, $record, $dbh,$encoding,$input);
         $template->param(
             biblionumber             => $biblionumber,
@@ -992,7 +895,7 @@ if ( $op eq "addbiblio" ) {
             duplicatebiblionumber    => $duplicatebiblionumber,
             duplicatebibid           => $duplicatebiblionumber,
             duplicatetitle           => $duplicatetitle,
-        );
+            );
     }
 }
 elsif ( $op eq "delete" ) {

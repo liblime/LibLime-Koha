@@ -60,7 +60,7 @@ suppress | 942n | | dne_to_zero
 
 koha-tag | 999c | emit_tags
 
-koha-auth-number | record | emit_authids
+linked_rcn | record | emit_linked_rcns
 
 popularity | 9420
 catdate | 999c | emit_datecreated

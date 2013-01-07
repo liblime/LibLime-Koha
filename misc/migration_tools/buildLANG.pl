@@ -7,8 +7,6 @@ use strict;
 # Koha modules used
 use Koha;
 use C4::Context;
-use C4::Biblio;
-use C4::AuthoritiesMarc;
 use Time::HiRes qw(gettimeofday);
 
 use Getopt::Long;

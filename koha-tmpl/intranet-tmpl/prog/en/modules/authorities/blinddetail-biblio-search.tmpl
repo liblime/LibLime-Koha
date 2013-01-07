@@ -23,8 +23,8 @@
             <!-- TMPL_IF NAME="clear" -->
                 if (subfield){subfield.value="" ;}
             <!--TMPL_ELSE-->      
-                if(code.value=='9'){
-                        subfield.value = "<!-- TMPL_VAR NAME="authid" -->";
+                if(code.value=='0'){
+                        subfield.value = "<!-- TMPL_VAR NAME="rcn" -->";
                 }
             <!-- TMPL_LOOP NAME="0XX" -->
                 <!-- TMPL_LOOP NAME="subfield" -->

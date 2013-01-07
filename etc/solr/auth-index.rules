@@ -1,7 +1,9 @@
 id | record | emit_id
 rtype | record | emit_auth_rtype
-authid | record | emit_authid
+authid | 999e
+rcn | record | emit_rcn
 kauthtype_s | 942a
+is_stub_b | record | | auth_is_stub
 
 personal-name_auths | 100 | cat_alpha_subfields
 corporate-name_auths | 110 | cat_alpha_subfields
@@ -16,11 +18,11 @@ Heading-use-main-or-added-entry | 008[14]
 Heading-use-subject-added-entry | 008[15]
 Heading-use-series-added-entry | 008[16]
 Subject-heading-thesaurus | 008[11]
-Match-heading-see-from | 400abcdefghjklmnopqrstvxyz 410abcdefghklmnoprstvxyz 411acdefghjklnpqstvxyz 430adfghklmnoprstvxyz 448avxyz 450avxyz 451avxyz 455avxyz | concat
+Match-heading-see-from | 4.. | cat_alpha_subfields
 
-
-auth-heading | 100 110 111 130 148 150 151 155 | cat_alpha_subfields
-auth-full | 100 110 111 130 148 150 151 155 400 500 410 510 411 511 430 530 450 550 451 551 455 555 180 181 182 185 | cat_alpha_subfields
-auth-heading-sort | 100 110 111 130 148 150 151 155 | cat_alpha_subfields | first
+coded-heading_s | record | | emit_coded_heading
+auth-heading | 1.. | cat_alpha_subfields
+auth-heading-sort | 1.. | cat_alpha_subfields | first
+auth-full | 1.. 4.. 5.. | cat_alpha_subfields
 
 marcxml | record | as_marcxml

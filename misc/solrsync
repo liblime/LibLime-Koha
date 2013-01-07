@@ -3,11 +3,11 @@
 use Koha;
 use C4::Context;
 use C4::Items qw(GetMarcWithItems);
-use C4::AuthoritiesMarc qw(GetAuthority);
 use WebService::Solr;
 use Koha::Solr::IndexStrategy::MARC;
 use Koha::Solr::Document::MARC;
 use Koha::Changelog::DBLog;
+use Koha::Authority;
 use File::Slurp;
 use DateTime;
 use DateTime::TimeZone;
@@ -41,7 +41,7 @@ my %dispatch = (
             return C4::Context->dbh->selectcol_arrayref(
                 'SELECT authid FROM auth_header');
         },
-        acquire_one => \&GetAuthority,
+        acquire_one => sub { Koha::Authority->new(id => $_)->marc },
         rules_file => C4::Context->config('solr')->{auth_rules},
         prefix => 'auth',
         rtype => 'auth',
@@ -61,6 +61,10 @@ my %opts = (
     continuous => 0,
     sleeptime => 30,
     verbosity => 0,
+    commit => 0,
+    optimize => 0,
+    delete => 0,
+    empty => 0,
     help => undef,
     );
 
@@ -71,9 +75,13 @@ GetOptions(
     'ids:s' => \$opts{ids},
     's|since:s' => \$opts{timestamp},
     'w|workers:i' => \$opts{workers},
-    'b|batch-size:i' => \$opts{batch_size},
+    'b|batch_size:i' => \$opts{batch_size},
     'c|continuous!' => \$opts{continuous},
     't|sleeptime:i' => \$opts{sleeptime},
+    'delete!' => \$opts{delete},
+    'empty!' => \$opts{empty},
+    'commit!' => \$opts{commit},
+    'optimize!' => \$opts{optimize},
     'o|stdout!' => \$opts{to_stdout},
     'v|verbose' => sub { $opts{verbosity}++ },
     'h|help' => \$opts{help},
@@ -81,10 +89,8 @@ GetOptions(
 
 pod2usage(0) if $opts{help};
 
-croak '"continuous" mode is incompatible with "all" or "ids"'
-    if ( $opts{continuous} && ($opts{all} || $opts{ids}) );
-croak 'only one of either "all" or "ids" may be specified'
-    if ( $opts{all} && $opts{ids} );
+croak '"all" and "continuous" options are not compatible'
+    if ( $opts{continuous} && $opts{all} );
 
 my $log = Log::Dispatch->new();
 $log->add( Log::Dispatch::Screen->new(
@@ -92,6 +98,14 @@ $log->add( Log::Dispatch::Screen->new(
                newline=>1, stderr=>1));
 
 my $ltz = DateTime::TimeZone->new(name => 'local');
+
+if ( $opts{empty} ) {
+    my $solr = WebService::Solr->new( C4::Context->config('solr')->{url},
+                                      { autocommit => 0 } );
+    $log->info( 'Emptying index.' );
+    $solr->delete( {query => 'rtype:bib'} ) if grep {/^biblio$/} @queues;
+    $solr->delete( {query => 'rtype:auth'} ) if grep {/^auth$/} @queues;
+}
 
 while (1) {
     $log->info('Starting new queue run at '. DateTime->now(time_zone => $ltz));
@@ -130,11 +144,23 @@ sub run_queue {
     while (my @todo_part = $todoitr->()) {
         next if $forker->start;
         $SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = undef;
+        $C4::Context::context->{dbh} = C4::Context->dbh->clone;
         process_list($rtype, \@todo_part);
         $forker->finish;
     }
     $forker->wait_all_children;
     $SIG{HUP} = $SIG{TERM} = $SIG{INT} = $SIG{QUIT} = undef;
+
+    if ($opts{optimize}) {
+        my $solr = WebService::Solr->new( C4::Context->config('solr')->{url} );
+        $log->info( 'Optimizing.' );
+        $solr->optimize;
+    }
+    if ($opts{commit}) {
+        my $solr = WebService::Solr->new( C4::Context->config('solr')->{url} );
+        $log->info( 'Committing.' );
+        $solr->commit;
+    }
 
     return;
 }
@@ -157,9 +183,10 @@ sub get_todos {
         }
         my $tstamp = DateTime->now(time_zone => $ltz)->ymd
             . ' ' . DateTime->now(time_zone => $ltz)->hms;
+        my $action = $opts{delete} ? 'delete' : 'update';
         return [
             map { {id=>$_, rtype=>$rtype->{name},
-                   action=>'update', stamp=>$tstamp }
+                   action=>$action, stamp=>$tstamp }
             } @ids
         ];
     }
@@ -188,10 +215,10 @@ sub s2hms {
 }
 
 sub process_list {
-    our ($rtype, $todos) = @_;
+    my ($rtype, $todos) = @_;
     return unless @$todos;
 
-    our $solr = WebService::Solr->new( C4::Context->config('solr')->{url},
+    my $solr = WebService::Solr->new( C4::Context->config('solr')->{url},
                                       { autocommit => 0 } );
     my %deletes = map { $_->{id} => 1} grep { $_->{action} ~~ 'delete' } @$todos;
     my %updates = map { $_->{id} => 1} grep { $_->{action} ~~ 'update' } @$todos;
@@ -205,14 +232,15 @@ sub process_list {
         $log->info('Delete complete');
     }
 
-    our $r = Koha::Solr::IndexStrategy::MARC->new(
+    my $r = Koha::Solr::IndexStrategy::MARC->new(
         rules_text => scalar read_file($rtype->{rules_file}) );
-    our ($update_count, $render_errors, $update_errors) = (0, 0, 0);
-    our ($start_time, undef) = gettimeofday();
-    our $queue_size = scalar keys %updates;
+    my @update_docs;
+    my ($update_count, $render_errors, $update_errors) = (0, 0, 0);
+    my $queue_size = scalar keys %updates;
     $log->info("Have $queue_size updates in queue");
+    my ($start_time, undef) = gettimeofday();
 
-    sub doc_with_catch {
+    my $doc_with_catch = sub {
         my $id = shift;
         $log->debug("Expressing $id");
         my $record = $rtype->{acquire_one}->($id);
@@ -223,7 +251,7 @@ sub process_list {
                 record => $record, strategy => $r );
         }
         catch {
-            $log->warn("Error rendering $id into Solr doc: $_");
+            carp "Error rendering $id into Solr doc: $_";
             $render_errors++;
             $update_count--;
             undef;
@@ -231,20 +259,13 @@ sub process_list {
         return $doc;
     };
 
-    sub add_with_catch {
-        my $update_docs = shift;
-        return unless @$update_docs;
-
-        if ($rtype->{opts}{to_stdout}) {
-            say join('', @$update_docs);
-            return;
-        }
-
+    my $add_with_catch = sub {
         my ($now, undef) = gettimeofday();
         my $total_elapsed_seconds = ($now - $start_time) || 1;
         my $dps_all = int($update_count / $total_elapsed_seconds);
         my $docs_remaining = $queue_size - $update_count;
-        my $est_seconds_remaining = int($docs_remaining / $dps_all);
+        my $est_seconds_remaining
+            = ($dps_all) ? int($docs_remaining / $dps_all) : 0;
 
         my $elapsed = s2hms($total_elapsed_seconds);
         my $remaining = s2hms($est_seconds_remaining);
@@ -253,34 +274,29 @@ sub process_list {
         $log->info($msg);
 
         try {
-            $solr->add( $update_docs );
+            if ($rtype->{opts}{to_stdout}) {
+                say join("\n", @update_docs);
+            }
+            else {
+                $solr->add( \@update_docs );
+            }
         }
         catch {
-            if (@$update_docs == 1) {
-                $log->warn('Unable to upload doc: ' . substr($_, 0, 255));
-                $update_errors++;
-                return;
-            }
-            $log->warn("Batch upload error. Splitting batch.");
-            my @ud2 = splice $update_docs, @$update_docs/2;
-            add_with_catch( $update_docs );
-            add_with_catch( \@ud2 );
+            carp "Error uploading batch into Solr: $_";
+            $update_errors++;
             undef;
         };
+        @update_docs = ();
         $log->debug('Batch complete');
     };
 
-    my $update_docs = [];
     for ( sort {$a <=> $b} keys %updates ) {
-        my $doc = doc_with_catch($_);
+        my $doc = $doc_with_catch->($_);
         next unless $doc;
-        push $update_docs, $doc;
-        if (@$update_docs >= $rtype->{opts}{batch_size}) {
-            add_with_catch( $update_docs );
-            $update_docs = [];
-        }
+        push @update_docs, $doc;
+        $add_with_catch->() if (@update_docs >= $rtype->{opts}{batch_size});
     }
-    add_with_catch( $update_docs );
+    $add_with_catch->();
 
     $log->info(
         "Updated $update_count records with $render_errors render errors ".

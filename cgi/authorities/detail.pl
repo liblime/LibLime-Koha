@@ -38,18 +38,15 @@ parameters tables.
 =cut
 
 
-use strict;
-
-use C4::AuthoritiesMarc;
-use C4::Auth;
 use Koha;
+use C4::Auth;
 use C4::Context;
 use C4::Output;
+use Koha::Authority;
+use Koha::HeadingMap;
 use CGI;
 use MARC::Record;
 use C4::Koha;
-# use C4::Biblio;
-# use C4::Catalogue;
 
 our ($tagslib);
 
@@ -342,8 +339,7 @@ sub build_tabs ($$$$$) {
                 foreach my $field (@fields) {
                     my @subfields_data;
                     if ($field->tag()<10) {
-                        next
-                        if (
+                        next if (
                             $tagslib->{ $field->tag() }->{ '@' }->{tab}
                             ne $tabloop );
                       next if ($tagslib->{$field->tag()}->{'@'}->{hidden});
@@ -358,13 +354,10 @@ sub build_tabs ($$$$$) {
                   # loop through each subfield
                       for my $i (0..$#subf) {
                         $subf[$i][0] = "@" unless $subf[$i][0];
-                        next
-                        if (
-                            $tagslib->{ $field->tag() }->{ $subf[$i][0] }->{tab}
-                            ne $tabloop );
-                        next
-                        if ( $tagslib->{ $field->tag() }->{ $subf[$i][0] }
-                            ->{hidden} );
+                        next if (
+                            !($tabloop ~~ $tagslib->{ $field->tag() }{ $subf[$i][0] }{tab}));
+                        next if (
+                            $tagslib->{ $field->tag() }{ $subf[$i][0] }{hidden} );
                         my %subfield_data;
                         $subfield_data{marc_lib}=$tagslib->{$field->tag()}->{$subf[$i][0]}->{lib};
                         if ($tagslib->{$field->tag()}->{$subf[$i][0]}->{isurl}) {
@@ -407,7 +400,7 @@ sub build_tabs ($$$$$) {
 
 
 # 
-my $query=new CGI;
+my $query=CGI->new;
 
 my $dbh=C4::Context->dbh;
 
@@ -421,51 +414,14 @@ my ($template, $loggedinuser, $cookie)
 			     debug => 1,
 			     });
 
-my $authid = $query->param('authid');
+my %buildargs = ($query->param('authid'))
+    ? (id => $query->param('authid'))
+    : (rcn => $query->param('rcn'));
 
-
-
-my $authtypecode = &GetAuthTypeCode($authid);
-$tagslib = &GetTagsLabels(1,$authtypecode);
-
-my $record;
-if (C4::Context->preference("AuthDisplayHierarchy")){
-  my $trees=BuildUnimarcHierarchies($authid);
-  my @trees = split /;/,$trees ;
-  push @trees,$trees unless (@trees);
-  my @loophierarchies;
-  foreach my $tree (@trees){
-    my @tree=split /,/,$tree;
-    push @tree,$tree unless (@tree);
-    my $cnt=0;
-    my @loophierarchy;
-    foreach my $element (@tree){
-      my $cell;
-      my $elementdata = GetAuthority($element);
-      $record= $elementdata if ($authid==$element);
-      push @loophierarchy, BuildUnimarcHierarchy($elementdata,"child".$cnt, $authid);
-      $cnt++;
-    }
-    push @loophierarchies, { 'loopelement' =>\@loophierarchy};
-  }
-  $template->param(
-    'displayhierarchy' =>C4::Context->preference("AuthDisplayHierarchy"),
-    'loophierarchies' =>\@loophierarchies,
-  );
-} else {
-  $record=GetAuthority($authid);
-}
-my $count = CountUsage($authid);
-
-# find the marc field/subfield used in biblio by this authority
-my $sth = $dbh->prepare("select distinct tagfield from marc_subfield_structure where authtypecode=?");
-$sth->execute($authtypecode);
-my $biblio_fields;
-while (my ($tagfield) = $sth->fetchrow) {
-	$biblio_fields.= $tagfield."9,";
-}
-chop $biblio_fields;
-
+my $authority = Koha::Authority->new(%buildargs);
+my $record = $authority->marc;
+my $authtypecode = $authority->typecode;
+$tagslib = $authority->code_labels(1);
 
 # fill arrays
 my @loop_data =();
@@ -473,23 +429,23 @@ my $tag;
 # loop through each tab 0 through 9
 # for (my $tabloop = 0; $tabloop<=10;$tabloop++) {
 # loop through each tag
-  build_tabs ($template, $record, $dbh,"",$query);
+build_tabs ($template, $record, $dbh,"",$query);
 
-my $authtypes = getauthtypes;
+my $authtypes = Koha::HeadingMap->auth_types;
 my @authtypesloop;
 foreach my $thisauthtype (sort { $authtypes->{$b} cmp $authtypes->{$a} } keys %$authtypes) {
-	my $selected = 1 if $thisauthtype eq $authtypecode;
-	my %row =(value => $thisauthtype,
-				selected => $selected,
-				authtypetext => $authtypes->{$thisauthtype}{'authtypetext'},
-			);
-	push @authtypesloop, \%row;
+    my $selected = 1 if $authtypes->{$thisauthtype}{authtypecode} eq $authtypecode;
+    my %row = (value => $thisauthtype,
+               selected => $selected,
+               authtypetext => $authtypes->{$thisauthtype}{authtypetext},
+        );
+    push @authtypesloop, \%row;
 }
 
-$template->param(authid => $authid,
-		count => $count,
-		biblio_fields => $biblio_fields,
-		authtypetext => $authtypes->{$authtypecode}{'authtypetext'},
+$template->param(authid => $authority->id,
+                rcn => $authority->rcn,
+		count => $authority->link_count,
+		authtypetext => $authority->type->{authtypetext},
 		authtypesloop => \@authtypesloop,
 		);
 output_html_with_http_headers $query, $cookie, $template->output;

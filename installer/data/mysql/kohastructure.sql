@@ -261,17 +261,15 @@ CREATE TABLE `aqorders` (
 
 DROP TABLE IF EXISTS `auth_header`;
 CREATE TABLE `auth_header` (
-  `authid` bigint(20) unsigned NOT NULL auto_increment,
-  `authtypecode` varchar(10) NOT NULL default '',
-  `datecreated` date default NULL,
-  `datemodified` date default NULL,
-  `origincode` varchar(20) default NULL,
-  `authtrees` mediumtext,
+  `authid` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `rcn` varchar(32) NOT NULL,
+  `authtypecode` varchar(10) NOT NULL,
+  `datemodified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `marc` blob,
-  `linkid` bigint(20) default NULL,
   `marcxml` longtext NOT NULL,
-  PRIMARY KEY  (`authid`),
-  KEY `origincode` (`origincode`)
+  PRIMARY KEY (`authid`),
+  KEY `rcn` (`rcn`),
+  KEY `datemodified` (`datemodified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -2818,6 +2816,13 @@ CREATE TABLE IF NOT EXISTS `xtags_and_saved_sql` (
   `saved_sql_id` int(11) NOT NULL,
   UNIQUE (`xtag_id`, `saved_sql_id`),
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE auth_cache (
+  authid INT(11) NOT NULL,
+  tag CHAR(28) NOT NULL,
+  PRIMARY KEY (authid),
+  KEY tag (tag)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

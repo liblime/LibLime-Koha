@@ -63,10 +63,22 @@ function searchauthority() {
     <!-- TMPL_ELSE -->
     <tr>
     <!-- /TMPL_UNLESS -->
-      <td><a href="detail.pl?authid=<!-- TMPL_VAR NAME="authid" -->"><!-- TMPL_VAR NAME="summary" --></a></td>
+      <td>
+        <TMPL_LOOP NAME="summary">
+        <a href="detail.pl?authid=<!-- TMPL_VAR NAME="authid" -->"><!-- TMPL_VAR NAME="heading" --></a><br/>
+          <TMPL_IF seefrom><em>Linked from:</em><br/></TMPL_IF>
+          <TMPL_LOOP NAME="seefrom">
+          &nbsp;&nbsp;<TMPL_VAR text /><br/>
+          </TMPL_LOOP>
+          <TMPL_IF seealso><em>See also:</em><br/></TMPL_IF>
+          <TMPL_LOOP NAME="seealso">
+          &nbsp;&nbsp;<a href="?op=do_search&type=intranet&authtypecode=&idx=auth-heading_lc&operator=contains&orderby=auth-heading-sort+asc&q=<TMPL_VAR text>"><TMPL_VAR text /></a><br/>
+          </TMPL_LOOP>
+        </TMPL_LOOP>
+      </td>
   <!-- TMPL_UNLESS name="isEDITORS" -->
       <td>
-        <a href="../catalogue/search.pl?type=intranet&amp;op=do_search&amp;q=koha-auth-number:<!--TMPL_VAR Name="authid" -->" class="button"><!-- TMPL_VAR NAME="used" --> biblio(s)</a>
+        <a href="../catalogue/search.pl?type=intranet&amp;op=do_search&amp;q=linked_rcn:%22<TMPL_VAR rcn>%22" class="button"><!-- TMPL_VAR NAME="used" --> biblio(s)</a>
       </td>
   <!-- /TMPL_UNLESS -->
       <td>

@@ -27,26 +27,10 @@ $dbh->{RaiseError} = 0;
 
 use C4::Output;
 use C4::Auth;
-use C4::AuthoritiesMarc;
 use C4::Koha;
 use C4::NewsChannels;
 
-my $query     = new CGI;
-my $authtypes = getauthtypes;
-my @authtypesloop;
-
-foreach my $thisauthtype (
-    sort { $authtypes->{$a} <=> $authtypes->{$b} }
-    keys %$authtypes
-  )
-{
-    my %row = (
-        value        => $thisauthtype,
-        authtypetext => $authtypes->{$thisauthtype}{'authtypetext'},
-    );
-    push @authtypesloop, \%row;
-}
-
+my $query = CGI->new;
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
         template_name   => "intranet-main.tmpl",
@@ -61,13 +45,6 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 
 # We've made it past the installer and can expect normal database function
 $dbh->{RaiseError} = 1;
-
-my $marc_p = C4::Context->boolean_preference("marc");
-
-$template->param(
-    NOTMARC       => !$marc_p,
-    authtypesloop => \@authtypesloop
-);
 
 $template->param(
     UsePeriodicals => C4::Context->boolean_preference('UsePeriodicals')

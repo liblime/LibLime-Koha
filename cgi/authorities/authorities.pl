@@ -18,12 +18,12 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
+use Koha;
 use CGI;
 use C4::Auth;
 use C4::Output;
-use C4::AuthoritiesMarc;
-use Koha;
+use Koha::Authority;
+use Koha::HeadingMap;
 use C4::Context;
 use C4::Koha; # XXX subfield_is_koha_internal_p
 use Date::Calc qw(Today);
@@ -32,10 +32,9 @@ use MARC::File::XML;
 use C4::Biblio;
 use vars qw( $tagslib);
 use vars qw( $authorised_values_sth);
-use vars qw( $is_a_modif );
 
 my $itemtype; # created here because it can be used in build_authorized_values_list sub
-our($authorised_values_sth,$is_a_modif,$usedTagsLib,$mandatory_z3950);
+our($authorised_values_sth,$usedTagsLib,$mandatory_z3950);
 
 =item build_authorized_values_list
 
@@ -131,7 +130,7 @@ sub create_input {
 
     # if there is no value provided but a default value in parameters, get it
     unless ($value) {
-        $value = $tagslib->{$tag}->{$subfield}->{defaultvalue};
+        $value = $tagslib->{$tag}->{$subfield}->{defaultvalue} // q{};
 
         # get today date & replace YYYY, MM, DD if provided in the default value
         my ( $year, $month, $day ) = Today();
@@ -251,16 +250,7 @@ sub create_input {
         # it's a standard field
     }
     else {
-        if (
-            length($value) > 100
-            or
-            ( C4::Context->preference("marcflavour") eq "UNIMARC" && $tag >= 300
-                and $tag < 400 && $subfield eq 'a' )
-            or (    $tag >= 600
-                and $tag < 700
-                && C4::Context->preference("marcflavour") eq "MARC21" )
-        )
-        {
+        if ( length($value) > 100 || ( $tag >= 600 && $tag < 700 ) ) {
             $subfield_data{marc_value} =
                 "<textarea cols=\"70\"
                         rows=\"4\"
@@ -316,8 +306,8 @@ sub CreateKey(){
     return int(rand(1000000));
 }
 
-sub build_tabs ($$$$$) {
-    my ( $template, $record, $dbh, $encoding,$input ) = @_;
+sub build_tabs ($$$$) {
+    my ( $template, $record, $dbh,$input ) = @_;
 
     # fill arrays
     my @loop_data = ();
@@ -524,14 +514,13 @@ my $input = new CGI;
 my $z3950 = $input->param('z3950');
 my $error = $input->param('error');
 my $authid=$input->param('authid'); # if authid exists, it's a modif, not a new authority.
-my $op = $input->param('op');
+my $op = $input->param('op') // q{};
 my $nonav = $input->param('nonav');
 my $myindex = $input->param('index');
 my $linkid=$input->param('linkid');
 my $authtypecode = $input->param('authtypecode');
 
 my $dbh = C4::Context->dbh;
-$authtypecode = &GetAuthTypeCode($authid) if !$authtypecode;
 
 my ($template, $loggedinuser, $cookie)
     = get_template_and_user({template_name => "authorities/authorities.tmpl",
@@ -541,103 +530,81 @@ my ($template, $loggedinuser, $cookie)
                             flagsrequired => {editauthorities => 1},
                             debug => 1,
                             });
-$template->param(nonav   => $nonav,index=>$myindex,authtypecode=>$authtypecode,);
-$tagslib = GetTagsLabels(1,$authtypecode);
 my $record=-1;
-my $encoding="";
-$record = GetAuthority($authid) if ($authid);
-my ($oldauthnumtagfield,$oldauthnumtagsubfield);
-my ($oldauthtypetagfield,$oldauthtypetagsubfield);
-$is_a_modif=0;
+my $authority;
 if ($authid) {
-    $is_a_modif=1;
-    ($oldauthnumtagfield,$oldauthnumtagsubfield) = &GetAuthMARCFromKohaField("auth_header.authid",$authtypecode);
-    ($oldauthtypetagfield,$oldauthtypetagsubfield) = &GetAuthMARCFromKohaField("auth_header.authtypecode",$authtypecode);
+    $authority = Koha::Authority->new(id => $authid);
+    $record = $authority->marc;
+    $authtypecode = $authority->typecode;
 }
+my ($authtypetext) = map {$_->{authtypetext}}
+    grep {$_->{authtypecode} ~~ $authtypecode}
+    values %{Koha::HeadingMap->auth_types};
 
-#------------------------------------------------------------------------------------------------------------------------------
-if ($op eq "add") {
-#------------------------------------------------------------------------------------------------------------------------------
-    # rebuild
-    my @tags = $input->param('tag');
-    my @subfields = $input->param('subfield');
-    my @values = $input->param('field_value');
-    # build indicator hash.
-    my @ind_tag = $input->param('ind_tag');
-    my @indicator = $input->param('indicator');
-    my @params = $input->param();
-    my $record = TransformHtmlToMarc(\@params,$input);
-    if  (C4::Context->preference("marcflavour") eq "UNIMARC"){
-        unless ($record->field('100')){
-        use POSIX qw(strftime);
-        my $string = strftime( "%Y%m%d", localtime(time) );
-        # set 50 to position 26 is biblios, 13 if authorities
-        my $pos=13;
-        $string = sprintf( "%-*s", 35, $string );
-        substr( $string, $pos , 2, "50" );
-        $record->append_fields(MARC::Field->new('100','','',"a"=>$string));
-        }    
-    }
+$tagslib = Koha::Authority->code_labels(1,$authtypecode);
+$template->param(nonav => $nonav, index=>$myindex, authtypecode=>$authtypecode);
 
-    my ($duplicateauthid,$duplicateauthvalue) = FindDuplicateAuthority($record,$authtypecode) if ($op eq "add") && (!$is_a_modif);
-    my $confirm_not_duplicate = $input->param('confirm_not_duplicate');
-    # it is not a duplicate (determined either by Koha itself or by user checking it's not a duplicate)
-    if (!$duplicateauthid or $confirm_not_duplicate) {
-        if ($is_a_modif ) {	
-            ModAuthority($authid,$record,$authtypecode);
-        } else {
-            ($authid) = AddAuthority($record,$authid,$authtypecode);
-        }
-        print $input->redirect("detail.pl?authid=$authid");
+my ($oldauthnumtagfield,$oldauthnumtagsubfield) = ('999', 'e');
+my ($oldauthtypetagfield,$oldauthtypetagsubfield) = ('942', 'a');
+
+if ($op eq 'add') {
+    my %args = (marc => TransformHtmlToMarc( [$input->param], $input ));
+    $args{id} = $authid if $authid;
+    $authority = Koha::Authority->new( %args );
+
+    if ( $input->param('confirm_not_duplicate') || !@{$authority->duplicates} ) {
+        warn "SAVING";
+        $authority->save;
+        print $input->redirect('detail.pl?authid='.$authority->id);
         exit;
     } else {
-    # it may be a duplicate, warn the user and do nothing
-        build_tabs($template, $record, $dbh, $encoding,$input);
+        warn "DUPLICATE";
+        build_tabs($template, $authority->marc, $dbh,$input);
         build_hidden_data;
-        $template->param(authid =>$authid,
-                        duplicateauthid     => $duplicateauthid,
-                        duplicateauthvalue  => $duplicateauthvalue,
-                        );
+        $template->param(
+            authid => $authid,
+            duplicateauthid => $authority->duplicates->[0]->id,
+            );
     }
-} elsif ($op eq "delete") {
-#------------------------------------------------------------------------------------------------------------------------------
-        &DelAuthority($authid);
-        if ($nonav){
-            print $input->redirect("auth_finder.pl");
-        }else{
-            print $input->redirect("authorities-home.pl?authid=0");
-        }
-                exit;
+
+} elsif ($op eq 'delete') {
+    $authority->delete;
+    print $input->redirect(
+        ($nonav) ? 'auth_finder.pl' : 'authorities-home.pl?authid=0'
+        );
+    exit;
+
 } else {
-if ($op eq "duplicate")
-        {
-                $authid = "";
-        }
-        build_tabs ($template, $record, $dbh,$encoding,$input);
-        build_hidden_data;
-        $template->param(oldauthtypetagfield=>$oldauthtypetagfield, oldauthtypetagsubfield=>$oldauthtypetagsubfield,
-                        oldauthnumtagfield=>$oldauthnumtagfield, oldauthnumtagsubfield=>$oldauthnumtagsubfield,
-                        authid                      => $authid , authtypecode=>$authtypecode,	);
+    if ($op eq 'duplicate') {
+        $authid = undef;
+    }
+    build_tabs ($template, $record, $dbh, $input);
+    build_hidden_data;
+    $template->param(
+        oldauthtypetagfield=>$oldauthtypetagfield, oldauthtypetagsubfield=>$oldauthtypetagsubfield,
+        oldauthnumtagfield=>$oldauthnumtagfield, oldauthnumtagsubfield=>$oldauthnumtagsubfield,
+        authid => $authid , authtypecode=>$authtypecode);
 }
 
-$template->param(authid                       => $authid,
-                 authtypecode => $authtypecode,
-                 linkid=>$linkid,
+$template->param(
+    authid => $authid,
+    authtypecode => $authtypecode,
+    linkid => $linkid,
 );
 
-my $authtypes = getauthtypes;
+my $authtypes = Koha::HeadingMap->auth_types;
 my @authtypesloop;
 foreach my $thisauthtype (keys %$authtypes) {
-    my $selected = 1 if $thisauthtype eq $authtypecode;
-    my %row =(value => $thisauthtype,
+    my $selected = 1 if $authtypes->{$thisauthtype}{authtypecode} eq $authtypecode;
+    my %row = ( value => $authtypes->{$thisauthtype}{authtypecode},
                 selected => $selected,
-                authtypetext => $authtypes->{$thisauthtype}{'authtypetext'},
+                authtypetext => $authtypes->{$thisauthtype}{authtypetext},
             );
     push @authtypesloop, \%row;
 }
 
 $template->param(authtypesloop => \@authtypesloop,
-                authtypetext => $authtypes->{$authtypecode}{'authtypetext'},
+                authtypetext => $authtypetext,
                 hide_marc => C4::Context->preference('hide_marc'),
                 );
 output_html_with_http_headers $input, $cookie, $template->output;

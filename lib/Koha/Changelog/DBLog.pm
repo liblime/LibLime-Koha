@@ -1,18 +1,11 @@
 package Koha::Changelog::DBLog;
 use Koha;
 use Moose;
-use Method::Signatures;
 use namespace::autoclean;
 use C4::Context;
+use Method::Signatures;
 
-has 'rtype' => (
-    is => 'ro',
-    isa => 'Str',
-    required => 1,
-    );
-
-method update( Ref|Int $record, Str $action) {
-    # FIXME: Method::Signatures fails to parse type disjunction Int|MARC::Record
+method update ( Int|MARC::Record $record, Str $action ) {
     my $biblionumber = (ref $record) ? $record->subfield('999', 'c') : $record;
     C4::Context->dbh->do(
         q{INSERT INTO changelog (rtype, action, id) VALUES (?,?,?)},

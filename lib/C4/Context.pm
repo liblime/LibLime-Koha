@@ -18,7 +18,7 @@ package C4::Context;
 
 use strict;
 use warnings;
-use vars qw($VERSION $AUTOLOAD $context @context_stack);
+use vars qw($VERSION $context @context_stack);
 
 use Try::Tiny;
 use CHI;
@@ -33,7 +33,7 @@ use JSON qw(from_json);
 use Koha;
 require Koha::RoseDB;
 
-$VERSION = '4.09.00.014';
+$VERSION = '4.09.00.015';
 
 if ($ENV{'HTTP_USER_AGENT'})	{
     require CGI::Carp;
@@ -450,6 +450,8 @@ sub zebraconfig {
 	return _common_config($_[1],'server');
 }
 
+sub intranetdir { return $context->config('intranetdir') }
+
 =item preference
 
   $sys_preference = C4::Context->preference('some_variable');
@@ -556,26 +558,6 @@ sub boolean_preference ($) {
     my $var = shift;        # The system preference to return
     my $it = preference($self, $var);
     return defined($it)? C4::Boolean::true_p($it): undef;
-}
-
-# AUTOLOAD
-# This implements C4::Config->foo, and simply returns
-# C4::Context->config("foo"), as described in the documentation for
-# &config, above.
-
-# FIXME - Perhaps this should be extended to check &config first, and
-# then &preference if that fails. OTOH, AUTOLOAD could lead to crappy
-# code, so it'd probably be best to delete it altogether so as not to
-# encourage people to use it.
-sub AUTOLOAD
-{
-    my $self = shift;
-
-    $AUTOLOAD =~ s/.*:://;        # Chop off the package name,
-                    # leaving only the function name.
-    config($self,$AUTOLOAD);
-# we are not necessarily blessed
-#    return $self->config($AUTOLOAD);
 }
 
 =item dbh

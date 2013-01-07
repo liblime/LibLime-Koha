@@ -50,7 +50,7 @@ function jumpfull(page)
                 </tr>
                 <!-- TMPL_LOOP NAME="result" -->
                     <tr>
-                        <td><!-- TMPL_VAR NAME="summary" --></td>
+                        <td><TMPL_LOOP NAME="summary"><TMPL_VAR heading></TMPL_LOOP></td>
                         <td><!-- TMPL_VAR NAME="used" --> times</td>
                         <td>
                             <a href="javascript:jumpfull('blinddetail-biblio-search.pl?authid=<!-- TMPL_VAR NAME="authid" -->&amp;index=<!-- TMPL_VAR NAME="index" -->')">choose</a>

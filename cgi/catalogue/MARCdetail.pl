@@ -197,7 +197,7 @@ for ( my $tabloop = 0 ; $tabloop <= 10 ; $tabloop++ ) {
                     if ( $tagslib->{ $fields[$x_i]->tag() }->{ $subf[$i][0] }
                         ->{authtypecode} )
                     {
-                        $subfield_data{authority} = $fields[$x_i]->subfield(9);
+                        $subfield_data{rcn} = $fields[$x_i]->subfield(0);
                     }
                     $subfield_data{marc_value} =
                       GetAuthorisedValueDesc( $fields[$x_i]->tag(),

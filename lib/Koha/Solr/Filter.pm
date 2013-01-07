@@ -7,13 +7,14 @@ use MARC::Record;
 use MARC::Field;
 use MARC::File::XML;
 use Locale::Language qw( code2language );
-use C4::Heading::MARC21;
 use C4::Koha;
 use C4::Biblio;
 use C4::Tags;
 use C4::Reserves qw();
 use C4::Circulation qw();
 use Koha::Format;
+use Koha::BareAuthority;
+use Koha::HeadingMap;
 use File::Slurp;
 use JSON;
 use Try::Tiny;
@@ -160,7 +161,7 @@ func emit_authids( MARC::Record $record ) {
     return map { scalar $_->subfield('9') }
         grep { $_->subfield('9') }
         map { $record->field($_) }
-        keys %{$C4::Heading::MARC21::bib_heading_fields};
+        keys %{Koha::HeadingMap->bib_headings()};
 }
 
 func on_shelf_at( MARC::Field @f952s ) {
@@ -259,6 +260,25 @@ func emit_isbn( Str @isbns ) {
     }
 
     return @nisbns;
+}
+
+func emit_linked_rcns( MARC::Record $record ) {
+    return map { scalar $_->subfield('0') }
+        grep { $_->subfield('0') }
+        map { $record->field($_) }
+        keys %{Koha::HeadingMap->bib_headings()};
+}
+
+func emit_rcn( MARC::Record $record ) {
+    return Koha::BareAuthority->new(marc => $record)->rcn;
+}
+
+func emit_coded_heading( MARC::Record $record ) {
+    return Koha::BareAuthority->new(marc => $record)->csearch_string;
+}
+
+func auth_is_stub( MARC::Record $record ) {
+    return Koha::BareAuthority->new(marc => $record)->is_stub // 0;
 }
 
 1;

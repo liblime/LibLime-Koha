@@ -18,7 +18,7 @@ use MARC::Batch;
 use Koha;
 use C4::Context;
 use C4::Charset;
-use C4::AuthoritiesMarc;
+use Koha::BareAuthority;
 use Time::HiRes qw(gettimeofday);
 use Getopt::Long;
 use IO::File;
@@ -114,35 +114,12 @@ RECORD: while ( my $record = $batch->next() ) {
             next RECORD;            
         }
     }
-
     warn "$i ==>".$record->as_formatted() if $verbose eq 2;
-    my $authtypecode;
-    if (C4::Context->preference('marcflavour') eq 'MARC21') {
-        $authtypecode="PERSO_NAME" if ($record->field('100'));
-        $authtypecode="CORPO_NAME" if ($record->field('110'));
-        $authtypecode="MEETI_NAME" if ($record->field('111'));
-        $authtypecode="UNIF_TITLE" if ($record->field('130'));
-        $authtypecode="CHRON_TERM" if ($record->field('148') or $record->field('182'));
-        $authtypecode="TOPIC_TERM" if ($record->field('150') or $record->field('180'));
-        $authtypecode="GEOGR_NAME" if ($record->field('151') or $record->field('181'));
-        $authtypecode="GENRE/FORM" if ($record->field('155') or $record->field('185'));
-        next unless $authtypecode; # skip invalid records FIXME: far too simplistic
-    }
-    else {
-        $authtypecode=substr($record->leader(),9,1);
-        $authtypecode="NP" if ($authtypecode eq 'a'); # personnes
-        $authtypecode="CO" if ($authtypecode eq 'b'); # collectivit�
-        $authtypecode="NG" if ($authtypecode eq 'c'); # g�graphique
-        $authtypecode="NM" if ($authtypecode eq 'd'); # marque
-        $authtypecode="NF" if ($authtypecode eq 'e'); # famille
-        $authtypecode="TI" if ($authtypecode eq 'f'); # Titre uniforme
-        $authtypecode="TI" if ($authtypecode eq 'h'); # auteur/titre
-        $authtypecode="MM" if ($authtypecode eq 'j'); # mot mati�e
-    }
 
     unless ($test_parameter) {
-        my ($authid) = AddAuthority($record,0,$authtypecode);
-        warn "ADDED authority NB $authid in DB\n" if $verbose;
+        my $auth = Koha::BareAuthority->new(marc => $record);
+        $auth->save;
+        warn "ADDED authority NB ".$auth->id." in DB\n" if $verbose;
         $dbh->commit() if (0 == $i % $commitnum);
     }
 

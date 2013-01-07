@@ -17,21 +17,21 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
-
 use CGI;
 use C4::Auth;
 
 use Koha;
 use C4::Context;
 use C4::Auth;
+use Koha::Authority;
+use Koha::HeadingMap;
 use C4::Output;
-use C4::AuthoritiesMarc;
 use C4::Koha;    # XXX subfield_is_koha_internal_p
 use Koha::Solr::Service;
 use Koha::Solr::Query;
 use Koha::Pager;
+use TryCatch;
+use Carp;
 
 my $query        = new CGI;
 my $op           = $query->param('op') // '';
@@ -53,24 +53,20 @@ my ( $template, $loggedinuser, $cookie )= get_template_and_user(
     );
 my $resultsperpage;
 
-my $authtypes = getauthtypes;
+my $authtypes = Koha::HeadingMap->auth_types;
 my @authtypesloop;
 
-for my $thisauthtype ( sort { $authtypes->{$a}{'authtypetext'} cmp $authtypes->{$b}{'authtypetext'} } keys %$authtypes ){
-#    next unless $thisauthtype; # There should be no default authority types.
-#    FIXME: This allows a frameworkless 'default' type.
-#    It also allows a search on any authority type.
+for my $thisauthtype ( sort { $authtypes->{$a}{authtypetext} cmp $authtypes->{$b}{authtypetext} } keys %$authtypes ){
     my %row = (
-        value        => $thisauthtype,
-        selected     => ($thisauthtype ~~ $authtypecode),
+        value        => $authtypes->{$thisauthtype}{authtypecode},
+        selected     => ($authtypes->{$thisauthtype}{authtypecode} ~~ $authtypecode),
         authtypetext => $authtypes->{$thisauthtype}{authtypetext},
     );
     push @authtypesloop, \%row;
 }
 
 if ( $op eq "delete" ) {
-    &DelAuthority( $authid, 1 );
-
+    Koha::Authority->new(id => $authid)->delete;
 } elsif ( $op eq "do_search" ) {
 
     my $q = $query->param('q');
@@ -98,15 +94,19 @@ if ( $op eq "delete" ) {
     my $resultset = ($rs->is_error) ? {} : $rs->content;
     my $results = [];
 
-    for my $doc (@{$resultset->{response}->{docs}}){
-        my $record = MARC::Record->new_from_xml($doc->{marcxml},'utf8','MARC21'); 
-        my $summary = C4::AuthoritiesMarc::BuildSummary($record,undef,$authtypecode);
-        push @$results, {   summary => $summary,
-                            authid => $doc->{authid},
-                            authtype => $doc->{kauthtype_s},
-                            used => C4::AuthoritiesMarc::CountUsage($doc->{authid}),
-
-                        };
+    for my $doc (@{$resultset->{response}{docs}}) {
+        try {
+            my $auth = Koha::Authority->new( id => $doc->{authid} );
+            push @$results, {   summary => [$auth->summary],
+                                rcn => $auth->rcn,
+                                authid => $auth->id,
+                                authtype => $auth->typecode,
+                                used => $auth->link_count,
+            };
+        }
+        catch {
+            carp "Problem with authority search result.";
+        }
     }
     my $resultsperpage;
     my $total = $resultset->{'response'}->{'numFound'};
