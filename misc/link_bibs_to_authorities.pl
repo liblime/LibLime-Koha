@@ -5,6 +5,10 @@ use Koha::Bib;
 use TryCatch;
 use C4::Context;
 use Getopt::Long;
+use Parallel::ForkManager;
+use DateTime::Format::Natural;
+
+my $dtfn = DateTime::Format::Natural->new(time_zone => 'local');
 
 $| = 1;
 
@@ -12,10 +16,15 @@ $| = 1;
 my $verbose   = 0;
 my $test_only = 0;
 my $want_help = 0;
+my $workers   = 1;
+my $since     = $dtfn->parse_datetime('1970-01-01 00:00:00');
 
 my $result = GetOptions(
     'verbose'       => \$verbose,
     'test'          => \$test_only,
+    'w|workers:i'   => \$workers,
+    's|since:s'     =>
+        sub { ($since) = $dtfn->parse_datetime_duration($_[1]) },
     'h|help'        => \$want_help
 );
 
@@ -29,15 +38,27 @@ my $num_bibs_modified = 0;
 my $num_bad_bibs = 0;
 my $dbh = C4::Context->dbh;
 $dbh->{AutoCommit} = 0;
-process_bibs();
-$dbh->commit();
+my $forker = Parallel::ForkManager->new( $workers );
+for (0..$workers-1) {
+    next if $forker->start;
+    $dbh = $C4::Context::context->{dbh} = C4::Context->dbh->clone;
+    process_bibs($_, $workers, $since);
+    $dbh->commit();
+    $forker->finish;
+}
+$forker->wait_all_children;
 
 exit 0;
 
 sub process_bibs {
-    my $sql = "SELECT biblionumber FROM biblio ORDER BY biblionumber ASC";
+    my ($worker_number, $worker_count, $since) = @_;
+    my $sql =
+        'SELECT biblionumber FROM biblioitems '.
+        'WHERE biblionumber % ? = ? '.
+        '  AND timestamp >= ? '.
+        'ORDER BY biblionumber ASC';
     my $sth = $dbh->prepare($sql);
-    $sth->execute();
+    $sth->execute( $worker_count, $worker_number, $since );
     while (my ($biblionumber) = $sth->fetchrow_array()) {
         $num_bibs_processed++;
         process_bib($biblionumber);
@@ -47,9 +68,7 @@ sub process_bibs {
         }
     }
 
-    if (not $test_only) {
-        $dbh->commit;
-    }
+    $dbh->commit unless $test_only;
 
     print <<_SUMMARY_;
 
@@ -103,11 +122,13 @@ database and attempts to link each of its headings
 to the matching authority record.
 
 Parameters:
-    --verbose               print the number of headings changed
-                            for each bib
-    --test                  only test the authority linking
-                            and report the results; do not
-                            change the bib records.
-    --help or -h            show this message.
+    --workers=N     Run N separate processing threads.
+    --since=T       Only process bibs modified since T. Can take the
+                    form of a date (e.g. "02/01/2013") or a duration
+                    (e.g. "24 hours ago").
+    --verbose       Print the number of headings changed for each bib.
+    --test          Only test the authority linking and report the
+                    results; do not change the bib records.
+    --help or -h    Show this message.
 _USAGE_
 }

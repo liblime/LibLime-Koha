@@ -425,6 +425,7 @@ CREATE TABLE `biblioitems` (
   KEY `isbn` (`isbn`),
   KEY `publishercode` (`publishercode`),
   KEY `issn` (`issn`),
+  KEY `timestamp` (`timestamp`),
   CONSTRAINT `biblioitems_ibfk_1` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1138,6 +1139,18 @@ CREATE TABLE `import_items` (
              REFERENCES `import_records` (`import_record_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   KEY `itemnumber` (`itemnumber`),
   KEY `branchcode` (`branchcode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `import_authorities` (
+  `import_record_id` int(11) NOT NULL,
+  `matched_authid` int(11) DEFAULT NULL,
+  `heading` varchar(64) DEFAULT NULL,
+  `rcn` varchar(16) DEFAULT NULL,
+  `authtypecode` varchar(10) DEFAULT NULL,
+  KEY `import_authority_ibfk_1` (`import_record_id`),
+  KEY `matched_authid` (`matched_authid`),
+  KEY `rcn` (`rcn`),
+  CONSTRAINT `import_authid_ibfk_1` FOREIGN KEY (`import_record_id`) REFERENCES `import_records` (`import_record_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

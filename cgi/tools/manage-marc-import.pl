@@ -89,7 +89,7 @@ if ($op eq "") {
     if ($import_batch_id eq '') {
         import_batches_list($template, $offset, $results_per_page);
     } else {
-        import_biblios_list($template, $import_batch_id, $offset, $results_per_page);
+        import_records_list($template, $import_batch_id, $offset, $results_per_page);
     }
 } elsif ($op eq "commit-batch") {
     if ($completedJobID) {
@@ -97,14 +97,14 @@ if ($op eq "") {
     } else {
         commit_batch($template, $import_batch_id, $runinbackground, $sessionID);
     }
-    import_biblios_list($template, $import_batch_id, $offset, $results_per_page);
+    import_records_list($template, $import_batch_id, $offset, $results_per_page);
 } elsif ($op eq "revert-batch") {
     if ($completedJobID) {
         add_saved_job_results_to_template($template, $completedJobID, $sessionID);
     } else {
         revert_batch($template, $import_batch_id, $runinbackground, $sessionID);
     }
-    import_biblios_list($template, $import_batch_id, $offset, $results_per_page);
+    import_records_list($template, $import_batch_id, $offset, $results_per_page);
 } elsif ($op eq "clean-batch") {
     CleanBatch($import_batch_id);
     import_batches_list($template, $offset, $results_per_page);
@@ -120,7 +120,7 @@ if ($op eq "") {
     my $item_action = $input->param('item_action');
     redo_matching($template, $import_batch_id, $new_matcher_id, $current_matcher_id, 
                   $overlay_action, $nomatch_action, $item_action);
-    import_biblios_list($template, $import_batch_id, $offset, $results_per_page);
+    import_records_list($template, $import_batch_id, $offset, $results_per_page);
 } 
 
 output_html_with_http_headers $input, $cookie, $template->output;
@@ -233,7 +233,7 @@ sub commit_batch {
         $callback = progress_callback($job);
     }
     my ($num_added, $num_updated, $num_items_added, $num_items_errored, $num_ignored) = 
-        BatchCommitBibRecords($import_batch_id, 50, $callback);
+        BatchCommitRecords($import_batch_id, 50, $callback);
 
     my $results = {
         did_commit => 1,
@@ -260,7 +260,7 @@ sub revert_batch {
         $callback = progress_callback($job);
     }
     my ($num_deleted, $num_errors, $num_reverted, $num_items_deleted, $num_ignored) = 
-        BatchRevertBibRecords($import_batch_id, 50, $callback);
+        BatchRevertRecords($import_batch_id, 50, $callback);
 
     my $results = {
         did_revert => 1,
@@ -326,41 +326,70 @@ sub add_saved_job_results_to_template {
     add_results_to_template($template, $results);
 }
 
-sub import_biblios_list {
+sub citation_biblio {
+    my $irec = shift;
+
+    my $citation = $irec->{title};
+    $citation .= " $irec->{author}" if $irec->{author};
+    $citation .= " (" if $irec->{issn} or $irec->{isbn};
+    $citation .= $irec->{isbn} if $irec->{isbn};
+    $citation .= ", " if $irec->{issn} and $irec->{isbn};
+    $citation .= $irec->{issn} if $irec->{issn};
+    $citation .= ")" if $irec->{issn} or $irec->{isbn};
+
+    my $match = GetImportRecordMatches($irec->{import_record_id}, 1)->[0];
+    my $match_citation = '';
+    if ($match) {
+        $match_citation .= $match->{title} if exists($match->{title});
+        $match_citation .= ' ' . $match->{author} if exists($match->{author});
+    }
+
+    return ($citation, $match_citation, $match);
+}
+
+sub citation_authority {
+    my $irec = shift;
+
+    my $citation = "$irec->{heading} :: $irec->{rcn}";
+
+    my $match = GetImportRecordMatches($irec->{import_record_id}, 1)->[0];
+    my $match_citation;
+    if ($match) {
+        $match_citation = "$match->{heading} :: $match->{rcn}";
+    }
+
+    return ($citation, $match_citation, $match);
+}
+
+sub make_citation {
+    my $irec = shift;
+    return (exists $irec->{rcn})
+        ? citation_authority($irec) : citation_biblio($irec);
+}
+
+sub import_records_list {
     my ($template, $import_batch_id, $offset, $results_per_page) = @_;
 
     my $batch = GetImportBatch($import_batch_id);
-    my $biblios = GetImportBibliosRange($import_batch_id, $offset, $results_per_page);
+    my $irecs = GetImportRecordsRange($import_batch_id, $offset, $results_per_page);
     my @list = ();
-    foreach my $biblio (@$biblios) {
-        my $citation = $biblio->{'title'};
-        $citation .= " $biblio->{'author'}" if $biblio->{'author'};
-        $citation .= " (" if $biblio->{'issn'} or $biblio->{'isbn'};
-        $citation .= $biblio->{'isbn'} if $biblio->{'isbn'};
-        $citation .= ", " if $biblio->{'issn'} and $biblio->{'isbn'};
-        $citation .= $biblio->{'issn'} if $biblio->{'issn'};
-        $citation .= ")" if $biblio->{'issn'} or $biblio->{'isbn'};
-
-        my $match = GetImportRecordMatches($biblio->{'import_record_id'}, 1);
-        my $match_citation = '';
-        if ($#$match > -1) {
-            $match_citation .= $match->[0]->{'title'} if defined($match->[0]->{'title'});
-            $match_citation .= ' ' . $match->[0]->{'author'} if defined($match->[0]->{'author'});
-        }
-
+    for my $irec (@$irecs) {
+        my ($citation, $match_citation, $match) = make_citation($irec);
         push @list,
-          { import_record_id         => $biblio->{'import_record_id'},
-            final_match_biblionumber => $biblio->{'matched_biblionumber'},
+          { import_record_id         => $irec->{import_record_id},
+            type                     => $irec->{type},
+            final_match_biblionumber => $irec->{matched_biblionumber},
+            final_match_authid       => $irec->{matched_authid},
             citation                 => $citation,
-            status                   => $biblio->{'status'},
-            record_sequence          => $biblio->{'record_sequence'},
-            overlay_status           => $biblio->{'overlay_status'},
-            match_biblionumber       => $#$match > -1 ? $match->[0]->{'biblionumber'} : 0,
+            status                   => $irec->{status},
+            record_sequence          => $irec->{record_sequence},
+            overlay_status           => $irec->{overlay_status},
+            match_biblionumber       => ($match) ? $match->{biblionumber} : 0,
             match_citation           => $match_citation,
-            match_score              => $#$match > -1 ? $match->[0]->{'score'} : 0,
+            match_score              => ($match) ? $match->{score} : 0,
           };
     }
-    my $num_biblios = $batch->{'num_biblios'};
+    my $num_biblios = $batch->{num_biblios};
     $template->param(biblio_list => \@list); 
     add_page_numbers($template, $offset, $results_per_page, $num_biblios);
     $template->param(offset => $offset);

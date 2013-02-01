@@ -202,7 +202,7 @@ Page
     <th>Comments</th>
     <th>Status</th>
     <th>Staged</th>
-    <th># Bibs</th>
+    <th># Records</th>
     <th># Items</th>
     <th>Action</th>
   </tr>
@@ -214,7 +214,7 @@ Page
     <td><!-- TMPL_VAR name="import_status" --></td>
     <td><!-- TMPL_VAR name="upload_timestamp" --></td>
     <td><!-- TMPL_VAR name="num_biblios" --></td>
-    <td><!-- TMPL_VAR name="num_items" --><!-- TMPL_IF NAME="num_items" --> <a href="<!-- TMPL_VAR name="script_name" -->?import_batch_id=<!-- TMPL_VAR name="import_batch_id" -->&amp;op=create_labels">(Create Label Batch)</a><!-- /TMPL_IF --></td>
+    <td><!-- TMPL_VAR name="num_items" --><!-- TMPL_IF NAME="num_items" --> <a href="<!-- TMPL_VAR name="script_name" -->?import_batch_id=<!-- TMPL_VAR name="import_batch_id" -->&amp;op=create_labels">(make labels)</a><!-- /TMPL_IF --></td>
     <td><!-- TMPL_IF name="can_clean" -->
           <form method="post" action="<!-- TMPL_VAR name="script_name" -->" name="clean_batch_<!-- TMPL_VAR name='import_batch_id'-->" id="clean_batch_<!-- TMPL_VAR name='import_batch_id'-->" >
             <input type="hidden" name="import_batch_id" value="<!-- TMPL_VAR name="import_batch_id" -->" />
@@ -256,21 +256,32 @@ Page
 <table>
   <tr>
     <th>#</th>
+    <th>Type</th>
     <th>Citation</th>
     <th>Status</th>
     <th>Match?</th>
-    <th>Bib</th>
+    <th>ID</th>
 
   </tr>
   <!-- TMPL_LOOP name="biblio_list" -->
   <tr>
     <td><!-- TMPL_VAR name="record_sequence"--></td>
+    <td>
+      <TMPL_IF expr="type eq 'auth'">
+        Authority
+      <TMPL_ELSE>
+        Bibliographic
+      </TMPL_IF>
+    </td>
     <td><a href="/cgi-bin/koha/catalogue/showmarc.pl?importid=<!-- TMPL_VAR name='import_record_id' -->" rel="gb_page_center[600,500]"><!-- TMPL_VAR name="citation"--></a></td>
     <td><!-- TMPL_VAR name="status"--></td>
     <td><!-- TMPL_VAR name="overlay_status"--></td>
     <td><!-- TMPL_IF name="final_match_biblionumber" -->
-        <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR name='final_match_biblionumber' -->"><!-- TMPL_VAR name="final_match_biblionumber"--></a>
+        <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR name='final_match_biblionumber' -->">bib <!-- TMPL_VAR name="final_match_biblionumber"--></a>
         <!-- /TMPL_IF -->
+        <TMPL_IF final_match_authid>
+          <a href="/cgi-bin/koha/authorities/detail.pl?authid=<TMPL_VAR final_match_authid>">auth <!-- TMPL_VAR name="final_match_authid"--></a>
+        </TMPL_IF>
     </td>
   </tr>
     <!-- TMPL_IF name="match_biblionumber" -->
