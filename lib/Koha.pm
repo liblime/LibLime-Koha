@@ -1,6 +1,6 @@
 package Koha;
 
-use 5.010_000;
+use 5.014_000;
 
 use warnings;
 use strict;
@@ -13,7 +13,7 @@ use strict;
     sub import {
         warnings->import();
         strict->import();
-        feature->import( ':5.10' );
+        feature->import( ':5.14' );
         mro::set_mro( scalar caller(), 'c3' );
     }
 }
