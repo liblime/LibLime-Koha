@@ -234,6 +234,7 @@ func as_marcxml( MARC::Record $record ) {
 
 func clean_year( Str @strings ){
     s/\D//g for @strings;
+    s/(....).*/$1/ for @strings;
     return @strings;
 }
 
