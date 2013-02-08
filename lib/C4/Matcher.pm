@@ -665,7 +665,7 @@ sub get_matches {
         my @source_keys = _get_match_keys($source_record, $matchpoint);
         next if scalar(@source_keys) == 0;
         # build query
-        my $query = join(" OR ", map { "$matchpoint->{'index'}:$_" } @source_keys);
+        my $query = join(' OR ', map { qq{$matchpoint->{index}:"$_"} } @source_keys);
         # FIXME only searching biblio index at the moment
         #my ($error, $searchresults, $total_hits) = SimpleSearch($query, 0, $max_matches);
         my $solr = Koha::Solr::Service->new();

@@ -3,7 +3,8 @@ rtype | record | emit_bib_rtype
 biblionumber | 999c
 
 text | record | fullmarc
-text | 001[0-15]
+text | 001[0-15] | | trim
+f001_lc | 001[0-15] | | trim
 
 author-display | 100a |
 author-full | 100abcd 100q 110ab 111ab 700abcd 700q 710ab 711ab | concat
@@ -50,7 +51,7 @@ callnumber | 099ab 090ab 050ab 082ab 952o | concat
 callnumber-a | 099a 090a 050a 082a
 
 lccn | 010a 010z
-ctrlnum | 035a 001[0-15] | | first
+ctrlnum | 035a 001[0-15] | | first trim
 
 # cn-sort -- some catalogs seem to have no cn_sort at bib level, so fall back on first item cn.
 cn-sort | 9426 9526 | | first

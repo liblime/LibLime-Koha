@@ -51,6 +51,10 @@ func first( @_ ) {
     return (List::Util::first {defined $_} @_) // ();
 }
 
+func trim( Str @strings ) {
+    return map { s/^\s+|\s+$//g; $_ } @strings;
+}
+
 func unique( Str @strings ) {
     return uniq @_;
 }

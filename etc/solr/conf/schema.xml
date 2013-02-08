@@ -256,7 +256,7 @@
     <field name="callnumber" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="callnumber-a" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="lccn" type="string" indexed="true" stored="true" multiValued="true"/>
-    <field name="ctrlnum" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="ctrlnum" type="lowercase" indexed="true" stored="true" multiValued="false"/>
 
     <field name="cn-sort" type="lowercase" indexed="true" stored="false" multiValued="false"/>
 
