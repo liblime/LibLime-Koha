@@ -44,7 +44,7 @@ collection | 9528 | | unique
 location | 952c | | unique
 barcode | 952p
 
-isbn | 020a 020z | | emit_isbn
+isbn | 020a 020z 776z | | emit_isbn
 isbn-a | 020a | | emit_isbn
 issn | 022a 022y 022z 440x 490x 730x 776x 780x 785x
 standard-id | 024a
