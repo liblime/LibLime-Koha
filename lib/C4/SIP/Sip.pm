@@ -209,7 +209,11 @@ sub write_msg {
     } else {
 		print "$msg$CRLF";
     }
-	syslog("LOG_INFO", "OUTPUT MSG: '$msg'");
+	# Remove characters above 255 since they cause a
+	# "Wide character in syswrite" error and terminate the session
+	my $log_msg = $msg;
+	$log_msg =~ s/[^[:ascii:]]//g;
+	syslog("LOG_INFO", "OUTPUT MSG: '$log_msg'");
 
     $last_response = $msg;
 }
