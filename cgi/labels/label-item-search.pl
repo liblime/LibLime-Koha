@@ -17,20 +17,16 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-use warnings;
-use vars qw($debug $cgi_debug);
-
+use Koha;
+use Carp;
 use CGI;
 use List::Util qw( max min );
 use POSIX qw(ceil);
 
 use C4::Auth qw(get_template_and_user);
 use C4::Output qw(output_html_with_http_headers);
-use Koha;
 use C4::Context;
 use C4::Dates;
-#use C4::Search qw(SimpleSearch);
 use C4::Biblio qw(TransformMarcToKoha);
 use C4::Items qw(GetItemInfosOf get_itemnumbers_of);
 use C4::Koha qw(GetItemTypes);    # XXX subfield_is_koha_internal_p
@@ -39,16 +35,9 @@ use C4::Debug;
 
 use Koha::Solr::Service;
 use Koha::Solr::Query;
+use DateTime::Format::Natural;
 
-BEGIN {
-    $debug = $debug || $cgi_debug;
-    if ($debug) {
-        require Data::Dumper;
-        import Data::Dumper qw(Dumper);
-    }
-}
-
-my $query = new CGI;
+my $query = CGI->new;
 
 my $type      = $query->param('type');
 my $op        = $query->param('op') || '';
@@ -70,17 +59,6 @@ my $display_columns = [ {_add                   => {label => "Add Item", link_fi
                       ];
 
 if ( $op eq "do_search" ) {
-    $idx         = $query->param('idx');
-    $q = $query->param('q');
-    if ( $idx ) {
-        $user_query = "$idx:($q)";
-    } elsif ($q) {
-        $user_query = $q;
-    } #else from query->param
-
-    $datefrom = $query->param('datefrom');
-    $dateto   = $query->param('dateto');
-
     ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         {
             template_name   => "labels/result.tmpl",
@@ -93,14 +71,28 @@ if ( $op eq "do_search" ) {
         }
     );
 
-    if($datefrom || $dateto){
-        $datefrom = "*" unless $datefrom;
-        $dateto = "*" unless $dateto;
-        $query .= " AND acqdate:[$datefrom TO $dateto]";
+    $idx = $query->param('idx');
+    $q = $query->param('q');
+    if ( $idx && $q ) {
+        $user_query = ($idx eq 'barcode') ? qq{$idx:"$q"} : qq{$idx:($q)};
+    } elsif ($q) {
+        $user_query = $q;
+    }
+    else {
+        $user_query = '*:*';
+    }
+
+    $datefrom = $query->param('datefrom');
+    $dateto   = $query->param('dateto');
+
+    if ($datefrom || $dateto) {
+        my $dtfn = DateTime::Format::Natural->new( time_zone => 'local' );
+        my $dt_from = ($datefrom) ? $dtfn->parse_datetime( $datefrom )->ymd : '*';
+        my $dt_to = ($dateto) ? $dtfn->parse_datetime( $dateto )->ymd : '*';
+        $user_query .= " AND acqdate:[$dt_from TO $dt_to]";
     }
 
     my $offset = $startfrom > 1 ? $startfrom - 1 : 0;
-   # ( $error, $marcresults, $total_hits ) = SimpleSearch( $user_query, $offset, $resultsperpage );
     my $solr = Koha::Solr::Service->new();
     my $q_param = {query => $user_query, rtype => 'bib'};
     $q_param->{options} = {start => $offset} if($offset);
@@ -109,7 +101,7 @@ if ( $op eq "do_search" ) {
         $show_results = scalar @$results;
     }
     else {
-        $debug and warn "ERROR label-item-search: no results from SimpleSearch";
+        carp "ERROR label-item-search: no results from SimpleSearch";
 
         # leave $show_results undef
     }
@@ -131,8 +123,9 @@ if ($show_results) {
        ($tdate) = $cq =~ /le=(\d{4}\-\d\d\-\d\d)/;
     }
     else {
-       if ($datefrom) { $fdate = $datefrom->output('iso')}
-       if ($dateto)   { $tdate = $dateto->output('iso')  }
+        my $dtfn = DateTime::Format::Natural->new( time_zone => 'local' );
+        if ($datefrom) { $fdate = $dtfn->parse_datetime( $datefrom )->ymd }
+        if ($dateto) { $fdate = $dtfn->parse_datetime( $dateto )->ymd }
     }
     $fdate =~ s/\D//g;
     $tdate =~ s/\D//g;
