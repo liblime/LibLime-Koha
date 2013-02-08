@@ -415,8 +415,7 @@ sub get_template_and_user {
             OPACUserCSS               => "". C4::Context->preference("OPACUserCSS"),
             OPACViewOthersSuggestions => "" . C4::Context->preference("OPACViewOthersSuggestions"),
             OpacAuthorities           => C4::Context->preference("OpacAuthorities"),
-            OPACBaseURL               => ($in->{'query'}->https() ? "https://" : "http://") . $ENV{'SERVER_NAME'} .
-                   ($ENV{'SERVER_PORT'} eq ($in->{'query'}->https() ? "443" : "80") ? '' : ":$ENV{'SERVER_PORT'}"),
+            OPACBaseURL               => $ENV{HTTP_HOST},
             opac_name             => $opac_name,
             opac_css_override           => $ENV{'OPAC_CSS_OVERRIDE'},
             group_branches            => $group_branches,
