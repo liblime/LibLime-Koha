@@ -16,7 +16,7 @@ title-sort | 245 | title_sort
 title-full | 245 | cat_alpha_subfields | first
 title-alt | 130 246 730 740 | cat_alpha_subfields
 title-alt | 240a 247a 700t 710t 711t 780t 785t |
-series-title | 490a 800at 810at 811at 830at | | first
+series-title | 490a 440at 800at 810at 811at 830at | concat | first
 uniform-title | 240 | cat_alpha_subfields | first
 
 subject-exact | 600at 610at 650a 651a 652a 653a 654a 655a 656a 657a 690a | concat
