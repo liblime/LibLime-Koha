@@ -1157,7 +1157,6 @@ sub ReserveForBestSellersClub {
   
   for ( @borrowers ) {
     my $borrower = GetMember($_->{borrowernumber});
-    warn Data::Dumper::Dumper $borrower;
     C4::Reserves::AddReserve(
       $borrower->{branchcode},
       $borrower->{borrowernumber},
