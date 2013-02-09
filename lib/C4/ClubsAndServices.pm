@@ -23,12 +23,11 @@ package C4::ClubsAndServices;
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-
+use Koha;
 require Exporter;
 
-use Koha;
 use C4::Context;
+use C4::Members qw(GetMember);
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -617,7 +616,6 @@ sub GetCasEnrollments {
 ##     Reference to an array of associated arrays
 sub GetClubsAndServices {
   my ( $type, $branchcode ) = @_;
-warn "C4::ClubsAndServices::GetClubsAndServices( $type, $branchcode )";
   my $dbh = C4::Context->dbh;
 
   my ( $sth, @results );
@@ -1157,23 +1155,20 @@ sub ReserveForBestSellersClub {
   
   unless( scalar( @borrowers ) ) { return; }
   
-  my $priority = 1;
-  foreach my $borrower ( @borrowers ) {
+  for ( @borrowers ) {
+    my $borrower = GetMember($_->{borrowernumber});
+    warn Data::Dumper::Dumper $borrower;
     C4::Reserves::AddReserve(
-      my $branch = $borrower->{'branchcode'},
-      my $borrowernumber = $borrower->{'borrowernumber'},
+      $borrower->{branchcode},
+      $borrower->{borrowernumber},
       $biblionumber,
-      my $constraint = 'a',
-      my $bibitems,
-      $priority,
-      '',
-      my $notes = "Automatic Reserve for Bestsellers Club",
+      undef,
+      undef,
+      undef,
+      undef,
+      'Automatic Reserve for Bestsellers Club',
       $title,
-      my $checkitem,
-      my $found,
-      my $expire_date
     );
-    $priority++;
   }
 }
 

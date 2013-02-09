@@ -4974,6 +4974,13 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.017';
+if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do(q{ALTER TABLE clubsAndServices MODIFY branchcode VARCHAR(10) NOT NULL});
+    say "Upgrade to $DBversion done ( Fix C&S table bug )";
+    SetVersion ($DBversion);
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 

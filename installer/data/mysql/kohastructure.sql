@@ -2554,7 +2554,7 @@ CREATE TABLE IF NOT EXISTS clubsAndServices (
   `casData3` text COMMENT 'Data described in casa.casData3Title',
   `startDate` date NOT NULL default '0000-00-00',
   `endDate` date default NULL,
-  `branchcode` varchar(4) NOT NULL COMMENT 'branch where club or service was created.',
+  `branchcode` varchar(10) NOT NULL COMMENT 'branch where club or service was created.',
   `last_updated` timestamp NOT NULL default CURRENT_TIMESTAMP,
   PRIMARY KEY  (`casId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
