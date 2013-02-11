@@ -107,6 +107,7 @@ sub _build_query_from_cgi{
 
     while ( my ($q, $idx, $op) = $params->() ) {
         next unless $q;
+        $q =~ s/^\s+|\s+$//g;
 
         $query .= sprintf ' %s ', uc($op)
             if $query;
@@ -132,6 +133,10 @@ sub _build_query_from_cgi{
                 $q =~ s/\s+/?/g;
                 $q .= '*';
             }
+            elsif ($idx ~~ ['title-nostem', 'author-exact']) {
+                $q = qq{"$q"};
+            }
+
             elsif( $q !~ /"/ && $q !~ /\(|\)/ && $q =~ /\S+\s+\S+/ ) {
                 # Add grouping for this field if not quoted and multiple terms.
                 $q = "($q)";
