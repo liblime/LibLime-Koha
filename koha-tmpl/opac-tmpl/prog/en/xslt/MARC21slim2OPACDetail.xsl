@@ -285,7 +285,7 @@
         <xsl:if test="marc:datafield[@tag=440 or @tag=490]">
         <span class="results_summary"><span class="displayserieslabel label">Series: </span>
         <xsl:for-each select="marc:datafield[@tag=440]">
-             <a href="/cgi-bin/koha/opac-search.pl?q=se:{marc:subfield[@code='a']}">
+             <a href="/cgi-bin/koha/opac-search.pl?q=series-title:{marc:subfield[@code='a']}">
             <xsl:call-template name="chopPunctuation">
                             <xsl:with-param name="chopString">
                                 <xsl:call-template name="subfieldSelect">
@@ -299,7 +299,7 @@
         </xsl:for-each>
 
         <xsl:for-each select="marc:datafield[@tag=490][@ind1=0]">
-             <a href="/cgi-bin/koha/opac-search.pl?q=se:{marc:subfield[@code='a']}">
+             <a href="/cgi-bin/koha/opac-search.pl?q=series-title:{marc:subfield[@code='a']}">
                         <xsl:call-template name="chopPunctuation">
                             <xsl:with-param name="chopString">
                                 <xsl:call-template name="subfieldSelect">
@@ -311,7 +311,39 @@
                     <xsl:call-template name="part"/>
         <xsl:choose><xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
         </xsl:for-each>
+
+        <xsl:for-each select="marc:datafield[@tag=490][@ind1=1]">
+             <a href="/cgi-bin/koha/opac-search.pl?q=series-title:{marc:subfield[@code='a']}">
+                        <xsl:call-template name="chopPunctuation">
+                            <xsl:with-param name="chopString">
+                                <xsl:call-template name="subfieldSelect">
+                                    <xsl:with-param name="codes">av</xsl:with-param>
+                                </xsl:call-template>
+                            </xsl:with-param>
+                        </xsl:call-template>
+            </a>
+                    <xsl:call-template name="part"/>
+        <xsl:choose><xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
         </span>
+        </xsl:for-each>
+
+        <xsl:if test="marc:datafield[@tag=490][@ind1=1]">
+            <xsl:for-each select="marc:datafield[@tag=830]">
+                 <span class="results_summary"><span class="displayseriesaddedlabel label">Series Added Entry Title: </span>
+                 <a href="/cgi-bin/koha/opac-search.pl?q=series-title:{marc:subfield[@code='a']}">
+                        <xsl:call-template name="chopPunctuation">
+                            <xsl:with-param name="chopString">
+                                <xsl:call-template name="subfieldSelect">
+                                    <xsl:with-param name="codes">av</xsl:with-param>
+                                </xsl:call-template>
+                            </xsl:with-param>
+                        </xsl:call-template>
+                </a>
+                    <xsl:call-template name="part"/>
+                <xsl:choose><xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
+                </span>
+            </xsl:for-each>
+        </xsl:if>
         </xsl:if>
 
         <!-- Publisher Statement: Alternate Graphic Representation (MARC 880) -->
