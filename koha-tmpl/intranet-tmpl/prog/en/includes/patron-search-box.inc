@@ -45,40 +45,34 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 	<div id="tabs-circ_search" class="residentsearch">
 	<p class="tip">Enter patron card number or partial name:</p>
     <form action="/cgi-bin/koha/circ/circulation.pl" method="post">
-    <!-- TMPL_IF NAME="CircAutocompl" -->
-						<div class="autocomplete">
-							<div id="borrowerautocomplete" class="autocomplete">
-                                <div class="withAutocomplete">
-								<label for="searchfield">Search Fields:</label>
-								<select name="searchfield" id="searchfield">
-									<option value="">Standard</option>
-									<option value="email">E-Mail</option>
-									<option value="borrowernumber">Borrower Number</option>
-									<option value="phonenumber">Phone Number</option>
-								</select>
-								<label for="orderby">Order By:</label>
-								<select name="orderby" id="searchorderby">
-									<option value="surname,firstname">Surname</option>
-									<option value="cardnumber">Cardnumber</option>
-								</select>
-								<input id="ysearchsubmit" type="submit" class="submit" value="Submit" />
-								<input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
-								<input name="printer" value="" type="hidden" />
-                                </div>
-								<input autocomplete="off" id="findborrower" name="findborrower" type="text" />
-								<div id="yborrowercontainer"></div>
-							</div>
-						</div>
-	<!-- TMPL_ELSE -->
-            <input id="findborrower" name="findborrower" size="40" class="focus" type="text" />
-            <input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
-            <input name="orderby" value="surname,firstname" type="hidden" />
-            <input name="printer" value="" type="hidden" />
+                <!-- TMPL_IF NAME="CircAutocompl" -->
+			<div class="autocomplete">
+				<div id="borrowerautocomplete" class="autocomplete">
+					<input autocomplete="off" id="findborrower" name="findborrower" type="text" />
+					<div id="yborrowercontainer"></div>
+
+					<label for="orderby">Order By:</label>
+					<select name="orderby" id="searchorderby">
+						<option value="surname,firstname">Surname</option>
+						<option value="cardnumber">Cardnumber</option>
+					</select>
+
+					<input id="ysearchsubmit" type="submit" class="submit" value="Submit" />
+					<input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
+					<input name="printer" value="" type="hidden" />
+				</div>
+			</div>
+		<!-- TMPL_ELSE -->
+			<input id="findborrower" name="findborrower" size="40" type="text" />
+			<input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
+			<input name="printer" value="" type="hidden" />
+			<input value="Submit" class="submit" type="submit" />
+        	<!-- /TMPL_IF -->
+
             <!-- TMPL_IF NAME="stickyduedate" -->
             <input type="hidden" name="duedatespec" value="<!-- TMPL_VAR NAME="duedatespec" -->" />
             <input type="hidden" name="stickyduedate" value="<!-- TMPL_VAR NAME="stickyduedate" -->" />
             <!-- /TMPL_IF -->
-            <input value="Submit" class="submit" type="submit" />
 	<!-- /TMPL_IF -->
     </form>
 	</div>
