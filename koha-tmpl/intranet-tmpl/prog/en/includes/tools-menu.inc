@@ -58,7 +58,9 @@
     <!-- TMPL_IF NAME="CAN_user_tools_batch_upload_patron_images" -->
 	<li><a href="/cgi-bin/koha/tools/picture-upload.pl">Upload Patron Images</a></li>
     <!-- /TMPL_IF -->
+    <!-- commenting out scheduler link
     <!-- TMPL_IF NAME="CAN_user_tools_schedule_tasks" -->
 	<li><a href="/cgi-bin/koha/tools/scheduler.pl">Task Scheduler</a></li>
     <!-- /TMPL_IF -->
+    -->
 </ul></div>
