@@ -123,9 +123,9 @@ if (nodename =="barcodes[]"){
             <!-- TMPL_IF NAME="phonepro" --><li><span class="label">Organization phone: </span><!-- TMPL_VAR NAME="phonepro" --></li><!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="emailpro" --><li><span class="label">Organization email: </span><!-- TMPL_VAR NAME="emailpro" --></li><!-- /TMPL_IF -->
         <!-- TMPL_ELSE -->
-            <!-- TMPL_IF NAME="phone"    --><li><span class="label">Home: </span><!-- TMPL_VAR NAME="phone" --></li><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="phone"    --><li><span class="label">Primary: </span><!-- TMPL_VAR NAME="phone" --></li><!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="mobile"   --><li><span class="label">Mobile: </span><!-- TMPL_VAR NAME="mobile" --></li><!-- /TMPL_IF -->
-            <!-- TMPL_IF NAME="phonepro" --><li><span class="label">Work: </span><!-- TMPL_VAR NAME="phonepro" --></li><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="phonepro" --><li><span class="label">Secondary: </span><!-- TMPL_VAR NAME="phonepro" --></li><!-- /TMPL_IF -->
         <!-- /TMPL_IF -->
 
     <!-- TMPL_IF NAME="P"-->
@@ -134,8 +134,8 @@ if (nodename =="barcodes[]"){
     <!-- /TMPL_IF -->   	
 	<!-- TMPL_IF NAME="fax" --><li><span class="label">Fax: </span><!-- TMPL_VAR NAME="fax" --></li><!-- /TMPL_IF -->
     <!-- TMPL_UNLESS NAME="I"-->
-        <!-- TMPL_IF Name="email"    --><li><span class="label">Email (home):</span><a href="mailto:<!-- TMPL_VAR NAME="email" -->"><!-- TMPL_VAR NAME="email" --></a></li><!-- /TMPL_IF -->
-        <!-- TMPL_IF Name="emailpro" --><li><span class="label">Email (work): </span><a href="mailto:<!-- TMPL_VAR NAME="emailpro" -->"><!-- TMPL_VAR NAME="emailpro" --></a></li><!-- /TMPL_IF -->
+        <!-- TMPL_IF Name="email"    --><li><span class="label">Email (primary):</span><a href="mailto:<!-- TMPL_VAR NAME="email" -->"><!-- TMPL_VAR NAME="email" --></a></li><!-- /TMPL_IF -->
+        <!-- TMPL_IF Name="emailpro" --><li><span class="label">Email (secondary): </span><a href="mailto:<!-- TMPL_VAR NAME="emailpro" -->"><!-- TMPL_VAR NAME="emailpro" --></a></li><!-- /TMPL_IF -->
     <!-- /TMPL_UNLESS -->
     <!-- TMPL_IF NAME="showinitials" -->
     <li><span class="label">Middle Initial(s): </span><!-- TMPL_VAR NAME="initials" --></li>
