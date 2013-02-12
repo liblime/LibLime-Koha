@@ -24,6 +24,7 @@ use C4::Installer;
 
 use MARC::Record;
 use MARC::File::XML ( BinaryEncoding => 'utf8' );
+use TryCatch;
  
 # FIXME - The user might be installing a new database, so can't rely
 # on /etc/koha.conf anyway.
@@ -4900,26 +4901,34 @@ MODIFY authtypecode VARCHAR(10) NOT NULL;
 
     my $all_authids = $dbh->selectcol_arrayref('SELECT authid FROM auth_header');
     for my $authid (@$all_authids) {
-        my $marc = Koha::BareAuthority->new(id => $authid)->marc;
-        my $c001 = $marc->field('001') // MARC::Field->new('001', $authid);
-        my $c003 = $marc->field('003') // MARC::Field->new('003', $org_code);
-        unless ($c003->data && $c003->data ne 'OSt') {
-            $c003->update($org_code);
-        }
-        my $rcn = sprintf('(%s)%s', $c003->data, $c001->data);
+        try {
+            my $auth = Koha::BareAuthority->new(id => $authid);
+            my $marc = $auth->marc;
+            my $c001 = $marc->field('001') // MARC::Field->new('001', $authid);
+            my $c003 = $marc->field('003') // MARC::Field->new('003', $org_code);
+            $marc->delete_fields( $c001, $c003);
+            $marc->insert_fields_ordered( $c001, $c003);
 
-        if ( my $f999 = $marc->field('999') ) {
-            $f999->update( 'e' => $authid );
-        }
-        else {
-            $marc->insert_fields_ordered(
-                MARC::Field->new('999', '', '', e => $authid) );
-        }
+            unless ($c003->data && $c003->data ne 'OSt') {
+                $c003->update($org_code);
+            }
 
-        $dbh->do(
-            'UPDATE auth_header SET marc = ?, marcxml = ?, rcn = ? WHERE authid = ?',
-            undef, $marc->as_usmarc, $marc->as_xml, $rcn, $authid
-        );
+            if ( my $f999 = $marc->field('999') ) {
+                $f999->update( 'e' => $authid );
+            }
+            else {
+                $marc->insert_fields_ordered(
+                    MARC::Field->new('999', '', '', e => $authid) );
+            }
+
+            $dbh->do(
+                'UPDATE auth_header SET marc = ?, marcxml = ?, rcn = ? WHERE authid = ?',
+                undef, $marc->as_usmarc, $marc->as_xml, $auth->rcn, $authid
+            );
+        }
+        catch ($e) {
+            warn "Error amending authid $authid: $e";
+        }
     }
 
     for (map {$_->{authtypecode}} values %{Koha::HeadingMap->auth_types}) {
