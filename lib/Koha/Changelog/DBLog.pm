@@ -5,7 +5,7 @@ use namespace::autoclean;
 use C4::Context;
 use Method::Signatures;
 
-method update ( Int|MARC::Record $record, Str $action ) {
+method update ( $record, Str $action ) {
     my $biblionumber = (ref $record) ? $record->subfield('999', 'c') : $record;
     C4::Context->dbh->do(
         q{INSERT INTO changelog (rtype, action, id) VALUES (?,?,?)},
