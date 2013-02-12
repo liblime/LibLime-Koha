@@ -1,7 +1,6 @@
 package Koha::BareAuthority;
 
 use Moose;
-use Carp;
 use Koha;
 use Koha::Changelog::DBLog;
 use Koha::HeadingMap;
@@ -10,6 +9,7 @@ use MARC::Record;
 use MARC::Field;
 use Digest::SHA1;
 use Encode qw(encode_utf8);
+use TryCatch;
 use Method::Signatures;
 
 with 'Koha::MarcRecord';
@@ -28,11 +28,15 @@ method _build_marc {
 
 method _build_rcn {
     if ($self->has_marc) {
-        return sprintf(
-            '(%s)%s',
-            $self->marc->field('003')->data,
-            $self->marc->field('001')->data
-            );
+        try {
+            return sprintf( '(%s)%s',
+                            $self->marc->field('003')->data,
+                            $self->marc->field('001')->data );
+        }
+        catch ($e) {
+            Koha::BareAuthority::Xcp::BadData->throw(
+                'Authority missing 001 or 003');
+        }
     }
     else {
         return $self->dbrec->{rcn};
@@ -47,7 +51,8 @@ method _build_id {
         return $self->dbrec->{authid};
     }
     else {
-        croak 'Unable to determine authority ID';
+        Koha::BareAuthority::Xcp::BadData->throw(
+            'Unable to determine authority ID');
     }
 }
 
@@ -63,7 +68,8 @@ method _build_dbrec {
         @args = ('authid = ?', $self->marc->subfield('999', 'e'));
     }
     else {
-        croak 'Unable to sync authority data source';
+        Koha::BareAuthority::Xcp::BadData->throw(
+            'Unable to sync authority data source');
     }
 
     return C4::Context->dbh->selectrow_hashref(
@@ -299,7 +305,13 @@ no Moose;
     package Koha::BareAuthority::Xcp::NoMatch;
     use Moose;
     extends 'Koha::Xcp';
-    __PACKAGE__->meta->make_immutable;
+
+    no Moose;
+
+    package Koha::BareAuthority::Xcp::BadData;
+    use Moose;
+    extends 'Koha::Xcp';
+
     no Moose;
 }
 
