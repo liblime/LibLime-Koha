@@ -14,6 +14,12 @@
 <li><a href="/cgi-bin/koha/reports/dictionary.pl?phase=View%20Dictionary">View Dictionary</a></li>
 </ul>
 
+<h5>Resources</h5>
+<ul>
+<li><a target="_blank" href="http://cdn.kohalibrary.com/c/Docs/LibLimeSampleReports.pdf">LibLime Reports Library</a></li>
+<li><a target="_blank" href="http://dev.mysql.com/doc/">MySQL Documentation</a></li>
+</ul>
+
 <form id="guided_report_tagger" method="post" action="/cgi-bin/koha/reports/guided_reports_tags.pl">
   <table id="tags" width="100%">
     <thead>
