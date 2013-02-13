@@ -7,6 +7,7 @@ use C4::Context;
 use Getopt::Long;
 use Parallel::ForkManager;
 use DateTime::Format::Natural;
+use Carp;
 
 my $dtfn = DateTime::Format::Natural->new(time_zone => 'local');
 
@@ -61,7 +62,12 @@ sub process_bibs {
     $sth->execute( $worker_count, $worker_number, $since );
     while (my ($biblionumber) = $sth->fetchrow_array()) {
         $num_bibs_processed++;
-        process_bib($biblionumber);
+        try {
+            process_bib($biblionumber);
+        }
+        catch ($e) {
+            carp "Error processing bib $biblionumber: $e";
+        }
 
         if (not $test_only and ($num_bibs_processed % 100) == 0) {
             print_progress_and_commit($num_bibs_processed);
