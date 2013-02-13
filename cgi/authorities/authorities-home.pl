@@ -124,6 +124,9 @@ if ( $op eq "delete" ) {
     );
 
 }
+else {
+    $template->param(q => $query->param('value_mainstr'));
+}
 
 $template->param( authtypesloop   => \@authtypesloop,
                   index           => $query->param('index'),
