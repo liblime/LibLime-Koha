@@ -26,7 +26,7 @@ func emit_id( MARC::Record $record ) {
     my $leader = $record->leader;
     my $rtype = substr($leader, 6, 1);
     if ($rtype eq 'z') {
-        my $id = $record->field('001')->data;
+        my $id = $record->subfield('999', 'e');
         return "auth_$id";
     }
     else {
