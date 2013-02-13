@@ -51,7 +51,6 @@ my @spaths = ('mysql','/usr/local/mysql/bin/mysql');
 foreach(@spaths) { if (`which $_`) { $mysqlVersion = `$_ -V`; last } }
 @spaths = ('httpd','httpd2','/usr/sbin/apache2', '/usr/local/apache2/bin/httpd');
 foreach(@spaths) { if (`which $_`) { $apacheVersion = (`$_ -V`)[0]; last; } }
-my $zebraVersion = `zebraidx -V`;
 
 $template->param(
     kohaSchemaVersion   => $kohaSchemaVersion,
@@ -62,7 +61,6 @@ $template->param(
     perlIncPath   => [ map { perlinc => $_ }, @INC ],
     mysqlVersion  => $mysqlVersion,
     apacheVersion => $apacheVersion,
-    zebraVersion  => $zebraVersion,
 );
 my @component_names =
     qw/
