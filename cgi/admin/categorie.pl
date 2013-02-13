@@ -81,6 +81,7 @@ $template->param(script_name => $script_name,
 		 categorycode => $categorycode,
 		 searchfield => $searchfield);
 
+$input->delete('maxholds') unless $input->param('maxholds');
 
 ################## ADD_FORM ##################################
 # called by default. Used to create form to add or  modify a record
@@ -123,11 +124,11 @@ if ($op eq 'add_form') {
 	my $dbh = C4::Context->dbh;
 	if ($is_a_modif) {
             my $sth=$dbh->prepare("UPDATE categories SET description=?,enrolmentperiod=?,upperagelimit=?,dateofbirthrequired=?,enrolmentfee=?,reservefee=?,overduenoticerequired=?,maxholds=?,holds_block_threshold=?,circ_block_threshold=?,category_type=? WHERE categorycode=?");
-            $sth->execute(map { $input->param($_) } ('description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','category_type','categorycode'));
+            $sth->execute(map { scalar $input->param($_) } ('description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','category_type','categorycode'));
             $sth->finish;
         } else {
             my $sth=$dbh->prepare("INSERT INTO categories  (categorycode,description,enrolmentperiod,upperagelimit,dateofbirthrequired,enrolmentfee,reservefee,overduenoticerequired,maxholds,holds_block_threshold,circ_block_threshold,category_type) values (?,?,?,?,?,?,?,?,?,?,?,?)");
-            $sth->execute(map { $input->param($_) } ('categorycode','description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','category_type'));
+            $sth->execute(map { scalar $input->param($_) } ('categorycode','description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','category_type'));
             $sth->finish;
         }
     if (C4::Context->preference('EnhancedMessagingPreferences')) {
