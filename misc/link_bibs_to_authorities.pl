@@ -4,6 +4,8 @@ use Koha;
 use Koha::Bib;
 use TryCatch;
 use C4::Context;
+use Koha::BibLinker;
+use LWP::UserAgent;
 use Getopt::Long;
 use Parallel::ForkManager;
 use DateTime::Format::Natural;
@@ -60,10 +62,15 @@ sub process_bibs {
         'ORDER BY biblionumber ASC';
     my $sth = $dbh->prepare($sql);
     $sth->execute( $worker_count, $worker_number, $since );
+    my $linker = Koha::BibLinker->new(
+        solr => Koha::Solr::Service->new(
+            C4::Context->config('solr')->{url},
+            { agent => LWP::UserAgent->new( keep_alive => 1 ) } )
+        );
     while (my ($biblionumber) = $sth->fetchrow_array()) {
         $num_bibs_processed++;
         try {
-            process_bib($biblionumber);
+            process_bib($biblionumber, $linker);
         }
         catch ($e) {
             carp "Error processing bib $biblionumber: $e";
@@ -88,18 +95,20 @@ _SUMMARY_
 
 sub process_bib {
     my $biblionumber = shift;
+    my $linker = shift;
 
     my $bib = Koha::Bib->new( id=>$biblionumber );
     try {
         $bib->marc;
     }
     catch {
-        print "\nCould not retrieve bib $biblionumber from the database - record is corrupt or not found.\n";
+        carp "Could not retrieve bib $biblionumber from the database".
+            ' - record is corrupt or not found.';
         $num_bad_bibs++;
         return;
     }
 
-    my $headings_changed = $bib->relink_with_stubbing;
+    my $headings_changed = $linker->relink_with_stubbing( $bib );
 
     if ($headings_changed) {   
         if ($verbose) {

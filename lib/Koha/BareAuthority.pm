@@ -189,34 +189,6 @@ func new_stub_from_field(Str $class, MARC::Field $f, Str $citation = undef) {
     return Koha::BareAuthority->new( marc => $marc );
 }
 
-# $f is a controlled bib field, like a 1xx, 6xx, 7xx, etc.
-func new_from_field_search(Str $class, MARC::Field $f) {
-    # first see if there's a cached entry
-    my $cstr = _field2cstr(
-        $f, Koha::HeadingMap::bib_headings->{$f->tag}{subfields});
-    my $hash = Digest::SHA1::sha1_base64( encode_utf8($cstr) );
-    my $cached_authid = C4::Context->dbh->selectrow_arrayref(
-        'SELECT authid FROM auth_cache WHERE tag = ?', undef, $hash );
-    return $class->new( id => $cached_authid->[0] )
-        if $cached_authid;
-
-    # if not, look in the Solr index, choosing the most recently updated
-    my $query = Koha::Solr::Query->new(
-        query => qq{coded-heading_s:"$cstr"},
-        rtype => 'auth',
-        options => {fl=>'rcn', sort=>'timestamp desc', rows=>1} );
-    my $solr = Koha::Solr::Service->new;
-    my $rs = $solr->search( $query->query, $query->options);
-
-    Koha::Xcp->throw($rs->content->{error}{msg}) if $rs->is_error;
-    my $resultset = $rs->content;
-    Koha::BareAuthority::Xcp::NoMatch->throw("No match for $cstr")
-        if $resultset->{response}{numFound} < 1;
-
-    my $rcn = $resultset->{response}{docs}[0]{rcn};
-    return $class->new( rcn => $rcn );
-}
-
 method is_stub {
     return $self->marc->subfield('999', 'z');
 }
@@ -302,12 +274,6 @@ __PACKAGE__->meta->make_immutable;
 no Moose;
 
 {
-    package Koha::BareAuthority::Xcp::NoMatch;
-    use Moose;
-    extends 'Koha::Xcp';
-    __PACKAGE__->meta->make_immutable;
-    no Moose;
-
     package Koha::BareAuthority::Xcp::BadData;
     use Moose;
     extends 'Koha::Xcp';

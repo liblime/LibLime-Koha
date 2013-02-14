@@ -2,6 +2,7 @@ package Koha::BareBib;
 
 use Moose;
 use Koha;
+use Koha::Xcp;
 use C4::Context;
 use Method::Signatures;
 
@@ -29,7 +30,7 @@ method _build_changelog {
 }
 
 method _insert {
-    die 'Unimplemented';
+    Koha::Xcp->throw('Unimplemented');
 }
 
 method _update {
@@ -40,7 +41,7 @@ method _update {
 }
 
 method _delete {
-    die 'Unimplemented';
+    Koha::Xcp->throw('Unimplemented');
 }
 
 __PACKAGE__->meta->make_immutable;
