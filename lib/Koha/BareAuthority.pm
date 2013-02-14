@@ -305,13 +305,13 @@ no Moose;
     package Koha::BareAuthority::Xcp::NoMatch;
     use Moose;
     extends 'Koha::Xcp';
-
+    __PACKAGE__->meta->make_immutable;
     no Moose;
 
     package Koha::BareAuthority::Xcp::BadData;
     use Moose;
     extends 'Koha::Xcp';
-
+    __PACKAGE__->meta->make_immutable;
     no Moose;
 }
 
