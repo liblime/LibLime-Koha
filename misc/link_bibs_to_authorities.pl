@@ -5,6 +5,7 @@ use Koha::Bib;
 use TryCatch;
 use C4::Context;
 use Koha::BibLinker;
+use Koha::Solr::Service;
 use LWP::UserAgent;
 use Getopt::Long;
 use Parallel::ForkManager;
@@ -38,6 +39,7 @@ if (not $result or $want_help) {
 
 my $num_bibs_processed = 0;
 my $num_bibs_modified = 0;
+my $num_new_stubs = 0;
 my $num_bad_bibs = 0;
 my $dbh = C4::Context->dbh;
 $dbh->{AutoCommit} = 0;
@@ -46,7 +48,7 @@ for (0..$workers-1) {
     next if $forker->start;
     $dbh = $C4::Context::context->{dbh} = C4::Context->dbh->clone;
     process_bibs($_, $workers, $since);
-    $dbh->commit();
+    db_commit();
     $forker->finish;
 }
 $forker->wait_all_children;
@@ -76,12 +78,13 @@ sub process_bibs {
             carp "Error processing bib $biblionumber: $e";
         }
 
-        if (not $test_only and ($num_bibs_processed % 100) == 0) {
-            print_progress_and_commit($num_bibs_processed);
+        if ($num_bibs_processed % 100 == 0) {
+            print_progress($num_bibs_processed);
+            db_commit() unless $test_only;
         }
     }
 
-    $dbh->commit unless $test_only;
+    db_commit() unless $test_only;
 
     print <<_SUMMARY_;
 
@@ -89,6 +92,7 @@ Bib authority heading linking report
 ------------------------------------
 Number of bibs checked:       $num_bibs_processed
 Number of bibs modified:      $num_bibs_modified
+Number of new auth stubs:     $num_new_stubs
 Number of bibs with errors:   $num_bad_bibs
 _SUMMARY_
 }
@@ -108,7 +112,21 @@ sub process_bib {
         return;
     }
 
-    my $headings_changed = $linker->relink_with_stubbing( $bib );
+    my $headings_changed;
+    if ($test_only) {
+        try {
+            $headings_changed += $linker->relink_from_headings( $bib );
+        }
+        catch (Koha::BibLinker::Xcp::UnmatchedFields $e) {
+            $num_new_stubs += scalar @{$e->unmatched};
+            $headings_changed = 1;
+        }
+        catch ($e) {
+        }
+    }
+    else {
+        $headings_changed = $linker->relink_with_stubbing( $bib );
+    }
 
     if ($headings_changed) {   
         if ($verbose) {
@@ -122,9 +140,12 @@ sub process_bib {
     }
 }
 
-sub print_progress_and_commit {
+sub db_commit {
+    $dbh->commit;
+}
+
+sub print_progress {
     my $recs = shift;
-    $dbh->commit();
     print "... processed $recs records\n";
 }
 
