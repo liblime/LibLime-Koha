@@ -121,8 +121,6 @@ sub process_bib {
             $num_new_stubs += scalar @{$e->unmatched};
             $headings_changed = 1;
         }
-        catch ($e) {
-        }
     }
     else {
         $headings_changed = $linker->relink_with_stubbing( $bib );

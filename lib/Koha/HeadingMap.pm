@@ -1,5 +1,7 @@
 package Koha::HeadingMap;
 
+use Koha;
+
 sub bib_headings {
     return {
         '100' => { auth_type => 'PERSO_NAME',
