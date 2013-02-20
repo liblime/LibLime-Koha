@@ -4904,6 +4904,9 @@ MODIFY authtypecode VARCHAR(10) NOT NULL;
         try {
             my $auth = Koha::BareAuthority->new(id => $authid);
             my $marc = $auth->marc;
+            my $ldr = $marc->leader;
+            substr $ldr, 6, 1, 'z';
+            $marc->leader($ldr);
             my $c001 = $marc->field('001') // MARC::Field->new('001', $authid);
             my $c003 = $marc->field('003') // MARC::Field->new('003', $org_code);
             $marc->delete_fields( $c001, $c003);
