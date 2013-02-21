@@ -28,7 +28,7 @@
 <script type="text/javascript" language="javascript" src="<!-- TMPL_VAR NAME="themelang" -->/lib/jquery/jquery-1.7.2.min.js"></script>
 <script type="text/javascript" language="javascript" src="<!-- TMPL_VAR NAME="themelang" -->/lib/jquery/jquery-ui-1.8.21.min.js"></script>
 <!-- TMPL_ELSE -->
-<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/smoothness/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/themes/smoothness/jquery-ui.css" />
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
 <!-- /TMPL_IF -->

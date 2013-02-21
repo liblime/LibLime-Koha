@@ -161,4 +161,6 @@
   <!-- /TMPL_UNLESS -->
 <!-- /TMPL_IF -->
 </div>
-<!-- /TMPL_IF --></p><!-- /TMPL_IF --></div>
+<!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
+</div>
