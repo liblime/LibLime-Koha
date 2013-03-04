@@ -77,7 +77,7 @@ sub new {
 
     my $dsn = sprintf('DBI:%s:dbname=%s;', $self->{dbms}, $self->{dbname});
     $dsn .= ($self->{socket}) ?
-        "mysql_socket=$self->{socket}" : "host=$self->{host};port=$self->{port}";
+        "mysql_socket=$self->{socket}" : "host=$self->{hostname};port=$self->{port}";
 
     $self->{'dbh'} = DBI->connect($dsn, $self->{'user'}, $self->{'password'});
     $self->{'language'} = undef;
