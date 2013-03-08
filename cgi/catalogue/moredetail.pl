@@ -19,6 +19,7 @@
 
 
 use strict;
+use warnings;
 use C4::Koha;
 use CGI;
 use C4::Biblio;
@@ -34,13 +35,8 @@ use C4::Search;		# enabled_staff_search_views
 
 my $query=new CGI;
 
-# FIXME  subject is not exported to the template?
-my $subject=$query->param('subject');
-
-# if its a subject we need to use the subject.tmpl
 my ($template, $loggedinuser, $cookie) = get_template_and_user({
-    template_name   => ($subject? 'catalogue/subject.tmpl':
-                      'catalogue/moredetail.tmpl'),
+    template_name   => 'catalogue/moredetail.tmpl',
     query           => $query,
     type            => "intranet",
     authnotrequired => 0,
@@ -52,35 +48,15 @@ my ($template, $loggedinuser, $cookie) = get_template_and_user({
 my $biblionumber=$query->param('biblionumber');
 my $title=$query->param('title');
 my $itemnumber=$query->param('itemnumber');
-my $bi=$query->param('bi');
 my $updatefail = $query->param('updatefail');
-# $bi = $biblionumber unless $bi;
-my $data=GetBiblioData($biblionumber);
-my $dewey = $data->{'dewey'};
+my $bibdata=GetBiblioData($biblionumber);
+my $branches = C4::Branch::GetBranches();
 
-#coping with subscriptions
-my $subscriptionsnumber = CountSubscriptionFromBiblionumber($biblionumber);
-
-# FIXME Dewey is a string, not a number, & we should use a function
-# $dewey =~ s/0+$//;
-# if ($dewey eq "000.") { $dewey = "";};
-# if ($dewey < 10){$dewey='00'.$dewey;}
-# if ($dewey < 100 && $dewey > 10){$dewey='0'.$dewey;}
-# if ($dewey <= 0){
-#      $dewey='';
-# }
-# $dewey=~ s/\.$//;
-# $data->{'dewey'}=$dewey;
-
-my @results;
 my $fw = GetFrameworkCode($biblionumber);
 my @items= GetItemsInfo($biblionumber);
 my $count=@items;
-$data->{'count'}=$count;
+$bibdata->{'count'}=$count;
 
-my $ordernum = GetOrderNumber($biblionumber);
-my $order = GetOrder($ordernum);
-my $ccodes= GetKohaAuthorisedValues('items.ccode',$fw);
 my $itemtypes = GetItemTypes;
 
 # dealing w/ item ownership
@@ -88,24 +64,18 @@ my $restrict = C4::Context->preference('EditAllLibraries') ?undef:1;
 my(@worklibs,%br);
 if ($restrict) {
    use C4::Members;
-   @worklibs = C4::Members::GetWorkLibraries(_borrower());
+   @worklibs = C4::Members::GetWorkLibraries($loggedinuser);
    $template->param('restrict'=>$restrict);
-   my $branches = C4::Branch::GetBranches();
-   my $tmp;
    foreach(@worklibs) { $br{$_} = 1 } # this is better than grep
 }
 
-$data->{'itemtypename'} = $itemtypes->{$data->{'itemtype'}}->{'description'};
-$results[0]=$data;
+$bibdata->{'itemtypename'} = $itemtypes->{$bibdata->{'itemtype'}}->{'description'};
 ($itemnumber) and @items = (grep {$_->{'itemnumber'} == $itemnumber} @items);
-my $itemcount=0;
-my $additemnumber;
 my @tmpitems;
 my $crval = C4::Context->preference('ClaimsReturnedValue');
 my %avc = (
    itemlost => GetAuthValCode('items.itemlost',$fw),
    damaged  => GetAuthValCode('items.damaged' ,$fw),
-   suppress => GetAuthValCode('items.suppress',$fw),
 );
 foreach(@{GetAuthorisedValues($avc{itemlost})}) {
    if ($$_{authorised_value} ~~ 1) {
@@ -117,8 +87,6 @@ foreach(@{GetAuthorisedValues($avc{itemlost})}) {
 }
 my @fail = qw(nocr nocr_notcharged nolc_noco);
 foreach my $item (@items){
-    $additemnumber = $item->{'itemnumber'} if (!$itemcount);
-    $itemcount++;
     if ($$item{itemlost}) {
         if (my $lostitem = C4::LostItems::GetLostItem($$item{itemnumber})) {
             my $lostbor = C4::Members::GetMember($$lostitem{borrowernumber});
@@ -160,20 +128,13 @@ foreach my $item (@items){
 
     $item->{itemlostloop}    = GetAuthorisedValues($avc{itemlost},$item->{itemlost}) if $avc{itemlost};
     $item->{itemdamagedloop} = GetAuthorisedValues($avc{damaged}, $item->{damaged})  if $avc{damaged};
-    $item->{itemsuppressloop}= GetAuthorisedValues($avc{suppress},$item->{suppress}) if $avc{suppress};
     $item->{itemstatusloop} = GetOtherItemStatus($item->{'otherstatus'});
-    $item->{'collection'} = $ccodes->{$item->{ccode}};
     $item->{'itype'} = $itemtypes->{$item->{'itype'}}->{'description'}; 
     $item->{'replacementprice'}=sprintf("%.2f", $item->{'replacementprice'});
     $item->{'datelastborrowed'}= format_date($item->{'datelastborrowed'});
     $item->{'dateaccessioned'} = format_date($item->{'dateaccessioned'});
     $item->{'datelastseen'} = format_date($item->{'datelastseen'});
-    $item->{'ordernumber'} = $ordernum;
-    $item->{'booksellerinvoicenumber'} = $order->{'booksellerinvoicenumber'};
     $item->{'copyvol'} = $item->{'copynumber'};
-    if ($item->{notforloantext} or $item->{itemlost} or $item->{damaged} or $item->{wthdrawn} or $item->{suppress}) {
-        $item->{status_advisory} = 1;
-    }
 
     if (C4::Context->preference("IndependantBranches")) {
         #verifying rights
@@ -196,33 +157,53 @@ foreach my $item (@items){
     if ($restrict && !$br{$$item{homebranch}}) {
          $$item{notmine} = 1;
     }
+    
+    # Circ status (populates item-status.inc)
+    my $ItemBorrowerReserveInfo;
+    my $hold = C4::Reserves::GetPendingReserveOnItem($item->{itemnumber});
+    if ($hold) {
+        my $ItemBorrowerReserveInfo     = GetMember($hold->{borrowernumber});
+        $item->{reservedate}            = $hold->{reservedate};
+        $item->{ReservedForBorrowernumber} = $hold->{borrowernumber};
+        $item->{ReservedForSurname}     = $ItemBorrowerReserveInfo->{'surname'};
+        $item->{ReservedForFirstname}   = $ItemBorrowerReserveInfo->{'firstname'};
+        $item->{ExpectedAtLibrary}      = $branches->{$hold->{branchcode}}{branchname} if($item->{holdingbranch} ne $hold->{branchcode});
+        $item->{cardnumber}             = $ItemBorrowerReserveInfo->{'cardnumber'};
+    }
+
+    # Check the transit status
+    my ( $transfertwhen, $transfertfrom, $transfertto ) = C4::Circulation::GetTransfers($item->{itemnumber});
+    if ( defined( $transfertwhen ) && ( $transfertwhen ne '' ) ) {
+        $item->{transfersince} = $transfertwhen;
+        $item->{transferfrom} = $branches->{$transfertfrom}{branchname};
+        $item->{transferto}   = $branches->{$transfertto}{branchname};
+    }
+    $item->{available} = ! $item->{itemnotforloan}
+                        && !$item->{onloan}
+                        && !$item->{itemlost}
+                        && !$item->{wthdrawn}
+                        && !$item->{damaged}
+                        && !$item->{suppress}
+                        && !$item->{otherstatus}
+                        && !$item->{reservedate}
+                        && !$item->{transfersince};
+    
     push @tmpitems, $item;
 }
 
 @items = @tmpitems;
-$template->param(count => $data->{'count'},
-	subscriptionsnumber => $subscriptionsnumber,
-    subscriptiontitle   => $data->{title},
+
+$template->param(count => $bibdata->{'count'},
 	C4::Search::enabled_staff_search_views,
 );
-$template->param(BIBITEM_DATA => \@results);
+$template->param(BIBITEM_DATA => [ $bibdata ]);
 $template->param(ITEM_DATA => \@items);
 $template->param(moredetailview => 1);
 $template->param(loggedinuser => $loggedinuser);
 $template->param(biblionumber => $biblionumber);
-$template->param(biblioitemnumber => $bi);
 $template->param(itemnumber => $itemnumber);
-$template->param(additemnumber => $additemnumber);
+$template->param(additemnumber => $itemnumber || $items[0]->{itemnumber} ); # for add-item link.
 $template->param(ONLY_ONE => 1) if ( $itemnumber && $count != @items );
-$template->param(ShowSupressStatus => C4::Context->preference('ShowSupressStatus'));
 $template->param(AllowHoldsOnDamagedItems => C4::Context->preference('AllowHoldsOnDamagedItems'));
 output_html_with_http_headers $query, $cookie, $template->output;
 
-sub _borrower
-{
-   my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare("SELECT borrowernumber FROM borrowers
-   WHERE userid = ?");
-   $sth->execute(C4::Context->userenv->{id});
-   return ($sth->fetchrow_array)[0];
-}

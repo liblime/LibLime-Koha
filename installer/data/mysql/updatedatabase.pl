@@ -5212,6 +5212,11 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
      SetVersion ($DBversion);
 }
 
+ $DBversion = '4.09.00.021';
+ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+   $dbh->do("DELETE FROM systempreferences where variable='ShowSupressStatus'");
+     
+ }
 
 
 

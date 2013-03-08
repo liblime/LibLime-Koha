@@ -921,6 +921,26 @@ ol.bibliodetails span.label {
 	margin-right: 1em;  
 }
 
+table.bibliodetails {
+  margin: .2em 0 1em 2.2em;
+  border: none;
+}
+
+table.bibliodetails th{
+  background: none;
+  text-align: left;
+  width: 12em;
+  border-width: 0 1px 1px 0;
+  border-color: #CCC;
+  border-style: solid;
+}
+
+table.bibliodetails td{
+  border-width: 0 0 1px 0;
+  border-color: #CCC;
+  border-style: solid;
+}
+
 div.listgroup {
 	clear :  left;
 }

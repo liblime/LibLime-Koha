@@ -875,45 +875,7 @@ $itemstatushash = GetItemStatus($fwkcode);
 
 =back
 
-Returns a list of valid values for the
-C<items.notforloan> field.
-
-NOTE: does B<not> return an individual item's
-status.
-
-Can be MARC dependant.
-fwkcode is optional.
-But basically could be can be loan or not
-Create a status selector with the following code
-
-=head3 in PERL SCRIPT
-
-=over 4
-
-my $itemstatushash = getitemstatus;
-my @itemstatusloop;
-foreach my $thisstatus (keys %$itemstatushash) {
-    my %row =(value => $thisstatus,
-                statusname => $itemstatushash->{$thisstatus}->{'statusname'},
-            );
-    push @itemstatusloop, \%row;
-}
-$template->param(statusloop=>\@itemstatusloop);
-
-=back
-
-=head3 in TEMPLATE
-
-=over 4
-
-<select name="statusloop">
-    <option value="">Default</option>
-<!-- TMPL_LOOP name="statusloop" -->
-    <option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_IF name="selected" -->selected<!-- /TMPL_IF -->><!-- TMPL_VAR name="statusname" --></option>
-<!-- /TMPL_LOOP -->
-</select>
-
-=back
+DEPRECATED Funciton to get items.notforloan authvals.  DELETEME!
 
 =cut
 
@@ -921,6 +883,7 @@ sub GetItemStatus {
 
     # returns a reference to a hash of references to status...
     my ($fwk) = @_;
+warn "Called deprecated function C4::Items::GetItemStatus.  Use authval functions in C4::Koha.";
     my %itemstatus;
     my $dbh = C4::Context->dbh;
     my $sth;
@@ -1376,50 +1339,22 @@ sub GetItemsByBiblioitemnumber {
 
 =over 4
 
-@results = GetItemsInfo($biblionumber);
+@results = GetItemsInfo($biblionumber [, $limit_group ]);
 
 =back
 
 Returns information about books with the given biblionumber.
 
-C<GetItemsInfo> returns a list of references-to-hash. Each element
-contains a number of keys. Most of them are table items from the
-C<biblio>, C<biblioitems>, C<items>, and C<itemtypes> tables in the
-Koha database. Other keys include:
+C<GetItemsInfo> returns a list of references-to-hash including
+keys from the C<biblio>, C<biblioitems>, C<items>, C<branches> and C<itemtypes>
+tables in the Koha database.
 
-=over 2
-
-=item C<$data-E<gt>{branchname}>
-
-The name (not the code) of the branch to which the book belongs.
-
-=item C<$data-E<gt>{datelastseen}>
-
-This is simply C<items.datelastseen>, except that while the date is
-stored in YYYY-MM-DD format in the database, here it is converted to
-DD/MM/YYYY format. A NULL date is returned as C<//>.
-
-=item C<$data-E<gt>{datedue}>
-
-=item C<$data-E<gt>{class}>
-
-This is the concatenation of C<biblioitems.classification>, the book's
-Dewey code, and C<biblioitems.subclass>.
-
-=item C<$data-E<gt>{ocount}>
-
-I think this is the number of copies of the book available.
-
-=item C<$data-E<gt>{order}>
-
-If this is set, it is set to C<One Order>.
-
-=back
+Limits items to those owned by branches in branchgroup if supplied.
 
 =cut
 
 sub GetItemsInfo {
-    my ( $biblionumber, $limit_group ) = @_;
+    my ($biblionumber, $limit_group) = @_;
 
     my %restype;
     my $attached_count = 0;
@@ -1458,14 +1393,15 @@ sub GetItemsInfo {
            items.notforloan as itemnotforloan,
            itemtypes.description,
            itemtypes.notforloan as notforloan_per_itemtype,
-           branchurl
+           branchurl,
+           itemstatus.description as otherstatus_desc
      FROM items
      LEFT JOIN branches ON items.homebranch = branches.branchcode
      LEFT JOIN biblio      ON      biblio.biblionumber     = items.biblionumber
      LEFT JOIN biblioitems ON biblioitems.biblioitemnumber = items.biblioitemnumber
-     LEFT JOIN itemtypes   ON   itemtypes.itemtype         = "
-     . (C4::Context->preference('item-level_itypes') ? 'items.itype' : 'biblioitems.itemtype');
-    $query .= ' WHERE items.biblionumber = ? ';
+     LEFT JOIN itemtypes   ON   itemtypes.itemtype         = items.itype
+     LEFT JOIN itemstatus  ON   itemstatus.statuscode      = items.otherstatus
+     WHERE items.biblionumber = ? ";
     if (@limit_to_branches) {
         $query .= sprintf 'AND homebranch IN (%s)', join(',', map {'?'} @limit_to_branches);
     }
@@ -1481,30 +1417,39 @@ sub GetItemsInfo {
         FROM   issues LEFT JOIN borrowers ON issues.borrowernumber=borrowers.borrowernumber
         WHERE  itemnumber = ?"
        );
-    my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=? "); 
-    my $authvals = C4::Koha::GetAuthorisedValuesTree();
-    my $notforloan_code = C4::Koha::GetAuthValCode('items.notforloan') // '';
-    my $stack_code = C4::Koha::GetAuthValCode('items.stack') // '';
+    my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=? ");
 
+    my $authvals = C4::Koha::GetAuthorisedValuesTree();
+    my %authmap = ( 'notforloan' => C4::Koha::GetAuthValCode('items.notforloan'),
+                    'itemlost'   => C4::Koha::GetAuthValCode('items.itemlost'),
+                    'damaged'    => C4::Koha::GetAuthValCode('items.damaged'),
+                    'wthdrawn'   => C4::Koha::GetAuthValCode('items.wthdrawn'),
+                    'ccode'      => C4::Koha::GetAuthValCode('items.ccode'),
+                    'suppress'   => C4::Koha::GetAuthValCode('items.suppress'),
+                    'location'   => C4::Koha::GetAuthValCode('items.location'),
+    );
     while ( my $data = $sth->fetchrow_hashref ) {
         $itemcount++;
         my $datedue = '';
         my ($restype,$reserves,$reserve_count);
         my $reserve_status;
-        $isth->execute( $data->{'itemnumber'} );
-        if ( my $idata = $isth->fetchrow_hashref ) {
-            $data->{borrowernumber} = $idata->{borrowernumber};
-            $data->{cardnumber}     = $idata->{cardnumber};
-            $data->{surname}     = $idata->{surname};
-            $data->{firstname}     = $idata->{firstname};
-            $datedue                = $idata->{'date_due'};
-          if (C4::Context->preference("IndependantBranches")){
-            my $userenv = C4::Context->userenv;
-            if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) {
-              $data->{'NOTSAMEBRANCH'} = 1 if ($idata->{'bcode'} ne $userenv->{branch});
+        if($data->{onloan}){
+            $isth->execute( $data->{'itemnumber'} );
+            if ( my $idata = $isth->fetchrow_hashref ) {
+                $data->{borrowernumber} = $idata->{borrowernumber};
+                $data->{cardnumber}     = $idata->{cardnumber};
+                $data->{surname}     = $idata->{surname};
+                $data->{firstname}     = $idata->{firstname};
+                $datedue                = $idata->{'date_due'};
+              if (C4::Context->preference("IndependantBranches")){
+                my $userenv = C4::Context->userenv;
+                if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) {
+                  $data->{'NOTSAMEBRANCH'} = 1 if ($idata->{'bcode'} ne $userenv->{branch});
+                }
+              }
             }
-          }
         }
+
         if ( $data->{'serial'}) {
           $ssth->execute($data->{'itemnumber'}) ;
           ($data->{'serialseq'} , $data->{'publisheddate'}) = $ssth->fetchrow_array();
@@ -1524,15 +1469,10 @@ sub GetItemsInfo {
         $data->{'active_reserve_count'} = $rescount + $attached_count -
                                           $suspended_rescount;
 
-        # Comment
-        my %authmap = ( 'DAMAGED'   => 'damaged',
-                        'LOST'      => 'itemlost',
-                        'NOT_LOAN'  => 'notforloan',
-                        'WITHDRAWN' => 'wthdrawn' );
         foreach my $key (keys %authmap) {
-          my $authorised_value_row = $authvals->{$key}{$data->{$authmap{$key}}};
-          my $staffkey = $authmap{$key} . "desc";
-          my $opackey = "opac" . $authmap{$key} . "desc";
+          my $authorised_value_row = $authvals->{$authmap{$key}}{$data->{$key}};
+          my $staffkey = $key . "desc";
+          my $opackey = "opac" . $key . "desc";
           $data->{$staffkey} = $authorised_value_row->{'lib'}
              if (defined($authorised_value_row->{'lib'}) &&
                 ($authorised_value_row->{'lib'} ne ''));
@@ -1540,12 +1480,6 @@ sub GetItemsInfo {
              if (defined($authorised_value_row->{'opaclib'}) &&
                 ($authorised_value_row->{'opaclib'} ne ''));
         }
-
-        my $nfl_authval = $authvals->{$notforloan_code}{$data->{itemnotforloan}};
-        $data->{notforloanvalue} = ($nfl_authval) ? $nfl_authval->{lib} : undef;
-
-        my $stack_authval = $authvals->{$stack_code}{$data->{itemnotforloan}};
-        $data->{stack} = ($stack_authval) ? $stack_authval->{lib} : undef;
 
         $results[$i] = $data;
         $i++;
