@@ -10,6 +10,7 @@ use strict;
 use POSIX qw(strftime);
 use Sys::Syslog qw(syslog);
 use Data::Dumper;
+use Date::Calc qw(Today);
 use CGI;
 
 use ILS;
@@ -123,14 +124,25 @@ sub do_checkout {
         . "w/ C4::Context->userenv: " . Dumper(C4::Context->userenv);
     my $c4due;
     if (C4::Context->preference('SIP_RenewOnIssue') && $renew) {
-        my ($renewokay, undef) = CanBookBeRenewed( $self->{patron}{borrowernumber}, $itemnumber );
-        if ($renewokay) {
-            $c4due = AddIssue(
-                borrower => $borrower,
-                barcode => $barcode,
-                sipmode => 1
-                );
-            $self->screen_msg('Item renewed.');
+        # Check to see if current date = issues.issuedate
+        # If so, then don't perform a renewal.
+        my ($ty,$tm,$td) = &Today();
+        my $today = sprintf "%4d-%02d-%02d",$ty,$tm,$td;
+        my $issue = GetItemIssue($itemnumber);
+        if ($today eq $issue->{issuedate}) {
+            $c4due = $issue->{date_due};
+            $self->screen_msg('Item issued today, no renewal charged.');
+        }
+        else {
+            my ($renewokay, undef) = CanBookBeRenewed( $self->{patron}{borrowernumber}, $itemnumber );
+            if ($renewokay) {
+                $c4due = AddIssue(
+                    borrower => $borrower,
+                    barcode => $barcode,
+                    sipmode => 1
+                    );
+                $self->screen_msg('Item renewed.');
+            }
         }
     }
     else {
