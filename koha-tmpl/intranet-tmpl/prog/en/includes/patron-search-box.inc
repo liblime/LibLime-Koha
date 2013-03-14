@@ -45,7 +45,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 	<div id="tabs-circ_search" class="residentsearch">
 	<p class="tip">Enter patron card number or partial name:</p>
     <form action="/cgi-bin/koha/circ/circulation.pl" method="post">
-                <!-- TMPL_IF NAME="CircAutocompl" -->
+        <!-- TMPL_IF NAME="CircAutocompl" -->
 			<div class="autocomplete">
 				<div id="borrowerautocomplete" class="autocomplete">
 					<input autocomplete="off" id="findborrower" name="findborrower" type="text" />
@@ -67,13 +67,12 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 			<input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
 			<input name="printer" value="" type="hidden" />
 			<input value="Submit" class="submit" type="submit" />
-        	<!-- /TMPL_IF -->
+       	<!-- /TMPL_IF -->
 
-            <!-- TMPL_IF NAME="stickyduedate" -->
+        <!-- TMPL_IF NAME="stickyduedate" -->
             <input type="hidden" name="duedatespec" value="<!-- TMPL_VAR NAME="duedatespec" -->" />
             <input type="hidden" name="stickyduedate" value="<!-- TMPL_VAR NAME="stickyduedate" -->" />
-            <!-- /TMPL_IF -->
-	<!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
     </form>
 	</div>
 	<!-- /TMPL_IF -->
