@@ -72,20 +72,12 @@ if ($restrict) {
 $bibdata->{'itemtypename'} = $itemtypes->{$bibdata->{'itemtype'}}->{'description'};
 ($itemnumber) and @items = (grep {$_->{'itemnumber'} == $itemnumber} @items);
 my @tmpitems;
-my $crval = C4::Context->preference('ClaimsReturnedValue');
 my %avc = (
-   itemlost => GetAuthValCode('items.itemlost',$fw),
    damaged  => GetAuthValCode('items.damaged' ,$fw),
 );
-foreach(@{GetAuthorisedValues($avc{itemlost})}) {
-   if ($$_{authorised_value} ~~ 1) {
-      $template->param(charge_authval => $$_{lib});
-   }
-   elsif ($$_{authorised_value} ~~ $crval) {
-      $template->param(claimsreturned_authval => $$_{lib});
-   }
-}
-my @fail = qw(nocr nocr_notcharged nolc_noco);
+
+
+my @fail = qw(nolc_noco);
 foreach my $item (@items){
     if ($$item{itemlost}) {
         if (my $lostitem = C4::LostItems::GetLostItem($$item{itemnumber})) {
@@ -98,22 +90,6 @@ foreach my $item (@items){
     }
     if ($updatefail && ($$item{itemnumber} ~~ $itemnumber)) {
         $item->{"updatefail_$updatefail"} = 1;
-        if ($updatefail ~~ 'nocr_charged') {
-            my $oldiss = C4::Circulation::GetOldIssue($itemnumber);
-            my $acc    = C4::Accounts::GetLine($query->param('oiborrowernumber'),$query->param('accountno'));
-            my $accbor = C4::Members::GetMember($$acc{borrowernumber});
-            $$item{"cr_oi_name"} = "$$accbor{firstname} $$accbor{surname}";
-            $$item{"cr_oi_cardnumber"} = $$accbor{cardnumber};
-            foreach(qw(returndate issuedate date_due)) {
-               $$item{"cr_oi_$_"} = C4::Dates->new($$oldiss{$_},'iso')->output;
-            }
-            foreach(keys %$acc) {
-               $$item{"cr_oi_$_"} = $$acc{$_};
-            }
-            foreach(qw(amount amountoutstanding)) {
-               $$item{"cr_oi_$_"} = sprintf('%.02f',$$item{"cr_oi_$_"});
-            }
-        }
         if ($updatefail ~~ @fail) {
             my $oldiss = C4::Circulation::GetOldIssue($itemnumber) // {};
             if ($$oldiss{borrowernumber}) { # may be anonymised
@@ -125,8 +101,14 @@ foreach my $item (@items){
             }
         }
     }
+    my $itemlost_values = C4::Items::get_itemlost_values();
 
-    $item->{itemlostloop}    = GetAuthorisedValues($avc{itemlost},$item->{itemlost}) if $avc{itemlost};
+    my @itemlostloop = map { {  value => $_,
+                                lib => $itemlost_values->{$_},
+                                selected => ($_ ~~ {$item->{itemlost}//''}) ? 1:0
+                                }
+                            } keys %$itemlost_values;
+    $item->{itemlostloop} = \@itemlostloop;
     $item->{itemdamagedloop} = GetAuthorisedValues($avc{damaged}, $item->{damaged})  if $avc{damaged};
     $item->{itemstatusloop} = GetOtherItemStatus($item->{'otherstatus'});
     $item->{'itype'} = $itemtypes->{$item->{'itype'}}->{'description'}; 

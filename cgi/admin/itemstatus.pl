@@ -52,19 +52,6 @@ use C4::Context;
 use C4::Auth;
 use C4::Output;
 
-### Not sure function below is needed
-sub StringSearch {
-    my ( $searchstring, $type ) = @_;
-    my $dbh = C4::Context->dbh;
-    $searchstring =~ s/\'/\\\'/g;
-    my @data = split( ' ', $searchstring );
-    my $sth = $dbh->prepare(
-        "SELECT * FROM itemstatus WHERE (description LIKE ?) ORDER BY statuscode"
-	);
-    $sth->execute("$data[0]%");
-    return $sth->fetchall_arrayref({});		# return ref-to-array of ref-to-hashes
-								# like [ fetchrow_hashref(), fetchrow_hashref() ... ]
-}
 
 my $input       = new CGI;
 my $searchfield = $input->param('description');
@@ -109,6 +96,7 @@ if ( $op eq 'add_form' ) {
         description     => $data->{'description'},
         holdsallowed    => $data->{'holdsallowed'},
         holdsfilled     => $data->{'holdsfilled'},
+        suppress        => $data->{'suppress'},
         template        => C4::Context->preference('template'),
     );
 
@@ -130,6 +118,7 @@ elsif ( $op eq 'add_validate' ) {
             SET    description = ?
                  , holdsallowed = ?
                  , holdsfilled  = ?
+                 , suppress = ?
             WHERE statuscode = ?
         ';
         $sth = $dbh->prepare($query2);
@@ -137,13 +126,14 @@ elsif ( $op eq 'add_validate' ) {
             $input->param('description'),
             $input->param('holdsallowed') ? 1 : 0,
             $input->param('holdsfilled')  ? 1 : 0,
+            $input->param('suppress')     ? 1 : 0,
             $input->param('statuscode')
         );
     }
     else {    # add a new itemtype & not modif an old
         my $query = "
             INSERT INTO itemstatus
-                (statuscode,description,holdsallowed,holdsfilled)
+                (statuscode,description,holdsallowed,holdsfilled,suppress)
             VALUES
                 (?,?,?,?);
             ";
@@ -153,10 +143,11 @@ elsif ( $op eq 'add_validate' ) {
             $input->param('description'),
             $input->param('holdsallowed') ? 1 : 0,
             $input->param('holdsfilled')  ? 1 : 0,
+            $input->param('suppress')     ? 1 : 0,
         );
     }
 
-    print $input->redirect('itemstatus.pl');
+    print $input->redirect('itemstatus.pl'); # Fixme: if edit, should return to same page. in paginated table.
     exit;
 
     # END $OP eq ADD_VALIDATE
@@ -174,6 +165,7 @@ elsif ( $op eq 'delete_confirm' ) {
         description     => $data->{description},
         holdsallowed    => $data->{holdsallowed},
         holdsfilled     => $data->{holdsfilled},
+        suppress        => $data->{suppress},
     );
 
     # END $OP eq DELETE_CONFIRM
@@ -191,7 +183,9 @@ elsif ( $op eq 'delete_confirmed' ) {
 ################## DEFAULT ##################################
 }
 else {    # DEFAULT
-    my ($results) = StringSearch( $searchfield, 'web' );
+    my $sth = $dbh->prepare("SELECT * FROM itemstatus ORDER BY statuscode");
+    $sth->execute();
+    my ($results) = $sth->fetchall_arrayref({});
     my $page = $input->param('page') || 1;
     my $first = ( $page - 1 ) * $pagesize;
 
@@ -202,7 +196,8 @@ else {    # DEFAULT
     foreach my $itemstatus ( @{$results}[ $first .. $last ] ) {
         push( @loop, $itemstatus);
     }
-
+use DDP;
+warn p @loop;
     $template->param(
         loop           => \@loop,
         pagination_bar => pagination_bar(

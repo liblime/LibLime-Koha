@@ -78,7 +78,7 @@ if($op eq 'maninvoice'){
                 operator_id     => $loggedinuser,
             };
         $invoice->{itemnumber} = $item if($item);
-        $error = manualinvoice($invoice);
+        $error = C4::Accounts::manualinvoice($invoice);
     }
 } elsif($op eq 'mancredit'){
     # Create credit.  Will be applied to fees when RedistributeCredits is called.
@@ -229,12 +229,12 @@ my @fee_types;
 #my $last_fines_alert_date = $last_fines_alert && C4::Dates->new($last_fines_alert->{time_queued}, 'iso')->output();
 #my $over_alert_threshold = Koha::Money->new( $borcat->{fines_alert_threshold}) > 0.01 && Koha::Money->new( $totaldue) >= $borcat->{fines_alert_threshold};
 
-for my $inv_type ( C4::Accounts::getaccounttypes('fee') ){
+for my $inv_type ( sort keys C4::Accounts::getaccounttypes('fee') ){
     # these accounttypes should be properly linked to credits.
     next if($inv_type eq 'CANCELCREDIT' || $inv_type eq 'REVERSED_PAYMENT');
     push @fee_types, { accounttype => $inv_type , description => $atypes->{$inv_type}->{'description'} };
 }
-for my $inv_type ( C4::Accounts::getaccounttypes('invoice') ){
+for my $inv_type ( sort keys C4::Accounts::getaccounttypes('invoice') ){
     push @invoice_types, { accounttype => $inv_type , description => $atypes->{$inv_type}->{'description'}, default_amt => $atypes->{$inv_type}->{default_amt} };
 }
 # FIXME : this template stuff has to go in every page -- should just be able to call a function.

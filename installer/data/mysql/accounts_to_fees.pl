@@ -40,8 +40,9 @@ my $die;
 my $exit = 0;
 my $workers = 1;
 my $actionlogs = 'action_logs'; # table to look in to recover clobbered fines. (zeroed-out by some bug)
+my $workerlog;
 
-$SIG{'INT'} = sub { print "Exiting...\n"; $exit=1; };
+$SIG{'INT'} = sub { print "Exiting...\n"; $exit=1; return; };
 
 GetOptions(
     'h|help|?'  => \$help,
@@ -55,7 +56,8 @@ GetOptions(
     'limit:i'   => \$limit,
     'actionlogs:s' => \$actionlogs,
     'w|workers:i'  => \$workers,
-    
+    'wlog'      => \$workerlog,
+
     );
 
 my $num_bor_handled = 0;
@@ -79,6 +81,8 @@ This script has the following parameters :
     -clear              : clear the fees tables before going.  If you run this script twice without this flag, you'll get duplicate fines.
     -actionlogs         : table name of action_logs table, used to recover corrupted fines data
     -confirm            : actually do it.  For safety's sake, this arg is required.
+    -w | -workers       : number of workers to use.
+    -wlog               : log each borrowernumber to a worker log.  Useful with --die (or if it dies without it) to identify which borrower caused failure and where to restart.
 
 USAGE
 
@@ -185,7 +189,7 @@ while ( my $row = $sth_accttype->fetchrow_hashref() ) {
     # ^^ will need to grep accountline description when array.
 }
 
-sub get_fine_accttype($) {
+sub get_fine_accttype {
     my $fine = shift;
     my $shortcode = $fine->{accounttype};
     if(ref $x{$shortcode}){
@@ -205,6 +209,7 @@ sub appendLog {
     flock(FILE, Fcntl::LOCK_EX) or die "$!";
     print FILE $message;
     close FILE;
+    return;
 }
 
 my %ACCT_TYPES = C4::Accounts::_get_accounttypes();
@@ -262,9 +267,9 @@ sub do_patron{
     $query .= sprintf("LIMIT %d", $limit / $workers) if $limit;
     my $sth = $dbh->prepare($query);
     $sth->execute();
-open WLOG, '>', "worker$worker_id.log";
+    open WLOG, '>', "worker$worker_id.log" if $workerlog;
     while(my ($borrowernumber) = $sth->fetchrow_array){
-print WLOG " $borrowernumber\n";
+    print WLOG " $borrowernumber\n" if $workerlog;
         my @logoutput;
         my $sth2 = $dbh->prepare("SELECT * FROM accountlines where borrowernumber=? ");
         $sth2->execute($borrowernumber);
@@ -287,7 +292,7 @@ print WLOG " $borrowernumber\n";
         while (my $a = $sth2->fetchrow_hashref){
             # skip any entries that did not charge an amount.
             #next unless( $a->{amount} || $a->{amountoutstanding} );  # This is imperfect, since we'll lose some data for status changes (eg set to LOST).
-            
+
             $a->{amountoutstanding} = Koha::Money->new(sprintf("%.2f",$a->{amountoutstanding}));
             $a->{amount} = Koha::Money->new(sprintf("%.2f",$a->{amount}));  # manualinvoice/credit allowed arbitrary precision values...
 
@@ -644,7 +649,7 @@ print WLOG " $borrowernumber\n";
                     $fine->{accounttype} = 'LOSTITEM';
                     $fee = CreateFee($fine);
                     if($paidfines{$f}->{description} =~ /claims returned at no\.(\d+)/){
-                        $trans = {  accounttype  => 'LOSTRETURNED',
+                        $trans = {  accounttype  => 'CLAIMS_RETURNED',
                                 date         => $payments{$1}->{timestamp},
                                 description  => $payments{$1}->{'description'},
                              };
@@ -675,7 +680,7 @@ print WLOG " $borrowernumber\n";
                     $fine->{accounttype} = 'LOSTITEM';
                     $fee = CreateFee($fine);
                     if($paidfines{$f}->{description} =~ /claims returned at no\.(\d+)/ && $payments{$1}){
-                        $trans = {  accounttype  => 'LOSTRETURNED',
+                        $trans = {  accounttype  => 'CLAIMS_RETURNED',
                                 date         => $payments{$1}->{timestamp},
                                 description  => $payments{$1}->{'description'},
                              };
@@ -695,8 +700,8 @@ print WLOG " $borrowernumber\n";
                     ApplyCredit( $fee , $trans );
                     delete $paidfines{$f};
                     $resolved++;
-                    next;                
-            
+                    next;
+
             } elsif($paidfines{$f}->{accounttype} eq 'FU'
                         || $paidfines{$f}->{accounttype} eq 'FFOR'
                         || $ACCT_TYPES{$accounttype}->{class} eq 'fee'
@@ -778,7 +783,7 @@ print WLOG " $borrowernumber\n";
 					}
 					
                 }
-                                  
+
                 while($paidfines{$f}->{description} =~ / paid at no.(\d+)/g){
                     push @ha_pay, $1;
                 }

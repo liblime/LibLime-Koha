@@ -28,17 +28,18 @@ use C4::Items;
 use C4::LostItems;
 use C4::Circulation;
 use Koha::Money;
+
 use List::Util qw[min max];
 use Carp qw[cluck];
 use Check::ISA;
 use Date::Calc;
-
+use Method::Signatures;
 
 use DDP filters => {
             'DateTime'      => sub { $_[0]->ymd },
             'Koha::Money'   => sub { $_[0]->value } };
             
-use vars qw($VERSION @ISA @EXPORT $debug);
+use vars qw($VERSION @ISA @EXPORT_OK $debug);
 
 BEGIN {
 	# set the version for version checking
@@ -46,7 +47,7 @@ BEGIN {
 	$debug = $ENV{DEBUG} || 0;
 	require Exporter;
 	@ISA    = qw(Exporter);
-	@EXPORT = qw(
+	@EXPORT_OK = qw(
         &manualinvoice &manualcredit
 		&getfee &getcharges &getcredits
         &getaccruingcharges
@@ -108,52 +109,6 @@ FIXME -- MISSING.
 =cut
 
 
-sub chargelostitem{
-    my %args = shift;
-    
-# lost ==1 Lost and charge, lost==2 longoverdue, lost==? trace (affects holds).
-# This sub assumes caller has modified item.
-# FIXME : If we allow user to edit authorised values for itemlost, then we shouldn't be hardcoding values.
-# FIXME : These lost statuses should be in the lost_items table, not in the items table.
-    
-    # sub can be called with either: issue_id, lost_item_id, or itemnumber.
-    
-    my %ACCT_TYPES = _get_accounttypes();
-    my $dbh = C4::Context->dbh();
-    my ($itemnumber) = @_;
-#    my $issue = C4::Circulation::GetItemIssue($itemnumber);  # returns item info even if not checked out. -- NOT in LK.
-    my $sth=$dbh->prepare("SELECT lost_items.borrowernumber,
-                                  lost_items.claims_returned,
-                                  items.*,
-                                  biblio.title,
-                                  itemtypes.replacement_price 
-                             FROM lost_items,items,biblio,itemtypes
-                            WHERE lost_items.itemnumber = ?
-                              AND lost_items.itemnumber = items.itemnumber
-                              AND items.biblionumber    = biblio.biblionumber
-                              AND items.itype           = itemtypes.itemtype");
-    $sth->execute($itemnumber);
-    my $lost=$sth->fetchrow_hashref();
-    return unless $lost->{borrowernumber};
-    my $amount = $lost->{replacementprice} || $lost->{replacement_price} || 0;
-    return unless $amount;
-    $amount = Koha::Money->new($amount);
-    
-    my $accounttype = 'LOSTITEM';
-    #FIXME: In LAK, this sub gets branch from issues table, and so takes into account circControl.  Can't do that here, so we use homebranch.
-    my %new_fee_info = (
-        borrowernumber => $lost->{'borrowernumber'},
-        amount         => $amount,
-        accounttype    => $accounttype,
-        branchcode     => $lost->{'homebranch'},
-        description    => $ACCT_TYPES{$accounttype}->{'description'} . ": $lost->{'title'} [$lost->{barcode}]",
-        itemnumber     => $itemnumber,
-    );
-    _insert_new_fee( \%new_fee_info );
-
-    # mark issue returned.
-    C4::Circulation::MarkIssueReturned($lost->{'borrowernumber'},$itemnumber);
-}
 
 =head2 manualinvoice
 
@@ -188,7 +143,7 @@ sub manualinvoice {
         $error = "INVALID_INVOICE_AMOUNT";
     }
 
-    return ( defined $error ) ? $error : 0;
+    return $error // 0;
 }
 
 =head2 manualcredit
@@ -235,7 +190,7 @@ sub manualcredit {
         $error = "INVALID_CREDIT_AMOUNT";
     }
     # TODO: it would probably be useful to return the payment id, or even the full payment hash as well as error.
-    return ( defined $error ) ? $error : 0;
+    return $error // 0;
 }
 
 
@@ -258,16 +213,18 @@ C<$options> can include:
 
 =item accounttype => 'code'  limits to fees of a given accounttype.
 
+=item itemnumber => itemnumber   limits to fees on a given item.
+
 =item limit => 10    gets the 10 most recent fines.
 
 =back
 
-Returns an arrayref of fines hashrefs.
+Returns an arrayref of fines hashrefs, most recent first.
 
 =cut
 
 sub getcharges {
-	my $borrowernumber = shift || return undef;
+	my $borrowernumber = shift || return;
     my %options = @_ ;
 	my $dbh        = C4::Context->dbh;
 	my $query = " SELECT * FROM fees JOIN fee_transactions AS ft on(id = fee_id)
@@ -277,6 +234,10 @@ sub getcharges {
         $query .= " AND timestamp > ? ";
         push @bind, (ref $options{since} eq 'C4::Dates') ? $options{since}->output('iso') : $options{since};
     }
+    if($options{itemnumber}){
+        $query .= " AND itemnumber = ? ";
+        push @bind, $options{itemnumber};
+    }    
     if($options{accounttype}){
         $query .= " AND accounttype = ? ";
         push @bind, $options{accounttype};
@@ -314,7 +275,7 @@ The fees_accruing table is populated by the fines.pl cron job.
 =cut
 
 sub getaccruingcharges {
-	my $borrowernumber = shift || return undef;
+	my $borrowernumber = shift || return;
 	my $dbh        = C4::Context->dbh;
 	my $sth = $dbh->prepare(   "SELECT fees_accruing.*, itemnumber, date_due
                                 FROM fees_accruing
@@ -339,15 +300,19 @@ most recent first.  These are rows from fee_transactions
 table, which will show payments, as well as writeoffs & forgivens which are not
 stored in the payments table.
 
+options:  payments => 1  will only return payments, not waives.
+
 
 =cut
 
 sub getcredits {
-	my ( $fee_id ) = @_;
+	my $fee_id = shift;
+    my %options = @_;
+
 	my $dbh = C4::Context->dbh;
     my @ptypes = _get_accounttypes('payment');
     my @ttypes = _get_accounttypes('transaction');
-    my @accounttypes = ( @ptypes, @ttypes );
+    my @accounttypes =  ($options{payments}) ? @ptypes : ( @ptypes, @ttypes );
     my $placeholders = join(',', map {'?'} @accounttypes);
 	my $sth = $dbh->prepare(   "SELECT * FROM fee_transactions LEFT JOIN payments on(fee_transactions.payment_id = payments.id)
                                 WHERE fee_id = ?
@@ -486,7 +451,7 @@ sub getpayment {
 }
 
 sub getpayments {
-    my $borrowernumber = shift || return undef;
+    my $borrowernumber = shift || return;
     my %options = @_;
     my $dbh = C4::Context->dbh;
     my $query = "SELECT id FROM payments WHERE borrowernumber=? ";
@@ -519,7 +484,7 @@ sub is_reversed {
             return $fee->{accounttype} eq 'CANCELCREDIT';                        
         }
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -606,7 +571,6 @@ sub getaccounttypes {
 =head2
 
     C4::Accounts::ApplyCredit($fee_id, $action)
- ( was    C4::Accounts::UpdateFee($fee, $action)  )
 
 Applies a credit to a given fee.
 The C<$action> hashref must contain at a minimum
@@ -702,7 +666,7 @@ sub ApplyCredit {
         # nothing to do ?
         return 'NO_ACTION_SPECIFIED';
     }
-    return undef;
+    return;
 }
 
 
@@ -774,7 +738,7 @@ sub CreateFee {
     if ( $error ) {
         warn $error;
         warn p $data;
-        return undef;
+        return;
     }
     return $fee;
 }
@@ -1071,7 +1035,7 @@ sub allocate_payment {
     my %args = @_;
     if(!$args{payment} || !$args{fee}){
         cluck "Bad call to allocate_payment." . p %args;
-        return undef;
+        return;
     }
     my $payment = (ref $args{payment}) ? $args{payment} : getpayment($args{payment}, unallocated=>1);
     my $fee = (ref $args{fee}) ? $args{fee} : getfee($args{fee});
@@ -1091,7 +1055,7 @@ sub allocate_payment {
             warn "*************Attempted overallocation of payment: $amt / $unallocated_amt";
             warn p $payment;
             warn p $fee;
-            return undef;
+            return;
         }
     } else {
         $amt = $unallocated_amt;
@@ -1155,7 +1119,7 @@ sub deallocate_payment {
     warn " deallocate_payment called with payment id : $args{payment} / fee id : $args{fee}";
     if(!$args{payment}){
         warn "Bad call to deallocate_payment";
-        return undef;
+        return;
     }
     my $dbh = C4::Context->dbh;
     
@@ -1172,7 +1136,7 @@ sub deallocate_payment {
     if(!exists $payment->{id} || !exists $fee->{id}){
         warn "Attempt to deallocate payment from fee.  One/both don't exist.";
         $dbh->commit();  # just dropping the row lock set in getpayment.
-        return undef;
+        return;
     }
     eval{
         # If payment is fully allocated, convert first transaction to unallocated, else update unallocated.
@@ -1190,57 +1154,131 @@ sub deallocate_payment {
     if($@){
         warn "deallocate_payment aborted : $@";
         $dbh->rollback;
-        return undef;
+        return;
     }
 }
 
+=head2 chargelostitem
 
-=head2 creditlostreturned
-
-formerly FixAccountForLostAndReturned
-
-    &creditlostreturned($issuedata);
-
-Credit a patron for a LOSTITEM fee against an item.  Called in C4::Circulation::AddReturn.
-
-C<$issuedata> is a hashref of issue and item info ( from GetIssueData ).
-If payments have been made, they are unlinked from the fine.
-Waivers are left in place, and any remaining amount is waived with accounttype LOSTRETURNED.
+    Charge LOSTITEM fee for an item, and mark that issue returned.
+    Caller is responsible for creating the lost item record, which must exist.
 
 =cut
 
-sub creditlostreturned {
-    my $lostitemdata = shift;
-    my $credit_type = 'LOSTRETURNED';
-## FIXME:
-# This should use the lost items id.
-    my $dbh = C4::Context->dbh;
-    unless ($lostitemdata->{'borrowernumber'}) {
-        my $lost_item = C4::LostItems::GetLostItem($lostitemdata->{'itemnumber'}) // {};
-        if($lost_item){
-            $lostitemdata->{'borrowernumber'} = $lost_item->{borrowernumber};
-        } else {
-            # Don't know who to credit.  fail silently.
-            return;
+sub chargelostitem{
+
+    my $lost_item_id = shift;
+
+    my %ACCT_TYPES = _get_accounttypes();
+    my $dbh = C4::Context->dbh();
+    my $sth=$dbh->prepare("SELECT li.borrowernumber,
+                                  li.title,
+                                  li.homebranch,
+                                  li.holdingbranch,
+                                  li.itemnumber,
+                                  items.itype,
+                                  items.replacementprice,
+                                  issues.id AS issue_id,
+                                  itemtypes.replacement_price,
+                                  borrowers.branchcode AS borrower_branch
+                             FROM lost_items li
+                                    JOIN items USING(itemnumber)
+                                    JOIN itemtypes ON(items.itype=itemtypes.itemtype)
+                                    JOIN borrowers USING(borrowernumber)
+                                    LEFT JOIN issues ON(issues.borrowernumber=li.borrowernumber AND issues.itemnumber=li.itemnumber)
+                            WHERE li.id = ? ");
+    $sth->execute($lost_item_id);
+    my $lost=$sth->fetchrow_hashref();
+    return unless $lost->{borrowernumber};
+    my $amount = $lost->{replacementprice} || $lost->{replacement_price} || 0;
+    return unless $amount;
+    $amount = Koha::Money->new($amount);
+    my $lost_item_charges = getcharges($lost->{borrowernumber}, itemnumber => $lost->{itemnumber}, accounttype => 'LOSTITEM');
+    unless(@$lost_item_charges){
+        my $accounttype = 'LOSTITEM';
+        # note issues.branchcode IS the circControl branch, but we might not have an issue.
+        # TODO: store circControl branch  AND issue_id in lost_items.
+        my $circControlBranch = C4::Circulation::GetCircControlBranch(
+               pickup_branch      => $lost->{holdingbranch},
+               item_homebranch    => $lost->{homebranch},
+               item_holdingbranch => $lost->{holdingbranch},
+               borrower_branch    => $lost->{borrower_branch} );
+        my %new_fee_info = (
+            borrowernumber => $lost->{'borrowernumber'},
+            amount         => $amount,
+            accounttype    => $accounttype,
+            branchcode     => $circControlBranch,
+            description    => $ACCT_TYPES{$accounttype}->{'description'} . ": $lost->{'title'} [$lost->{barcode}]",
+            itemnumber     => $lost->{itemnumber},
+        );
+        _insert_new_fee( \%new_fee_info );    
+    }
+
+    # mark issue returned if checked out.
+    # FIXME: we probably shouldn't have a lost item record and an issue record.
+    # creation of lost item should probably force a return, or we should just leave it up to the caller.
+    if($lost->{issue_id}){
+        C4::Circulation::MarkIssueReturned($lost->{'borrowernumber'},$lost->{itemnumber});    
+    } else {
+        # Waive any overdue charges (but only if there was actually a lost item charge)
+        if($amount){
+            my $overdue_fines = getcharges($lost->{borrowernumber}, itemnumber => $lost->{itemnumber}, accounttype => 'FINE');
+            if(@$overdue_fines){
+                ApplyCredit( $overdue_fines->[0]->{id}, 'OVERDUE_LOST');
+            }
         }
     }
+    
+    return;
+}
+
+=head2 credit_lost_item
+
+formerly FixAccountForLostAndReturned
+
+    &credit_lost_item($lost_item_id, credit => 'CLAIMS_RETURNED', undo => 1);
+
+Credit a patron for a LOSTITEM fee against an item.  Called in C4::Circulation::AddReturn and updateitem.pl
+
+If payments have been made, they are unlinked from the fine.
+Waives are left in place, and any remaining amount is waived with accounttype LOSTRETURNED,
+unless accounttype is specified with named argument 'credit'.
+If 'undo' is specified, this reverses the credit by deleting the associated transactions.
+
+=cut
+
+func credit_lost_item( $lost_item_id, :$credit, :$undo ) {
+    $credit = 'LOSTRETURNED' if(!$credit || $credit ne 'CLAIMS_RETURNED');
+
+    my $dbh = C4::Context->dbh;
+    my $lost_item = C4::LostItems::GetLostItemById($lost_item_id);
+    return unless $lost_item; # Don't know who to credit.  fail silently.
+
     # check for a lost item fee and/or surcharge.
     my $query = "SELECT id FROM fees LEFT JOIN fee_transactions ON fee_id=fees.id
                 WHERE borrowernumber = ? AND itemnumber = ? AND accounttype='LOSTITEM'";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($lost_item->{borrowernumber}, $lost_item->{'itemnumber'});
 
     # What happens if you lose an item twice?  We forgive both charges.
 
-    my $sth = $dbh->prepare($query);
-    $sth->execute($lostitemdata->{'borrowernumber'}, $lostitemdata->{'itemnumber'});
-    my $sth_payments = $dbh->prepare('SELECT DISTINCT payment_id FROM fee_transactions WHERE fee_id=? AND payment_id IS NOT NULL');   # AND must be payment type
-    
-    my $credited = Koha::Money->new();
-    while (my ($fee_id) = $sth->fetchrow) {
-        $sth_payments->execute($fee_id);
-        while (my ($payment_id) = $sth_payments->fetchrow){
-            $credited += deallocate_payment(fee=>$fee_id, payment=>$payment_id);
+    if($undo){
+        # unforgive all such credits.  Hopefully this shouldn't really happen, but we're only keyed on itemnumber.
+        my $sth_waives = $dbh->prepare("DELETE FROM fee_transactions WHERE fee_id=? AND accounttype=?");
+        while (my ($fee_id) = $sth->fetchrow) {
+            $sth_waives->execute($fee_id, $credit);
         }
-        ApplyCredit($fee_id, {  accounttype => 'LOSTRETURNED' });
+    } else {
+        my $sth_payments = $dbh->prepare('SELECT DISTINCT payment_id FROM fee_transactions WHERE fee_id=? AND payment_id IS NOT NULL');   # AND must be payment type
+        
+        my $credited = Koha::Money->new();
+        while (my ($fee_id) = $sth->fetchrow) {
+            $sth_payments->execute($fee_id);
+            while (my ($payment_id) = $sth_payments->fetchrow){
+                $credited += deallocate_payment(fee=>$fee_id, payment=>$payment_id);
+            }
+            ApplyCredit($fee_id, {  accounttype => $credit });
+        }    
     }
     return;
 }
@@ -1304,7 +1342,7 @@ sub get_total_overpaid {
 
 sub get_total_waived_amount {
     my $borrowernumber= shift;
-    my $since = shift || return undef;
+    my $since = shift || return;
     my $dbh = C4::Context->dbh;
     my $sth = $dbh->prepare("select sum(amount) as waived from fees 
         join fee_transactions on (fee_id=id)

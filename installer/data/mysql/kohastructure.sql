@@ -1132,6 +1132,8 @@ CREATE TABLE `issues` (
   `renewals` tinyint(4) default NULL,
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `issuedate` date default NULL,
+  `returndate` date default NULL,
+  `returnbranch` varchar(10) default NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `itemnumber` (`itemnumber`),
   KEY `issuesborridx` (`borrowernumber`),
@@ -1141,6 +1143,33 @@ CREATE TABLE `issues` (
   CONSTRAINT `issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `old_issues`
+--
+
+DROP TABLE IF EXISTS `old_issues`;
+CREATE TABLE `old_issues` (
+  `id` bigint NOT NULL,
+  `borrowernumber` int(11) default NULL,
+  `itemnumber` int(11) default NULL,
+  `date_due` date default NULL,
+  `branchcode` varchar(10) default NULL,
+  `lastreneweddate` date default NULL,
+  `renewals` tinyint(4) default NULL,
+  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  `issuedate` date default NULL,
+  `returndate` date default NULL,
+  `returnbranch` varchar(10) default NULL,
+
+  PRIMARY KEY (`id`),
+  KEY `old_issuesborridx` (`borrowernumber`),
+  KEY `old_issuesitemidx` (`itemnumber`),
+  KEY `old_bordate` (`borrowernumber`,`timestamp`),
+  CONSTRAINT `old_issues_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) 
+    ON DELETE SET NULL ON UPDATE SET NULL,
+  CONSTRAINT `old_issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) 
+    ON DELETE SET NULL ON UPDATE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 --
 -- Table structure for table `issuingrules`
 --
@@ -1189,7 +1218,7 @@ CREATE TABLE `items` (
   `stack` tinyint(1) default NULL,
   `notforloan` tinyint(1) NOT NULL default 0,
   `damaged` tinyint(1) NOT NULL default 0,
-  `itemlost` tinyint(1) NOT NULL default 0,
+  `lost` enum('lost','longoverdue','missing','trace') default NULL,
   `wthdrawn` tinyint(1) NOT NULL default 0,
   `suppress` tinyint(1) NOT NULL DEFAULT 0,
   `itemcallnumber` varchar(255) default NULL,
@@ -1332,8 +1361,8 @@ DROP TABLE IF EXISTS `lost_items`;
 CREATE TABLE lost_items (
   id INT(11) NOT NULL auto_increment,
   borrowernumber INT(11) NOT NULL,
-  itemnumber INT(11) NOT NULL,
-  biblionumber INT(11) NOT NULL,
+  itemnumber INT(11),
+  biblionumber INT(11),
   barcode VARCHAR(20) DEFAULT NULL,
   homebranch VARCHAR(10) DEFAULT NULL,
   holdingbranch VARCHAR(10) DEFAULT NULL,
@@ -1343,11 +1372,13 @@ CREATE TABLE lost_items (
   itemtype VARCHAR(10) DEFAULT NULL,
   title mediumtext,
   date_lost DATE NOT NULL,
-  claims_returned tinyint(1) NOT NULL DEFAULT 0,
+  status enum('charged','disputed','paid','found') DEFAULT 'charged',
   PRIMARY KEY (`id`),
   KEY (`borrowernumber`),
   KEY (`itemnumber`),
-  KEY (`date_lost`)
+  KEY (`date_lost`),
+  CONSTRAINT `lost_items_item` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `lost_items_bib` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1517,33 +1548,6 @@ CREATE TABLE `nozebra` (
                 KEY `value` (`server`,`value`))
                 ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Table structure for table `old_issues`
---
-
-DROP TABLE IF EXISTS `old_issues`;
-CREATE TABLE `old_issues` (
-  `id` bigint NOT NULL,
-  `borrowernumber` int(11) default NULL,
-  `itemnumber` int(11) default NULL,
-  `date_due` date default NULL,
-  `branchcode` varchar(10) default NULL,
-  `issuingbranch` varchar(18) default NULL,
-  `returndate` date default NULL,
-  `lastreneweddate` date default NULL,
-  `return` varchar(4) default NULL,
-  `renewals` tinyint(4) default NULL,
-  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  `issuedate` date default NULL,
-  PRIMARY KEY (`id`),
-  KEY `old_issuesborridx` (`borrowernumber`),
-  KEY `old_issuesitemidx` (`itemnumber`),
-  KEY `old_bordate` (`borrowernumber`,`timestamp`),
-  CONSTRAINT `old_issues_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) 
-    ON DELETE SET NULL ON UPDATE SET NULL,
-  CONSTRAINT `old_issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) 
-    ON DELETE SET NULL ON UPDATE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `old_reserves`
@@ -2747,6 +2751,7 @@ CREATE TABLE itemstatus (
   description varchar(25) default NULL,
   holdsallowed tinyint(1) NOT NULL default 0,
   holdsfilled tinyint(1) NOT NULL default 0,
+  suppress tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY  (statuscode_id),
   UNIQUE KEY statuscode (statuscode)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

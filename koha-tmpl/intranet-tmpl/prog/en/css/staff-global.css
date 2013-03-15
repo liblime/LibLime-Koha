@@ -1975,10 +1975,17 @@ td.payall_column button.ui-button.ui-widget{
 td.pay_column .ui-button-text{
   padding: 0.4em 0.6em;
 }
+td p{
+	margin: 0.25em 0 0.25em 0;
+}
 .htmlentlink{
   text-decoration: none;
   font-size: large;
 }
+.debit{
+	color: rgb(167, 67, 12);
+}
+
 /* jQuery-UI overrides */
 .ui-tabs-nav {
     background: none;

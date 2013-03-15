@@ -1230,7 +1230,10 @@ sub AddIssue {
     ## handle previously lost
     if (my $lostitem = GetLostItem($$item{itemnumber})) {
         ## whoever last lost this item will get credit that it was found
-        _FixAccountNowFound($$borrower{borrowernumber},$lostitem,C4::Dates->new(),0,1);
+        warn "Got a lostitem... ";
+        use DDP;
+        warn p $lostitem;
+        C4::Accounts::credit_lost_item($lostitem->{id});
         C4::LostItems::DeleteLostItem($$lostitem{id});
     }
 
@@ -1546,7 +1549,7 @@ patron who last borrowed the book.
 =cut
 
 sub AddReturn {
-    my ($barcode, $branch, $exemptfine, $returndate, $tolost) = @_;
+    my ($barcode, $branch, $exemptfine, $returndate) = @_;
     my $today         = C4::Dates->new();
     $returndate     ||= $today->output('iso');
     my $returndateObj = C4::Dates->new($returndate,'iso');  # FIXME: Can't we just work with C4::Dates objects by default?
@@ -1687,13 +1690,10 @@ sub AddReturn {
     ## patron's account, so we have items.itemlost now 0 but lost_items defined.
     ## FIXME: This may also mean there are multiple lost items rows for an itemnumber.  In LAK, there's a flag for that condition.
     my $lostitem = C4::LostItems::GetLostItem($item->{itemnumber}) // {};
-# FIXME: Get rid of $tolost.  We shouldn't be calling AddReturn when an item is set to lost.
-# We're not calling AddReturn anymore.  I think it can be removed. --rch 2013-01.
-    # $tolost here is from updateitem.pl 
-    if ($item->{'itemlost'} || $$lostitem{id} || $tolost) {
+
+    if ($item->{'itemlost'} || $$lostitem{id} ) {
         ## requires confirmation from WasLost; 
-        # FIXME: Why isn't the lost item dealt with ??
-        #DeleteLostItem($lost_item->{id});
+
         $messages->{'WasLost'} = {
             itemnumber          => $$item{itemnumber},
             lostborrowernumber  => $$lostitem{borrowernumber},
@@ -1702,7 +1702,9 @@ sub AddReturn {
             barcode             => $barcode,
             lost_item_id        => $$lostitem{id},
         };
-        C4::Accounts::creditlostreturned($lostitem);
+        C4::Accounts::credit_lost_item($lostitem->{id});
+        C4::LostItems::DeleteLostItem($lostitem->{id});
+
     }
 
     # find reserves.....
@@ -1749,9 +1751,8 @@ sub AddReturn {
         if C4::Context->preference("ReturnLog");
 
     #Deal with transfer: if item is not at its homebranch, and is not supposed to be going somewhere else, send it home.
-    # The $tolost param basically means the item was returned from the longoverdue script (i.e. it was marked lost).
     #
-    if (!$tolost && ($branch ne $item->{'homebranch'}) and not $messages->{'WrongTransfer'} and ($validTransfert ne 1) and not $resfound ){
+    if ( ($branch ne $item->{'homebranch'}) and not $messages->{'WrongTransfer'} and ($validTransfert ne 1) and not $resfound ){
         if ( C4::Context->preference("AutomaticItemReturn"    ) or
             (C4::Context->preference("UseBranchTransferLimits") and
              ! IsBranchTransferAllowed($branch, $hbr, $item->{C4::Context->preference("BranchTransferLimitsType")} )
@@ -1794,12 +1795,14 @@ sub MarkIssueReturned {
     my @bind = $sth_sel->fetchrow_array();
     my $id = $bind[0];
     $debug and warn "Checking in issue id $id .";
+    my $returnbranch = (C4::Context->userenv) ? C4::Context->userenv->{branch} : undef;
+    push @bind, ($returndate->output('iso'), $returnbranch);
     my $cp_query = "INSERT INTO old_issues
-                (id,borrowernumber,itemnumber,date_due,branchcode, renewals,issuedate,lastreneweddate, returndate)
-                 VALUES (?,?,?,?,?,?,?,?,?)";
+                (id,borrowernumber,itemnumber,date_due,branchcode, renewals,issuedate,lastreneweddate, returndate, returnbranch)
+                 VALUES (?,?,?,?,?,?,?,?,?,?)";
     # FIXME transaction
     my $sth_copy = $dbh->prepare($cp_query);
-    $sth_copy->execute((@bind, $returndate->output('iso')));
+    $sth_copy->execute(@bind);
     my $sth_del  = $dbh->prepare("DELETE FROM issues WHERE id = ?");
     $sth_del->execute($id);
     C4::Items::ModItem({ onloan => undef }, undef, $itemnumber);

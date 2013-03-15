@@ -100,6 +100,7 @@ sub gettemplate {
                                 #currency_html => sub { return sprintf("<span class='currency'>%.2f</span>",$_[0]); },
                                 currency => sub { return sprintf("%.2f",$_[0]); },
                                 default  => sub { return ( ! defined $_[0] || (!$_[0] && $_[0] ne "0") ) ? $_[1] : $_[0]; },  # give a default for a blank or undefined value.
+                                ucfirst  => sub { return ucfirst($_[0]) },
                              }
     );
     my $themelang=( $interface ne 'intranet' ? '/opac-tmpl' : '/intranet-tmpl' )

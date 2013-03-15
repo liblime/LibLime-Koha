@@ -458,7 +458,7 @@ sub ModItemFromMarc {
         holdingbranch        => undef, 
         homebranch           => undef, 
         itemcallnumber       => undef, 
-        itemlost             => 0,
+        itemlost             => undef,
         itemnotes            => undef, 
         itype                => undef, 
         location             => undef, 
@@ -485,7 +485,7 @@ sub ModItemFromMarc {
         $item->{$item_field} = $default_values_for_mod_from_marc{$item_field} unless exists $item->{$item_field};
     }
     my $unlinked_item_subfields = _get_unlinked_item_subfields($item_marc, $frameworkcode);
-   
+
     return ModItem($item, $biblionumber, $itemnumber, $dbh, $frameworkcode, $unlinked_item_subfields); 
 }
 
@@ -690,9 +690,9 @@ C<$itemnum> is the item number
 
 sub ModDateLastSeen {
     my ($itemnumber) = @_;
-    
-    my $today = C4::Dates->new();    
-    ModItem({ itemlost => 0, datelastseen => $today->output("iso") }, undef, $itemnumber);
+
+    my $today = C4::Dates->new();
+    ModItem({ itemlost => undef, datelastseen => $today->output("iso") }, undef, $itemnumber);
 }
 
 =head2 ModItemLost
@@ -704,14 +704,14 @@ ModItemLost( $biblionumber, $itemnumber, $lostvalue, $nomoditem );
 =back
 
 Changes itemlost for a given item. If $lostvalue > 0, then a log entry is made
-for that item.  Note that nothing is done for Claims Returned, which is handled 
-elsewhere.
+for that item.  No Lost Items handling is done here.  
 
 Set $nomoditem to true if you've been here before and don't want to change the
-items.itemlost value.
+items.itemlost value.  But, why would you call this function, then?
 
 =cut
 
+# FIXME: This function should probably just be merged into ModItem.
 sub ModItemLost {
     my ( $biblionumber, $itemnumber, $lostvalue, $nomoditem ) = @_;
     my $dbh = C4::Context->dbh;
@@ -1092,9 +1092,7 @@ sub GetItemsLost {
         FROM   items
             LEFT JOIN biblio ON (items.biblionumber = biblio.biblionumber)
             LEFT JOIN biblioitems ON (items.biblionumber = biblioitems.biblionumber)
-            LEFT JOIN authorised_values ON (items.itemlost = authorised_values.authorised_value)
         WHERE
-            authorised_values.category = 'LOST'
             AND itemlost IS NOT NULL
             AND itemlost <> 0
     ";
@@ -1421,7 +1419,6 @@ sub GetItemsInfo {
 
     my $authvals = C4::Koha::GetAuthorisedValuesTree();
     my %authmap = ( 'notforloan' => C4::Koha::GetAuthValCode('items.notforloan'),
-                    'itemlost'   => C4::Koha::GetAuthValCode('items.itemlost'),
                     'damaged'    => C4::Koha::GetAuthValCode('items.damaged'),
                     'wthdrawn'   => C4::Koha::GetAuthValCode('items.wthdrawn'),
                     'ccode'      => C4::Koha::GetAuthValCode('items.ccode'),
@@ -1466,8 +1463,8 @@ sub GetItemsInfo {
         $data->{'datedue'}        = $datedue;
         $data->{'reserve_status'} = $reserve_status;
         $data->{'reserve_count'}  = $rescount + $attached_count;
-        $data->{'active_reserve_count'} = $rescount + $attached_count -
-                                          $suspended_rescount;
+        $data->{'active_reserve_count'} = $rescount + $attached_count - $suspended_rescount;
+        $data->{'itemlostdesc'} = $data->{'itemlostopacdesc'} = get_itemlost_values()->{$data->{'itemlost'} // ''};
 
         foreach my $key (keys %authmap) {
           my $authorised_value_row = $authvals->{$authmap{$key}}{$data->{$key}};
@@ -1550,6 +1547,11 @@ sub GetItemnumberFromBarcode {
     $rq->execute($barcode);
     my ($result) = $rq->fetchrow;
     return ($result);
+}
+
+# FIXME: Should have interface for defining these, but for now, we hard code them here.
+sub get_itemlost_values {
+    return { '' => '', lost => 'Lost', longoverdue => 'Long overdue', missing => 'Missing', trace => 'Trace' };
 }
 
 =head3 get_item_authorised_values
@@ -1923,9 +1925,9 @@ _do_column_fixes_for_mod($item);
 Given an item hashref containing one or more
 columns to modify, fix up certain values.
 Specifically, set to 0 any passed value
-of C<notforloan>, C<damaged>, C<itemlost>,
-C<wthdrawn>, or C<suppress> that is either
+of C<notforloan>, C<damaged>, C<wthdrawn>, or C<suppress> that is either
 undefined or contains the empty string.
+Conversely, set C<itemlost> to undef if it's falsey.
 
 =cut
 
@@ -1940,9 +1942,8 @@ sub _do_column_fixes_for_mod {
         (not defined $item->{'damaged'} or $item->{'damaged'} eq '')) {
         $item->{'damaged'} = 0;
     }
-    if (exists $item->{'itemlost'} and
-        (not defined $item->{'itemlost'} or $item->{'itemlost'} eq '')) {
-        $item->{'itemlost'} = 0;
+    if (exists $item->{'itemlost'} and ! $item->{'itemlost'}){
+        undef $item->{'itemlost'};
     }
     if (exists $item->{'wthdrawn'} and
         (not defined $item->{'wthdrawn'} or $item->{'wthdrawn'} eq '')) {
@@ -2029,10 +2030,6 @@ C<items.damaged>
 
 =item *
 
-C<items.itemlost>
-
-=item *
-
 C<items.wthdrawn>
 
 =item *
@@ -2046,7 +2043,7 @@ C<items.suppress>
 sub _set_defaults_for_add {
     my $item = shift;
     $item->{dateaccessioned} ||= C4::Dates->new->output('iso');
-    $item->{$_} ||= 0 for (qw( notforloan damaged itemlost wthdrawn suppress));
+    $item->{$_} ||= 0 for (qw( notforloan damaged wthdrawn suppress));
 }
 
 =head2 _koha_new_item
@@ -2175,12 +2172,12 @@ sub _koha_modify_item {
     my $error;
     my $query = "UPDATE items SET ";
     my @bind;
+    my $delete_from_holdsqueue;
     for (qw(notforloan suppress withdrawn)) {
-      $item->{$_} //= 0 if exists $item->{$_};
+        $item->{$_} //= 0 if exists $item->{$_};
+        $delete_from_holdsqueue = 1 if $item->{$_};
     }
-    if (($$item{notforloan} != 0)
-     || ($$item{suppress}   != 0)
-     || ($$item{wthdrawn}   != 0) ) {
+    if ($delete_from_holdsqueue){
        $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber=?',undef,$$item{itemnumber});
     }
     if ($$item{otherstatus}) {

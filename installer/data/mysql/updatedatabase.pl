@@ -5057,17 +5057,18 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
 
 $DBversion = '4.09.00.023';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+
     $dbh->do(" DELETE FROM `issues` WHERE branchcode NOT IN ( SELECT branchcode from branches )"); 
     $dbh->do(" DELETE FROM `old_issues` WHERE branchcode NOT IN ( SELECT branchcode from branches )");
     $dbh->do(" ALTER TABLE `issues` DROP INDEX `bordate` ");   
-    $dbh->do(" ALTER TABLE `issues` ADD CONSTRAINT `issues_fk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
+    $dbh->do(" ALTER TABLE `issues` ADD CONSTRAINT `issues_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
     $dbh->do(" ALTER TABLE `old_issues` DROP INDEX `old_bordate` ");
-    $dbh->do(" ALTER TABLE `old_issues` ADD CONSTRAINT `old_issues_fk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
+    $dbh->do(" ALTER TABLE `old_issues` ADD CONSTRAINT `old_issues_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
 
-
-    $dbh->do(" ALTER TABLE `issues` DROP COLUMN `return` ");
     $dbh->do(" ALTER TABLE `issues` DROP COLUMN `issuingbranch` ");
-    $dbh->do(" ALTER TABLE `issues` DROP COLUMN `returndate` ");
+    $dbh->do(" ALTER TABLE `old_issues` DROP COLUMN `issuingbranch` ");
+    $dbh->do(" ALTER TABLE `issues` CHANGE COLUMN `return` `returnbranch` varchar(10) DEFAULT NULL ");
+    $dbh->do(" ALTER TABLE `old_issues` CHANGE COLUMN `return` `returnbranch` varchar(10) DEFAULT NULL ");
 
     $dbh->{AutoCommit} = 0 ;
     $dbh->do("LOCK TABLES issues WRITE, old_issues WRITE" );
@@ -5105,7 +5106,8 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
      for ( qw(LinkLostItemsToPatron MarkLostItemsReturned RefundLostReturnedAmount EnableOverdueAccruedAmount) ) {
          $dbh->do('DELETE FROM systempreferences WHERE variable LIKE ?', undef, $_);
      }
-     
+    $dbh->do("RENAME TABLE accountlines TO archive_accountlines");
+    
     $dbh->do("DROP TABLE IF EXISTS `fee_transactions`");
     $dbh->do("DROP TABLE IF EXISTS `fees`");
     $dbh->do("DROP TABLE IF EXISTS `payments`");
@@ -5128,13 +5130,11 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         ('REFUND','Refund','fee'),
         ('REVERSED_PAYMENT','Reversed Payment','fee'),
         ('RENTAL','Checkout fee','fee'),
-        ('LOST_SURCHARGE','Lost Item Surcharge','fee' ),
         ('EXPIRED_HOLD','Expired Hold fee','fee'),
         ('COLLECTIONS','Collections Agency Fee','fee'),
-        ('CANCELCREDIT','Credit Canceled','fee'),        
+        ('CANCELCREDIT','Credit Canceled','fee'),
         ('SUNDRY','Sundry','invoice'),
         ('FORGIVE','Fine Forgiven','transaction'),
-        ('TFORGIVE','Threshold Fine Forgiven','transaction'),
         ('WRITEOFF','Writeoff','transaction'),
         ('LOSTRETURNED','Lost, Returned', 'transaction'),
         ('CLAIMS_RETURNED','Claims Returned', 'transaction'),
@@ -5144,7 +5144,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         ('CREDIT','Credit','payment'),
         ('TRANSBUS','Transferred to Business Office','transaction')
     ");
-    
+
     $dbh->do("CREATE TABLE `fees` (
         id bigint NOT NULL auto_increment,
         borrowernumber int(11) NOT NULL,
@@ -5152,7 +5152,6 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         description mediumtext default NULL,
         PRIMARY KEY (id),
         CONSTRAINT `fees_ibfk1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT `fees_ibfk2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ");
 
    $dbh->do("CREATE TABLE `payments` (
@@ -5162,6 +5161,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
       `date` timestamp NOT NULL default CURRENT_TIMESTAMP,
       `received_by` int(11) default NULL,
       PRIMARY KEY  (`id`),
+      CONSTRAINT `payments_bor` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
       CONSTRAINT `payments_operator` FOREIGN KEY (`received_by`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE SET NULL 
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ");
 
@@ -5185,7 +5185,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
    $dbh->do("CREATE TABLE `fees_accruing` (
        `issue_id` bigint NOT NULL,
-       `amount` int(11) NOT NULL default 0,
+       `amount` decimal(12,2) NOT NULL default '0.00',
        `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
        PRIMARY KEY  (`issue_id`),
        CONSTRAINT `fees_accruing_fk_1` FOREIGN KEY (`issue_id`) REFERENCES `issues` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
@@ -5212,12 +5212,114 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
      SetVersion ($DBversion);
 }
 
- $DBversion = '4.09.00.021';
+ $DBversion = '4.09.00.026';
  if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
-   $dbh->do("DELETE FROM systempreferences where variable='ShowSupressStatus'");
-     
- }
+    $dbh->do("DELETE FROM systempreferences where variable IN('ShowSupressStatus','ClaimsReturnedValue')");
 
+    $dbh->do("UPDATE lost_items li, biblio b SET li.title=b.title WHERE li.biblionumber=b.biblionumber AND li.title is NULL");
+
+    $dbh->do("ALTER TABLE itemstatus ADD COLUMN suppress tinyint(1) NOT NULL DEFAULT 0");
+
+    my $useless_var = C4::Context->preference('OverdueRules');  # Just to trigger creation of preference.
+    my $cust_odue_settings = { salinas => {lost=>90},antonelli => {lost=>90},ascc => {lost=>45},asdl => {lost=>90},auk => {lost=>30},baugo => {lost=>90},
+                                bay => {lost=>120},bco => {lost=>90},bellw => {lost=>45},bma => {lost=>45},bmpl => {lost=>180},carthage => {lost=>365},
+                                cbsh2 => {lost=>90},chwm => {lost=>45},cmbsc => {lost=>37},crowell => {lost=>30},derby => {lost=>26},disd => {lost=>90},
+                                donors => {lost=>45},famplan => {lost=>90},ferguson => {longoverdue=>60,},gcpl2 => {lost=>56},george => {lost=>90},
+                                henderson => {lost=>60},hpplnj => {lost=>42},huntsville => {lost=>36},ican => {lost=>60},ingalls => {lost=>90},
+                                ldm2 => {lost=>90},maufl => {lost=>90},mca => {lost=>90},mtvernon => {longoverdue=>10, lost=>20},neharbor => {longoverdue=>10, lost=>20},
+                                nmwa => {lost=>365},nwacc => {lost=>90},pgfnz => {lost=>90},pgsp => {lost=>45},pioneer => {lost=>21},poets => {lost=>90},
+                                rbl => {lost=>45},rcdc => {lost=>37},regis => {lost=>20},rfpl => {longoverdue=>30, lost=>180},rockyview => {lost=>60},
+                                rotunda => {longoverdue=>120,},salinak => {lost=>28},sek => {longoverdue=>99,},shms => {lost=>45},trinity => {lost=>30},
+                                uocb => {lost=>90},vesper => {lost=>90},visd => {lost=>90} };  # From long_overdue.pl cron settings.
+    my $cust_id = C4::Context->config('database');
+    $cust_id =~ s/koha_//;
+    my $new_syspref_val = join(",", map("$_:$cust_odue_settings->{$cust_id}->{$_}", keys(%{$cust_odue_settings->{$cust_id}})) );
+    my $sth=$dbh->prepare("UPDATE systempreferences SET value=? WHERE variable='OverdueRules'");
+    $sth->execute($new_syspref_val);
+
+
+    # Map LOST value 1 (lost)           => 'lost'
+    #                2 (long overdue)   => 'longoverdue'
+    #                3 (lost and paid for) => 'lost'
+    #                4 (missing)        => 'missing'
+    #                5? (trace)         => 'trace'
+    #                6? (claim* return*)=> 'lost'
+    # authvals may have changed, so we do string matches on authorised_values.lib.
+    #
+    # Any LOST vals that don't map as above are translated to an ItemStatus.
+
+    # Create an ItemStatus for each LOST authval except, LOST,  and set items appropriately.
+    $sth = $dbh->prepare("select authorised_value from marc_subfield_structure where kohafield='items.itemlost' and frameworkcode=''");
+    $sth->execute();
+    my ($lost_authval) = $sth->fetchrow || ('LOST');
+    $sth = $dbh->prepare("SELECT DISTINCT itemlost, lib from items join authorised_values on(itemlost=authorised_value) where category='$lost_authval' and itemlost <> 0 and itemlost is not null");
+    $sth->execute();
+    $dbh->do("UPDATE items set itemlost=NULL where itemlost NOT IN(SELECT DISTINCT authorised_value FROM authorised_values WHERE category='$lost_authval')"); # No constraints exist...
+
+    $dbh->do("CREATE TEMPORARY TABLE oldlostvalues (itemnumber int, itemlost tinyint(1)) AS
+                     SELECT itemnumber, itemlost FROM items WHERE itemlost <>0 AND itemlost IS NOT NULL");
+
+    my $sth_itemstatus = $dbh->prepare("INSERT INTO itemstatus (statuscode,description,suppress) VALUES (?,?,1)");
+    while( my ($lostval, $lib) = $sth->fetchrow){
+        say "$lostval => $lib";
+        my %lv_map;
+        my %new_itemstatus;
+        for ($lib){
+            # rely on what WILL be enum indexes when itemlost is changed to enum.
+            when (/overdue/i) { $lv_map{$lostval} = { lost => 2 }; }
+            when (/lost.*paid/i) { $lv_map{$lostval} = { lost => 1 }; }
+            when (/missing/i) { $lv_map{$lostval} = { lost => 3 }; }
+            when (/claim/i) { $lv_map{$lostval} = { lost => 1 }; }
+            when (/trace/i) { $lv_map{$lostval} = { lost => 4 }; }
+            when (/lost/i) { $lv_map{$lostval} = { lost => 1 }; }
+            default {
+                my $itemstatus = "LOST$lostval";
+                if(!C4::Items::GetOtherStatusWhere(code=>$itemstatus)){
+                    $sth_itemstatus->execute($itemstatus,$lib);
+                }
+                $lv_map{$lostval} = { lost => 3, itemstatus => $itemstatus };
+            }
+        }
+        if(defined($lv_map{$lostval}->{itemstatus})){
+            # do in two passes since we don't want to clobber existing items.otherstatus values.
+            # in those cases, we lose some information.
+            my $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET i.itemlost=? WHERE o.itemlost=? AND otherstatus IS NOT NULL AND otherstatus <> ''");
+            warn $sth_upd->execute($lv_map{$lostval}->{lost}, $lostval);
+            $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET i.itemlost=?, otherstatus=? WHERE o.itemlost=? AND otherstatus IS NULL OR otherstatus=''");
+            warn $sth_upd->execute($lv_map{$lostval}->{lost},$lv_map{$lostval}->{itemstatus}, $lostval);
+        } else {
+            my $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET i.itemlost=? WHERE o.itemlost=?");
+            warn $sth_upd->execute($lv_map{$lostval}->{lost}, $lostval);
+        }
+    }
+    #  All itemlost values should now be in range for enum.
+    $dbh->do("UPDATE marc_subfield_structure SET authorised_value='lost_status' WHERE kohafield='items.itemlost'");
+
+    $dbh->do("ALTER TABLE items CHANGE COLUMN itemlost itemlost enum('lost','longoverdue','missing','trace') default NULL");
+    $dbh->do("UPDATE authorised_values set category='LOST-OLD' WHERE category='$lost_authval'");
+
+    $dbh->do("UPDATE items set itemlost=NULL where itemlost=0");
+
+    # NOW do deleteditems.
+    $sth = $dbh->prepare("SELECT DISTINCT itemlost, lib from deleteditems join authorised_values on(itemlost=authorised_value) where category='$lost_authval' and itemlost <> 0 and itemlost is not null");
+    $sth->execute();
+    $dbh->do("UPDATE items set itemlost=NULL where itemlost NOT IN(SELECT DISTINCT authorised_value FROM authorised_values WHERE category='$lost_authval')");
+    my $sth_deletedlostitems = $dbh->prepare("UPDATE deleteditems set itemlost=? WHERE itemlost=?");
+    while( my ($lostval, $lib) = $sth->fetchrow){
+         for ($lib){
+            when (/overdue/i) { $sth_deletedlostitems->execute(2,$lostval); }
+            when (/lost/i) { $sth_deletedlostitems->execute(1,$lostval); }
+            when (/missing/i) { $sth_deletedlostitems->execute(3,$lostval); }
+            when (/claim/i) { $sth_deletedlostitems->execute(1,$lostval); }
+            when (/trace/i) {$sth_deletedlostitems->execute(4,$lostval); }            
+        }
+    }
+    $dbh->do("ALTER TABLE deleteditems CHANGE COLUMN itemlost itemlost enum('lost','longoverdue','missing','trace') default NULL");
+    $dbh->do("UPDATE lostitems set itemlost=NULL where itemlost=0");
+
+    say "Upgrade to $DBversion done ( Enhancements to lost item and claims-returned functionality. )";
+    SetVersion ($DBversion);
+}
 
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;

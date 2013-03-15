@@ -435,13 +435,16 @@ $(document).ready(function() {
             <legend>Manual Invoice</legend>
             <ol>
             <li><label for="invoice_type">Type: </label><select name="accounttype" id="invoice_type">
-            <!-- TMPL_LOOP NAME="fee_types" -->
-                <option value="<!-- TMPL_VAR NAME="accounttype" -->"><!--TMPL_VAR NAME="description" --></option>
-            <!-- /TMPL_LOOP -->
-            <!-- TMPL_LOOP NAME="invoice_types" -->
-                <option value="<!-- TMPL_VAR NAME="accounttype" -->" data-amount="<!-- TMPL_VAR default_amt -->"><!--TMPL_VAR NAME="description" --></option>
-            <!-- /TMPL_LOOP -->
-
+              <optgroup label="System invoice types">
+                <!-- TMPL_LOOP NAME="fee_types" -->
+                  <option value="<!-- TMPL_VAR NAME="accounttype" -->"><!--TMPL_VAR NAME="description" --></option>
+                <!-- /TMPL_LOOP -->
+              </optgroup>
+              <optgroup label="Local invoice types">
+                <!-- TMPL_LOOP NAME="invoice_types" -->
+                  <option value="<!-- TMPL_VAR NAME="accounttype" -->" data-amount="<!-- TMPL_VAR default_amt -->"><!--TMPL_VAR NAME="description" --></option>
+                <!-- /TMPL_LOOP -->
+              </optgroup>
         </select></li>
             <li><label for="invoice_barcode">Barcode: </label><input type="text" name="barcode" id="invoice_barcode" disabled="disabled" /></li>
             <li><label for="invoice_desc">Description: </label><input type="text" name="desc" id="invoice_desc" size="50" /></li>

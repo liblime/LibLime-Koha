@@ -84,14 +84,14 @@ elsif ( $action eq 'claims_returned_found' ) {
 elsif ( $action eq 'payment_received' ) {
     my $borrowernumber = $cgi->param('borrowernumber');
     my $data;
-
+warn $content;
     $data = _get_fines_data( $borrowernumber, 'todayspayments' );
     $content = _replace_loop( $content, $data, 'TodaysPaymentsList' );
-
+warn $content;
 
     $data = _get_fines_data( $borrowernumber, 'recentfines' );
     $content = _replace_loop( $content, $data, 'RecentFinesList' );
-
+warn $content;
     $content = _replace( $content, { TotalOwed => C4::Accounts::gettotalowed($borrowernumber)} );
 }
 ## Process Hold Found Receipts

@@ -298,7 +298,7 @@ while (my $row = $sth2->fetchrow_hashref) {
     $row->{'default_humancategorycode'} = 1 if $row->{'humancategorycode'} eq '*';
     $row->{'fine'} = sprintf('%.2f', $row->{'fine'});
     $row->{'max_fine'} = sprintf('%.2f', $row->{'max_fine'});
-    $row->{'expired_hold_fee'} = sprintf('%.2f', $row->{'expired_hold_fee'});
+    $row->{'expired_hold_fee'} = sprintf('%.2f', $row->{'expired_hold_fee'}//0);
     $row->{holdallowed_any} = 1 if($row->{holdallowed} == 2);
     $row->{holdallowed_same} = 1 if($row->{holdallowed} == 1);
     push @row_loop, $row;

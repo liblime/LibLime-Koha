@@ -1124,6 +1124,11 @@ sub GetAuthorisedValueDesc {
         if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq "itemtypes" ) {
             return getitemtypeinfo($value)->{description};
         }
+#---- lost_status
+        if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq "lost_status" ) {
+            # Values are currently enum in mysql.
+            return ucfirst($value);
+        }
 
 #---- "true" authorized value
         $category = $tagslib->{$tag}->{$subfield}->{'authorised_value'}
