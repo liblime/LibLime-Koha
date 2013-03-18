@@ -295,7 +295,7 @@
         </xsl:for-each>
 
         <xsl:for-each select="marc:datafield[@tag=490][@ind1=1]">
-             <a href="/cgi-bin/koha/opac-search.pl?q=series-title:{marc:subfield[@code='a']}">
+             <a href="/cgi-bin/koha/catalogue/search.pl?q=series-title:{marc:subfield[@code='a']}">
                         <xsl:call-template name="chopPunctuation">
                             <xsl:with-param name="chopString">
                                 <xsl:call-template name="subfieldSelect">
@@ -312,7 +312,7 @@
         <xsl:if test="marc:datafield[@tag=490][@ind1=1]">
             <xsl:for-each select="marc:datafield[@tag=830]">
                  <span class="results_summary"><span class="label displayseriesaddedlabel">Series Added Entry Title: </span>
-                 <a href="/cgi-bin/koha/opac-search.pl?q=series-title:{marc:subfield[@code='a']}">
+                 <a href="/cgi-bin/koha/catalogue/search.pl?q=series-title:{marc:subfield[@code='a']}">
                         <xsl:call-template name="chopPunctuation">
                             <xsl:with-param name="chopString">
                                 <xsl:call-template name="subfieldSelect">
