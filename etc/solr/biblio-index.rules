@@ -48,7 +48,8 @@ isbn | 020a 020z 776z | | emit_isbn
 isbn-a | 020a | | emit_isbn
 issn | 022a 022y 022z 440x 490x 730x 776x 780x 785x
 standard-id | 024a
-callnumber | 099ab 090ab 050ab 082ab 952o | concat
+callnumber | 952o
+callnumber | 099ab 090ab 050ab 082ab | concat
 callnumber-a | 099a 090a 050a 082a
 
 lccn | 010a 010z
