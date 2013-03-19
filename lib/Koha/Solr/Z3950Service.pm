@@ -282,9 +282,9 @@ sub _real_fetch_handler {
     _throw(30, $args->{SETNAME}) if !$set; # Result set does not exist
 
     my $dbconfig = $set->{dbConfig};
-    my $map = '';
+    my $charset = 'charset=utf8';
     if ($dbconfig->{charset}) {
-	$map = 'charset=' . $dbconfig->{charset} . ',utf-8';
+        $charset .= ",$dbconfig->{charset}";
     }
 
     my $rs = $set->{resultset};
@@ -298,7 +298,7 @@ sub _real_fetch_handler {
     my $t0 = [ gettimeofday() ];
     my $rec = $rs->record($args->{OFFSET} - 1);
     print "elapsed: record = ", tv_interval($t0), "\n" if $TIME;
-    my $xml = $rec->get('xml', $map);
+    my $xml = $rec->get('xml', $charset);
 
     # Surrogate diagnostics should be detected by ZOOM-C and testable
     # using $rec->error().  As of YAZ 3.0.10 this is not done, and we
