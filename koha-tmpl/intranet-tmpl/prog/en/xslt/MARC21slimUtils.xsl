@@ -116,19 +116,19 @@
                     <xsl:choose>
                         <xsl:when test="boolean($bibno)">
                             <a>
-                                <xsl:attribute name="href">/cgi-bin/koha/opac-detail.pl?biblionumber=<xsl:value-of  select="$bibno"/></xsl:attribute>
+                                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?biblionumber=<xsl:value-of  select="$bibno"/></xsl:attribute>
                                 <xsl:value-of select="$str"/>
                             </a>
                         </xsl:when>
                        <xsl:when test="boolean($index) and boolean(marc:subfield[@code=0])">
                             <a>
-                                <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=linked_rcn:%22<xsl:value-of  select="marc:subfield[@code=0]"/>%22</xsl:attribute>
+                                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of  select="marc:subfield[@code=0]"/>%22</xsl:attribute>
                                   <xsl:value-of select="$str"/>
                             </a>
                         </xsl:when>
                         <xsl:when test="boolean($index)">
                             <a>
-                                <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=<xsl:value-of  select="$index"/>:%22<xsl:value-of  select="marc:subfield[@code='a']"/>%22</xsl:attribute>
+                                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=<xsl:value-of  select="$index"/>:%22<xsl:value-of  select="marc:subfield[@code='a']"/>%22</xsl:attribute>
                                 <xsl:value-of select="$str"/>
                             </a>
                         </xsl:when>
