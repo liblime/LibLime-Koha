@@ -11,9 +11,11 @@
       <map use="7"><index>isbn</index></map>
       <map use="8"><index>issn</index></map>
       <map use="9"><index>lccn</index></map>
+      <map use="12"><index>biblionumber</index></map>
       <map use="21"><index>subject</index></map>
       <map use="1003"><index>author-full</index></map>
       <map use="1016"><index>text</index></map>
+      <map use="9001"><index>ctrlnum</index></map>
     </search>
     <usmarc-record>
       <field><xpath>/</xpath><content>full</content></field>
