@@ -667,25 +667,21 @@ sub GetHighestPriority {
 
 =item AddReserve
     
-    AddReserve($branchcode,$borrowernumber,$biblionumber,$constraint,
-    $bibitems,$priority,$notes,$title,$checkitem,$found)
+    AddReserve($branchcode,$borrowernumber,$biblionumber,$priority,$startdate,$notes,$itemnumber,$found)
 
 =cut
 
 sub AddReserve {
     my (
         $branchcode, $borrowernumber, $biblionumber,
-        $constraint, $bibitems,  $priority, $resdate,  $notes,
-        $title,      $checkitem, $found
+        $priority, $resdate,  $notes,
+        $itemnumber, $found
     ) = @_;
 
     die 'Insufficient arguments provided to AddReserve'
         unless (defined $branchcode && defined $borrowernumber && defined $biblionumber);
     $priority //= GetHighestPriority($biblionumber) + 1;
-    $title //= C4::Biblio::GetBiblioData($biblionumber)->{title};
-    $constraint //= 'a';
-
-    my $const   = lc substr( $constraint, 0, 1 );
+    my $constraint = 'a'; # FIXME: remove constraint from db.  it is not used.
 
     my ($sec,$min,$hour,$day,$mon,$year,undef,undef,undef) = localtime();
     my $timestamp = sprintf '%04d-%02d-%02d %02d:%02d:%02d', 1900+$year, 1+$mon, $day, $hour, $min, $sec;
@@ -724,14 +720,14 @@ sub AddReserve {
     my $sth = $dbh->prepare($query);
     $sth->execute(
         $borrowernumber, $biblionumber, $resdate, $branchcode,
-        $const,          $priority,     $notes,   $checkitem,
+        $constraint,     $priority,     $notes,   $itemnumber,
         $found,          $waitingdate
     );
     my $new_reservenumber = $dbh->last_insert_id(undef, undef, undef, undef);
 
     # Assign holds fee if applicable
     my $fee =
-      GetReserveFee( $borrowernumber, $biblionumber, $constraint, $bibitems );
+      GetReserveFee( $borrowernumber, $biblionumber );
     if ( $fee > 0 ) {
         my $nextacctno = &getnextacctno( $borrowernumber );
         my $query      = qq/
@@ -742,7 +738,7 @@ sub AddReserve {
     /;
         my $usth = $dbh->prepare($query);
         $usth->execute( $borrowernumber, $nextacctno, $fee,
-            "Reserve Charge - $title", $fee );
+            "Reserve Charge", $fee );
 
     }
 
@@ -1038,7 +1034,7 @@ sub ModOldReservesDisplay {
 
     $borrowerreserv = GetReservesByBorrowernumberAndItemtypeOf($borrowernumber, $biblionumber);
     
-    TODO :: Descritpion
+    This probably shouldn't be used since it only works for bib-level itype...
     
 =cut
 
@@ -1064,6 +1060,85 @@ sub GetReservesByBorrowernumberAndItemtypeOf {
     my $data = $sth->fetchall_arrayref({});
     return @$data;
 }
+
+=item GetHoldCountByItemtype
+
+    $holdcounts = GetHoldCountByItemtype($borrowernumber);
+    
+    Return a hash of itemtypes and hold counts for a given borrower.
+    Suspended holds are counted.
+    A bib-level hold with multiple itemtypes will count a hold toward each of those itemtypes.
+    Itemtypes that are notforhold are excluded.
+    
+=cut
+
+sub GetHoldCountByItemtype {
+    my ( $borrowernumber ) = @_;
+    my $dbh   = C4::Context->dbh;
+    my $sth_bib = $dbh->prepare("SELECT DISTINCT itype FROM items WHERE biblionumber = ?");    
+    my $sth_hold = $dbh->prepare("SELECT r.biblionumber, r.itemnumber, itype from reserves r left join items using(biblionumber) where borrowernumber=?");
+    $sth_hold->execute($borrowernumber);
+    my $holdcount = {};
+    while(my ($biblionumber,$itemnumber,$itype) = $sth_hold->fetchrow){
+        if($itemnumber){
+            $holdcount->{$itype}++;
+        } else {
+            $sth_bib->execute($biblionumber);
+            while(my ($itype) = $sth_bib->fetchrow){
+                $holdcount->{$itype}++;
+            }
+        }
+    }
+    return $holdcount;
+}
+
+=item TestMaxHolds
+
+    my $can_place_hold = TestMaxHolds(  biblionumber => $biblionumber,
+                                        borrower => $borrower_hash,
+                                        holdcount => $holdcount_by_itemtype_hash,
+                                        action_per_itemtype => $do_per_itemtype_coderef,
+                                        action_if_fail      => $do_on_fail_coderef );
+                                        
+    Tests whether the patron can place hold on this bib.
+    Assumes that if the bib has multiple itemtypes, that placing a bib-level hold
+    will count toward each of those itemtypes.
+    params:
+
+    C<holdcount> hashref from C4::Reserves::GetHoldCountByItemtype.  Pass this if you'll be counting holds yourself.
+    C<action_per_itemtype> coderef, will get a hash with keys C<itemtype>, C<holdcount> and C<maxholds>.
+    C<action_if_fail> : coderef, is passed same hash as above, but only executes on failures.
+                                        
+    TODO: add itemnumber option to test for itemlevel holds (not yet required by interface).
+    Currently only tests bib-level hold.
+    
+=cut
+
+sub TestMaxHolds {
+    my %o = @_;
+    my $biblionumber = $o{biblionumber} or return;
+    my $borrower = $o{borrower} or return;
+    my $holdcount_by_itemtype = $o{holdcount} || C4::Reserves::GetHoldCountByItemtype($borrower->{borrowernumber});
+    my $pass=1;
+    # Note we always use borrower's branch.  CircControlBranch doesn't make sense when we don't know
+    # which item is reserved, so we fall back to patron branch.
+    for my $itype (@{C4::Biblio::GetItemtypesInBib($biblionumber)}){
+        my $irule = C4::Circulation::GetIssuingRule($borrower->{categorycode}, $itype, $borrower->{branchcode} );
+        my $holdcount = $holdcount_by_itemtype->{$itype}//0;
+        if($o{action_per_itemtype} && ref($o{action_per_itemtype}) eq 'CODE'){
+            $o{action_per_itemtype}->( itemtype => $itype, maxholds => $irule->{'max_holds'}, holdcount => $holdcount);
+        }       
+        if($irule->{'max_holds'} && ($holdcount >= $irule->{'max_holds'})){
+            # Note max_holds=0 means no limit, not zero.
+            if($o{action_if_fail} && ref($o{action_if_fail}) eq 'CODE'){
+                $o{action_if_fail}->( itemtype => $itype, maxholds => $irule->{'max_holds'}, holdcount => $holdcount);
+            }
+            $pass = 0;
+        }
+    }
+    return $pass;
+}
+
 
 #-------------------------------------------------------------------------------------
 sub BorrowerHasReserve {
@@ -1106,6 +1181,7 @@ this function returns the number of reservation for a borrower given on input ar
 If optional $today is true, will return only holds placed today.
 
 If option $shelf_holds_only is true, will only return the count of holds placed on items not checked out.
+
 =cut
 
 sub GetReserveCount {

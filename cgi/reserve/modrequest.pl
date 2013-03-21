@@ -74,7 +74,7 @@ if ( $from eq 'borrower'){
 } elsif ( $from eq 'circ'){
     print $query->redirect("/cgi-bin/koha/circ/circulation.pl?borrowernumber=$borrower[0]");
 } else {
-     my $url = "/cgi-bin/koha/reserve/request.pl?";
+     my $url = "/cgi-bin/koha/reserve/placehold.pl?";
      if ($multi_hold) {
          $url .= "multi_hold=1&biblionumber=$biblionumber&biblionumbers=$biblionumbers";
      } else {

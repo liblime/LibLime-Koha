@@ -43,8 +43,9 @@ use C4::Members;
 use C4::Accounts;
 use C4::Search;		# enabled_staff_search_views
 
+use JSON;
+
 my $dbh = C4::Context->dbh;
-my $sth;
 my $input = new CGI;
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
@@ -65,9 +66,35 @@ $template->param(
    borrowernumber=>$borrowernumber,
 );
 
-my $action = $input->param('action');
-$action = '' if not defined $action;
-if ( $action eq 'suspend' ) {
+my $action = $input->param('action') // '';
+
+if($action eq 'placeholds'){
+    ### FIXME: All checks are done when placehold.pl renders the hold form
+    # this interface could be used to bypass limits since we don't do further checks when the form is submitted.
+    my $multi_hold = $input->param('multi_hold');
+    my $searchtohold = $input->param('searchtohold');
+    my $biblionumbers = $multi_hold ? $input->param('biblionumbers') : $input->param('biblionumber');
+    my $itemnumber=$input->param('checkitem');  # only available if multi_hold is false.
+    my $startdate=$input->param('reserve_date') || '';
+    my $notes=$input->param('notes');
+    my $branch=$input->param('pickup');
+    
+    if($borrowernumber){
+        for my $biblionumber (split('/',$biblionumbers)) {
+            AddReserve($branch,$borrowernumber,$biblionumber,undef,$startdate,$notes,$itemnumber,undef);
+        }
+        my $url;
+        if($multi_hold){
+            $url = "/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrowernumber";
+        } else {
+            my $biblionumber=$input->param('biblionumber');
+            $url = ($searchtohold) ? "editholds.pl?searchtohold=$searchtohold&close_greybox=$searchtohold&biblionumber=$biblionumber&sortRev=ASC"
+                                  : "editholds.pl?biblionumber=$biblionumber&sortRev=ASC";
+        }
+        print $input->redirect($url);
+        exit;
+    }
+} elsif ( $action eq 'suspend' ) {
   my $resumedate = $input->param('resumedate');
   
   if ( $resumedate =~ m/(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/(\d{4})/ ) {
@@ -117,51 +144,90 @@ $findborrower =~ s|,| |g;
 my $cardnumber = $input->param('cardnumber') || '';
 my $borrowerslist;
 my $messageborrower;
-my $warnings;
+my $warnings = 0;
 my $messages;
+my $CGIselectborrower;
 
 my $date = C4::Dates->today('iso');
 
 if ($findborrower) {
-    my ( $count, $borrowers ) =
-      SearchMember($findborrower, 'cardnumber', 'web' );
+    my ( $count, $borrowers ) = SearchMember($findborrower, 'cardnumber', 'web' );
 
     my @borrowers = @$borrowers;
 
     if ( $#borrowers == -1 ) {
         $input->param( 'findborrower', '' );
         $messageborrower = "'$findborrower'";
+        
+        $template->param( messageborrower => $messageborrower );
     }
     elsif ( $#borrowers == 0 ) {
         $input->param( 'cardnumber', $borrowers[0]->{'cardnumber'} );
         $cardnumber = $borrowers[0]->{'cardnumber'};
+        # FIXME: We should be using borrowernumber, not cardnumber once we've identified the patron.
     }
     else {
         $borrowerslist = \@borrowers;
+        my @values;
+        my %labels;
+    
+        foreach my $borrower (
+            sort {
+                    $a->{surname}
+                  . $a->{firstname} cmp $b->{surname}
+                  . $b->{firstname}
+            } @{$borrowerslist}
+          )
+        {
+            push @values, $borrower->{cardnumber};
+    
+            no warnings qw(uninitialized);
+            if (C4::Context->preference('DisplayInitials')) {
+              $labels{ $borrower->{cardnumber} } = sprintf(
+                  '%s, %s %s ... (%s - %s) ... %s',
+                  $borrower->{surname},  $borrower->{firstname},
+                  $borrower->{initials}, $borrower->{cardnumber},
+                  $borrower->{categorycode}, $borrower->{address},
+              );
+            }
+            else {
+              $labels{ $borrower->{cardnumber} } = sprintf(
+                  '%s, %s ... (%s - %s) ... %s',
+                  $borrower->{surname},    $borrower->{firstname},
+                  $borrower->{cardnumber}, $borrower->{categorycode},
+                  $borrower->{address},
+              );
+            }
+        }
+    
+        $CGIselectborrower = CGI::scrolling_list(
+            -name     => 'cardnumber',
+            -values   => \@values,
+            -labels   => \%labels,
+            -size     => 7,
+            -multiple => 0,
+        );
     }
 }
 
+my $borrowerinfo = GetMemberDetails( 0, $cardnumber );
+my $maxholds;
+
+
 if ($cardnumber) {
-    my $borrowerinfo = GetMemberDetails( 0, $cardnumber );
     my $cat          = C4::Members::GetCategoryInfo($$borrowerinfo{categorycode});
     my $diffbranch;
     my @getreservloop;
-    my $count_reserv = 0;
-    my $maxholds;
     my $maxamount;
-
-#   we check the reserves of the borrower, and if he can reserv a document
-# FIXME At this time we have a simple count of reservs, but, later, we could improve the infos "title" ...
-
-   my $number_reserves   = GetReserveCount( $borrowerinfo->{'borrowernumber'} ) // 0;
-   my $amount_msg        = $$borrowerinfo{flags}{CHARGES}{message} // '';
-   my $cat_amount_symbol = '';
-   $$cat{holds_block_threshold} //= 0;
-   if ($$cat{maxholds} && ($number_reserves >= $$cat{maxholds})) {
+    my $number_reserves   = GetReserveCount( $borrowerinfo->{'borrowernumber'} ) // 0;
+    my $amount_msg        = $$borrowerinfo{flags}{CHARGES}{message} // '';
+    my $cat_amount_symbol = '';
+    $$cat{holds_block_threshold} //= 0;
+    if ($$cat{maxholds} && ($number_reserves >= $$cat{maxholds})) {
       $warnings = 1;
       $maxholds = 1;
       $maxholds_warn = 1;
-   }
+    }
    if ($$cat{holds_block_threshold}>0 && $amount_msg) {
       if ($$borrowerinfo{flags}{CHARGES}{amount} > $$cat{holds_block_threshold}) {
          $warnings  = 1;
@@ -198,72 +264,19 @@ if ($cardnumber) {
                 borrowerphonepro       => $borrowerinfo->{'phonepro'},
                 borroweremail          => $borrowerinfo->{'email'},
                 borroweremailpro       => $borrowerinfo->{'emailpro'},
-                borrowercategory       => $borrowerinfo->{'category'},
-
-                borrowerreservs        => $count_reserv,
+                borrowercategory       => $cat->{'description'},
                 maxholds               => $maxholds,
                 cat_maxholds           => $$cat{maxholds},
+                totalholds             => $number_reserves,
                 maxamount              => $maxamount,
                 amount_msg             => $amount_msg,
                 cat_maxamount          => sprintf("%.2f",$$cat{holds_block_threshold}),
                 cat_amount_symbol      => $cat_amount_symbol,
                 expiry                 => $expiry,
                 diffbranch             => $diffbranch,
-                messages               => $messages,
-		          warnings               => $warnings
     );
 }
 
-$template->param(
-    messageborrower => $messageborrower,
-    DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
-    );
-
-my $CGIselectborrower;
-if ($borrowerslist) {
-    my @values;
-    my %labels;
-
-    foreach my $borrower (
-        sort {
-                $a->{surname}
-              . $a->{firstname} cmp $b->{surname}
-              . $b->{firstname}
-        } @{$borrowerslist}
-      )
-    {
-        push @values, $borrower->{cardnumber};
-
-        no warnings qw(uninitialized);
-        if (C4::Context->preference('DisplayInitials')) {
-          $labels{ $borrower->{cardnumber} } = sprintf(
-              '%s, %s %s ... (%s - %s) ... %s',
-              $borrower->{surname},  $borrower->{firstname},
-              $borrower->{initials}, $borrower->{cardnumber},
-              $borrower->{categorycode}, $borrower->{address},
-          );
-        }
-        else {
-          $labels{ $borrower->{cardnumber} } = sprintf(
-              '%s, %s ... (%s - %s) ... %s',
-              $borrower->{surname},    $borrower->{firstname},
-              $borrower->{cardnumber}, $borrower->{categorycode},
-              $borrower->{address},
-          );
-        }
-    }
-
-    $CGIselectborrower = CGI::scrolling_list(
-        -name     => 'cardnumber',
-        -values   => \@values,
-        -labels   => \%labels,
-        -size     => 7,
-        -multiple => 0,
-    );
-}
-
-# FIXME launch another time GetMemberDetails perhaps until
-my $borrowerinfo = GetMemberDetails( 0, $cardnumber );
 
 my @biblionumbers = ();
 my $biblionumbers = $input->param('biblionumbers');
@@ -283,30 +296,40 @@ if ($multihold) {
     }
 }
 
+$borrowernumber = $borrowerinfo->{borrowernumber} if(!$borrowernumber);
+
+my $holdcount_by_itemtype = (C4::Context->preference('UseGranularMaxHolds')) ? C4::Reserves::GetHoldCountByItemtype($borrowernumber) : {};
+my $maxholds_by_itemtype;
+
 my @biblioloop = ();
 foreach my $biblionumber (@biblionumbers) {
 
-    my $number_reserves = GetReserveCount( $borrowerinfo->{'borrowernumber'} );    
-    if ( C4::Context->preference('UseGranularMaxHolds') ) {
-    	my $itemtype;
-    	$sth = $dbh->prepare("SELECT itype FROM items WHERE biblionumber = ?");
-	$sth->execute($biblionumber);
-	($itemtype) = $sth->fetchrow_array;
-
-        my @reservesByItemtype = C4::Reserves::GetReservesByBorrowernumberAndItemtypeOf($borrowerinfo->{'borrowernumber'},$biblionumber);
-        my $number_reserves = scalar( @reservesByItemtype );
-                                                
-    	my $irule = GetIssuingRule($borrowerinfo->{'categorycode'}, $itemtype, C4::Context->userenv->{'branch'} );
-    	my $max_holds = $irule->{'max_holds'};    	
-    	if ( $max_holds && $number_reserves >= $max_holds ) {
-    	  $template->param( warnings => 1 );
-    	  $template->param( maxholds => 1);
-    	  $template->param( override_required => 1 );
-          $maxholds_warn = 1;
-    	}
+    my %biblioloopiter = ();
+    my $dat          = GetBiblioData($biblionumber);
+    $biblioloopiter{itemtypes_at_hold_limit} = [];
+    
+    if ( $borrowerinfo && C4::Context->preference('UseGranularMaxHolds') ) {
+        ## Note that the first time the page loads, we only know bibnumbers as the user hasn't selected
+        # item-level holds yet.  So these checks should really happen in the client.        
+        my $do_per_itemtype = sub {  my %o = @_; 
+                                     $holdcount_by_itemtype->{$o{itemtype}}++;
+                                     $maxholds_by_itemtype->{$o{itemtype}} = $o{maxholds} };
+        my $do_on_fail = sub {  my %o = @_;
+                                push @{$biblioloopiter{itemtypes_at_hold_limit}}, 
+                                        { itemtype => $o{itemtype}, will_have => $o{holdcount}+1, max => $o{maxholds} };
+                             };
+        if( !C4::Reserves::TestMaxHolds(biblionumber=>$biblionumber, borrower => $borrowerinfo,
+                                     holdcount => $holdcount_by_itemtype,
+                                     action_per_itemtype => $do_per_itemtype,
+                                     action_if_fail => $do_on_fail) ){
+            $template->param( maxholds => 1,
+                              override_required => 1 );
+            $warnings = 1;
+            $maxholds_warn = 1;
+        }
     }
 
-  if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
+  if ( $borrowerinfo && C4::Context->preference('MaxShelfHoldsPerDay') ) {
     if ( GetAvailableItemsCount( $biblionumber ) ) {
       my $shelf_holds_today = GetReserveCount( $borrowerinfo->{'borrowernumber'}, my $today = 1, my $shelf_holds_only = 1 );
       my $max_shelf_holds_per_day = C4::Context->preference('MaxShelfHoldsPerDay');
@@ -321,10 +344,6 @@ foreach my $biblionumber (@biblionumbers) {
       }
     }	                    
   }
-
-    my %biblioloopiter = ();
-
-    my $dat          = GetBiblioData($biblionumber);
 
     # get existing reserves .....
     my ( $count, $reserves ) = GetReservesFromBiblionumber($biblionumber,1);
@@ -346,24 +365,8 @@ foreach my $biblionumber (@biblionumbers) {
         }
     }
 
-    $template->param( alreadyreserved => $alreadyreserved,
-                      messages => $messages,
-                      warnings => $warnings );
+    $template->param( alreadyreserved => $alreadyreserved );
     
-    
-    # FIXME think @optionloop, is maybe obsolete, or  must be switchable by a systeme preference fixed rank or not
-    # make priorities options
-    
-    my @optionloop;
-    for ( 1 .. $count + 1 ) {
-        push(
-             @optionloop,
-             {
-              num      => $_,
-              selected => ( $_ == $count + 1 ),
-             }
-            );
-    }
     # adding a fixed value for priority options
     my $fixedRank = $count+1;
 
@@ -430,10 +433,7 @@ foreach my $biblionumber (@biblionumbers) {
                 $item->{holdingbranchname} =
                   $branches->{ $item->{holdingbranch} }{branchname};
             }
-            
-            #   add information
-            $item->{itemcallnumber} = $item->{itemcallnumber};
-            
+
             # if the item is currently on loan, we display its return date and
             # change the background color
             my $issues= GetItemIssue($itemnumber);
@@ -537,7 +537,7 @@ foreach my $biblionumber (@biblionumbers) {
                 ) {
                 $policy_holdallowed = 0;
             }
-            
+
             if (IsAvailableForItemLevelRequest($itemnumber) and not $item->{cantreserve}) {
                 if (!$policy_holdallowed ) {
 					if ( C4::Context->preference( 'AllowHoldPolicyOverride' ) ) {
@@ -552,7 +552,8 @@ foreach my $biblionumber (@biblionumbers) {
                 }
                 if ($alreadyreserved && CanHoldMultipleItems($item->{itype},'intranet')) {
                   $template->param( alreadyreserved => undef);
-                  $template->param( warnings => undef) if (!$maxholds_warn && !$maxamount_warn && !$max_shelf_holds_per_day_warn)
+              #    $template->param( warnings => undef) if (!$maxholds_warn && !$maxamount_warn && !$max_shelf_holds_per_day_warn);
+              ## FIXME: ^^ yuck.
                 }
                 elsif ($alreadyreserved) {
                     $item->{available} = undef;
@@ -573,13 +574,13 @@ foreach my $biblionumber (@biblionumbers) {
             
             push @{ $biblioitem->{itemloop} }, $item;
         }
-        
+
         if ( $num_override == scalar( @{ $biblioitem->{itemloop} } ) ) { # That is, if all items require an override
             $template->param( override_required => 1 );
         } elsif ( $num_available == 0 ) {
             $template->param( none_available => 1 );
 			$template->param( num_policy_blocked => $num_policy_blocked );
-            $template->param( warnings => 1 );
+			$warnings = 1;
             $biblioloopiter{warn} = 1;
             $biblioloopiter{none_avail} = 1;
         }
@@ -588,27 +589,10 @@ foreach my $biblionumber (@biblionumbers) {
 
     # existingreserves building
     my @reserveloop;
-    my $populate_option_loop = $template->param('CAN_user_reserveforothers_reorder_holds');
     # pretend all non-T/non-W reserves have an 'S' for sorting purposes
     foreach my $res ( sort { ($a->{found} // 'S') cmp ($b->{found} // 'S') } @$reserves ) {
         my %reserve;
-
         $reserve{'reservenumber'}   = $res->{'reservenumber'};
-
-        my @optionloop;
-        if ($populate_option_loop ) {
-            for ( my $i = 1 ; $i <= $totalcount ; $i++ ) {
-                push(
-                    @optionloop,
-                    {
-                        num      => $i,
-                        selected => ( $i == $res->{priority} ),
-                    }
-                );
-            }
-        } else {
-            push @optionloop, { num => $res->{priority}, selected => 1, };
-        }
         
         if ( defined $res->{'found'} && ( $res->{'found'} eq 'W' || $res->{'found'} eq 'T' ) ) {
             my $item = $res->{'itemnumber'};
@@ -659,7 +643,6 @@ foreach my $biblionumber (@biblionumbers) {
         $reserve{'barcode'}         = $res->{'barcode'};
         $reserve{'priority'}    = $res->{'priority'};
         $reserve{'branchloop'} = GetBranchesLoop($res->{'branchcode'}, 0);
-        $reserve{'optionloop'} = \@optionloop;
         $reserve{'reservenumber'} = $res->{'reservenumber'};
         
         push( @reserveloop, \%reserve );
@@ -670,14 +653,12 @@ foreach my $biblionumber (@biblionumbers) {
     
     $template->param(
                      CGIbranch   => $CGIbranch,
-
                      time        => $time,
                      fixedRank   => $fixedRank,
                     );
     
     # display infos
     $template->param(
-                     optionloop        => \@optionloop,
                      bibitemloop       => \@bibitemloop,
                      date              => $date,
                      biblionumber      => $biblionumber,
@@ -709,18 +690,16 @@ foreach my $biblionumber (@biblionumbers) {
     push @biblioloop, \%biblioloopiter;
 }
 
-$template->param( biblioloop => \@biblioloop );
-$template->param( biblionumbers => $biblionumbers );
+$template->param(   biblioloop      => \@biblioloop,
+                    biblionumbers   => $biblionumbers,
+                    multi_hold      => ($multihold) ? 1 : 0,
+                    reserve_in_future => C4::Context->preference('AllowHoldDateInFuture') ? 1 : 0,
+                    maxholds_json   => JSON::encode_json($maxholds_by_itemtype),
+                    holdcount_json  => JSON::encode_json($holdcount_by_itemtype),
+                    
+                    DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
+                    messages               => $messages,
+                    warnings               => $warnings
+                  );
 
-if ($multihold) {
-    $template->param( multi_hold => 1 );
-}
-
-if ( C4::Context->preference( 'AllowHoldDateInFuture' ) ) {
-    $template->param(
-	reserve_in_future         => 1,
-	);
-}
-    
-# printout the page
 output_html_with_http_headers $input, $cookie, $template->output;

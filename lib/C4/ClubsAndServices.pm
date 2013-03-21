@@ -1163,10 +1163,7 @@ sub ReserveForBestSellersClub {
       $biblionumber,
       undef,
       undef,
-      undef,
-      undef,
       'Automatic Reserve for Bestsellers Club',
-      $title,
     );
   }
 }

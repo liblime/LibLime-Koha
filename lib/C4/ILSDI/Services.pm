@@ -646,7 +646,7 @@ sub HoldTitle {
 
     # Add the reserve
     #          $branch, $borrowernumber, $biblionumber, $constraint, $bibitems,  $priority, $notes, $title, $checkitem,  $found
-    AddReserve( $branch, $borrowernumber, $biblionumber, 'a', undef, 0, undef, $title, undef, undef );
+    AddReserve( $branch, $borrowernumber, $biblionumber, 0 );
 
     # Hashref building
     my $out;
@@ -740,8 +740,8 @@ sub HoldItem {
    # }
 
     # Add the reserve
-    #          $branch, $borrowernumber, $biblionumber, $constraint, $bibitems,  $priority, $notes, $title, $checkitem,  $found
-    AddReserve( $branch, $borrowernumber, $biblionumber, 'a', undef, $rank, undef, $title, $itemnumber, $found );
+    #          $branch, $borrowernumber, $biblionumber, $priority, $notes, $item 
+    AddReserve( $branch, $borrowernumber, $biblionumber, $rank, undef, $itemnumber );
 
     # Hashref building
     my $out;

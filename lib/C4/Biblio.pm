@@ -3061,6 +3061,17 @@ sub get_biblio_authorised_values {
     return $authorised_values;
 }
 
+sub GetItemtypesInBib {
+    my $biblionumber=shift;
+    my $sth_itemtypes = C4::Context->dbh->prepare("SELECT DISTINCT itype FROM items WHERE biblionumber = ?");
+    $sth_itemtypes->execute($biblionumber);
+    my $itemtypes = [];
+    while(my ($itype) = $sth_itemtypes->fetchrow){
+        push @$itemtypes, $itype;     
+    }
+    return $itemtypes;
+}
+
 use Koha::Changelog::DBLog;
 sub _update_changelog {
     my ( $record, $action ) = @_;

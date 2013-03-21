@@ -1918,6 +1918,10 @@ a.disabled{
     cursor: default;
     color: #aaa;
 }
+.inlineSubheading{
+  font-size: smaller;
+  font-weight: lighter;
+}
 /* jQuery-UI overrides */
 .ui-tabs-nav {
     background: none;

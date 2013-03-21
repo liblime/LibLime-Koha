@@ -69,8 +69,7 @@ sub do_hold {
 		return $self;
 	}
 	my $bibno = $bib->{biblionumber};
-	AddReserve($branch, $borrower->{borrowernumber}, 
-				$bibno, 'a', GetBiblioItemByBiblioNumber($bibno)) ;
+	AddReserve($branch, $borrower->{borrowernumber}, $bibno);
 		# unfortunately no meaningful return value
 	$self->ok(1);
 	return $self;
@@ -132,8 +131,8 @@ sub change_hold {
 1;
 __END__
 
-# 11 friggin arguments
-AddReserve($branch,$borrowernumber,$biblionumber,$constraint,$bibitems,$priority,$startdate,$notes,$title,$checkitem,$found)
+# 11 friggin arguments (seven now)
+AddReserve($branch,$borrowernumber,$biblionumber,$priority,$startdate,$notes,$checkitem,)
 
 ModReserve($rank, $biblio, $borrower, $branch , $itemnumber)
 

@@ -307,11 +307,17 @@
                         <!-- TMPL_IF NAME="already_reserved" -->
                           <div class="bibmessage">You have already requested this title.</div>
                         <!-- /TMPL_IF -->
-                        <!-- TMPL_UNLESS NAME="bib_available" -->
-                          <div class="bibmessage">No available items.</div>
+                        <!-- TMPL_IF NAME="bib_available" -->
+                            <div class="bibmessage">This title cannot be requested.</div>
                         <!-- TMPL_ELSE -->
-                          <div class="bibmessage">This title cannot be requested.</div>
-                        <!-- /TMPL_UNLESS -->
+	                        <div class="bibmessage">
+	                            <!-- TMPL_IF too_many_by_itemtype -->
+	                                Too many holds per itemtype.
+	                            <!-- TMPL_ELSE -->
+	                                No available items.
+	                            <!-- /TMPL_IF -->
+	                        </div>                          
+                        <!-- /TMPL_IF -->
                     </td>
                       <!-- /TMPL_IF -->
                     <td>
@@ -497,7 +503,6 @@
                             <!-- /TMPL_UNLESS -->
                             <th>Barcode</th>
                             <th>Home Library</th>
-<!--                              <th>Last Location</th> -->
                             <th>Call Number</th>
                             <!-- TMPL_IF NAME="itemdata_enumchron" -->
                               <th>Vol Info</th>
@@ -528,19 +533,16 @@
                               <!-- /TMPL_UNLESS -->
                               <td><!-- TMPL_VAR NAME="barcode" --></td>
                               <td><!-- TMPL_VAR NAME="homeBranchName" --></td>
-<!--                                <td><!-- TMPL_VAR NAME="holdingBranchName" --></td>
--->
                               <td><!-- TMPL_VAR NAME="callNumber" --></td>
-                              <!-- TMPL_IF NAME="itemdata_enumchron" --><!-- test -->
-                                <td><!-- TMPL_VAR NAME="enumchron" --></td>
+                              <!-- TMPL_IF NAME="itemdata_enumchron" -->
+	                              <td>
+		                              <!-- TMPL_IF NAME="enumchron" -->
+		                              <!-- TMPL_VAR NAME="enumchron" --><!-- TMPL_IF NAME="serialseq" --> -- <!-- /TMPL_IF -->
+		                              <!-- /TMPL_IF -->
+		                              <!-- TMPL_VAR NAME="serialseq" --><!-- TMPL_IF NAME="publisheddate" --> (<!-- TMPL_VAR NAME="publisheddate" -->)<!-- /TMPL_IF -->
+		                              <!-- TMPL_IF NAME="copynumber" --><br /><!-- TMPL_VAR NAME="copynumber" --><!-- TMPL_ELSE -->&nbsp;<!-- /TMPL_IF -->
+	                              </td>
                               <!-- /TMPL_IF -->
-                              <!--
-                              <td>
-                              <!-- TMPL_IF NAME="enumchron" -->
-                              <!-- TMPL_VAR NAME="enumchron" --><!-- TMPL_IF NAME="serialseq" --> -- <!-- /TMPL_IF -->
-                              <!-- /TMPL_IF -->
-                              <!-- TMPL_VAR NAME="serialseq" --><!-- TMPL_IF NAME="publisheddate" --> (<!-- TMPL_VAR NAME="publisheddate" -->)<!-- /TMPL_IF -->
-                              <!-- TMPL_IF NAME="copynumber" --><br /><!-- TMPL_VAR NAME="copynumber" --><!-- TMPL_ELSE -->&nbsp;<!-- /TMPL_IF --></td> -->
                               <td>
                                 <!-- TMPL_IF NAME="date_due" -->
                                   <span class="checkedout">Due <!-- TMPL_VAR NAME="date_due" --></span>
