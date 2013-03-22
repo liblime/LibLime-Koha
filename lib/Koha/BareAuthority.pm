@@ -88,6 +88,26 @@ method _cache_me {
         undef, $self->id, $hash, $hash);
 }
 
+func _normalize_control_fields( $record ) {
+    $record->leader( '     nz  a22     o  4500' )
+        unless $record->leader;
+    my $orgcode = C4::Context->preference('MARCOrgCode');
+
+    my @tags = (
+        [ '003', $orgcode ],
+        [ '005', POSIX::strftime( '%Y%m%d%H%M%S.0', localtime ) ],
+        [ '008', POSIX::strftime( '%y%m%d', localtime )
+              . '|||a|a||aaa          | |||     d' ],
+        [ '040', '', '', 'a' => $orgcode, 'c' => $orgcode ],
+    );
+    for ( @tags ) {
+        next if $record->field($_->[0]);
+        $record->insert_fields_ordered( MARC::Field->new(@$_) );
+    }
+
+    return;
+}
+
 method _insert {
     # Insert a dummy row to reserve a definite authid
     C4::Context->dbh->do(
@@ -103,10 +123,7 @@ method _insert {
             MARC::Field->new('001', $id) );
     }
 
-    if ( !$marc->field('003') ) {
-        $marc->insert_fields_ordered(
-            MARC::Field->new('003', C4::Context->preference('MARCOrgCode')) );
-    }
+    _normalize_control_fields( $marc );
 
     my $stub_flag = $self->is_stub ? 1 : 0;
     if ( my ($f999) = $marc->field('999') ) {
