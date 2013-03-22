@@ -26,7 +26,27 @@ var override_items = {<!-- TMPL_LOOP NAME="bibitemloop" --><!-- TMPL_LOOP NAME="
 };
 var MSG_NO_ITEMS_AVAILABLE = _("A hold cannot be requested on any of these items.");
 
+KOHA.maxholds = <!-- TMPL_VAR maxholds_json -->; /* includes only itypes in these bibs */
+KOHA.holdscount = <!-- TMPL_VAR holdcount_json -->;
+
+
+
 function check() {
+  <!-- TMPL_IF multi_hold-->
+	  var spans = $(".multi_hold_item");
+	  if ($(spans).size() == 0) {
+	      alert(MSG_NO_ITEMS_AVAILABLE);
+	      return false;
+	  }
+	  var biblionumbers = "";
+	  $(spans).each(function() {
+	      var bibnum = $(this).attr("title");
+	      biblionumbers += bibnum + "/";
+	  });
+	  $("#multi_hold_bibs").val(biblionumbers);
+	  
+	  return true;
+  <!-- TMPL_ELSE -->
 	var msg = "";
 	var count_reserv = 0;
 	var alreadyreserved = 0;
@@ -70,32 +90,7 @@ function check() {
 		alert(msg);
 		return(false);
 	}
-}
-
-function checkMultiHold() {
-    var spans = $(".multi_hold_item");
-    if ($(spans).size() == 0) {
-        alert(MSG_NO_ITEMS_AVAILABLE);
-        return false;
-    }
-
-    var biblionumbers = "";
-    $(spans).each(function() {
-        var bibnum = $(this).attr("title");
-        biblionumbers += bibnum + "/";
-    });
-
-    var badSpans = $(".not_holdable");
-    var badBibs = "";
-    $(badSpans).each(function() {
-        var bibnum = $(this).attr("title");
-        badBibs += bibnum + "/";
-    });
-
-    $("#multi_hold_bibs").val(biblionumbers);
-    $("#bad_bibs").val(badBibs);
-    
-    return true;
+  <!-- /TMPL_IF -->
 }
 
  $(document).ready(function() {
@@ -135,6 +130,14 @@ function checkMultiHold() {
 			$("#requestany").prop("checked",true);
 		}
 	});
+ 	<!-- TMPL_UNLESS multi_hold -->
+	 	for (var itype in KOHA.maxholds){
+			if(KOHA.holdscount[itype] >= KOHA.maxholds[itype]){
+	 			$("<li><strong>Max Holds for itemtype "+itype+":</strong> <strong>"+KOHA.holdscount[itype]+"</strong> current of <strong>"+KOHA.maxholds[itype]+"</strong> allowed.</li>")
+	 			    .insertAfter("li.maxholdsWarning");
+	 		}
+	 	}
+ 	<!-- /TMPL_UNLESS -->
  });
 
 // ]]>
@@ -160,99 +163,89 @@ function checkMultiHold() {
       <h1>Confirm Holds</h1>
       <!-- /TMPL_UNLESS -->
 
-      <!-- TMPL_UNLESS NAME="cardnumber"-->
+      <!-- TMPL_IF NAME="cardnumber"-->
+        <!-- TMPL_IF NAME="warnings" -->
+          <div class="dialog alert">
+            <h3>Cannot Place Hold on Some Items</h3>
+            <h3>Hold Blocked <span class="inlineSubheading"> for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a></span></h3> 
+            <ul>
+              <!-- TMPL_IF NAME="maxholds" -->
+                <li class="maxholdsWarning"><strong>Max Total Holds for <!-- TMPL_VAR borrowercategory -->: </strong>
+                  <strong><!-- TMPL_VAR totalholds --></strong> total of <strong><!-- TMPL_VAR NAME="cat_maxholds" --></strong> allowed.
+                </li>
+              <!-- /TMPL_IF -->
+              <!-- TMPL_IF NAME="maxamount" -->
+                <li><strong>Excess fines: </strong> <!-- TMPL_VAR NAME="amount_msg" -->  
+                   Max allowed charges for this patron is <!-- TMPL_VAR NAME="cat_amount_symbol" --><!-- TMPL_VAR NAME="cat_maxamount" -->.</li>
+              <!-- /TMPL_IF -->
+              <!-- TMPL_IF NAME="max_shelf_holds_per_day" -->
+                <li><strong>Shelf Holds: </strong>  Too many holds in one day for bibs with at least one available item.</li>
+              <!-- /TMPL_IF -->
+              <!-- TMPL_IF NAME="alreadyreserved" -->
+                <li><strong>Hold already placed</strong> on this item </li>
+              <!-- /TMPL_IF -->
+              <!-- TMPL_IF NAME="none_available" -->
+                <li>
+                  <strong>No copies are available</strong> to be placed on hold<!-- TMPL_IF NAME="num_policy_blocked" -->.<br />
+                  Some cannot be placed on hold because this library's rules for this patron type prevent it.<!-- /TMPL_IF -->
+                </li>
+              <!-- /TMPL_IF -->
+            </ul>
+          </div>
+	    <!-- /TMPL_IF --><!-- /warnings -->
+	
+	    <!-- TMPL_IF EXPR="messages && !none_available" -->
+	      <div class="dialog message"><ul>
+	         <!-- TMPL_IF NAME="expiry" -->
+	           <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a>'s <strong>account has expired</strong></li>
+	         <!-- /TMPL_IF -->
+	         <!-- TMPL_IF NAME="diffbranch" -->
+	           <li><strong>Pickup library is different</strong> than <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a>'s home library (<!-- TMPL_VAR NAME="borrower_branchname" --> / <!-- TMPL_VAR NAME="borrower_branchcode" --> )</li>
+	         <!-- /TMPL_IF -->
+	      </ul></div>
+	    <!-- /TMPL_IF -->
+	    <!-- TMPL_IF NAME="messageborrower" -->
+            <div class="dialog alert"><h3>Patron not found:</h3> <p>Name or barcode not found. Please try another </p></div>
+        <!-- /TMPL_IF -->
+    <!-- TMPL_ELSE --><!-- i.e. NO cardnumber -->
          <!-- TMPL_IF NAME="messageborrower" -->
          <div class="dialog alert"><h3>Patron Not Found</h3><p>No patron with this name, Please, try another</p> </div>
          <!-- /TMPL_IF -->
          <form action="placehold.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" method="post">
-         <!-- TMPL_UNLESS name="CGIselectborrower" -->
-			<fieldset class="brief">
-		        <label for="patron">Patron: </label>
-				<div class="hint">Enter patron card number or partial name:</div>
-                <input type="text" size="20" id="patron" class="focus" name="findborrower" />
-                <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber"-->" />
-                <input type="submit" value="Search" />
-			</fieldset>
+         <!-- TMPL_IF name="CGIselectborrower" -->
+            <fieldset class="brief">
+               <!-- TMPL_VAR NAME="CGIselectborrower" -->
+               <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
+               <fieldset class="action"><input type="submit" value="Select" /></fieldset>
+            </fieldset>
          <!-- TMPL_ELSE -->
-			<fieldset>
-			   <!-- TMPL_VAR NAME="CGIselectborrower" -->
-			   <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber"-->" /><fieldset class="action"><input type="submit" value="Select" /></fieldset></fieldset>
-         <!-- /TMPL_UNLESS -->
+            <fieldset>
+                <label for="patron">Patron: </label>
+                <div class="hint">Enter patron card number or partial name:</div>
+                <input type="text" size="20" id="patron" class="focus" name="findborrower" />
+                <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
+                <input type="submit" value="Search" />
+            </fieldset>
+         <!-- /TMPL_IF -->
          <!-- TMPL_IF NAME="multi_hold" -->
             <input type="hidden" name="multi_hold" value="<!-- TMPL_VAR NAME="multi_hold" -->"/>
             <input type="hidden" name="biblionumbers" value="<!-- TMPL_VAR NAME="biblionumbers" -->"/>
          <!-- /TMPL_IF -->
             <input type=hidden name="searchtohold" value="<TMPL_VAR NAME="searchtohold">">
          </form>
-      <!-- TMPL_ELSE --><!-- UNLESS cardnumber -->
-         <!-- TMPL_IF NAME="warnings" -->
-         <div class="dialog alert">
-            <!-- TMPL_UNLESS NAME="multi_hold" -->
-            <h3>Cannot Place Hold</h3>
-  	         <ul>
-               <!-- TMPL_IF NAME="maxholds" -->
-               <li><strong>Too Many Holds: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> has too many holds.  Max for this patron is <!-- TMPL_VAR NAME="cat_maxholds" -->.</li>
-               <!-- /TMPL_IF -->
-               <!-- TMPL_IF NAME="maxamount" -->
-               <li><strong>Too Much Owed: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> exceeded amount limit.  <!-- TMPL_VAR NAME="amount_msg" -->.  Max owed for this patron is <!-- TMPL_VAR NAME="cat_amount_symbol" --><!-- TMPL_VAR NAME="cat_maxamount" -->.</li>
-               <!-- /TMPL_IF -->
-               <!-- TMPL_IF NAME="max_shelf_holds_per_day" -->
-               <li><strong>Too Many Shelf Holds Today: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --> </a> has placed too many holds in one day for bibs with at least one available item.</li>
-               <!-- /TMPL_IF -->
-               <!-- TMPL_IF NAME="alreadyreserved" -->
-               <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> <strong>already has a hold</strong> on this item </li>
-               <!-- /TMPL_IF -->
-               <!-- TMPL_IF NAME="none_available" -->
-               <li>
-                  <strong>No copies are available</strong> to be placed on hold<!-- TMPL_IF NAME="num_policy_blocked" -->.<br />
-                  Some cannot be placed on hold because this library's rules for this patron type prevent it.<!-- /TMPL_IF -->
-               </li>
-               <!-- /TMPL_IF -->
-      	  </ul>
-         <!-- TMPL_ELSE --><!-- UNLESS multi_hold -->
-         <h3>Cannot Place Hold on Some Items</h3>
-         <!-- /TMPL_UNLESS -->
-      </div>
-      <!-- /TMPL_IF --><!-- /warnings -->
-
-      <!-- TMPL_IF EXPR="messages && !none_available" -->
-      <div class="dialog message"><ul>
-         <!-- TMPL_IF NAME="expiry" -->
-         <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a>'s <strong>account has expired</strong></li>
-         <!-- /TMPL_IF -->
-         <!-- TMPL_IF NAME="diffbranch" -->
-         <li><strong>Pickup library is different</strong> than <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a>'s home library (<!-- TMPL_VAR NAME="borrower_branchname" --> / <!-- TMPL_VAR NAME="borrower_branchcode" --> )</li>
-         <!-- /TMPL_IF -->
-      </ul></div>
-      <!-- /TMPL_IF -->
-      <!-- TMPL_IF NAME="messageborrower" -->
-      <div class="dialog alert"><h3>Patron not found:</h3> <p>Name or barcode not found. Please try another </p></div>
-      <!-- /TMPL_IF -->
-   <!-- /TMPL_UNLESS --><!-- eof unless cardnumber -->
+   <!-- /TMPL_IF --><!-- eof if cardnumber -->
 
   <fieldset class="rows left" style="border:0px;bottom-border:0px;">
     <legend>Hold details</legend>
-   <!-- TMPL_UNLESS NAME="multi_hold" -->
-            <form action="placerequest.pl" method="post" onsubmit="return check();" name="form">
-   <!-- TMPL_ELSE -->
-            <form action="placerequest.pl" method="post" onsubmit="return checkMultiHold();" name="form">
-   <!-- /TMPL_UNLESS -->
-        <input type="hidden" size="10" name="member" value="<!--  TMPL_VAR NAME="cardnumber" -->" />
-        <input type="hidden" name="type" value="str8" />
-   <!-- TMPL_IF NAME="multi_hold" -->
+    <form action="placehold.pl" method="post" onsubmit="return check();" name="form">
+        <input type="hidden" name="action" value="placeholds" />
+        <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR borrowernumber -->" />
+        <!-- TMPL_IF NAME="multi_hold" -->
             <input type="hidden" name="multi_hold" value="<!-- TMPL_VAR NAME="multi_hold" -->"/>
             <input type="hidden" name="biblionumbers" id="multi_hold_bibs" value="<!-- TMPL_VAR NAME="biblionumbers" -->"/>
-            <input type="hidden" name="bad_bibs" id="bad_bibs" value=""/>
-            <input type="hidden" name="request" value="any"/>
-      <!-- TMPL_LOOP NAME="biblioloop" -->
-              <input type="hidden" name="title_<!-- TMPL_VAR NAME="biblionumber">" value="<!-- TMPL_VAR NAME="title">"/>
-              <input type="hidden" name="rank_<!-- TMPL_VAR NAME="biblionumber">" value="<!-- TMPL_VAR NAME="rank">"/>
-      <!-- /TMPL_LOOP -->
-   <!-- TMPL_ELSE --><!-- else multi_hold -->
-            <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
-            <input type="hidden" name="title" value="<!-- TMPL_VAR NAME="title" -->" />
-            <input type="hidden" name="rank_request" value="<!-- TMPL_VAR NAME="fixedRank" -->" />
-   <!-- /TMPL_IF --><!-- /multi_hold -->
+        <!-- TMPL_ELSE -->
+                <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
+        <!-- /TMPL_IF -->
 
        <ol> <li><span class="label">Patron:</span>
    <!-- TMPL_IF NAME="cardnumber"-->
@@ -430,9 +423,6 @@ function checkMultiHold() {
     <table id="requesttitles">
       <tr>
         <th>Title</th>
-      <!-- TMPL_UNLESS NAME="item-level_itypes" -->
-          <th>Item Type</th>
-      <!-- /TMPL_UNLESS -->
         <th>Priority</th>
         <th>Information</th>
       </tr>
@@ -455,11 +445,7 @@ function checkMultiHold() {
               <span class="not_holdable" title="<!-- TMPL_VAR NAME="biblionumber" -->"></span>
          <!-- /TMPL_UNLESS -->
           </td>
-         <!-- TMPL_UNLESS NAME="item-level_itypes" -->
-            <td>
-              <img src="<!-- TMPL_VAR name="imageurl" -->" alt="<!-- TMPL_VAR NAME="itypename" -->" title="<!-- TMPL_VAR NAME="itypename" -->" />
-            </td>
-         <!-- /TMPL_UNLESS -->
+
           <td><!-- TMPL_VAR NAME="rank" --></td>
           <td>
          <!-- TMPL_IF NAME="alreadyres" -->
@@ -487,6 +473,14 @@ function checkMultiHold() {
          <!-- TMPL_ELSIF NAME="noresstatus" -->
               </ul>
          <!-- /TMPL_IF -->
+         <!-- TMPL_IF itemtypes_at_hold_limit -->
+            <ul>
+                <!-- TMPL_LOOP itemtypes_at_hold_limit -->
+                    <li class="error">Itemtype <!-- TMPL_VAR itemtype -->: will have <!-- TMPL_VAR will_have --> holds (limit <!-- TMPL_VAR max -->) if hold is placed.</li>
+                <!-- /TMPL_LOOP -->
+            </ul>
+         <!-- /TMPL_IF -->
+         
           </td>
         </tr>
       <!-- /TMPL_LOOP -->

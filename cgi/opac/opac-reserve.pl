@@ -183,7 +183,7 @@ if ( $query->param('place_reserve') ) {
 
     while (@selectedItems) {
         my $biblioNum = shift(@selectedItems);
-        my $itemNum   = shift(@selectedItems);
+        my $itemNum   = shift(@selectedItems) || undef;
         my $branch    = shift(@selectedItems); # i.e., branch code, not name
 
         my $singleBranchMode = $template->param('singleBranchMode');
@@ -192,35 +192,18 @@ if ( $query->param('place_reserve') ) {
         }
 
         my $biblioData = $biblioDataHash{$biblioNum};
-        my $found;
         
-	# Check for user supplied reserve date
-	my $startdate;
-	if (
-	    C4::Context->preference( 'AllowHoldDateInFuture' ) &&
-	    C4::Context->preference( 'OPACAllowHoldDateInFuture' )
-	    ) {
-	    $startdate = $query->param("reserve_date_$biblioNum");
-	}
-
-        # If a specific item was selected and the pickup branch is the same as the
-        # holdingbranch, force the value $rank and $found.
-        my $rank = $biblioData->{rank};
-        if ($itemNum ne ''){
-           # $rank = '0' unless C4::Context->preference('ReservesNeedReturns');
-           # my $item = GetItem($itemNum);
-           # if ( $item->{'holdingbranch'} eq $branch ){
-           #     $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
-           # }
+	    # Check for user supplied reserve date
+	    my $startdate;
+	    if (C4::Context->preference( 'AllowHoldDateInFuture' ) && C4::Context->preference( 'OPACAllowHoldDateInFuture' )) {
+	        $startdate = $query->param("reserve_date_$biblioNum");
+	    }
+        # FIXME: we only check one setting here, so a very savvy user could sidestep hold policies.
+        if(C4::Reserves::TestMaxHolds(biblionumber => $biblioNum, borrower => $borr)){
+            AddReserve($branch, $borrowernumber, $biblioNum, undef, $startdate, $notes, $itemNum);            
+        } else {
+            warn "Attempt to sidestep hold policies via opac.  Borrower $borrowernumber";
         }
-        else {
-            # Inserts a null into the 'itemnumber' field of 'reserves' table.
-            $itemNum = undef;
-        }
-        
-        # Here we actually do the reserveration. Stage 3.
-        AddReserve($branch, $borrowernumber, $biblioNum, 'a', [$biblioNum], $rank, $startdate, $notes,
-                   $biblioData->{'title'}, $itemNum, $found);
     }
 
     print $query->redirect("/cgi-bin/koha/opac-user.pl#opac-user-holds");
@@ -286,58 +269,13 @@ my $userenv = C4::Context->userenv;
 my @reserves = GetReservesFromBorrowernumber( $borrowernumber );
 $template->param( RESERVES => \@reserves );
 
-if ( C4::Context->preference('UseGranularMaxHolds') ) {
-    $noreserves = 1;
-    foreach my $biblionumber (@biblionumbers) {
-        ## Since we can't limit by branchcode in the opac, we use the * rule for branch
-        ## Get the reserves for the borrower, limited by itemtype
-        ## If the borrower is over the limit for their borrower.categorycode and the given itemtype
-        ## Disable ability to make a reserve
-        my $dbh = C4::Context->dbh;
-        my $sth = $dbh->prepare("SELECT itemnumber FROM items WHERE biblionumber = ? ORDER BY 1 DESC");
-        $sth->execute($biblionumber);
-        while (my ($itemnumber) = $sth->fetchrow_array) {
-            my $item = GetItem($itemnumber);
-            my $itemtype;
-            if(C4::Context->preference('item-level_itypes')) {
-                $itemtype = $item->{itype};
-            }
-            else {
-                my $biblioitem = GetBiblioItemByBiblioNumber($biblionumber);
-                $itemtype = $biblioitem->{itemtype};
-            }
 
-            my @reservesByItemtype = C4::Reserves::GetReservesByBorrowernumberAndItemtypeOf($borrowernumber, $biblionumber);
-            my $res_count = scalar( @reservesByItemtype );
 
-            my $branch = C4::Circulation::GetCircControlBranch(
-               pickup_branch        => $userenv? $userenv->{branch} : $item->{homebranch},
-               item_homebranch      => $item->{homebranch},
-               item_holdingbranch   => $item->{holdingbranch},
-               borrower_branch      => $borr->{branchcode},
-            );
-            my $irule = GetIssuingRule($borr->{'categorycode'}, $itemtype, $branch);
-            
-            if (($irule->{max_holds}>0) && ($res_count >= $irule->{max_holds})) {
-                $template->param( message => 1, too_many_reserves => $res_count );
-                $noreserves = 1;
-                last;
-            }
-            if ( $irule->{'max_holds'} ) {
-                $noreserves = 0;
-            } 
-        }
-    }
-    if ($noreserves && ! $template->param('too_many_reserves')) {
-        $template->param( message => 1, none_available => 1 );
-    }
-}
-elsif ((@reserves >= $$cat{maxholds}) && $$cat{maxholds}) {
+if ((@reserves + @biblionumbers > $$cat{maxholds}) && $$cat{maxholds}) {
    $template->param(message => 1);
    $noreserves = 1;
    $template->param( too_many_reserves => $$cat{maxholds});
 }
-
 
 if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
   foreach my $biblionumber (@biblionumbers) {
@@ -382,18 +320,13 @@ foreach my $res (@reserves) {
     }
 }
 
-unless ($noreserves) {
-    $template->param( select_item_types => 1 );
-}
-
-
 #
 #
 # Build the template parameters that will show the info
 # and items for each biblionumber.
 #
 #
-my $notforloan_label_of = get_notforloan_label_of();
+my $notforloan_label_of = get_notforloan_label_of();  # FIXME: deprecated function call.
 
 my $biblioLoop = [];
 my $numBibsAvailable = 0;
@@ -401,6 +334,8 @@ my $itemdata_enumchron = 0;
 my $numPolicyBlocked = 0;
 my $itemLevelTypes = C4::Context->preference('item-level_itypes');
 $template->param('item-level_itypes' => $itemLevelTypes);
+
+my $holdcount_by_itemtype = (C4::Context->preference('UseGranularMaxHolds')) ? C4::Reserves::GetHoldCountByItemtype($borrowernumber) : {};
 
 foreach my $biblioNum (@biblionumbers) {
 
@@ -430,6 +365,25 @@ foreach my $biblioNum (@biblionumbers) {
         $biblioLoopIter{description} = $itemTypes->{$biblioData->{itemtype}}{description};
         $biblioLoopIter{imageurl} = getitemtypeimagesrc() . "/". $itemTypes->{$biblioData->{itemtype}}{imageurl};
     }
+    
+    my $overItypeLimit = 0;
+    if ( C4::Context->preference('UseGranularMaxHolds') ) {
+        ## Note that the first time the page loads, we only know bibnumbers as the user hasn't selected
+        # item-level holds yet.  So these checks should really happen in the client, since the user could
+        # select an itemtype that they are under the limit on.  However, with the upcoming opac rebuild,
+        # that's not going to happen now.
+
+        my $do_per_itemtype = sub {  my %o = @_; $holdcount_by_itemtype->{$o{itemtype}}++; };
+
+        if( !C4::Reserves::TestMaxHolds( biblionumber=>$biblioNum, borrower=>$borr,
+                                     holdcount=>$holdcount_by_itemtype,
+                                     action_per_itemtype=>$do_per_itemtype ) ){
+            $overItypeLimit = 1;
+            $biblioLoopIter{too_many_by_itemtype} = 1;
+        }
+    }
+                  
+
 
     foreach my $itemInfo (@{$biblioData->{itemInfos}}) {
         $debug and warn $itemInfo->{'notforloan'};
@@ -605,25 +559,25 @@ foreach my $biblioNum (@biblionumbers) {
             }
         }
 
-	# FIXME: move this to a pm
+	   # FIXME: move this to a pm
         my $dbh = C4::Context->dbh;
         my $sth2 = $dbh->prepare("SELECT * FROM reserves WHERE borrowernumber=? AND itemnumber=? AND found='W'");
         $sth2->execute($itemLoopIter->{ReservedForBorrowernumber}, $itemNum);
         while (my $wait_hashref = $sth2->fetchrow_hashref) {
             $itemLoopIter->{waitingdate} = format_date($wait_hashref->{waitingdate});
         }
-	$itemLoopIter->{imageurl} = getitemtypeimagelocation( 'opac', $itemTypes->{ $itemInfo->{itype} }{imageurl} );
-     
-    # Show serial enumeration when needed
-    if ($itemLoopIter->{enumchron}) {
-        $itemdata_enumchron = 1;    
-    }
-    $template->param( itemdata_enumchron => $itemdata_enumchron );
+    	$itemLoopIter->{imageurl} = getitemtypeimagelocation( 'opac', $itemTypes->{ $itemInfo->{itype} }{imageurl} );
+         
+        # Show serial enumeration when needed
+        if ($itemLoopIter->{enumchron}) {
+            $itemdata_enumchron = 1;    
+        }
+        $template->param( itemdata_enumchron => $itemdata_enumchron );
         
         push @{$biblioLoopIter{itemLoop}}, $itemLoopIter;
     }
 
-    if ($numCopiesAvailable > 0) {
+    if ($numCopiesAvailable > 0 && !$overItypeLimit) {
         $numBibsAvailable++;
         $biblioLoopIter{bib_available} = 1;
         $biblioLoopIter{holdable} = 1;
