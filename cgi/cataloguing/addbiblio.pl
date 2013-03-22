@@ -21,6 +21,7 @@
 use Koha;
 use Koha::Authority;
 use Koha::Bib;
+use Koha::BibLinker;
 use CGI;
 use C4::Output;
 use C4::Auth;
@@ -827,7 +828,8 @@ if ( $op eq "addbiblio" ) {
             my $oldbibitemnum;
             if (C4::Context->preference("BiblioAddsAuthorities")){
                 my $bib = Koha::Bib->new(marc => $record);
-                $bib->relink_with_stubbing;
+                my $linker = Koha::BibLinker->new;
+                $linker->relink_with_stubbing( $bib );
                 $record = $bib->marc;
             }
             if ( $is_a_modif ) {
@@ -853,7 +855,8 @@ if ( $op eq "addbiblio" ) {
         my $oldbibitemnum;
         if (C4::Context->preference("BiblioAddsAuthorities")){
             my $bib = Koha::Bib->new(marc => $record);
-            $bib->relink_with_stubbing;
+            my $linker = Koha::BibLinker->new;
+            $linker->relink_with_stubbing( $bib );
             $record = $bib->marc;
         } 
         if ( $is_a_modif ) {
