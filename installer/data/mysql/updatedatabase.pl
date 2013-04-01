@@ -4880,6 +4880,7 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
 
 $DBversion = '4.09.00.015';
 if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do(q{ALTER TABLE auth_header DROP KEY datemodified}); #separate statement in case it fails
     $dbh->do(q{ALTER TABLE auth_header
 DROP COLUMN authtrees,
 DROP COLUMN linkid,
