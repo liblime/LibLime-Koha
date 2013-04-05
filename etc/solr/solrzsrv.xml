@@ -4,7 +4,7 @@
     <option name="sru">solr</option>
     <option name="schema">marcxml</option>
     <option name="extraArgs">qt=advanced&amp;fq=rtype:bib</option>
-    <charset>marc-8</charset>
+    <charset>utf-8</charset>
     <search>
       <querytype>solr</querytype>
       <map use="4"><index>title-full</index></map>
