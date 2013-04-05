@@ -1,199 +1,30 @@
-
 <yazgfs>
-<!-- [scheme:]host[:port][/databaseName] -->
-<!-- scheme: tcp, ssl, unix, http, sru -->
-<!-- can run all servers on tcp, but the unix socket is faster -->
+  <!-- ADDITIONAL KOHA CONFIGURATION DIRECTIVE -->
+  <!-- db_scheme should follow the DBD driver name -->
+  <!-- port info: mysql:3306 Pg:5432 (5433 on Debian) -->
+  <config>
+    <timezone>US/Eastern</timezone>
+    <db_scheme>__DB_TYPE__</db_scheme>
+    <database>__DB_NAME__</database>
+    <hostname>__DB_HOST__</hostname>
+    <port>__DB_PORT__</port>
+    <user>__DB_USER__</user>
+    <pass>__DB_PASS__</pass>
+    <basedir>__KOHA_BASE_DIR__</basedir>
+    <intranetdir>__INTRANET_CGI_DIR__</intranetdir>
+    <opacdir>__OPAC_CGI_DIR__/opac</opacdir>
+    <opachtdocs>__OPAC_TMPL_DIR__</opachtdocs>
+    <intrahtdocs>__INTRANET_TMPL_DIR__</intrahtdocs>
+    <includes>__INTRANET_TMPL_DIR__/prog/en/includes/</includes>
+    <solr>
+      <url>__SOLR_URL__</url>
+      <auth_rules>__KOHA_BASE_DIR__/etc/solr/auth-index.rules</auth_rules>
+      <biblio_rules>__KOHA_BASE_DIR__/etc/solr/biblio-index.rules</biblio_rules>
+    </solr>
+    <install_log>__MISC_DIR__/koha-install-log</install_log>
 
-<listen id="biblioserver" >unix:__ZEBRA_RUN_DIR__/bibliosocket</listen>
-<listen id="authorityserver" >unix:__ZEBRA_RUN_DIR__/authoritysocket</listen>
-<!-- public server runs on tcp -->
-<!-- <listen id="publicserver" >tcp:@:9999</listen> -->
-
-<!-- Settings for special biblio server instance for PazPar2.
-     Because PazPar2 only connects to a Z39.50 server using TCP/IP,
-     it cannot use the Unix-domain socket that biblioserver uses.
-     Therefore, a custom server is defined. -->
-__PAZPAR2_TOGGLE_XML_PRE__
-<listen id="mergeserver">tcp:@:__MERGE_SERVER_PORT__</listen>
-<server id="mergeserver"  listenref="mergeserver"> 
-    <directory>__ZEBRA_DATA_DIR__/biblios</directory>
-    <config>__ZEBRA_CONF_DIR__/zebra-biblios.cfg</config>
-    <cql2rpn>__ZEBRA_CONF_DIR__/pqf.properties</cql2rpn>
-</server>
-__PAZPAR2_TOGGLE_XML_POST__
-
-<!-- BIBLIOGRAPHIC RECORDS -->
-<server id="biblioserver"  listenref="biblioserver"> 
-    <directory>__ZEBRA_DATA_DIR__/biblios</directory>
-    <config>__ZEBRA_CONF_DIR__/zebra-biblios.cfg</config>
-    <cql2rpn>__ZEBRA_CONF_DIR__/pqf.properties</cql2rpn>
-     <!-- <docpath>xsl</docpath> -->
-     <!-- <stylesheet>xsl/default.xsl</stylesheet> -->
-     <!-- <maximumrecordsize>2000000</maximumrecordsize> -->
-     <retrievalinfo>
-       <retrieval syntax="usmarc" name="F"/>
-       <retrieval syntax="usmarc" name="B"/>
-       <retrieval syntax="xml" name="F"/>
-       <retrieval syntax="xml" name="B"/>
-       <retrieval syntax="xml" name="marcxml"
-                  identifier="info:srw/schema/1/marcxml-v1.1">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-         </backend>
-       </retrieval>
-       <retrieval syntax="xml" name="dc">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-           <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slim2DC.xsl"/>
-         </backend>
-       </retrieval>
-       <retrieval syntax="xml" name="mods">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-           <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slim2MODS.xsl"/>
-         </backend>
-       </retrieval>
-       <retrieval syntax="xml" name="rdfdc">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-           <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slim2RDFDC.xsl"/>
-         </backend>
-       </retrieval>
-       <retrieval syntax="xml" name="rss2">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-           <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slim2RSS2.xsl"/>
-         </backend>
-       </retrieval>
-       <retrieval syntax="xml" name="utils">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-           <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slimUtils.xsl"/>
-         </backend>
-       </retrieval>
-     </retrievalinfo>
-    <xi:include href="__KOHA_CONF_DIR__/zebradb/explain-biblios.xml"
-                xmlns:xi="http://www.w3.org/2001/XInclude">
-      <xi:fallback>
-      <explain xmlns="http://explain.z3950.org/dtd/2.0/">
-          <serverInfo>
-            <host>__ZEBRA_SRU_HOST__</host>
-            <port>__ZEBRA_SRU_BIBLIOS_PORT__</port>
-            <database>biblios</database>
-          </serverInfo>
-        </explain>
-      </xi:fallback>
-    </xi:include>
-</server>
-<serverinfo id="biblioserver">
-        <ccl2rpn>__ZEBRA_CONF_DIR__/ccl.properties</ccl2rpn>
-        <user>__ZEBRA_USER__</user>    
-        <password>__ZEBRA_PASS__</password>
-</serverinfo>
-
-<!-- AUTHORITY RECORDS -->
-<server id="authorityserver"  listenref="authorityserver" >
-    <directory>__ZEBRA_DATA_DIR__/authorities</directory>
-    <config>__ZEBRA_CONF_DIR__/__ZEBRA_AUTH_CFG__</config>
-    <cql2rpn>__ZEBRA_CONF_DIR__/pqf.properties</cql2rpn>
-     <!-- <docpath>xsl</docpath> -->
-     <!-- <stylesheet>xsl/default.xsl</stylesheet> -->
-     <!-- <maximumrecordsize>2000000</maximumrecordsize> -->
-    <xi:include href="__KOHA_CONF_DIR__/zebradb/__AUTH_RETRIEVAL_CFG__"
-                xmlns:xi="http://www.w3.org/2001/XInclude">
-      <xi:fallback>
-     <retrievalinfo>
-       <retrieval syntax="usmarc" name="F"/>
-       <retrieval syntax="usmarc" name="B"/>
-       <retrieval syntax="xml" name="marcxml"
-                  identifier="info:srw/schema/1/marcxml-v1.1">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-         </backend>
-       </retrieval>
-       <retrieval syntax="xml" name="dc">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-           <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slim2DC.xsl"/>
-         </backend>
-       </retrieval>
-       <retrieval syntax="xml" name="mods">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-           <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slim2MODS.xsl"/>
-         </backend>
-       </retrieval>
-       <retrieval syntax="xml" name="rdfdc">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-           <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slim2RDFDC.xsl"/>
-         </backend>
-       </retrieval>
-       <retrieval syntax="xml" name="utils">
-         <backend syntax="usmarc" name="F">
-           <marc inputformat="marc" outputformat="marcxml"
-                 inputcharset="utf-8"/>
-           <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slimUtils.xsl"/>
-         </backend>
-       </retrieval>
-     </retrievalinfo>
-      </xi:fallback>
-    </xi:include>
-    <xi:include href="__KOHA_CONF_DIR__/zebradb/explain-authorities.xml"
-                xmlns:xi="http://www.w3.org/2001/XInclude">
-      <xi:fallback>
-      <explain xmlns="http://explain.z3950.org/dtd/2.0/">
-          <serverInfo>
-            <host>__ZEBRA_SRU_HOST__</host>
-            <port>__ZEBRA_SRU_AUTHORITIES_PORT__</port>
-            <database>authorities</database>
-          </serverInfo>
-        </explain>
-      </xi:fallback>
-    </xi:include>
-</server>
-<serverinfo id="authorityserver">
-    <ccl2rpn>__ZEBRA_CONF_DIR__/ccl.properties</ccl2rpn>
-    <user>__ZEBRA_USER__</user>
-    <password>__ZEBRA_PASS__</password>
-</serverinfo>
-
-<!-- ADDITIONAL KOHA CONFIGURATION DIRECTIVE -->
-<!-- db_scheme should follow the DBD driver name --> 
-<!-- port info: mysql:3306 Pg:5432 (5433 on Debian) -->
-<config>
- <!-- <timezone>US/Eastern</timezone> -->
- <db_scheme>__DB_TYPE__</db_scheme>
- <database>__DB_NAME__</database>
- <hostname>__DB_HOST__</hostname>
- <port>__DB_PORT__</port>
- <user>__DB_USER__</user>
- <pass>__DB_PASS__</pass>
- <biblioserver>biblios</biblioserver>
- <biblioservershadow>1</biblioservershadow>
- <authorityserver>authorities</authorityserver>
- <authorityservershadow>1</authorityservershadow>
- <basedir>__KOHA_BASE_DIR__</basedir>
- <intranetdir>__INTRANET_CGI_DIR__</intranetdir>
- <opacdir>__OPAC_CGI_DIR__/opac</opacdir>
- <opachtdocs>__OPAC_TMPL_DIR__</opachtdocs>
- <intrahtdocs>__INTRANET_TMPL_DIR__</intrahtdocs>
- <includes>__INTRANET_TMPL_DIR__/prog/en/includes/</includes>
- <logdir>__LOG_DIR__</logdir>
- <pazpar2url>http://__PAZPAR2_HOST__:__PAZPAR2_PORT__/search.pz2</pazpar2url>
- <install_log>__MISC_DIR__/koha-install-log</install_log>
- <useldapserver>0</useldapserver><!-- see C4::Auth_with_ldap for extra configs you must add if you want to turn this on -->
- <memcached_servers>__MEMCACHED_SERVERS__</memcached_servers>
- <memcached_namespace>__MEMCACHED_NAMESPACE__</memcached_namespace>
-</config>
+    <!-- see C4::Auth_with_ldap for extra configs you must add if you
+         want to turn this on -->
+    <useldapserver>0</useldapserver>
+  </config>
 </yazgfs>
