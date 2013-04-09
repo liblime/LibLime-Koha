@@ -299,7 +299,7 @@ if ($multihold) {
 $borrowernumber = $borrowerinfo->{borrowernumber} if(!$borrowernumber);
 
 my $holdcount_by_itemtype = (C4::Context->preference('UseGranularMaxHolds')) ? C4::Reserves::GetHoldCountByItemtype($borrowernumber) : {};
-my $maxholds_by_itemtype;
+my $maxholds_by_itemtype = {};
 
 my @biblioloop = ();
 foreach my $biblionumber (@biblionumbers) {
