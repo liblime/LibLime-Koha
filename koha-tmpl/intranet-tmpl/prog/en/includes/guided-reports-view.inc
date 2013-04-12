@@ -16,7 +16,7 @@
 
 <h5>Resources</h5>
 <ul>
-<li><a target="_blank" href="http://cdn.kohalibrary.com/c/Docs/LibLimeSampleReports.pdf">LibLime Reports Library</a></li>
+<li><a target="_blank" href="http://cdn.kohalibrary.com/c/Docs/LibLimeSampleReports.htm">LibLime Reports Library</a></li>
 <li><a target="_blank" href="http://dev.mysql.com/doc/">MySQL Documentation</a></li>
 </ul>
 
