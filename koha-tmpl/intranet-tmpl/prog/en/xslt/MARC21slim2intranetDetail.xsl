@@ -587,18 +587,9 @@
             <span class="label">Partial contents:</span>
         </xsl:when>
         </xsl:choose>  
-        <xsl:choose>
-        <xsl:when test="@ind2=0">
-            <xsl:for-each select="marc:subfield[@code='t']">
-                <xsl:value-of select="marc:subfield[@code=t]"/> <xsl:value-of select="marc:subfield[@code=r]"/>
-            </xsl:for-each> 
-        </xsl:when>
-        <xsl:otherwise>
-            <xsl:call-template name="subfieldSelect">
-                <xsl:with-param name="codes">au</xsl:with-param>
+        <xsl:call-template name="subfieldSelect">
+            <xsl:with-param name="codes">agrtu</xsl:with-param>
             </xsl:call-template>
-        </xsl:otherwise>
-        </xsl:choose>
         </span>
         </xsl:for-each>
         </xsl:if>
