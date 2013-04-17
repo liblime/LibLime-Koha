@@ -162,12 +162,6 @@
                     <xsl:call-template name="subfieldSelect">
                         <xsl:with-param name="codes">a</xsl:with-param>
                     </xsl:call-template>
-                    <xsl:if test="marc:subfield[@code='h']">
-                        <xsl:text> </xsl:text>
-                        <xsl:call-template name="subfieldSelect">
-                            <xsl:with-param name="codes">h</xsl:with-param>
-                        </xsl:call-template>
-                    </xsl:if>
                     <xsl:if test="marc:subfield[@code='b']">
                         <xsl:text> </xsl:text>
                         <xsl:call-template name="subfieldSelect">
@@ -175,8 +169,21 @@
                         </xsl:call-template>
                         <xsl:text> </xsl:text>
                     </xsl:if>
+                    <xsl:if test="marc:subfield[@code='p']">
+                        <xsl:text> </xsl:text>
+                        <xsl:call-template name="subfieldSelect">
+                            <xsl:with-param name="codes">p</xsl:with-param>
+                        </xsl:call-template>
+                        <xsl:text> </xsl:text>
+                    </xsl:if>
+                    <xsl:if test="marc:subfield[@code='h']">
+                        <xsl:text> </xsl:text>
+                        <xsl:call-template name="subfieldSelect">
+                            <xsl:with-param name="codes">h</xsl:with-param>
+                        </xsl:call-template>
+                    </xsl:if>
                     <xsl:call-template name="subfieldSelect">
-                        <xsl:with-param name="codes">fgknps</xsl:with-param>
+                        <xsl:with-param name="codes">fgkns</xsl:with-param>
                     </xsl:call-template>
             </xsl:for-each>
         </h1>
