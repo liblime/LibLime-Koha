@@ -102,8 +102,8 @@ if ($op ~~ 'action') {
 	    $items_display_hashref=BuildItemsData(@itemnumbers);
 	} else {
 	    # Else, we only display the barcode
-	    my @simple_items_display = map {{ itemnumber => $_, barcode => (GetBarcodeFromItemnumber($_) or ""), biblionumber => (GetBiblionumberFromItemnumber($_) or "") }} @itemnumbers;
-	    $template->param("simple_items_display" => \@simple_items_display);
+	    my $simple_items_display = "More than 1000 items; can't display.";
+	    $template->param("simple_items_display" => $simple_items_display);
 	}
 
 	# Setting the job as done
