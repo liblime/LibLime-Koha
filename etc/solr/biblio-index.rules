@@ -7,7 +7,7 @@ text | 001[0-15] | | trim
 f001_lc | 001[0-15] | | trim
 
 author-display | 100a |
-author-full | 100abcd 100q 110ab 111ab 700abcd 700q 710ab 711ab | concat
+author-full | 100abcd 100q 110ab 111ab 700abcd 700q 710ab 711ab 800a 810a 811a 505r | concat
 author-sort | 100a 110a 111a | | first
 
 title-nostem | 245ab | concat | first
@@ -15,7 +15,7 @@ title-short | 245a | | first
 title-sort | 245 | title_sort
 title-full | 245 | cat_alpha_subfields | first
 title-alt | 130 246 730 740 | cat_alpha_subfields
-title-alt | 240a 247a 700t 710t 711t 780t 785t |
+title-alt | 240a 247a 505t 700t 710t 711t 780t 785t |
 series-title | 490a 440at 800at 810at 811at 830at | concat | first
 uniform-title | 240 | cat_alpha_subfields | first
 
