@@ -198,8 +198,8 @@
                     <xsl:with-param name="codes">abc</xsl:with-param>
                     <xsl:with-param name="index">au</xsl:with-param>
                     <!-- do not use label 'by ' here, it would be repeated for every occurence of 100,110,111,700,710,711 -->
-            </h5>
                 </xsl:call-template>
+            </h5>
         </xsl:if>
 
         <xsl:choose>
@@ -330,8 +330,8 @@
             </a>
                     <xsl:call-template name="part"/>
         <xsl:choose><xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
-        </span>
         </xsl:for-each>
+        </span>
 
         <xsl:if test="marc:datafield[@tag=490][@ind1=1]">
             <xsl:for-each select="marc:datafield[@tag=830]">
@@ -347,7 +347,55 @@
                 </a>
                     <xsl:call-template name="part"/>
                 <xsl:choose><xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
-                </span>
+            </span>
+            </xsl:for-each>
+            <xsl:for-each select="marc:datafield[@tag=800]">
+                 <span class="results_summary"><span class="label displayseriesaddedlabel">Series Added Entry Author: </span>
+            <a>
+            <xsl:choose>
+                <xsl:when test="marc:subfield[@code=0]">
+                    <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
+                </xsl:when>
+                <xsl:otherwise>
+                <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=author:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
+                </xsl:otherwise>
+            </xsl:choose>
+            <xsl:call-template name="nameABCDQ"/></a>
+            <xsl:choose>
+            <xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
+            </span>
+            </xsl:for-each>
+            <xsl:for-each select="marc:datafield[@tag=810]">
+                 <span class="results_summary"><span class="label displayseriesaddedlabel">Series Added Entry Corporate Name: </span>
+            <a>
+            <xsl:choose>
+                <xsl:when test="marc:subfield[@code=0]">
+                    <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
+                </xsl:when>
+                <xsl:otherwise>
+                <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=author:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
+                </xsl:otherwise>
+            </xsl:choose>
+            <xsl:call-template name="nameABCDQ"/></a>
+            <xsl:choose>
+            <xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
+            </span>
+            </xsl:for-each>
+            <xsl:for-each select="marc:datafield[@tag=811]">
+                 <span class="results_summary"><span class="label displayseriesaddedlabel">Series Added Entry Meeting Name: </span>
+            <a>
+            <xsl:choose>
+                <xsl:when test="marc:subfield[@code=0]">
+                    <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
+                </xsl:when>
+                <xsl:otherwise>
+                <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=author:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
+                </xsl:otherwise>
+            </xsl:choose>
+            <xsl:call-template name="nameABCDQ"/></a>
+            <xsl:choose>
+            <xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
+            </span>
             </xsl:for-each>
         </xsl:if>
         </xsl:if>
