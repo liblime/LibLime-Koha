@@ -18,11 +18,10 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
+use CGI;
 use Koha;
 use Koha::Authority;
 use Koha::HeadingMap;
-use CGI;
-use C4::Auth;
 use C4::Context;
 use C4::Auth;
 use C4::Output;
@@ -33,11 +32,10 @@ use Koha::Pager;
 use TryCatch;
 use Carp;
 
-my $query        = CGI->new;
-my $op           = $query->param('op') || '';
-my $authtypecode = $query->param('authtypecode') || '*';
+my $query = CGI->new;
+my $q = $query->param('q');
 
-my $template_file = ($op eq 'do_search') ? "opac-authoritiessearchresultlist.tmpl" : "opac-authorities-home.tmpl";
+my $template_file = ($q) ? "opac-authoritiessearchresultlist.tmpl" : "opac-authorities-home.tmpl";
 my ( $template, $loggedinuser, $cookie )= get_template_and_user(
         {
             template_name   => $template_file,
@@ -48,38 +46,26 @@ my ( $template, $loggedinuser, $cookie )= get_template_and_user(
         }
     );
 
-our $authtypes = Koha::HeadingMap->auth_types;
-my @authtypesloop;
+if ( $q ) {
+    my $options = {};
+    $options->{sort} = 'auth-heading-sort '
+        . (($query->param('orderby') ~~ 'AZ') ? 'asc' : 'desc');
 
-sub _by_default_then_alpha {
-    return -1 if $a eq '';
-    $authtypes->{$a}{authtypetext} cmp $authtypes->{$b}{authtypetext};
-}
+    if ($query->param('typecodes')) {
+        $options->{fq} = sprintf('kauthtype_s:(%s)',
+                     join(' OR ', map {qq("$_")} split(/\|/, $query->param('typecodes'))));
+    }
 
-for ( sort _by_default_then_alpha keys %$authtypes ){
-    my %row = (
-        value        => $authtypes->{$_}{authtypecode},
-        selected     => ($_ ~~ $authtypecode),
-        authtypetext => $authtypes->{$_}{authtypetext},
-    );
-    push @authtypesloop, \%row;
-}
-$template->param( authtypesloop => \@authtypesloop );
-
-if ( $op eq "do_search" ) {
-
-    my $idx = $query->param('idx');
-    my $q = $query->param('q');
-    $q =~ s/^|$|\b/*/g;
-    my $query_string = qq{$idx:($q)};
-
-    my $sortby = $query->param('orderby');
-    my $options = { 'sort' => $sortby, 'fq' => "kauthtype_s:$authtypecode" };
     $options->{start} = $query->param('start') || 0;
 
+    my $query_string = qq{auth-heading:($q)};
+
     my $solr = Koha::Solr::Service->new();
-    my $solr_query = Koha::Solr::Query->new(query => $query_string, options => $options, rtype => 'auth', opac => 1);
+    my $solr_query = Koha::Solr::Query->new(
+        query => $query_string, options => $options, rtype => 'auth', opac => 1 );
+
     my $rs = $solr->search($solr_query->query,$solr_query->options);
+
     my $resultset = ($rs->is_error) ? {} : $rs->content;
     my $results = [];
 
@@ -87,7 +73,7 @@ if ( $op eq "do_search" ) {
         my $authid = $doc->{authid};
         try {
             my $auth = Koha::Authority->new(id => $authid);
-            next unless $auth->is_linked;
+            die 'Unlinked authority' unless $auth->is_linked;
 
             push @$results, {
                 summary => [$auth->summary],
@@ -98,6 +84,7 @@ if ( $op eq "do_search" ) {
             };
         }
         catch ($e) {
+            chomp($e);
             carp "Error processing authority $authid: $e;";
         }
     }
@@ -105,9 +92,7 @@ if ( $op eq "do_search" ) {
     my $pager = Koha::Pager->new(pageset => $rs->pageset, offset_param => 'start');
 
     $template->param(   result          => $results,
-                        orderby         => $sortby,
                         total           => $resultset->{response}{numFound},
-                        authtypecode    => $authtypecode,
                         pager           => $pager->tmpl_loop(),
                         from            => $pager->first,
                         to              => $pager->last(),

@@ -1,59 +1,120 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" --><!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog &rsaquo; Authority Search
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
-<script>
-$(document).ready(function(){
-    
-});
-</script>
+<style>
+.examples-list li {
+  float: left;
+}
+
+.examples-list dl dt {
+  display: inline;
+  font-weight: bold;
+}
+
+.examples-list dl dd {
+  display: inline;
+}
+
+.ex-sublist li {
+  display:block;
+  clear:both;
+}
+</style>
+
 </head>
+
 <body>
-<!-- TMPL_IF NAME="OpacNav" --><div id="doc3" class="yui-t1"><!-- TMPL_ELSE --><div id="doc3" class="yui-t7"><!-- /TMPL_IF -->
-   <div id="bd">
-<!-- TMPL_INCLUDE name="masthead.inc" -->
+  <!-- TMPL_IF NAME="OpacNav" --><div id="doc3" class="yui-t1"><!-- TMPL_ELSE --><div id="doc3" class="yui-t7"><!-- /TMPL_IF -->
+  <div id="bd">
+    <!-- TMPL_INCLUDE name="masthead.inc" -->
+    <div id="yui-main">
+      <div class="yui-b">
+        <div class="yui-g">
 
-	<div id="yui-main">
-	<div class="yui-b"><div class="yui-g">
-<div class="container">
-<form name="f" action="/cgi-bin/koha/opac-authorities-home.pl" method="get">
-        <input type="hidden" name="op" value="do_search" />
-        <input type="hidden" name="type" value="opac" />
-<fieldset class="rows">
-<legend>Authority search</legend>
-<ol>
- <li><label for="authtypecode">Search: : </label> <select name="authtypecode" id="authtypecode">
-                <!-- TMPL_LOOP NAME="authtypesloop" -->
-                <!-- TMPL_IF name="selected" --><option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="authtypetext" --></option>
-                <!-- TMPL_ELSE --><option value="<!-- TMPL_VAR NAME="value" -->"> <!-- TMPL_VAR NAME="authtypetext" --></option>
-                <!-- /TMPL_IF -->
-                <!-- /TMPL_LOOP -->
-                </select></li>
-                <li>
-                <label for="operatora">Search for: </label>
-                <select name="idx" id="operatora">
-                    <option value="auth-heading_lc">Main heading</option>
-                    <option value="text">Full record</option>
-                </select>
-                <input type="text" name="q" id="query_string" value="<!-- TMPL_VAR NAME="value" -->" />
-            </li>
-            <li><label for="orderby">Order by: </label><select name="orderby" id="orderby">
-                    <option value="auth-heading-sort asc" selected="selected">Heading Ascending</option>
-                    <option value="auth-heading-sort desc">Heading Descending</option>
-                </select>
-            </li></ol>
-			</fieldset>
-            <fieldset class="action">
-                <input type="submit" value="Submit" class="submit" />
-            </fieldset>
-    </form>
-</div>
-</div>
-</div>
+          <div id="about-section" class="hidden">
+            <h1>About the collection</h1>
+            <p id="about-text" />
+          </div>
 
-</div><!-- TMPL_IF NAME="OpacNav" -->
-<div class="yui-b">
-<div class="container">
-<!--TMPL_INCLUDE NAME="navigation.inc" -->
-</div>
-</div><!-- /TMPL_IF -->
-</div>
-<!-- TMPL_INCLUDE NAME="opac-bottom.inc" -->
+          <div id="input-section" class="container">
+            <form name="f" action="/cgi-bin/koha/opac-authorities-home.pl" method="GET">
+              <fieldset class="sentence">
+                <legend>Authority search</legend>
+
+                Search for
+                <select name="typecodes" id="authtypecode">
+                  <option value="">all authors/subjects/titles</option>
+                  <option value="PERSO_NAME|CORPO_NAME|MEETI_NAME">all authors</option>
+                  <option value="CORPO_NAME">&nbsp;&nbsp;corporate names</option>
+                  <option value="MEETI_NAME">&nbsp;&nbsp;meeting names</option>
+                  <option value="PERSO_NAME">&nbsp;&nbsp;personal names</option>
+                  <option value="CHRON_TERM|GENRE/FORM|TOPIC_TERM|GEOGR_NAME">all subjects</option>
+                  <option value="CHRON_TERM">&nbsp;&nbsp;chronological terms</option>
+                  <option value="GENRE/FORM">&nbsp;&nbsp;genre/form terms</option>
+                  <option value="TOPIC_TERM">&nbsp;&nbsp;topical terms</option>
+                  <option value="GEOGR_NAME">&nbsp;&nbsp;geographical terms</option>
+                  <option value="UNIF_TITLE">all titles</option>
+                  <option value="UNIF_TITLE">&nbsp;&nbsp;uniform titles</option>
+                </select>
+
+                containing the term(s)
+                <input type="text" name="q" value="<!-- TMPL_VAR NAME="value" -->" />
+
+                sorted from
+                <select name="orderby">
+                  <option value="AZ" selected="selected">A-Z</option>
+                  <option value="ZA">Z-A</option>
+                </select>
+
+                <fieldset class="action">
+                  <input type="submit" value="Submit" class="submit" />
+                </fieldset>
+              </fieldset>
+            </form>
+          </div>
+
+          <div id="examples-section">
+            <h2>How to browse</h2>
+
+            <ul class="examples-list">
+              <li>
+                <dl>
+                  <dt>Browse by author</dt>
+                  <dd>
+                    <ul class="ex-sublist">
+                      <li>Corporate Name (e.g. LibLime)</li>
+                      <li>Personal Name (e.g. William Shakespeare)</li>
+                      <li>Meeting Name (e.g. 2013 UN Summit)</li>
+                    </ul>
+                  </dd>
+                </dl>
+              </li>
+              <li>
+                <dl>
+                  <dt>Browse by subject</dt>
+                  <dd>
+                    <ul class="ex-sublist">
+                      <li>Chronological Term (e.g. World War II)</li>
+                      <li>Geological Term (e.g. The Rocky Mountains)</li>
+                      <li>Topical Term (e.g. Astronauts)</li>
+                      <li>Genre/Form Term (e.g. Poems, Dictionaries)</li>
+                    </ul>
+                  </dd>
+                </dl>
+              </li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TMPL_IF NAME="OpacNav" -->
+      <div class="yui-b">
+        <div class="container">
+          <!--TMPL_INCLUDE NAME="navigation.inc" -->
+        </div>
+      </div>
+    <!-- /TMPL_IF -->
+
+  </div>
+  <!-- TMPL_INCLUDE NAME="opac-bottom.inc" -->
