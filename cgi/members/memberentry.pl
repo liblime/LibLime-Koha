@@ -805,7 +805,10 @@ sub patron_attributes_form {
             my $newentry = { map { $_ => $entry->{$_} } %$entry };
             if ($attr_type->authorised_value_category()) {
                 $newentry->{use_dropdown} = 1;
-                $newentry->{auth_val_loop} = GetAuthorisedValues($attr_type->authorised_value_category());
+                my $authvals = GetAuthorisedValues(
+                    $attr_type->authorised_value_category());
+                $newentry->{auth_val_loop}
+                    = [ sort {lc($a->{lib}) cmp lc($b->{lib})} @{$authvals} ];
             }
             $newentry->{form_id} = "patron_attr_$i";
             push @attribute_loop, $newentry;
