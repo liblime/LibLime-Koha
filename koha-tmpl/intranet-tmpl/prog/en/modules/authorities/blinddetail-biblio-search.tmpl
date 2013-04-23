@@ -28,11 +28,14 @@
                 }
             <!-- TMPL_LOOP NAME="0XX" -->
                 <!-- TMPL_LOOP NAME="subfield" -->
-                    if (code.value == "<!-- TMPL_VAR NAME="marc_subfield" -->"){
+                    else if (code.value == "<!-- TMPL_VAR NAME="marc_subfield" -->"){
                         subfield.value = "<!-- TMPL_VAR NAME="marc_value" -->";
                     }
                 <!-- /TMPL_LOOP -->
             <!-- /TMPL_LOOP -->
+                else {
+                    subfield.value = "";
+                }
             <!--/TMPL_IF-->
             }
         }
