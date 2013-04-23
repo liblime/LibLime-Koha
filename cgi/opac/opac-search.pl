@@ -70,6 +70,7 @@ my $search_form = 1;
 my $format = $cgi->param("format") || '';
 if ($format =~ /(rss|atom|opensearchdescription)/) {
 	$template_name = 'opac-opensearch.tmpl';
+    $search_form = 0;
 } elsif ( defined $cgi->param("q")) {
 	$template_name = 'opac-results.tmpl';
     $search_form = 0;
