@@ -156,7 +156,7 @@ sub _build_query_from_cgi{
 
             elsif( $q !~ /"/ && $q !~ /\(|\)/ && $q =~ /\S+\s+\S+/ ) {
                 # Add grouping for this field if not quoted and multiple terms.
-                $q = "($q)";
+                $q = sprintf( '(%s)', join(' AND ', split(/\s+/, $q)) );
             }
             $query .= "$idx:$q";
         }
