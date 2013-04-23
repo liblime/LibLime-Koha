@@ -22,7 +22,7 @@ Match-heading-see-from | 4.. | cat_alpha_subfields
 
 coded-heading_s | record | | emit_coded_heading
 auth-heading | 1.. | cat_alpha_subfields
-auth-heading-sort | 1.. | cat_alpha_subfields | first
+auth-heading-sort | 1.. | cat_alpha_subfields strip_nonalnum | first
 auth-full | 1.. 4.. 5.. | cat_alpha_subfields
 
 marcxml | record | as_marcxml

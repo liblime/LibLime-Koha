@@ -72,6 +72,10 @@ func trim( Str @strings ) {
     return map { s/^\s+|\s+$//g; $_ } @strings;
 }
 
+func strip_nonalnum( Str @strings ) {
+    return map { s/[^\w ]//g; $_ } @strings;
+}
+
 func unique( Str @strings ) {
     return uniq @_;
 }
