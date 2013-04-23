@@ -841,23 +841,9 @@ sub _parse_match_component {
 
 # FIXME - default normalizer
 sub _normalize {
-    my $value = uc shift;
+    my $value = shift;
 
-    # NOTE: order of these conversions is, of course, important
-
-    # Replace pesky characters sometimes used inconsistently with spaces.
-    # This will keep word separation in cases where no spaces were used for that 
-    # in the input. Eg, parenthesized values will be properly seen as separate words 
-    # for duplicate-record matching attempts.  
-    # Also must remove parens in value else Zoom::Query::CCL2RPN may fail.
-
-    $value =~ s/[.;:,\]\[\)\(\/'"]/ /g;
-
-    # Remove leading and trailing whitespace.
-    $value =~ s/^\s+//;
-    $value =~ s/\s+$//;
-
-    # Convert each internal sequence of multiple spaces to single space.
+    $value =~ s/^\s+|\s+$//g;
     $value =~ s/\s+/ /g;
 
     return $value;
