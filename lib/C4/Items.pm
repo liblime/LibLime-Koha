@@ -33,6 +33,7 @@ use C4::Branch;
 require C4::Reserves;
 use C4::Charset;
 use C4::Stats;
+use XML::Simple;
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -2337,11 +2338,21 @@ of the item.
 sub _marc_from_item_hash {
     my $item = shift;
     my $frameworkcode = shift;
-    my $unlinked_item_subfields;
+    my $more_subfields_xml;
     if (@_) {
-        $unlinked_item_subfields = shift;
+        $more_subfields_xml = shift;
     }
-   
+
+    my @unlinked;
+    if ($more_subfields_xml) {
+        my $xml = XMLin($more_subfields_xml);
+        my $extra_subfields =  $xml->{record}{datafield};
+        if (ref $extra_subfields eq 'HASH') {
+            $extra_subfields = [{subfield => $extra_subfields->{subfield}}];
+        }
+        @unlinked = map {[$_->{subfield}{code} => $_->{subfield}{content}] } @$extra_subfields;
+    }
+
     # Tack on 'items.' prefix to column names so lookup from MARC frameworks will work
     # Also, don't emit a subfield if the underlying field is blank.
     my $mungeditem = { map {  (defined($item->{$_}) and $item->{$_} ne '') ? 
@@ -2355,12 +2366,13 @@ sub _marc_from_item_hash {
         if (my $field = $item_marc->field($tag)) {
             $field->add_subfields($subfield => $mungeditem->{$item_field});
         } else {
-            my $add_subfields = [];
-            if (defined $unlinked_item_subfields and ref($unlinked_item_subfields) eq 'ARRAY' and $#$unlinked_item_subfields > -1) {
-                $add_subfields = $unlinked_item_subfields;
-            }
-            $item_marc->add_fields( $tag, " ", " ", $subfield =>  $mungeditem->{$item_field}, @$add_subfields);
+            $item_marc->add_fields( $tag, " ", " ", $subfield => $mungeditem->{$item_field});
         }
+    }
+
+    my ($f952) = $item_marc->field('952');
+    for (@unlinked) {
+        $f952->add_subfields($_->[0] => $_->[1]);
     }
 
     return $item_marc;
@@ -2491,7 +2503,7 @@ sub _get_unlinked_subfields_xml {
         my $marc = MARC::Record->new();
         # use of tag 999 is arbitrary, and doesn't need to match the item tag
         # used in the framework
-        $marc->append_fields(MARC::Field->new('999', ' ', ' ', @$unlinked_item_subfields));
+        $marc->append_fields(MARC::Field->new('952', ' ', ' ', @$unlinked_item_subfields));
         $marc->encoding("UTF-8");    
         $xml = $marc->as_xml("USMARC");
     }
