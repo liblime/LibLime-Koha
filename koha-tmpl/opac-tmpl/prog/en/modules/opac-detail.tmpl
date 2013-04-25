@@ -348,7 +348,7 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
       <li> <a href="#LTFLTagBrowse">Tag Browser</a></li>
     <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
-    <!-- TMPL_IF name="subscriptionsnumber" --><li>  <a href="#subscriptions">Subscriptions</a> </li><!-- /TMPL_IF -->
+    <!-- TMPL_IF EXPR="subscriptionsnumber || periodical_id" --><li>  <a href="#subscriptions">Subscriptions</a> </li><!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="reviewson" --><li><a href="#comments">Comments</a></li><!-- /TMPL_IF -->
     
     <!-- TMPL_IF NAME="OPACAmazonEnabled" --><!-- TMPL_IF NAME="OPACAmazonSimilarItems" --><!-- TMPL_IF NAME="AMAZON_SIMILAR_PRODUCTS" --><li><a href="#similars">Related</a></li><!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_IF -->
@@ -568,7 +568,27 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 <!-- /TMPL_IF --><!-- /TMPL_IF -->
 <!-- /TMPL_IF --> <!-- /SyndeticsEnabled -->
 
-<!-- TMPL_IF name="subscriptionsnumber" -->
+<TMPL_IF periodical_id>
+  <div id="subscriptions">
+
+    <TMPL_IF EXPR="subscription_count == 1">
+      There is 1 subscription.<br/>
+    <TMPL_ELSE>
+      There are <TMPL_VAR subscription_count /> subscriptions.<br/>
+    </TMPL_IF>
+    <ul id="subscriptions-list" class="subscriptions-list">
+      <TMPL_LOOP subscriptions_loop>
+        <li class="subscription-item">
+          <TMPL_VAR branchname />:
+          <TMPL_IF EXPR="issue_count == 1">1 issue<TMPL_ELSE><TMPL_VAR issue_count /> issues</TMPL_IF>
+          <TMPL_IF opac_note>(note: <TMPL_VAR opac_note />)</TMPL_IF>
+        </li>
+      </TMPL_LOOP>
+    </ul>
+  </div>
+</TMPL_IF>
+
+<!-- TMPL_IF EXPR="!UsePeriodicals && subscriptionsnumber" -->
 <div id="subscriptions">
     <h2>This is a serial subscription</h2>
     <p> (There are <!-- TMPL_VAR NAME="subscriptionsnumber" --> subscriptions associated with this title).</p>

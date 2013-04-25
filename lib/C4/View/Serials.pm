@@ -98,6 +98,11 @@ sub _get_periodical_subscriptions_details($) {
 
     my @subs = map {scalar column_value_pairs($_)} @{Koha::Schema::Subscription::Manager->get_subscriptions(
         query => [ periodical_id => $p->id, branchcode => \@branches ], sort_by => 'branchcode')};
+    for (@subs) {
+        $_->{branchname} = GetBranchName($_->{branchcode});
+        ($_->{issue_count}) = C4::Context->dbh->selectrow_array(
+            'SELECT COUNT(*) FROM subscription_serials WHERE subscription_id=?', undef, $_->{id});
+    }
     _set_datetime_format(\@subs, 'expiration_date');
     return \@subs;
 }
