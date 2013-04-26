@@ -35,6 +35,7 @@ use C4::Reserves;
 use C4::Accounts;
 use C4::Biblio;
 use C4::Items;
+use C4::LostItems;
 use C4::Koha qw( GetAuthValCode );
 use C4::Auth qw();
 
@@ -1131,15 +1132,14 @@ The keys include C<biblioitems> fields except marc and marcxml.
 
 #'
 sub GetPendingIssues {
-    my ($borrowernumber) = @_;
+    my ($borrowernumber, $within) = @_;
     # must avoid biblioitems.* to prevent large marc and marcxml fields from killing performance
     # FIXME: namespace collision: each table has "timestamp" fields.  Which one is "timestamp" ?
     # FIXME: circ/ciculation.pl tries to sort by timestamp!
     # FIXME: C4::Print::printslip tries to sort by timestamp!
     # FIXME: namespace collision: other collisions possible.
     # FIXME: most of this data isn't really being used by callers.
-    my $sth = C4::Context->dbh->prepare(
-   "SELECT issues.*,
+    my $query = q{SELECT issues.*,
             items.*,
            biblio.*,
            biblioitems.volume,
@@ -1161,26 +1161,20 @@ sub GetPendingIssues {
     LEFT JOIN biblio      ON items.biblionumber     =      biblio.biblionumber
     LEFT JOIN biblioitems ON items.biblioitemnumber = biblioitems.biblioitemnumber
     WHERE
-      borrowernumber=?
-    ORDER BY issues.issuedate"
-    );
+      borrowernumber=?};
+
+    $query .= ($within) ? " AND issues.timestamp > NOW() - INTERVAL $within " : q{};
+    $query .= 'ORDER BY issues.issuedate';
+
+    my $sth = C4::Context->dbh->prepare($query);
     $sth->execute($borrowernumber);
     my $data = $sth->fetchall_arrayref({});
     my $today = C4::Dates->new->output('iso');
     my @new = ();
-    use C4::LostItems;
     foreach (@$data) {
         $_->{date_due} or next;
         ($_->{date_due} lt $today) and $_->{overdue} = 1;
-        my $claims_returned = C4::LostItems::isClaimsReturned(
-         $$_{itemnumber},
-         $borrowernumber
-        );
-        if (defined $claims_returned) {
-            if ($claims_returned) {
-               next;
-            }
-        }
+        next if C4::LostItems::isClaimsReturned($_->{itemnumber},$borrowernumber);
         push @new, $_;
     }
     return \@new;

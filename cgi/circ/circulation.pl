@@ -424,8 +424,6 @@ if ($borrowernumber) {
 #
 #
 
-my %last_issue;
-
 if ($barcode) {
   # always check for blockers on issuing
   my ( $error, $question ) =
@@ -489,12 +487,6 @@ if ($barcode) {
                datedueObj     => $datedueObj,
                howReserve     => $howReserve,
             );
-            my $item = C4::Items::GetItem(undef, $barcode) // {};
-            my $biblio = GetBiblioData($item->{biblionumber}) // {};
-            $last_issue{title} = $biblio->{title};
-            $last_issue{barcode} = $barcode;
-            $last_issue{duedate} = C4::Dates->new($datedue,'iso')->output;
-            
             $inprocess = 1;
             if($globalduedate && ! $stickyduedate && $duedatespec_allow ){
                 $duedatespec = $globalduedate->output();
@@ -755,6 +747,8 @@ if ( scalar( @canned_notes ) ) {
   $template->param( canned_bor_notes_loop => \@canned_notes );
 }
 
+my $recent_issues = [reverse @{C4::Members::GetPendingIssues($borrowernumber, '10 minute')}];
+
 $template->param(
     override_user             => $circ_session->{'override_user'},
     override_pass             => $circ_session->{'override_pass'},
@@ -768,7 +762,8 @@ $template->param(
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
     AllowDueDateInPast        => C4::Context->preference('AllowDueDateInPast'),
     UseReceiptTemplates => C4::Context->preference("UseReceiptTemplates"),
-    last_issue                => ($last_issue{barcode}) ? [ \%last_issue ] : undef,
+    recent_issues => $recent_issues,
+    recent_issues_count => scalar @$recent_issues,
 );
 
 # Pass off whether to display initials or not

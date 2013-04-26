@@ -778,18 +778,21 @@ Checkout anyway?<br>
 </div>
 </div>
 
-<TMPL_IF NAME="last_issue">
-  <TMPL_LOOP NAME="last_issue">
-    <div id="last_issue">
-      <dl>
-        <dt>Just checked out:</dt>
-        <dd>
-          <span class="booktitle"><TMPL_VAR NAME="title"/></span>
-          <span class="itembarcode">(<TMPL_VAR NAME="barcode"/>)</span>,
-          Due: <span class="duedate"><TMPL_VAR NAME="duedate"/></span>
-        </dd>
-    </div>
-  </TMPL_LOOP>
+<TMPL_IF recent_issues>
+  <div id="recent-issues">
+    <h4>Session checkouts:
+      <TMPL_IF EXPR="recent_issues_count == 1">1 item<TMPL_ELSE><TMPL_VAR recent_issues_count /> items</TMPL_IF>
+    </h4>
+    <ul class="recent-issues-list">
+      <TMPL_LOOP recent_issues>
+        <li>
+          <span class="booktitle"><TMPL_VAR title /></span>
+          <span class="itembarcode">(<TMPL_VAR barcode />)</span>,
+          due back <span class="duedate"><TMPL_VAR date_due /></span>
+        </li>
+      </TMPL_LOOP>
+    </ul>
+  </div>
 </TMPL_IF>
 
 </div>

@@ -1928,4 +1928,6 @@ a.disabled{
     border: none;
 }
 
-
+.recent-issues-list li {list-style:circle inside;}
+.recent-issues-list .booktitle {font-style:italic;}
+.recent-issues-list .itembarcode {font-family:monospace;}
