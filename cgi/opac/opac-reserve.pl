@@ -287,20 +287,30 @@ if ( C4::Context->preference('MaxShelfHoldsPerDay') ) {
         $template->param( too_many_shelf_holds_per_day =>  C4::Context->preference('MaxShelfHoldsPerDay') );
       }
     }
-  }                                                                                              
-} 
+  }
+}
 
 my $no_on_shelf_holds_in_library = 0;
 my $inBranchcode = C4::Branch::GetBranchByIp();
-if ( $inBranchcode && C4::Context->preference('AllowOnShelfHolds') && !$branches->{ $inBranchcode }->{'branchonshelfholds'} ) {
-  foreach my $biblionumber ( @biblionumbers ) {
-    if ( GetAvailableItemsCount( $biblionumber, $inBranchcode ) ) {
-      $noreserves = 1;
-      $template->param( message => 1 );
-      $template->param( no_on_shelf_holds_in_library => 1 );
-      $no_on_shelf_holds_in_library = 1;
+if (   $inBranchcode && !$noreserves
+    && C4::Context->preference('AllowOnShelfHolds')
+    && !$branches->{$inBranchcode}{branchonshelfholds}
+   )
+{
+    for my $biblionumber ( @biblionumbers ) {
+        for my $itemref ( @{C4::Items::GetBiblioItems($biblionumber)} ) {
+            my $item = GetItem($itemref->{itemnumber});
+            next unless $item->{homebranch} eq $inBranchcode;
+            my ($impossible, $confirm) = CanBookBeIssued($borr, $itemref->{barcode});
+            if (scalar keys %$impossible == 0 && scalar keys %$confirm == 0) {
+                $noreserves = 1;
+                $template->param( message => 1 );
+                $template->param( no_on_shelf_holds_in_library => 1 );
+                $no_on_shelf_holds_in_library = 1;
+            }
+        }
+        last if $noreserves;
     }
-  }
 }
 
 foreach my $res (@reserves) {

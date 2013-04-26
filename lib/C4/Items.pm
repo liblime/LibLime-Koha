@@ -1320,6 +1320,13 @@ sub GetItemInfosOf {
     return get_infos_of( $query, 'itemnumber' );
 }
 
+sub GetBiblioItems {
+    my $biblionumber = shift;
+    return C4::Context->dbh->selectall_arrayref(
+        'SELECT itemnumber, barcode FROM items WHERE biblionumber=?',
+        {Slice =>{}}, $biblionumber );
+}
+
 =head2 GetItemsByBiblioitemnumber
 
 =over 4
