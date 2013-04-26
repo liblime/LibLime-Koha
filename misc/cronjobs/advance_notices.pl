@@ -55,6 +55,7 @@ use C4::Letters;
 use C4::Members;
 use C4::Members::Messaging;
 use C4::Overdues;
+use C4::Circulation qw();
 use C4::Dates qw/format_date/;
 
 
@@ -136,7 +137,7 @@ SELECT biblio.*, items.*, issues.*
     AND (TO_DAYS(date_due)-TO_DAYS(NOW()) = ?)
 END_SQL
 
-UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
+for my $upcoming ( @$upcoming_dues ) {
     warn 'examining ' . $upcoming->{'itemnumber'} . ' upcoming due items' if $verbose;
     # warn( Data::Dumper->Dump( [ $upcoming ], [ 'overdue' ] ) );
 
@@ -151,8 +152,8 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
           }
         );
         # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
-        next DUEITEM unless $borrower_preferences;
-        
+        next unless $borrower_preferences;
+
         if ( $borrower_preferences->{'wants_digest'} ) {
             # cache this one to process after we've run through all of the items.
             push @{$due_digest->{$upcoming->{borrowernumber}}}, $upcoming->{itemnumber};
@@ -183,8 +184,8 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
           }
         );
         # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
-        next UPCOMINGITEM unless $borrower_preferences && exists $borrower_preferences->{'days_in_advance'};
-        next UPCOMINGITEM unless $borrower_preferences->{'days_in_advance'} == $upcoming->{'days_until_due'};
+        next unless $borrower_preferences && exists $borrower_preferences->{'days_in_advance'};
+        next unless $borrower_preferences->{'days_in_advance'} == $upcoming->{'days_until_due'};
 
         if ( $borrower_preferences->{'wants_digest'} ) {
             # cache this one to process after we've run through all of the items.
@@ -218,20 +219,28 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
 
     # If we have prepared a letter, send it.
     if ($letter) {
-      if ($nomail) {
-        local $, = "\f";
-        print $letter->{'content'};
-      }
-      else {
-        foreach my $transport ( @{$borrower_preferences->{'transports'}} ) {
-            C4::Letters::EnqueueLetter( { letter                 => $letter,
-                                          borrowernumber         => $upcoming->{'borrowernumber'},
-                                          message_transport_type => $transport } );
+        if ($nomail) {
+            local $, = "\f";
+            print $letter->{'content'};
+        } else {
+            my $ccbcode = C4::Circulation::GetCircControlBranch({
+                pickup_branch => $upcoming->{issuingbranch},
+                item_homebranch => $upcoming->{homebranch},
+                borrower_branch => $upcoming->{branchcode},
+            });
+            my $ccb = GetBranchDetail($ccbcode);
+
+            for my $transport ( @{$borrower_preferences->{transports}} ) {
+                C4::Letters::EnqueueLetter({
+                    letter => $letter,
+                    borrowernumber => $upcoming->{borrowernumber},
+                    message_transport_type => $transport,
+                    from_address => ($ccb->{branchemail} || $fromaddress || undef),
+                });
+            }
         }
-      }
     }
 }
-
 
 # warn( Data::Dumper->Dump( [ $upcoming_digest ], [ 'upcoming_digest' ] ) );
 
@@ -246,7 +255,7 @@ SELECT biblio.*, items.*, issues.*
     AND (TO_DAYS(date_due)-TO_DAYS(NOW()) = ?)
 END_SQL
 
-PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
+for my $borrowernumber ( keys %{ $upcoming_digest} ) {
     my @Ttitems;
     my @items = @{$upcoming_digest->{$borrowernumber}};
     my $count = scalar @items;
@@ -257,7 +266,7 @@ PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
          }
        );
     # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
-    next PATRON unless $borrower_preferences; # how could this happen?
+    next unless $borrower_preferences; # how could this happen?
 
     my $letter_type = 'PREDUEDGST';
     my $letter = C4::Letters::getletter( 'circulation', $letter_type );
@@ -269,6 +278,12 @@ PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
       my @item_info = map { $_ =~ /^date|date$/ ? format_date($item_info->{$_}) : $item_info->{$_} || '' } @item_content_fields;
       $titles .= join("\t",@item_info) . "\n";
     }
+    my $ccbcode = C4::Circulation::GetCircControlBranch({
+        pickup_branch => $Ttitems[0]{issuingbranch},
+        item_homebranch => $Ttitems[0]{homebranch},
+        borrower_branch => $Ttitems[0]{branchcode},
+    });
+    my $ccb = GetBranchDetail($ccbcode);
     $letter = parse_letter( { letter         => $letter,
                               borrowernumber => $borrowernumber,
                               branchcode     => $borrower->{branchcode},
@@ -287,13 +302,14 @@ PATRON: for my $borrowernumber ( keys %{ $upcoming_digest} ) {
       foreach my $transport ( @{$borrower_preferences->{'transports'}} ) {
         C4::Letters::EnqueueLetter( { letter                 => $letter,
                                       borrowernumber         => $borrowernumber,
+                                      from_address => ($ccb->{branchemail} || $fromaddress || undef),
                                       message_transport_type => $transport } );
       }
     }
 }
 
 # Now, run through all the people that want digests and send them
-PATRON: for my $borrowernumber ( keys %{ $due_digest} ) {
+for my $borrowernumber ( keys %{ $due_digest} ) {
     my @items = @{$due_digest->{$borrowernumber}};
     my $count = scalar @items;
     my $borrower = C4::Members::GetMember($borrowernumber);
@@ -303,17 +319,24 @@ PATRON: for my $borrowernumber ( keys %{ $due_digest} ) {
          }
        );
     # warn( Data::Dumper->Dump( [ $borrower_preferences ], [ 'borrower_preferences' ] ) );
-    next PATRON unless $borrower_preferences; # how could this happen?
+    next unless $borrower_preferences; # how could this happen?
 
     my $letter_type = 'DUEDGST';
     my $letter = C4::Letters::getletter( 'circulation', $letter_type );
     die "no letter of type '$letter_type' found. Please see sample_notices.sql" unless $letter;
     $sth->execute($borrowernumber,'0');
     my $titles = "";
+    my $ccbcode;
     while ( my $item_info = $sth->fetchrow_hashref()) {
+      $ccbcode //= C4::Circulation::GetCircControlBranch({
+          pickup_branch => $item_info->{issuingbranch},
+          item_homebranch => $item_info->{homebranch},
+          borrower_branch => $item_info->{branchcode},
+      });
       my @item_info = map { $_ =~ /^date|date$/ ? format_date($item_info->{$_}) : $item_info->{$_} || '' } @item_content_fields;
       $titles .= join("\t",@item_info) . "\n";
     }
+    my $ccb = GetBranchDetail($ccbcode);
     $letter = parse_letter( { letter         => $letter,
                               borrowernumber => $borrowernumber,
                               branchcode     => $borrower->{branchcode},
@@ -330,6 +353,7 @@ PATRON: for my $borrowernumber ( keys %{ $due_digest} ) {
       foreach my $transport ( @{$borrower_preferences->{'transports'}} ) {
         C4::Letters::EnqueueLetter( { letter                 => $letter,
                                       borrowernumber         => $borrowernumber,
+                                      from_address => ($ccb->{branchemail} || $fromaddress || undef),
                                       message_transport_type => $transport } );
       }
     }
