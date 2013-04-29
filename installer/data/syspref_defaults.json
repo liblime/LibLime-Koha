@@ -383,12 +383,6 @@
       "value" : null,
       "type" : "free"
    },
-   "emailLibrarianWhenHoldIsPlaced" : {
-      "explanation" : "If ON, emails the librarian whenever a hold is placed",
-      "options" : null,
-      "value" : "0",
-      "type" : "YesNo"
-   },
    "itemcallnumber" : {
       "explanation" : "The MARC field/subfield that is used to calculate the itemcallnumber (Dewey would be 082ab or 092ab; LOC would be 050ab or 090ab) could be 852hi from an item record",
       "options" : null,
