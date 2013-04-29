@@ -338,8 +338,9 @@ $branchcode is a member of , and to $categorytype.
 =cut
 
 sub _sort_by_type_then_by_code {
+# changing to sort by description, not code
     return $a->{categorytype} cmp $b->{categorytype}
-        || $a->{categorycode} cmp $b->{categorycode};
+        || $a->{codedescription} cmp $b->{codedescription};
 
 }
 

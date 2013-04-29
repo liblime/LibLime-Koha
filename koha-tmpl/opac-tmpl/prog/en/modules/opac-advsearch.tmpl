@@ -323,7 +323,7 @@ $("document").ready(function(){
           <select name="multibranchlimit">
             <option value="">All library search groups</option>
             <!-- TMPL_LOOP NAME="searchdomainoptions" -->
-            <option value="owned-by:<TMPL_VAR NAME="categorycode">" <TMPL_IF NAME="selected">selected="selected"</TMPL_IF>><TMPL_VAR NAME="categoryname"></option>
+            <option value="owned-by:<TMPL_VAR NAME="categorycode">" <TMPL_IF NAME="selected">selected="selected"</TMPL_IF>><TMPL_VAR NAME="codedescription"></option>
             <!-- /TMPL_LOOP -->
           </select>
         </div>
