@@ -60,7 +60,7 @@ sub searchResultDisplay {
             : C4::Items::GetMarcWithItems( $doc->{biblionumber} );
     }
     catch {
-        warn "could not read marcxml. $@";
+        warn "could not read bib $doc->{biblionumber} marcxml: $_";
         return;
     };
     return unless $marcrecord;

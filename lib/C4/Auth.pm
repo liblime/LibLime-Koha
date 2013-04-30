@@ -1585,7 +1585,7 @@ sub getborrowernumber {
 
 sub IsIpInLibrary {
     my $params = shift;
-    return (C4::Branch::GetBranchByIp($params->{ip}) eq $params->{branchcode}) ? 1 : 0;
+    return (C4::Branch::GetBranchByIp($params->{ip}) ~~ $params->{branchcode}) ? 1 : 0;
 }
 
 sub _uniq {
