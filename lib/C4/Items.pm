@@ -2353,11 +2353,11 @@ sub _marc_from_item_hash {
     my @unlinked;
     if ($more_subfields_xml) {
         my $xml = XMLin($more_subfields_xml);
-        my $extra_subfields =  $xml->{record}{datafield};
+        my $extra_subfields =  $xml->{record}{datafield}{subfield};
         if (ref $extra_subfields eq 'HASH') {
-            $extra_subfields = [{subfield => $extra_subfields->{subfield}}];
+            $extra_subfields = [ $extra_subfields ];
         }
-        @unlinked = map {[$_->{subfield}{code} => $_->{subfield}{content}] } @$extra_subfields;
+        @unlinked = map {[$_->{code} => $_->{content}] } @$extra_subfields;
     }
 
     # Tack on 'items.' prefix to column names so lookup from MARC frameworks will work
