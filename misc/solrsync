@@ -292,7 +292,7 @@ sub process_list {
 
     for ( sort {$a <=> $b} keys %updates ) {
         my $doc = $doc_with_catch->($_);
-        next unless $doc;
+        next unless defined $doc;
         push @update_docs, $doc;
         $add_with_catch->() if (@update_docs >= $rtype->{opts}{batch_size});
     }
