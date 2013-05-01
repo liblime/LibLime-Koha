@@ -42,12 +42,6 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
-BEGIN {
-    # find Koha's Perl modules
-    # test carefully before changing this
-    use FindBin;
-    eval { require "$FindBin::Bin/../kohalib.pl" };
-}
 use C4::Biblio;
 use Koha;
 use C4::Context;
@@ -57,6 +51,8 @@ use C4::Members::Messaging;
 use C4::Overdues;
 use C4::Circulation qw();
 use C4::Dates qw/format_date/;
+use C4::Branch qw/GetBranchDetail/;
+use Try::Tiny;
 
 
 # These are defaults for command line options.
@@ -223,12 +219,17 @@ for my $upcoming ( @$upcoming_dues ) {
             local $, = "\f";
             print $letter->{'content'};
         } else {
-            my $ccbcode = C4::Circulation::GetCircControlBranch({
-                pickup_branch => $upcoming->{issuingbranch},
-                item_homebranch => $upcoming->{homebranch},
-                borrower_branch => $upcoming->{branchcode},
-            });
-            my $ccb = GetBranchDetail($ccbcode);
+            my $ccb = try {
+                my $ccbcode = C4::Circulation::GetCircControlBranch(
+                    pickup_branch => $upcoming->{issuingbranch},
+                    item_homebranch => $upcoming->{homebranch},
+                    borrower_branch => $upcoming->{branchcode},
+                );
+                return GetBranchDetail($ccbcode);
+            }
+            catch {
+                return {};
+            };
 
             for my $transport ( @{$borrower_preferences->{transports}} ) {
                 C4::Letters::EnqueueLetter({
@@ -278,12 +279,18 @@ for my $borrowernumber ( keys %{ $upcoming_digest} ) {
       my @item_info = map { $_ =~ /^date|date$/ ? format_date($item_info->{$_}) : $item_info->{$_} || '' } @item_content_fields;
       $titles .= join("\t",@item_info) . "\n";
     }
-    my $ccbcode = C4::Circulation::GetCircControlBranch({
-        pickup_branch => $Ttitems[0]{issuingbranch},
-        item_homebranch => $Ttitems[0]{homebranch},
-        borrower_branch => $Ttitems[0]{branchcode},
-    });
-    my $ccb = GetBranchDetail($ccbcode);
+    my $ccb = try {
+        my $ccbcode = C4::Circulation::GetCircControlBranch(
+            pickup_branch => $Ttitems[0]{issuingbranch},
+            item_homebranch => $Ttitems[0]{homebranch},
+            borrower_branch => $Ttitems[0]{branchcode},
+        );
+        return GetBranchDetail($ccbcode);
+    }
+    catch {
+        return {};
+    };
+
     $letter = parse_letter( { letter         => $letter,
                               borrowernumber => $borrowernumber,
                               branchcode     => $borrower->{branchcode},
@@ -326,17 +333,22 @@ for my $borrowernumber ( keys %{ $due_digest} ) {
     die "no letter of type '$letter_type' found. Please see sample_notices.sql" unless $letter;
     $sth->execute($borrowernumber,'0');
     my $titles = "";
-    my $ccbcode;
-    while ( my $item_info = $sth->fetchrow_hashref()) {
-      $ccbcode //= C4::Circulation::GetCircControlBranch({
-          pickup_branch => $item_info->{issuingbranch},
-          item_homebranch => $item_info->{homebranch},
-          borrower_branch => $item_info->{branchcode},
-      });
-      my @item_info = map { $_ =~ /^date|date$/ ? format_date($item_info->{$_}) : $item_info->{$_} || '' } @item_content_fields;
-      $titles .= join("\t",@item_info) . "\n";
+    my $ccb = try {
+        my $ccbcode;
+        while ( my $item_info = $sth->fetchrow_hashref()) {
+            $ccbcode //= C4::Circulation::GetCircControlBranch(
+                pickup_branch => $item_info->{issuingbranch},
+                item_homebranch => $item_info->{homebranch},
+                borrower_branch => $item_info->{branchcode},
+            );
+            my @item_info = map { $_ =~ /^date|date$/ ? format_date($item_info->{$_}) : $item_info->{$_} || '' } @item_content_fields;
+            $titles .= join("\t",@item_info) . "\n";
+        }
+        return GetBranchDetail($ccbcode);
     }
-    my $ccb = GetBranchDetail($ccbcode);
+    catch {
+        return {};
+    };
     $letter = parse_letter( { letter         => $letter,
                               borrowernumber => $borrowernumber,
                               branchcode     => $borrower->{branchcode},
