@@ -660,13 +660,13 @@
               <span class="results_summary">
                  <xsl:choose>
                     <xsl:when test="@ind1=1">
-                       <span class="label">Incomplete contents:</span>
+                       <span class="label">Incomplete contents: </span>
                     </xsl:when>
                     <xsl:when test="@ind1=2">
-                       <span class="label">Partial contents:</span>
+                       <span class="label">Partial contents: </span>
                     </xsl:when>
                     <xsl:otherwise>
-                        <span class="label">Contents:</span>
+                        <span class="label">Contents: </span>
                     </xsl:otherwise>
                  </xsl:choose>
                  <xsl:call-template name="subfieldSelect">
