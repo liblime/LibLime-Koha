@@ -880,6 +880,36 @@
 	</span>
     </xsl:if>
 
+    <xsl:if test="marc:datafield[@tag=264]">
+        <xsl:for-each select="marc:datafield[@tag=264]">
+        <span class="results_summary">
+            <xsl:choose>
+                <xsl:when test="@ind2=0">
+                    <span class="label">Production: </span>
+                </xsl:when>
+                <xsl:when test="@ind2=1">
+                    <span class="label">Publication: </span>
+                </xsl:when>
+                <xsl:when test="@ind2=2">
+                    <span class="label">Distribution: </span>
+                </xsl:when>
+                <xsl:when test="@ind2=3">
+                    <span class="label">Manufacture: </span>
+                </xsl:when>
+                <xsl:when test="@ind2=4">
+                    <span class="label">Copyright: </span>
+                </xsl:when>
+                <xsl:otherwise>
+                    <span class="label">Work Description: </span>
+                </xsl:otherwise>
+            </xsl:choose>  
+        <xsl:call-template name="subfieldSelect">
+            <xsl:with-param name="codes">abc</xsl:with-param>
+        </xsl:call-template>
+        </span>
+        </xsl:for-each>
+    </xsl:if>
+
     <!-- Other Title  Statement: Alternate Graphic Representation (MARC 880) -->
     <xsl:if test="$display880">
        <xsl:call-template name="m880Select">
