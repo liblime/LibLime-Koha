@@ -94,10 +94,8 @@ sub _set_datetime_format {
 sub _get_periodical_subscriptions_details($) {
     my $p = shift or croak;
 
-    my @branches = C4::Auth::GetUserGroupBranches('subscriptions');
-
     my @subs = map {scalar column_value_pairs($_)} @{Koha::Schema::Subscription::Manager->get_subscriptions(
-        query => [ periodical_id => $p->id, branchcode => \@branches ], sort_by => 'branchcode')};
+        query => [ periodical_id => $p->id ], sort_by => 'branchcode')};
     for (@subs) {
         $_->{branchname} = GetBranchName($_->{branchcode});
         ($_->{issue_count}) = C4::Context->dbh->selectrow_array(
