@@ -19,4 +19,4 @@ INSERT INTO `authorised_values` (`category`,`authorised_value`,`prefix`,`lib`,`i
     ('ETYPE','z',NULL,'Other',NULL,NULL);
 INSERT into authorised_values (category,authorised_value, lib, imageurl) VALUES
     ('I_SUPPRESS',0,'Do not Suppress',''),
-    ('I_SUPPRESS',1,'Suppress','');");
+    ('I_SUPPRESS',1,'Suppress','');
