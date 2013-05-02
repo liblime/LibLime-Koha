@@ -234,7 +234,7 @@ sub process_list {
 
     my $r = Koha::Solr::IndexStrategy::MARC->new(
         rules_text => scalar read_file($rtype->{rules_file}) );
-    my @update_docs;
+    my $update_docs = [];
     my ($update_count, $render_errors, $update_errors) = (0, 0, 0);
     my $queue_size = scalar keys %updates;
     $log->info("Have $queue_size updates in queue");
@@ -275,10 +275,10 @@ sub process_list {
 
         try {
             if ($rtype->{opts}{to_stdout}) {
-                say join("\n", @update_docs);
+                say join("\n", @$update_docs);
             }
             else {
-                $solr->add( \@update_docs );
+                $solr->add( $update_docs );
             }
         }
         catch {
@@ -286,15 +286,15 @@ sub process_list {
             $update_errors++;
             undef;
         };
-        @update_docs = ();
+        $update_docs = [];
         $log->debug('Batch complete');
     };
 
     for ( sort {$a <=> $b} keys %updates ) {
         my $doc = $doc_with_catch->($_);
         next unless defined $doc;
-        push @update_docs, $doc;
-        $add_with_catch->() if (@update_docs >= $rtype->{opts}{batch_size});
+        push @$update_docs, $doc;
+        $add_with_catch->() if ( scalar @$update_docs >= $rtype->{opts}{batch_size});
     }
     $add_with_catch->();
 

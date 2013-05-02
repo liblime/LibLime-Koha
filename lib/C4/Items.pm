@@ -399,7 +399,7 @@ sub AddItemBatchFromMarc {
         logaction("CATALOGUING", "ADD", $itemnumber, "item") if C4::Context->preference("CataloguingLog"); 
 
         my $new_item_marc = _marc_from_item_hash($item, $frameworkcode, $unlinked_item_subfields);
-        $item_field->replace_with($new_item_marc->field($itemtag));
+        $item_field->replace_with($new_item_marc);
     }
 
     # remove any MARC item fields for rejected items
@@ -1861,8 +1861,7 @@ sub GetMarcWithItems {
     foreach my $itemnumber (@$items) {
         my $whole_item = GetItem($itemnumber);
         my $new_item_marc = _marc_from_item_hash($whole_item, $frameworkcode,$whole_item->{'more_subfields_xml'});
-        # FIXME: _marc_from_item_hash returns a MARC::Record object instead of the more sensible MARC::Field object.
-        $biblio_marc->append_fields($new_item_marc->field($itemtag));
+        $biblio_marc->append_fields($new_item_marc);
     }
     return $biblio_marc;
 }
@@ -2332,8 +2331,8 @@ my $item_marc = _marc_from_item_hash($item, $frameworkcode[, $unlinked_item_subf
 =back
 
 Given an item hash representing a complete item record,
-create a C<MARC::Record> object containing an embedded
-tag representing that item.
+create a C<MARC::Field> object for the tag representing
+that item.
 
 The third, optional parameter C<$unlinked_item_subfields> is
 an arrayref of subfields (not mapped to C<items> fields per the
@@ -2345,10 +2344,7 @@ of the item.
 sub _marc_from_item_hash {
     my $item = shift;
     my $frameworkcode = shift;
-    my $more_subfields_xml;
-    if (@_) {
-        $more_subfields_xml = shift;
-    }
+    my $more_subfields_xml = shift;
 
     my @unlinked;
     if ($more_subfields_xml) {
@@ -2362,25 +2358,28 @@ sub _marc_from_item_hash {
 
     # Tack on 'items.' prefix to column names so lookup from MARC frameworks will work
     # Also, don't emit a subfield if the underlying field is blank.
-    my $mungeditem = { map {  (defined($item->{$_}) and $item->{$_} ne '') ? 
-                                (/^items\./ ? ($_ => $item->{$_}) : ("items.$_" => $item->{$_})) 
-                                : ()  } keys %{ $item } }; 
+    my $mungeditem = {
+        map {  (defined($item->{$_}) and $item->{$_} ne '')
+                   ? (/^items\./ ? ($_ => $item->{$_}) : ("items.$_" => $item->{$_}))
+                   : ()
+                } keys %{$item}
+    };
 
-    my $item_marc = MARC::Record->new();
-    foreach my $item_field (keys %{ $mungeditem }) {
-        my ($tag, $subfield) = GetMarcFromKohaField($item_field, $frameworkcode);
+    my $item_marc;
+    for (keys %{ $mungeditem }) {
+        my ($tag, $subfield) = GetMarcFromKohaField($_, $frameworkcode);
         next unless defined $tag and defined $subfield; # skip if not mapped to MARC field
-        if (my $field = $item_marc->field($tag)) {
-            $field->add_subfields($subfield => $mungeditem->{$item_field});
-        } else {
-            $item_marc->add_fields( $tag, " ", " ", $subfield => $mungeditem->{$item_field});
+        if ( $item_marc ) {
+            $item_marc->add_subfields($subfield => $mungeditem->{$_});
+        }
+        else {
+            $item_marc = MARC::Field->new(
+                $tag, ' ', ' ', $subfield => $mungeditem->{$_} );
         }
     }
 
-    my ($f952) = $item_marc->field('952');
-    for (@unlinked) {
-        $f952->add_subfields($_->[0] => $_->[1]);
-    }
+    $item_marc->add_subfields($_->[0] => $_->[1])
+        for @unlinked;
 
     return $item_marc;
 }
