@@ -6,7 +6,7 @@
     You did not specify any search criteria.
 <!-- /TMPL_IF -->
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
-<link rel="alternate" type="application/rss+xml" title="<!-- TMPL_VAR NAME="LibraryName" --> Search RSS Feed" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="user_query" ESCAPE="URL" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->&amp;format=rss2" />
+<link rel="alternate" type="application/rss+xml" title="<!-- TMPL_VAR NAME="LibraryName" --> Search RSS Feed" href="<!-- TMPL_VAR NAME="OPACBaseURL" -->/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR name="user_query" ESCAPE="URL" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" -->&amp;idx=kw<!-- /TMPL_LOOP -->&amp;format=rss2" />
 
 
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.min.js"></script>
