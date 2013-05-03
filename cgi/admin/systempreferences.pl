@@ -263,6 +263,7 @@ $tabsysprefs{NotifyBorrowerDeparture}      = "Patrons";
 $tabsysprefs{AddPatronLists}               = "Patrons";
 $tabsysprefs{PatronsPerPage}               = "Patrons";
 $tabsysprefs{ExtendedPatronAttributes}     = "Patrons";
+$tabsysprefs{SearchExtendedPatronAttributes} = "Patrons";
 $tabsysprefs{AutoEmailOpacUser}            = "Patrons";
 $tabsysprefs{AutoEmailPrimaryAddress}      = "Patrons";
 $tabsysprefs{EnhancedMessagingPreferences} = "Patrons";

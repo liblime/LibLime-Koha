@@ -293,6 +293,12 @@
       "value" : "0",
       "type" : "YesNo"
    },
+   "SearchExtendedPatronAttributes" : {
+      "explanation" : "Include extended attribute data when searching for patrons.",
+      "options" : null,
+      "value" : "0",
+      "type" : "YesNo"
+   },
    "AllowNotForLoanOverride" : {
       "explanation" : "If ON, Koha will allow the librarian to loan a not for loan item.",
       "options" : null,

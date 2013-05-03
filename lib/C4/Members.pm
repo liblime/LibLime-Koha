@@ -209,12 +209,11 @@ sub SearchMember {
     my $sth;
     my @bind;
     my $query = q{
-        SELECT SQL_CALC_FOUND_ROWS *
+        SELECT SQL_CALC_FOUND_ROWS DISTINCT borrowers.borrowernumber
         FROM borrowers
-        LEFT JOIN categories
+        JOIN categories
           ON borrowers.categorycode=categories.categorycode
-        WHERE 1
-      };
+        WHERE 1};
 
     ($query, @bind) = _constrain_sql_by_branchcategory($query);
 
@@ -234,7 +233,7 @@ sub SearchMember {
         $sth = $dbh->prepare("$query AND cardnumber=? LIMIT 1");
         $sth->execute(@bind, $searchstring);
     }
-    
+
     my $data = $sth->fetchrow_hashref();
     if ($data) {
         return (1, [$data]);
@@ -265,6 +264,17 @@ sub SearchMember {
         }
         $query =~ s/ AND $/ /;
         $query .= ') ';
+
+        if ( C4::Context->preference('SearchExtendedPatronAttributes') ) {
+            my $more_tables = 'FROM borrowers LEFT JOIN borrower_attributes ba '.
+                '  ON borrowers.borrowernumber = ba.borrowernumber '.
+                    'LEFT JOIN borrower_attribute_types bat '.
+                        '  ON (ba.code = bat.code) ';
+            $query =~ s/FROM borrowers/$more_tables/;
+
+            $query .= ' OR (ba.attribute LIKE ? AND bat.staff_searchable = 1) ';
+            push @bind, "%$searchstring%";
+        }
     }
 
     $query .= " ORDER BY $orderby ";
@@ -274,12 +284,18 @@ sub SearchMember {
                           $limits->{limit} // C4::Context->preference('PatronsPerPage'));
     }
 
-    $data = $dbh->selectall_arrayref($query, {Slice => {}}, @bind);
+    $data = $dbh->selectcol_arrayref($query, {Slice => {}}, @bind);
     my ($row_count) = $dbh->selectrow_array('SELECT FOUND_ROWS()');
 
+    if (@$data) {
+        $query = sprintf(
+            'SELECT * FROM borrowers b JOIN categories c ON b.categorycode = c.categorycode WHERE borrowernumber in (%s)',
+            join( ',', split('', '?' x @$data) ));
+        $data = $dbh->selectall_arrayref($query, {Slice=>{}}, @$data);
+    }
     # This assumes a lost barcode search will never match a patron's name.
     # Not necessarily an absolute guarantee, but it's worth the performance tradeoff.
-    if (not scalar @$data) {
+    else {
         $query = q/
             SELECT borrowers.*, categories.*
             FROM borrowers
