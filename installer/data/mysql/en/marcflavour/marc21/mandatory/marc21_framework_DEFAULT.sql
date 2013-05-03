@@ -88,12 +88,10 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
         ('942', 'u', 'In Processing Count', 'In Processing Count', 0, 0, 'biblioitems.in_process_count', 9, '', '', '', NULL, 0, '', '', '', NULL),
         ('942', 's', 'Serial record flag', 'Serial record', 0, 0, 'biblio.serial', 9, '', '', '', NULL, -5, '', '', '', NULL);
 INSERT INTO marc_subfield_structure 
-        (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkc
-ode, seealso, link, defaultvalue) 
+        (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
         VALUES ('952', 'i', 'Supressed','',0,0,'items.suppress',10,'I_SUPPRESS','','',0,0,'',NULL,'','');
  INSERT INTO marc_subfield_structure 
-        (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkc
-ode, seealso, link, defaultvalue) 
+        (tagfield, tagsubfield, liblibrarian, libopac, repeatable, mandatory, kohafield, tab, authorised_value, authtypecode, value_builder, isurl, hidden, frameworkcode, seealso, link, defaultvalue) 
         VALUES ('952', 'k', 'Other item status', 'Other item status', 0, 0, 'items.otherstatus', 10, 'otherstatus', '', '', 0, 0, '', NULL, '', '');
 
  INSERT INTO marc_subfield_structure (tagfield,tagsubfield,liblibrarian,libopac,repeatable,mandatory,kohafield,tab,authorised_value,isurl,hidden,frameworkcode)
