@@ -112,7 +112,8 @@ if ( $op eq "delete" ) {
     my $total = $resultset->{'response'}->{'numFound'};
 
     my $pager = Koha::Pager->new(
-        pageset => $rs->pageset(entries_per_page => 20),
+        pageset => $rs->pageset(
+            entries_per_page => 20, current_page=> int($start/20)+1),
         offset_param => 'start');
 
     $template->param(   result          => $results,

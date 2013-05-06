@@ -35,6 +35,8 @@ use Carp;
 my $query = CGI->new;
 my $q = $query->param('q');
 
+my $start = $query->param('start') || 0;
+
 my $template_file = ($q) ? "opac-authoritiessearchresultlist.tmpl" : "opac-authorities-home.tmpl";
 my ( $template, $loggedinuser, $cookie )= get_template_and_user(
         {
@@ -90,7 +92,8 @@ if ( $q ) {
     }
 
     my $pager = Koha::Pager->new(
-        pageset => $rs->pageset(entries_per_page => 20),
+        pageset => $rs->pageset(
+            entries_per_page => 20, current_page=> int($start/20)+1),
         offset_param => 'start');
 
     $template->param(   result          => $results,
