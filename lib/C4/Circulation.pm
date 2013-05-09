@@ -3509,6 +3509,36 @@ sub DeleteBranchTransferLimits {
    $sth->execute();
 }
 
+### Returns arrayref of branchcodes which possess the given bib's
+### items and having that item sitting on the shelf available for
+### checkout.
+sub BiblioIsAvailableAt {
+    my $biblionumber = shift;
+    my @branches;
+    for my $itemref ( @{C4::Items::GetBiblioItems($biblionumber)} ) {
+        my $item = GetItem($itemref->{itemnumber});
+        push @branches, $item if ItemIsAvailable($item);
+    }
+    return [map { $_->{homebranch} } @branches];
+}
+
+### Returns true if item is on the shelf available for checkout in a
+### general sense. Does *not* make any reference to circulation rules
+### or anything specific to a given patron.
+sub ItemIsAvailable {
+    my ($item) = @_;
+
+    my $status_check = !$item->{onloan}
+        && !$item->{wthdrawn}
+        && !$item->{itemlost}
+        && !$item->{damaged}
+        && !$item->{notforloan};
+    return unless $status_check;
+    return if C4::Circulation::GetTransfers( $item->{itemnumber} );
+    return if C4::Reserves::GetReservesFromItemnumber( $item->{itemnumber} );
+
+    return 1;
+}
 
   1;
 

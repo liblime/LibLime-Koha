@@ -297,17 +297,14 @@ if (   $inBranchcode && !$noreserves
     && !$branches->{$inBranchcode}{branchonshelfholds}
    )
 {
-    for my $biblionumber ( @biblionumbers ) {
-        for my $itemref ( @{C4::Items::GetBiblioItems($biblionumber)} ) {
-            my $item = GetItem($itemref->{itemnumber});
-            next unless $item->{homebranch} eq $inBranchcode;
-            my ($impossible, $confirm) = CanBookBeIssued($borr, $itemref->{barcode});
-            if (scalar keys %$impossible == 0 && scalar keys %$confirm == 0) {
+    for ( @biblionumbers ) {
+        my $on_local_shelf = scalar grep {$_ ~~ $inBranchcode}
+            @{C4::Circulation::BiblioIsAvailableAt($_)};
+        if ($on_local_shelf) {
                 $noreserves = 1;
                 $template->param( message => 1 );
                 $template->param( no_on_shelf_holds_in_library => 1 );
                 $no_on_shelf_holds_in_library = 1;
-            }
         }
         last if $noreserves;
     }
