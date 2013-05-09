@@ -4993,6 +4993,21 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.018';
+if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    my $dupes = $dbh->selectall_arrayref(
+        q{SELECT itemnumber, COUNT(*) icount FROM issues GROUP BY 1 HAVING icount > 1 ORDER BY timestamp DESC} );
+    for (@$dupes) {
+        my ($itemnumber, $count) = @$_;
+        $dbh->do(q{DELETE FROM issues WHERE itemnumber=? LIMIT ?},
+                 undef, $itemnumber, $count-1);
+    }
+
+    $dbh->do(q{ALTER TABLE issues ADD UNIQUE itemnumber (itemnumber)});
+    say "Upgrade to $DBversion done ( Add UNIQUE constraint to issues.itemnumber )";
+    SetVersion ($DBversion);
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
