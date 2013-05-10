@@ -1170,6 +1170,7 @@ CREATE TABLE `issues` (
   `renewals` tinyint(4) default NULL,
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `issuedate` date default NULL,
+  UNIQUE KEY `itemnumber` (`itemnumber`),
   KEY `issuesborridx` (`borrowernumber`),
   KEY `issuesitemidx` (`itemnumber`),
   KEY `bordate` (`borrowernumber`,`timestamp`),
