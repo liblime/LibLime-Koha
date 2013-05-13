@@ -5008,6 +5008,13 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.019';
+if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do(q{ALTER TABLE subscriptions ADD COLUMN adds_po_lines BOOLEAN NOT NULL DEFAULT FALSE AFTER adds_items});
+    say "Upgrade to $DBversion done ( Add adds_po_lines column to periodicals )";
+    SetVersion ($DBversion);
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 

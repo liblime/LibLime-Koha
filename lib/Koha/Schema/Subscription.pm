@@ -17,6 +17,7 @@ __PACKAGE__->meta->setup(
         staff_note      => { type => 'text', length => 65535 },
         item_defaults   => { type => 'text', length => 65535, not_null => 1 },
         adds_items      => { type => 'integer', default => '0', not_null => 1 },
+        adds_po_lines   => { type => 'integer', default => '0', not_null => 1 },
     ],
 
     primary_key_columns => [ 'id' ],

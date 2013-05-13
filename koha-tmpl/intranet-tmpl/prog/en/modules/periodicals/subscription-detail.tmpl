@@ -66,6 +66,18 @@ function popup(subscriptionid) {
         <!-- TMPL_IF name="letter" --><li><span class="label">Patron alert with:</span> <!-- TMPL_VAR name="letter" -->&nbsp;</li><!-- /TMPL_IF -->
         <!-- TMPL_IF name="notes" --><li><span class="label">Notes:</span> <!-- TMPL_VAR name="notes" --></li><!-- /TMPL_IF -->
         <!-- TMPL_IF name="internalnotes" --><li><span class="label">Management Notes:</span> <!-- TMPL_VAR name="internalnotes" --></li><!-- /TMPL_IF -->
+        <!-- TMPL_IF name="getitenabled" -->
+            <!-- TMPL_IF name="adds_po_lines" -->
+                <!-- TMPL_IF name="getitpurchaseorder" -->
+                    <li>Issue receipt creates a GetIt PO line on PO <!-- TMPL_VAR name="getitpurchaseorder" -->.</li>
+                    <!-- TMPL_ELSE -->
+                    <li>Issue receipt will create a GetIt PO line on a newly created PO<br />
+                        You can select a PO by setting the subscription ID in a Standing Order PO line</li>
+                <!-- /TMPL_IF -->
+            <!-- TMPL_ELSE -->
+                <li>Issue receipt does not create a GetIt PO line.</li>
+            <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
      </ul>
     </div>
     <div id="subscription_planning">

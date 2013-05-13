@@ -2631,6 +2631,7 @@ CREATE TABLE subscriptions (
      opac_note TEXT DEFAULT NULL,
      staff_note TEXT DEFAULT NULL,
      adds_items BOOLEAN NOT NULL DEFAULT FALSE,
+     adds_po_lines BOOLEAN NOT NULL DEFAULT FALSE,
      item_defaults TEXT DEFAULT NULL,
      FOREIGN KEY (`periodical_id`) REFERENCES periodicals (`id`),
      FOREIGN KEY (`aqbookseller_id`) REFERENCES aqbooksellers (`id`),
