@@ -534,6 +534,7 @@ sub _commit_auth {
             'WHERE import_record_id = ?',
             undef, $auth->id, $rowref->{import_record_id});
         SetImportRecordStatus($rowref->{import_record_id}, 'imported');
+        $stats->{num_added}++;
     }
     catch ($e) {
         $stats->{num_errors}++;
