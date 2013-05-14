@@ -656,6 +656,7 @@ function HaltReturns() {
          <!-- /TMPL_IF -->
 		   <!-- TMPL_IF name="HoldButtonIgnore" -->
                 <input type=hidden name="cancelTransfer" value="0">
+                <input type="hidden" name="dotransfer" value="0">
                 <input type="button" class="deny" value="Ignore<TMPL_IF NAME="WrongTransfer">, Cancel transfer, Keep here<TMPL_ELSIF NAME="transfertodo">, Keep here</TMPL_IF>" onclick=" 
                     <TMPL_IF NAME="queue_branchlimit">parent.parent.GB_hide();
                     </TMPL_IF>
