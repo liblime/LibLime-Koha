@@ -4,6 +4,7 @@
     <option name="sru">solr</option>
     <option name="schema">marcxml</option>
     <option name="extraArgs">qt=advanced&amp;fq=rtype:bib</option>
+    <!-- <option name="explicit_availability"></option> -->
     <charset>utf-8</charset>
     <search>
       <querytype>solr</querytype>

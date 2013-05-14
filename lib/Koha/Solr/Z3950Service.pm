@@ -402,6 +402,16 @@ sub _format {
     my $config = $dbconfig->{"$name-record"};
     goto UNSUPPORTED_FORMAT if $needConf && !defined $config;
 
+    if (my $explicit = $dbconfig->{option}{explicit_availability}) {
+        my $fudge = $explicit->{content};
+        my $rec = MARC::Record->new_from_xml($xml, 'UTF-8');
+        for ( $rec->field('952') ) {
+            next if defined $_->subfield('q');
+            $_->add_subfields('q', $fudge);
+        }
+        $xml = $rec->as_xml;
+    }
+
     return $xml if !defined $codeRef;
     return &$codeRef($xml, $config);
 }
