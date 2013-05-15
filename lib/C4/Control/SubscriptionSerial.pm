@@ -8,6 +8,7 @@ use Try::Tiny;
 use DateTime;
 use JSON;
 
+use Koha::App::GetIt;
 use Koha::Schema::SubscriptionSerial;
 use Koha::Schema::SubscriptionSerial::Manager;
 use Koha::Schema::PeriodicalSerial;
