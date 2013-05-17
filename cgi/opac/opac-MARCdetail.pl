@@ -141,7 +141,7 @@ for ( my $tabloop = 0 ; $tabloop <= 10 ; $tabloop++ ) {
             my $previous;
             # loop through each subfield
             for my $i ( 0 .. $#subf ) {
-                $subf[$i][0] = "@" unless $subf[$i][0];
+                $subf[$i][0] = "@" unless defined $subf[$i][0];
                 next
                   if (
                     $tagslib->{ $fields[$x_i]->tag() }->{ $subf[$i][0] }->{tab}
