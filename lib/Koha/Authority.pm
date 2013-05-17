@@ -26,7 +26,7 @@ has 'duplicates' => (
 method _build_bibs {
     my $solr = Koha::Solr::Service->new();
     my %options = ( fl => 'biblionumber', facet => 'false',
-                    spellcheck => 'false', rows => 1000 );
+                    spellcheck => 'false', rows => 50_000 );
 
     my $query_string = sprintf('linked_rcn:"%s"', $self->rcn);
 
