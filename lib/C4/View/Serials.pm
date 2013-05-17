@@ -36,6 +36,7 @@ use CGI;
 use Rose::DB::Object::Helpers qw(column_value_pairs);
 use Try::Tiny;
 
+use Koha::App::GetIt;
 use Koha::Schema::Periodical;
 use Koha::Schema::Periodical::Manager;
 use Koha::Schema::PeriodicalSerial;
@@ -205,6 +206,7 @@ sub SeedTemplateWithSubscriptionData($$) {
     my ($template, $subscription_id) = @_;
     my $subscription = Koha::Schema::Subscription->new(id => $subscription_id)->load;
 
+    my $getit_enabled = C4::Context->preference('GetItAcquisitions');
     try {
         $template->param(
             subscription_id => $subscription->id,
@@ -213,9 +215,20 @@ sub SeedTemplateWithSubscriptionData($$) {
             aqbookseller_id => $subscription->aqbookseller_id,
             expiration_date => _set_datetime_format(undef, $subscription->expiration_date),
             adds_items => $subscription->adds_items,
+            adds_po_lines => $subscription->adds_po_lines,
             opac_note => $subscription->opac_note,
             staff_note => $subscription->staff_note,
+            getitenabled => $getit_enabled,
             );
+
+        if ($getit_enabled) {
+            my $getit = new Koha::App::GetIt;
+            my ($data, $err) = $getit->get('purchase_order_lines', undef, {query => {q => "[koha_subscription_id]=" . $subscription->id}});
+            if ($data && (ref($data->{purchase_order_lines}) eq 'ARRAY')) {
+                my $rec = $data->{purchase_order_lines}[0];
+                $template->param(getitpurchaseorder => $rec->{purchase_order_number} || $rec->{purchase_order_id});
+            }
+        }
 
         SeedTemplateWithSubscriptionDefaults($template, $subscription_id);
         my $ss_list = Koha::Schema::SubscriptionSerial::Manager->get_subscription_serials(query => [ subscription_id => $subscription_id ]);

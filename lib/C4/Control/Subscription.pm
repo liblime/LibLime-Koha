@@ -104,6 +104,7 @@ sub UpdateOrCreate($) {
         $subscription->opac_note($query->param('opac_note'));
         $subscription->staff_note($query->param('staff_note'));
         $subscription->adds_items($query->param('adds_items') || 0);
+        $subscription->adds_po_lines($query->param('adds_po_lines') || 0);
 
 	my $item_defaults = ConvertQueryToItemDefaults($query);
 	$subscription->item_defaults(to_json($item_defaults));

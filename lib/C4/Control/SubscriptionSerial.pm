@@ -8,6 +8,7 @@ use Try::Tiny;
 use DateTime;
 use JSON;
 
+use Koha::App::GetIt;
 use Koha::Schema::SubscriptionSerial;
 use Koha::Schema::SubscriptionSerial::Manager;
 use Koha::Schema::PeriodicalSerial;
@@ -64,10 +65,28 @@ sub Update($) {
     $subscription_serial_id = try {
         my $subscription_serial
             = Koha::Schema::SubscriptionSerial->new(id => $subscription_serial_id)->load;;
+        my $old_status = $subscription_serial->status;
+        my $new_status = $query->param('status');
+
 	$subscription_serial->expected_date($query->param('expected_date') || undef);
         $subscription_serial->received_date($query->param('received_date') || undef);
-	$subscription_serial->status($query->param('status'));
+	$subscription_serial->status($new_status);
         $subscription_serial->save;
+
+        if ($subscription_serial->subscription->adds_po_lines && ($new_status == 2) && ($old_status != 2)) {
+            my $getit = new Koha::App::GetIt;
+            if ($getit->enabled) {
+                $getit->post('purchase_order_lines', {
+                        subscriptionid => $subscription_serial->subscription->id,
+                        serialid => $subscription_serial->id,
+                        title => $subscription_serial->subscription->periodical->biblio->title,
+                        issue => $subscription_serial->periodical_serial->vintage,
+                        received => 1,
+                    }, {
+                        view => 'serial'
+                    });
+            }
+        }
 
 	if ($subscription_serial->status > 1) {
 	    _GenerateNextSubscriptionSerial($subscription_serial);

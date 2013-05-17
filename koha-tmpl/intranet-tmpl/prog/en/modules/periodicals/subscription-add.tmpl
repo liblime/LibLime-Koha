@@ -72,6 +72,22 @@ function FindAcqui(f)
                 <p><input type="radio" id="adds_items-no" name="adds_items" value="0" onclick="document.getElementById('item_defaults').style.display = 'none'" checked="checked" /><label class="widelabel" for="adds_items-no">do not create an item record when receiving this serial</label></p>
             <!-- /TMPL_IF -->
         </li>
+        <!-- TMPL_IF name="getitenabled" -->
+            <li class="radio">
+                <!-- TMPL_IF name="adds_po_lines" -->
+                    <p><input type="radio" id="adds_po_lines-yes" name="adds_po_lines" value="1" checked="checked" /><label class="widelabel" for="adds_po_lines-yes">create a GetIt PO line when receiving this serial
+                    <!-- TMPL_IF name="getitpurchaseorder" -->
+                        (on PO number <!-- TMPL_VAR name="getitpurchaseorder" -->)</label></p>
+                    <!-- TMPL_ELSE -->
+                        </label><br />A new PO will be created, unless you create or edit a GetIt PO line and set its subscription ID to <!-- TMPL_VAR name="subscription_id" --></p>
+                    <!-- /TMPL_IF -->
+                    <p><input type="radio" id="adds_po_lines-no" name="adds_po_lines" value="0" /><label class="widelabel" for="adds_po_lines-no">do not create a GetIt PO line when receiving this serial </label></p>
+                <!-- TMPL_ELSE -->
+                    <p><input type="radio" id="adds_po_lines-yes" name="adds_po_lines" value="1"/><label class="widelabel" for="adds_po_lines-yes">create a GetIt PO line when receiving this serial</label></p>
+                    <p><input type="radio" id="adds_po_lines-no" name="adds_po_lines" value="0" checked="checked" /><label class="widelabel" for="adds_po_lines-no">do not create a GetIt PO line when receiving this serial</label></p>
+                <!-- /TMPL_IF -->
+            </li>
+        <!-- /TMPL_IF -->
 <div id="item_defaults" <!-- TMPL_UNLESS name="adds_items" -->style="display:none"<!-- /TMPL_UNLESS --> >
 	<fieldset class="rows">
 		<legend>Item Defaults</legend>
