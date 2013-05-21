@@ -88,6 +88,11 @@ method _cache_me {
         undef, $self->id, $hash, $hash);
 }
 
+method _uncache_me {
+    C4::Context->dbh->do(
+        'DELETE FROM auth_cache WHERE authid = ?', undef, $self->id );
+}
+
 func _normalize_control_fields( $record ) {
     $record->leader( '     nz  a22     o  4500' )
         unless $record->leader;
@@ -141,13 +146,13 @@ method _insert {
     }
 
     $self->_update;
-    $self->_cache_me;
 }
 
 method _delete {
     C4::Context->dbh->do(
         'DELETE FROM auth_header WHERE authid = ?', undef, $self->id );
     $self->changelog->update($self->id, 'delete');
+    $self->_uncache_me;
 }
 
 method _update {
@@ -165,6 +170,7 @@ method _update {
         $self->marc->as_usmarc, $self->marc->as_xml, $self->id);
 
     $self->changelog->update($self->id, 'update');
+    $self->_cache_me;
 }
 
 func _field2cstr( MARC::Field $f, Str $subfields = 'a-z68' ) {

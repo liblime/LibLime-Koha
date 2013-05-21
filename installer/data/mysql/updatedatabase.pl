@@ -5015,6 +5015,13 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.020';
+if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do(q{TRUNCATE auth_cache});
+    say "Upgrade to $DBversion done ( Reset authority cache )";
+    SetVersion ($DBversion);
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
