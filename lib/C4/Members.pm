@@ -236,7 +236,11 @@ sub SearchMember {
 
     my $data = $sth->fetchrow_hashref();
     if ($data) {
-        return (1, [$data]);
+        $query = 'SELECT * FROM borrowers b '.
+            'JOIN categories c ON b.categorycode = c.categorycode '.
+            'WHERE borrowernumber = ?';
+        $data = $dbh->selectall_arrayref($query, {Slice=>{}}, $data->{borrowernumber});
+        return (1, $data);
     }
 
     if ($category_type) {
