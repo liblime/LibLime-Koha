@@ -227,9 +227,10 @@ func fullmarc( MARC::Record $record ) {
 }
 
 func title_sort( MARC::Field $f ){
+    my $title = $f->as_string('abcfghknps');
     my $nonfiling = $f->indicator(2);
     $nonfiling = 0 unless $nonfiling =~ /\d/;
-    return substr($f->subfield('a'), $nonfiling);
+    return substr($title, $nonfiling);
 }
 
 func ccode_authval( Str @strings ){
