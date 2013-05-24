@@ -7,6 +7,7 @@ use Koha::HeadingMap;
 use C4::Context;
 use MARC::Record;
 use MARC::Field;
+use MARC::Field::Normalize::NACO qw(naco_from_authority);
 use Digest::SHA1;
 use Encode qw(encode_utf8);
 use TryCatch;
@@ -80,19 +81,6 @@ method _build_changelog {
     return Koha::Changelog::DBLog->new( rtype => 'auth' )
 }
 
-method _cache_me {
-    my $hash = Digest::SHA1::sha1_base64( encode_utf8($self->csearch_string) );
-    C4::Context->dbh->do(
-        'INSERT INTO auth_cache (authid, tag) VALUES (?,?)
-         ON DUPLICATE KEY UPDATE tag = ?',
-        undef, $self->id, $hash, $hash);
-}
-
-method _uncache_me {
-    C4::Context->dbh->do(
-        'DELETE FROM auth_cache WHERE authid = ?', undef, $self->id );
-}
-
 func _normalize_control_fields( $record ) {
     $record->leader( '     nz  a22     o  4500' )
         unless $record->leader;
@@ -152,7 +140,6 @@ method _delete {
     C4::Context->dbh->do(
         'DELETE FROM auth_header WHERE authid = ?', undef, $self->id );
     $self->changelog->update($self->id, 'delete');
-    $self->_uncache_me;
 }
 
 method _update {
@@ -165,23 +152,16 @@ method _update {
     }
 
     C4::Context->dbh->do(
-        'UPDATE auth_header SET rcn = ?, authtypecode = ?, marc = ?, marcxml = ? WHERE authid = ?',
+        'UPDATE auth_header SET rcn = ?, authtypecode = ?, marc = ?, marcxml = ?, naco = ? WHERE authid = ?',
         undef, $self->rcn, $self->typecode,
-        $self->marc->as_usmarc, $self->marc->as_xml, $self->id);
+        $self->marc->as_usmarc, $self->marc->as_xml,
+        $self->csearch_string, $self->id);
 
     $self->changelog->update($self->id, 'update');
-    $self->_cache_me;
-}
-
-func _field2cstr( MARC::Field $f, Str $subfields = 'a-z68' ) {
-    return join '', map {"\$$_->[0]$_->[1]"}
-        grep {$_->[0] =~ qr([$subfields])} $f->subfields;
 }
 
 method csearch_string {
-    # Emit canonical search string
-    my ($f) = $self->marc->field('1..');
-    return _field2cstr($f);
+    return naco_from_authority( $self->marc );
 }
 
 func new_stub_from_field(Str $class, MARC::Field $f, Str $citation = undef) {
@@ -279,6 +259,10 @@ method code_labels( Bool $forlibrarian, Str $authtypecode = $self->typecode ) {
     }
 
     return \%res;
+}
+
+method as_string {
+    return $self->marc->field('1..')->as_string;
 }
 
 method summary {

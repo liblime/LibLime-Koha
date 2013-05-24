@@ -447,6 +447,9 @@ $template->param(authid => $authority->id,
 		count => $authority->link_count,
 		authtypetext => $authority->type->{authtypetext},
 		authtypesloop => \@authtypesloop,
+                normalized => $authority->csearch_string,
+                is_stub => scalar $authority->is_stub,
+                readable => scalar $authority->as_string,
 		);
 output_html_with_http_headers $query, $cookie, $template->output;
 

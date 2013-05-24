@@ -106,9 +106,16 @@ function searchauthority() {
 <h1>Authority #<!-- TMPL_VAR NAME="authid" --> (<!-- TMPL_VAR name="authtypetext" -->)</h1>
 
 <div id="action">
-    
-    
-    Used in <a href="/cgi-bin/koha/catalogue/search.pl?type=intranet&op=do_search&q=linked_rcn:%22<TMPL_VAR rcn>%22"><!-- TMPL_VAR name="count" --> record(s)</a>
+  <TMPL_IF is_stub><div id="stub-notice">This is a machine-generated stub.</div></TMPL_IF>
+  <div id="readable-form">Heading: &quot;<TMPL_VAR readable />&quot;</div>
+  <div id="normalized-form">Normalizes to: &quot;<TMPL_VAR normalized />&quot;</div>
+  <div id="auth-used-in">
+    <TMPL_IF count>
+      Used in <a href="/cgi-bin/koha/catalogue/search.pl?type=intranet&op=do_search&q=linked_rcn:%22<TMPL_VAR rcn>%22"><!-- TMPL_VAR name="count" --> bibliographic record<TMPL_IF EXPR="count != 1">s</TMPL_IF></a>.
+    <TMPL_ELSE>
+      This record is unused.
+    </TMPL_IF>
+    </div>
 </div>
 
 <div id="authoritiestabs" class="toptabs numbered">

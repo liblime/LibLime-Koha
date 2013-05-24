@@ -4953,14 +4953,6 @@ MODIFY authtypecode VARCHAR(10) NOT NULL;
           SET tagsubfield = '0', liblibrarian = 'Authority RCN', libopac = 'Authority RCN', hidden = '0'
           WHERE tagsubfield = '9' AND tagfield < 900} );
 
-    $dbh->do(
-        q{CREATE TABLE auth_cache (
-            authid INT(11) NOT NULL,
-            tag CHAR(28) NOT NULL,
-            PRIMARY KEY (authid),
-            KEY tag (tag) )
-         });
-
     say "Upgrade to $DBversion done ( New authorities schema )";
     SetVersion ($DBversion);
 }
@@ -5015,10 +5007,18 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
-$DBversion = '4.09.00.020';
+$DBversion = '4.09.00.021';
 if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
-    $dbh->do(q{TRUNCATE auth_cache});
-    say "Upgrade to $DBversion done ( Reset authority cache )";
+    $dbh->do(q{DROP TABLE auth_cache});
+    $dbh->do(q{ALTER TABLE auth_header ADD COLUMN naco VARCHAR(512) NOT NULL, ADD KEY `naco` (`naco`(32))});
+
+    my $sth = $dbh->prepare('SELECT authid FROM auth_header');
+    $sth->execute;
+    while (my ($authid) = $sth->fetchrow_array) {
+        Koha::BareAuthority->new(id => $authid)->save;
+    }
+
+    say "Upgrade to $DBversion done ( Add auth_header.naco, remove auth_cache )";
     SetVersion ($DBversion);
 }
 

@@ -2,54 +2,25 @@ package Koha::BibLinker;
 
 use Koha;
 use Moose;
-use Koha::Solr::Service;
 use Koha::HeadingMap;
+use MARC::Field::Normalize::NACO;
 use Koha::Xcp;
 use C4::Context;
 use Encode qw(encode_utf8);
 use TryCatch;
 use Method::Signatures;
 
-has 'solr' => (
-    is => 'ro',
-    isa => 'Koha::Solr::Service',
-    lazy_build => 1,
-    );
-
-method _build_solr {
-    return Koha::Solr::Service->new;
-}
-
-func _field2cstr( MARC::Field $f, Str $subfields = 'a-z68' ) {
-    return join '', map {"\$$_->[0]$_->[1]"}
-        grep {$_->[0] =~ qr([$subfields])} $f->subfields;
-}
-
 # $f is a controlled bib field, like a 1xx, 6xx, 7xx, etc.
 method find_auth_from_bib_field( MARC::Field $f ) {
-    # first see if there's a cached entry
-    my $cstr = _field2cstr(
-        $f, Koha::HeadingMap::bib_headings->{$f->tag}{subfields});
-    my $hash = Digest::SHA1::sha1_base64( encode_utf8($cstr) );
-    my $cached_authid = C4::Context->dbh->selectrow_arrayref(
-        'SELECT authid FROM auth_cache WHERE tag = ?', undef, $hash );
-    return Koha::BareAuthority->new( id => $cached_authid->[0] )
-        if $cached_authid;
+    my $subfields = Koha::HeadingMap::bib_headings->{$f->tag}{subfields};
+    my $naco = $f->as_naco( subfields => $subfields );
+    my $authid = C4::Context->dbh->selectrow_arrayref(
+        'SELECT authid FROM auth_header WHERE naco = ?', undef, $naco );
 
-    # if not, look in the Solr index, choosing the most recently updated
-    my $query = Koha::Solr::Query->new(
-        query => qq{coded-heading_s:"$cstr"},
-        rtype => 'auth',
-        options => {fl=>'rcn', sort=>'timestamp desc', rows=>1} );
-    my $rs = $self->solr->search( $query->query, $query->options);
+    Koha::BibLinker::Xcp::NoAuthMatch->throw("No match for $naco")
+          unless $authid;
 
-    Koha::Xcp->throw($rs->content->{error}{msg}) if $rs->is_error;
-    my $resultset = $rs->content;
-    Koha::BibLinker::Xcp::NoAuthMatch->throw("No match for $cstr")
-        if $resultset->{response}{numFound} < 1;
-
-    my $rcn = $resultset->{response}{docs}[0]{rcn};
-    return Koha::BareAuthority->new( rcn => $rcn );
+    return Koha::BareAuthority->new( id => $authid->[0] );
 }
 
 method relink_from_headings( Koha::BareBib $bib ) {
@@ -63,8 +34,19 @@ method relink_from_headings( Koha::BareBib $bib ) {
         try {
             my $auth = $self->find_auth_from_bib_field( $f );
             unless ( $auth->rcn ~~ $f->subfield('0') ) {
-                $f->update( '0' => $auth->rcn );
-                $f->delete_subfield( code => '9' );
+                my $auth_f = $auth->marc->field('1..');
+                my $new_f = MARC::Field->new(
+                    $f->tag, $auth_f->indicator(1), $auth_f->indicator(2),
+                    (map {@$_} $auth_f->subfields) );
+
+                # Copy back uncontrolled subfields and $0
+                my @additional =
+                    map {@$_} grep {$_->[0] =~ /[w234]/} $f->subfields;
+                push @additional, ('v', $f->subfield('v'))
+                    if $f->tag =~ /^4..$/ && $f->subfield('v');
+                $new_f->add_subfields( @additional, '0' => $auth->rcn );
+
+                $f->replace_with( $new_f );
                 $count++;
             }
         }
@@ -86,8 +68,13 @@ method relink_with_stubbing( Koha::BareBib $bib ) {
         $count += $self->relink_from_headings( $bib );
     }
     catch (Koha::BibLinker::Xcp::UnmatchedFields $e) {
-        for my $f (@{$e->unmatched}) {
-            my $auth = Koha::BareAuthority->new_stub_from_field($f);
+        my %unmatched;
+        for (@{$e->unmatched}) {
+            # uniqueify in case we have identical headings in the same bib
+            $unmatched{$_->as_naco} = $_;
+        }
+        for (values %unmatched) {
+            my $auth = Koha::BareAuthority->new_stub_from_field($_);
             $auth->save;
         }
         $count += $self->relink_from_headings( $bib );

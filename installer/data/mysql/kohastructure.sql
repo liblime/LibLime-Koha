@@ -267,8 +267,10 @@ CREATE TABLE `auth_header` (
   `datemodified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   `marc` blob,
   `marcxml` longtext NOT NULL,
+  `naco` VARCHAR(512) NOT NULL,
   PRIMARY KEY (`authid`),
   KEY `rcn` (`rcn`),
+  KEY `naco` (`naco`(32)),
   KEY `datemodified` (`datemodified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -2831,13 +2833,6 @@ CREATE TABLE IF NOT EXISTS `xtags_and_saved_sql` (
   `saved_sql_id` int(11) NOT NULL,
   UNIQUE (`xtag_id`, `saved_sql_id`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE auth_cache (
-  authid INT(11) NOT NULL,
-  tag CHAR(28) NOT NULL,
-  PRIMARY KEY (authid),
-  KEY tag (tag)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
