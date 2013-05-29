@@ -110,6 +110,7 @@ $tabsysprefs{authoritysep}          = "Authorities";
 $tabsysprefs{AuthDisplayHierarchy}  = "Authorities";
 $tabsysprefs{dontmerge}             = "Authorities";
 $tabsysprefs{BiblioAddsAuthorities} = "Authorities";
+$tabsysprefs{SearchByRcn}           = "Authorities";
 
 # Cataloguing
 $tabsysprefs{BibliosCataloging}           = "Cataloging";

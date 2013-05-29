@@ -148,7 +148,10 @@ sub XSLTParse4Display {
     my $itemsxml  = buildKohaItemsNamespace($biblionumber);
     my $xmlrecord = $record->as_xml();
     my $sysxml = "<sysprefs>\n";
-    foreach my $syspref ( qw/OPACURLOpenInNewWindow DisplayOPACiconsXSLT URLLinkText viewISBD DisplayStafficonsXSLT OPACXSLTResultsAvailabilityDisplay/ ) {
+    foreach my $syspref ( qw/OPACURLOpenInNewWindow DisplayOPACiconsXSLT
+                             URLLinkText viewISBD DisplayStafficonsXSLT
+                             OPACXSLTResultsAvailabilityDisplay SearchByRcn/ )
+    {
         $syspref ||= '';
         $sysxml .= "<syspref name=\"$syspref\">" .
                    C4::Context->preference( $syspref ) .

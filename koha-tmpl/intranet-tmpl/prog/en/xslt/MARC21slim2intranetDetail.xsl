@@ -108,6 +108,7 @@
     <xsl:variable name="DisplayStafficonsXSLT" select="marc:sysprefs/marc:syspref[@name='DisplayStafficonsXSLT']"/>
     <xsl:variable name="OPACURLOpenInNewWindow" select="marc:sysprefs/marc:syspref[@name='OPACURLOpenInNewWindow']"/>
     <xsl:variable name="URLLinkText" select="marc:sysprefs/marc:syspref[@name='URLLinkText']"/>
+    <xsl:variable name="SearchByRcn" select="marc:sysprefs/marc:syspref[@name='SearchByRcn']"/>
         <xsl:variable name="leader" select="marc:leader"/>
         <xsl:variable name="leader6" select="substring($leader,7,1)"/>
         <xsl:variable name="leader7" select="substring($leader,8,1)"/>
@@ -207,7 +208,7 @@
         <xsl:for-each select="marc:datafield[@tag=100 or @tag=700]">
         <a>
         <xsl:choose>
-            <xsl:when test="marc:subfield[@code=0]">
+            <xsl:when test="marc:subfield[@code=0 and $SearchByRcn=1]">
                 <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
             </xsl:when>
             <xsl:otherwise>
@@ -222,7 +223,7 @@
         <xsl:for-each select="marc:datafield[@tag=110 or @tag=710]">
         <a>
         <xsl:choose>
-            <xsl:when test="marc:subfield[@code=0]">
+            <xsl:when test="marc:subfield[@code=0 and $SearchByRcn=1]">
                 <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
             </xsl:when>
             <xsl:otherwise>
@@ -236,7 +237,7 @@
         <xsl:for-each select="marc:datafield[@tag=111 or @tag=711]">
         <a>
         <xsl:choose>
-            <xsl:when test="marc:subfield[@code=0]">
+            <xsl:when test="marc:subfield[@code=0 and $SearchByRcn=1]">
                 <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
             </xsl:when>
             <xsl:otherwise>
@@ -336,7 +337,7 @@
                  <span class="results_summary"><span class="label displayseriesaddedlabel">Series Added Entry Author: </span>
             <a>
             <xsl:choose>
-                <xsl:when test="marc:subfield[@code=0]">
+                <xsl:when test="marc:subfield[@code=0 and $SearchByRcn=1]">
                     <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
                 </xsl:when>
                 <xsl:otherwise>
@@ -352,7 +353,7 @@
                  <span class="results_summary"><span class="label displayseriesaddedlabel">Series Added Entry Corporate Name: </span>
             <a>
             <xsl:choose>
-                <xsl:when test="marc:subfield[@code=0]">
+                <xsl:when test="marc:subfield[@code=0 and $SearchByRcn=1]">
                     <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
                 </xsl:when>
                 <xsl:otherwise>
@@ -368,7 +369,7 @@
                  <span class="results_summary"><span class="label displayseriesaddedlabel">Series Added Entry Meeting Name: </span>
             <a>
             <xsl:choose>
-                <xsl:when test="marc:subfield[@code=0]">
+                <xsl:when test="marc:subfield[@code=0 and $SearchByRcn=1]">
                     <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
                 </xsl:when>
                 <xsl:otherwise>
@@ -578,7 +579,7 @@
             <xsl:for-each select="marc:datafield[substring(@tag, 1, 1) = '6']">
             <a>
             <xsl:choose>
-            <xsl:when test="marc:subfield[@code=0]">
+            <xsl:when test="marc:subfield[@code=0 and $SearchByRcn=1]">
                 <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
             </xsl:when>
             <xsl:otherwise>
