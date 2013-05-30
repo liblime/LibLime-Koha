@@ -62,6 +62,7 @@ sub do_checkout {
     my ($issuingimpossible,$needsconfirmation) = CanBookBeIssued( $borrower, $barcode );
     my $noerror=1;
     my $renew = 0;
+    my $othererror = 0;
     $self->screen_msg("Item was successfully checked out.");
     if (scalar keys %$issuingimpossible) {
         foreach (keys %$issuingimpossible) {
@@ -91,10 +92,12 @@ sub do_checkout {
                 # don't do anything, it's the minor debt, and alarms fire elsewhere
             } else {
                 $self->screen_msg($needsconfirmation->{$confirmation});
+                $othererror = 1;
                 $noerror = 0;
             }
         }
     }
+    $noerror = 1 if ($othererror && $renew);
     my $itemnumber = $self->{item}->{itemnumber};
     foreach (@$shelf) {
         $debug and warn "shelf has ($_->{itemnumber} for $_->{borrowernumber}). this is ($itemnumber, $self->{patron}->{borrowernumber})";
