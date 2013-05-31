@@ -107,6 +107,7 @@ func emit_format( MARC::Record $record ) {
     push @codes, 'digital-audio-player' if ($l_format eq 'sz');
     push @codes, 'website' if ($l_format eq 'cr');
     push @codes, 'music' if ($rtype eq 'j');
+    push @codes, 'printmusic' if ($rtype eq 'c' or $rtype eq 'd');
     push @codes, 'audiobook' if ($rtype eq 'i');
     push @codes, 'compact-disc' if ($l_format eq 'sd');
 

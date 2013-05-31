@@ -48,6 +48,7 @@ sub _build_labels {
         {code => 'digital-audio-player', description => 'Digital audio player', category => 'audio'},
         {code => 'website', description => 'Website or downloadable', category => 'computing'},
         {code => 'music', description => 'Music', category => 'other'},
+        {code => 'printmusic', description => 'Printed Music', category => 'other'},
         {code => 'audiobook', description => 'Audiobook', category => 'other'},
         {code => 'compact-disc', description => 'Compact disc', category => 'audio'},
         {code => 'large-print-book', description => 'Large print book', category => 'print'},
