@@ -138,7 +138,7 @@ elsif ($op eq "set-branch-defaults") {
                                         FROM default_circ_rules");
         my $sth_insert = $dbh->prepare("INSERT INTO default_circ_rules
                                         (maxissueqty)
-                                        VALUES (?, ?)");
+                                        VALUES (?)");
         my $sth_update = $dbh->prepare("UPDATE default_circ_rules
                                         SET maxissueqty = ?");
 
@@ -155,7 +155,7 @@ elsif ($op eq "set-branch-defaults") {
                                         WHERE branchcode = ?");
         my $sth_insert = $dbh->prepare("INSERT INTO default_branch_circ_rules
                                         (branchcode, maxissueqty)
-                                        VALUES (?, ?, ?)");
+                                        VALUES (?, ?)");
         my $sth_update = $dbh->prepare("UPDATE default_branch_circ_rules
                                         SET maxissueqty = ?
                                         WHERE branchcode = ?");
@@ -374,7 +374,7 @@ foreach my $entry (@sorted_branch_cat_rules, @sorted_row_loop) {
     $entry->{unlimited_maxissueqty} = 1 unless defined($entry->{maxissueqty});
 }
 
-my @sorted_row_loop = sort by_category_and_itemtype @row_loop;
+@sorted_row_loop = sort by_category_and_itemtype @row_loop;
 
 $template->param(show_branch_cat_rule_form => 1);
 $template->param(branch_cat_rule_loop => \@sorted_branch_cat_rules);
