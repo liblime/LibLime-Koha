@@ -21,31 +21,9 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-=head1 systempreferences.pl
-
-ALGO :
- this script use an $op to know what to do.
- if $op is empty or none of the above values,
-    - the default screen is build (with all records, or filtered datas).
-    - the   user can clic on add, modify or delete record.
- if $op=add_form
-    - if primkey exists, this is a modification,so we read the $primkey record
-    - builds the add/modify form
- if $op=add_validate
-    - the user has just send datas, so we create/modify the record
- if $op=delete_form
-    - we show the record having primkey=$primkey and ask for deletion validation form
- if $op=delete_confirm
-    - we delete the record having primkey=$primkey
-
-=cut
-
-use strict;
-use warnings;
-
+use Koha;
 use CGI;
 use C4::Auth;
-use Koha;
 use C4::Context;
 use C4::Koha;
 use C4::Languages qw(getTranslatedLanguages);
@@ -53,489 +31,35 @@ use C4::ClassSource;
 use C4::Log;
 use C4::Output;
 
-# use Smart::Comments;
-
-# FIXME, shouldnt we store this stuff in the systempreferences table?
-
-# FIXME: This uses hash in a backwards way.  What we really want is:
-#       $tabsysprefs{key} = $array_ref;
-#               like
-#       $tabsysprefs{Cataloguing} = [qw(autoBarcode ISBD marc ...)];
-#
-#   Because some things *should* be on more than one tab.
-#   And the tabname is the unique part (the key).
-
-my %tabsysprefs;
-
-# Acquisitions
-$tabsysprefs{acquisitions}              = "Acquisitions";
-$tabsysprefs{gist}                      = "Acquisitions";
-$tabsysprefs{emailPurchaseSuggestions}  = "Acquisitions";
-$tabsysprefs{GetItAcquisitions}         = "Acquisitions";
-$tabsysprefs{LooseBudgets}              = "Acquisitions";
-
-# Admin
-$tabsysprefs{singleBranchMode}      = "Admin";
-$tabsysprefs{staffClientBaseURL}    = "Admin";
-$tabsysprefs{Version}               = "Admin";
-$tabsysprefs{OpacMaintenance}       = "Admin";
-$tabsysprefs{FrameworksLoaded}      = "Admin";
-$tabsysprefs{libraryAddress}        = "Admin";
-$tabsysprefs{delimiter}             = "Admin";
-$tabsysprefs{IndependantBranches}   = "Admin";
-$tabsysprefs{insecure}              = "Admin";
-$tabsysprefs{KohaAdmin}             = "Admin";
-$tabsysprefs{KohaAdminEmailAddress} = "Admin";
-$tabsysprefs{MIME}                  = "Admin";
-$tabsysprefs{timeout}               = "Admin";
-$tabsysprefs{Intranet_includes}     = "Admin";
-$tabsysprefs{AutoLocation}          = "Admin";
-$tabsysprefs{DebugLevel}            = "Admin";
-$tabsysprefs{SessionStorage}        = "Admin";
-$tabsysprefs{noItemTypeImages}      = "Admin";
-$tabsysprefs{OPACBaseURL}           = "Admin";
-$tabsysprefs{GranularPermissions}   = "Admin";
-$tabsysprefs{AllowOverrideLogin}    = "Admin";
-$tabsysprefs{itembarcodelength}     = "Admin";
-$tabsysprefs{patronbarcodelength}   = "Admin";
-$tabsysprefs{barcodeValidationRoutine}="Admin";
-$tabsysprefs{UseReceiptTemplates}   = "Admin";
-$tabsysprefs{Replica_DSN}           = "Admin";
-$tabsysprefs{Replica_pass}          = "Admin";
-$tabsysprefs{Replica_user}          = "Admin";
-$tabsysprefs{localJQuery}           = "Admin";
-
-# Authorities
-$tabsysprefs{authoritysep}          = "Authorities";
-$tabsysprefs{AuthDisplayHierarchy}  = "Authorities";
-$tabsysprefs{dontmerge}             = "Authorities";
-$tabsysprefs{BiblioAddsAuthorities} = "Authorities";
-$tabsysprefs{SearchByRcn}           = "Authorities";
-
-# Cataloguing
-$tabsysprefs{BibliosCataloging}           = "Cataloging";
-$tabsysprefs{advancedMARCeditor}          = "Cataloging";
-$tabsysprefs{autoBarcode}                 = "Cataloging";
-$tabsysprefs{hide_marc}                   = "Cataloging";
-$tabsysprefs{IntranetBiblioDefaultView}   = "Cataloging";
-$tabsysprefs{ISBD}                        = "Cataloging";
-$tabsysprefs{itemcallnumber}              = "Cataloging";
-$tabsysprefs{LabelMARCView}               = "Cataloging";
-$tabsysprefs{marc}                        = "Cataloging";
-$tabsysprefs{marcflavour}                 = "Cataloging";
-$tabsysprefs{MARCOrgCode}                 = "Cataloging";
-$tabsysprefs{z3950AuthorAuthFields}       = "Cataloging";
-$tabsysprefs{z3950NormalizeAuthor}        = "Cataloging";
-$tabsysprefs{Stemming}                    = "Cataloging";
-$tabsysprefs{WeightFields}                = "Cataloging";
-$tabsysprefs{ReceiveBackIssues}           = "Cataloging";
-$tabsysprefs{DefaultClassificationSource} = "Cataloging";
-$tabsysprefs{RoutingSerials}              = "Cataloging";
-$tabsysprefs{'item-level_itypes'}         = "Cataloging";
-$tabsysprefs{OpacSuppression}             = "Cataloging";
-$tabsysprefs{SpineLabelFormat}            = "Cataloging";
-$tabsysprefs{SpineLabelAutoPrint}         = "Cataloging";
-$tabsysprefs{UsePeriodicals}              = "Cataloging";
-$tabsysprefs{ItemLocation}                = "Cataloging";
-$tabsysprefs{EditAllLibraries}            = "Cataloging";
-$tabsysprefs{SolrAuthUpdateTS}            = "Cataloging";
-$tabsysprefs{SolrBibUpdateTS}             = "Cataloging";
-
-# Circulation
-$tabsysprefs{UseGranularMaxHolds}            = "Circulation";
-$tabsysprefs{UseGranularMaxFines}            = "Circulation";
-$tabsysprefs{IssuingInProcess}               = "Circulation";
-$tabsysprefs{patronimages}                   = "Circulation";
-$tabsysprefs{printcirculationslips}          = "Circulation";
-$tabsysprefs{ReturnBeforeExpiry}             = "Circulation";
-$tabsysprefs{ceilingDueDate}                 = "Circulation";
-$tabsysprefs{SpecifyDueDate}                 = "Circulation";
-$tabsysprefs{AutomaticItemReturn}            = "Circulation";
-$tabsysprefs{ReservesMaxPickUpDelay}         = "Circulation";
-$tabsysprefs{TransfersMaxDaysWarning}        = "Circulation";
-$tabsysprefs{useDaysMode}                    = "Circulation";
-$tabsysprefs{ReservesNeedReturns}            = "Circulation";
-$tabsysprefs{CircAutocompl}                  = "Circulation";
-$tabsysprefs{AllowRenewalLimitOverride}      = "Circulation";
-$tabsysprefs{canreservefromotherbranches}    = "Circulation";
-$tabsysprefs{finesMode}                      = "Circulation";
-$tabsysprefs{numReturnedItemsToShow}         = "Circulation";
-$tabsysprefs{globalDueDate}                  = "Circulation";
-$tabsysprefs{holdCancelLength}               = "Circulation";
-$tabsysprefs{itemBarcodeInputFilter}         = "Circulation";
-$tabsysprefs{WebBasedSelfCheck}              = "Circulation";
-$tabsysprefs{ShowPatronImageInWebBasedSelfCheck} = "Circulation";
-$tabsysprefs{CircControl}                    = "Circulation";
-$tabsysprefs{finesCalendar}                  = "Circulation";
-$tabsysprefs{previousIssuesDefaultSortOrder} = "Circulation";
-$tabsysprefs{todaysIssuesDefaultSortOrder}   = "Circulation";
-$tabsysprefs{HomeOrHoldingBranch}            = "Circulation";
-$tabsysprefs{RandomizeHoldsQueueWeight}      = "Circulation";
-$tabsysprefs{StaticHoldsQueueWeight}         = "Circulation";
-$tabsysprefs{NextLibraryHoldsQueueWeight}    = "Circulation";
-$tabsysprefs{AllowOnShelfHolds}              = "Circulation";
-$tabsysprefs{AllowHoldsOnDamagedItems}       = "Circulation";
-$tabsysprefs{UseBranchTransferLimits}        = "Circulation";
-$tabsysprefs{AllowHoldPolicyOverride}        = "Circulation";
-$tabsysprefs{BranchTransferLimitsType}       = "Circulation";
-$tabsysprefs{AllowNotForLoanOverride}        = "Circulation";
-$tabsysprefs{RenewalPeriodBase}              = "Circulation";
-$tabsysprefs{FilterBeforeOverdueReport}      = "Circulation";
-$tabsysprefs{AllowHoldDateInFuture}          = "Circulation";
-$tabsysprefs{OPACFineNoRenewals}             = "Circulation";
-$tabsysprefs{InProcessingToShelvingCart}     = "Circulation";
-$tabsysprefs{NewItemsDefaultLocation}        = "Circulation";
-$tabsysprefs{ReturnToShelvingCart}           = "Circulation";
-$tabsysprefs{DisplayClearScreenButton}       = "Circulation";
-$tabsysprefs{AllowAllMessageDeletion}        = "Circulation";
-$tabsysprefs{HoldButtonConfirm}              = "Circulation";
-$tabsysprefs{HoldButtonPrintConfirm}         = "Circulation";
-$tabsysprefs{HoldButtonIgnore}               = "Circulation";
-$tabsysprefs{AllowDueDateInPast}             = "Circulation";
-$tabsysprefs{CircFinesBreakdown}             = "Circulation";
-$tabsysprefs{MarkLostItemsReturned}          = "Circulation";
-$tabsysprefs{LinkLostItemsToPatron}          = "Circulation";
-$tabsysprefs{RefundReturnedLostItem}         = "Circulation";
-$tabsysprefs{RefundLostReturnedAmount}       = "Circulation";
-$tabsysprefs{ApplyMaxFineWhenLostItemChargeRefunded} = "Circulation";
-$tabsysprefs{AllowCheckInDateChange}         = "Circulation";
-$tabsysprefs{AllowMultipleHoldsPerBib}       = "Circulation";
-$tabsysprefs{CourseReserves}                 = "Circulation";
-$tabsysprefs{EnableClubsAndServices}         = "Circulation";
-$tabsysprefs{ClaimsReturnedValue}            = "Circulation";
-$tabsysprefs{EnableOverdueAccruedAmount}     = "Circulation";
-$tabsysprefs{FillRequestsAtPickupLibrary}    = "Circulation";
-$tabsysprefs{FillRequestsAtPickupLibraryAge} = "Circulation";
-$tabsysprefs{HoldExpireLength}               = "Circulation";
-$tabsysprefs{HoldsTransportationReductionThreshold} = "Circulation";
-$tabsysprefs{reservesNeedConfirmationOnCheckout} = "Circulation";
-$tabsysprefs{StaffShowCompletedHolds}        = "Circulation";
-$tabsysprefs{StaffShowCancelledHolds}        = "Circulation";
-$tabsysprefs{StaffShowExpiredHolds}          = "Circulation";
-$tabsysprefs{AllowPatronsToCancelReadyHolds} = "Circulation";
-$tabsysprefs{SIPItemDisplay}                 = "Circulation";
-$tabsysprefs{KeepPreviousBorrower}           = "Circulation";
-$tabsysprefs{KeepPreviousBorrowerInterval}   = "Circulation";
-$tabsysprefs{SplitStatistics}                = "Circulation";
-$tabsysprefs{ClearNotForLoan}                = "Circulation";
-$tabsysprefs{PrintNoticesMaxLines}           = "Circulation";
-$tabsysprefs{SIP_RenewOnIssue}               = "Circulation";
-
-# Staff Client
-$tabsysprefs{TemplateEncoding}            = "StaffClient";
-$tabsysprefs{template}                    = "StaffClient";
-$tabsysprefs{intranetstylesheet}          = "StaffClient";
-$tabsysprefs{IntranetNav}                 = "StaffClient";
-$tabsysprefs{intranetcolorstylesheet}     = "StaffClient";
-$tabsysprefs{intranetuserjs}              = "StaffClient";
-$tabsysprefs{yuipath}                     = "StaffClient";
-$tabsysprefs{IntranetmainUserblock}       = "StaffClient";
-$tabsysprefs{viewMARC}                    = "StaffClient";
-$tabsysprefs{viewLabeledMARC}             = "StaffClient";
-$tabsysprefs{viewISBD}                    = "StaffClient";
-$tabsysprefs{StaffSearchSuggestionsCount} = "StaffClient";
-$tabsysprefs{BatchItemEditor}             = "StaffClient";
-$tabsysprefs{CheckoutTimeout}             = "StaffClient";
-$tabsysprefs{BCCAllNotices}               = "StaffClient";
-$tabsysprefs{DisableHoldsIssueOverrideUnlessAuthorised} = "StaffClient";
-$tabsysprefs{XSLTDetailsDisplay}          = "StaffClient";
-$tabsysprefs{XSLTResultsDisplay}          = "StaffClient";
-$tabsysprefs{soundon}                     = "StaffClient";
-$tabsysprefs{DisplayStafficonsXSLT}       = "StaffClient";
-$tabsysprefs{ShowPatronSearchBySQL}       = "StaffClient";
-$tabsysprefs{WarnOnlyOnMaxFine}           = "StaffClient";
-$tabsysprefs{IntranetUserCSS}             = "StaffClient";
-$tabsysprefs{ShowSupressStatus}           = "StaffClient";
-
-# Patrons
-$tabsysprefs{autoMemberNum}                = "Patrons";
-$tabsysprefs{checkdigit}                   = "Patrons";
-$tabsysprefs{intranetreadinghistory}       = "Patrons";
-$tabsysprefs{NotifyBorrowerDeparture}      = "Patrons";
-$tabsysprefs{memberofinstitution}          = "Patrons";
-$tabsysprefs{BorrowerMandatoryField}       = "Patrons";
-$tabsysprefs{borrowerRelationship}         = "Patrons";
-$tabsysprefs{BorrowersTitles}              = "Patrons";
-$tabsysprefs{patronimages}                 = "Patrons";
-$tabsysprefs{minPasswordLength}            = "Patrons";
-$tabsysprefs{uppercasesurnames}            = "Patrons";
-$tabsysprefs{MaxFine}                      = "Patrons";
-$tabsysprefs{NotifyBorrowerDeparture}      = "Patrons";
-$tabsysprefs{AddPatronLists}               = "Patrons";
-$tabsysprefs{PatronsPerPage}               = "Patrons";
-$tabsysprefs{ExtendedPatronAttributes}     = "Patrons";
-$tabsysprefs{SearchExtendedPatronAttributes} = "Patrons";
-$tabsysprefs{AutoEmailOpacUser}            = "Patrons";
-$tabsysprefs{AutoEmailPrimaryAddress}      = "Patrons";
-$tabsysprefs{EnhancedMessagingPreferences} = "Patrons";
-$tabsysprefs{'SMSSendDriver'}              = 'Patrons';
-$tabsysprefs{HidePatronName}               = "Patrons";
-$tabsysprefs{'PatronDisplayReturn'}        = 'Patrons';
-$tabsysprefs{DisplayInitials}              = "Patrons";
-$tabsysprefs{DisplayOthernames}            = "Patrons";
-$tabsysprefs{NewPatronReadingHistory}      = "Patrons";
-$tabsysprefs{EnableHoldExpiredNotice}      = "Patrons";
-$tabsysprefs{EnableHoldCancelledNotice}    = "Patrons";
-$tabsysprefs{EnableHoldOnShelfNotice}      = "Patrons";
-$tabsysprefs{BatchMemberDeleteFineThreshhold} = "Patrons";
-$tabsysprefs{BatchMemberDeletePaidDebtCollections} = "Patrons";
-$tabsysprefs{OwedNotificationValue}        = "Patrons";
-$tabsysprefs{MaxShelfHoldsPerDay}          = "Patrons";
-$tabsysprefs{EnableOwedNotification}       = "Patrons";
-$tabsysprefs{UsePatronBranchForPatronInfo} = "Patrons";
-$tabsysprefs{ConstrainPatronsDeeply}       = "Patrons";
-
-# I18N/L10N
-$tabsysprefs{dateformat}    = "I18N/L10N";
-$tabsysprefs{opaclanguages} = "I18N/L10N";
-$tabsysprefs{opaclanguagesdisplay} = "I18N/L10N";
-$tabsysprefs{language}      = "I18N/L10N";
-
-# Searching
-$tabsysprefs{defaultSortField}        = "Searching";
-$tabsysprefs{defaultSortOrder}        = "Searching";
-$tabsysprefs{numSearchResults}        = "Searching";
-$tabsysprefs{OPACdefaultSortField}    = "Searching";
-$tabsysprefs{OPACdefaultSortOrder}    = "Searching";
-$tabsysprefs{OPACItemsResultsDisplay} = "Searching";
-$tabsysprefs{OPACnumSearchResults}    = "Searching";
-$tabsysprefs{expandedSearchOption}    = "Searching";
-$tabsysprefs{AdvancedSearchTypes}     = "Searching";
-$tabsysprefs{AdvancedSearchLimits}    = "Searching";
-$tabsysprefs{OPACAdvancedSearchLimits}= "Searching";
-$tabsysprefs{DisplayMultiPlaceHold}   = "Searching";
-$tabsysprefs{OPACAdvancedSearchTypes} = "Searching";
-$tabsysprefs{maxItemsinSearchResults} = "Searching";
-$tabsysprefs{OPACShowActiveBranchFirstInResults} = "Searching";
-$tabsysprefs{OpacFacets}              = "Searching";
-$tabsysprefs{SearchFacets}            = "Searching";
-$tabsysprefs{OPACSolrBQ}              = "Searching";
-$tabsysprefs{OPACSolrMM}              = "Searching";
-
-
-# EnhancedContent
-$tabsysprefs{AmazonEnabled}          = "EnhancedContent";
-$tabsysprefs{OPACAmazonEnabled}      = "EnhancedContent";
-$tabsysprefs{AmazonCoverImages}      = "EnhancedContent";
-$tabsysprefs{OPACAmazonCoverImages}  = "EnhancedContent";
-$tabsysprefs{AWSAccessKeyID}         = "EnhancedContent";
-$tabsysprefs{AWSPrivateKey}          = "EnhancedContent";
-$tabsysprefs{AmazonLocale}           = "EnhancedContent";
-$tabsysprefs{AmazonAssocTag}         = "EnhancedContent";
-$tabsysprefs{AmazonSimilarItems}     = "EnhancedContent";
-$tabsysprefs{OPACAmazonSimilarItems} = "EnhancedContent";
-$tabsysprefs{AmazonReviews}          = "EnhancedContent";
-$tabsysprefs{OPACAmazonReviews}      = "EnhancedContent";
-$tabsysprefs{TalkingTechEnabled}     = "EnhancedContent";
-$tabsysprefs{TalkingTechFileName}    = "EnhancedContent";
-
-# Babelthèque
-$tabsysprefs{Babeltheque}            = "EnhancedContent";
-
-# Baker & Taylor
-$tabsysprefs{BakerTaylorBookstoreURL} = 'EnhancedContent';
-$tabsysprefs{BakerTaylorEnabled}      = 'EnhancedContent';
-$tabsysprefs{BakerTaylorPassword}     = 'EnhancedContent';
-$tabsysprefs{BakerTaylorUsername}     = 'EnhancedContent';
-
-# Library Thing for Libraries
-$tabsysprefs{LibraryThingForLibrariesID} = "EnhancedContent"; 
-$tabsysprefs{LibraryThingForLibrariesEnabled} = "EnhancedContent"; 
-$tabsysprefs{LibraryThingForLibrariesTabbedView} = "EnhancedContent";
-
-# Syndetics
-$tabsysprefs{SyndeticsClientCode}     = 'EnhancedContent';
-$tabsysprefs{SyndeticsEnabled}        = 'EnhancedContent';
-$tabsysprefs{SyndeticsCoverImages}    = 'EnhancedContent';
-$tabsysprefs{SyndeticsTOC}            = 'EnhancedContent';
-$tabsysprefs{SyndeticsSummary}        = 'EnhancedContent';
-$tabsysprefs{SyndeticsEditions}       = 'EnhancedContent';
-$tabsysprefs{SyndeticsExcerpt}        = 'EnhancedContent';
-$tabsysprefs{SyndeticsReviews}        = 'EnhancedContent';
-$tabsysprefs{SyndeticsAuthorNotes}    = 'EnhancedContent';
-$tabsysprefs{SyndeticsAwards}         = 'EnhancedContent';
-$tabsysprefs{SyndeticsSeries}         = 'EnhancedContent';
-$tabsysprefs{SyndeticsCoverImageSize} = 'EnhancedContent';
-
-
-# FRBR
-$tabsysprefs{FRBRizeEditions}     = "EnhancedContent";
-$tabsysprefs{XISBN}               = "EnhancedContent";
-$tabsysprefs{OCLCAffiliateID}     = "EnhancedContent";
-$tabsysprefs{XISBNDailyLimit}     = "EnhancedContent";
-$tabsysprefs{PINESISBN}           = "EnhancedContent";
-$tabsysprefs{ThingISBN}           = "EnhancedContent";
-$tabsysprefs{OPACFRBRizeEditions} = "EnhancedContent";
-
-# Tags
-$tabsysprefs{TagsEnabled}            = 'EnhancedContent';
-$tabsysprefs{TagsExternalDictionary} = 'EnhancedContent';
-$tabsysprefs{TagsInputOnDetail}      = 'EnhancedContent';
-$tabsysprefs{TagsInputOnList}        = 'EnhancedContent';
-$tabsysprefs{TagsShowOnDetail}       = 'EnhancedContent';
-$tabsysprefs{TagsShowOnList}         = 'EnhancedContent';
-$tabsysprefs{TagsModeration}         = 'EnhancedContent';
-$tabsysprefs{GoogleJackets}          = 'EnhancedContent';
-$tabsysprefs{AuthorisedValueImages}  = "EnhancedContent";
-
-# OPAC
-$tabsysprefs{BiblioDefaultView}               = "OPAC";
-$tabsysprefs{LibraryName}                     = "OPAC";
-$tabsysprefs{opaccolorstylesheet}             = "OPAC";
-$tabsysprefs{opaccredits}                     = "OPAC";
-$tabsysprefs{opaclayoutstylesheet}            = "OPAC";
-$tabsysprefs{OpacNav}                         = "OPAC";
-$tabsysprefs{opacsmallimage}                  = "OPAC";
-$tabsysprefs{opacstylesheet}                  = "OPAC";
-$tabsysprefs{opacthemes}                      = "OPAC";
-$tabsysprefs{opacuserjs}                      = "OPAC";
-$tabsysprefs{opacheader}                      = "OPAC";
-$tabsysprefs{hideBiblioNumber}                = "OPAC";
-$tabsysprefs{OpacMainUserBlock}               = "OPAC";
-$tabsysprefs{OPACURLOpenInNewWindow}          = "OPAC";
-$tabsysprefs{OPACUserCSS}                     = "OPAC";
-$tabsysprefs{OPACHighlightedWords}            = "OPAC";
-$tabsysprefs{OPACViewOthersSuggestions}       = "OPAC";
-$tabsysprefs{URLLinkText}                     = "OPAC";
-$tabsysprefs{OPACSearchForTitleIn}            = "OPAC";
-$tabsysprefs{OPACShelfBrowser}                = "OPAC";
-$tabsysprefs{OPACDisplayRequestPriority}      = "OPAC";
-$tabsysprefs{OPACAllowHoldDateInFuture}       = "OPAC";
-$tabsysprefs{OPACPatronDetails}               = "OPAC";
-$tabsysprefs{OPACFinesTab}                    = "OPAC";
-$tabsysprefs{DisplayOPACiconsXSLT}            = "OPAC";
-$tabsysprefs{opacmsgtab}                      = "OPAC";
-$tabsysprefs{AutoSelfCheckAllowed}            = "OPAC";
-$tabsysprefs{AutoSelfCheckID}                 = "OPAC";
-$tabsysprefs{AutoSelfCheckPass}               = "OPAC";
-$tabsysprefs{OPACSearchSuggestionsCount}      = "OPAC";
-$tabsysprefs{HideItypeInOPAC}                 = 'OPAC';
-$tabsysprefs{ShowOPACAvailabilityFacetSearch} = "OPAC";
-$tabsysprefs{SearchMyLibraryFirst}               = "OPAC";
-$tabsysprefs{hidelostitems}                      = "OPAC";
-$tabsysprefs{opacbookbag}                        = "OPAC";
-$tabsysprefs{opacbookbagName}                    = "OPAC";
-$tabsysprefs{OpacPasswordChange}                 = "OPAC";
-$tabsysprefs{opacreadinghistory}                 = "OPAC";
-$tabsysprefs{virtualshelves}                     = "OPAC";
-$tabsysprefs{RequestOnOpac}                      = "OPAC";
-$tabsysprefs{reviewson}                          = "OPAC";
-$tabsysprefs{OpacTopissues}                      = "OPAC";
-$tabsysprefs{OpacAuthorities}                    = "OPAC";
-$tabsysprefs{OpacCloud}                          = "OPAC";
-$tabsysprefs{opacuserlogin}                      = "OPAC";
-$tabsysprefs{AnonSuggestions}                    = "OPAC";
-$tabsysprefs{suggestion}                         = "OPAC";
-$tabsysprefs{OpacTopissue}                       = "OPAC";
-$tabsysprefs{OpacBrowser}                        = "OPAC";
-$tabsysprefs{kohaspsuggest}                      = "OPAC";
-$tabsysprefs{OpacRenewalAllowed}                 = "OPAC";
-$tabsysprefs{OPACItemHolds}                      = "OPAC";
-$tabsysprefs{OPACUseHoldType}                    = "OPAC";
-$tabsysprefs{OPACGroupResults}                   = "OPAC";
-$tabsysprefs{OPACXSLTDetailsDisplay}             = "OPAC";
-$tabsysprefs{OPACXSLTResultsDisplay}             = "OPAC";
-$tabsysprefs{OPACShowCheckoutName}               = "OPAC";
-$tabsysprefs{OPACXSLTResultsAvailabilityDisplay} = "OPAC";
-$tabsysprefs{DefaultOPACHoldType}                = "OPAC";
-$tabsysprefs{AllowReadingHistoryAnonymizing}     = "OPAC";
-$tabsysprefs{ResetOpacInactivityTimeout}         = "OPAC";
-$tabsysprefs{OPACDefaultItemSort}                = "OPAC";
-$tabsysprefs{GoogleIndicTransliteration}         = "OPAC";
-$tabsysprefs{OPACAdvSearchInputCount}            = "OPAC";
-$tabsysprefs{OPACShowCompletedHolds}             = "OPAC";
-$tabsysprefs{OPACShowCancelledHolds}             = "OPAC";
-$tabsysprefs{OPACShowExpiredHolds}               = "OPAC";
-$tabsysprefs{OPACQuickSearchFilter}              = "OPAC";
-$tabsysprefs{NewTitlesAge}                       = "OPAC";
-
-# Serials
-$tabsysprefs{OPACSerialIssueDisplayCount}  = "Serials";
-$tabsysprefs{StaffSerialIssueDisplayCount} = "Serials";
-$tabsysprefs{OPACDisplayExtendedSubInfo}   = "Serials";
-$tabsysprefs{OPACSubscriptionDisplay}      = "Serials";
-$tabsysprefs{RenewSerialAddsSuggestion}    = "Serials";
-$tabsysprefs{SubscriptionHistory}          = "Serials";
-$tabsysprefs{serialsadditems}              = "Serials";
-
-# LOGFeatures
-$tabsysprefs{CataloguingLog}  = "Logs";
-$tabsysprefs{BorrowersLog}    = "Logs";
-$tabsysprefs{SubscriptionLog} = "Logs";
-$tabsysprefs{IssueLog}        = "Logs";
-$tabsysprefs{ReturnLog}       = "Logs";
-$tabsysprefs{LetterLog}       = "Logs";
-$tabsysprefs{FinesLog}        = "Logs";
-
-# OAI-PMH variables
-$tabsysprefs{'OAI-PMH'}           = "OAI-PMH";
-$tabsysprefs{'OAI-PMH:archiveID'} = "OAI-PMH";
-$tabsysprefs{'OAI-PMH:MaxCount'}  = "OAI-PMH";
-$tabsysprefs{'OAI-PMH:Set'}       = "OAI-PMH";
-$tabsysprefs{'OAI-PMH:Subset'}    = "OAI-PMH";
-
-# ILS-DI variables
-$tabsysprefs{'ILS-DI'} = "ILS-DI";
-
-#################################################
 # Load any uninitialized sysprefs
-my $syspref_defaults = C4::Context::_seed_preference_defaults_cache();
-C4::Context->preference($_) for (keys %$syspref_defaults);
+our $prefdefs = C4::Context->preference_defaults;
+C4::Context->preference($_) for (keys %$prefdefs);
 
 sub StringSearch {
-    my ( $searchstring, $type, $tabsysprefs ) = @_;
-    my $dbh = C4::Context->dbh;
-    $searchstring =~ s/\'/\\\'/g;
-    my @data = split( ' ', $searchstring );
-    my $count = @data;
-    my @results;
-    my $cnt = 0;
-    my $sth;
+    my ( $searchstring, $type ) = @_;
 
-    # used for doing a plain-old sys-pref search
-    if ( $type && $type ne 'all' ) {
-        foreach my $syspref ( sort { lc $a cmp lc $b } keys %$tabsysprefs ) {
-            if ( $tabsysprefs->{$syspref} eq $type ) {
-                my $sth = $dbh->prepare("Select variable,value,explanation,type,options from systempreferences where (variable like ?) order by variable");
-                $sth->execute($syspref);
-                while ( my $data = $sth->fetchrow_hashref ) {
-                    $data->{shortvalue} = $data->{value};
-                    $data->{shortvalue} = substr( $data->{value}, 0, 60 ) . "..." if defined( $data->{value} ) and length( $data->{value} ) > 60;
-                    push( @results, $data );
-                    $cnt++;
-                }
-            }
-        }
-    } else {
-        my $sth;
-
-        if ( $type and $type eq 'all' ) {
-            $sth = $dbh->prepare( "
-            SELECT *
-              FROM systempreferences 
-              WHERE variable LIKE ? OR explanation LIKE ? 
-              ORDER BY VARIABLE" );
-            $sth->execute( "%$searchstring%", "%$searchstring%" );
-        } else {
-            my $strsth = "Select variable,value,explanation,type,options from systempreferences where variable not in (";
-            foreach my $syspref ( keys %$tabsysprefs ) {
-                $strsth .= $dbh->quote($syspref) . ",";
-            }
-            $strsth =~ s/,$/) /;
-            $strsth .= " order by variable";
-            $sth = $dbh->prepare($strsth);
-            $sth->execute();
-        }
-
-        while ( my $data = $sth->fetchrow_hashref ) {
-            $data->{shortvalue} = $data->{value};
-            $data->{shortvalue} = substr( $data->{value}, 0, 60 ) . "..." if length( $data->{value} ) > 60;
-            push( @results, $data );
-            $cnt++;
-        }
-
+    my ($where, @bind);
+    if ( $type && $type ne 'all' ) { # search by tab
+        @bind = grep {$prefdefs->{$_}{tags}[0] eq $type} keys %$prefdefs;
+        $where = sprintf 'variable IN (%s)', (join ',', map '?', @bind);
     }
-    return ( $cnt, \@results );
+    else { # search by string
+        $searchstring ||= 'gibberish and nonsense'; #find nothing by default
+        @bind = ("%$searchstring%");
+        $where = 'variable LIKE ?';
+    }
+    my $query = "SELECT variable, value FROM systempreferences WHERE $where ORDER BY variable";
+
+    my $prefs = C4::Context->dbh->selectall_arrayref($query, {Slice=>{}}, @bind);
+    for my $pref (@$prefs) {
+        my $default = $prefdefs->{$pref->{variable}};
+        next unless $default && ! $default->{hidden};
+        for (qw/options explanation type/) {
+            $pref->{$_} = $default->{$_};
+        }
+    }
+
+    return $prefs;
 }
 
 sub GetPrefParams {
@@ -571,6 +95,7 @@ sub GetPrefParams {
         $params->{'fieldlength'} = ( defined( $data->{'options'} ) and $data->{'options'} and $data->{'options'} > 0 ) ? $data->{'options'} : 10;
     } elsif ( $data->{'type'} eq 'Textarea' ) {
         $params->{'type-textarea'} = 1;
+        $data->{options} //= '';
         $data->{options} =~ /(.*)\|(.*)/;
         $params->{'cols'} = $1;
         $params->{'rows'} = $2;
@@ -673,101 +198,14 @@ if ($op) {
 } else {
     $template->param(
         script_name => $script_name,
-        else        => 1
     );    # we show only the TMPL_VAR names $op
-}
-
-if ( $op eq 'update_and_reedit' ) {
-    foreach ( $input->param ) {
-    }
-    my $value = '';
-    if ( my $currentorder = $input->param('currentorder') ) {
-        my @currentorder = split /\|/, $currentorder;
-        my $orderchanged = 0;
-        foreach my $param ( $input->param ) {
-            if ( $param =~ m#up-(\d+).x# ) {
-                my $temp = $currentorder[$1];
-                $currentorder[$1]       = $currentorder[ $1 - 1 ];
-                $currentorder[ $1 - 1 ] = $temp;
-                $orderchanged           = 1;
-                last;
-            } elsif ( $param =~ m#down-(\d+).x# ) {
-                my $temp = $currentorder[$1];
-                $currentorder[$1]       = $currentorder[ $1 + 1 ];
-                $currentorder[ $1 + 1 ] = $temp;
-                $orderchanged           = 1;
-                last;
-            }
-        }
-        $value = join ' ', @currentorder;
-        if ($orderchanged) {
-            $op = 'add_form';
-            $template->param(
-                script_name => $script_name,
-                $op         => 1
-            );    # we show only the TMPL_VAR names $op
-        } else {
-            $op          = '';
-            $searchfield = '';
-            $template->param(
-                script_name => $script_name,
-                else        => 1
-            );    # we show only the TMPL_VAR names $op
-        }
-    }
-    my $dbh   = C4::Context->dbh;
-    my $query = "select * from systempreferences where variable=?";
-    my $sth   = $dbh->prepare($query);
-    $sth->execute( $input->param('variable') );
-    if ( $sth->rows ) {
-        unless ( C4::Context->config('demo') ) {
-            my $sth = $dbh->prepare("update systempreferences set value=?,explanation=?,type=?,options=? where variable=?");
-            $sth->execute( $value, $input->param('explanation'), $input->param('variable'), $input->param('preftype'), $input->param('prefoptions') );
-            C4::Context::_clear_syspref_cache();
-            logaction( 'SYSTEMPREFERENCE', 'MODIFY', undef, $input->param('variable') . " | " . $value );
-        }
-    } else {
-        unless ( C4::Context->config('demo') ) {
-            my $sth = $dbh->prepare("insert into systempreferences (variable,value,explanation) values (?,?,?,?,?)");
-            $sth->execute( $input->param('variable'), $input->param('value'), $input->param('explanation'), $input->param('preftype'), $input->param('prefoptions') );
-            C4::Context::_clear_syspref_cache();
-            logaction( 'SYSTEMPREFERENCE', 'ADD', undef, $input->param('variable') . " | " . $input->param('value') );
-        }
-    }
-
 }
 
 ################## ADD_FORM ##################################
 # called by default. Used to create form to add or  modify a record
 
-if ( $op eq 'add_form' ) {
-
-    #---- if primkey exists, it's a modify action, so read values to modify...
-    my $data;
-    if ($searchfield) {
-        my $dbh = C4::Context->dbh;
-        my $sth = $dbh->prepare("select variable,value,explanation,type,options from systempreferences where variable=?");
-        $sth->execute($searchfield);
-        $data = $sth->fetchrow_hashref;
-        $template->param( modify => 1 );
-
-        # save tab to return to if user cancels edit
-        $template->param( return_tab => $tabsysprefs{$searchfield} );
-    }
-
-    $data->{'lang'} = $template->param('lang');
-
-    $template->param( GetPrefParams($data) );
-
-    $template->param( searchfield => $searchfield );
-
-################## ADD_VALIDATE ##################################
-    # called by add_form, used to insert/modify data in DB
-} elsif ( $op eq 'add_validate' ) {
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("select * from systempreferences where variable=?");
-    $sth->execute( $input->param('variable') );
-
+if ( $op eq 'add_validate' ) {
+    my $variable = $input->param('variable');
     # to handle multiple values
     my $value;
 
@@ -786,54 +224,21 @@ if ( $op eq 'add_form' ) {
             $value = $params->{'value'};
         }
     }
-    if ( $sth->rows ) {
-        unless ( C4::Context->config('demo') ) {
-            my $sth = $dbh->prepare("update systempreferences set value=?,explanation=?,type=?,options=? where variable=?");
-            $sth->execute( $value, $input->param('explanation'), $input->param('preftype'), $input->param('prefoptions'), $input->param('variable') );
-            C4::Context::_clear_syspref_cache();
-            logaction( 'SYSTEMPREFERENCE', 'MODIFY', undef, $input->param('variable') . " | " . $value );
-        }
-    } else {
-        unless ( C4::Context->config('demo') ) {
-            my $sth = $dbh->prepare("insert into systempreferences (variable,value,explanation,type,options) values (?,?,?,?,?)");
-            $sth->execute( $input->param('variable'), $value, $input->param('explanation'), $input->param('preftype'), $input->param('prefoptions') );
-            logaction( 'SYSTEMPREFERENCE', 'ADD', undef, $input->param('variable') . " | " . $value );
-        }
+    unless ( C4::Context->config('demo') ) {
+        C4::Context->preference_set($variable, $value);
+        logaction( 'SYSTEMPREFERENCE', 'MODIFY', undef, $variable . " | " . $value );
     }
-    my $tab = $input->param('variable') // '';
-    $tab = exists($tabsysprefs{$tab})? $tabsysprefs{$tab} : '';
+    my $tab = $prefdefs->{$variable}{tags}[0];
     print "Content-Type: text/html\n\n<META HTTP-EQUIV=Refresh CONTENT=\"0; URL=systempreferences.pl?tab=$tab\"></html>";
     exit;
-################## DELETE_CONFIRM ##################################
-    # called by default form, used to confirm deletion of data in DB
-} elsif ( $op eq 'delete_confirm' ) {
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("select variable,value,explanation,type,options from systempreferences where variable=?");
-    $sth->execute($searchfield);
-    my $data = $sth->fetchrow_hashref;
-    $template->param(
-        searchfield => $searchfield,
-        Tvalue      => $data->{'value'},
-    );
 
-    # END $OP eq DELETE_CONFIRM
-################## DELETE_CONFIRMED ##################################
-    # called by delete_confirm, used to effectively confirm deletion of data in DB
-} elsif ( $op eq 'delete_confirmed' ) {
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("delete from systempreferences where variable=?");
-    $sth->execute($searchfield);
-    C4::Context::_clear_syspref_cache();
-    my $logstring = $searchfield . " | " . $Tvalue;
-    logaction( 'SYSTEMPREFERENCE', 'DELETE', undef, $logstring );
-
-    # END $OP eq DELETE_CONFIRMED
 ################## DEFAULT ##################################
 } else {    # DEFAULT
-            #Adding tab management for system preferences
+    #Adding tab management for system preferences
     my $tab = $input->param('tab');
     $template->param( $tab => 1 );
-    my ( $count, $results ) = StringSearch( $searchfield, $tab, \%tabsysprefs );
+    my $results = StringSearch( $searchfield, $tab );
+    my $count = @$results;
     my @loop_data = ();
     for ( my $i = $offset ; $i < ( $offset + $pagesize < $count ? $offset + $pagesize : $count ) ; $i++ ) {
         my $row_data = $results->[$i];
@@ -843,7 +248,6 @@ if ( $op eq 'add_form' ) {
         $row_data->{delete} = "$script_name?op=delete_confirm&amp;searchfield=" . $results->[$i]{'variable'};
         push( @loop_data, $row_data );
     }
-    $tab = ( $tab ? $tab : "Local Use" );
     $template->param( loop => \@loop_data, $tab => 1 );
     if ( $offset > 0 ) {
         my $prevpage = $offset - $pagesize;

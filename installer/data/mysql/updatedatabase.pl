@@ -5022,6 +5022,38 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.022';
+if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do(q{ALTER TABLE systempreferences DROP COLUMN options, DROP COLUMN explanation, DROP COLUMN type});
+
+    my %used_names = map {$_ => 1} @{C4::Context->dbh->selectcol_arrayref(
+        'SELECT variable FROM systempreferences ORDER by variable'
+    )};
+    delete $used_names{Version};
+
+    my $defaults = C4::Context->preference_defaults;
+    my %default_names = map {$_ => 1} keys %$defaults;
+    my %default_names_lc = map {lc $_ => $_} keys %default_names;
+
+    my @undeclared = grep {!exists $default_names{$_}} keys %used_names;
+    for (@undeclared) {
+        if (exists $default_names_lc{lc $_}) {
+            say "Normalizing '$_'";
+            C4::Context->dbh->do(
+                'UPDATE systempreferences SET variable=? WHERE variable=?',
+                undef, $default_names_lc{lc $_}, $_);
+        } else {
+            say "Deleting unknown preference '$_'";
+            C4::Context->dbh->do(
+                'DELETE FROM systempreferences WHERE variable=?',
+                undef, $_);
+        }
+    }
+
+    say "Upgrade to $DBversion done ( Normalize sysprefs )";
+    SetVersion ($DBversion);
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 

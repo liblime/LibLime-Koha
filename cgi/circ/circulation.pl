@@ -518,7 +518,7 @@ my @values;
 my %labels;
 my $CGIselectborrower;
 $template->param( showinitials => C4::Context->preference('DisplayInitials') );
-$template->param( showothernames => C4::Context->preference('DisplayOtherNames') );
+$template->param( showothernames => C4::Context->preference('DisplayOthernames') );
 if ($borrowerslist) {
     foreach (
         sort {(lc $a->{'surname'} cmp lc $b->{'surname'} || lc $a->{'firstname'} cmp lc $b->{'firstname'})
@@ -724,7 +724,7 @@ $template->param(
     CGIorganisations  => $CGIorganisations,
 	 is_child          => ($borrower->{'category_type'} ~~ 'C'),
     circview          => 1,
-    soundon           => C4::Context->preference("SoundOn"),
+    soundon           => C4::Context->preference("soundon"),
 );
 
 # save stickyduedate to session

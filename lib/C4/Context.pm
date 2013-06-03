@@ -33,66 +33,7 @@ use JSON qw(from_json);
 use Koha;
 require Koha::RoseDB;
 
-$VERSION = '4.09.00.020';
-
-if ($ENV{'HTTP_USER_AGENT'})	{
-    require CGI::Carp;
-    # FIXME for future reference, CGI::Carp doc says
-    #  "Note that fatalsToBrowser does not work with mod_perl version 2.0 and higher."
-    import CGI::Carp qw(fatalsToBrowser);
-
-    sub handle_errors {
-        my $msg = shift;
-        my $debug_level;
-        eval {C4::Context->dbh();};
-        if ($@){
-            $debug_level = 1;
-        } 
-        else {
-            $debug_level =  C4::Context->preference("DebugLevel");
-        }
-
-        print q(<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-                            "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-                       <html lang="en" xml:lang="en"  xmlns="http://www.w3.org/1999/xhtml">
-                       <head><title>Koha Error</title></head>
-                       <body>);
-        if ($debug_level eq '2'){
-            # debug 2 , print extra info too.
-            my %versions = get_versions();
-
-            # a little example table with various version info";
-            print "
-						<h1>Koha error</h1>
-						<p>The following fatal error has occurred:</p> 
-                        <pre><code>$msg</code></pre>
-						<table>
-						<tr><th>Apache</th><td>  $versions{apacheVersion}</td></tr>
-						<tr><th>Koha</th><td>    $versions{kohaVersion}</td></tr>
-						<tr><th>Koha DB</th><td> $versions{kohaDbVersion}</td></tr>
-						<tr><th>MySQL</th><td>   $versions{mysqlVersion}</td></tr>
-						<tr><th>OS</th><td>      $versions{osVersion}</td></tr>
-						<tr><th>Perl</th><td>    $versions{perlVersion}</td></tr>
-						</table>";
-        } elsif ($debug_level eq '1'){
-            print "
-						<h1>Koha error</h1>
-						<p>The following fatal error has occurred:</p> 
-                        <pre><code>$msg</code></pre>";
-        } else {
-            print "<p>production mode - trapped fatal error</p>";
-        }       
-        print '</body></html>';
-    }
-
-    CGI::Carp::set_message(\&handle_errors);
-
-    ## give a stack backtrace if KOHA_BACKTRACES is set
-    ## can't rely on DebugLevel for this, as we're not yet connected
-    if ($ENV{KOHA_BACKTRACES}) {
-        $main::SIG{__DIE__} = \&CGI::Carp::confess;
-    }
-}  	# else there is no browser to send fatals to!
+$VERSION = '4.09.00.022';
 
 =head1 NAME
 
@@ -491,7 +432,7 @@ sub _seed_preferences_cache {
         'SELECT variable, value FROM systempreferences',
         {Slice => {}} );
 
-    my %syspref_cache = map { lc($_->{variable}) => $_->{value}} @$matrix_ref;
+    my %syspref_cache = map { $_->{variable} => $_->{value}} @$matrix_ref;
     return \%syspref_cache;
 }
 
@@ -516,39 +457,24 @@ sub preference {
     my $self = shift;
     my $var  = shift;
 
-    # syspref captitalization should be normalized at some point. For now
-    # just always key against the lower case version
-    my $lcvar = lc($var);
-
     my $cache = C4::Context->getcache(__PACKAGE__,
                                       {driver => 'RawMemory',
                                       datastore => C4::Context->cachehash});
     my $sysprefs = $cache->compute('systempreferences', '1m', \&_seed_preferences_cache);
 
     # Just return the variable's value if we have it
-    return $sysprefs->{$lcvar} if exists $sysprefs->{$lcvar};
+    return $sysprefs->{$var} if exists $sysprefs->{$var};
 
     # Otherwise, scan for the variable in the defaults file
     my $defaults = preference_defaults();
-    # croak 'Cannot find syspref defaults' if !defined $defaults;
-    return if !defined $defaults;
+    croak 'Cannot find syspref defaults' unless $defaults;
 
-    # Warn if the variable isn't listed
+    # Die if the variable isn't listed
     my $new_var = $defaults->{$var};
-    # croak "Systempreference '$var' is not registered" if !defined $new_var;
-    if (!defined $new_var) {
-        carp "Systempreference '$var' is not registered";
-        return undef;
-    }
+    croak "Systempreference '$var' is not registered" unless $new_var;
 
     # Otherwise write the variable to the DB
-    $self->_clear_syspref_cache();
-    C4::Context->dbh->do(
-        q{
-            INSERT INTO systempreferences (variable, value, options, explanation, type)
-            VALUES (?, ?, ?, ?, ?)
-        }, undef, $var, $new_var->{value}, $new_var->{options},
-        $new_var->{explanation}, $new_var->{type});
+    $self->preference_set($var, $new_var->{value});
 
     return $new_var->{value};
 }
@@ -557,7 +483,14 @@ sub boolean_preference ($) {
     my $self = shift;
     my $var = shift;        # The system preference to return
     my $it = preference($self, $var);
-    return defined($it)? C4::Boolean::true_p($it): undef;
+    my $val = try {
+        return defined($it)? C4::Boolean::true_p($it): undef;
+    }
+    catch {
+        carp "Non-boolean value for boolean syspref '$var'. Using default.";
+        return preference_defaults()->{$var};
+    };
+    return $val;
 }
 
 =item dbh

@@ -731,7 +731,7 @@ $template->param(
     checkin_override_date   => $dropboxmode? '' : $checkin_override_date,
     dropboxdate				 => $dropboxdate->output(),
   	 overduecharges           => $overduecharges,
-    soundon                 => C4::Context->preference("SoundOn"),
+    soundon                 => C4::Context->preference("soundon"),
     DHTMLcalendar_dateformat=> C4::Dates->DHTMLcalendar(),
     AllowCheckInDateChange  => C4::Context->preference('AllowCheckInDateChange'),
     UseReceiptTemplates     => C4::Context->preference("UseReceiptTemplates"),

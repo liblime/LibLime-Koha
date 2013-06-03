@@ -2057,9 +2057,6 @@ DROP TABLE IF EXISTS `systempreferences`;
 CREATE TABLE `systempreferences` (
   `variable` varchar(50) NOT NULL default '',
   `value` text,
-  `options` mediumtext,
-  `explanation` text,
-  `type` varchar(20) default NULL,
   PRIMARY KEY  (`variable`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

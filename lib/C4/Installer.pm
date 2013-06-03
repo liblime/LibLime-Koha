@@ -425,7 +425,7 @@ sub load_sql_in_order {
 
     unless ( $updateflag == 1 ) {
         my $string =
-            "INSERT INTO systempreferences (value, variable, explanation, type) VALUES (\"$systempreference\",'FrameworksLoaded','Frameworks loaded through webinstaller','choice')";
+            "INSERT INTO systempreferences (value, variable) VALUES (\"$systempreference\",'FrameworksLoaded')";
         my $rq = $self->{'dbh'}->prepare($string);
         $rq->execute;
     }
@@ -460,7 +460,7 @@ sub set_marcflavour_syspref {
     $marc_cleaned = 'UNIMARC' if $marcflavour =~ /unimarc/i;
     my $request =
         $self->{'dbh'}->prepare(
-          "INSERT IGNORE INTO `systempreferences` (variable,value,explanation,options,type) VALUES('marcflavour','$marc_cleaned','Define global MARC flavor (MARC21 or UNIMARC) used for character encoding','MARC21|UNIMARC','Choice');"
+          "INSERT IGNORE INTO `systempreferences` (variable,value) VALUES('marcflavour','$marc_cleaned');"
         );
     $request->execute;
 }
@@ -490,7 +490,7 @@ sub set_version_syspref {
         $finish->execute($kohaversion);
     } else {
         warn "INSERT Version";
-        my $finish=$self->{'dbh'}->prepare("INSERT into systempreferences (variable,value,explanation) values ('Version',?,'The Koha database version. WARNING: Do not change this value manually, it is maintained by the webinstaller')");
+        my $finish=$self->{'dbh'}->prepare("INSERT into systempreferences (variable,value) values ('Version',?)");
         $finish->execute($kohaversion);
     }
     C4::Context->clear_syspref_cache();

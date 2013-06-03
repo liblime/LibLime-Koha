@@ -10,9 +10,6 @@ __PACKAGE__->meta->setup(
     columns => [
         variable    => { type => 'varchar', length => 50, not_null => 1 },
         value       => { type => 'text', length => 65535 },
-        options     => { type => 'scalar', length => 16777215 },
-        explanation => { type => 'text', length => 65535 },
-        type        => { type => 'varchar', length => 20 },
     ],
 
     primary_key_columns => [ 'variable' ],
