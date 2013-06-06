@@ -449,8 +449,9 @@ sub preference_set {
 
     $class->_clear_syspref_cache();
     C4::Context->dbh->do(
-        'UPDATE systempreferences SET value = ? WHERE variable LIKE ?',
-        undef, $val, $var);
+        'INSERT INTO systempreferences (variable, value) VALUES (?,?) '.
+        'ON DUPLICATE KEY UPDATE value=?',
+        undef, $var, $val, $val);
 }
 
 sub preference {

@@ -5009,7 +5009,7 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
 
 $DBversion = '4.09.00.021';
 if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
-    $dbh->do(q{DROP TABLE auth_cache});
+    $dbh->do(q{DROP TABLE IF EXISTS auth_cache});
     $dbh->do(q{ALTER TABLE auth_header ADD COLUMN naco VARCHAR(512) NOT NULL, ADD KEY `naco` (`naco`(32))});
 
     my $sth = $dbh->prepare('SELECT authid FROM auth_header');
@@ -5033,6 +5033,7 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
 
     my $defaults = C4::Context->preference_defaults;
     my %default_names = map {$_ => 1} keys %$defaults;
+    $default_names{Version} = 1; # Preserve Version pref
     my %default_names_lc = map {lc $_ => $_} keys %default_names;
 
     my @undeclared = grep {!exists $default_names{$_}} keys %used_names;
