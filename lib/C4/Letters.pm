@@ -27,7 +27,6 @@ use C4::Log;
 use C4::SMS;
 use C4::Debug;
 use C4::Dates qw/format_date/;
-use Date::Calc qw( Add_Delta_Days );
 use Encode;
 use Carp;
 use File::Temp qw/tempfile/;
@@ -529,19 +528,6 @@ sub parseletter {
 
     my $values = $sth->fetchrow_hashref;
     
-    # TEMPORARY hack until the expirationdate column is added to reserves
-    if ( $table eq 'reserves' && $values->{'waitingdate'} ) {
-        my @waitingdate = split /-/, $values->{'waitingdate'};
-
-        $values->{'expirationdate'} = C4::Dates->new(
-            sprintf(
-                '%04d-%02d-%02d',
-                Add_Delta_Days( @waitingdate, C4::Context->preference( 'ReservesMaxPickUpDelay' ) )
-            ),
-            'iso'
-        )->output();
-    }
-
     # and get all fields from the table
     if ($table ne 'items' ) {
         my $columns = C4::Context->dbh->prepare("SHOW COLUMNS FROM $table");
