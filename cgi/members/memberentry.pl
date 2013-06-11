@@ -545,7 +545,7 @@ my $borrotitlepopup = CGI::popup_menu(-name=>'title',
         -default=>$default_borrowertitle
         );    
 
-my @relationships = split /,|\|/, C4::Context->preference('BorrowerRelationship');
+my @relationships = split /,|\|/, C4::Context->preference('borrowerRelationship');
 my @relshipdata;
 while (@relationships) {
   my $relship = shift @relationships || '';
