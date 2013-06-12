@@ -758,7 +758,7 @@
 
 	<!-- 866 holdings public note -->
         <xsl:if test="marc:datafield[@tag=866]">
-           <xsl:if test="marc:subfield[@code=t]">
+           <xsl:if test="marc:subfield[@code=z]">
         <span class="results_summary"><span class="label">Holdings Note: </span>
         <xsl:for-each select="marc:datafield[@tag=866]">
                 <xsl:value-of select="marc:subfield[@code='z']"/>
@@ -883,7 +883,7 @@
                 <xsl:call-template name="chopPunctuation">
                     <xsl:with-param name="chopString">
                       <xsl:call-template name="subfieldSelect">
-                         <xsl:with-param name="codes">a</xsl:with-param>
+                         <xsl:with-param name="codes">az</xsl:with-param>
                       </xsl:call-template>
                    </xsl:with-param>
                 </xsl:call-template></li>
@@ -902,7 +902,7 @@
                    <xsl:call-template name="chopPunctuation">
                        <xsl:with-param name="chopString">
                          <xsl:call-template name="subfieldSelect">
-                            <xsl:with-param name="codes">a</xsl:with-param>
+                            <xsl:with-param name="codes">az</xsl:with-param>
                          </xsl:call-template>
                        </xsl:with-param>
                    </xsl:call-template></li>
