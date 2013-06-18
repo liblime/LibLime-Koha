@@ -5315,7 +5315,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         }
     }
     $dbh->do("ALTER TABLE deleteditems CHANGE COLUMN itemlost itemlost enum('lost','longoverdue','missing','trace') default NULL");
-    $dbh->do("UPDATE lostitems set itemlost=NULL where itemlost=0");
+    $dbh->do("UPDATE deleteditems set itemlost=NULL where itemlost=0");
 
     say "Upgrade to $DBversion done ( Enhancements to lost item and claims-returned functionality. )";
     SetVersion ($DBversion);

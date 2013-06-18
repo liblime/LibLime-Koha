@@ -726,7 +726,7 @@ sub AddReserve {
     my $new_reservenumber = $dbh->last_insert_id(undef, undef, undef, undef);
 
     # Assign holds fee if applicable
-    my $fee = GetReserveFee( $borrowernumber, $biblionumber, $constraint, $bibitems );
+    my $fee = GetReserveFee( $borrowernumber, $biblionumber, $itemnumber );
     if ( defined($fee) && $fee > 0 ) {
         my $biblio = GetBiblioData($biblionumber); 
         C4::Accounts::manualinvoice({
@@ -1213,101 +1213,42 @@ sub GetReserveCount {
 
 $fee = GetReserveFee($borrowernumber,$biblionumber,$constraint,$biblionumber);
 
+FIXME: Rewrite this.
+
 Calculate the fee for a reserve
+Sum of categories.reservefee, itemtypes.reservefee.
+If it's a bib-level hold, the GREATEST itemtype fee is
+charged.
 
 =cut
 
 sub GetReserveFee {
-    my ($borrowernumber, $biblionumber, $constraint, $bibitems ) = @_;
+    my ($borrowernumber, $biblionumber, $itemnumber) = @_;
 
     #check for issues;
     my $dbh   = C4::Context->dbh;
-    my $const = lc substr( $constraint, 0, 1 );
     my $query = qq/
-      SELECT * FROM borrowers
+      SELECT reservefee FROM borrowers
     LEFT JOIN categories ON borrowers.categorycode = categories.categorycode
     WHERE borrowernumber = ?
     /;
     my $sth = $dbh->prepare($query);
     $sth->execute($borrowernumber);
     my $data = $sth->fetchrow_hashref;
-    $sth->finish();
-    my $fee = $data->{'reservefee'} // 0;
-    $query = qq/
-      SELECT * FROM items
-    LEFT JOIN itemtypes ON items.itype = itemtypes.itemtype
-    WHERE biblionumber = ?
-    /;
-    my $isth = $dbh->prepare($query);
-    $isth->execute($biblionumber);
-    my $idata = $isth->fetchrow_hashref // {};
-    $$idata{reservefee} //= 0;
-    $fee += $idata->{'reservefee'};
+    my $fee = KOHA::Money->new($data->{'reservefee'});
 
-    if ( $fee > 0 ) {
+    if($itemnumber){
+        $sth = $dbh->prepare("SELECT reservefee FROM items join itemtypes ON(itype=itemtype) WHERE itemnumber=?");
+        $sth->execute($itemnumber);
 
-        # check for items on issue
-        # first find biblioitem records
-        my @biblioitems;
-        my $sth1 = $dbh->prepare(
-            "SELECT * FROM biblio LEFT JOIN biblioitems on biblio.biblionumber = biblioitems.biblionumber
-                   WHERE (biblio.biblionumber = ?)"
-        );
-        $sth1->execute($biblionumber);
-        while ( my $data1 = $sth1->fetchrow_hashref ) {
-            if ( $const ~~ 'a' ) {
-                push @biblioitems, $data1;
-            }
-            else {
-                my $found = 0;
-                foreach my $bibitemnum (@$bibitems) {
-                    if ($bibitemnum == $data->{biblioitemnumber}) {
-                        $found = 1;
-                        last;
-                    }
-                }
-                if ( ($const ~~ 'o' && $found) || !$found ) {
-                    push @biblioitems, $data1;
-                }
-            }
-        }
-        $sth1->finish;
-        my $cntitemsfound = @biblioitems;
-        my $issues        = 0;
-        my $x             = 0;
-        my $allissued     = 1;
-        while ( $x < $cntitemsfound ) {
-            my $bitdata = $biblioitems[$x];
-            my $sth2    = $dbh->prepare(
-                "SELECT * FROM items
-                     WHERE biblioitemnumber = ?"
-            );
-            $sth2->execute( $bitdata->{'biblioitemnumber'} );
-            while ( my $itdata = $sth2->fetchrow_hashref ) {
-                my $sth3 = $dbh->prepare(
-                    "SELECT * FROM issues
-                       WHERE itemnumber = ?"
-                );
-                $sth3->execute( $itdata->{'itemnumber'} );
-                if ( my $isdata = $sth3->fetchrow_hashref ) {
-                }
-                else {
-                    $allissued = 0;
-                }
-            }
-            $x++;
-        }
-        if ( $allissued == 0 ) {
-            my $rsth =
-              $dbh->prepare("SELECT * FROM reserves WHERE biblionumber = ?");
-            $rsth->execute($biblionumber);
-            if ( my $rdata = $rsth->fetchrow_hashref ) {
-            }
-            else {
-                $fee = 0;
-            }
-        }
+    } else {
+        $sth = $dbh->prepare("SELECT MAX(reservefee) FROM items join itemtypes ON(itype=itemtype) WHERE biblionumber=?");
+        $sth->execute($biblionumber);
     }
+
+    my $itemtype_fee = $sth->fetchrow_hashref // 0;
+    $fee += $itemtype_fee;
+
     return $fee;
 }
 
