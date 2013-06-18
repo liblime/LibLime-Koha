@@ -187,10 +187,22 @@ $(document).ready(function() {
             $("#forgiveMany span.ui-button-text").html("Waive All");    		
     	}
     });
-    $("a.fee_detail_link").click(function(){
-    	$(this).parent('td').find('div.fee_details').toggle();
+    $("a.fee-detail-link").click(function(){
+    	$(this).parent('td').find('div.fee-details').toggle();
     	return false;
     });
+    $("#toggle-all-paydetails").click(function(){
+      if($(this).data('viewstate')==1){
+        $("div.fee-details").hide();
+        $(this).html("Show credit details");
+        $(this).data('viewstate',0);
+      } else {
+        $("div.fee-details").show();
+        $(this).html("Hide credit details");
+        $(this).data('viewstate',1);
+      }
+      return false;
+    })
 
 });
 //]]>
@@ -260,7 +272,7 @@ $(document).ready(function() {
               <td><!-- TMPL_VAR NAME="date" --></td>
               <td><span class="feeDescription"><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --><!-- /TMPL_IF --></span>&nbsp;
                 <!-- TMPL_IF NAME="accruing" -->Accruing overdue charge for <span class='title'><!-- TMPL_VAR NAME="title" --></span> (due <!-- TMPL_VAR NAME="date_due" -->) <!-- /TMPL_IF -->&nbsp;
-                <!-- TMPL_IF NAME="itemcallnumber" -->[cn: <!-- TMPL_VAR NAME="itemcallnumber" -->]<!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="barcode" -->[<!-- TMPL_VAR NAME="barcode" -->]<!-- /TMPL_IF -->
                 <!-- TMPL_IF NAME="itemnumber" --><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">View item</a>&nbsp;<!-- /TMPL_IF -->
               </td>
               <td><!-- TMPL_VAR NAME="branchcode" --></td>
@@ -328,11 +340,13 @@ $(document).ready(function() {
             <h3 class="credit"><!-- TMPL_ELSE -->
             <h3 class="debit"><!-- /TMPL_IF -->Balance:  $<!-- TMPL_VAR NAME="total" --></h3>
             <br />
-            <table class="accountHistory"><caption>Fees &amp; payments</caption>
+            
+            <table class="accountHistory"><caption>Fees &amp; payments  <a href id="toggle-all-paydetails" data-viewstate="0">Show credit details</a></caption>
           <tr>
             <!-- TODO: <th>Edit</th> -->
             <th>Date</th>
             <th>Description</th>
+            <th>Library</th>
             <th>Fee type</th>
             <th>Amount</th>
             <th>Payment</th>
@@ -348,8 +362,8 @@ $(document).ready(function() {
 	              <td><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --><!-- /TMPL_IF -->
 	                  <!-- TMPL_IF NAME="itemnumber" -->: <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR "title" --></a>&nbsp;<!-- /TMPL_IF -->
 	                   <!-- TMPL_UNLESS payment --><!-- TMPL_IF has_credit -->
-	                       <a class="fee_detail_link htmlentlink" href="#" title="View details">&oplus;</a>
-		                   <div class="fee_details hidden">
+	                       <a class="fee-detail-link htmlentlink" href="#" title="View details">&oplus;</a>
+		                   <div class="fee-details hidden">
 		                   <table><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr>
 		                   <!-- TMPL_LOOP creditloop -->
 		                       <tr><td><!-- TMPL_VAR EXPR="date(date)" --></td><td><!-- TMPL_VAR description --><span class="notes"><!-- TMPL_VAR notes --></span></td><td><!-- TMPL_VAR "accounttype_desc" --></td><td><!-- TMPL_VAR EXPR=currency(amount) --></td></tr>
@@ -357,6 +371,7 @@ $(document).ready(function() {
 		                   </table></div>
                        <!-- /TMPL_UNLESS --><!-- /TMPL_IF -->
 	              </td>
+                <td><!-- TMPL_VAR NAME="branchcode" --></td>
 	              <td><!-- TMPL_VAR NAME="accounttype_desc" --></td>
 	              <td <!-- TMPL_UNLESS payment -->class="debit"<!-- /TMPL_UNLESS -->><!-- TMPL_IF NAME="accruing" -->(accruing)<!-- TMPL_ELSE -->$<!-- TMPL_VAR EXPR="currency(amount)" --><!-- /TMPL_IF --></td>
 	              <td class="credit">

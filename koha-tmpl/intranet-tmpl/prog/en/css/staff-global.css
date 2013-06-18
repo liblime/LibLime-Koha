@@ -1982,8 +1982,14 @@ td p{
   text-decoration: none;
   font-size: large;
 }
+
+#toggle-all-paydetails{
+  margin-left: 1em;
+  font-size:0.6em;
+}
+
 .debit{
-	color: rgb(167, 67, 12);
+  color: rgb(167, 67, 12);
 }
 
 /* jQuery-UI overrides */

@@ -1298,6 +1298,7 @@ sub prepare_fee_for_display {
         $fee->{'title'} = $item->{'title'};
         $fee->{'itemtype'} = $item->{'itemtype_description'};
         $fee->{'homebranch'} = $item->{'homebranch'};
+        $fee->{'barcode'} = $item->{'barcode'};
         $fee->{'itemcallnumber'} = $item->{'itemcallnumber'};
     }
     $fee->{'date'} = C4::Dates::format_date($fee->{'timestamp'});
