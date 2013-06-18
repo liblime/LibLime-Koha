@@ -90,7 +90,7 @@ if($op eq 'maninvoice'){
                 operator_id     => $loggedinuser,
             };
     @fees_to_pay = map { $_ + 0 } $input->param('fees_to_pay');
-    $error = (@fees_to_pay) ? manualcredit($credit, fees => \@fees_to_pay) : manualcredit($credit);
+    $error = (@fees_to_pay) ? C4::Accounts::manualcredit($credit, fees => \@fees_to_pay) : C4::Accounts::manualcredit($credit);
 } elsif($op eq 'pay'){
     my $fee_id = $input->param('fee_id');
     my $desc = $input->param('desc');

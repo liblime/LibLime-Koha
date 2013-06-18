@@ -1939,13 +1939,13 @@ EOF
     $sth = $dbh->prepare("SELECT enrolmentfee FROM categories WHERE categorycode=?");
     $sth->execute($borrower->{'categorycode'});
     my ($enrolmentfee) = $sth->fetchrow;
+
     if ($enrolmentfee && $enrolmentfee > 0) {
-        # insert fee in patron debts
-        C4::Accounts::manualinvoice(
+       C4::Accounts::manualinvoice({
          borrowernumber => $borrower->{'borrowernumber'},
-         accounttype    => 'A', 
+         accounttype    => 'RENEWCARD', 
          amount         => $enrolmentfee
-        );
+         });
     }
     return $date if ($sth);
     return 0;

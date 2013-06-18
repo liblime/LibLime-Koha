@@ -441,6 +441,7 @@ sub getpayment {
                     date            => ($unallocated) ? $unallocated->{date} : $trans[0]->{date},
                     received_by     => ($unallocated) ? $unallocated->{received_by} : $trans[0]->{received_by},
                     accounttype     => ($unallocated) ? $unallocated->{accounttype} : $trans[0]->{accounttype},
+                    branchcode     => ($unallocated) ? $unallocated->{branchcode} : $trans[0]->{branchcode},                    
                     unallocated     => $unallocated,
         };
     if(!$options{unallocated}){
