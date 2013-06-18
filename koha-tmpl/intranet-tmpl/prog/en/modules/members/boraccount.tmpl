@@ -6,15 +6,8 @@
 $(document).ready(function() {
      $('#account_tabs').tabs();
      $("#invoice_type").change( function(){
-             var accounttype = $(this).val();
-             if(accounttype != 'FINE' && accounttype != 'LOSTITEM' && accounttype != 'LOST_SURCHARGE'){
-                 $("#invoice_barcode").val('');
-                 $("#invoice_barcode").attr('disabled','disabled');
-             } else {
-                 $("#invoice_barcode").removeAttr('disabled');
-             }
-             if($(this).children('option:selected').data('amount')){
-                 $("#invoice_amount").val($(this).children('option:selected').data('amount').toFixed(2));            	 
+             if($(this).find('option:selected').data('amount')){
+                 $("#invoice_amount").val($(this).find('option:selected').data('amount').toFixed(2));
              } else {
             	 $("#invoice_amount").val('');
              }
@@ -461,7 +454,7 @@ $(document).ready(function() {
                 <!-- /TMPL_LOOP -->
               </optgroup>
         </select></li>
-            <li><label for="invoice_barcode">Barcode: </label><input type="text" name="barcode" id="invoice_barcode" disabled="disabled" /></li>
+            <li><label for="invoice_barcode">Barcode: </label><input type="text" name="barcode" id="invoice_barcode" /></li>
             <li><label for="invoice_desc">Description: </label><input type="text" name="desc" id="invoice_desc" size="50" /></li>
             <li><label for="invoice_amount">Amount: </label><input type="text" name="amount" id="invoice_amount" /></li>
             </ol></fieldset>
