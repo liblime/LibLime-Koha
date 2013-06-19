@@ -190,17 +190,15 @@ if ($op eq 'insert' || $op eq 'modify' || $op eq 'save') {
 
     # If dateexpiry was blank - set it to default value, with
     # format specified per $syspref for Koha variable "dateformat".
-    unless ($borrower_data->{'dateexpiry'}){
-        $newdata{'categorycode'} = $categorycode;
-        if (! defined $newdata{'dateexpiry'} or ! $newdata{'dateexpiry'}) {
-            my $denr = $newdata{'dateenrolled'} // C4::Dates->today('iso');
+    $newdata{'categorycode'} = $categorycode;
+    if (! defined $newdata{'dateexpiry'} or ! $newdata{'dateexpiry'}) {
+        my $denr = $newdata{'dateenrolled'} // C4::Dates->today('iso');
 
-            if ($denr =~ /$syspref/) {
-                # if match syspref format, then convert to ISO
-                $denr = format_date_in_iso($denr);
-            }
-            $newdata{dateexpiry} = GetExpiryDate($newdata{categorycode}, $denr);
+        if ($denr =~ /$syspref/) {
+            # if match syspref format, then convert to ISO
+            $denr = format_date_in_iso($denr);
         }
+        $newdata{dateexpiry} = GetExpiryDate($newdata{categorycode}, $denr);
     }
     foreach (qw(dateenrolled dateexpiry dateofbirth)) {
         my $userdate = $newdata{$_} or next;
