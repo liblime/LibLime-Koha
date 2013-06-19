@@ -51,9 +51,13 @@ sub StringSearch {
     my $query = "SELECT variable, value FROM systempreferences WHERE $where ORDER BY variable";
 
     my $prefs = C4::Context->dbh->selectall_arrayref($query, {Slice=>{}}, @bind);
+    $prefs = [
+        grep { ! $prefdefs->{$_->{variable}}{hidden} }
+        grep { exists $prefdefs->{$_->{variable}} }
+        @$prefs
+    ];
     for my $pref (@$prefs) {
         my $default = $prefdefs->{$pref->{variable}};
-        next unless $default && ! $default->{hidden};
         for (qw/options explanation type/) {
             $pref->{$_} = $default->{$_};
         }
