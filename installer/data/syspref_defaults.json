@@ -6,7 +6,7 @@
       "hidden" : false,
       "type" : "free",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "StaffShowExpiredHolds" : {
@@ -36,7 +36,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "GetItAcquisitions" : {
@@ -56,17 +56,17 @@
       "hidden" : false,
       "type" : "Textarea",
       "tags" : [
-         "OAI-PMH"
+         "Ignore"
       ]
    },
    "marc" : {
       "explanation" : "Turn on MARC support",
       "options" : null,
       "value" : "1",
-      "hidden" : false,
+      "hidden" : true,
       "type" : "YesNo",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "KeepPreviousBorrowerInterval" : {
@@ -160,7 +160,7 @@
       ]
    },
    "TransfersMaxDaysWarning" : {
-      "explanation" : "Define the days before a transfer is suspected of having a problem",
+      "explanation" : "Define the days before a transfer is suspected of having a problem. Multi-Library Only.",
       "options" : null,
       "value" : "3",
       "hidden" : false,
@@ -196,7 +196,7 @@
       "hidden" : false,
       "type" : "free",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "IntranetNav" : {
@@ -226,7 +226,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "OPACSearchSuggestionsCount" : {
@@ -273,10 +273,10 @@
       "explanation" : "If set, a link to Biblios Cataloging will appear in the Koha menu and Biblios Cataloging-specific functionality will appear elsewhere. Please refer to the documentation for details.",
       "options" : null,
       "value" : "0",
-      "hidden" : false,
+      "hidden" : true,
       "type" : "YesNo",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "itembarcodelength" : {
@@ -296,7 +296,7 @@
       "hidden" : false,
       "type" : "Free",
       "tags" : [
-         "OAI-PMH"
+         "Ignore"
       ]
    },
    "LibraryName" : {
@@ -366,7 +366,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "OpacNav" : {
@@ -396,7 +396,7 @@
       "hidden" : false,
       "type" : "Free",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "BiblioAddsAuthorities" : {
@@ -480,13 +480,13 @@
       ]
    },
    "SMSSendDriver" : {
-      "explanation" : "Sets which SMS::Send driver is used to send SMS messages.",
+      "explanation" : "Sets which SMS::Send driver is used to send SMS messages. Requires system configuration; ask support for more information.",
       "options" : null,
       "value" : null,
       "hidden" : false,
       "type" : "free",
       "tags" : [
-         "Patrons"
+         "Ignore"
       ]
    },
    "itemcallnumber" : {
@@ -620,9 +620,9 @@
       ]
    },
    "MARCOrgCode" : {
-      "explanation" : "Define MARC Organization Code - http://www.loc.gov/marc/organizations/orgshome.html",
+      "explanation" : "Define MARC Organization Code - http://www.loc.gov/marc/organizations/orgshome.html -- need an org code or an entry of \"local\" for authority linking",
       "options" : null,
-      "value" : "OSt",
+      "value" : "local",
       "hidden" : false,
       "type" : "free",
       "tags" : [
@@ -710,7 +710,7 @@
       ]
    },
    "HoldsTransportationReductionThreshold" : {
-      "explanation" : "The number of holds that must be in the queue for the holds transportation reduction to be enabled ( assuming FillRequestsAtPickupLibrary is enabled ).",
+      "explanation" : "The number of holds that must be in the queue for the holds transportation reduction to be enabled ( assuming FillRequestsAtPickupLibrary is enabled ). Multi-Library Only.",
       "options" : null,
       "value" : "1000000",
       "hidden" : false,
@@ -810,7 +810,7 @@
       ]
    },
    "OPACShowActiveBranchFirstInResults" : {
-      "explanation" : "If ON, in the OPAC, use the active library as the primary sort field for a record's holdings.  Used in conjunction with OPACDefaultItemSort where OPACDefaultItemSort is the secondary sort field.  Otherwise if Off, sort by OPACDefaultItemSort.",
+      "explanation" : "If ON, in the OPAC, use the active library as the primary sort field for a record's holdings.  Used in conjunction with OPACDefaultItemSort where OPACDefaultItemSort is the secondary sort field.  Otherwise if Off, sort by OPACDefaultItemSort. Multi-Library Only.",
       "options" : null,
       "value" : "0",
       "hidden" : false,
@@ -850,7 +850,7 @@
       ]
    },
    "FillRequestsAtPickupLibraryAge" : {
-      "explanation" : "Measured in days. If there are any higher-priority active holds that have been waiting longer than the FillRequestsAtPickupLibraryAge, then the item will fill the highest priority active hold, even thought that will require transportation. Note that the highest-priority hold may not be the one that's been waiting longest.",
+      "explanation" : "Measured in days. If there are any higher-priority active holds that have been waiting longer than the FillRequestsAtPickupLibraryAge, then the item will fill the highest priority active hold, even thought that will require transportation. Note that the highest-priority hold may not be the one that's been waiting longest.  Multi-Library Only.",
       "options" : null,
       "value" : "30",
       "hidden" : false,
@@ -876,7 +876,7 @@
       "hidden" : false,
       "type" : "Integer",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "soundon" : {
@@ -916,17 +916,17 @@
       "hidden" : false,
       "type" : "Textarea",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "insecure" : {
       "explanation" : "If ON, bypasses all authentication. Be careful!",
       "options" : null,
       "value" : "0",
-      "hidden" : false,
+      "hidden" : true,
       "type" : "YesNo",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "IntranetBiblioDefaultView" : {
@@ -936,7 +936,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "checkdigit" : {
@@ -956,7 +956,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "patronbarcodelength" : {
@@ -1076,7 +1076,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "BranchTransferLimitsType" : {
@@ -1146,7 +1146,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "yuipath" : {
@@ -1156,7 +1156,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "StaffClient"
+         "Ignore"
       ]
    },
    "InProcessingToShelvingCart" : {
@@ -1206,7 +1206,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "Circulation"
+         "Ignore"
       ]
    },
    "IntranetUserCSS" : {
@@ -1356,7 +1356,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "maxItemsinSearchResults" : {
@@ -1386,7 +1386,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "OPACUserCSS" : {
@@ -1486,7 +1486,7 @@
       "hidden" : false,
       "type" : "Textarea",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "NewPatronReadingHistory" : {
@@ -1520,7 +1520,7 @@
       ]
    },
    "NextLibraryHoldsQueueWeight" : {
-      "explanation" : "Specify a list of library location codes separated by commas -- the list of codes will be traversed and weighted with first values given higher weight for holds fulfillment -- alternatively, if RandomizeHoldsQueueWeight is set, the list will be used in order. This preference overrides both StaticHoldsQueueWeight and RandomizeHoldsQueueWeight.",
+      "explanation" : "Specify a list of library location codes separated by commas -- the list of codes will be traversed and weighted with first values given higher weight for holds fulfillment -- alternatively, if RandomizeHoldsQueueWeight is set, the list will be used in order. This preference overrides both StaticHoldsQueueWeight and RandomizeHoldsQueueWeight. Multi-Library Only.",
       "options" : null,
       "value" : "",
       "hidden" : false,
@@ -1530,7 +1530,7 @@
       ]
    },
    "KohaAdminEmailAddress" : {
-      "explanation" : "Define the email address where patron modification requests are sent",
+      "explanation" : "Define the email address where patron modification requests are sent; also used as the default \"from\" address for notices.",
       "options" : null,
       "value" : "root@localhost",
       "hidden" : false,
@@ -1590,7 +1590,7 @@
       ]
    },
    "AutomaticItemReturn" : {
-      "explanation" : "If ON, Koha will automatically set up a transfer of this item to its homebranch",
+      "explanation" : "If ON, Koha will automatically set up a transfer of this item to its homebranch. Multi-Library Only.",
       "options" : null,
       "value" : "1",
       "hidden" : false,
@@ -1600,17 +1600,17 @@
       ]
    },
    "HomeOrHoldingBranch" : {
-      "explanation" : "Used by Circulation to determine which branch of an item to check with independent branches on, and by search to determine which branch to choose for availability ",
+      "explanation" : "Used by Circulation to determine which branch of an item to check with independent branches on, and by search to determine which branch to choose for availability. Multi-Library Only.",
       "options" : "holdingbranch|homebranch",
       "value" : "holdingbranch",
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "Circulation"
+         "Ignore"
       ]
    },
    "AutoEmailPrimaryAddress" : {
-      "explanation" : "Defines the default email address where 'Account Details' emails are sent.",
+      "explanation" : "Defines the default email address where notices and 'Account Details' emails are sent.",
       "options" : "email|emailpro|B_email|cardnumber|OFF",
       "value" : "email",
       "hidden" : false,
@@ -1626,7 +1626,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "SubscriptionLog" : {
@@ -1656,7 +1656,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "SpineLabelAutoPrint" : {
@@ -1686,7 +1686,7 @@
       "hidden" : false,
       "type" : "Themes",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "SyndeticsEditions" : {
@@ -1736,7 +1736,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "StaffClient"
+         "Ignore"
       ]
    },
    "SessionStorage" : {
@@ -1746,7 +1746,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "hidelostitems" : {
@@ -1786,7 +1786,7 @@
       "hidden" : false,
       "type" : "Integer",
       "tags" : [
-         "OAI-PMH"
+         "Ignore"
       ]
    },
    "OPACDisplayExtendedSubInfo" : {
@@ -1846,7 +1846,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "TagsExternalDictionary" : {
@@ -1856,7 +1856,7 @@
       "hidden" : false,
       "type" : "Free",
       "tags" : [
-         "EnhancedContent"
+         "Ignore"
       ]
    },
    "GoogleJackets" : {
@@ -1876,7 +1876,7 @@
       "hidden" : false,
       "type" : "Textarea",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "OPACAmazonCoverImages" : {
@@ -1946,7 +1946,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "StaffClient"
+         "Ignore"
       ]
    },
    "ClaimsReturnedValue" : {
@@ -2056,7 +2056,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "OPACSolrBQ" : {
@@ -2096,7 +2096,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "DisableHoldsIssueOverrideUnlessAuthorised" : {
@@ -2116,7 +2116,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "Circulation"
+         "Ignore"
       ]
    },
    "OpacSuppression" : {
@@ -2176,7 +2176,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "virtualshelves" : {
@@ -2286,7 +2286,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "StaffClient"
+         "Ignore"
       ]
    },
    "SubscriptionHistory" : {
@@ -2346,7 +2346,7 @@
       "hidden" : false,
       "type" : "Themes",
       "tags" : [
-         "StaffClient"
+         "Ignore"
       ]
    },
    "SearchMyLibraryFirst" : {
@@ -2366,7 +2366,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "OAI-PMH"
+         "Ignore"
       ]
    },
    "defaultSortField" : {
@@ -2386,7 +2386,7 @@
       "hidden" : false,
       "type" : "Textarea",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "uppercasesurnames" : {
@@ -2516,7 +2516,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "OPACdefaultSortOrder" : {
@@ -2576,7 +2576,7 @@
       "hidden" : false,
       "type" : "Textarea",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "opacuserjs" : {
@@ -2683,10 +2683,10 @@
       "explanation" : "Define global MARC flavor (MARC21 or UNIMARC) used for character encoding",
       "options" : "MARC21|UNIMARC",
       "value" : "MARC21",
-      "hidden" : false,
+      "hidden" : true,
       "type" : "Choice",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "globalDueDate" : {
@@ -2716,7 +2716,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "Admin"
+         "Ignore"
       ]
    },
    "intranetcolorstylesheet" : {
@@ -2876,7 +2876,7 @@
       "hidden" : false,
       "type" : "free",
       "tags" : [
-         "Cataloging"
+         "Ignore"
       ]
    },
    "Babeltheque" : {
@@ -2910,7 +2910,7 @@
       ]
    },
    "RandomizeHoldsQueueWeight" : {
-      "explanation" : "if ON, the holds queue in circulation will be randomized, either based on all location codes, or by the location codes specified in StaticHoldsQueueWeight",
+      "explanation" : "if ON, the holds queue in circulation will be randomized, either based on all location codes, or by the location codes specified in StaticHoldsQueueWeight.  Multi-Library Only.",
       "options" : null,
       "value" : "",
       "hidden" : false,
@@ -3000,7 +3000,7 @@
       ]
    },
    "FillRequestsAtPickupLibrary" : {
-      "explanation" : "Fill hold requests at your local library if possible before sending an item to another branch to fill a hold request.",
+      "explanation" : "Fill hold requests at your local library if possible before sending an item to another branch to fill a hold request. Multi-Library Only.",
       "options" : null,
       "value" : "0",
       "hidden" : false,
@@ -3016,7 +3016,7 @@
       "hidden" : false,
       "type" : "Free",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "ReservesNeedReturns" : {
@@ -3066,7 +3066,7 @@
       "hidden" : false,
       "type" : "YesNo",
       "tags" : [
-         "EnhancedContent"
+         "Circulation"
       ]
    },
    "WarnOnlyOnMaxFine" : {
@@ -3190,7 +3190,7 @@
       ]
    },
    "EditAllLibraries" : {
-      "explanation" : "If set, all libraries have privileges to edit all items; if OFF, libraries may only edit items owned by their own library",
+      "explanation" : "If set, all libraries have privileges to edit all items; if OFF, libraries may only edit items owned by their own library. Multi-Library Only.",
       "options" : null,
       "value" : "1",
       "hidden" : false,
@@ -3210,7 +3210,7 @@
       ]
    },
    "ConstrainPatronsDeeply" : {
-      "explanation" : "When using patron categories, hide non-local patrons not only from search but from access within Koha modules. Has no effect unless patron groups are enabled.",
+      "explanation" : "When using patron categories, hide non-local patrons not only from search but from access within Koha modules. Has no effect unless patron groups are enabled. Multi-Library Only.",
       "options" : null,
       "value" : "1",
       "hidden" : false,
@@ -3220,7 +3220,7 @@
       ]
    },
    "StaticHoldsQueueWeight" : {
-      "explanation" : "Specify a list of library location codes separated by commas -- the list of codes will be traversed and weighted with first values given higher weight for holds fulfillment -- alternatively, if RandomizeHoldsQueueWeight is set, the list will be randomly selective",
+      "explanation" : "Specify a list of library location codes separated by commas -- the list of codes will be traversed and weighted with first values given higher weight for holds fulfillment -- alternatively, if RandomizeHoldsQueueWeight is set, the list will be randomly selective. Multi-Library Only.",
       "options" : null,
       "value" : "",
       "hidden" : false,
@@ -3256,7 +3256,7 @@
       "hidden" : false,
       "type" : "Choice",
       "tags" : [
-         "OPAC"
+         "Ignore"
       ]
    },
    "CataloguingLog" : {
@@ -3286,11 +3286,11 @@
       "hidden" : false,
       "type" : "Free",
       "tags" : [
-         "OAI-PMH"
+         "Ignore"
       ]
    },
    "OPACQuickSearchFilter" : {
-      "explanation" : "Enable limit dropdown in the OPAC Masthead.  This preference will shorten the quick search bar.  Valid values are:\n a) blank: No limit dropdown will appear in masthead search.\n b) a Koha authorised value-controlled index (i.e. itemtype, ccode, location, or format), or\n c) a list of labels and Koha search query clauses, separated by a pipe ('|') symbol, e.g. 'Video|itemtype:DVD or itemtype:VHS'",
+      "explanation" : "Enable limit dropdown in the OPAC Masthead.  This preference will shorten the quick search bar.  Valid values are:\n a) blank: No limit dropdown will appear in masthead search.\n b) a Koha authorised value-controlled index (i.e. itemtype, ccode, location, or format), or\n c) a list of labels and Koha search query clauses (on separate lines), separated by a pipe ('|') symbol, e.g. Music|format:\"Music\" or Book|format:\"Book\"",
       "options" : "70|10",
       "value" : "",
       "hidden" : false,
@@ -3310,7 +3310,7 @@
       ]
    },
    "AllowAllMessageDeletion" : {
-      "explanation" : "Allow any Library to delete any message",
+      "explanation" : "Allow any Library to delete any message. Multi-Library Only.",
       "options" : null,
       "value" : "0",
       "hidden" : false,
@@ -3370,7 +3370,7 @@
       ]
    },
    "EnableOwedNotification" : {
-      "explanation" : "If ON,allows a notification to be sent on total amount owed.  OwedNotificationValue syspref will need to be set to the desired amount.",
+      "explanation" : "If ON,allows a billing notice to be sent on total amount owed.  OwedNotificationValue syspref will need to be set to the desired amount and a cron job enabled.",
       "options" : null,
       "value" : "0",
       "hidden" : false,
@@ -3420,7 +3420,7 @@
       ]
    },
    "UseReceiptTemplates" : {
-      "explanation" : "Enable the use of the Receipt Templates system.",
+      "explanation" : "Enable the use of the Receipt Templates system; each library must define receipts if on.",
       "options" : null,
       "value" : "0",
       "hidden" : false,
