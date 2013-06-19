@@ -194,7 +194,7 @@ sub CalcFine {
     );
 
     my $dbh = C4::Context->dbh;
-    my $amount = 0;
+    my $amount = Koha::Money->new();
     my ($daystocharge, $totaldays);
     my $start_date = C4::Dates->new($issue->{date_due},'iso');
 
@@ -212,7 +212,8 @@ sub CalcFine {
         $days_minus_grace = $totaldays - $irule->{'firstremind'};
         $daystocharge = (C4::Context->preference('FinesExcludeGracePeriod')) ? $days_minus_grace : $totaldays;
         if ($irule->{'chargeperiod'} > 0 && $days_minus_grace > 0 && $daystocharge > 0) {
-            $amount = int($daystocharge / $irule->{'chargeperiod'}) * $irule->{'fine'};
+            $amount = Koha::Money->new(int($daystocharge / $irule->{'chargeperiod'}) * $irule->{'fine'});
+
         }
         #else { a zero (or null)  chargeperiod means no charge.}
     }
@@ -221,7 +222,7 @@ sub CalcFine {
     my $rule_max = C4::Context->preference('UseGranularMaxFines') ? $irule->{max_fine} : 0;
     my $max_fine = $rule_max || $sys_max;
     if ($amount >= $max_fine) {
-        $amount = $max_fine;
+        Koha::Money->new($max_fine);
         $ismax = 1
     }
 
@@ -248,21 +249,21 @@ deleted and copied to old_issues.
 
 
 sub AccrueFine {
-    my $issue_id = shift || return;
+    my $issue_id = shift or return;
     my $amount   = shift;
     my $dbh = C4::Context->dbh;
     if($amount == 0){
         my $sth_del = $dbh->prepare('DELETE from fees_accruing where issue_id = ?');
         $sth_del->execute($issue_id);
     } else {
-        $amount = sprintf( "%d",$amount * 100.0 );  # fees_accruing stores integer.
+        $amount = Koha::Money->new($amount) unless(Check::ISA::obj($amount, 'Koha::Money'));
         my $sth_check = $dbh->prepare('select * from fees_accruing where issue_id = ?');
         $sth_check->execute($issue_id);
         my $update_query = ($sth_check->rows()) ?
                                 "UPDATE fees_accruing SET amount = ? WHERE issue_id = ?" :
                                 "INSERT INTO fees_accruing ( amount , issue_id ) VALUES ( ? , ? )";
         my $sth = $dbh->prepare($update_query);
-        $sth->execute( $amount , $issue_id );
+        $sth->execute( $amount->value() , $issue_id );
     }
 }
 

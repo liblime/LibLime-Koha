@@ -285,7 +285,7 @@ sub getaccruingcharges {
 	$sth->execute( $borrowernumber );
 	my @results;
 	while(my $data = $sth->fetchrow_hashref){
-	    $data->{'amount'} = Koha::Money->new($data->{amount}) / 100.0 ; # stored as int, unlike fee_transactions.amount
+	    $data->{'amount'} = Koha::Money->new($data->{amount});
 	    push @results,$data;
 	}
     return \@results;
@@ -373,7 +373,7 @@ sub gettotalaccruing {
     my $sth = $dbh->prepare("SELECT SUM(fees_accruing.amount) FROM fees_accruing JOIN issues on ( fees_accruing.issue_id = issues.id)  WHERE borrowernumber = ?");
     $sth->execute( $borrowernumber );
     my ($data) = $sth->fetchrow_array;
-    return Koha::Money->new($data) / 100.0;
+    return Koha::Money->new($data);
 }
 
 =head2 getfee

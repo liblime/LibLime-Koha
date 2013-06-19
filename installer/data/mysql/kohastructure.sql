@@ -2856,7 +2856,7 @@ CREATE TABLE `fee_transactions` (
 DROP TABLE IF EXISTS `fees_accruing`;
 CREATE TABLE `fees_accruing` (
    `issue_id` int(11) NOT NULL,
-   `amount` int(11) NOT NULL default 0,
+   `amount` decimal(12,2) NOT NULL default '0.00',
    `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
    PRIMARY KEY  (`issue_id`),
    CONSTRAINT `fees_accruing_fk_1` FOREIGN KEY (`issue_id`) REFERENCES `issues` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
