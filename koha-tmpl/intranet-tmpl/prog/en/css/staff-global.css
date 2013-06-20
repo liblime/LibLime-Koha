@@ -1991,6 +1991,9 @@ td p{
 .debit{
   color: rgb(167, 67, 12);
 }
+input.reversepayment{
+	font-size: smaller;
+}
 
 /* jQuery-UI overrides */
 .ui-tabs-nav {

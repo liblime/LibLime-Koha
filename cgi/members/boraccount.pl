@@ -37,7 +37,7 @@ my ($template, $loggedinuser, $cookie, $staffflags)
                             query => $input,
                             type => "intranet",
                             authnotrequired => 0,
-                            flagsrequired => {borrowers => "borrowers_remaining_permissions", updatecharges => 1},
+                            flagsrequired => {updatecharges => "*"},
                             debug => 1,
                             });
 
