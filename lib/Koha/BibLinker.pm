@@ -41,7 +41,9 @@ method relink_from_headings( Koha::BareBib $bib ) {
 
                 # Copy back uncontrolled subfields and $0
                 my @additional =
-                    map {@$_} grep {$_->[0] =~ /[w234]/} $f->subfields;
+                    map {@$_} grep {$_->[0] =~ /[iw1-9]/} $f->subfields;
+                push @additional, ('e', $f->subfield('e'))
+                        if $f->tag !~ /^.11$/ && $f->subfield('e');
                 push @additional, ('v', $f->subfield('v'))
                     if $f->tag =~ /^4..$/ && $f->subfield('v');
                 $new_f->add_subfields( @additional, '0' => $auth->rcn );
