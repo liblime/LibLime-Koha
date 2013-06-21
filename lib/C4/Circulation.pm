@@ -1654,12 +1654,6 @@ sub AddReturn {
         $messages->{'wthdrawn'} = 1;
         $doreturn = 0;
     }
-    if (   C4::Context->preference('AllowReadingHistoryAnonymizing')
-        && !C4::Context->preference('KeepPreviousBorrower')
-        && $borrower->{'disable_reading_history'} )
-    {
-        AnonymiseIssueHistory( '', $borrower->{'borrowernumber'} );
-    }
 
     # Set items.otherstatus back to NULL on check in regardless of whether the
     # item was actually checked out.
@@ -1694,6 +1688,15 @@ sub AddReturn {
                     $returndate);
             $messages->{'WasReturned'} = $borrower || 1;        
          }
+    }
+
+    # Needed to move this down below _MarkIssueReturned since most recent
+    # return was still in the issues and not the old_issues table.
+    if (   C4::Context->preference('AllowReadingHistoryAnonymizing')
+        && !C4::Context->preference('KeepPreviousBorrower')
+        && $borrower->{'disable_reading_history'} )
+    {
+        AnonymiseIssueHistory( '', $borrower->{'borrowernumber'} );
     }
 
     # the holdingbranch is updated if the document is returned to another location.
