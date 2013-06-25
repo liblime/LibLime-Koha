@@ -361,7 +361,14 @@
                 <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=author:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
                 </xsl:otherwise>
             </xsl:choose>
-            <xsl:call-template name="nameABCDQ"/></a>
+            <xsl:call-template name="chopPunctuation">
+                <xsl:with-param name="chopString">
+                    <xsl:call-template name="subfieldSelect">
+                        <xsl:with-param name="codes">at</xsl:with-param>
+                    </xsl:call-template>
+                </xsl:with-param>
+            </xsl:call-template>
+            </a>
             <xsl:choose>
             <xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
             </span>
@@ -377,7 +384,14 @@
                 <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=author:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
                 </xsl:otherwise>
             </xsl:choose>
-            <xsl:call-template name="nameABCDQ"/></a>
+            <xsl:call-template name="chopPunctuation">
+                <xsl:with-param name="chopString">
+                    <xsl:call-template name="subfieldSelect">
+                        <xsl:with-param name="codes">at</xsl:with-param>
+                    </xsl:call-template>
+                </xsl:with-param>
+            </xsl:call-template>
+            </a>
             <xsl:choose>
             <xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
             </span>
@@ -393,7 +407,14 @@
                 <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=author:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
                 </xsl:otherwise>
             </xsl:choose>
-            <xsl:call-template name="nameABCDQ"/></a>
+            <xsl:call-template name="chopPunctuation">
+                <xsl:with-param name="chopString">
+                    <xsl:call-template name="subfieldSelect">
+                        <xsl:with-param name="codes">at</xsl:with-param>
+                    </xsl:call-template>
+                </xsl:with-param>
+            </xsl:call-template>
+            </a>
             <xsl:choose>
             <xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
             </span>
