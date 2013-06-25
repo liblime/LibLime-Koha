@@ -115,16 +115,25 @@ $template->param( filledreservloop => \@filledreservloop,
 my @expiredreservloop;
 foreach my $num_res (@borroweroldreserv) {
   my %getreserv;
-  my $getiteminfo  = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
-  my $itemtypeinfo = getitemtypeinfo( $getiteminfo->{'itemtype'} );
-
+  $getreserv{biblionumber} = $num_res->{'biblionumber'};
+  # The itemnumber is not necessarily defined for expired holds.
+  if (defined ($num_res->{'itemnumber'})) {
+    my $getiteminfo  = GetBiblioFromItemNumber( $num_res->{'itemnumber'} );
+    my $itemtypeinfo = getitemtypeinfo( $getiteminfo->{'itemtype'} );
+    foreach (qw(title author itemcallnumber)) {
+      $getreserv{$_} = $getiteminfo->{$_};
+    }
+    $getreserv{itemtype}  = $itemtypeinfo->{'description'};
+    $getreserv{barcodereserv} = $getiteminfo->{'barcode'};
+  }
+  else {
+    my ($bibliocnt, @biblio) = GetBiblio($num_res->{'biblionumber'});
+    foreach (qw(title author)) {
+      $getreserv{$_} = $biblio[0]->{$_};
+    }
+  }
   $getreserv{reservedate} = C4::Dates->new($num_res->{'reservedate'},'iso')->output('syspref');
   $getreserv{holdexpdate} = format_date($num_res->{'expirationdate'});
-  foreach (qw(biblionumber title author itemcallnumber )) {
-    $getreserv{$_} = $getiteminfo->{$_};
-  }
-  $getreserv{barcodereserv}  = $getiteminfo->{'barcode'};
-  $getreserv{itemtype}  = $itemtypeinfo->{'description'};
   $getreserv{waitingposition} = $num_res->{'priority'};
   $getreserv{reservenumber} = $num_res->{'reservenumber'};
   push( @expiredreservloop, \%getreserv );
