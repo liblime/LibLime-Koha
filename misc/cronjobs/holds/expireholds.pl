@@ -33,7 +33,7 @@ or, in crontab:
 This script simply removes holds in the reserves table that have expired.
 Expired can occur two ways:
 (1) Unfilled holds that exceed HoldExpireLength.
-(2) Filled holds that exceed ReservesMaxPickupDelay.
+(2) Filled holds that exceed ReservesMaxPickUpDelay.
 
 =cut
 use 5.010;
