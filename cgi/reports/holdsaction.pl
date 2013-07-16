@@ -52,7 +52,7 @@ $template->param(
 );
 
 ## high-level sanity check.
-unless (C4::Context->preference('ReservesMaxPickupDelay')) {
+unless (C4::Context->preference('ReservesMaxPickUpDelay')) {
    $template->param(novarset => 1);
    output_html_with_http_headers $cgi, $cookie, $template->output;
    exit;

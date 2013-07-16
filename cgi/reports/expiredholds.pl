@@ -66,7 +66,7 @@ $template->param(do_it => $do_it,
 $template->param(branchloop => $branches);
 
 ## high-level sanity check.
-## note that we don't check ReservesMaxPickupDelay, which can 
+## note that we don't check ReservesMaxPickUpDelay, which can 
 ## theoretically be zero-value (don't expire from Holds Shelf
 ## automatically, do it manually).
 unless (C4::Context->preference('HoldExpireLength')) {
