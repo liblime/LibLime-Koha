@@ -551,9 +551,8 @@ foreach my $biblionumber (@biblionumbers) {
                     $num_available++;
                 }
                 if ($alreadyreserved && CanHoldMultipleItems($item->{itype},'intranet')) {
-                  $template->param( alreadyreserved => undef);
-              #    $template->param( warnings => undef) if (!$maxholds_warn && !$maxamount_warn && !$max_shelf_holds_per_day_warn);
-              ## FIXME: ^^ yuck.
+                  $warnings = 0 if (!$maxholds_warn && !$maxamount_warn && !$max_shelf_holds_per_day_warn);
+                  ## FIXME: ^^ yuck.  This logic needs to be cleaned up. 
                 }
                 elsif ($alreadyreserved) {
                     $item->{available} = undef;
@@ -574,7 +573,6 @@ foreach my $biblionumber (@biblionumbers) {
             
             push @{ $biblioitem->{itemloop} }, $item;
         }
-
         if ( $num_override == scalar( @{ $biblioitem->{itemloop} } ) ) { # That is, if all items require an override
             $template->param( override_required => 1 );
         } elsif ( $num_available == 0 ) {
@@ -689,7 +687,6 @@ foreach my $biblionumber (@biblionumbers) {
 
     push @biblioloop, \%biblioloopiter;
 }
-
 $template->param(   biblioloop      => \@biblioloop,
                     biblionumbers   => $biblionumbers,
                     multi_hold      => ($multihold) ? 1 : 0,

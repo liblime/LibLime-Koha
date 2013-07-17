@@ -202,6 +202,9 @@ function check() {
 	         <!-- TMPL_IF NAME="diffbranch" -->
 	           <li><strong>Pickup library is different</strong> than <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a>'s home library (<!-- TMPL_VAR NAME="borrower_branchname" --> / <!-- TMPL_VAR NAME="borrower_branchcode" --> )</li>
 	         <!-- /TMPL_IF -->
+             <!-- TMPL_IF alreadyreserved -->
+                <li><strong>Hold already placed</strong> on this title</li>
+             <!-- /TMPL_IF -->
 	      </ul></div>
 	    <!-- /TMPL_IF -->
 	    <!-- TMPL_IF NAME="messageborrower" -->
