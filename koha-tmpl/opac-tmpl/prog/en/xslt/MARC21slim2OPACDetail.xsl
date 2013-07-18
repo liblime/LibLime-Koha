@@ -337,7 +337,15 @@
         <xsl:if test="marc:datafield[@tag=490][@ind1=1]">
             <xsl:for-each select="marc:datafield[@tag=830]">
                  <span class="results_summary"><span class="displayseriesaddedlabel label">Series Added Entry Title: </span>
-                 <a href="/cgi-bin/koha/opac-search.pl?q=series-title:{marc:subfield[@code='a']}">
+                 <a>
+                 <xsl:choose>
+                    <xsl:when test="marc:subfield[@code=0 and $SearchByRcn=1]">
+                        <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=linked_rcn:%22<xsl:value-of select="marc:subfield[@code=0]"/>%22</xsl:attribute>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:attribute name="href">/cgi-bin/koha/opac-search.pl?q=series-title:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
+                    </xsl:otherwise>
+                 </xsl:choose>
                         <xsl:call-template name="chopPunctuation">
                             <xsl:with-param name="chopString">
                                 <xsl:call-template name="subfieldSelect">
