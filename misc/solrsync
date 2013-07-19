@@ -242,9 +242,9 @@ sub process_list {
     sub doc_with_catch {
         my $id = shift;
         $log->debug("Expressing $id");
-        my $record = $rtype->{acquire_one}->($id);
-        return unless $record;
         my $doc = try {
+            my $record = $rtype->{acquire_one}->($id);
+            return unless $record;
             $update_count++;
             Koha::Solr::Document::MARC->new(
                 record => $record, strategy => $r );
