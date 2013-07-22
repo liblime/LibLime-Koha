@@ -59,17 +59,8 @@ This will return a list of all the available delimiters.
 =cut
 
 sub GetDelimiterChoices {
-    my $dbh = C4::Context->dbh;
-
-    my $sth = $dbh->prepare("
-      SELECT options, value
-      FROM systempreferences
-      WHERE variable = 'delimiter'
-    ");
-
-    $sth->execute();
-
-    my ($choices, $default) = $sth->fetchrow;
+    my $choices = C4::Context->preference_defaults->{delimiter}{options};
+    my $default = C4::Context->preference('delimiter');
     my @dels = split /\|/, $choices;
 
     return CGI::scrolling_list(
