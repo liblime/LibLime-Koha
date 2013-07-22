@@ -71,7 +71,7 @@ function check() {
     }
 
     if (document.form.alreadyreserved && document.form.alreadyreserved.value == "1"){
-		 alreadyreserved++ ;
+        alreadyreserved++ ;
     }
 
     if (count_reserv == "0"){
@@ -81,12 +81,15 @@ function check() {
 		msg += (_("- You may only place a hold on one item at a time\n"));
     }
 
-    if (alreadyreserved > "0"){
-		msg += (_("- This patron had already placed a hold on this item\n Please cancel the previous hold first \n"));
-    }
 
-	if (msg == "") return(true);
-	else	{
+	if (msg == ""){
+        if (alreadyreserved > "0"){
+    		msg = (_("- This patron has already placed a hold on this item\n Click OK to place hold, or cancel the previous hold first \n"));
+            return(confirm(msg));
+        } else {
+            return(true);
+        }
+	} else {
 		alert(msg);
 		return(false);
 	}
