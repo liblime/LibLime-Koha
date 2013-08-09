@@ -42,7 +42,7 @@ INSERT IGNORE INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblib
 		('100','4','Relator code','Relator code',1,0,'',0,'','','',0,0,'FA',NULL,'',''),
 		('100','6','Linkage','Linkage',0,0,'',0,'','','',0,0,'FA',NULL,'',''),
 		('100','8','Field link and sequence number','Field link and sequence number',1,0,'',0,'','','',0,0,'FA',NULL,'',''),
-		('100','9','9 (RLIN)','9 (RLIN)',0,0,'',0,'','','',0,0,'FA',NULL,'',''),
+		('100','0','Authority RCN','Authority RCN',0,0,'',0,'','','',0,0,'FA',NULL,'',''),
 		('100','a','Personal name','Personal name',0,0,'biblio.author',0,'','PERSO_NAME','',0,0,'FA',NULL,'',''),
 		('100','b','Numeration','Numeration',0,0,'',0,'','','',0,0,'FA',NULL,'',''),
 		('100','c','Titles and other words associated with a name','Titles and other words associated with a name',1,0,'',0,'','','',0,0,'FA',NULL,'',''),
