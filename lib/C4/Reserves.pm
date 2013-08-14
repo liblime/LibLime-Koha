@@ -1075,19 +1075,15 @@ sub GetReservesByBorrowernumberAndItemtypeOf {
 sub GetHoldCountByItemtype {
     my ( $borrowernumber ) = @_;
     my $dbh   = C4::Context->dbh;
-    my $sth_bib = $dbh->prepare("SELECT DISTINCT itype FROM items WHERE biblionumber = ?");    
-    my $sth_hold = $dbh->prepare("SELECT r.biblionumber, r.itemnumber, itype from reserves r left join items using(biblionumber) where borrowernumber=?");
+    my $sth_hold = $dbh->prepare("SELECT DISTINCT r.biblionumber, r.itemnumber, itype from reserves r left join items using(biblionumber) where borrowernumber=?");
     $sth_hold->execute($borrowernumber);
     my $holdcount = {};
+    my $counted = {};
     while(my ($biblionumber,$itemnumber,$itype) = $sth_hold->fetchrow){
-        if($itemnumber){
+        if(!$counted->{$biblionumber}){
             $holdcount->{$itype}++;
-        } else {
-            $sth_bib->execute($biblionumber);
-            while(my ($itype) = $sth_bib->fetchrow){
-                $holdcount->{$itype}++;
-            }
         }
+        $counted->{$biblionumber}++ if $itemnumber;
     }
     return $holdcount;
 }
