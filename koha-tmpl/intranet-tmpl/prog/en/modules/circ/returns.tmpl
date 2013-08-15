@@ -628,6 +628,7 @@ function HaltReturns() {
                 <input type=hidden name="dotransfer" value="1">
                 <input type=hidden name="transferitem" value="<TMPL_VAR NAME="itemnumber">">
                 <input type=hidden name="tobranch" value="<TMPL_VAR NAME="destbranch">">
+                <input type=hidden name="cancelTransfer" value="0">
       		<!-- TMPL_IF name="HoldButtonConfirm" -->
                 <input type="submit" class="approve" value="Confirm hold and <TMPL_IF NAME="reroute">reroute </TMPL_IF>Transfer" />
         	   <!-- /TMPL_IF -->
@@ -655,8 +656,6 @@ function HaltReturns() {
             <!-- /TMPL_IF -->
          <!-- /TMPL_IF -->
 		   <!-- TMPL_IF name="HoldButtonIgnore" -->
-                <input type=hidden name="cancelTransfer" value="0">
-                <input type="hidden" name="dotransfer" value="0">
                 <input type="button" class="deny" value="Ignore<TMPL_IF NAME="WrongTransfer">, Cancel transfer, Keep here<TMPL_ELSIF NAME="transfertodo">, Keep here</TMPL_IF>" onclick=" 
                     <TMPL_IF NAME="queue_branchlimit">parent.parent.GB_hide();
                     </TMPL_IF>
