@@ -576,7 +576,9 @@ foreach my $biblionumber (@biblionumbers) {
         if ( $num_override == scalar( @{ $biblioitem->{itemloop} } ) ) { # That is, if all items require an override
             $template->param( override_required => 1 );
         } elsif ( $num_available == 0 ) {
-            $template->param( none_available => 1 );
+            if($num_override == 0){
+                $template->param( none_available => 1 );
+            }
 			$template->param( num_policy_blocked => $num_policy_blocked );
 			$warnings = 1;
             $biblioloopiter{warn} = 1;
