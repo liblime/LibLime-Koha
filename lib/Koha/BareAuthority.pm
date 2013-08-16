@@ -181,7 +181,8 @@ func new_stub_from_field(Str $class, MARC::Field $f, Str $citation = undef) {
     $marc->leader('     nz  a22     o  4500');
 
     my @tags = (
-        [ $auth_type->{auth_tag_to_report}, '', '', @subfs_1xx ],
+        [ $auth_type->{auth_tag_to_report},
+          $f->indicator(1), $f->indicator(2), @subfs_1xx ],
         [ '667', '', '', 'a' => 'Machine generated authority record.' ],
         [ '999', '', '', 'z' => 1],
     );
