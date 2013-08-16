@@ -545,7 +545,8 @@ foreach my $biblioNum (@biblionumbers) {
                         )
                 )
                     {
-                        $template->param( message => undef);
+                        $template->param( message => undef);  # FIXME:  This is not safe.  The message flag is for all messages.
+                                                              # The fact that this particular block isn't in place should not clear all other blocks.
                         $template->param( no_on_shelf_holds_in_library => undef);
                         $itemLoopIter->{available} = 1;
                         $numCopiesAvailable++;
@@ -562,7 +563,7 @@ foreach my $biblioNum (@biblionumbers) {
                 $numCopiesAvailable--;
             }
             if (CanHoldMultipleItems($itemInfo->{itype},'opac')) {
-              $template->param( message => undef, hold_already_exists => undef );
+              $template->param( message => undef, hold_already_exists => undef );   # FIXME: CLEARING message flag is BAD.  This needs to be rewritten.
             }
         }
 
