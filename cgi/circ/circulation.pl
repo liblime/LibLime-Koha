@@ -49,7 +49,7 @@ use Date::Calc qw(
   Date_to_Days
 );
 
-sub FormatFinesSummary {
+my $format_fines_summary = sub {
     my ( $borrower ) = @_;
 
     my %type_map = (
@@ -72,7 +72,7 @@ sub FormatFinesSummary {
     my $totalowed = C4::Accounts::gettotalowed($borrower->{'borrowernumber'});
     $params{"credits_total"} = $totalowed if $totalowed < 0;
     return +{ map { $_ => sprintf('%0.2f', $params{$_} || 0) } keys %params };
-}
+};
 
 #
 # PARAMETERS READING
@@ -579,7 +579,7 @@ foreach my $flag ( sort keys %{$flags} ) {
                 $template->param( charges_override => 1 );
             }
 
-            $template->param( FormatFinesSummary( $borrower ) ) if ( C4::Context->preference( 'CircFinesBreakdown' ) );
+            $template->param( $format_fines_summary->( $borrower ) ) if ( C4::Context->preference( 'CircFinesBreakdown' ) );
         }
         if ( $flag eq 'CREDITS' ) {
             $template->param(
@@ -597,7 +597,7 @@ foreach my $flag ( sort keys %{$flags} ) {
                 chargesamount => $flags->{'CHARGES'}->{'amount'},
             );
 
-            $template->param( FormatFinesSummary( $borrower ) ) if ( C4::Context->preference( 'CircFinesBreakdown' ) );
+            $template->param( $format_fines_summary->( $borrower ) ) if ( C4::Context->preference( 'CircFinesBreakdown' ) );
         }
         elsif ( $flag eq 'CREDITS' ) {
             $template->param(
@@ -605,7 +605,7 @@ foreach my $flag ( sort keys %{$flags} ) {
                 creditsmsg => $flags->{'CREDITS'}->{'message'}
             );
 
-            $template->param( FormatFinesSummary( $borrower ) ) if ( C4::Context->preference( 'CircFinesBreakdown' ) );
+            $template->param( $format_fines_summary->( $borrower ) ) if ( C4::Context->preference( 'CircFinesBreakdown' ) );
         }
         elsif ( $flag eq 'ODUES' ) {
             $template->param(

@@ -1230,11 +1230,8 @@ sub AddIssue {
     ## handle previously lost
     if (my $lostitem = GetLostItem($$item{itemnumber})) {
         ## whoever last lost this item will get credit that it was found
-        warn "Got a lostitem... ";
-        use DDP;
-        warn p $lostitem;
         C4::Accounts::credit_lost_item($lostitem->{id});
-        C4::LostItems::DeleteLostItem($$lostitem{id});
+        C4::LostItems::DeleteLostItem($$lostitem{id}); # FIXME: In AddReturn, staff is prompted to delete, but not here.
     }
 
     logaction("CIRCULATION", "ISSUE", $borrower->{'borrowernumber'}, $biblio->{'biblionumber'})
@@ -1703,7 +1700,21 @@ sub AddReturn {
             lost_item_id        => $$lostitem{id},
         };
         C4::Accounts::credit_lost_item($lostitem->{id});
-        C4::LostItems::DeleteLostItem($lostitem->{id});
+
+        if (C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem') && ! $exemptfine) {
+            my $patron = C4::Members::GetMember($issue->{borrowernumber});
+            my ($circ_policy,$length) = GetIssuingRule($patron->{categorycode},$lostitem->{itemtype},$issue->{branchcode});
+            if ($circ_policy->{maxfine}) {
+                manualinvoice({
+                    borrowernumber  => $issue->{borrowernumber},
+                    amount          => $circ_policy->{maxfine},
+                    accounttype     => 'FINE',
+                    description     => $lostitem->{title} . ' [Max overdue fine on returned lost item]'
+                });
+            }
+        }
+
+        # C4::LostItems::DeleteLostItem($lostitem->{id});  # This is done in a separate confirmation step.
 
     }
 
