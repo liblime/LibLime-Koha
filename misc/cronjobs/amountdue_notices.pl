@@ -102,15 +102,15 @@ amountdues that could not be emailed are sent in CSV format to the admin.
 =head1 DESCRIPTION
 
 This script is designed to alert patrons and administrators of account
-amounts owed that equal or exceed the value set up in the 
-C<OwedNotificationValue> system preference.
+amounts owed that equal or exceed the value set in the 
+C<fines_alert_threshold> setting of the patron category.
 
 =head2 Configuration
 
-The notification alert value is controlled by the value set up in the
-C<OwedNotificationValue> system preference.  In addition, a sytem preference
-called C<EnableOwedNotification> tells the Koha system whether to use this
-notification ability at all.
+The notification alert value is controlled by the 
+Patron category's C<fines_alert_threshold> setting.
+Patron categories with this value set to zero will not
+receive notices.
 
 The template used to craft the email is defined in the "Tools:
 Notices" section of the staff interface to Koha under the Code of 'BILLING'.
@@ -118,7 +118,7 @@ Notices" section of the staff interface to Koha under the Code of 'BILLING'.
 =head2 Outgoing emails
 
 Typically, messages are prepared for each patron with amounts due that
-equal or exceed OwedNotificationValue.  Messages for whom there is no 
+equal or exceed categories.fines_alert_threshold.  Messages for whom there is no 
 email address on file are collected and sent as attachments in a single 
 email to each library administrator, or if that is not set, then to the 
 email address in the C<KohaAdminEmailAddress> system preference.
@@ -215,9 +215,6 @@ if ( defined $csvfilename && $csvfilename =~ /^-/ ) {
     warn qq(using "$csvfilename" as filename, that seems odd);
 }
 
-if (!C4::Context->preference('EnableOwedNotification')) {
-  die 'EnableOwedNotification is not turned on';
-}
 $letter_code = 'BILLING' if (! defined ($letter_code));
 
 
