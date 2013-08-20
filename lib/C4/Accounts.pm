@@ -129,7 +129,7 @@ sub manualinvoice {
     my ( $invoice ) = @_;
     my $dbh      = C4::Context->dbh;
     my ($fee_id, $error);
-
+    
     my %ACCT_TYPES = _get_accounttypes();
     return 'INVALID_ACCOUNT_TYPE' unless($invoice->{accounttype}
                 && $ACCT_TYPES{$invoice->{accounttype}}

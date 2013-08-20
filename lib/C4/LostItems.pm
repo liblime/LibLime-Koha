@@ -165,12 +165,14 @@ sub GetLostItems {
     my @lost_items;
     my $sth_item = $dbh->prepare("SELECT itemlost from items WHERE itemnumber=?");
     # FIXME: We should test for the bib here and not link to it if it was deleted.
+
     while (my $row = $sth->fetchrow_hashref) {
         $sth_item->execute($row->{itemnumber});
-        $row->{itemlost} = $sth_item->fetchrow_arrayref->[0];
-        warn $row->{itemlost} ;
-        if(!$sth_item->rows()){
-          $row->{deleted} = 1;
+        if($sth_item->rows()){
+            $row->{itemlost} = $sth_item->fetchrow_arrayref->[0];
+        } else {
+            $row->{deleted} = 1;
+            # FIXME: get date of deleteditem  if deleted, and its lost status.
         }
         push @lost_items, $row;
     }

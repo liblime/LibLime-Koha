@@ -185,7 +185,6 @@ C<$intervalcounttotal> is C<$intervalcount> without consideration of grace perio
 sub CalcFine {
     my ( $issue, $bortype, $branchcode, $end_date, $cal ) = @_;
     croak "Too many args to CalcFine" if scalar(@_) > 5;
-    my $debug = 1;
     $debug and warn sprintf("CalcFine(%s, %s, %s, %s, cal)",
             ($issue ? '{issue}' : 'UNDEF'),
             ($bortype    || 'UNDEF'),
@@ -227,7 +226,6 @@ sub CalcFine {
     }
 
     $debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $days_minus_grace, $daystocharge, $ismax);
-    carp "MAX FINE APPLIED... CHECK RETURN VALUE." if $ismax;
     return ($amount, $daystocharge, $totaldays, $ismax);  # why return two interval counts ??
 }
 

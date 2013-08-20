@@ -3428,6 +3428,16 @@
          "Circulation"
       ]
    },
+   "ChargeOverdueFineOnRenewal" : {
+      "explanation" : "If ON, overdue fines (if present) will be assessed on item renewal.",
+      "options" : null,
+      "value" : "0",
+      "hidden" : false,
+      "type" : "YesNo",
+      "tags" : [
+         "Circulation"
+      ]
+   },   
    "OverdueRules" : {
       "explanation" : "Set long-overdue/lost status changes for checked-out items, used by the long_overdue cron script.  Format: status:n, where n is number of days overdue before that status is triggered.  Available statuses are longoverdue and lost.  E.g. 'longoverdue:20, lost:45'.  Leave blank for no status changes.  One or both status changes may be specified.",
       "options" : null,

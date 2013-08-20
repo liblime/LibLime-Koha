@@ -1694,7 +1694,6 @@ sub AddReturn {
         $messages->{'WasLost'} = {
             itemnumber          => $$item{itemnumber},
             lostborrowernumber  => $$lostitem{borrowernumber},
-            issueborrowernumber => $$issue{borrowernumber},
             biblionumber        => $$lostitem{biblionumber},
             barcode             => $barcode,
             lost_item_id        => $$lostitem{id},
@@ -1702,13 +1701,16 @@ sub AddReturn {
         C4::Accounts::credit_lost_item($lostitem->{id});
 
         if (C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem') && ! $exemptfine) {
-            my $patron = C4::Members::GetMember($issue->{borrowernumber});
-            my ($circ_policy,$length) = GetIssuingRule($patron->{categorycode},$lostitem->{itemtype},$issue->{branchcode});
-            if ($circ_policy->{maxfine}) {
-                manualinvoice({
-                    borrowernumber  => $issue->{borrowernumber},
-                    amount          => $circ_policy->{maxfine},
+            my $patron = C4::Members::GetMember($lostitem->{borrowernumber});
+            # assume $lostitem->{holdingbranch} was the issuingbranch.
+            my ($circ_policy,$length) = GetIssuingRule($patron->{categorycode},$lostitem->{itemtype},$lostitem->{holdingbranch});
+
+            if ($circ_policy->{max_fine}) {
+                C4::Accounts::manualinvoice({
+                    borrowernumber  => $lostitem->{borrowernumber},
+                    amount          => $circ_policy->{max_fine},
                     accounttype     => 'FINE',
+                    itemnumber      => $lostitem->{itemnumber},
                     description     => $lostitem->{title} . ' [Max overdue fine on returned lost item]'
                 });
             }
@@ -2167,6 +2169,7 @@ sub AddRenewal {
    my $borrower        = $g{borrower}        || C4::Members::GetMember($borrowernumber) || return;
    my $datedue         = $g{datedueObj}      || $g{datedue} || '';
    my $issuedate       = $g{issuedate}       || C4::Dates->new()->output('iso');
+   my $exemptfine      = $g{exemptfine}      || 0; 
    $issue            ||= GetItemIssue($itemnumber,$borrowernumber);
    $itemnumber       ||= $$issue{itemnumber};
    $borrowernumber   ||= $$issue{borrowernumber};
@@ -2205,6 +2208,10 @@ Setting date due = $today for borrower: $borrowernumber
 item number: $itemnumber.
 EOF
         $datedue = C4::Dates->new;
+    }
+
+    if(C4::Context->preference('ChargeOverdueFineOnRenewal') && !$exemptfine && $issue->{date_due} lt $today) {
+        C4::Overdues::ApplyFine($issue);
     }
 
     # Update the issues record to have the new due date, and a new count
