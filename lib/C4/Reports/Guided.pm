@@ -54,7 +54,6 @@ $table_areas{'1'} =
 $table_areas{'2'} = [ 'items', 'biblioitems', 'biblio' ];   # catalogue
 $table_areas{'3'} = [ 'borrowers' ];        # patrons
 $table_areas{'4'} = ['aqorders', 'biblio', 'items'];        # acquisitions
-$table_areas{'5'} = [ 'borrowers', 'accountlines' ];        # accounts
 our %keys;
 $keys{'1'} = [
     'statistics.borrowernumber=borrowers.borrowernumber',
@@ -70,7 +69,6 @@ $keys{'4'} = [
 	'aqorders.biblionumber=biblio.biblionumber',
 	'biblio.biblionumber=items.biblionumber'
 ];
-$keys{'5'} = ['borrowers.borrowernumber=accountlines.borrowernumber'];
 
 # have to do someting here to know if its dropdown, free text, date etc
 
@@ -85,7 +83,6 @@ $criteria{'2'} =
   [ 'items.holdingbranch', 'items.homebranch' ,'items.itemlost', 'items.location', 'items.ccode'];
 $criteria{'3'} = ['borrowers.branchcode'];
 $criteria{'4'} = ['aqorders.datereceived|date'];
-$criteria{'5'} = ['borrowers.branchcode'];
 
 if (C4::Context->preference('item-level_itypes')) {
     unshift @{ $criteria{'1'} }, 'items.itype';
@@ -144,9 +141,9 @@ sub get_report_areas {
     my $dbh = C4::Context->dbh();
 
     # FIXME these should be in the database
-    my @reports = ( 'Circulation (checkouts and reserves)', 'Catalog (records and items)', 'Patrons', 'Acquisitions', 'Accounts (fines)');
+    my @reports = ( 'Circulation (checkouts and reserves)', 'Catalog (records and items)', 'Patrons', 'Acquisitions' );
     my @reports2;
-    for ( my $i = 0 ; $i < 5 ; $i++ ) {
+    for ( my $i = 0 ; $i < 4 ; $i++ ) {
         my %hashrep;
         $hashrep{id}   = $i + 1;
         $hashrep{name} = $reports[$i];
@@ -641,7 +638,7 @@ sub get_from_dictionary {
 		$sth->execute();
 	}
 	my @loop;
-	my @reports = ( 'Circulation', 'Catalog', 'Patrons', 'Acquisitions', 'Accounts');
+	my @reports = ( 'Circulation', 'Catalog', 'Patrons', 'Acquisitions' );
 	while (my $data = $sth->fetchrow_hashref()){
 		$data->{'areaname'}=$reports[$data->{'area'}-1];
 		push @loop,$data;
