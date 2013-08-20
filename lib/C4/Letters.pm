@@ -767,8 +767,9 @@ sub CreateTALKINGtechMESSAGE {
     my $borrower = C4::Members::GetMember( $borrowernumber );
     croak "Unable to find borrower ($borrowernumber)" unless $borrower;
 
-    return 0
-        unless ( $borrower->{phone} && $borrower->{phone} !~ /^\s*\*/ );
+    return 0 unless ( $borrower->{phone}
+                              && $borrower->{phone} !~ /^\s*\*/
+                              && defined $code );
 
     $notelevel = 0
         if ( $code eq 'FINE' );

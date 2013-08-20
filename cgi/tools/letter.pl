@@ -220,6 +220,7 @@ sub add_validate {
     my $content = $input->param('content');
     if (C4::Context->preference('TalkingTechEnabled')) {
       my $ttcode  = $input->param('ttcode');
+      $ttcode = $ttcode ~~ 'NULL' ? undef : $ttcode;
       if (letter_exists($module, $code)) {
           $dbh->do(
               q{UPDATE letter SET module = ?, code = ?, name = ?, title = ?, content = ?, ttcode = ? WHERE module = ? AND code = ?},
