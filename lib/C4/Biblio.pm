@@ -32,6 +32,7 @@ use C4::ClassSource;
 use C4::Charset;
 use Encode;
 require C4::Serials;
+require C4::Items;
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -2310,9 +2311,8 @@ sub PrepareItemrecordDisplay {
                             push @authorised_values, $itemtype;
                             $authorised_lib{$itemtype} = $description;
                         }
-
-                        #---- "true" authorised value
                     }
+                        #---- "true" authorised value                
                     else {
                         $authorised_values_sth->execute(
                             $tagslib->{$tag}->{$subfield}->{authorised_value} );
