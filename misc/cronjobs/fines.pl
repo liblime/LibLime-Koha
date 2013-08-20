@@ -151,19 +151,12 @@ for (my $i=0; $i<scalar(@$data); $i++) {
       
     ($datedue_days <= $today_days) or next; # or it's not overdue, right?
 
-    my $claimret_item=0;
-    if ($data->[$i]->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){   #this item is claims-returned, don't add more fines
-       $claimret_item=1;
-    }
-    
-
     $overdueItemsCounted++;
     my ($daycounttotal, $amount,$daycount,$ismax);
 
 	# Don't update the fine if today is a holiday.  
-  	# This ensures that dropbox mode will remove the correct amount of fine.
   	
-	if (! $isHoliday  and ! $claimret_item) {
+	if (! $isHoliday ) {
         ($amount,$daycounttotal,$daycount,$ismax) = CalcFine($data->[$i], $borrower->{'categorycode'}, $branchcode, $today, $calendar);
 		C4::Overdues::AccrueFine($data->[$i]->{id},$amount) if( $amount > 0 ) ;
  	}

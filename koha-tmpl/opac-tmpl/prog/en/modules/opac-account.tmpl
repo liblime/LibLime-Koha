@@ -13,42 +13,89 @@
     <!-- TMPL_LOOP NAME="BORROWER_INFO" -->
         <h3><a href="/cgi-bin/koha/opac-user.pl"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" -->'s account</a> <img src="<!-- TMPL_VAR NAME="themelang" -->../../images/caret.gif" width="16" height="16" alt="&gt;" border="0" /> Fines and Charges</h3>
     <!-- /TMPL_LOOP -->
-    
-    <!-- TMPL_IF NAME="ACCOUNT_LINES" -->
-        <table>
+
+    <div class="fines_summary">
+      <!-- TMPL_IF NAME="total_credits" -->
+        <br /><h4>Account credits:</h4>
+        <div class="fines_detail">
+          <table>
             <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Fine Amount</th>
-                    <th>Amount Outstanding</th>
-                </tr>
-            </thead>
-            
-            <tfoot>
             <tr>
-                <th class="sum" colspan="3">Total Due</th>
-                <td class="sum"><!-- TMPL_VAR NAME="total" --></td>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Amount</th>
             </tr>
-            </tfoot>
-            
+            </thead>
             <tbody>
-                <!-- TMPL_LOOP NAME="ACCOUNT_LINES" -->
-                    <!-- TMPL_IF NAME="odd" --><tr class="highlight"><!-- TMPL_ELSE --><tr><!-- /TMPL_IF -->
-                        <td><!-- TMPL_VAR NAME="date" --></td>
-                        <td><!-- TMPL_VAR NAME="description" -->
-                        <!-- TMPL_IF NAME="title" -->
-                        <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<TMPL_VAR NAME="biblionumber">"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- /TMPL_IF --></td>
-                        <!-- TMPL_IF NAME="amountcredit" --><td class="credit"><!-- TMPL_ELSE --><td class="debit"><!-- /TMPL_IF --><!-- TMPL_VAR NAME="amount" --></td>
-                        <!-- TMPL_IF NAME="amountoutstandingcredit" --><td class="credit"><!-- TMPL_ELSE --><td class="debit"><!-- /TMPL_IF --><!-- TMPL_VAR NAME="amountoutstanding" --></td>
-                    </tr>
-                <!-- /TMPL_LOOP -->
+            <!-- TMPL_LOOP NAME="unallocated" -->
+            <tr><td><!-- TMPL_VAR NAME="date" --></td>
+                <td><!-- TMPL_VAR NAME="description" --></td>
+                <td><!-- TMPL_VAR NAME="amount" --></td></tr>
+            <!-- /TMPL_LOOP -->
             </tbody>
-        
-        </table>
-    <!-- TMPL_ELSE -->
-        <h4>You have no Fines or Charges</h4>
-    <!-- /TMPL_IF -->
+          </table> </div>
+          <!-- /TMPL_IF -->
+
+        <h4>Past fines and charges:</h4>
+        <div class="fines_detail">
+
+          <!-- TMPL_IF NAME="ACCOUNT_LINES" -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Fine Amount</th>
+                        <th>Amount Outstanding</th>
+                    </tr>
+                </thead>
+
+                <tfoot>
+                <!-- TMPL_IF total_credits -->
+                  <tr><th class="sum" colspan="3">Total credits</th>
+                      <td class="credit">&nbsp;(<!-- TMPL_VAR NAME="total_credits" -->)</td>
+                  </tr>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF totalaccruing -->
+                  <tr><th class="sum" colspan="3">Accruing fines on checked out materials</th>
+                      <td><!-- TMPL_VAR EXPR="currency(totalaccruing)" --></td>
+                  </tr>
+                <!-- /TMPL_IF -->
+                <tr>
+                    <th class="sum" colspan="3">Total due</th>
+                    <td class="sum"><!-- TMPL_VAR NAME="total" --></td>
+                </tr>
+                </tfoot>
+
+                <tbody>
+                    <!-- TMPL_LOOP NAME="ACCOUNT_LINES" -->
+                        <tr>
+                            <td><!-- TMPL_VAR EXPR="date(date)" --></td>
+                            <td><!-- TMPL_VAR NAME="description" -->
+                            <!-- TMPL_IF NAME="title" --><!-- TMPL_VAR NAME="title" escape="html" --><!-- /TMPL_IF --></td>
+                            <!-- TMPL_IF NAME="amountcredit" --><td class="credit"><!-- TMPL_ELSE --><td class="debit"><!-- /TMPL_IF --><!-- TMPL_VAR EXPR="currency(amount)" --></td>
+                            <!-- TMPL_IF NAME="amountoutstandingcredit" --><td class="credit"><!-- TMPL_ELSE --><td class="debit"><!-- /TMPL_IF --><!-- TMPL_VAR EXPR="currency(amountoutstanding)" --></td>
+                        </tr>
+                    <!-- /TMPL_LOOP -->
+                </tbody>
+
+            </table>
+
+          <!-- TMPL_ELSE -->
+              <h4>You have no Fines or Charges</h4>
+          <!-- /TMPL_IF -->
+        </div>
+      </div>
+      <!-- TMPL_IF NAME="totalaccruing" -->
+        <div class="fines_summary">
+            <h4>Current fines and charges:</h4>
+            <div class="fines_detail">
+            <h5>You have overdue fines on currently checked out materials totaling <span class="debit">$ <!-- TMPL_VAR NAME="totalaccruing" --></span>.</h5>
+            <p>See <a href="/cgi-bin/koha/opac-user.pl">your summary page</a> for details.</p>
+            </div>
+        </div>
+      <!-- /TMPL_IF -->
+
 </div>
 </div>
 </div>

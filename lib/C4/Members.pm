@@ -403,14 +403,10 @@ sub GetMemberDetails {
     my $borrower = $dbh->selectrow_hashref($sql, undef, @params);
     return if !$borrower;
 
- # these are included in patronflags.  ## / but probably SHOULDN'T BE.
- #    $borrower->{totalowed} = C4::Accounts::gettotalowed($borrower->{borrowernumber});
- #    $borrower->{accruingfines}  = C4::Accounts::gettotalaccruing($borrower->{borrowernumber});
-#    $borrower->{'amountoutstanding'} = $amount;
-    # FIXME - just have patronflags return $amount
-
     my $flags = patronflags( $borrower, $circ_session );
     my $accessflagshash;
+
+    $borrower->{totalowed} = $flags->{CHARGES}->{amount} // 0;  # probably shouldn't be in patronflags.
 
     $sth = $dbh->prepare('SELECT bit,flag FROM userflags');
     $sth->execute;
@@ -501,10 +497,8 @@ sub patronflags {
     my ( $patroninformation, $circ_session ) = @_;
     $circ_session ||= {};
 
-    my $amount = C4::Accounts::gettotalowed($patroninformation->{borrowernumber})
-        +  C4::Accounts::gettotalaccruing($patroninformation->{borrowernumber});
+    my $amount = C4::Accounts::gettotalowed($patroninformation->{borrowernumber});
 
-    $amount //= 0;
     my $cat = GetCategoryInfo($$patroninformation{categorycode});
 
     if ( $amount > 0 ) {
@@ -1157,6 +1151,7 @@ sub GetPendingIssues {
     my $query = q{SELECT issues.*,
             items.*,
            biblio.*,
+           fees_accruing.amount as overdue_fine,
            biblioitems.volume,
            biblioitems.number,
            biblioitems.itemtype,
@@ -1175,6 +1170,7 @@ sub GetPendingIssues {
     LEFT JOIN items       ON items.itemnumber       =      issues.itemnumber
     LEFT JOIN biblio      ON items.biblionumber     =      biblio.biblionumber
     LEFT JOIN biblioitems ON items.biblioitemnumber = biblioitems.biblioitemnumber
+    LEFT JOIN fees_accruing ON issues.id            = fees_accruing.issue_id 
     WHERE
       borrowernumber=?};
 

@@ -47,38 +47,28 @@ $bordat[0] = $borr;
 
 $template->param( BORROWER_INFO => \@bordat );
 
-#get account details
-my ($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
-
-for ( my $i = 0 ; $i < @$accts ; $i++ ) {
-    $accts->[$i]{'date'} = format_date( $accts->[$i]{'date'} );
-    $accts->[$i]{'amount'} = sprintf( "%.2f", $accts->[$i]{'amount'} );
-    if ( $accts->[$i]{'amount'} >= 0 ) {
-        $accts->[$i]{'amountcredit'} = 1;
-    }
-    $accts->[$i]{'amountoutstanding'} =
-      sprintf( "%.2f", $accts->[$i]{'amountoutstanding'} );
-    if ( $accts->[$i]{'amountoutstanding'} >= 0 ) {
-        $accts->[$i]{'amountoutstandingcredit'} = 1;
-    }
-    $accts->[$i]{'description'} //= '';
-    $accts->[$i]{'description'} =~ s/(\s*\(-cron\)\s*)//g;
-    $accts->[$i]{'description'} =~ s/\s*by a different patron(\s*\(.+?\)\s*)//g;
+my $total = C4::Accounts::gettotalowed($borrowernumber);
+my $totalaccruing = C4::Accounts::gettotalaccruing($borrowernumber);
+my ($total_credits, $unallocated) = C4::Accounts::get_unallocated_credits( $borrowernumber );
+foreach my $row (@$unallocated) {
+    $row->{date} =  C4::Dates->new($row->{'date'},'iso')->output();
+    $row->{'amount'} = as_currency($row->{'amount'});
 }
 
-# add the row parity
-my $num = 0;
-foreach my $row (@$accts) {
-    $row->{'even'} = 1 if $num % 2 == 0;
-    $row->{'odd'}  = 1 if $num % 2 == 1;
-    $num++;
+my $fees = C4::Accounts::getcharges($borrowernumber, { outstanding => 1} );
+for my $fee (@$fees) {
+    C4::Accounts::prepare_fee_for_display($fee);
 }
 
 $template->param (
-    ACCOUNT_LINES => $accts,
-    total => sprintf( "%.2f", $total ),
-	accountview => 1
+    ACCOUNT_LINES   => $fees,
+    total           => $total,
+    totalaccruing   => $totalaccruing,
+    total_credits   => $total_credits || undef,
+    unallocated     => $unallocated,
 );
+
+
 
 output_html_with_http_headers $query, $cookie, $template->output;
 
