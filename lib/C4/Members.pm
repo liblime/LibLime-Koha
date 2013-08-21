@@ -873,12 +873,11 @@ sub AddMember {
     $sth->execute($data{'categorycode'});
     my ($enrolmentfee) = $sth->fetchrow;
     if ($enrolmentfee && $enrolmentfee > 0) {
-        # insert fee in patron debts
-        C4::Accounts::manualinvoice(
+        C4::Accounts::manualinvoice({
          borrowernumber => $data{'borrowernumber'},
-         accounttype    => 'A', 
+         accounttype    => 'NEWCARD', 
          amount         => $enrolmentfee
-        );
+        });
     }
 
     # work libraries
