@@ -2213,6 +2213,7 @@ EOF
     if(C4::Context->preference('ChargeOverdueFineOnRenewal') && !$exemptfine && $issue->{date_due} lt $today) {
         C4::Overdues::ApplyFine($issue);
     }
+    C4::Overdues::DeleteAccruingFine($issue->{id});
 
     # Update the issues record to have the new due date, and a new count
     # of how many times it has been renewed.

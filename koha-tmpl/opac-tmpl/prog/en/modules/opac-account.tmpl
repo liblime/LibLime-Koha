@@ -63,7 +63,7 @@
                 <!-- /TMPL_IF -->
                 <tr>
                     <th class="sum" colspan="3">Total due</th>
-                    <td class="sum"><!-- TMPL_VAR NAME="total" --></td>
+                    <td class="sum"><!-- TMPL_VAR EXPR="currency(total)" --></td>
                 </tr>
                 </tfoot>
 
@@ -90,7 +90,7 @@
         <div class="fines_summary">
             <h4>Current fines and charges:</h4>
             <div class="fines_detail">
-            <h5>You have overdue fines on currently checked out materials totaling <span class="debit">$ <!-- TMPL_VAR NAME="totalaccruing" --></span>.</h5>
+            <h5>You have overdue fines on currently checked out materials totaling <span class="debit">$ <!-- TMPL_VAR EXPR="currency(totalaccruing)" --></span>.</h5>
             <p>See <a href="/cgi-bin/koha/opac-user.pl">your summary page</a> for details.</p>
             </div>
         </div>
