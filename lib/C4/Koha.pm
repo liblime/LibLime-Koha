@@ -835,6 +835,7 @@ C<$category> returns authorised values for just one category (optional).
 sub GetAuthorisedValues {
     my ($category, $selected) = @_;
     my $authvals = GetAuthorisedValuesTree();
+
     my @vals
         = (defined $category)
         ? map {$_} values %{$authvals->{$category}}

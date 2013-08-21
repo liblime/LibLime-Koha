@@ -4,13 +4,6 @@ INSERT INTO authorised_values (category, authorised_value, lib) VALUES ('SUGGEST
 INSERT INTO authorised_values (category, authorised_value, lib) VALUES ('SUGGEST','LCL','Library Copy Lost');
 INSERT INTO authorised_values (category, authorised_value, lib) VALUES ('SUGGEST','AVILL','Available via ILL');
 
--- availability statuses
-INSERT INTO `authorised_values` (category, authorised_value, lib) VALUES ('LOST','0','');
-INSERT INTO `authorised_values`  (category, authorised_value, lib) VALUES ('LOST','2','Long Overdue (Lost)');
-INSERT INTO `authorised_values` (category, authorised_value, lib) VALUES ('LOST','1','Lost');
-INSERT INTO `authorised_values`  (category, authorised_value, lib ) VALUES ('LOST','3','Lost and Paid For');
-INSERT INTO `authorised_values`  (category, authorised_value, lib )VALUES ('LOST','4','Missing');
-
 -- damaged status of an item
 INSERT INTO `authorised_values`  (category, authorised_value, lib) VALUES ('DAMAGED','0','');
 INSERT INTO `authorised_values` (category, authorised_value, lib) VALUES ('DAMAGED','1','Damaged');

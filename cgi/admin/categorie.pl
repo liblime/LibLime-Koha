@@ -109,6 +109,7 @@ if ($op eq 'add_form') {
             maxholds                => $data->{'maxholds'},
             holds_block_threshold   => sprintf("%.2f",$data->{'holds_block_threshold'}),
             circ_block_threshold    => sprintf("%.2f",$data->{'circ_block_threshold'}),
+            fines_alert_threshold   => sprintf("%.2f",$data->{'fines_alert_threshold'}),
 				category_type           => $data->{'category_type'},
 				"type_".$data->{'category_type'} => 1,
 				);
@@ -123,12 +124,12 @@ if ($op eq 'add_form') {
 	my $is_a_modif = $input->param("is_a_modif");
 	my $dbh = C4::Context->dbh;
 	if ($is_a_modif) {
-            my $sth=$dbh->prepare("UPDATE categories SET description=?,enrolmentperiod=?,upperagelimit=?,dateofbirthrequired=?,enrolmentfee=?,reservefee=?,overduenoticerequired=?,maxholds=?,holds_block_threshold=?,circ_block_threshold=?,category_type=? WHERE categorycode=?");
-            $sth->execute(map { scalar $input->param($_) } ('description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','category_type','categorycode'));
+            my $sth=$dbh->prepare("UPDATE categories SET description=?,enrolmentperiod=?,upperagelimit=?,dateofbirthrequired=?,enrolmentfee=?,reservefee=?,overduenoticerequired=?,maxholds=?,holds_block_threshold=?,circ_block_threshold=?,fines_alert_threshold=?,category_type=? WHERE categorycode=?");
+            $sth->execute(map { scalar $input->param($_) } ('description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','fines_alert_threshold','category_type','categorycode'));
             $sth->finish;
         } else {
-            my $sth=$dbh->prepare("INSERT INTO categories  (categorycode,description,enrolmentperiod,upperagelimit,dateofbirthrequired,enrolmentfee,reservefee,overduenoticerequired,maxholds,holds_block_threshold,circ_block_threshold,category_type) values (?,?,?,?,?,?,?,?,?,?,?,?)");
-            $sth->execute(map { scalar $input->param($_) } ('categorycode','description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','category_type'));
+            my $sth=$dbh->prepare("INSERT INTO categories  (categorycode,description,enrolmentperiod,upperagelimit,dateofbirthrequired,enrolmentfee,reservefee,overduenoticerequired,maxholds,holds_block_threshold,circ_block_threshold,fines_alert_threshold=?,category_type) values (?,?,?,?,?,?,?,?,?,?,?,?)");
+            $sth->execute(map { scalar $input->param($_) } ('categorycode','description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','fines_alert_threshold','category_type'));
             $sth->finish;
         }
     if (C4::Context->preference('EnhancedMessagingPreferences')) {
@@ -202,6 +203,7 @@ if ($op eq 'add_form') {
             maxholds   => $results->[$i]{'maxholds'},
             holds_block_threshold => sprintf("%.2f",$results->[$i]{'holds_block_threshold'}),
             circ_block_threshold => sprintf("%.2f",$results->[$i]{'circ_block_threshold'}),
+            fines_alert_threshold => sprintf("%.2f",$results->[$i]{'fines_alert_threshold'}),
 				category_type => $results->[$i]{'category_type'},
 				"type_".$results->[$i]{'category_type'} => 1);
         if (C4::Context->preference('EnhancedMessagingPreferences')) {

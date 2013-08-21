@@ -105,7 +105,8 @@ function selectValueSet(selectName, Value) {
                 <!-- TMPL_IF NAME="UseGranularMaxHolds" -->
 		  <th>Max Number of Holds</th>
                 <!-- /TMPL_IF -->
-		<th>Hold Policy</th><th>&nbsp;</th>
+                <th>Expired Hold Fee</th>
+		<th>Hold Policy</th>
 		<th>&nbsp;</th>
 		<th>&nbsp;</th>
             </tr>
@@ -143,6 +144,7 @@ function selectValueSet(selectName, Value) {
                     <!-- TMPL_IF NAME="UseGranularMaxHolds" -->
         		  <td><!-- TMPL_IF NAME="max_holds" --><!-- TMPL_VAR NAME="max_holds" --><!-- /TMPL_IF --></td>
                     <!-- /TMPL_IF -->
+                    <td><!-- TMPL_IF NAME="expired_hold_fee" -->$<!-- TMPL_VAR NAME="expired_hold_fee" --><!-- /TMPL_IF --></td>
 					<td><!-- TMPL_IF NAME="holdallowed_any" -->
 							From Any Library
 						<!-- TMPL_ELSIF NAME="holdallowed_same" -->
@@ -163,6 +165,7 @@ function selectValueSet(selectName, Value) {
 				document.rulesform.issuelength.value='<!-- TMPL_VAR NAME="issuelength" -->';
 				<!-- TMPL_IF NAME="UseGranularMaxFines" -->document.rulesform.max_fine.value='<!-- TMPL_VAR NAME="max_fine" -->';<!-- /TMPL_IF -->
 				<!-- TMPL_IF NAME="UseGranularMaxHolds" -->document.rulesform.max_holds.value='<!-- TMPL_VAR NAME="max_holds" -->';<!-- /TMPL_IF -->
+                document.rulesform.expired_hold_fee.value='<!-- TMPL_VAR NAME="expired_hold_fee" -->';
                                 <!-- TMPL_IF NAME="holdallowed_any" -->
                                 selectValueSet('rulesform.holdallowed',2);
                                                 <!-- TMPL_ELSIF NAME="holdallowed_same" -->
@@ -208,6 +211,7 @@ function selectValueSet(selectName, Value) {
                     <!-- TMPL_IF NAME="UseGranularMaxHolds" -->
                     <td><input name="max_holds" size="3" /></td>
                     <!-- /TMPL_IF -->
+                    <td>$<input name="expired_hold_fee" size="4" /></td>
 		    <td>
                         <select name="holdallowed">
                             <option value="2">From Any Library</option>

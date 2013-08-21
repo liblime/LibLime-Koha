@@ -519,16 +519,6 @@
          "Circulation"
       ]
    },
-   "MarkLostItemsReturned" : {
-      "explanation" : "If ON,will check in items (removing them from a patron list of checked out items) when they are marked as lost",
-      "options" : null,
-      "value" : "1",
-      "hidden" : false,
-      "type" : "YesNo",
-      "tags" : [
-         "Circulation"
-      ]
-   },
    "UsePeriodicals" : {
       "explanation" : "Use newer \"periodicals\" module to manage serials.",
       "options" : null,
@@ -1047,16 +1037,6 @@
       "type" : "YesNo",
       "tags" : [
          "OPAC"
-      ]
-   },
-   "RefundLostReturnedAmount" : {
-      "explanation" : "Refund a returned lost item rather than applying it to an outstanding balance",
-      "options" : null,
-      "value" : "0",
-      "hidden" : false,
-      "type" : "YesNo",
-      "tags" : [
-         "Circulation"
       ]
    },
    "AllowOverrideLogin" : {
@@ -1949,16 +1929,6 @@
          "Ignore"
       ]
    },
-   "ClaimsReturnedValue" : {
-      "explanation" : "Lost value of Claims Returned,to be ignored by fines cron job",
-      "options" : null,
-      "value" : "5",
-      "hidden" : false,
-      "type" : "Integer",
-      "tags" : [
-         "Circulation"
-      ]
-   },
    "SearchExtendedPatronAttributes" : {
       "explanation" : "Include extended attribute data when searching for patrons.",
       "options" : null,
@@ -2157,16 +2127,6 @@
       "type" : "Choice",
       "tags" : [
          "Cataloging"
-      ]
-   },
-   "LinkLostItemsToPatron" : {
-      "explanation" : "If set, items marked lost will be listed in the patron Lost Items list",
-      "options" : null,
-      "value" : "1",
-      "hidden" : false,
-      "type" : "YesNo",
-      "tags" : [
-         "Circulation"
       ]
    },
    "OPACXSLTResultsDisplay" : {
@@ -2477,16 +2437,6 @@
       "type" : "Textarea",
       "tags" : [
          "Searching"
-      ]
-   },
-   "EnableOverdueAccruedAmount" : {
-      "explanation" : "If ON,splits fines and charges into amount due and overdue accrued amount.  The latter amount can not be paid until the item is checked in.",
-      "options" : null,
-      "value" : "0",
-      "hidden" : false,
-      "type" : "YesNo",
-      "tags" : [
-         "Circulation"
       ]
    },
    "NewItemsDefaultLocation" : {
@@ -3339,16 +3289,6 @@
          "Circulation"
       ]
    },
-   "OwedNotificationValue" : {
-      "explanation" : "Amount owed to receive a notification.  To work,EnableOwedNotification syspref will need to be turned ON.",
-      "options" : null,
-      "value" : "25.00",
-      "hidden" : false,
-      "type" : "free",
-      "tags" : [
-         "Patrons"
-      ]
-   },
    "GranularPermissions" : {
       "explanation" : "Use detailed staff user permissions",
       "options" : null,
@@ -3365,16 +3305,6 @@
       "value" : "0.0",
       "hidden" : false,
       "type" : "Float",
-      "tags" : [
-         "Patrons"
-      ]
-   },
-   "EnableOwedNotification" : {
-      "explanation" : "If ON,allows a billing notice to be sent on total amount owed.  OwedNotificationValue syspref will need to be set to the desired amount and a cron job enabled.",
-      "options" : null,
-      "value" : "0",
-      "hidden" : false,
-      "type" : "YesNo",
       "tags" : [
          "Patrons"
       ]
@@ -3469,16 +3399,6 @@
          "Searching"
       ]
    },
-   "ShowSupressStatus" : {
-      "explanation" : "Enable display of suppressed items in staff catalogue bib detail view",
-      "options" : null,
-      "value" : "1",
-      "hidden" : false,
-      "type" : "YesNo",
-      "tags" : [
-         "StaffClient"
-      ]
-   },
    "opacuserlogin" : {
       "explanation" : "Enable or disable display of user login features",
       "options" : null,
@@ -3495,6 +3415,34 @@
       "value" : "0",
       "hidden" : false,
       "type" : "YesNo",
+      "tags" : [
+         "Circulation"
+      ]
+   },
+   "FinesExcludeGracePeriod" : {
+      "explanation" : "If ON, an item that is returned after the grace period has passed will only charge overdue fines counting from the day after the grace period, not for all days overdue.  For example, if ON, an item with a one day grace period that is returned three days late will charge two days' worth of fines.  Default setting is off; three days' worth of fines would be charged.",
+       "options" : null,
+       "value" : null,
+       "type" : "YesNo",
+       "tags" : [
+         "Circulation"
+      ]
+   },
+   "ChargeOverdueFineOnRenewal" : {
+      "explanation" : "If ON, overdue fines (if present) will be assessed on item renewal.",
+      "options" : null,
+      "value" : "0",
+      "hidden" : false,
+      "type" : "YesNo",
+      "tags" : [
+         "Circulation"
+      ]
+   },   
+   "OverdueRules" : {
+      "explanation" : "Set long-overdue/lost status changes for checked-out items, used by the long_overdue cron script.  Format: status:n, where n is number of days overdue before that status is triggered.  Available statuses are longoverdue and lost.  E.g. 'longoverdue:20, lost:45'.  Leave blank for no status changes.  One or both status changes may be specified.",
+      "options" : null,
+      "value" : null,
+      "type" : "free",
       "tags" : [
          "Circulation"
       ]

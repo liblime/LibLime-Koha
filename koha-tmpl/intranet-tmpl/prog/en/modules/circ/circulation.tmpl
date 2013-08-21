@@ -668,7 +668,7 @@ Checkout anyway?<br>
                         Checkouts are blocked because fine balance is over the limit.
                 <!-- /TMPL_IF -->
                 <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
-                    Make <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Payment</a>
+                    Make <a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Payment</a>
                 <!-- /TMPL_IF -->
                 <!-- TMPL_IF NAME="charges_override" -->
                     <input type="submit" class="submit" value="Override" />

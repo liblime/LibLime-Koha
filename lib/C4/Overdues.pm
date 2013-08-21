@@ -20,16 +20,17 @@ package C4::Overdues;
 
 use strict;
 use Date::Calc qw/Today Date_to_Days/;
-use Date::Manip qw/UnixDate/;
 use C4::Circulation;
-use Koha;
 use C4::Context;
 use C4::Accounts;
+use C4::Members;
+use C4::Biblio;
 use C4::Log; # logaction
 use C4::Debug;
-use C4::Stats;
+use Carp;
 
-use vars qw($VERSION @ISA @EXPORT);
+
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
 BEGIN {
 	# set the version for version checking
@@ -41,58 +42,18 @@ BEGIN {
         &CalcFine
         &Getoverdues
         &checkoverdues
-		&GetFinesSummary
-        &CheckAccountLineLevelInfo
-        &CheckAccountLineItemInfo
-        &CheckExistantNotifyid
-        &GetNextIdNotify
-        &GetNotifyId
-        &NumberNotifyId
-        &AmountNotify
-        &UpdateAccountLines
-        &UpdateFine
-        &GetOverdueDelays
-        &GetOverduerules
-        &GetFine
-        &GetFineByDescription
-        &CreateItemAccountLine
-        &ReplacementCost2
-        
-        &CheckItemNotify
-        &GetOverduesForBranch
-        &RemoveNotifyLine
-        &AddNotifyLine
-	);
-	# subs to remove
-	push @EXPORT, qw(
-        &BorType
 	);
 
-	# check that an equivalent don't exist already before moving
-
-	# subs to move to Circulation.pm
-	push @EXPORT, qw(
-        &GetIssuesIteminfo
-	);
-    #
-	# &GetIssuingRules - delete.
-	# use C4::Circulation::GetIssuingRule instead.
-	
-	# subs to move to Members.pm
-	push @EXPORT, qw(
-        &CheckBorrowerDebarred
-        &UpdateBorrowerDebarred
-	);
-	# subs to move to Biblio.pm
-	push @EXPORT, qw(
-        &GetItems
-        &ReplacementCost
-	);
+    push @EXPORT_OK, qw(
+        &AccrueFine
+        &ApplyFine
+        &DeleteAccruingFine
+    );
 }
 
 =head1 NAME
 
-C4::Circulation::Fines - Koha module dealing with fines
+C4::Circulation::Overdues - Koha module dealing with overdue items and related charges & statuses
 
 =head1 SYNOPSIS
 
@@ -101,45 +62,46 @@ C4::Circulation::Fines - Koha module dealing with fines
 =head1 DESCRIPTION
 
 This module contains several functions for dealing with fines for
-overdue items. It is primarily used by the 'misc/fines2.pl' script.
+overdue items. It is primarily used by the 'misc/cronjobs/fines.pl' script.
 
 =head1 FUNCTIONS
 
 =head2 Getoverdues
 
-  $overdues = Getoverdues( { minimumdays => 1, maximumdays => 30 } );
+  $overdues = Getoverdues( $option_hash );
+  
+=head3 optional parameters in C<$option_hash> :
 
-Returns the list of all overdue books, with their itemtype.
+=over 4
 
-C<$overdues> is a reference-to-array. Each element is a
-reference-to-hash whose keys are the fields of the issues table in the
-Koha database.
+=item minimumdays => 1
+
+default: 0.
+
+=item maximumdays => 30
+
+default: infinity.
+
+Returns the list of all overdue items.
+
+C<$overdues> is a reference-to-array. Each array element is a
+reference-to-hash whose keys are the fields of the issues table
+and select columns from the items table in the Koha database.
 
 =cut
 
-#'
 sub Getoverdues {
     my $params = shift;
     my $dbh = C4::Context->dbh;
-    my $statement;
-    if ( C4::Context->preference('item-level_itypes') ) {
-        $statement = "
+    my $statement = "
    SELECT issues.*, items.itype as itemtype, items.homebranch, items.holdingbranch, items.barcode, items.itemlost
-     FROM issues 
+     FROM issues
 LEFT JOIN items       USING (itemnumber)
-    WHERE date_due < CURDATE() 
+    WHERE date_due < CURDATE()
 ";
-    } else {
-        $statement = "
-   SELECT issues.*, biblioitems.itemtype, items.itype, items.homebranch, items.holdingbranch, items.barcode, items.itemlost
-     FROM issues 
-LEFT JOIN items       USING (itemnumber)
-LEFT JOIN biblioitems USING (biblioitemnumber)
-    WHERE date_due < CURDATE() 
-";
-    }
 
     my @bind_parameters;
+
     if ( exists $params->{'minimumdays'} and exists $params->{'maximumdays'} ) {
         $statement .= ' AND TO_DAYS( NOW() )-TO_DAYS( date_due ) BETWEEN ? and ? ';
         push @bind_parameters, $params->{'minimumdays'}, $params->{'maximumdays'};
@@ -150,7 +112,7 @@ LEFT JOIN biblioitems USING (biblioitemnumber)
         $statement .= ' AND ( TO_DAYS( NOW() )-TO_DAYS( date_due ) ) < ? ';
         push @bind_parameters, $params->{'maximumdays'};
     }
-    $statement .= 'ORDER BY borrowernumber';
+    $statement .= 'ORDER BY borrowernumber ';
     my $sth = $dbh->prepare( $statement );
     $sth->execute( @bind_parameters );
     return $sth->fetchall_arrayref({});
@@ -168,81 +130,43 @@ Returns a count and a list of overdueitems for a given borrowernumber
 sub checkoverdues {
     my $borrowernumber = shift or return;
     my $sth = C4::Context->dbh->prepare(
-        "SELECT * FROM issues
+        "SELECT issues.*, biblio.title, biblio.author FROM issues
          LEFT JOIN items       ON issues.itemnumber      = items.itemnumber
          LEFT JOIN biblio      ON items.biblionumber     = biblio.biblionumber
-         LEFT JOIN biblioitems ON items.biblioitemnumber = biblioitems.biblioitemnumber
             WHERE issues.borrowernumber  = ?
-            AND   issues.date_due < CURDATE()"
+            AND issues.date_due < CURDATE()"
     );
-    # FIXME: SELECT * across 4 tables?  do we really need the marc AND marcxml blobs??
     $sth->execute($borrowernumber);
     my $results = $sth->fetchall_arrayref({});
     return ( scalar(@$results), $results);  # returning the count and the results is silly
 }
 
-=head2 GetOverdueSummary
-
-=over 4
-
-my $fines_by_type = GetFinesSummary( $borrowernumber );
-
-=back
-
-Given a borrowernumber, this will return a hashref with the keys being the types
-of fines and the values being the totals for each kind of fine.
-
-=cut
-
-sub GetFinesSummary {
-    my ( $borrowernumber ) = @_;
-
-    my $dbh = C4::Context->dbh;
-
-    my $sth = $dbh->prepare( "
-        SELECT
-          accounttype, SUM(amountoutstanding) AS total
-          FROM accountlines
-          WHERE borrowernumber = ?
-          GROUP BY accounttype
-          HAVING total > 0 OR total < 0
-    " );
-
-    $sth->execute( $borrowernumber );
-
-    return { map { $_->{'accounttype'} => $_->{'total'} } @{ $sth->fetchall_arrayref( {} ) } }
-}
-
 =head2 CalcFine
 
-  ($amount, $chargename, $daycount, $daycounttotal) =
-    &CalcFine($item, $categorycode, $branch, $days_overdue, $description, $start_date, $end_date );
+  ($amount, $intervalcount, $intervaltotal) =
+      &CalcFine($issue, $categorycode, $branch, $end_date, $calendar );
 
-Calculates the fine for a book.
+Calculates the fine for an overdue book.
 
 The issuingrules table in the Koha database is a fine matrix, listing
 the penalties for each type of patron for each type of item and each branch (e.g., the
 standard fine for books might be $0.50, but $1.50 for DVDs, or staff
-members might get a longer grace period between the first and second
-reminders that a book is overdue).
+members might get a longer grace period).
 
+This function calculates the number of fine_period intervals that have passed since the
+item became overdue, and returns the amount due based on those calculations.
 
-C<$item> is an item object (hashref).
+C<$issue> is an issue hashref (from GetItemIssue)
 
 C<$categorycode> is the category code (string) of the patron who currently has
 the book.
 
 C<$branchcode> is the library (string) whose issuingrules govern this transaction.
 
-C<$days_overdue> is the number of days elapsed since the book's due date.
-  NOTE: supplying days_overdue is deprecated.
+C<$end_date> is a C4::Dates object
+defining the ending date over which to determine the fine.
 
-C<$start_date> & C<$end_date> are C4::Dates objects 
-defining the date range over which to determine the fine.
-Note that if these are defined, we ignore C<$difference> and C<$dues> , 
-but retain these for backwards-comptibility with extant fines scripts.
-
-Fines scripts should just supply the date range over which to calculate the fine.
+C<$calendar>, the controlling calendar for the transaction, may optionally be supplied.
 
 C<&CalcFine> returns four values:
 
@@ -251,993 +175,156 @@ C<$amount> is the fine owed by the patron (see above).
 C<$chargename> is the chargename field from the applicable record in
 the categoryitem table, whatever that is.
 
-C<$daycount> is the number of days between start and end dates, Calendar adjusted (where needed), 
-minus any applicable grace period.
+C<$intervalcount> is the number of fine_period intervals between start and end dates,
+adjusted for the policy's calendar and grace period.
 
-C<$daycounttotal> is C<$daycount> without consideration of grace period.
-
-FIXME - What is chargename supposed to be ?
-
-FIXME: previously attempted to return C<$message> as a text message, either "First Notice", "Second Notice",
-or "Final Notice".  But CalcFine never defined any value.
+C<$intervalcounttotal> is C<$intervalcount> without consideration of grace period.
 
 =cut
 
 sub CalcFine {
-    my ( $item, $bortype, $branchcode, $difference ,$dues , $start_date, $end_date  ) = @_;
-	$debug and warn sprintf("CalcFine(%s, %s, %s, %s, %s, %s, %s)",
-			($item ? '{item}' : 'UNDEF'), 
-			($bortype    || 'UNDEF'), 
-			($branchcode || 'UNDEF'), 
-			($difference || 'UNDEF'), 
-			($dues       || 'UNDEF'), 
-			($start_date ? ($start_date->output('iso') || 'Not a C4::Dates object') : 'UNDEF'), 
-			(  $end_date ? (  $end_date->output('iso') || 'Not a C4::Dates object') : 'UNDEF')
-	);
+    my ( $issue, $bortype, $branchcode, $end_date, $cal ) = @_;
+    croak "Too many args to CalcFine" if scalar(@_) > 5;
+    $debug and warn sprintf("CalcFine(%s, %s, %s, %s, cal)",
+            ($issue ? '{issue}' : 'UNDEF'),
+            ($bortype    || 'UNDEF'),
+            ($branchcode || 'UNDEF'),
+            (  $end_date ? (  $end_date->output('iso') || 'Not a C4::Dates object') : 'UNDEF')
+    );
+
     my $dbh = C4::Context->dbh;
-    my $amount = 0;
-    my $daystocharge = 0;
-    my $data = C4::Circulation::GetIssuingRule($bortype, $$item{itype} || $$item{itemtype}, $branchcode);
-    if($difference) {
-	# if $difference is supplied, the difference has already been calculated, but we still need to adjust for the calendar.
-    	# use copy-pasted functions from calendar module.  (deprecated -- these functions will be removed from C4::Overdues ).
-	my $countspecialday    = &GetSpecialHolidays($dues,$item->{itemnumber});
-	my $countrepeatableday = &GetRepeatableHolidays($dues,$item->{itemnumber},$difference);    
-	my $countalldayclosed  = $countspecialday + $countrepeatableday;
-	$daystocharge = $difference - $countalldayclosed;
+    my $amount = Koha::Money->new();
+    my ($daystocharge, $totaldays);
+    my $start_date = C4::Dates->new($issue->{date_due},'iso');
+
+    my $irule = C4::Circulation::GetIssuingRule($bortype, $$issue{itemtype}, $branchcode);
+    if(C4::Context->preference('finesCalendar') eq 'noFinesWhenClosed') {
+        $totaldays = $cal->daysBetween( $start_date, $end_date );
     } else {
-	# if $difference is not supplied, we have C4::Dates objects giving us the date range, and we use the calendar module.
-	if(C4::Context->preference('finesCalendar') eq 'noFinesWhenClosed') {
-	    my $calendar = C4::Calendar->new( branchcode => $branchcode );
-	    $daystocharge = $calendar->daysBetween( $start_date, $end_date );
-        } else {
-	    $daystocharge = Date_to_Days(split('-',$end_date->output('iso'))) - Date_to_Days(split('-',$start_date->output('iso')));
-	}
+        $totaldays = Date_to_Days(split('-',$end_date->output('iso'))) - Date_to_Days(split('-',$start_date->output('iso')));
     }
-	
    # correct for grace period.
     my $days_minus_grace = 0;
+#FIXME: this should be in calendar module.
     {
         no warnings 'uninitialized';
-        $days_minus_grace = $daystocharge - $data->{'firstremind'};
-        
-        if ($data->{'chargeperiod'} > 0 && $days_minus_grace > 0 ) { 
-            $amount = int($daystocharge / $data->{'chargeperiod'}) * $data->{'fine'};
+        $days_minus_grace = $totaldays - $irule->{'firstremind'};
+        $daystocharge = (C4::Context->preference('FinesExcludeGracePeriod')) ? $days_minus_grace : $totaldays;
+        if ($irule->{'chargeperiod'} > 0 && $days_minus_grace > 0 && $daystocharge > 0) {
+            $amount = Koha::Money->new(int($daystocharge / $irule->{'chargeperiod'}) * $irule->{'fine'});
+
         }
         #else { a zero (or null)  chargeperiod means no charge.}
     }
-
     my $ismax = 0;
     my $sys_max = C4::Context->preference('MaxFine') || 0;
-    my $rule_max =
-        C4::Context->preference('UseGranularMaxFines') ? $data->{max_fine} : 0;
+    my $rule_max = C4::Context->preference('UseGranularMaxFines') ? $irule->{max_fine} : 0;
     my $max_fine = $rule_max || $sys_max;
     if ($amount >= $max_fine) {
-        $amount = $max_fine;
+        Koha::Money->new($max_fine);
         $ismax = 1
     }
 
-    $debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $data->{'chargename'}, $days_minus_grace, $daystocharge);
-    return ($amount, $data->{'chargename'}, $days_minus_grace, $daystocharge, $ismax);
-    # FIXME: chargename is NEVER populated anywhere.
+    $debug and warn sprintf("CalcFine returning (%s, %s, %s, %s)", $amount, $days_minus_grace, $daystocharge, $ismax);
+    return ($amount, $daystocharge, $totaldays, $ismax);  # why return two interval counts ??
 }
 
 
-=head2 GetSpecialHolidays
 
-&GetSpecialHolidays($date_dues,$itemnumber);
+=head2 AccrueFine
 
-return number of special days  between date of the day and date due
+  &AccrueFine($issue_id, $amount);
 
-C<$date_dues> is the envisaged date of book return.
+Updates the ESTIMATED overdue fine owed on an overdue item.
 
-C<$itemnumber> is the book's item number.
+C<$amount> is the current amount owed by the patron (if they were to return it now).
+
+C<&AccrueFine> updates the fees_accruing table, but does not actually charge a fine.
+Rows in fees_accruing should cascade delete when the entry in the issues table is
+deleted and copied to old_issues.
 
 =cut
 
-sub GetSpecialHolidays {
-    my ( $date_dues, $itemnumber ) = @_;
 
-    # calcul the today date
-    my $today = join "-", &Today();
-
-    # return the holdingbranch
-    my $iteminfo = GetIssuesIteminfo($itemnumber);
-
-    # use sql request to find all date between date_due and today
+sub AccrueFine {
+    my $issue_id = shift or return;
+    my $amount   = shift;
     my $dbh = C4::Context->dbh;
-    my $query =
-      qq|SELECT DATE_FORMAT(concat(year,'-',month,'-',day),'%Y-%m-%d') as date
-FROM `special_holidays`
-WHERE DATE_FORMAT(concat(year,'-',month,'-',day),'%Y-%m-%d') >= ?
-AND   DATE_FORMAT(concat(year,'-',month,'-',day),'%Y-%m-%d') <= ?
-AND branchcode=?
-|;
-    my @result = GetWdayFromItemnumber($itemnumber);
-    my @result_date;
-    my $wday;
-    my $dateinsec;
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $date_dues, $today, $iteminfo->{'branchcode'} )
-      ;    # FIXME: just use NOW() in SQL instead of passing in $today
-
-    while ( my $special_date = $sth->fetchrow_hashref ) {
-        push( @result_date, $special_date );
-    }
-
-    my $specialdaycount = scalar(@result_date);
-
-    for ( my $i = 0 ; $i < scalar(@result_date) ; $i++ ) {
-        $dateinsec = UnixDate( $result_date[$i]->{'date'}, "%o" );
-        ( undef, undef, undef, undef, undef, undef, $wday, undef, undef ) =
-          localtime($dateinsec);
-        for ( my $j = 0 ; $j < scalar(@result) ; $j++ ) {
-            if ( $wday == ( $result[$j]->{'weekday'} ) ) {
-                $specialdaycount--;
-            }
-        }
-    }
-
-    return $specialdaycount;
-}
-
-=head2 GetRepeatableHolidays
-
-&GetRepeatableHolidays($date_dues, $itemnumber, $difference,);
-
-return number of day closed between date of the day and date due
-
-C<$date_dues> is the envisaged date of book return.
-
-C<$itemnumber> is item number.
-
-C<$difference> numbers of between day date of the day and date due
-
-=cut
-
-sub GetRepeatableHolidays {
-    my ( $date_dues, $itemnumber, $difference ) = @_;
-    my $dateinsec = UnixDate( $date_dues, "%o" );
-    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =
-      localtime($dateinsec);
-    my @result = GetWdayFromItemnumber($itemnumber);
-    my @dayclosedcount;
-    my $j;
-
-    for ( my $i = 0 ; $i < scalar(@result) ; $i++ ) {
-        my $k = $wday;
-
-        for ( $j = 0 ; $j < $difference ; $j++ ) {
-            if ( $result[$i]->{'weekday'} == $k ) {
-                push( @dayclosedcount, $k );
-            }
-            $k++;
-            ( $k = 0 ) if ( $k eq 7 );
-        }
-    }
-    return scalar(@dayclosedcount);
-}
-
-
-=head2 GetWayFromItemnumber
-
-&Getwdayfromitemnumber($itemnumber);
-
-return the different week day from repeatable_holidays table
-
-C<$itemnumber> is  item number.
-
-=cut
-
-sub GetWdayFromItemnumber {
-    my ($itemnumber) = @_;
-    my $iteminfo = GetIssuesIteminfo($itemnumber);
-    my @result;
-    my $query = qq|SELECT weekday
-    FROM repeatable_holidays
-    WHERE branchcode=?
-|;
-    my $sth = C4::Context->dbh->prepare($query);
-
-    $sth->execute( $iteminfo->{'branchcode'} );
-    while ( my $weekday = $sth->fetchrow_hashref ) {
-        push( @result, $weekday );
-    }
-    return @result;
-}
-
-
-=head2 GetIssuesIteminfo
-
-&GetIssuesIteminfo($itemnumber);
-
-return all data from issues about item
-
-C<$itemnumber> is  item number.
-
-=cut
-
-sub GetIssuesIteminfo {
-    my ($itemnumber) = @_;
-    my $dbh          = C4::Context->dbh;
-    my $query        = qq|SELECT *
-    FROM issues
-    WHERE itemnumber=?
-    |;
-    my $sth = $dbh->prepare($query);
-    $sth->execute($itemnumber);
-    my ($issuesinfo) = $sth->fetchrow_hashref;
-    return $issuesinfo;
-}
-
-
-=head2 UpdateFine
-
-  &UpdateFine($itemnumber, $borrowernumber, $amount, $type, $description, $ismax);
-
-(Note: the following is mostly conjecture and guesswork.)
-
-Updates the fine owed on an overdue book.
-
-C<$itemnumber> is the book's item number.
-
-C<$borrowernumber> is the borrower number of the patron who currently
-has the book on loan.
-
-C<$amount> is the current amount owed by the patron.
-
-C<$type> will be used in the description of the fine.
-
-C<$description> is a string that must be present in the description of
-the fine. I think this is expected to be a date in DD/MM/YYYY format.
-
-C<$ismax> bool, from C<&CalcFine>, whether the C<$amount> is max overdue.
-
-C<&UpdateFine> looks up the amount currently owed on the given item
-and sets it to C<$amount>, creating, if necessary, a new entry in the
-accountlines table of the Koha database.
-
-=cut
-
-#
-# Question: Why should the caller have to
-# specify both the item number and the borrower number? A book can't
-# be on loan to two different people, so the item number should be
-# sufficient.
-#
-# Possible Answer: You might update a fine for a damaged item, *after* it is returned.
-#
-sub UpdateFine {
-    my ( $itemnum, $borrowernumber, $amount, $type, $due, $ismax ) = @_;
-    $type ||= 'FU';
-    my $dbh = C4::Context->dbh;
-    # FIXME - What exactly is this query supposed to do? It looks up an
-    # entry in accountlines that matches the given item and borrower
-    # numbers, where the description contains $due, and where the
-    # account type has one of several values, but what does this _mean_?
-    # Does it look up existing fines for this item?
-    # FIXME - What are these various account types? ("FU", "O", "F", "M")
-	#	"L"   is LOST item
-	#   "A"   is Account Management Fee
-	#   "N"   is New Card
-	#   "M"   is Sundry
-	#   "O"   is Overdue ??
-	#   "F"   is Fine ??
-	#   "FU"  is Fine UPDATE??
-	#	"Pay" is Payment
-	#   "REF" is Cash Refund
-    my $sth = $dbh->prepare(
-        "SELECT * FROM accountlines
-		WHERE itemnumber=?
-		AND   borrowernumber=?
-		AND   accounttype IN ('FU','O','F','M')
-		AND   description like ? "
-    );
-    $sth->execute( $itemnum, $borrowernumber, "%$due%" );
-    my $retnum = 0;
-    if ( my $data = $sth->fetchrow_hashref ) {
-
-		# we're updating an existing fine.  Only modify if we're adding to the charge.
-        # Note that in the current implementation, you cannot pay against an accruing fine
-        # (i.e. , of accounttype 'FU').  Doing so will break accrual.
-        if ($$data{description} =~ /max overdue/i && !$ismax) {
-            $$data{description} =~ s/\, max overdue//i;
-        }
-    	if ( $data->{'amount'} != $amount ) {
-            $retnum = $$data{accountno};
-            my $diff = $amount - $data->{'amount'};
-            $diff = 0 if ( $data->{amount} > $amount);
-            my $out  = $data->{'amountoutstanding'} + $diff;
-            $out = $amount if $out > $amount; # sudden change in circrules
-            my $query = "UPDATE accountlines
-				   SET date             = now(), 
-                   amount           = ?, 
-                   amountoutstanding= ?,
-					    lastincrement    = ?, 
-                   accounttype      = ?, 
-                   description      = ?
-	  			 WHERE borrowernumber   = ?
-               AND accountno        = ?";
-            my $sth2 = $dbh->prepare($query);
-            $sth2->execute($amount,$out,$diff,$type,$$data{description},$data->{'borrowernumber'}, $data->{accountno});
-            UpdateStats( my $branch = '', my $stattype = "fine_update", $amount, my $other = '', $data->{'itemnumber'}, my $itemtype = '', $data->{'borrowernumber'}, my $proccode = '' );
-        } else {
-            #      print "no update needed $data->{'amount'}"
-        }
+    if($amount == 0){
+        my $sth_del = $dbh->prepare('DELETE from fees_accruing where issue_id = ?');
+        $sth_del->execute($issue_id);
     } else {
-        my $sth4 = $dbh->prepare(
-            "SELECT title FROM biblio LEFT JOIN items ON biblio.biblionumber=items.biblionumber WHERE items.itemnumber=?"
-        );
-        $sth4->execute($itemnum);
-        my $title = $sth4->fetchrow;
-
-#         #   print "not in account";
-#         my $sth3 = $dbh->prepare("Select max(accountno) from accountlines");
-#         $sth3->execute;
-# 
-#         # FIXME - Make $accountno a scalar.
-#         my @accountno = $sth3->fetchrow_array;
-#         $sth3->finish;
-#         $accountno[0]++;
-# begin transaction
-		my $nextaccntno = C4::Accounts::getnextacctno($borrowernumber);
-        $retnum   = $nextaccntno;
-		my $desc  = "$title due on $due";
-		my $query = "INSERT INTO accountlines
-		    (borrowernumber,itemnumber,date,amount,description,accounttype,amountoutstanding,lastincrement,accountno)
-			    VALUES (?,?,now(),?,?,'FU',?,?,?)";
-		my $sth2 = $dbh->prepare($query);
-		$debug and print STDERR "UpdateFine query: $query\nw/ args: $borrowernumber, $itemnum, $amount, $desc, $amount, $amount, $nextaccntno\n";
-        $sth2->execute($borrowernumber, $itemnum, $amount, $desc, $amount, $amount, $nextaccntno);
-       UpdateStats( my $branch = '', my $stattype = "fine_new", $amount, my $other = '', $itemnum, my $itemtype = '', $borrowernumber, my $proccode = '' );
-    }
-    # logging action
-
-    if ($retnum && $ismax) {
-        $dbh->do("UPDATE accountlines
-            SET description    = CONCAT(description, ', Max overdue')
-          WHERE borrowernumber = $borrowernumber
-            AND accountno      = $retnum
-        ");
-    }
-    &logaction(
-        "FINES",
-        $type,
-        $borrowernumber,
-        "due=".$due."  amount=".$amount." itemnumber=".$itemnum
-        ) if C4::Context->preference("FinesLog");
-    return $retnum;
-}
-
-=head2 BorType
-
-  $borrower = &BorType($borrowernumber);
-
-Looks up a patron by borrower number.
-
-C<$borrower> is a reference-to-hash whose keys are all of the fields
-from the borrowers and categories tables of the Koha database. Thus,
-C<$borrower> contains all information about both the borrower and
-category he or she belongs to.
-
-=cut
-
-#'
-sub BorType {
-    my ($borrowernumber) = @_;
-    my $dbh              = C4::Context->dbh;
-    my $sth              = $dbh->prepare(
-        "SELECT * from borrowers
-      LEFT JOIN categories ON borrowers.categorycode=categories.categorycode 
-      WHERE borrowernumber=?"
-    );
-    $sth->execute($borrowernumber);
-    return $sth->fetchrow_hashref;
-}
-
-=head2 ReplacementCost
-
-  $cost = &ReplacementCost($itemnumber);
-
-Returns the replacement cost of the item with the given item number.
-
-=cut
-
-#'
-sub ReplacementCost {
-    my ($itemnum) = @_;
-    my $dbh       = C4::Context->dbh;
-    my $sth       =
-      $dbh->prepare("Select replacementprice from items where itemnumber=?");
-    $sth->execute($itemnum);
-
-    # FIXME - Use fetchrow_array or a slice.
-    my $data = $sth->fetchrow_hashref;
-    return ( $data->{'replacementprice'} );
-}
-
-=head2 GetFine
-
-$data->{'sum(amountoutstanding)'} = &GetFine($itemnum,$borrowernumber);
-
-return the total of fine
-
-C<$itemnum> is item number
-
-C<$borrowernumber> is the borrowernumber
-
-=cut 
-
-
-sub GetFine {
-    my ( $itemnum, $borrowernumber ) = @_;
-    my $dbh   = C4::Context->dbh();
-    my $query = "SELECT sum(amountoutstanding) FROM accountlines
-    where accounttype like 'F%'  
-  AND amountoutstanding > 0 AND itemnumber = ? AND borrowernumber=?";
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $itemnum, $borrowernumber );
-    my $data = $sth->fetchrow_hashref();
-    return ( $data->{'sum(amountoutstanding)'} );
-}
-
-sub GetFineByDescription {
-    my ( $borrowernumber, $type, $description ) = @_;
-    my $dbh = C4::Context->dbh;
-
-    return $dbh->selectrow_hashref( "
-        SELECT
-          accountno, itemnumber, date, description, amount, amountoutstanding, DATE(timestamp) as update_date
-          FROM accountlines
-          WHERE borrowernumber = ? AND accounttype = ? AND description LIKE ?
-          ORDER BY accountno DESC
-          LIMIT 1
-    ", {}, $borrowernumber, $type, '%' . $description . '%' );
-}
-
-=head2 GetIssuingRules
-
-FIXME - This sub should be deprecated and removed.
-It ignores branch and defaults.
-
-$data = &GetIssuingRules($itemtype,$categorycode);
-
-Looks up for all issuingrules an item info 
-
-C<$itemnumber> is a reference-to-hash whose keys are all of the fields
-from the borrowers and categories tables of the Koha database. Thus,
-
-C<$categorycode> contains  information about borrowers category 
-
-C<$data> contains all information about both the borrower and
-category he or she belongs to.
-=cut 
-
-sub GetIssuingRules {
-	warn "GetIssuingRules is deprecated: use GetIssuingRule from C4::Circulation instead.";
-   my ($itemtype,$categorycode)=@_;
-   my $dbh   = C4::Context->dbh();    
-   my $query=qq|SELECT *
-        FROM issuingrules
-        WHERE issuingrules.itemtype=?
-            AND issuingrules.categorycode=?
-        |;
-    my $sth = $dbh->prepare($query);
-    #  print $query;
-    $sth->execute($itemtype,$categorycode);
-    return $sth->fetchrow_hashref;
-}
-
-
-sub ReplacementCost2 {
-    my ( $itemnum, $borrowernumber ) = @_;
-    my $dbh   = C4::Context->dbh();
-    my $query = "SELECT amountoutstanding
-         FROM accountlines
-             WHERE accounttype like 'L'
-         AND amountoutstanding > 0
-         AND itemnumber = ?
-         AND borrowernumber= ?";
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $itemnum, $borrowernumber );
-    my $data = $sth->fetchrow_hashref();
-    return ( $data->{'amountoutstanding'} );
-}
-
-
-=head2 GetNextIdNotify
-
-($result) = &GetNextIdNotify($reference);
-
-Returns the new file number
-
-C<$result> contains the next file number
-
-C<$reference> contains the beggining of file number
-
-=cut
-
-sub GetNextIdNotify {
-    my ($reference) = @_;
-    my $query = qq|SELECT max(notify_id)
-         FROM accountlines
-         WHERE notify_id  like \"$reference%\"
-         |;
-
-    # AND borrowernumber=?|;
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare($query);
-    $sth->execute();
-    my $result = $sth->fetchrow;
-    my $count;
-    if ( $result eq '' ) {
-        ( $result = $reference . "01" );
-    }
-    else {
-        $count = substr( $result, 6 ) + 1;
-
-        if ( $count < 10 ) {
-            ( $count = "0" . $count );
-        }
-        $result = $reference . $count;
-    }
-    return $result;
-}
-
-=head2 NumberNotifyId
-
-(@notify) = &NumberNotifyId($borrowernumber);
-
-Returns amount for all file per borrowers
-C<@notify> array contains all file per borrowers
-
-C<$notify_id> contains the file number for the borrower number nad item number
-
-=cut
-
-sub NumberNotifyId{
-    my ($borrowernumber)=@_;
-    my $dbh = C4::Context->dbh;
-    my $query=qq|    SELECT distinct(notify_id)
-            FROM accountlines
-            WHERE borrowernumber=?|;
-    my @notify;
-    my $sth = $dbh->prepare($query);
-    $sth->execute($borrowernumber);
-    while ( my ($numberofnotify) = $sth->fetchrow ) {
-        push( @notify, $numberofnotify );
-    }
-    return (@notify);
-}
-
-=head2 AmountNotify
-
-($totalnotify) = &AmountNotify($notifyid);
-
-Returns amount for all file per borrowers
-C<$notifyid> is the file number
-
-C<$totalnotify> contains amount of a file
-
-C<$notify_id> contains the file number for the borrower number and item number
-
-=cut
-
-sub AmountNotify{
-    my ($notifyid,$borrowernumber)=@_;
-    my $dbh = C4::Context->dbh;
-    my $query=qq|    SELECT sum(amountoutstanding)
-            FROM accountlines
-            WHERE notify_id=? AND borrowernumber = ?|;
-    my $sth=$dbh->prepare($query);
-	$sth->execute($notifyid,$borrowernumber);
-	my $totalnotify=$sth->fetchrow;
-    $sth->finish;
-    return ($totalnotify);
-}
-
-
-=head2 GetNotifyId
-
-($notify_id) = &GetNotifyId($borrowernumber,$itemnumber);
-
-Returns the file number per borrower and itemnumber
-
-C<$borrowernumber> is a reference-to-hash whose keys are all of the fields
-from the items tables of the Koha database. Thus,
-
-C<$itemnumber> contains the borrower categorycode
-
-C<$notify_id> contains the file number for the borrower number nad item number
-
-=cut
-
-sub GetNotifyId {
-    my ( $borrowernumber, $itemnumber ) = @_;
-    my $query = qq|SELECT notify_id
-           FROM accountlines
-           WHERE borrowernumber=?
-          AND itemnumber=?
-           AND (accounttype='FU' or accounttype='O')|;
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $borrowernumber, $itemnumber );
-    my ($notify_id) = $sth->fetchrow;
-    $sth->finish;
-    return ($notify_id);
-}
-
-=head2 CreateItemAccountLine
-
-() = &CreateItemAccountLine($borrowernumber,$itemnumber,$date,$amount,$description,$accounttype,$amountoutstanding,$timestamp,$notify_id,$level);
-
-update the account lines with file number or with file level
-
-C<$items> is a reference-to-hash whose keys are all of the fields
-from the items tables of the Koha database. Thus,
-
-C<$itemnumber> contains the item number
-
-C<$borrowernumber> contains the borrower number
-
-C<$date> contains the date of the day
-
-C<$amount> contains item price
-
-C<$description> contains the descritpion of accounttype 
-
-C<$accounttype> contains the account type
-
-C<$amountoutstanding> contains the $amountoutstanding 
-
-C<$timestamp> contains the timestamp with time and the date of the day
-
-C<$notify_id> contains the file number
-
-C<$level> contains the file level
-
-=cut
-
-sub CreateItemAccountLine {
-    my (
-        $borrowernumber, $itemnumber,  $date,              $amount,
-        $description,    $accounttype, $amountoutstanding, $timestamp,
-        $notify_id,      $level
-    ) = @_;
-    my $dbh         = C4::Context->dbh;
-    my $nextaccntno = C4::Accounts::getnextacctno($borrowernumber);
-    my $query       = "INSERT into accountlines
-         (borrowernumber,accountno,itemnumber,date,amount,description,accounttype,amountoutstanding,timestamp,notify_id,notify_level)
-          VALUES
-             (?,?,?,?,?,?,?,?,?,?,?)";
-
-    my $sth = $dbh->prepare($query);
-    $sth->execute(
-        $borrowernumber, $nextaccntno,       $itemnumber,
-        $date,           $amount,            $description,
-        $accounttype,    $amountoutstanding, $timestamp,
-        $notify_id,      $level
-    );
-}
-
-=head2 UpdateAccountLines
-
-() = &UpdateAccountLines($notify_id,$notify_level,$borrowernumber,$itemnumber);
-
-update the account lines with file number or with file level
-
-C<$items> is a reference-to-hash whose keys are all of the fields
-from the items tables of the Koha database. Thus,
-
-C<$itemnumber> contains the item number
-
-C<$notify_id> contains the file number
-
-C<$notify_level> contains the file level
-
-C<$borrowernumber> contains the borrowernumber
-
-=cut
-
-sub UpdateAccountLines {
-    my ( $notify_id, $notify_level, $borrowernumber, $itemnumber ) = @_;
-    my $query;
-    if ( $notify_id eq '' ) {
-        $query = qq|UPDATE accountlines
-    SET  notify_level=?
-    WHERE borrowernumber=? AND itemnumber=?
-    AND (accounttype='FU' or accounttype='O')|;
-    } else {
-        $query = qq|UPDATE accountlines
-     SET notify_id=?, notify_level=?
-   WHERE borrowernumber=?
-    AND itemnumber=?
-    AND (accounttype='FU' or accounttype='O')|;
-    }
-
-    my $sth = C4::Context->dbh->prepare($query);
-    if ( $notify_id eq '' ) {
-        $sth->execute( $notify_level, $borrowernumber, $itemnumber );
-    } else {
-        $sth->execute( $notify_id, $notify_level, $borrowernumber, $itemnumber );
+        $amount = Koha::Money->new($amount) unless(Check::ISA::obj($amount, 'Koha::Money'));
+        my $sth_check = $dbh->prepare('select * from fees_accruing where issue_id = ?');
+        $sth_check->execute($issue_id);
+        my $update_query = ($sth_check->rows()) ?
+                                "UPDATE fees_accruing SET amount = ? WHERE issue_id = ?" :
+                                "INSERT INTO fees_accruing ( amount , issue_id ) VALUES ( ? , ? )";
+        my $sth = $dbh->prepare($update_query);
+        $sth->execute( $amount->value() , $issue_id );
     }
 }
 
-=head2 GetItems
+=head ApplyFine( $issue_hashref , $checkindate)
 
-($items) = &GetItems($itemnumber);
+Applies an overdue fine associated with an issue record.
+C<$checkindate> is a C4::Dates object representing the effective
+checkin date to use in calculating the fine.
 
-Returns the list of all delays from overduerules.
-
-C<$items> is a reference-to-hash whose keys are all of the fields
-from the items tables of the Koha database. Thus,
-
-C<$itemnumber> contains the borrower categorycode
 
 =cut
 
-# FIXME: This is a bad function to have here.
-# Shouldn't it be in C4::Items?
-# Shouldn't it be called GetItem since you only get 1 row?
-# Shouldn't it be called GetItem since you give it only 1 itemnumber?
+sub ApplyFine {
+    my $issue = shift;
+    my $checkindate = shift || C4::Dates->new();
+    my $duedate = C4::Dates->new($issue->{'date_due'},'iso');
+    my $borrower = C4::Members::GetMember($issue->{'borrowernumber'});  # Should be Memoized.
+    my $item = C4::Items::GetItem($issue->{itemnumber});
+    # $issue->{branchcode} holds the circControl branch.
 
-sub GetItems {
-    my $itemnumber = shift or return;
-    my $query = qq|SELECT *
-             FROM items
-              WHERE itemnumber=?|;
-    my $sth = C4::Context->dbh->prepare($query);
-    $sth->execute($itemnumber);
-    my ($items) = $sth->fetchrow_hashref;
-    return ($items);
-}
-
-=head2 GetOverdueDelays
-
-(@delays) = &GetOverdueDelays($categorycode);
-
-Returns the list of all delays from overduerules.
-
-C<@delays> it's an array contains the three delays from overduerules table
-
-C<$categorycode> contains the borrower categorycode
-
-=cut
-
-sub GetOverdueDelays {
-    my ($category) = @_;
-    my $query      = qq|SELECT delay1,delay2,delay3
-                FROM overduerules
-                WHERE categorycode=?|;
-    my $sth = C4::Context->dbh->prepare($query);
-    $sth->execute($category);
-    my (@delays) = $sth->fetchrow_array;
-    return (@delays);
-}
-
-=head2 GetBranchcodesWithOverdueRules
-
-=over 4
-
-my @branchcodes = C4::Overdues::GetBranchcodesWithOverdueRules()
-
-returns a list of branch codes for branches with overdue rules defined.
-
-=back
-
-=cut
-
-sub GetBranchcodesWithOverdueRules {
-    my $dbh               = C4::Context->dbh;
-    my $rqoverduebranches = $dbh->prepare("SELECT DISTINCT branchcode FROM overduerules WHERE delay1 IS NOT NULL AND branchcode <> ''");
-    $rqoverduebranches->execute;
-    my @branches = map { shift @$_ } @{ $rqoverduebranches->fetchall_arrayref };
-    $rqoverduebranches->finish;
-# Check for branches from overdueitemrules if no branches found in overduerules
-    if (scalar(@branches) == 0) {
-      $rqoverduebranches = $dbh->prepare("SELECT DISTINCT branchcode FROM overdueitemrules WHERE delay1 IS NOT NULL AND branchcode <> ''");
-      $rqoverduebranches->execute;
-      @branches = map { shift @$_ } @{ $rqoverduebranches->fetchall_arrayref };
-      $rqoverduebranches->finish;
+    return if($duedate->output('iso') gt $checkindate->output('iso')); # or it's not overdue, right?
+    my $control = C4::Context->preference('CircControl');
+    my $branchcode = ($control eq 'ItemHomeLibrary') ? $item->{homebranch} :
+                     ($control eq 'PatronLibrary'  ) ? $borrower->{branchcode} :
+                                                       $issue->{branchcode} ;
+    # In final case, CircControl must be PickupLibrary. (branchcode comes from issues table here).
+    my $calendar = C4::Calendar->new(branchcode => $branchcode);
+    #my ($amount,$chargeintervals)= CalcFine($issue, $borrower->{'categorycode'}, $branchcode, $checkindate, $calendar);
+    my ($amount, $days_minus_grace, $daystocharge, $ismax)= CalcFine($issue, $borrower->{categorycode}, $branchcode, $checkindate, $calendar);
+    if($amount){
+        my $biblio = GetBiblioFromItemNumber($issue->{itemnumber});
+    
+        # begin transaction
+        my %new_fee = (
+                        borrowernumber => $issue->{borrowernumber},
+                        itemnumber  => $issue->{itemnumber},
+                        amount      => $amount,
+                        accounttype => 'FINE',
+                        description => "Overdue: $biblio->{'title'}",
+                        );
+        my $fee_rowid = C4::Accounts::CreateFee( \%new_fee );
     }
-    return @branches;
 }
 
-=head2 CheckAccountLineLevelInfo
+=head DeleteAccruingFine( $issue_id )
 
-($exist) = &CheckAccountLineLevelInfo($borrowernumber,$itemnumber,$accounttype,notify_level);
-
-Check and Returns the list of all overdue books.
-
-C<$exist> contains number of line in accounlines
-with the same .biblionumber,itemnumber,accounttype,and notify_level
-
-C<$borrowernumber> contains the borrower number
-
-C<$itemnumber> contains item number
-
-C<$accounttype> contains account type
-
-C<$notify_level> contains the accountline level 
-
+Removes Accruing fine record in fees_accruing table.
 
 =cut
 
-sub CheckAccountLineLevelInfo {
-    my ( $borrowernumber, $itemnumber, $level ) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $query = qq|SELECT count(*)
-            FROM accountlines
-            WHERE borrowernumber =?
-            AND itemnumber = ?
-            AND notify_level=?|;
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $borrowernumber, $itemnumber, $level );
-    my ($exist) = $sth->fetchrow;
-    return ($exist);
+sub DeleteAccruingFine {
+    my $issue_id = shift;
+    my $sth_del = C4::Context->dbh()->prepare('delete from fees_accruing where issue_id = ?');
+    $sth_del->execute($issue_id);
 }
 
-=head2 GetOverduerules
-
-($overduerules) = &GetOverduerules($categorycode);
-
-Returns the value of borrowers (debarred or not) with notify level
-
-C<$overduerules> return value of debbraed field in overduerules table
-
-C<$category> contains the borrower categorycode
-
-C<$notify_level> contains the notify level
-
-=cut
-
-sub GetOverduerules {
-    my ( $category, $notify_level ) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $query = qq|SELECT debarred$notify_level
-                     FROM overduerules
-                    WHERE categorycode=?|;
-    my $sth = $dbh->prepare($query);
-    $sth->execute($category);
-    my ($overduerules) = $sth->fetchrow;
-    return ($overduerules);
-}
-
-
-=head2 CheckBorrowerDebarred
-
-($debarredstatus) = &CheckBorrowerDebarred($borrowernumber);
-
-Check if the borrowers is already debarred
-
-C<$debarredstatus> return 0 for not debarred and return 1 for debarred
-
-C<$borrowernumber> contains the borrower number
-
-=cut
-
-# FIXME: Shouldn't this be in C4::Members?
-sub CheckBorrowerDebarred {
-    my ($borrowernumber) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $query = qq|
-        SELECT debarred
-        FROM borrowers
-        WHERE borrowernumber=?
-    |;
-    my $sth = $dbh->prepare($query);
-    $sth->execute($borrowernumber);
-    my ($debarredstatus) = $sth->fetchrow;
-    return ( $debarredstatus eq '1' ? 1 : 0 );
-}
-
-=head2 UpdateBorrowerDebarred
-
-($borrowerstatut) = &UpdateBorrowerDebarred($borrowernumber);
-
-update status of borrowers in borrowers table (field debarred)
-
-C<$borrowernumber> borrower number
-
-=cut
-
-sub UpdateBorrowerDebarred{
-    my($borrowernumber) = @_;
-    my $dbh = C4::Context->dbh;
-        my $query=qq|UPDATE borrowers
-             SET debarred='1'
-                     WHERE borrowernumber=?
-            |;
-    my $sth=$dbh->prepare($query);
-        $sth->execute($borrowernumber);
-        $sth->finish;
-        return 1;
-}
-
-=head2 CheckExistantNotifyid
-
-  ($exist) = &CheckExistantNotifyid($borrowernumber,$itemnumber,$accounttype,$notify_id);
-
-Check and Returns the notify id if exist else return 0.
-
-C<$exist> contains a notify_id 
-
-C<$borrowernumber> contains the borrower number
-
-C<$date_due> contains the date of item return 
-
-
-=cut
-
-sub CheckExistantNotifyid {
-    my ( $borrowernumber, $date_due ) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $query = qq|SELECT notify_id FROM accountlines
-             LEFT JOIN issues ON issues.itemnumber= accountlines.itemnumber
-             WHERE accountlines.borrowernumber =?
-              AND date_due = ?|;
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $borrowernumber, $date_due );
-    return $sth->fetchrow || 0;
-}
-
-=head2 CheckAccountLineItemInfo
-
-  ($exist) = &CheckAccountLineItemInfo($borrowernumber,$itemnumber,$accounttype,$notify_id);
-
-Check and Returns the list of all overdue items from the same file number(notify_id).
-
-C<$exist> contains number of line in accounlines
-with the same .biblionumber,itemnumber,accounttype,notify_id
-
-C<$borrowernumber> contains the borrower number
-
-C<$itemnumber> contains item number
-
-C<$accounttype> contains account type
-
-C<$notify_id> contains the file number 
-
-=cut
-
-sub CheckAccountLineItemInfo {
-    my ( $borrowernumber, $itemnumber, $accounttype, $notify_id ) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $query = qq|SELECT count(*) FROM accountlines
-             WHERE borrowernumber =?
-             AND itemnumber = ?
-              AND accounttype= ?
-            AND notify_id = ?|;
-    my $sth = $dbh->prepare($query);
-    $sth->execute( $borrowernumber, $itemnumber, $accounttype, $notify_id );
-    my ($exist) = $sth->fetchrow;
-    return ($exist);
-}
-
-=head2 CheckItemNotify
-
-Sql request to check if the document has alreday been notified
-this function is not exported, only used with GetOverduesForBranch
-
-=cut
-
-sub CheckItemNotify {
-    my ($notify_id,$notify_level,$itemnumber) = @_;
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("
-    SELECT COUNT(*)
-     FROM notifys
-    WHERE notify_id    = ?
-     AND  notify_level = ? 
-     AND  itemnumber   = ? ");
-    $sth->execute($notify_id,$notify_level,$itemnumber);
-    my $notified = $sth->fetchrow;
-    return ($notified);
-}
 
 =head2 GetOverduesForBranch
 
 Sql request for display all information for branchoverdues.pl
+This filters overdue items by whether or not the patron has been notified.
+The means of entering the notification data is not currently in branchoverdues.pl. (3/2009).
+This sub also only returns overdue items with fines.
 2 possibilities : with or without location .
 display is filtered by branch
 
@@ -1246,11 +333,9 @@ FIXME: This function should be renamed.
 =cut
 
 sub GetOverduesForBranch {
-    my ( $branch, $location) = @_;
-	my $itype_link =  (C4::Context->preference('item-level_itypes')) ?  " items.itype " :  " biblioitems.itemtype ";
+    my ( $branch, $location ) = @_;
     my $dbh = C4::Context->dbh;
-    my $select = "
-    SELECT
+    my $select = " SELECT 
             borrowers.borrowernumber,
             borrowers.surname,
             borrowers.firstname,
@@ -1259,7 +344,6 @@ sub GetOverduesForBranch {
                biblio.title,
                biblio.biblionumber,
                issues.date_due,
-               issues.returndate,
                issues.branchcode,
              branches.branchname,
                 items.barcode,
@@ -1267,22 +351,17 @@ sub GetOverduesForBranch {
                 items.location,
                 items.itemnumber,
             itemtypes.description,
-         accountlines.notify_id,
-         accountlines.notify_level,
-         accountlines.amountoutstanding
-    FROM  accountlines
-    LEFT JOIN issues      ON    issues.itemnumber     = accountlines.itemnumber
-                          AND   issues.borrowernumber = accountlines.borrowernumber
-    LEFT JOIN borrowers   ON borrowers.borrowernumber = accountlines.borrowernumber
+         fees_accruing.amount
+    FROM  fees_accruing
+    LEFT JOIN issues      ON    issues.id = issue_id
+    LEFT JOIN borrowers   ON borrowers.borrowernumber = issues.borrowernumber
     LEFT JOIN items       ON     items.itemnumber     = issues.itemnumber
     LEFT JOIN biblio      ON      biblio.biblionumber =  items.biblionumber
     LEFT JOIN biblioitems ON biblioitems.biblioitemnumber = items.biblioitemnumber
-    LEFT JOIN itemtypes   ON itemtypes.itemtype       = $itype_link
+    LEFT JOIN itemtypes   ON items.itype       = itemtypes.itemtype
     LEFT JOIN branches    ON  branches.branchcode     = issues.branchcode
-    WHERE (accountlines.amountoutstanding  != '0.000000')
-      AND (accountlines.accounttype         = 'FU'      )
-      AND (issues.branchcode =  ?   )
-      AND (issues.date_due  < CURDATE())
+    WHERE ( issues.branchcode = ? )
+      AND ( issues.date_due  <= NOW())
     ";
     my @getoverdues;
     my $i = 0;
@@ -1296,67 +375,16 @@ sub GetOverduesForBranch {
     }
     while ( my $data = $sth->fetchrow_hashref ) {
     #check if the document has already been notified
-        my $countnotify = CheckItemNotify($data->{'notify_id'}, $data->{'notify_level'}, $data->{'itemnumber'});
-        if ($countnotify eq '0') {
+  #FIXME: that's gone now.
+  #      my $countnotify = CheckItemNotify($data->{'notify_id'}, $data->{'notify_level'}, $data->{'itemnumber'});
+  #      if ($countnotify eq '0') {
             $getoverdues[$i] = $data;
             $i++;
-        }
+   #     }
     }
-    return (@getoverdues);
+    return (@getoverdues); 
 }
 
-
-=head2 AddNotifyLine
-
-&AddNotifyLine($borrowernumber, $itemnumber, $overduelevel, $method, $notifyId)
-
-Creat a line into notify, if the method is phone, the notification_send_date is implemented to
-
-=cut
-
-sub AddNotifyLine {
-    my ( $borrowernumber, $itemnumber, $overduelevel, $method, $notifyId ) = @_;
-    my $dbh = C4::Context->dbh;
-    if ( $method eq "phone" ) {
-        my $sth = $dbh->prepare(
-            "INSERT INTO notifys (borrowernumber,itemnumber,notify_date,notify_send_date,notify_level,method,notify_id)
-        VALUES (?,?,now(),now(),?,?,?)"
-        );
-        $sth->execute( $borrowernumber, $itemnumber, $overduelevel, $method,
-            $notifyId );
-    }
-    else {
-        my $sth = $dbh->prepare(
-            "INSERT INTO notifys (borrowernumber,itemnumber,notify_date,notify_level,method,notify_id)
-        VALUES (?,?,now(),?,?,?)"
-        );
-        $sth->execute( $borrowernumber, $itemnumber, $overduelevel, $method,
-            $notifyId );
-    }
-    return 1;
-}
-
-=head2 RemoveNotifyLine
-
-&RemoveNotifyLine( $borrowernumber, $itemnumber, $notify_date );
-
-Cancel a notification
-
-=cut
-
-sub RemoveNotifyLine {
-    my ( $borrowernumber, $itemnumber, $notify_date ) = @_;
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare(
-        "DELETE FROM notifys 
-            WHERE
-            borrowernumber=?
-            AND itemnumber=?
-            AND notify_date=?"
-    );
-    $sth->execute( $borrowernumber, $itemnumber, $notify_date );
-    return 1;
-}
 
 1;
 __END__

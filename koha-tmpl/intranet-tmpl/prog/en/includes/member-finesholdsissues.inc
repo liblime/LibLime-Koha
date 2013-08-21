@@ -132,7 +132,7 @@ function confirmCancelWaiting(that) {
             </p>
             <p>
               <!-- TMPL_IF NAME="CAN_user_circulate_exempt_fines" -->
-              Forgive fines on return: <input type="checkbox" name="exemptfine" value="1" />
+              Forgive fines on renewal: <input type="checkbox" name="exemptfine" value="1" />
               <!-- TMPL_ELSE -->
               <input type="hidden" name="exemptfine" value="0" />
               <!-- /TMPL_IF -->

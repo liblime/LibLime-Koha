@@ -26,7 +26,6 @@
 # Suite 330, Boston, MA  02111-1307 USA
 
 
-# FIXME: use FinesMode as described or change syspref description
 use strict;
 
 BEGIN {
@@ -44,6 +43,7 @@ use C4::Circulation;
 use C4::Overdues;
 use C4::Calendar qw();  # don't need any exports from Calendar
 use C4::Biblio;
+use C4::Members qw(GetMember);
 use C4::Debug;  # supplying $debug and $cgi_debug
 use Getopt::Long;
 
@@ -59,11 +59,8 @@ GetOptions( 'h|help'        => \$help,
        );
 my $usage = << 'ENDUSAGE';
 
-This script calculates and charges overdue fines
-to patron accounts.  If the Koha System Preference
-'finesMode' is set to 'production', the fines are charged
-to the patron accounts.  If set to 'test', the fines are
-calculated but not applied.
+This script calculates and Accrues estimated overdue fines
+to patron accounts.  The fines are charged at checkin.
 
 This script has the following parameters :
     -h --help: this message
@@ -76,15 +73,14 @@ ENDUSAGE
 die $usage if $help;
 
 use vars qw(@borrower_fields @item_fields @other_fields);
-use vars qw($fldir $libname $mode $delim $dbname $today $today_iso $today_days);
+use vars qw($fldir $libname $delim $dbname $today $today_iso $today_days);
 use vars qw($filename);
 
 CHECK {
     @borrower_fields = qw(cardnumber categorycode surname firstname email phone address citystate);
         @item_fields = qw(itemnumber barcode date_due itemlost);
-       @other_fields = qw(type days_overdue fine);
+       @other_fields = qw(days_overdue fine);
     $libname = C4::Context->preference('LibraryName');
-    $mode    = C4::Context->preference('finesMode');
     $dbname  = C4::Context->config('database');
     $delim   = "\t"; # ?  C4::Context->preference('delimiter') || "\t";
 
@@ -138,9 +134,9 @@ for (my $i=0; $i<scalar(@$data); $i++) {
     }
     # for legacy data that doesn't set issuingbranch:
     $data->[$i]->{issuingbranch} ||= $data->[$i]->{branchcode};
-    my $borrower = BorType($data->[$i]->{'borrowernumber'});
+    my $borrower = GetMember($data->[$i]->{'borrowernumber'});
     my $branchcode = C4::Circulation::GetCircControlBranch(
-         pickup_branch        => $data->[$i]->{issuingbranch},
+         pickup_branch        => $data->[$i]->{branchcode},
          item_homebranch      => $data->[$i]->{homebranch},
          item_holdingbranch   => $data->[$i]->{holdingbranch},
          borrower_branch      => $borrower->{branchcode},
@@ -155,27 +151,19 @@ for (my $i=0; $i<scalar(@$data); $i++) {
       
     ($datedue_days <= $today_days) or next; # or it's not overdue, right?
 
-    my $claimret_item=0;
-    if ($data->[$i]->{'itemlost'} == C4::Context->preference('ClaimsReturnedValue')){   #this item is claims-returned, don't add more fines
-       $claimret_item=1;
-    }
-    
-
     $overdueItemsCounted++;
-    my ($amount,$type,$daycounttotal,$daycount,$ismax)=
-  		CalcFine($data->[$i], $borrower->{'categorycode'}, $branchcode,undef,undef, $datedue, $today);
-        # FIXME: $type NEVER gets populated by anything.
-    (defined $type) or $type = '';
+    my ($daycounttotal, $amount,$daycount,$ismax);
+
 	# Don't update the fine if today is a holiday.  
-  	# This ensures that dropbox mode will remove the correct amount of fine.
-	if ($mode eq 'production' and  ! $isHoliday  and ! $claimret_item) {
-		UpdateFine($data->[$i]->{'itemnumber'},$data->[$i]->{'borrowernumber'},$amount,$type,$due_str,$ismax) 
-        if( $amount > 0 ) ;
+  	
+	if (! $isHoliday ) {
+        ($amount,$daycounttotal,$daycount,$ismax) = CalcFine($data->[$i], $borrower->{'categorycode'}, $branchcode, $today, $calendar);
+		C4::Overdues::AccrueFine($data->[$i]->{id},$amount) if( $amount > 0 ) ;
  	}
     my @cells = ();
     push @cells, map {$borrower->{$_} // ''} @borrower_fields;
     push @cells, map {$data->[$i]->{$_} // ''} @item_fields;
-    push @cells, $type, $daycounttotal, $amount;
+    push @cells, $daycounttotal, $amount;
     print FILE join($delim, @cells), "\n";
 }
 

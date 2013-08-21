@@ -36,151 +36,98 @@ my $cgi= CGI->new();
 
 my ($loggedinuser, $cookie, $sessionID) = checkauth($cgi, 0, {circulate => '*'}, 'intranet');
 
-my $biblionumber    = $cgi->param('biblionumber');
 my $itemnumber      = $cgi->param('itemnumber');
-my $biblioitemnumber= $cgi->param('biblioitemnumber');
-my $itemlost        = $cgi->param('itemlost');
-my $itemnotes       = $cgi->param('itemnotes');
-my $wthdrawn        = $cgi->param('wthdrawn');
-my $damaged         = $cgi->param('damaged');
-my $otherstatus     = $cgi->param('otherstatus') // '';
-my $suppress        = $cgi->param('suppress');
 my $confirm         = $cgi->param('confirm');
 
+# NOTE: This script updates only ONE value at a time.
+my $status_to_update;
+my $new_value;
+my $statuses = { itemlost    => undef,
+                 itemnotes   => '',
+                 wthdrawn    => 0,
+                 damaged     => 0,
+                 otherstatus => undef,
+                 suppress    => 0
+               };  # nullish values.
+
+for (keys %$statuses){
+    if(defined($cgi->param($_))){
+        $status_to_update = $_;
+        $new_value = $cgi->param($_) || $statuses->{$_};
+    }
+}
+
+my @params = $cgi->param();
+
 my $item_data_hashref = GetItem($itemnumber, undef);
-for ($damaged,$itemlost,$wthdrawn,$suppress) { if (!$_ or ($_ eq "")) { $_ = 0;} }
 
-# modify MARC item if input differs from items table.
-my $item_changes = {};
-my $cancel_reserves = 0;
-if (defined $itemnotes) { # i.e., itemnotes parameter passed from form
-    if ((not defined $item_data_hashref->{'itemnotes'}) or $itemnotes ne $item_data_hashref->{'itemnotes'}) {
-        $item_changes->{'itemnotes'} = $itemnotes;
+my $biblionumber = $item_data_hashref->{biblionumber};
+
+# dispatch table to handle various status changes.
+my $side_effects = {
+    otherstatus => sub {
+        my $status = shift;
+        if (my $stat = C4::Items::GetOtherStatusWhere(statuscode=>$status)) {
+            C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber) if !$$stat{holdsfilled};
+        } 
+    },
+    damaged => sub {
+        C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber);
+        # Cancel item specific reserves if changing to non-holdable status
+        if (!C4::Context->preference('AllowHoldsOnDamagedItems')){
+            my %p = ('itemnumber',$itemnumber);
+            my $r = C4::Reserves::ItemReservesAndOthers($itemnumber);
+            if ($$r{onlyiteminbib}) { 
+                $p{biblionumber} = $biblionumber;
+                delete($p{itemnumber});
+            }
+            C4::Reserves::CancelReserves(\%p);
+        }
+    },
+    itemlost => sub {
+        my $lostval = shift || undef;
+        my $item_data_hashref = shift;
+
+        my $issue      = GetItemIssue($item_data_hashref->{itemnumber});
+        my $lostitem   = C4::LostItems::GetLostItem($item_data_hashref->{itemnumber});
+
+        # If the item is being made lost, charge the patron the lost item charge and create a lost item record.
+
+        C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber) if $lostval;
+
+        # FIXME:  if we're allowed to leave items in the lost_items table after they are found,
+        # then this check is wrong; $lostitem could be the wrong entry.
+
+        if (($issue || $lostitem) && $lostval eq 'lost') {  
+            ## dupecheck is performed in the function
+            my $id = $$lostitem{id} || C4::LostItems::CreateLostItem(
+                $item_data_hashref->{itemnumber},
+                $$issue{borrowernumber}
+            );
+            ## note if item is issued, chargelostitem marks issue returned.# If not, it will waive overdue fines.
+            C4::Accounts::chargelostitem($id);
+
+        } elsif ($lostval && !$lostitem && !$issue && ($lostval eq 'lost')) {
+           # Do not allow the item to be set to 'lost' unless there is a patron who can take a lost item charge.
+           print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nolc_noco#item$itemnumber");
+           exit;    
+        } elsif ($lostitem && $lostval ne 'lost') {
+            ## If the item is being marked found, refund the patron the lost item charge,
+            ## and delete the lost item record #  User should have been warned on form submit.
+            C4::Accounts::credit_lost_item($lostitem->{id});        
+            C4::LostItems::DeleteLostItem($lostitem->{id});
+        }
     }
-} elsif ($itemlost ne $item_data_hashref->{'itemlost'}) {
-    $item_changes->{'itemlost'} = $itemlost;
-} elsif ($wthdrawn ne $item_data_hashref->{'wthdrawn'}) {
-    $item_changes->{'wthdrawn'} = $wthdrawn;
-} elsif ($damaged ne $item_data_hashref->{'damaged'}) {
-    $item_changes->{'damaged'} = $damaged;
-    $cancel_reserves = 1 if (!C4::Context->preference('AllowHoldsOnDamagedItems'));
-    C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber) if $damaged;
-} elsif ($otherstatus ne ($item_data_hashref->{'otherstatus'} // '')) {
-    $item_changes->{'otherstatus'} = $otherstatus;
-    if (!$otherstatus) {
-      undef($item_changes->{'otherstatus'});
-    }
-    elsif (my $stat = C4::Items::GetOtherStatusWhere(statuscode=>$otherstatus)) {
-      C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber) if !$$stat{holdsfilled};
-    }
-} elsif ($suppress ne $item_data_hashref->{'suppress'}) {
-    $item_changes->{'suppress'} = $suppress;
-} else {
-    #nothing changed, so do nothing.
-    print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber#item$itemnumber");
-    exit;
-}
+
+};
+
 if ($cgi->param('force_lostcharge_borrowernumber')) {
-   C4::LostItems::CreateLostItem(
-      $item_data_hashref->{itemnumber},
-      $cgi->param('force_lostcharge_borrowernumber'),
-   );
+   C4::LostItems::CreateLostItem( $item_data_hashref->{itemnumber}, $cgi->param('force_lostcharge_borrowernumber') );
 }
 
-my $issue      = GetItemIssue($itemnumber);
-my $lostitem   = C4::LostItems::GetLostItem($itemnumber);
+$side_effects->{$status_to_update}->($new_value, $item_data_hashref) if exists $side_effects->{$status_to_update};
 
-# Cancel item specific reserves if changing to non-holdable status
-if ($cancel_reserves) {
-   my %p = ('itemnumber',$itemnumber);
-   my $r = C4::Reserves::ItemReservesAndOthers($itemnumber);
-   if ($$r{onlyiteminbib}) { 
-      $p{biblionumber} = $biblionumber;
-      delete($p{itemnumber});
-   }
-   C4::Reserves::CancelReserves(\%p);
-}
-
-# If the item is being made lost, charge the patron the lost item charge and
-# create a lost item record.  also, if cron is not running, calculate overdues
-
-my $crval = C4::Context->preference('ClaimsReturnedValue');
-C4::Reserves::RmFromHoldsQueue(itemnumber=>$itemnumber) if $itemlost;
-if (($issue || $lostitem) && $itemlost) {  
-   ## dupecheck is performed in the function
-   my $id = $$lostitem{id} || C4::LostItems::CreateLostItem(
-      $item_data_hashref->{itemnumber},
-      $$issue{borrowernumber}
-   );
-   ## charge the lost item fee for LOST value 1 BEFORE checking in item
-   if ($itemlost==1) {
-      C4::Accounts::chargelostitem($itemnumber);
-   }
-   elsif ($crval) { ## Claims Returned
-      if ($itemlost==$crval) {
-         if (C4::Accounts::makeClaimsReturned($id,1)) {
-            ## do nothing
-         }
-         else {
-            C4::LostItems::DeleteLostItem($id);
-            print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr#item$itemnumber");
-            exit;
-         }
-      }
-      elsif (($$item_data_hashref{itemlost}==$crval)
-         && ($itemlost != $$item_data_hashref{itemlost})) { # changing from claims returned to something else
-         C4::Accounts::makeClaimsReturned($id,0,1);
-      }
-   }
-
-   if (C4::Context->preference('MarkLostItemsReturned') && $issue) {
-      #C4::Circulation::MarkIssueReturned($$issue{borrowernumber},$itemnumber)
-      ## update: AddIssue() will figure out the overdue fine, using today as returndate, 
-      ## temporarily setting items.itemlost to nada
-      C4::Circulation::AddReturn(
-         $item_data_hashref->{barcode},
-         undef,  # branch
-         0,      # exemptfine
-         0,      # dropbox,
-         undef,  # returndate
-         1,      # tolost
-      );
-      ## is checked in
-      $item_changes->{onloan} = undef;
-   }
-}
-elsif ($itemlost == $crval) { # not charged lost to patron, want make claims returned on overdue
-   my($oi,$acc) = C4::LostItems::tryClaimsReturned($item_data_hashref);
-   if ($oi && $acc) {
-      print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_charged"
-         . "&oiborrowernumber=$$oi{borrowernumber}&accountno=$$acc{accountno}#item$itemnumber");
-      exit;
-   }
-   elsif ($oi) {
-       print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_notcharged"
-         . "&oiborrowernumber=$$oi{borrowernumber}#item$itemnumber");
-      exit;    
-   }
-   else {
-      print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nocr_nooi#item$itemnumber");
-      exit;
-   }
-}
-elsif ($itemlost && !$lostitem && !$issue && ($itemlost==1)) {
-   print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber&updatefail=nolc_noco#item$itemnumber");
-   exit;    
-}
-elsif ($lostitem && !$itemlost) {
-	## If the item is being marked found, refund the patron the lost item charge,
-	## and delete the lost item record if syspref MarkLostItemsReturned is ON
-	if ($issue) {
-		C4::Circulation::FixAccountForLostAndReturned($itemnumber,$issue,$lostitem->{id});
-	}
-	else { ## bad legacy data: item not currently checked out but linked as lost to patron
-		## remove from patron's Lost Items
-		C4::LostItems::DeleteLostItemByItemnumber($itemnumber);
-   }
-}
-
-ModItem($item_changes, $biblionumber, $itemnumber) if $item_changes;
+ModItem({$status_to_update => $new_value}, $biblionumber, $itemnumber);
 print $cgi->redirect("moredetail.pl?biblionumber=$biblionumber&itemnumber=$itemnumber#item$itemnumber");
+
+

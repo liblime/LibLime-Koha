@@ -236,7 +236,7 @@ onclick="document.location.href='/cgi-bin/koha/reserve/placehold.pl?searchtohold
 <!-- TMPL_IF name="count" -->
         <table>
             <tr>
-                <!-- TMPL_IF NAME="item-level_itypes" --><th>Item type</th><!-- /TMPL_IF -->
+                <th>Item type</th>
                 <th>Location</th>
                 <th>Home Library</th>
                 <th>Current Library</th>
@@ -252,114 +252,25 @@ onclick="document.location.href='/cgi-bin/koha/reserve/placehold.pl?searchtohold
             </tr>
             <!-- TMPL_LOOP NAME="itemloop" -->
                 <tr>
-                    <!-- TMPL_IF NAME="item-level_itypes" -->
-                      <td class="itype">
-                        <!-- TMPL_IF NAME="noItemTypeImages" -->
-                          <!-- TMPL_VAR NAME="description" -->
-                        <!-- TMPL_ELSE -->
-                          <!-- TMPL_IF NAME="imageurl" -->
-                            <img src="<!-- TMPL_VAR NAME="imageurl" -->" alt="<!-- TMPL_VAR NAME="description" -->" title="<!-- TMPL_VAR NAME="description" -->" />
-                          <!-- TMPL_ELSE -->
-                            <!-- TMPL_VAR NAME="description" -->
-                          <!-- /TMPL_IF -->
-                        <!-- /TMPL_IF --></td>
-                    <!-- /TMPL_IF -->
-                    <td class="homelocation"><!-- TMPL_VAR NAME="location" --></td>
+                     <td class="itype">
+                       <!-- TMPL_IF NAME="noItemTypeImages" -->
+                         <!-- TMPL_VAR NAME="description" -->
+                       <!-- TMPL_ELSE -->
+                         <!-- TMPL_IF NAME="imageurl" -->
+                           <img src="<!-- TMPL_VAR NAME="imageurl" -->" alt="<!-- TMPL_VAR NAME="description" -->" title="<!-- TMPL_VAR NAME="description" -->" />
+                         <!-- TMPL_ELSE -->
+                           <!-- TMPL_VAR NAME="description" -->
+                         <!-- /TMPL_IF -->
+                       <!-- /TMPL_IF --></td>
+                    <td class="homelocation"><!-- TMPL_VAR NAME="locationdesc" --></td>
                     <td class="homebranch"><!-- TMPL_VAR NAME="homebranch" --></td>
                     <td class="holdinglocation"><!-- TMPL_VAR NAME="branchname" --></td>
-                    <!-- TMPL_IF NAME="itemdata_ccode" --><td><!-- TMPL_VAR name="ccode" --></td><!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="itemdata_ccode" --><td><!-- TMPL_VAR name="ccodedesc" --></td><!-- /TMPL_IF -->
                     <td class="itemcallnumber"><!-- TMPL_IF NAME="itemcallnumber" --> <!-- TMPL_VAR NAME="itemcallnumber" --><!-- /TMPL_IF --></td>
                     <td class="status">
-
-                <!-- TMPL_IF name="datedue" -->
-						<span class="datedue">Checked out
-                    <!-- TMPL_UNLESS  NAME="NOTSAMEBRANCH" -->
-                          to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">
-			  <!-- TMPL_IF NAME='hidepatronname' -->
-			      <!-- TMPL_VAR NAME="cardnumber" -->
-			  <!-- TMPL_ELSE -->
-			      <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" -->
-			  <!-- /TMPL_IF -->
-			  </a>
-                    <!-- /TMPL_UNLESS -->
-						: due <!-- TMPL_VAR NAME="datedue" -->
-						</span>
-                <!-- TMPL_ELSIF Name="transfertwhen" -->
-                           In transit from <!-- TMPL_VAR NAME="transfertfrom" -->,
-                           to <!-- TMPL_VAR NAME="transfertto" -->, since <!-- TMPL_VAR NAME="transfertwhen" -->
-							<!-- FIXME: the "since" clause is redundant w/ lastseen field -->
-                <!-- /TMPL_IF -->
-
-                <!-- TMPL_IF NAME="itemlostdesc" -->
-                    <span class="lost"><!-- TMPL_VAR NAME="itemlostdesc" --></span>
-                <!-- TMPL_ELSIF NAME="itemlost" -->
-                    <span class="lost">Unavailable (lost or missing)</span>
-                <!-- /TMPL_IF -->
-
-                <!-- TMPL_IF NAME="wthdrawndesc" -->
-                    <span class="wdn"><!-- TMPL_VAR NAME="wthdrawndesc" --></span>
-                <!-- TMPL_ELSIF NAME="wthdrawn" -->
-                    <span class="wdn">Withdrawn</span>
-                <!-- /TMPL_IF -->
-
-                <!-- TMPL_IF NAME="damageddesc" -->
-                    <span class="dmg"><!-- TMPL_VAR NAME="damageddesc" --></span>
-                <!-- TMPL_ELSIF NAME="damaged" -->
-                    <span class="dmg">Damaged</span>
-                <!-- /TMPL_IF -->
-
-                <!-- TMPL_IF NAME="otherstatus_description" -->
-                   <span class="lost"><!-- TMPL_VAR NAME="otherstatus_description" --></span>
-                <!-- /TMPL_IF -->
-
-                <!-- TMPL_IF NAME="suppress" -->
-                    <!-- TMPL_IF NAME="itemsuppressloop" -->
-                        <!-- TMPL_LOOP NAME="itemsuppressloop" -->
-                            <!-- TMPL_IF NAME="selected" -->
-                                <span class="suppress"><!-- TMPL_VAR NAME="lib" --></span>
-                            <!-- /TMPL_IF -->
-                        <!-- /TMPL_LOOP -->
-                    <!-- TMPL_ELSE -->
-                        <span class="suppress">Suppressed</span>
-                    <!-- /TMPL_IF -->
-                <!-- /TMPL_IF -->
-
-                <!-- TMPL_IF Name="itemnotforloan" -->
-                    <!-- TMPL_IF Name="notforloandesc" -->
-                        <!-- TMPL_VAR NAME="notforloandesc" -->
-                    <!-- /TMPL_IF -->
-                <!-- /TMPL_IF -->
-
-                <!-- TMPL_IF NAME="reservedate"-->
-                    <!-- TMPL_IF NAME="waitingdate" -->
-                        Waiting
-                    <!-- TMPL_ELSE -->
-                        On hold
-                    <!-- /TMPL_IF -->
-                      <!-- TMPL_IF NAME="waitingdate" -->
-                      <!-- TMPL_IF NAME="canreservefromotherbranches" -->for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="ReservedForBorrowernumber" -->">
-                        <!-- TMPL_IF NAME="hidepatronname" -->
-                          <!-- TMPL_VAR NAME="cardnumber" -->
-                        <!-- TMPL_ELSE -->
-                          <!-- TMPL_VAR NAME="ReservedForFirstname" --> <!-- TMPL_VAR NAME="ReservedForSurname" -->
-                        <!-- /TMPL_IF -->
-                      </a><!-- /TMPL_IF -->
-                      <!-- TMPL_IF NAME="waitingdate" -->
-                          at<!-- TMPL_ELSE -->expected at
-                      <!-- /TMPL_IF -->   <!-- TMPL_VAR NAME="ExpectedAtLibrary" -->
-                      since
-                      <!-- TMPL_IF NAME="waitingdate" --><!-- TMPL_VAR NAME="waitingdate" -->
-                      <!-- TMPL_ELSE -->
-                        <!-- TMPL_IF name="reservedate" --><!-- TMPL_VAR NAME="reservedate" --><!-- /TMPL_IF -->
-                      <!-- /TMPL_IF -->
-                        <!-- /TMPL_IF -->
-                <!-- /TMPL_IF -->
-                <!-- TMPL_UNLESS name="itemnotforloan" --><!-- TMPL_UNLESS NAME="onloan" --><!-- TMPL_UNLESS NAME="itemlost" --><!-- TMPL_UNLESS NAME="wthdrawn" --><!-- TMPL_UNLESS NAME="damaged" --><!-- TMPL_UNLESS NAME="suppress" --><!-- TMPL_UNLESS NAME="transfertwhen" --><!-- TMPL_UNLESS NAME="reservedate" --><!-- TMPL_UNLESS NAME="otherstatus_description" -->
-                                        Available
-                <!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS --><!-- /TMPL_UNLESS -->
-                        
+                        <!-- TMPL_INCLUDE item-status.inc -->
                     </td>
-                    <td class="datelastseen"><!-- TMPL_VAR NAME="datelastseen" --></td>
+                    <td class="datelastseen"><!-- TMPL_VAR EXPR="date(datelastseen)" --></td>
                     <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?type=<!-- TMPL_VAR NAME="type" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;bi=<!-- TMPL_VAR NAME="biblioitemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber">"><!-- TMPL_VAR NAME="barcode" --></a>
                     <!-- TMPL_IF NAME="barcode" -->
                     <a href="javascript:;" onclick="checkinNote(<!-- TMPL_VAR NAME="itemnumber" -->)"><img src="/intranet-tmpl/prog/img/toolbar-edit.gif" title="check in note" alt="check in note" align=abscenter border=0></a>

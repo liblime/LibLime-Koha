@@ -160,7 +160,7 @@ function isValidDate(theFieldName){
                 <tr><th colspan="2">Amount</th></tr>
                 <tr>
                     <td>You currently owe fines and charges amounting to:</td>
-                    <td><a href="/cgi-bin/koha/opac-account.pl"><!-- TMPL_VAR NAME="amountoutstanding" --></a></td>
+                    <td><a href="/cgi-bin/koha/opac-account.pl"><!-- TMPL_VAR NAME="totalowed" --></a></td>
                 </tr>
             </table></div>
         <!-- /TMPL_IF -->
@@ -170,7 +170,7 @@ function isValidDate(theFieldName){
             <table>
                 <tr><th colspan="2">Amount</th></tr>
                 <tr><td>You currently owe fines and charges amounting to:</td>
-                <td><a href="/cgi-bin/koha/opac-account.pl"><!-- TMPL_VAR NAME="amountoutstanding" --></a></td></tr>
+                <td><a href="/cgi-bin/koha/opac-account.pl"><!-- TMPL_VAR NAME="totalowed" --></a></td></tr>
             </table></div>
         <!-- /TMPL_IF -->
 
@@ -178,7 +178,7 @@ function isValidDate(theFieldName){
           <div id="opac-user-fines">  <h3>Credits</h3>
             <table>
             <tr><th colspan="2">Amount</th></tr>
-            <tr><td>You have a credit of:</td><td><a href="/cgi-bin/koha/opac-account.pl"><!-- TMPL_VAR NAME="amountoutstanding" --></a></td></tr>
+            <tr><td>You have a credit of:</td><td><a href="/cgi-bin/koha/opac-account.pl"><!-- TMPL_VAR NAME="totalowed" --></a></td></tr>
             </table></div>
         <!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
@@ -274,7 +274,7 @@ function isValidDate(theFieldName){
                     <!-- /TMPL_UNLESS -->
                 <!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="OPACFinesTab" -->
-                <td><!-- TMPL_IF NAME="charges" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
+                <td><!-- TMPL_IF NAME="overdue_fine" --><!-- TMPL_VAR overdue_fine --><!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
 <!-- /TMPL_IF -->
             </tr>
         <!-- /TMPL_LOOP --></tbody>
@@ -343,7 +343,7 @@ function isValidDate(theFieldName){
 <!-- /TMPL_IF -->
 </td><!-- /TMPL_IF --><!-- /TMPL_UNLESS -->
 <!-- TMPL_IF NAME="OPACFinesTab" -->
-<td><!-- TMPL_IF NAME="charges" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
+<td><!-- TMPL_IF NAME="overdue_fine" --><!-- TMPL_VAR overdue_fine --><!-- TMPL_ELSE -->No<!-- /TMPL_IF --></td>
 <!-- /TMPL_IF -->
 </tr>
 <!-- /TMPL_LOOP --></tbody>

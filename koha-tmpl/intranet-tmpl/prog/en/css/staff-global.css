@@ -236,6 +236,7 @@ table {
     border-collapse : separate;
     border: 0 none;
 }
+table.borderless tr td { border:0 !important;}
 
 #label-search-results {
         width: 700px;
@@ -883,6 +884,19 @@ div.error {
 	margin : 1em;
 }
 
+label.error {
+    display: block;
+}
+
+#circ_policy_table label.error{
+    display: inline;
+}
+fieldset.rows label.error{
+    float: none;
+    display: inline;
+    margin-left: 1.2em;
+}
+
 input.alert {
 	background-color : #FFFF99;
 	border-color: #900;
@@ -905,6 +919,26 @@ ol.bibliodetails span.label {
 	font-weight: bold;
 	width: 12em;  
 	margin-right: 1em;  
+}
+
+table.bibliodetails {
+  margin: .2em 0 1em 2.2em;
+  border: none;
+}
+
+table.bibliodetails th{
+  background: none;
+  text-align: left;
+  width: 12em;
+  border-width: 0 1px 1px 0;
+  border-color: #CCC;
+  border-style: solid;
+}
+
+table.bibliodetails td{
+  border-width: 0 0 1px 0;
+  border-color: #CCC;
+  border-style: solid;
 }
 
 div.listgroup {
@@ -1922,6 +1956,45 @@ a.disabled{
   font-size: smaller;
   font-weight: lighter;
 }
+.credit{
+    color: #328C14;
+}
+.rightJustify{
+    text-align: right;
+}
+#selectForgiveType{
+    margin-top: 14px;
+    margin-left: 150px;
+}
+td.pay_column {
+  width: 108px;
+}
+td.payall_column button.ui-button.ui-widget{
+  width: 100%;
+}
+td.pay_column .ui-button-text{
+  padding: 0.4em 0.6em;
+}
+td p{
+	margin: 0.25em 0 0.25em 0;
+}
+.htmlentlink{
+  text-decoration: none;
+  font-size: large;
+}
+
+#toggle-all-paydetails{
+  margin-left: 1em;
+  font-size:0.6em;
+}
+
+.debit{
+  color: rgb(167, 67, 12);
+}
+input.reversepayment{
+	font-size: smaller;
+}
+
 /* jQuery-UI overrides */
 .ui-tabs-nav {
     background: none;

@@ -69,26 +69,26 @@ if ( $borr->{'debarred'} || $borr->{'gonenoaddress'} || $borr->{'lost'} ) {
     $borr->{'flagged'} = 1;
 }
 
-if ( $borr->{'amountoutstanding'} > 5 ) {
+if ( $borr->{'totalowed'} > 5 ) {
     $borr->{'amountoverfive'} = 1;
 }
-if ( 5 >= $borr->{'amountoutstanding'} && $borr->{'amountoutstanding'} > 0 ) {
+if ( 5 >= $borr->{'totalowed'} && $borr->{'totalowed'} > 0 ) {
     $borr->{'amountoverzero'} = 1;
 }
 
-if ( $borr->{'amountoutstanding'} > C4::Context->preference( 'OPACFineNoRenewals' ) ) {
+if ( $borr->{'totalowed'} > C4::Context->preference( 'OPACFineNoRenewals' ) ) {
     $borr->{'flagged'} = 1;
     $template->param(
         renewal_blocked_fines => sprintf( "%.02f", C4::Context->preference( 'OPACFineNoRenewals' ) ),
     );
 }
 
-if ( $borr->{'amountoutstanding'} < 0 ) {
+if ( $borr->{'totalowed'} < 0 ) {
     $borr->{'amountlessthanzero'} = 1;
     $borr->{'amountoutstanding'} = -1 * ( $borr->{'amountoutstanding'} );
 }
 
-$borr->{'amountoutstanding'} = sprintf "%.02f", $borr->{'amountoutstanding'};
+$borr->{'totalowed'} = sprintf "%.02f", $borr->{'totalowed'};
 
 my @bordat;
 $bordat[0] = $borr;
@@ -128,18 +128,7 @@ foreach my $issue ( @issue_list ) {
     if ( $restype ) {
         $issue->{'reserved'} = 1;
     }
-    
-    my ($total,$accts) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrowernumber);
-    my $charges = 0;
-    foreach my $ac (@$accts) {
-        if ( $ac->{'itemnumber'} == $issue->{'itemnumber'} ) {
-            $charges += $ac->{'amountoutstanding'}
-              if $ac->{'accounttype'} eq 'F';
-            $charges += $ac->{'amountoutstanding'}
-              if $ac->{'accounttype'} eq 'L';
-        }
-    }
-    $issue->{'charges'} = $charges;
+
 
     # get publictype for icon
 
@@ -342,6 +331,7 @@ $template->param(
     OpacRenewalAllowed => C4::Context->preference("OpacRenewalAllowed"),
     userview => 1,
     dateformat    => C4::Context->preference("dateformat"),
+    totalowed     => $borr->{totalowed}
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

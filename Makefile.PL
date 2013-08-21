@@ -557,6 +557,7 @@ WriteMakefile(
                             'DBIx::Connector'                  => 0.47,
                             'Data::Dumper'                     => 2.121,
                             'Data::ICal'                       => 0.13,
+                            'Data::Money'                      => 0.06,
                             'Date::Calc'                       => 5.4,
                             'Date::ICal'                       => 1.72,
                             'Date::Manip'                      => 5.44,

@@ -244,6 +244,7 @@ sub get_form_values {
 
             my $attributes_no_value = qq( tabindex="1" id="$subfield_data{id}" name="field_value_$item_index" class="input_marceditor" size="67" maxlength="255" );
             my $attributes          = qq( $attributes_no_value value="$value" );
+            my @field_class_names   = ('input_marceditor',);
             if ( $subfieldlib->{authorised_value} || ($subfieldlib->{kohafield} eq "items.otherstatus") ) {
                 my @authorised_values;
                 my %authorised_lib;
@@ -298,6 +299,11 @@ sub get_form_values {
                           $authorised_lib{$statuscode} = $description;
                      }
                 }
+                elsif ( $subfieldlib->{kohafield} eq "items.itemlost" ) {
+                     %authorised_lib = %{C4::Items::get_itemlost_values()};
+                     @authorised_values = keys %authorised_lib;
+                     push @field_class_names, 'itemlost';
+                }
                     #---- "true" authorised value
                 else {
                     push @authorised_values, "" unless ( $subfieldlib->{mandatory} );
@@ -317,7 +323,7 @@ sub get_form_values {
                     -multiple => 0,
                     -tabindex => 1,
                     -id       => "tag_".$tag."_subfield_".$subfield."_".$index_subfield,
-                    -class    => "input_marceditor",
+                    -class    => join(' ', @field_class_names)
                 );
                 # it's a thesaurus / authority field
             }

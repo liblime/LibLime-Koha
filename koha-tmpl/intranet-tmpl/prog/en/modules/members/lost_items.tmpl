@@ -26,7 +26,7 @@
         <th>Item Type</th>
         <th>Barcode</th>
         <th>Date Lost</th>
-        <th>Claims Returned</th>
+        <th>Status</th>
         <th></th>
     </tr>
     </thead>
@@ -39,7 +39,19 @@
                 <td><!-- TMPL_VAR NAME="itemtype" --></td>
                 <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME=biblionumber -->&itemnumber=<!-- TMPL_VAR NAME=itemnumber -->#item<!-- TMPL_VAR NAME=itemnumber -->"><!-- TMPL_VAR NAME="barcode" --></a></td>
                 <td><TMPL_VAR NAME="date_lost"></td>
-                <td><!-- TMPL_IF NAME="claims_returned" --><i>Claims Returned</i>
+                <td><p><!-- TMPL_IF itemlost --><!-- TMPL_VAR EXPR="ucfirst(itemlost)" -->
+                        <!-- TMPL_ELSIF deleted -->[deleted]
+                        <!-- TMPL_ELSE -->NOT LOST
+                        <!-- /TMPL_IF -->
+                        <!-- TMPL_IF charged -->
+                            , <span class="debit">Charged <!-- TMPL_VAR EXPR="date(charged)" --></span>
+                        <!-- /TMPL_IF -->
+                    </p>
+                    <!-- TMPL_IF paid --><p class="credit">Paid <!-- TMPL_VAR EXPR="date(paid)" --></p>
+                        <!-- TMPL_ELSIF waived --><p class="credit">Waived</p>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF deleted --><p class="error">Item deleted</p><!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="claims_returned" --><i>Claims Returned</i>
                         (<a href="lost_items.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&op=undo_claims_returned&lost_item_id=<!-- TMPL_VAR NAME="id" -->">Undo</a>)
                     <!-- TMPL_ELSE -->
                         <form method=post action="lost_items.pl">
@@ -49,6 +61,7 @@
                         <input type=submit value="Make Claims Returned" style="font-size:80%">
                         </form>
                     <!-- /TMPL_IF -->
+
                 </td>
                 <td><a href="lost_items.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&op=delete&lost_item_id=<!-- TMPL_VAR NAME="id" -->">Delete</a></td>
                 </tr>

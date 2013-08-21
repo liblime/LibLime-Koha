@@ -21,6 +21,7 @@
 	<li><a href="/cgi-bin/koha/admin/branch_transfer_limits.pl">Library transfer limits</a></li>
 	<li><a href="/cgi-bin/koha/admin/item_circulation_alerts.pl">Item circulation alerts</a></li>
 	<li><a href="/cgi-bin/koha/admin/itemstatus.pl">Other item status</a></li>
+	<li><a href="/cgi-bin/koha/admin/accounttypes.pl">Invoice account types</a></li>
 </ul>
 
 <h5>Catalog</h5>

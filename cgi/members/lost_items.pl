@@ -50,37 +50,43 @@ my ($template, $loggedinuser, $cookie)
            debug => ($debug) ? 1 : 0,
        });
 
-my $op = $query->param("op");
+my $op = $query->param("op") || '';
 my $borrowernumber = $query->param("borrowernumber");
 my $lost_item_id = $query->param("lost_item_id");
 my $borrower = GetMemberDetails( $borrowernumber, 0 );
 
 if ($op eq 'delete') {
     C4::LostItems::DeleteLostItem($lost_item_id);
-    print $query->redirect("/cgi-bin/koha/members/lost_items.pl?borrowernumber=$borrowernumber");
-    exit;
+} elsif ($op eq 'claims_returned') {
+   C4::LostItems::ModLostItem( id => $lost_item_id, claims_returned => 1);
+   C4::Accounts::credit_lost_item($lost_item_id, credit => 'CLAIMS_RETURNED');
+} elsif ($op eq 'undo_claims_returned') {
+   C4::LostItems::ModLostItem( id => $lost_item_id, claims_returned => 0);
+   C4::Accounts::credit_lost_item($lost_item_id, credit => 'CLAIMS_RETURNED', undo => 1);
 }
-elsif ($op eq 'claims_returned') {
-   ## first, change the status of this item to claims_returned=1 in lost_items table
-   C4::Accounts::makeClaimsReturned($lost_item_id,1);
 
-   print $query->redirect("lost_items.pl?borrowernumber=$borrowernumber");
-   exit;
-}
-elsif ($op eq 'undo_claims_returned') {
-   C4::Accounts::makeClaimsReturned($lost_item_id,0);
-   print $query->redirect("lost_items.pl?borrowernumber=$borrowernumber");
-   exit;
-}
-else {
-    my $lost_items = C4::LostItems::GetLostItems($borrowernumber);
-    for my $lost_item (@$lost_items) {
-        $$lost_item{claims_returned} ||=  undef;
+
+my $lost_items = C4::LostItems::GetLostItems($borrowernumber);
+for my $lost_item (@$lost_items) {
+    $$lost_item{claims_returned} ||=  undef;
+    # charged status
+    my $charge = C4::Accounts::getcharges($borrowernumber, itemnumber => $lost_item->{itemnumber}, accounttype => 'LOSTITEM');
+    if($charge && @$charge){
+      $lost_item->{charged} = $charge->[0]->{timestamp};
+      if( ! $charge->[0]->{amountoutstanding}){
+        my $payments = C4::Accounts::getcredits($charge->[0]->{id}, payments=>1);
+        if($payments && @$payments){
+            $lost_item->{paid} = $payments->[0]->{date};
+        } else {
+          $lost_item->{waived} = 1;
+        }
+      }
     }
-
-    $template->param(LOST_ITEMS=> $lost_items);
-    $template->param(borrowernumber => $borrowernumber);
 }
+
+$template->param(LOST_ITEMS=> $lost_items);
+$template->param(borrowernumber => $borrowernumber);
+
 
 $template->param(
     proxyview => 1,

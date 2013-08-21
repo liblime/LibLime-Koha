@@ -458,7 +458,7 @@ sub ModItemFromMarc {
         holdingbranch        => undef, 
         homebranch           => undef, 
         itemcallnumber       => undef, 
-        itemlost             => 0,
+        itemlost             => undef,
         itemnotes            => undef, 
         itype                => undef, 
         location             => undef, 
@@ -485,7 +485,7 @@ sub ModItemFromMarc {
         $item->{$item_field} = $default_values_for_mod_from_marc{$item_field} unless exists $item->{$item_field};
     }
     my $unlinked_item_subfields = _get_unlinked_item_subfields($item_marc, $frameworkcode);
-   
+
     return ModItem($item, $biblionumber, $itemnumber, $dbh, $frameworkcode, $unlinked_item_subfields); 
 }
 
@@ -690,9 +690,9 @@ C<$itemnum> is the item number
 
 sub ModDateLastSeen {
     my ($itemnumber) = @_;
-    
-    my $today = C4::Dates->new();    
-    ModItem({ itemlost => 0, datelastseen => $today->output("iso") }, undef, $itemnumber);
+
+    my $today = C4::Dates->new();
+    ModItem({ itemlost => undef, datelastseen => $today->output("iso") }, undef, $itemnumber);
 }
 
 =head2 ModItemLost
@@ -704,14 +704,14 @@ ModItemLost( $biblionumber, $itemnumber, $lostvalue, $nomoditem );
 =back
 
 Changes itemlost for a given item. If $lostvalue > 0, then a log entry is made
-for that item.  Note that nothing is done for Claims Returned, which is handled 
-elsewhere.
+for that item.  No Lost Items handling is done here.  
 
 Set $nomoditem to true if you've been here before and don't want to change the
-items.itemlost value.
+items.itemlost value.  But, why would you call this function, then?
 
 =cut
 
+# FIXME: This function should probably just be merged into ModItem.
 sub ModItemLost {
     my ( $biblionumber, $itemnumber, $lostvalue, $nomoditem ) = @_;
     my $dbh = C4::Context->dbh;
@@ -875,45 +875,7 @@ $itemstatushash = GetItemStatus($fwkcode);
 
 =back
 
-Returns a list of valid values for the
-C<items.notforloan> field.
-
-NOTE: does B<not> return an individual item's
-status.
-
-Can be MARC dependant.
-fwkcode is optional.
-But basically could be can be loan or not
-Create a status selector with the following code
-
-=head3 in PERL SCRIPT
-
-=over 4
-
-my $itemstatushash = getitemstatus;
-my @itemstatusloop;
-foreach my $thisstatus (keys %$itemstatushash) {
-    my %row =(value => $thisstatus,
-                statusname => $itemstatushash->{$thisstatus}->{'statusname'},
-            );
-    push @itemstatusloop, \%row;
-}
-$template->param(statusloop=>\@itemstatusloop);
-
-=back
-
-=head3 in TEMPLATE
-
-=over 4
-
-<select name="statusloop">
-    <option value="">Default</option>
-<!-- TMPL_LOOP name="statusloop" -->
-    <option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_IF name="selected" -->selected<!-- /TMPL_IF -->><!-- TMPL_VAR name="statusname" --></option>
-<!-- /TMPL_LOOP -->
-</select>
-
-=back
+DEPRECATED Funciton to get items.notforloan authvals.  DELETEME!
 
 =cut
 
@@ -921,6 +883,7 @@ sub GetItemStatus {
 
     # returns a reference to a hash of references to status...
     my ($fwk) = @_;
+warn "Called deprecated function C4::Items::GetItemStatus.  Use authval functions in C4::Koha.";
     my %itemstatus;
     my $dbh = C4::Context->dbh;
     my $sth;
@@ -1129,9 +1092,7 @@ sub GetItemsLost {
         FROM   items
             LEFT JOIN biblio ON (items.biblionumber = biblio.biblionumber)
             LEFT JOIN biblioitems ON (items.biblionumber = biblioitems.biblionumber)
-            LEFT JOIN authorised_values ON (items.itemlost = authorised_values.authorised_value)
         WHERE
-            authorised_values.category = 'LOST'
             AND itemlost IS NOT NULL
             AND itemlost <> 0
     ";
@@ -1376,50 +1337,22 @@ sub GetItemsByBiblioitemnumber {
 
 =over 4
 
-@results = GetItemsInfo($biblionumber);
+@results = GetItemsInfo($biblionumber [, $limit_group ]);
 
 =back
 
 Returns information about books with the given biblionumber.
 
-C<GetItemsInfo> returns a list of references-to-hash. Each element
-contains a number of keys. Most of them are table items from the
-C<biblio>, C<biblioitems>, C<items>, and C<itemtypes> tables in the
-Koha database. Other keys include:
+C<GetItemsInfo> returns a list of references-to-hash including
+keys from the C<biblio>, C<biblioitems>, C<items>, C<branches> and C<itemtypes>
+tables in the Koha database.
 
-=over 2
-
-=item C<$data-E<gt>{branchname}>
-
-The name (not the code) of the branch to which the book belongs.
-
-=item C<$data-E<gt>{datelastseen}>
-
-This is simply C<items.datelastseen>, except that while the date is
-stored in YYYY-MM-DD format in the database, here it is converted to
-DD/MM/YYYY format. A NULL date is returned as C<//>.
-
-=item C<$data-E<gt>{datedue}>
-
-=item C<$data-E<gt>{class}>
-
-This is the concatenation of C<biblioitems.classification>, the book's
-Dewey code, and C<biblioitems.subclass>.
-
-=item C<$data-E<gt>{ocount}>
-
-I think this is the number of copies of the book available.
-
-=item C<$data-E<gt>{order}>
-
-If this is set, it is set to C<One Order>.
-
-=back
+Limits items to those owned by branches in branchgroup if supplied.
 
 =cut
 
 sub GetItemsInfo {
-    my ( $biblionumber, $limit_group ) = @_;
+    my ($biblionumber, $limit_group) = @_;
 
     my %restype;
     my $attached_count = 0;
@@ -1458,14 +1391,15 @@ sub GetItemsInfo {
            items.notforloan as itemnotforloan,
            itemtypes.description,
            itemtypes.notforloan as notforloan_per_itemtype,
-           branchurl
+           branchurl,
+           itemstatus.description as otherstatus_desc
      FROM items
      LEFT JOIN branches ON items.homebranch = branches.branchcode
      LEFT JOIN biblio      ON      biblio.biblionumber     = items.biblionumber
      LEFT JOIN biblioitems ON biblioitems.biblioitemnumber = items.biblioitemnumber
-     LEFT JOIN itemtypes   ON   itemtypes.itemtype         = "
-     . (C4::Context->preference('item-level_itypes') ? 'items.itype' : 'biblioitems.itemtype');
-    $query .= ' WHERE items.biblionumber = ? ';
+     LEFT JOIN itemtypes   ON   itemtypes.itemtype         = items.itype
+     LEFT JOIN itemstatus  ON   itemstatus.statuscode      = items.otherstatus
+     WHERE items.biblionumber = ? ";
     if (@limit_to_branches) {
         $query .= sprintf 'AND homebranch IN (%s)', join(',', map {'?'} @limit_to_branches);
     }
@@ -1481,30 +1415,38 @@ sub GetItemsInfo {
         FROM   issues LEFT JOIN borrowers ON issues.borrowernumber=borrowers.borrowernumber
         WHERE  itemnumber = ?"
        );
-    my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=? "); 
-    my $authvals = C4::Koha::GetAuthorisedValuesTree();
-    my $notforloan_code = C4::Koha::GetAuthValCode('items.notforloan') // '';
-    my $stack_code = C4::Koha::GetAuthValCode('items.stack') // '';
+    my $ssth = $dbh->prepare("SELECT serialseq,publisheddate from serialitems left join serial on serialitems.serialid=serial.serialid where serialitems.itemnumber=? ");
 
+    my $authvals = C4::Koha::GetAuthorisedValuesTree();
+    my %authmap = ( 'notforloan' => C4::Koha::GetAuthValCode('items.notforloan'),
+                    'damaged'    => C4::Koha::GetAuthValCode('items.damaged'),
+                    'wthdrawn'   => C4::Koha::GetAuthValCode('items.wthdrawn'),
+                    'ccode'      => C4::Koha::GetAuthValCode('items.ccode'),
+                    'suppress'   => C4::Koha::GetAuthValCode('items.suppress'),
+                    'location'   => C4::Koha::GetAuthValCode('items.location'),
+    );
     while ( my $data = $sth->fetchrow_hashref ) {
         $itemcount++;
         my $datedue = '';
         my ($restype,$reserves,$reserve_count);
         my $reserve_status;
-        $isth->execute( $data->{'itemnumber'} );
-        if ( my $idata = $isth->fetchrow_hashref ) {
-            $data->{borrowernumber} = $idata->{borrowernumber};
-            $data->{cardnumber}     = $idata->{cardnumber};
-            $data->{surname}     = $idata->{surname};
-            $data->{firstname}     = $idata->{firstname};
-            $datedue                = $idata->{'date_due'};
-          if (C4::Context->preference("IndependantBranches")){
-            my $userenv = C4::Context->userenv;
-            if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) {
-              $data->{'NOTSAMEBRANCH'} = 1 if ($idata->{'bcode'} ne $userenv->{branch});
+        if($data->{onloan}){
+            $isth->execute( $data->{'itemnumber'} );
+            if ( my $idata = $isth->fetchrow_hashref ) {
+                $data->{borrowernumber} = $idata->{borrowernumber};
+                $data->{cardnumber}     = $idata->{cardnumber};
+                $data->{surname}     = $idata->{surname};
+                $data->{firstname}     = $idata->{firstname};
+                $datedue                = $idata->{'date_due'};
+              if (C4::Context->preference("IndependantBranches")){
+                my $userenv = C4::Context->userenv;
+                if ( ($userenv) && ( $userenv->{flags} % 2 != 1 ) ) {
+                  $data->{'NOTSAMEBRANCH'} = 1 if ($idata->{'bcode'} ne $userenv->{branch});
+                }
+              }
             }
-          }
         }
+
         if ( $data->{'serial'}) {
           $ssth->execute($data->{'itemnumber'}) ;
           ($data->{'serialseq'} , $data->{'publisheddate'}) = $ssth->fetchrow_array();
@@ -1521,18 +1463,13 @@ sub GetItemsInfo {
         $data->{'datedue'}        = $datedue;
         $data->{'reserve_status'} = $reserve_status;
         $data->{'reserve_count'}  = $rescount + $attached_count;
-        $data->{'active_reserve_count'} = $rescount + $attached_count -
-                                          $suspended_rescount;
+        $data->{'active_reserve_count'} = $rescount + $attached_count - $suspended_rescount;
+        $data->{'itemlostdesc'} = $data->{'itemlostopacdesc'} = get_itemlost_values()->{$data->{'itemlost'} // ''};
 
-        # Comment
-        my %authmap = ( 'DAMAGED'   => 'damaged',
-                        'LOST'      => 'itemlost',
-                        'NOT_LOAN'  => 'notforloan',
-                        'WITHDRAWN' => 'wthdrawn' );
         foreach my $key (keys %authmap) {
-          my $authorised_value_row = $authvals->{$key}{$data->{$authmap{$key}}};
-          my $staffkey = $authmap{$key} . "desc";
-          my $opackey = "opac" . $authmap{$key} . "desc";
+          my $authorised_value_row = $authvals->{$authmap{$key}}{$data->{$key}};
+          my $staffkey = $key . "desc";
+          my $opackey = "opac" . $key . "desc";
           $data->{$staffkey} = $authorised_value_row->{'lib'}
              if (defined($authorised_value_row->{'lib'}) &&
                 ($authorised_value_row->{'lib'} ne ''));
@@ -1540,12 +1477,6 @@ sub GetItemsInfo {
              if (defined($authorised_value_row->{'opaclib'}) &&
                 ($authorised_value_row->{'opaclib'} ne ''));
         }
-
-        my $nfl_authval = $authvals->{$notforloan_code}{$data->{itemnotforloan}};
-        $data->{notforloanvalue} = ($nfl_authval) ? $nfl_authval->{lib} : undef;
-
-        my $stack_authval = $authvals->{$stack_code}{$data->{itemnotforloan}};
-        $data->{stack} = ($stack_authval) ? $stack_authval->{lib} : undef;
 
         $results[$i] = $data;
         $i++;
@@ -1616,6 +1547,11 @@ sub GetItemnumberFromBarcode {
     $rq->execute($barcode);
     my ($result) = $rq->fetchrow;
     return ($result);
+}
+
+# FIXME: Should have interface for defining these, but for now, we hard code them here.
+sub get_itemlost_values {
+    return { '' => '', lost => 'Lost', longoverdue => 'Long overdue', missing => 'Missing', trace => 'Trace' };
 }
 
 =head3 get_item_authorised_values
@@ -1989,9 +1925,9 @@ _do_column_fixes_for_mod($item);
 Given an item hashref containing one or more
 columns to modify, fix up certain values.
 Specifically, set to 0 any passed value
-of C<notforloan>, C<damaged>, C<itemlost>,
-C<wthdrawn>, or C<suppress> that is either
+of C<notforloan>, C<damaged>, C<wthdrawn>, or C<suppress> that is either
 undefined or contains the empty string.
+Conversely, set C<itemlost> to undef if it's falsey.
 
 =cut
 
@@ -2006,9 +1942,8 @@ sub _do_column_fixes_for_mod {
         (not defined $item->{'damaged'} or $item->{'damaged'} eq '')) {
         $item->{'damaged'} = 0;
     }
-    if (exists $item->{'itemlost'} and
-        (not defined $item->{'itemlost'} or $item->{'itemlost'} eq '')) {
-        $item->{'itemlost'} = 0;
+    if (exists $item->{'itemlost'} and ! $item->{'itemlost'}){
+        undef $item->{'itemlost'};
     }
     if (exists $item->{'wthdrawn'} and
         (not defined $item->{'wthdrawn'} or $item->{'wthdrawn'} eq '')) {
@@ -2095,10 +2030,6 @@ C<items.damaged>
 
 =item *
 
-C<items.itemlost>
-
-=item *
-
 C<items.wthdrawn>
 
 =item *
@@ -2112,7 +2043,7 @@ C<items.suppress>
 sub _set_defaults_for_add {
     my $item = shift;
     $item->{dateaccessioned} ||= C4::Dates->new->output('iso');
-    $item->{$_} ||= 0 for (qw( notforloan damaged itemlost wthdrawn suppress));
+    $item->{$_} ||= 0 for (qw( notforloan damaged wthdrawn suppress));
 }
 
 =head2 _koha_new_item
@@ -2241,12 +2172,12 @@ sub _koha_modify_item {
     my $error;
     my $query = "UPDATE items SET ";
     my @bind;
+    my $delete_from_holdsqueue;
     for (qw(notforloan suppress withdrawn)) {
-      $item->{$_} //= 0 if exists $item->{$_};
+        $item->{$_} //= 0 if exists $item->{$_};
+        $delete_from_holdsqueue = 1 if $item->{$_};
     }
-    if (($$item{notforloan} != 0)
-     || ($$item{suppress}   != 0)
-     || ($$item{wthdrawn}   != 0) ) {
+    if ($delete_from_holdsqueue){
        $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber=?',undef,$$item{itemnumber});
     }
     if ($$item{otherstatus}) {

@@ -6,6 +6,13 @@
 $(document).ready(function(){
 		$("fieldset.rows input").keydown(function(e){ return checkEnter(e); });
 //		$("#ajax_spinner").center();
+    <!-- TMPL_IF itemnumber -->
+    var helptxt = '<span class="tip">Note: Modifying this value does not affect patron lost item charges.  If changing to or from "lost", use'
+          + ' <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR biblionumber>&itemnumber=<TMPL_VAR itemnumber>">Item status editor</a>'
+          + ' to ensure lost item and overdue charges are assessed or waived.</span>';
+      $("select.itemlost").after(helptxt);
+
+    <!-- /TMPL_IF -->
 });
 
 jQuery.fn.center = function () {

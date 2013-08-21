@@ -51,35 +51,6 @@ C4::LostItems
 =cut
 
 
-sub tryClaimsReturned
-{
-   my $item = shift;
-   return unless $item;
-   ## if we get here, no need to look for current checkouts.
-   ## find latest returned issue
-   my $dbh = C4::Context->dbh();
-   my $sth = $dbh->prepare('SELECT * FROM old_issues
-      WHERE itemnumber = ?
-        AND date_due   < ?
-        AND borrowernumber IS NOT NULL
-   ORDER BY returndate DESC
-      LIMIT 1');
-   $sth->execute($$item{itemnumber},C4::Dates->new(undef,'iso'));
-   my $oi = $sth->fetchrow_hashref();
-   return unless $oi;
-   my $due = C4::Dates->new($$oi{date_due},'iso')->output;
-   $sth = $dbh->prepare("SELECT * FROM accountlines
-      WHERE accounttype IN ('F','FU','O')
-        AND borrowernumber = ?
-        AND itemnumber     = ?
-        AND description RLIKE 'due on $due'
-        AND description NOT RLIKE 'NO LONGER LOST'
-        AND amountoutstanding > 0
-   ORDER BY accountno DESC");
-   $sth->execute($$oi{borrowernumber},$$oi{itemnumber});
-   my $acc = $sth->fetchrow_hashref();
-   return $oi, $acc;
-}
 
 # not exported.
 # returns
@@ -106,9 +77,9 @@ sub CreateLostItem {
 
     # Get the item and biblio data
     my $sth = $dbh->prepare("
-      SELECT items.*,biblioitems.itemtype FROM items,biblioitems
+      SELECT items.*,biblio.title FROM items,biblio
        WHERE items.itemnumber=?
-         AND items.biblioitemnumber=biblioitems.biblioitemnumber");
+         AND items.biblionumber=biblio.biblionumber");
     $sth->execute($itemnumber);
     my $item = $sth->fetchrow_hashref;
     $$item{itype} //= $$item{itemtype};
@@ -169,6 +140,8 @@ sub ModLostItem
    return $sth->execute(values %g,$id);
 }
 
+# FIXME: Some libraries seem to want to keep a lost item record around
+# even after the item is found.  This would break that.
 sub DeleteLostItemByItemnumber
 {
    my $itemnumber = shift;
@@ -185,15 +158,22 @@ sub DeleteLostItem {
 sub GetLostItems {
     my $borrowernumber = shift;
     my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("
-      SELECT li.*,b.title FROM lost_items li,biblio b, items
-       WHERE li.borrowernumber=?
-         AND li.itemnumber = items.itemnumber
-         AND items.biblionumber = b.biblionumber
-    ORDER BY li.date_lost DESC");
+    my $sth = $dbh->prepare("SELECT li.*, biblio.title AS biblio_title
+        FROM lost_items li LEFT JOIN biblio USING(biblionumber)
+        WHERE borrowernumber=? ORDER BY date_lost DESC");
     $sth->execute($borrowernumber);
     my @lost_items;
+    my $sth_item = $dbh->prepare("SELECT itemlost from items WHERE itemnumber=?");
+    # FIXME: We should test for the bib here and not link to it if it was deleted.
+
     while (my $row = $sth->fetchrow_hashref) {
+        $sth_item->execute($row->{itemnumber});
+        if($sth_item->rows()){
+            $row->{itemlost} = $sth_item->fetchrow_arrayref->[0];
+        } else {
+            $row->{deleted} = 1;
+            # FIXME: get date of deleteditem  if deleted, and its lost status.
+        }
         push @lost_items, $row;
     }
     return \@lost_items;
@@ -202,9 +182,12 @@ sub GetLostItems {
 sub GetLostItem {
     my $itemnumber = shift;
     my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT * from lost_items WHERE itemnumber=?");
+    my $sth = $dbh->prepare("SELECT li.*, itemlost, items.itemnumber as has_item from lost_items li left join items using(itemnumber) WHERE itemnumber=?");
     $sth->execute($itemnumber);
     my $lost_item = $sth->fetchrow_hashref;
+    if( $lost_item && !$lost_item->{has_item}){
+      $lost_item->{deleted} = 1;
+    }
     return $lost_item;
 }
 

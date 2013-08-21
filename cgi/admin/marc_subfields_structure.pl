@@ -136,6 +136,7 @@ if ( $op eq 'add_form' ) {
     push( @authorised_values, "branches" );
     push( @authorised_values, "itemtypes" );
     push( @authorised_values, "cn_source" );
+    push( @authorised_values, "lost_status" );
 
     # build thesaurus categories list
     $sth2->finish;

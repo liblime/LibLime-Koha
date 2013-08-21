@@ -57,9 +57,7 @@
 	<!-- TMPL_IF NAME="circview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Check Out</a></li>
 	<!-- TMPL_IF NAME="CAN_user_borrowers" -->
 	<!-- TMPL_IF NAME="detailview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Details</a></li>
-        <!-- TMPL_IF NAME="LinkLostItemsToPatron" -->
         <li><a href="/cgi-bin/koha/members/lost_items.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Lost Items</a></li>
-        <!-- /TMPL_IF -->
 	 <!-- TMPL_IF NAME="CAN_user_updatecharges" -->
 	<!-- TMPL_IF NAME="finesview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Fines</a></li>
 	<!-- /TMPL_IF -->

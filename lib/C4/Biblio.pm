@@ -32,6 +32,7 @@ use C4::ClassSource;
 use C4::Charset;
 use Encode;
 require C4::Serials;
+require C4::Items;
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -1123,6 +1124,11 @@ sub GetAuthorisedValueDesc {
 #---- itemtypes
         if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq "itemtypes" ) {
             return getitemtypeinfo($value)->{description};
+        }
+#---- lost_status
+        if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq "lost_status" ) {
+            # Values are currently enum in mysql.
+            return ucfirst($value);
         }
 
 #---- "true" authorized value
@@ -2305,9 +2311,8 @@ sub PrepareItemrecordDisplay {
                             push @authorised_values, $itemtype;
                             $authorised_lib{$itemtype} = $description;
                         }
-
-                        #---- "true" authorised value
                     }
+                        #---- "true" authorised value                
                     else {
                         $authorised_values_sth->execute(
                             $tagslib->{$tag}->{$subfield}->{authorised_value} );

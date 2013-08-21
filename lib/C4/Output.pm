@@ -95,7 +95,13 @@ sub gettemplate {
         global_vars       => 1,
         case_sensitive    => 1,
         loop_context_vars => 1, # enable: __first__, __last__, __inner__, __odd__, __counter__ 
-        path              => ["$htdocs/$theme/$lang/$path"]
+        path              => ["$htdocs/$theme/$lang/$path"],
+        functions         => {  date     => \&C4::Dates::format_date,
+                                #currency_html => sub { return sprintf("<span class='currency'>%.2f</span>",$_[0]); },
+                                currency => sub { return sprintf("%.2f",$_[0]); },
+                                default  => sub { return ( ! defined $_[0] || (!$_[0] && $_[0] ne "0") ) ? $_[1] : $_[0]; },  # give a default for a blank or undefined value.
+                                ucfirst  => sub { return ucfirst($_[0]) },
+                             }
     );
     my $themelang=( $interface ne 'intranet' ? '/opac-tmpl' : '/intranet-tmpl' )
           . "/$theme/$lang";

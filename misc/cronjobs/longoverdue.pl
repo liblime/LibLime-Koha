@@ -41,52 +41,44 @@ use C4::Accounts;
 use C4::Circulation;
 use Getopt::Long;
 
-my  $lost;  #  key=lost value,  value=num days.
-my ($charge, $verbose, $confirm);
+my  ($lost_start, $longodue_start, $confirm, $debug, $verbose);
+
 my $endrange = 366;  # FIXME hardcoded - don't deal with anything overdue by more than this num days.
 
 GetOptions( 
-    'lost=s%'    => \$lost,
-    'c|charge=s' => \$charge,
+    'lost=i'      => \$lost_start,
+    'longoverdue=i' => \$longodue_start,
     'confirm'    => \$confirm,
     'verbose'    => \$verbose,
+    'debug'      => \$debug,
 );
 
 my $usage = << 'ENDUSAGE';
-longoverdue.pl : This cron script set lost values on overdue items and optionally sets charges the patron's account
-for the item's replacement price.  It is designed to be run as a nightly job.  The command line options that globally
-define this behavior for this script  will likely be moved into Koha's core circulation / issuing rules code in a 
-near-term release, so this script is not intended to have a long lifetime.  
+longoverdue.pl : This cron script sets lost values on overdue items, charging the patron's account
+for the item's replacement price for the value 'lost'.  It is designed to be run as a nightly job.
+The command line options exist primarily for testing purposes.
+Generally, parameters should be taken from the OverdueRules syspref.
 
 This script takes the following parameters :
 
-    --lost | -l         This option takes the form of n=lv,
-                        where n is num days overdue, and lv is the lost value.  See warning below.
+    --lost              integer, num days overdue to set to 'lost' and charge patron.
 
-    --charge | -c       This specifies what lost value triggers Koha to charge the account for the
-                        lost item.  Replacement costs are not charged if this is not specified.  Normally,
-                        the 'Lost+Charge' authorized value of the LOST category has a value of 1, so set this
-                        to 1.
+    --longoverdue       integer, num days overdue to set to 'longoverdue'.  Patron is not charged.
 
-    --verbose | v       verbose.
+    --verbose | v       verbose.  (or use --debug for more)
 
     --confirm           confirm.  without this option, the script will report the number of affected items and
                         return without modifying any records.
 
   examples :
-  $PERL5LIB/misc/cronjobs/longoverdue.pl --lost 30=1
-    Would set LOST=1 after 30 days (up to one year), but not charge the account.
-    This would be suitable for the Koha default LOST authorized value of 1 -> 'Lost'.
+  $PERL5LIB/misc/cronjobs/longoverdue.pl --lost 30
+    Would set LOST='lost' after 30 days (up to one year).  The account will be charged.
 
-  $PERL5LIB/misc/cronjobs/longoverdue.pl --lost 60=2 --charge 1
-    Would set LOST=2 after 60 days (up to one year), and charge the account when setting LOST=2.
-    This would be suitable for the Koha default LOST authorized value of 2 -> 'Long Overdue' 
+  $PERL5LIB/misc/cronjobs/longoverdue.pl --longoverdue 20 --lost 40
+    Would set the item to longoverdue after 20 days, and lost after 40 days.
 
 WARNING:  Flippant use of this script could set all or most of the items in your catalog to Lost and charge your
 patrons for them!
-
-WARNING:  This script is known to be faulty.  It is NOT recommended to use multiple --lost options.
-          See http://bugs.koha.org/cgi-bin/bugzilla/show_bug.cgi?id=2881
 
 ENDUSAGE
 
@@ -101,10 +93,30 @@ ENDUSAGE
 # FIXME: convert to using pod2usage
 # FIXME: allow --help or -h
 # 
-if ( ! defined($lost) ) {
-    print $usage;
-    die "ERROR: No --lost (-l) option defined";
+
+$verbose = 1 if($debug);
+
+if(!defined $longodue_start){
+    if(C4::Context->preference("OverdueRules") =~ /longoverdue:(\d+)/){
+        $longodue_start = $1;
+    }
 }
+if(!defined $lost_start){
+    if(C4::Context->preference("OverdueRules") =~ /lost:(\d+)/){
+        $lost_start = $1;        
+    }
+}
+
+if( $longodue_start && $longodue_start > $lost_start){
+    print "Invalid overdue rules.\n" if $verbose;
+    exit 1;
+}
+
+if( ! $lost_start && ! $longodue_start ){
+    print "No lost settings specified.\n" if $verbose;
+    exit;
+}
+
 unless ($confirm) {
     $verbose = 1;     # If you're not running it for real, then the whole point is the print output.
     print "### TEST MODE -- NO ACTIONS TAKEN ###\n";
@@ -121,7 +133,7 @@ sub bounds ($) {
 # FIXME - This sql should be inside the API.
 sub longoverdue_sth {
     my $query = "
-    SELECT issues.*,items.barcode,items.holdingbranch,items.homebranch
+    SELECT issues.*,items.barcode,items.holdingbranch,items.homebranch,items.itemlost
       FROM issues, items
      WHERE items.itemnumber = issues.itemnumber
       AND  DATE_SUB(CURDATE(), INTERVAL ? DAY)  > issues.date_due
@@ -135,58 +147,65 @@ sub longoverdue_sth {
 #FIXME - Should add a 'system' user and get suitable userenv for it for logging, etc.
 
 my $count;
-# my @ranges = map { 
 my @report;
 my $total = 0;
 my $i = 0;
 
-# FIXME - The item is only marked returned if you supply --charge .
-#         We need a better way to handle this.
-#
+
 my $sth_items = longoverdue_sth();
 
-foreach my $startrange (sort keys %$lost) {
-    if( my $lostvalue = $lost->{$startrange} ) {
-        my ($date1) = bounds($startrange);
-        my ($date2) = bounds(  $endrange);
-        # print "\nRange ", ++$i, "\nDue $startrange - $endrange days ago ($date2 to $date1), lost => $lostvalue\n" if($verbose);
-        $verbose and 
-            printf "\nRange %s\nDue %3s - %3s days ago (%s to %s), lost => %s\n", ++$i,
-            $startrange, $endrange, $date2, $date1, $lostvalue;
-        $sth_items->execute($startrange, $endrange, $lostvalue);
-        $count=0;
-        while (my $row=$sth_items->fetchrow_hashref) {
-            printf ("Due %s: item %5s from borrower %5s to lost: %s\n", $row->{date_due}, $row->{itemnumber}, $row->{borrowernumber}, $lostvalue) if($verbose);
-            if($confirm) {
-                C4::LostItems::CreateLostItem($row->{'itemnumber'}, $row->{'borrowernumber'});
-                C4::Accounts::chargelostitem($row->{'itemnumber'}) if( $charge && $charge eq $lostvalue);
-                ## honor syspref
-                if (C4::Context->preference('MarkLostItemsReturned')) {
-                   C4::Circulation::AddReturn(
-                      $$row{barcode},
-                      $$row{holdingbranch}, # assume returned to where last checked out
-                      0,     # exemptfine
-                      0,     # dropbox
-                      undef, # returndate: will default to today
-                      1,     # tolost
-                   );
-                }
-                ModItemLost($row->{'biblionumber'}, $row->{'itemnumber'}, $lostvalue);
-            }
-            $count++;
-        }
-        push @report, {
-           startrange => $startrange,
-             endrange => $endrange,
-                range => "$startrange - $endrange",
-                date1 => $date1,
-                date2 => $date2,
-            lostvalue => $lostvalue,
-                count => $count,
-        };
-        $total += $count;
+if($longodue_start){
+    my $longodue_end = $lost_start || $endrange;
+    my ($startdate) = bounds($longodue_end);  # yes, range is backwards from date.
+    my ($enddate) = bounds($longodue_start);
+
+    $verbose and printf "\nlongoverdue:\nDue %d - %d days ago (%s to %s), lost => longoverdue\n",
+                    $longodue_start, $longodue_end, $startdate, $enddate;
+    $sth_items->execute($longodue_start, $longodue_end, 'longoverdue');
+    $count=0;
+    while (my $row=$sth_items->fetchrow_hashref) {
+        printf ("Due %s: item %d from borrower %d to lost: %s\n", $row->{date_due}, $row->{itemnumber}, $row->{borrowernumber}, 'longoverdue') if($debug);
+        ModItemLost($row->{'biblionumber'}, $row->{'itemnumber'}, 'longoverdue') if $confirm;
+        $count++;
     }
-    $endrange = $startrange;
+    push @report, {
+       startrange => $longodue_end,
+         endrange => $longodue_start,
+            range => "$longodue_start - $longodue_end",
+            date1 => $startdate,
+            date2 => $enddate,
+        lostvalue => 'longoverdue',
+            count => $count,
+    };
+    $total += $count;
+};
+if($lost_start){
+    my ($startdate) = bounds($endrange);
+    my ($enddate) = bounds($lost_start);
+    $verbose and 
+        printf "\nlost:\nDue %d - %d days ago (%s to %s), lost => lost\n",
+        $lost_start, $endrange, $startdate, $enddate;
+    $sth_items->execute($lost_start, $endrange, 'lost');
+    $count=0;
+    while (my $row=$sth_items->fetchrow_hashref) {
+        printf ("Due %s: item %d from borrower %d to lost: %s\n", $row->{date_due}, $row->{itemnumber}, $row->{borrowernumber}, 'lost') if($debug);
+        if ($confirm){
+            my $lost_id = C4::LostItems::CreateLostItem($row->{'itemnumber'}, $row->{'borrowernumber'});
+            C4::Accounts::chargelostitem($lost_id);
+            ModItemLost($row->{'biblionumber'}, $row->{'itemnumber'}, 'lost');
+        }
+        $count++;
+    }
+    push @report, {
+       startrange => $endrange,
+         endrange => $lost_start,
+            range => "$lost_start - $endrange",
+            date1 => $startdate,
+            date2 => $enddate,
+        lostvalue => 'lost',
+            count => $count,
+    };
+    $total += $count;    
 }
 
 sub summarize ($$) {
@@ -195,7 +214,7 @@ sub summarize ($$) {
     my @report = @$arg or return undef;
     my $i = 0;
     for my $range (@report) {
-        printf "\nRange %s\nDue %3s - %3s days ago (%s to %s), lost => %s\n", ++$i,
+        printf "\nDue %3s - %3s days ago (%s to %s), lost => %s\n",
             map {$range->{$_}} qw(startrange endrange date2 date1 lostvalue);
         $got_items and printf "  %4s items\n", $range->{count};
     }

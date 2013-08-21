@@ -32,6 +32,8 @@ use C4::Dates qw/format_date/;
 use C4::Debug;
 use C4::Members;
 use C4::Letters;
+use C4::Accounts;
+use C4::Category;
 
 use Getopt::Long;
 use Pod::Usage;
@@ -48,6 +50,7 @@ amountdue_notices.pl [ -n ] [ -library <branchcode> ] [ -csv [ <filename> ] ]
  Options:
    -help                          brief help message
    -man                           full documentation
+   -v|verbose                     verbose output
    -n                             No email will be sent
    -library      <branchname>     only deal with excessive amountdues from this library
    -code         <lettercode>     name of notice code to use
@@ -99,15 +102,15 @@ amountdues that could not be emailed are sent in CSV format to the admin.
 =head1 DESCRIPTION
 
 This script is designed to alert patrons and administrators of account
-amounts owed that equal or exceed the value set up in the 
-C<OwedNotificationValue> system preference.
+amounts owed that equal or exceed the value set in the 
+C<fines_alert_threshold> setting of the patron category.
 
 =head2 Configuration
 
-The notification alert value is controlled by the value set up in the
-C<OwedNotificationValue> system preference.  In addition, a sytem preference
-called C<EnableOwedNotification> tells the Koha system whether to use this
-notification ability at all.
+The notification alert value is controlled by the 
+Patron category's C<fines_alert_threshold> setting.
+Patron categories with this value set to zero will not
+receive notices.
 
 The template used to craft the email is defined in the "Tools:
 Notices" section of the staff interface to Koha under the Code of 'BILLING'.
@@ -115,7 +118,7 @@ Notices" section of the staff interface to Koha under the Code of 'BILLING'.
 =head2 Outgoing emails
 
 Typically, messages are prepared for each patron with amounts due that
-equal or exceed OwedNotificationValue.  Messages for whom there is no 
+equal or exceed categories.fines_alert_threshold.  Messages for whom there is no 
 email address on file are collected and sent as attachments in a single 
 email to each library administrator, or if that is not set, then to the 
 email address in the C<KohaAdminEmailAddress> system preference.
@@ -197,7 +200,7 @@ my $ignore = 365;
 GetOptions(
     'help|?'         => \$help,
     'man'            => \$man,
-    'v'              => \$verbose,
+    'v|verbose'      => \$verbose,
     'n'              => \$nomail,
     'library=s'      => \$mybranch,
     'code=s'         => \$letter_code,
@@ -212,10 +215,8 @@ if ( defined $csvfilename && $csvfilename =~ /^-/ ) {
     warn qq(using "$csvfilename" as filename, that seems odd);
 }
 
-if (!C4::Context->preference('EnableOwedNotification')) {
-  die 'EnableOwedNotification is not turned on';
-}
 $letter_code = 'BILLING' if (! defined ($letter_code));
+
 
 my $branch_hashref = C4::Branch::GetBranches();
 my $branchcount = keys %$branch_hashref;
@@ -285,6 +286,9 @@ if ( defined $htmlfilename ) {
   print $html_fh "<body>\n";
 }
 
+my @cats = C4::Category->all();
+my $sth_bor_notif_date = $dbh->prepare("UPDATE borrowers SET amount_notify_date = CURDATE() WHERE borrowernumber = ?");
+
 foreach my $branchcode (@branches) {
 
     my $branch_details = C4::Branch::GetBranchDetail($branchcode);
@@ -293,114 +297,91 @@ foreach my $branchcode (@branches) {
 
     $verbose and warn sprintf "branchcode : '%s' using %s\n", $branchcode, $admin_email_address;
 
-    my $notify_value = C4::Context->preference('OwedNotificationValue');
-    my $sth = $dbh->prepare( <<'END_SQL' );
-SELECT accountlines.borrowernumber, SUM(accountlines.amountoutstanding) AS amountdue
-  FROM accountlines
-  LEFT JOIN borrowers on (accountlines.borrowernumber = borrowers.borrowernumber)
-  WHERE accountlines.accounttype <> 'FU'
-    AND borrowers.amount_notify_date IS NULL
-    AND borrowers.branchcode = ?
-    AND (accountlines.description NOT LIKE '%Debt Collect%')
-    AND (accountlines.description NOT LIKE '%collections agency%')
-    AND DATEDIFF(CURDATE(),accountlines.date) <= ?
-  GROUP BY accountlines.borrowernumber
-  HAVING SUM(accountlines.amountoutstanding) >= ?
-END_SQL
-    $sth->execute( $branchcode, $ignore, $notify_value );
-    while ( my $patron_hits = $sth->fetchrow_hashref() ) {
-      my $letter = C4::Letters::getletter( 'circulation', $letter_code );
-      unless ($letter) {
-        $verbose and warn "Message '$letter_code' content not found";
-        last;
-      }
-
-      my $amount_due = sprintf "%.2f",$patron_hits->{amountdue};
-      $verbose and warn "Patron: $patron_hits->{borrowernumber} Amount: $amount_due\n";
-
-      my $sth2 = $dbh->prepare("SELECT date,description,amountoutstanding,itemnumber
-                                FROM accountlines
-                                WHERE borrowernumber = ?
-                                  AND amountoutstanding > 0.0");
-      $sth2->execute($patron_hits->{borrowernumber});
-      my $outstanding_items = "";
-      while (my @rows = $sth2->fetchrow_array()) {
-        $rows[2] = sprintf "%.2f",$rows[2];
-        my @modified_row = ();
-        if (defined($rows[3])) {
-          my $item_details = C4::Biblio::GetBiblioFromItemNumber($rows[3]);
-          push @rows, $item_details->{title};
-          @modified_row = (@rows)[0,4,2];
-        }
-        else {
-          @modified_row = (@rows)[0,1,2];
-        }
-        $outstanding_items .= join("\t",@modified_row) . "\n";
-      }
-      $letter = parse_letter(
-         {   letter         => $letter,
-             borrowernumber => $patron_hits->{borrowernumber},
-             branchcode     => $branchcode,
-             substitute     => {
-               bib             => $branch_details->{'branchname'},
-               totalamountdue  => $amount_due,
-               'items.content' => $outstanding_items
-             }
-         }
-      );
+    # FIXME: Don't include debt collect fees.
     
-      my @misses = grep { /./ } map { /^([^>]*)[>]+/; ( $1 || '' ); } split /\</, $letter->{'content'};
-      if (@misses) {
-        $verbose and warn "The following terms were not matched and replaced: \n\t" . join "\n\t", @misses;
-      }
-      $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # Now that we've warned about them, remove them.
-      $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # 2nd pass for the double nesting.
+    my @fee_summary_data = qw/date description amountoutstanding/;
     
-      my $sth3 = $dbh->prepare( <<'END_SQL' );
-UPDATE borrowers
-   SET amount_notify_date = CURDATE()
- WHERE borrowernumber = ?
-END_SQL
-      $sth3->execute( $patron_hits->{borrowernumber} );
+    for my $cat (@cats){
+        next unless $cat->fines_alert_threshold;  # Yes, that means zero turns it off.
+        my $notify_value = $cat->fines_alert_threshold;
+        $verbose and warn sprintf "category: %s, threshold: %s, branch: %s", $cat->categorycode, $notify_value, $branchcode;
+        my $borrowers = C4::Accounts::get_borrowers_with_fines(category => $cat->categorycode, threshold => $notify_value, branch => $branchcode, since=>$ignore, exclude_notified=>1);
 
-      my $patron = GetMember($patron_hits->{borrowernumber});
-    
-      if ($nomail or not $patron->{email}) {
-          push @output_chunks, prepare_letter_for_printing(
-                {   letter         => $letter,
-                    borrowernumber => $patron->{borrowernumber},
-                    firstname      => $patron->{firstname},
-                    lastname       => $patron->{surname},
-                    address1       => $patron->{address},
-                    address2       => $patron->{address2},
-                    city           => $patron->{city},
-                    postcode       => $patron->{zipcode},
-                    email          => $patron->{email},
-                    outputformat   => defined $csvfilename ? 'csv' : defined $htmlfilename ? 'html' : '',
-                }
-          );
-          # Log as a print message in the message_queue table
-          # for patron messaging tab
-          if ($nomail) {
-            C4::Letters::EnqueueLetter(
-                {   letter                 => $letter,
-                    borrowernumber         => $patron->{borrowernumber},
-                    message_transport_type => 'print_billing',
-                    from_address           => $admin_email_address,
-                    to_address             => undef
-                }
-            );
+        for my $patron_hits ( @$borrowers ) {
+          my $letter = C4::Letters::getletter( 'circulation', $letter_code );
+          unless ($letter) {
+            $verbose and warn "Message '$letter_code' content not found";
+            last;
           }
-      } else {
-          C4::Letters::EnqueueLetter(
-              {  letter                 => $letter,
-                  borrowernumber         => $patron->{borrowernumber},
-                  message_transport_type => 'email',
-                  from_address           => $admin_email_address,
-                  to_address             => $patron->{email}
-              }
+    
+          my $amount_due = sprintf "%.2f",$patron_hits->{balance};
+          my $outstandingfees = C4::Accounts::getcharges($patron_hits->{borrowernumber}, outstanding=>1);
+          my $fee_summary = ''; 
+          for my $fee (@$outstandingfees){
+              C4::Accounts::prepare_fee_for_display($fee);
+              $fee_summary .= join("\t", map($fee->{$_}, @fee_summary_data)) . "\n";
+          }
+          
+          $verbose and warn "Patron: $patron_hits->{borrowernumber} Amount: $amount_due\n";
+    
+          $letter = parse_letter(
+             {   letter         => $letter,
+                 borrowernumber => $patron_hits->{borrowernumber},
+                 branchcode     => $branchcode,
+                 substitute     => {
+                   bib             => $branch_details->{'branchname'},
+                   totalamountdue  => $amount_due,
+                   'items.content' => $fee_summary
+                 }
+             }
           );
-      }
+        
+          my @misses = grep { /./ } map { /^([^>]*)[>]+/; ( $1 || '' ); } split /\</, $letter->{'content'};
+          if (@misses) {
+            $verbose and warn "The following terms were not matched and replaced: \n\t" . join "\n\t", @misses;
+          }
+          $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # Now that we've warned about them, remove them.
+          $letter->{'content'} =~ s/\<[^<>]*?\>//g;    # 2nd pass for the double nesting.
+                  
+          $sth_bor_notif_date->execute( $patron_hits->{borrowernumber} );
+            
+          if ($nomail or not $patron_hits->{email}) {
+              push @output_chunks, prepare_letter_for_printing(
+                    {   letter         => $letter,
+                        borrowernumber => $patron_hits->{borrowernumber},
+                        firstname      => $patron_hits->{firstname},
+                        lastname       => $patron_hits->{surname},
+                        address1       => $patron_hits->{address},
+                        address2       => $patron_hits->{address2},
+                        city           => $patron_hits->{city},
+                        postcode       => $patron_hits->{zipcode},
+                        email          => $patron_hits->{email},
+                        outputformat   => defined $csvfilename ? 'csv' : defined $htmlfilename ? 'html' : '',
+                    }
+              );
+              # Log as a print message in the message_queue table
+              # for patron messaging tab
+              if ($nomail) {
+                C4::Letters::EnqueueLetter(
+                    {   letter                 => $letter,
+                        borrowernumber         => $patron_hits->{borrowernumber},
+                        message_transport_type => 'print_billing',
+                        from_address           => $admin_email_address,
+                        to_address             => undef
+                    }
+                );
+              }
+          } else {
+              C4::Letters::EnqueueLetter(
+                  {  letter                 => $letter,
+                      borrowernumber         => $patron_hits->{borrowernumber},
+                      message_transport_type => 'email',
+                      from_address           => $admin_email_address,
+                      to_address             => $patron_hits->{email}
+                  }
+              );
+          }
+        }
     }
 
     if (@output_chunks) {
@@ -438,6 +419,7 @@ END_SQL
     }
 
 }
+
 if ($csvfilename) {
 
     # note that we're not testing on $csv_fh to prevent closing

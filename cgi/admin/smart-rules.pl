@@ -100,8 +100,8 @@ elsif ($op eq 'delete-branch-item') {
 # save the values entered
 elsif ($op eq 'add') {
     my $sth_search = $dbh->prepare("SELECT COUNT(*) AS total FROM issuingrules WHERE branchcode=? AND categorycode=? AND itemtype=?");
-    my $sth_insert = $dbh->prepare("INSERT INTO issuingrules (branchcode, categorycode, itemtype, maxissueqty, issuelength, fine, firstremind, chargeperiod, max_fine, max_holds,holdallowed) VALUES(?,?,?,?,?,?,?,?,?,?,?)");
-    my $sth_update = $dbh->prepare("UPDATE issuingrules SET fine=?, firstremind=?, chargeperiod=?, maxissueqty=?, issuelength=?, max_fine = ?, max_holds = ? ,holdallowed=? WHERE branchcode=? AND categorycode=? AND itemtype=?");
+    my $sth_insert = $dbh->prepare("INSERT INTO issuingrules (branchcode, categorycode, itemtype, maxissueqty, issuelength, fine, firstremind, chargeperiod, max_fine, max_holds, holdallowed, expired_hold_fee) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
+    my $sth_update = $dbh->prepare("UPDATE issuingrules SET fine=?, firstremind=?, chargeperiod=?, maxissueqty=?, issuelength=?, max_fine = ?, max_holds = ? , holdallowed=?, expired_hold_fee = ? WHERE branchcode=? AND categorycode=? AND itemtype=?");
     
     my $br = $branch; # branch
     my $bor  = $input->param('categorycode'); # borrower category
@@ -112,6 +112,7 @@ elsif ($op eq 'add') {
     my $maxissueqty  = $input->param('maxissueqty');
     my $max_fine = $input->param('max_fine');
     my $max_holds = $input->param('max_holds');
+    my $expired_hold_fee = $input->param('expired_hold_fee');
     
     $maxissueqty =~ s/\s//g;
     $maxissueqty = undef if $maxissueqty !~ /^\d+/;
@@ -122,9 +123,9 @@ elsif ($op eq 'add') {
     $sth_search->execute($br,$bor,$cat);
     my $res = $sth_search->fetchrow_hashref();
     if ($res->{total}) {
-        $sth_update->execute($fine, $firstremind, $chargeperiod, $maxissueqty, $issuelength, $max_fine, $max_holds, $holdallowed, $br, $bor, $cat );
+        $sth_update->execute($fine, $firstremind, $chargeperiod, $maxissueqty, $issuelength, $max_fine, $max_holds, $holdallowed, $expired_hold_fee, $br, $bor, $cat );
     } else {
-        $sth_insert->execute($br, $bor, $cat, $maxissueqty, $issuelength, $fine, $firstremind, $chargeperiod, $max_fine, $max_holds,$holdallowed);
+        $sth_insert->execute($br, $bor, $cat, $maxissueqty, $issuelength, $fine, $firstremind, $chargeperiod, $max_fine, $max_holds, $holdallowed, $expired_hold_fee);
     }
 }
 elsif ($op eq "set-branch-defaults") {
@@ -297,6 +298,7 @@ while (my $row = $sth2->fetchrow_hashref) {
     $row->{'default_humancategorycode'} = 1 if $row->{'humancategorycode'} eq '*';
     $row->{'fine'} = sprintf('%.2f', $row->{'fine'});
     $row->{'max_fine'} = sprintf('%.2f', $row->{'max_fine'});
+    $row->{'expired_hold_fee'} = sprintf('%.2f', $row->{'expired_hold_fee'}//0);
     $row->{holdallowed_any} = 1 if($row->{holdallowed} == 2);
     $row->{holdallowed_same} = 1 if($row->{holdallowed} == 1);
     push @row_loop, $row;

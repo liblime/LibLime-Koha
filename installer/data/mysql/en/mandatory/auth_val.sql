@@ -1,8 +1,6 @@
-INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'LOST','5','Trace' );
 INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'DEPARTMENTS', 'Default', 'Default Department' );
 INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'TERMS', 'Default', 'Default Term' );
 INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'BOR_NOTES', 'Address', 'Need to verify patron address' );
-INSERT INTO `authorised_values` ( category, authorised_value, lib ) values ( 'MANUAL_INV', 'Copicard', '10.00' );
 INSERT INTO `authorised_values` (`category`,`authorised_value`,`prefix`,`lib`,`imageurl`,`opaclib`) VALUES
     ('ETYPE','a',NULL,'Numeric data',NULL,NULL),
     ('ETYPE','b',NULL,'Computer program',NULL,NULL),

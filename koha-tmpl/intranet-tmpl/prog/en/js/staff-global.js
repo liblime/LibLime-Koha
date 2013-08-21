@@ -7,6 +7,14 @@ function _(s) { return s } // dummy function for gettext
 
 KOHA.focusOnTabChange = false; // Only needed until jQuery-UI 1.9
 
+// validator method for decimal values.  default 'number' validator will accept '0.25' but not '.25' (bug filed against jquery 1.3 12 Feb 2009) 
+jQuery.validator.addMethod('decimal',function(value,element,param){
+    return /^-?(\d*|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(value);
+});
+jQuery.validator.addMethod('pos_decimal',function(value,element,param){
+    return /^(\d*|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(value);
+});
+
  $(document).ready(function() {
 	$('#header_search').tabs( { show : function(e, ui) { KOHA.focusOnTabChange && $(ui.panel).find('input[type="text"]').eq(0).focus(); KOHA.focusOnTabChange = true; } });
  	$(".focus").focus();

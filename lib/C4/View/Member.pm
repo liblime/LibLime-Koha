@@ -225,11 +225,7 @@ sub GetIssuesLoop {
 
 sub GetTotalFines {
     my $borrowernumber = shift;
-    my $total = C4::Accounts::MemberAllAccounts( 
-      borrowernumber => $borrowernumber,
-      total_only     => 1
-    );
-    return $total;
+    return C4::Accounts::gettotalowed( $borrowernumber );
 }
 
 sub BuildFinesholdsissuesBox {

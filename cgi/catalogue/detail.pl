@@ -126,12 +126,11 @@ my $subtitle         = C4::Biblio::get_koha_field_from_marc('bibliosubtitle', 's
 # Get Branches, Itemtypes and Locations
 my $branches = GetBranches();
 my $itemtypes = GetItemTypes();
-my $itemstatuses = GetOtherItemStatus();
 my $dbh = C4::Context->dbh;
 
 # change back when ive fixed request.pl
-my @items = &GetItemsInfo( $biblionumber, C4::XSLT::LimitItemsToThisGroup());
-my $dat = &GetBiblioData($biblionumber);
+my @items = GetItemsInfo( $biblionumber, limitgroup => C4::XSLT::LimitItemsToThisGroup());
+my $dat = GetBiblioData($biblionumber);
 
 # Get number of holds place on bib and/or items
 my ($rescount,$res) = GetReservesFromBiblionumber($biblionumber);
@@ -162,15 +161,10 @@ if ( defined $dat->{'itemtype'} ) {
     $dat->{imageurl} = getitemtypeimagelocation( 'intranet', $itemtypes->{ $dat->{itemtype} }{imageurl} );
 }
 $dat->{'count'} = scalar @items;
-my $shelflocations = GetKohaAuthorisedValues('items.location', $fw);
-my $collections    = GetKohaAuthorisedValues('items.ccode'   , $fw);
 my (@itemloop, %itemfields);
 my $norequests = 1;
-my $authvalcode_items_itemlost = GetAuthValCode('items.itemlost',$fw);
-my $authvalcode_items_damaged  = GetAuthValCode('items.damaged', $fw);
 my $itemcount=0;
 my $additemnumber;
-my $authvalcode_items_suppress = GetAuthValCode('items.suppress', $fw);
 
 foreach my $item (@items) {
     $additemnumber = $item->{'itemnumber'} if (!$itemcount);
@@ -182,90 +176,43 @@ foreach my $item (@items) {
     # can place holds defaults to yes
     $norequests = 0 unless ( ( $item->{'notforloan'} > 0 ) || ( $item->{'itemnotforloan'} > 0 ) );
 
-    # format some item fields for display
-    if ( defined $item->{'publictype'} ) {
-        $item->{ $item->{'publictype'} } = 1;
-    }
     $item->{imageurl} = defined $item->{itype} ? getitemtypeimagelocation('intranet', $itemtypes->{ $item->{itype} }{imageurl})
                                                : '';
 
-	foreach (qw(datedue datelastseen onloan)) {
-		$item->{$_} = format_date($item->{$_});
-	}
-    # item damaged, lost, withdrawn loops
-    $item->{itemlostloop} = GetAuthorisedValues($authvalcode_items_itemlost, $item->{itemlost}) if $authvalcode_items_itemlost;
-    if ($item->{damaged}) {
-        $item->{itemdamagedloop} = GetAuthorisedValues($authvalcode_items_damaged, $item->{damaged}) if $authvalcode_items_damaged;
-    }
-    if ($item->{suppress}) {
-        $item->{itemsuppressloop} = GetAuthorisedValues($authvalcode_items_suppress, $item->{suppress}) if $authvalcode_items_suppress;
-    }
-    #get shelf location and collection code description if they are authorised value.
-    my $shelfcode = $item->{'location'};
-    $item->{'location'} = $shelflocations->{$shelfcode} if ( defined( $shelfcode ) && defined($shelflocations) && exists( $shelflocations->{$shelfcode} ) );
-    my $ccode = $item->{'ccode'};
-    $item->{'ccode'} = $collections->{$ccode} if ( defined( $ccode ) && defined($collections) && exists( $collections->{$ccode} ) );
     foreach (qw(ccode enumchron copynumber uri)) {
         $itemfields{$_} = 1 if ( $item->{$_} );
     }
 
     # checking for holds
-    my ($reservedate,$reservedfor,$expectedAt,$waitingdate);
     my $ItemBorrowerReserveInfo;
-    my $reserves = C4::Reserves::GetPendingReserveOnItem($item->{itemnumber});
-    if ($reserves) {
-      $reservedate = $reserves->{reservedate};
-      $waitingdate = $reserves->{waitingdate};
-      $reservedfor = $reserves->{borrowernumber};
-      $expectedAt  = $reserves->{branchcode};
-      $ItemBorrowerReserveInfo = GetMember($reservedfor);
-      undef $reservedate if ($reserves->{nullitem});
-      $template->param( totalreserves => $rescount );
-      if ( defined $reserves->{itemnumber} ) {
-        $item->{reservedate} = format_date($reservedate);
-        $item->{waitingdate} = format_date($waitingdate);
-      }
-    }
-    if (C4::Context->preference('HidePatronName')){
-	$item->{'hidepatronname'} = 1;
-    }
-
-    if ( defined $waitingdate ) {
-        $item->{backgroundcolor} = 'reserved';
-        $item->{reservedate}     = format_date($reservedate);
-        $item->{ReservedForBorrowernumber}     = $reservedfor;
+    my $hold = C4::Reserves::GetPendingReserveOnItem($item->{itemnumber});
+    if ($hold) {
+        my $ItemBorrowerReserveInfo     = GetMember($hold->{borrowernumber});
+        $item->{reservedate}            = $hold->{reservedate};
+        $item->{ReservedForBorrowernumber} = $hold->{borrowernumber};
         $item->{ReservedForSurname}     = $ItemBorrowerReserveInfo->{'surname'};
         $item->{ReservedForFirstname}   = $ItemBorrowerReserveInfo->{'firstname'};
-        $item->{ExpectedAtLibrary}      = $branches->{$expectedAt}{branchname};
-	$item->{cardnumber}             = $ItemBorrowerReserveInfo->{'cardnumber'};
+        $item->{ExpectedAtLibrary}      = $branches->{$hold->{branchcode}}{branchname} if($item->{holdingbranch} ne $hold->{branchcode});
+        $item->{cardnumber}             = $ItemBorrowerReserveInfo->{'cardnumber'};
     }
 
 	# Check the transit status
-    my ( $transfertwhen, $transfertfrom, $transfertto ) = GetTransfers($item->{itemnumber});
+    my ( $transfertwhen, $transfertfrom, $transfertto ) = C4::Circulation::GetTransfers($item->{itemnumber});
     if ( defined( $transfertwhen ) && ( $transfertwhen ne '' ) ) {
-        $item->{transfertwhen} = format_date($transfertwhen);
-        $item->{transfertfrom} = $branches->{$transfertfrom}{branchname};
-        $item->{transfertto}   = $branches->{$transfertto}{branchname};
-        $item->{nocancel} = 1;
+        $item->{transfersince} = $transfertwhen;
+        $item->{transferfrom} = $branches->{$transfertfrom}{branchname};
+        $item->{transferto}   = $branches->{$transfertto}{branchname};
     }
-
-    # FIXME: move this to a pm, check waiting status for holds
-    my $sth2 = $dbh->prepare("SELECT * FROM reserves WHERE borrowernumber=? AND itemnumber=? AND found='W'");
-    $sth2->execute($item->{ReservedForBorrowernumber},$item->{itemnumber});
-    while (my $wait_hashref = $sth2->fetchrow_hashref) {
-        $item->{waitingdate} = format_date($wait_hashref->{waitingdate});
-    }
-
-    if ($item->{otherstatus}) {
-      foreach my $istatus (@$itemstatuses) {
-        if ($istatus->{statuscode} eq $item->{otherstatus}) {
-          $item->{otherstatus_description} = $istatus->{description};
-          last;
-        }
-      }
-    }
-
-
+    $item->{available} = ! $item->{itemnotforloan}
+                        && !$item->{onloan}
+                        && !$item->{itemlost}
+                        && !$item->{wthdrawn}
+                        && !$item->{damaged}
+                        && !$item->{suppress}
+                        && !$item->{otherstatus}
+                        && !$item->{reservedate}
+                        && !$item->{transfersince};
+    
     push @itemloop, $item;
 }
 @itemloop = sort { $$b{_isWorkLib} <=> $$a{_isWorkLib} 
@@ -279,8 +226,8 @@ if (C4::Context->preference('CourseReserves')) {
     );
 }
 
-$template->param( norequests => $norequests );
 $template->param(
+    norequests => $norequests,
 	MARCNOTES   => $marcnotesarray,
 	MARCSUBJCTS => $marcsubjctsarray,
 	MARCAUTHORS => $marcauthorsarray,
@@ -294,7 +241,10 @@ $template->param(
 	itemdata_uri        => $itemfields{uri},
 	itemdata_copynumber => $itemfields{copynumber},
 	volinfo				=> $itemfields{enumchron} || $dat->{'serial'} ,
+	hidepatronname     => C4::Context->preference('HidePatronName'),
+	
 	C4::Search::enabled_staff_search_views,
+	
    q  => $query->param('q')
 );
 

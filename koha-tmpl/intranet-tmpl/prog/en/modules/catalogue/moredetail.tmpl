@@ -40,68 +40,31 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
     <!-- /TMPL_LOOP -->
     <br clear="all" />
     <!-- TMPL_IF NAME="ONLY_ONE" -->
-        <div class="message emphasize">You are only viewing one item.  <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;bi=<!-- TMPL_VAR NAME="biblioitemnumber" -->#item<!-- TMPL_VAR NAME="itemnumber">">View All</a></div>
+        <div class="message emphasize">You are only viewing one item.  <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#item<!-- TMPL_VAR NAME="itemnumber">">View All</a></div>
     <!-- /TMPL_IF -->
     <!-- TMPL_LOOP NAME="ITEM_DATA" -->
     <a name="item<!-- TMPL_VAR NAME="itemnumber" -->"></a>
     <div class="yui-g">
-        <h3 id="item<!-- TMPL_VAR NAME="itemnumber" -->">Barcode <!-- TMPL_VAR NAME="barcode" -->  <!-- TMPL_IF name="notforloantext" --><!-- TMPL_VAR name="notforloantext" --> <!-- /TMPL_IF --></h3>
-        <div class="listgroup"><h4>Item Information <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" --><!-- TMPL_UNLESS name="nomod" --><!-- TMPL_UNLESS name="notmine" --><a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber"-->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#edititem">[Edit Items]</a><!-- /TMPL_UNLESS --><!-- /TMPL_IF --><!-- /TMPL_UNLESS --></h4>
-            <ol class="bibliodetails">
-            <li><span class="label">Home Library:</span> <!-- TMPL_VAR NAME="homebranchname" -->&nbsp;</li>
-	    <!-- TMPL_IF NAME="item-level_itypes" -->
-            <li><span class="label">Item type:</span> <!-- TMPL_VAR NAME="itype" -->&nbsp;</li>
-	    <!-- /TMPL_IF -->
-            <!-- TMPL_IF NAME="collection" --><li><span class="label">Collection:</span> <!-- TMPL_VAR NAME="collection" --></li> <!-- /TMPL_IF -->  
-            <li><span class="label">Item Callnumber:</span> <!-- TMPL_VAR NAME="itemcallnumber" -->&nbsp;</li>
-            <!-- TMPL_IF NAME="copyvol" --><li><span class="label">Copy / Vol :</span> <!-- TMPL_VAR NAME="copyvol" -->&nbsp;</li> <!-- /TMPL_IF -->  
-            <!-- TMPL_IF NAME="replacementprice" --><li><span class="label">Replacement Price:</span> <!-- TMPL_VAR NAME="replacementprice" -->&nbsp;</li> <!-- /TMPL_IF -->
-            </ol></div>
-           <div class="listgroup"><h4>Statuses <!-- TMPL_IF NAME="status_advisory" -->( 
-                <!-- TMPL_IF name="notforloantext" --><!-- TMPL_VAR name="notforloantext" --> <!-- /TMPL_IF -->
-                <!-- TMPL_IF name="itemlost"-->Lost<!-- /TMPL_IF --> 
-                <!-- TMPL_IF NAME="damaged" -->Damaged<!-- /TMPL_IF -->
-                <!-- TMPL_IF NAME="wthdrawn" -->Withdrawn<!-- /TMPL_IF -->
-                <!-- TMPL_IF NAME="suppress" -->Suppressed<!-- /TMPL_IF -->
-            )<!-- /TMPL_IF --></h4>
-            
-            <ol class="bibliodetails">
-            <li><span class="label">Current Location:</span> <!-- TMPL_VAR NAME="holdingbranchname" -->&nbsp;</li>
-            <li><span class="label">Checkout Status:</span> <!-- TMPL_IF NAME="issue" -->Checked out to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="cardnumber" --></a>, Due back on <!-- TMPL_VAR NAME="datedue" --><!-- TMPL_ELSE -->Not Checked out <!-- /TMPL_IF --></li>
-            <li><span class="label">Lost Status:</span>
+        <h3 id="item<!-- TMPL_VAR NAME="itemnumber" -->">Barcode <!-- TMPL_VAR NAME="barcode" -->  <!-- TMPL_IF name="notforloan" --> [<!-- TMPL_VAR name="notforloandesc" -->] <!-- /TMPL_IF --></h3>
+        <div class="listgroup">
+          <h4>Item Information <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" --><!-- TMPL_UNLESS name="nomod" --><!-- TMPL_UNLESS name="notmine" --><a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber"-->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#edititem">[Edit Items]</a><!-- /TMPL_UNLESS --><!-- /TMPL_IF --><!-- /TMPL_UNLESS --></h4>
+            <table class="bibliodetails">
+            <tr><th>Home Library:</th><td> <!-- TMPL_VAR NAME="homebranchname" -->&nbsp;</td></tr>
+            <tr><th>Item type:</th><td> <!-- TMPL_VAR NAME="itype" -->&nbsp;</td></tr>
+            <!-- TMPL_IF NAME="ccode" --><li><th>Collection:</th><td> <!-- TMPL_VAR NAME="ccodedesc" --></td></tr> <!-- /TMPL_IF -->  
+            <tr><th>Item Callnumber:</th><td> <!-- TMPL_VAR NAME="itemcallnumber" -->&nbsp;</td></tr>
+            <!-- TMPL_IF NAME="copyvol" --><tr><th>Copy / Vol :</th><td> <!-- TMPL_VAR NAME="copyvol" -->&nbsp;</td></tr> <!-- /TMPL_IF -->  
+            <!-- TMPL_IF NAME="replacementprice" --><tr><th>Replacement Price:</th><td> <!-- TMPL_VAR NAME="replacementprice" -->&nbsp;</td></tr> <!-- /TMPL_IF -->
+            </table></div>
+
+           <div class="listgroup"><h4>Status</h4>
+
+            <table class="bibliodetails">
+            <tr><th>Circ Status:</th><td> <div class="itemstatus"><!-- TMPL_INCLUDE item-status.inc --></div></td></tr>
+            <tr><th>Current Location:</th><td> <!-- TMPL_VAR NAME="holdingbranchname" -->&nbsp;</td></tr>
+            <tr><th>Lost Status:</th><td>
                 <table border=0 cellspacing=0 cellpadding=0 class="borderless">
-                <TMPL_IF NAME="updatefail_nocr"><tr class=borderless><td class=borderless><div class="msg">Update <span class=problem>failed</span>.
-                    Currently checked out, not charged as lost to any patron, cannot force <TMPL_VAR NAME="claimsreturned_authval">.<br>
-                    You must set Lost status to &lt;<TMPL_VAR NAME="charge_authval">&gt; 
-                    before you can set it to &lt;<TMPL_VAR NAME="claimsreturned_authval">&gt;.</div></td></tr>
-                <TMPL_ELSIF NAME="updatefail_nocr_notcharged"><tr class=borderless><td class=borderless><div class="msg">Update <span class=problem>failed</span>.
-                    Not checked out and not previously set to &lt;<TMPL_VAR NAME="charge_authval">&gt;; cannot force <TMPL_VAR NAME="claimsreturned_authval">.
-                    <TMPL_IF NAME="lastbor_borrowernumber"><br>Last known issue was to<br><br>
-                       <a href="/cgi-bin/koha/members/readingrec.pl?borrowernumber=<TMPL_VAR NAME="lastbor_borrowernumber">"><TMPL_VAR NAME="lastbor_name"></a> (<TMPL_VAR NAME="lastbor_cardnumber">), 
-                       <b>returned <TMPL_VAR NAME="lastbor_returndate"></b>
-                       <br><br>This patron does not have overdues for the loan instance.
-                    <TMPL_ELSE><br>Last patron who checked this out might have anonymized reading history.
-                    </TMPL_IF>
-                    <br>Set a different Lost status below:
-                    </div></td></tr>
-                <TMPL_ELSIF NAME="updatefail_nocr_nooi"><tr class=borderless><td class=borderless><div class="msg">Update <span class=problem>failed</span>.
-                    Not checked out, not charged as lost to any patron, cannot force <TMPL_VAR NAME="claimsreturned_authval">.
-                    <br>Last borrower is unknown (may have anonymised reading history).
-                    <br>Set a different Lost status below:
-                    </div></td></tr>                  
-                <TMPL_ELSIF NAME="updatefail_nocr_charged"><tr class=borderless><td class=borderless><div class="msg">Update <span class=problem>failed</span>.
-                    Not checked out, not charged as lost to any patron, cannot force <TMPL_VAR NAME="claimsreturned_authval">.
-                    <br>Previous issuing found and already charged overdue:<br>
-                    <table border=0 cellspacing=0 cellpadding=0>
-                     <tr><td>Borrower:</td><td><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<TMPL_VAR NAME="cr_oi_borrowernumber">"><TMPL_VAR NAME="cr_oi_name"></a> (<TMPL_VAR NAME="cr_oi_cardnumber">)</td></tr>
-                     <tr><td>Account:</td><td>No.<TMPL_VAR NAME="cr_oi_accountno"> <TMPL_VAR NAME="cr_oi_description"></td></tr>
-                     <tr><td>Amount:</td><td><TMPL_VAR NAME="cr_oi_amount"></td></tr>
-                     <tr><td>Outstanding:</td><td><TMPL_VAR NAME="cr_oi_amountoutstanding"></td></tr>
-                     <tr><td>Original Checkout:</td><td><TMPL_VAR NAME="cr_oi_issuedate">, due <TMPL_VAR NAME="cr_oi_date_due">, 
-                        <b>returned <TMPL_VAR NAME="cr_oi_returndate"></b></td></tr>
-                   </table>
-                   To charge as lost to this patron, set the status to &lt;<TMPL_VAR NAME="charge_authval">&gt; below:
-                <TMPL_ELSIF NAME="updatefail_nolc_noco"><tr class=borderless><td class=borderless><div class="msg" id="updatefail_nolc_noco" align=center>Update <span class=problem>failed</span>.
+                <TMPL_IF NAME="updatefail_nolc_noco"><tr class=borderless><td class=borderless><div class="msg" id="updatefail_nolc_noco" align=center>Update <span class=problem>failed</span>.
                     Not currently checked out: no patron to charge.
                     <TMPL_IF NAME="lastbor_borrowernumber"><br>Last issued to <a href="/cgi-bin/koha/members/readingrec.pl?borrowernumber=<TMPL_VAR NAME="lastbor_borrowernumber">"><TMPL_VAR NAME="lastbor_name"></a>
                         (<TMPL_VAR NAME="lastbor_cardnumber">), <b>returned <TMPL_VAR NAME="lastbor_returndate"></b><br><br>
@@ -110,13 +73,13 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
                         <input type=hidden name="biblionumber" value="<TMPL_VAR NAME="biblionumber">">
                         <input type=hidden name="itemnumber"   value="<TMPL_VAR NAME="itemnumber">">
                         <input type=hidden name="force_lostcharge_borrowernumber" value="<TMPL_VAR NAME="lastbor_borrowernumber">">
-                        <input type=hidden name="itemlost" value="1">
+                        <input type=hidden name="itemlost" value="lost">
                         <input type="button" value="No, set to a different Lost status"  style="font-size:10pt;" onclick="
                            document.getElementById('updatefail_nolc_noco').innerHTML = 'Set a different Lost status below:';">
                         <input type="submit" value="Yes, charge as lost" style="font-size:10pt;">
                         </form>
                     <TMPL_ELSE><br>Last borrower unkown (may have anonymised reading history).
-                        <br>Cannot force &lt;<TMPL_VAR NAME="charge_authval">&gt;.
+                        <br>Cannot set item to &lt;lost&gt;.
                         <br>Set to a different Lost status below:
                     </TMPL_IF>
                     </div></td></tr>
@@ -125,23 +88,17 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
                 <tr class=borderless><td class=borderless>
                 <!-- TMPL_IF NAME="CAN_user_circulate_change_lost_status" -->
                     <form action="updateitem.pl" method="post">
-                    <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
-                    <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" />
                     <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-                    <select name="itemlost" >
+                    <select name="itemlost" data-initial-value="<!-- TMPL_VAR itemlost -->">
             <!-- TMPL_LOOP NAME="itemlostloop" -->
                 <!-- TMPL_IF NAME="selected" -->
-                        <option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option>
+                        <option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option>
                 <!-- TMPL_ELSE -->
-                        <option value="<!-- TMPL_VAR NAME="authorised_value" -->"><!-- TMPL_VAR NAME="lib" --></option>
+                        <option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="lib" --></option>
                 <!-- /TMPL_IF -->
             <!-- /TMPL_LOOP -->
                     </select>
-                    <input type="hidden" name="wthdrawn" value="<!-- TMPL_VAR NAME="wthdrawn" -->" />
-                    <input type="hidden" name="damaged" value="<!-- TMPL_VAR NAME="damaged" -->" />
-                    <input type="hidden" name="otherstatus" value="<!-- TMPL_VAR NAME="otherstatus" -->" />
-                    <input type="hidden" name="suppress" value="<!-- TMPL_VAR NAME="suppress" -->" />
-                    <input type="submit" name="submit" class="submit" value="Set Status" /></form>
+                    <input type="submit" name="submit" class="submit setLostValue" value="Set Status" /></form>
                 <!-- TMPL_ELSE -->
                     <!-- TMPL_LOOP NAME="itemlostloop" -->
                         <!-- TMPL_IF NAME="selected" -->
@@ -151,12 +108,11 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
                     &nbsp;
                 <!-- /TMPL_IF -->
                 </td></tr></table>
-            </li>
-            <li><span class="label">Damaged Status:</span>
+                </td>
+            </tr>
+            <tr><th>Damaged Status:</th><td>
                 <!-- TMPL_IF NAME="CAN_user_circulate" -->
                     <form action="updateitem.pl" method="post" name="f_<TMPL_VAR NAME="itemnumber">">
-                    <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
-                    <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" />
                     <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
                     <select name="damaged" onchange="damagedHasHolds(this.form,<TMPL_VAR NAME="biblionumber">,<TMPL_VAR NAME="itemnumber">)">
             <!-- TMPL_LOOP NAME="itemdamagedloop" -->
@@ -169,10 +125,6 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
                     </select>
                     <input type=hidden name="onlyiteminbib" value=0>
                     <input type=hidden name="nukeHolds" value=0>
-                    <input type="hidden" name="wthdrawn" value="<!-- TMPL_VAR NAME="wthdrawn" -->" />
-                    <input type="hidden" name="itemlost" value="<!-- TMPL_VAR NAME="itemlost" -->" />
-                    <input type="hidden" name="otherstatus" value="<!-- TMPL_VAR NAME="otherstatus" -->" />
-                    <input type="hidden" name="suppress" value="<!-- TMPL_VAR NAME="suppress" -->" />
                     <input type="submit" name="submit" class="submit" value="Set Status" 
                     id="submitdamaged" style="display:none">
                 <div id="damagedmsg_<TMPL_VAR NAME="itemnumber">"></div>
@@ -185,36 +137,29 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
                     <!-- /TMPL_LOOP -->
                     &nbsp;
                 <!-- /TMPL_IF -->
-            </li>
+                </td>
+            </tr>
 
-            <form action="updateitem.pl" method="post">
-            <li><span class="label">Withdrawn?:</span><!-- TMPL_IF NAME="wthdrawn" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF -->
-                <!-- TMPL_IF NAME="CAN_user_circulate" -->
-                    <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
-                    <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" />
+            <tr><th>Withdrawn:</th><td><!-- TMPL_IF NAME="wthdrawn" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="CAN_user_circulate" -->
+                    <form action="updateitem.pl" method="post">
                     <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-                    <input type="hidden" name="itemlost" value="<!-- TMPL_VAR NAME="itemlost" -->" />
-                    <input type="hidden" name="damaged" value="<!-- TMPL_VAR NAME="damaged" -->" />
-                    <input type="hidden" name="otherstatus" value="<!-- TMPL_VAR NAME="otherstatus" -->" />
-                    <input type="hidden" name="suppress" value="<!-- TMPL_VAR NAME="suppress" -->" />
-
             <!-- TMPL_IF NAME="wthdrawn" -->
                     <input type="hidden" name="wthdrawn" value="0" /><!-- TMPL_ELSE --><input type="hidden" name="wthdrawn" value="1" />
             <!-- /TMPL_IF -->
 
-            <!-- TMPL_UNLESS NAME="notmine" -->
-            <!-- TMPL_IF NAME="wthdrawn" -->
-                    <input type="submit" name="submit" class="submit" value="Restore" /><!-- TMPL_ELSE --><input type="submit" name="submit" class="submit" value="Withdraw" />
+	            <!-- TMPL_UNLESS NAME="notmine" -->
+	                <!-- TMPL_IF NAME="wthdrawn" -->
+	                    <input type="submit" name="submit" class="submit" value="Restore" /><!-- TMPL_ELSE --><input type="submit" name="submit" class="submit" value="Withdraw" />
+	                <!-- /TMPL_IF -->
+	            <!-- /TMPL_UNLESS -->
+                </form>
             <!-- /TMPL_IF -->
-            <!-- /TMPL_UNLESS -->
-                <!-- /TMPL_IF -->
-            </form>
-            </li>
-            <li><span class="label">Other Item Status:</span>
+            </td>
+            </tr>
+            <tr><th>Other Item Status:</th><td>
                 <!-- TMPL_IF NAME="CAN_user_circulate" -->
                     <form action="updateitem.pl" method="post">
-                    <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
-                    <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" />
                     <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
                     <select name="otherstatus" >
             <!-- TMPL_LOOP NAME="itemstatusloop" -->
@@ -225,9 +170,6 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
                 <!-- /TMPL_IF -->
             <!-- /TMPL_LOOP -->
                     </select>
-                    <input type="hidden" name="wthdrawn" value="<!-- TMPL_VAR NAME="wthdrawn" -->" />
-                    <input type="hidden" name="damaged" value="<!-- TMPL_VAR NAME="damaged" -->" />
-                    <input type="hidden" name="itemlost" value="<!-- TMPL_VAR NAME="itemlost" -->" />
                     <input type="submit" name="submit" class="submit" value="Set Status" /></form>
                 <!-- TMPL_ELSE -->
                     <!-- TMPL_LOOP NAME="itemstatusloop" -->
@@ -236,76 +178,64 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
                         <!-- /TMPL_IF -->
                     <!-- /TMPL_LOOP -->
                     &nbsp;
-                <!-- /TMPL_IF -->
-            </li>
-	<!-- TMPL_IF NAME="ShowSupressStatus" -->
-            <li><span class="label">Suppress Status:</span>
-                <!-- TMPL_IF NAME="CAN_user_circulate" -->
-                    <form action="updateitem.pl" method="post">
-                    <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
-                    <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" />
-                    <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-                    <select name="suppress" <!-- TMPL_IF NAME="notmine" -->readonly disabled<!-- /TMPL_IF --> />
-            <!-- TMPL_LOOP NAME="itemsuppressloop" -->
-                <!-- TMPL_IF NAME="selected" -->
-                    <option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option>
-                <!-- TMPL_ELSE -->
-                    <option value="<!-- TMPL_VAR NAME="authorised_value" -->"><!-- TMPL_VAR NAME="lib" --></option>
-                <!-- /TMPL_IF -->
-            <!-- /TMPL_LOOP -->
-                    </select>
-                    <input type="hidden" name="wthdrawn" value="<!-- TMPL_VAR NAME="wthdrawn" -->" />
-                    <input type="hidden" name="itemlost" value="<!-- TMPL_VAR NAME="itemlost" -->" />
-                    <input type="hidden" name="damaged" value="<!-- TMPL_VAR NAME="damaged" -->" />
-                    <!-- TMPL_UNLESS NAME="notmine" -->
-                    <input type="submit" name="submit" class="submit" value="Set Status" /></form>
-                    <!-- /TMPL_UNLESS -->
-                <!-- TMPL_ELSE -->
-                    <!-- TMPL_LOOP NAME="itemsuppressloop" -->
-                        <!-- TMPL_IF NAME="selected" -->
-                            <!-- TMPL_VAR NAME="lib" -->
-                        <!-- /TMPL_IF -->
-                    <!-- /TMPL_LOOP -->
-                    &nbsp;
-                <!-- /TMPL_IF -->
-            </li>
-	<!-- /TMPL_IF -->
-            </ol></div>
+                <!-- /TMPL_IF --></td>
+            </tr>
+            </table>
+            </div>
             <div class="listgroup"><h4>History</h4>
-            <ol class="bibliodetails">
-                <li><span class="label">
-                Accession Date:</span> <!-- TMPL_VAR NAME="dateaccessioned" --></li>
-
-                <li><span class="label">Total Renewals:</span> <!-- TMPL_VAR NAME="renewals" -->&nbsp;</li>
-
-                <li><span class="label">Total Checkouts:</span><!-- TMPL_IF NAME="issues" --><!-- TMPL_VAR NAME="issues" --><!-- TMPL_ELSE -->0<!-- /TMPL_IF -->  (<a href="/cgi-bin/koha/circ/bookcount.pl?&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;bi=<!-- TMPL_VAR NAME="biblioitemnumber" -->&amp;itm=<!-- TMPL_VAR NAME="itemnumber" -->">View item's checkout history</a>)</li>
-
-
-                <li><span class="label">Last seen:</span> <!-- TMPL_VAR NAME="datelastseen" -->&nbsp;</li>
-                <li><span class="label">Last borrowed:</span> <!-- TMPL_VAR NAME="datelastborrowed" -->&nbsp;</li>
-                <!-- TMPL_IF NAME="card0" --><li><span class="label">Last Borrower:</span> <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrower0" -->"><!-- TMPL_VAR NAME="card0" --></a>&nbsp;</li><!-- /TMPL_IF -->
-                <!-- TMPL_IF NAME="card1" --><li><span class="label">Previous Borrower:</span> <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrower1" -->"><!-- TMPL_VAR NAME="card1" --></a>&nbsp;</li><!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="card2" --><li><span class="label">Previous Borrower:</span> <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrower2" -->"><!-- TMPL_VAR NAME="card2" --></a>&nbsp;</li><!-- /TMPL_IF -->
-                <li><span class="label">Paid for?:</span> <!-- TMPL_VAR NAME="paidfor" -->&nbsp;</li>
-            <li><span class="label">Public Note:</span>
-                <!-- TMPL_IF NAME="CAN_user_circulate" -->
-              <form class="inline" action="updateitem.pl" method="post"><input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
-                    <input type="hidden" name="biblioitemnumber" value="<!-- TMPL_VAR Name="biblioitemnumber" -->" /><input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
-                    <textarea name="itemnotes" rows="2" cols="30" <!-- TMPL_IF NAME="notmine" -->readonly disabled<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="itemnotes" --></textarea>
-                    <!-- TMPL_UNLESS NAME="notmine" -->
-                    <input type="submit" name="submit" class="submit" value="Update" /> 
-                    <!-- /TMPL_UNLESS -->
-              </form>
-            </li>
-            </ol>
-                <!-- TMPL_ELSE -->
-                    <!-- TMPL_VAR NAME="itemnotes" -->
-                    &nbsp;
-                <!-- /TMPL_IF -->
+	            <table class="bibliodetails">
+	                <tr><th>Accession Date:</th><td> <!-- TMPL_VAR NAME="dateaccessioned" --></td></tr>
+	                <tr><th>Total Renewals:</th><td> <!-- TMPL_VAR NAME="renewals" --></td></tr>
+	                <tr><th>Total Checkouts:</th><td><!-- TMPL_IF NAME="issues" --><!-- TMPL_VAR NAME="issues" --><!-- TMPL_ELSE -->0<!-- /TMPL_IF -->  (<a href="/cgi-bin/koha/circ/bookcount.pl?&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itm=<!-- TMPL_VAR NAME="itemnumber" -->">View item's checkout history</a>)</td></tr>
+	
+	                <tr><th>Last seen:</th><td> <!-- TMPL_VAR NAME="datelastseen" --></td></tr>
+	                <tr><th>Last borrowed:</th><td> <!-- TMPL_VAR NAME="datelastborrowed" --></td></tr>
+	                <!-- TMPL_IF NAME="card0" --><tr><th>Last Borrower:</th><td> <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrower0" -->"><!-- TMPL_VAR NAME="card0" --></a></td></tr><!-- /TMPL_IF -->
+	                <!-- TMPL_IF NAME="card1" --><tr><th>Previous Borrower:</span> <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrower1" -->"><!-- TMPL_VAR NAME="card1" --></a></td></tr><!-- /TMPL_IF -->
+			        <!-- TMPL_IF NAME="card2" --><tr><th>Previous Borrower:</span> <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME="borrower2" -->"><!-- TMPL_VAR NAME="card2" --></a></td></tr><!-- /TMPL_IF -->
+	                <tr><th>Public Note:</th><td>
+	                <!-- TMPL_IF NAME="CAN_user_circulate" -->
+	                  <form class="inline" action="updateitem.pl" method="post">
+	                    <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR Name="itemnumber" -->" />
+	                    <textarea name="itemnotes" rows="2" cols="30" <!-- TMPL_IF NAME="notmine" -->readonly disabled<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="itemnotes" --></textarea>
+	                    <!-- TMPL_UNLESS NAME="notmine" -->
+	                    <input type="submit" name="submit" class="submit" value="Update" /> 
+	                    <!-- /TMPL_UNLESS -->
+	                  </form>
+	                <!-- TMPL_ELSE -->
+	                    <!-- TMPL_VAR NAME="itemnotes" -->
+	                <!-- /TMPL_IF -->
+	                </td></tr>
+	            </table>
             </div>
 </div>
 <!-- /TMPL_LOOP -->
 <script>
+$(document).ready(function(){
+  $("input.setLostValue").click(function(){
+    var $itemlost = $(this.form).children("select[name='itemlost']");
+    if( $itemlost.val() == $itemlost.data('initialValue')){
+      return false;
+    }
+    if($itemlost.val() == 'lost' && $itemlost.data('initialValue') != 'lost'){
+      if(confirm("Setting this value to 'lost' will charge lost fees to the most recent borrower.")){
+        return true;
+      } else {
+        $itemlost.val($itemlost.data('initialValue'));
+        return false;
+      }
+    }
+    if($itemlost.val() != 'lost' && $itemlost.data('initialValue') == 'lost'){
+      if(confirm("Removing 'lost' status will waive any lost/replacement fees for the charged patron.")){
+        return true;
+      } else {
+        $itemlost.val($itemlost.data('initialValue'));
+        return false;
+      }
+    }
+    return true;
+  })
+});
 function damagedHasHolds(f,biblionumber,itemnumber) {
    var p  = '<TMPL_VAR NAME="AllowHoldsOnDamagedItems">';
    if (p == '1') { 

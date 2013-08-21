@@ -96,11 +96,6 @@ address each time.
 How many days to wait, including holidays and weekends, after the last billing
 notice to send the patron to a debt collection agency.
 
-=item B<--minimum>
-
-Required total amount due before the script stops sending reports to the debt
-collection agency.
-
 =item B<--subject>
 
 Subject and body of submitted email.
@@ -124,6 +119,9 @@ use C4::Overdues;
 use C4::Accounts;
 use C4::Members;
 use C4::Letters;
+use C4::Category;
+use Koha::Money;
+
 use Getopt::Long;
 use Pod::Usage;
 
@@ -133,7 +131,6 @@ my $subject = 'Debt Collect';
 my $wait = 21;
 my $max_wait = 365;
 my $send_fine = 10;
-my $minimum = C4::Context->preference('OwedNotificationValue');
 
 GetOptions(
     'h|help' => \$help,
@@ -146,7 +143,6 @@ GetOptions(
     'w|wait=i' => \$wait,
     'max-wait=i' => \$max_wait,
     'ignore=s' => \@ignored,
-    'min' => \$minimum,
     'subject=s' => \$subject,
     'o|once' => \$once,
 ) or pod2usage( 2 );
@@ -175,102 +171,108 @@ my @updated;
 
 @ignored = split(/,/,join(',',@ignored));
 
+my %categories = map { $_->categorycode => $_->{fines_alert_threshold}}  C4::Category->all();
+my $acct_types = C4::Accounts::getaccounttypes();
+
+
 # If $branch is not set, it is the same as not passing it
 foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignored ) } ) {
+    
     print "$borrower->{firstname} $borrower->{surname} ($borrower->{cardnumber}): " if ( $verbose );
     if ( $borrower->{exclude_from_collection} ) {
         print "manually skipped\n" if ( $verbose );
         next;
     }
-    my $sent_fine = GetFineByDescription( $borrower->{'borrowernumber'}, 'A', "Sent to collections agency" );
-    $sent_fine = GetFineByDescription( $borrower->{'borrowernumber'}, 'A', $once ) if ( !($sent_fine || $sent_fine->{'amountoutstanding'}) && $once && $once ne '1' ); # Since $once might be a string
-    my ($total,$acctlines) = C4::Accounts::MemberAllAccounts(borrowernumber=>$borrower->{'borrowernumber'});
-    my $total_cents = sprintf('%d', $total*100);
-    my $last_reported_cents
-        = sprintf('%d', $borrower->{last_reported_amount}*100);
+    $borrower->{fines_alert_threshold} = $categories{$borrower->{categorycode}};
+    
+    my $totalowed = C4::Accounts::gettotalowed($borrower->{'borrowernumber'});
 
-    if ( $borrower->{'last_reported_date'} && $last_reported_cents > 0 )
-    {
+    my $last_reported_amt = Koha::Money->new($borrower->{last_reported_amount});
+
+    if ( $borrower->{'last_reported_date'} && $last_reported_amt > 0 ){
         if ( $borrower->{'last_reported_date'} eq $today ) {
             print "skipping, already reported today\n" if ( $verbose );
             next;
         }
 
-        if ( $borrower->{last_reported_amount} < $minimum ) {
+        if ( $last_reported_amt < $borrower->{fines_alert_threshold} ) {
             MarkMemberReported( $borrower->{'borrowernumber'}, 0 ) if ( $confirm );
             next;
         }
-
-        my $diff = $total - $borrower->{last_reported_amount}; # Amount we have to reconcile
-        if ( abs($diff) < 0.01 ) {
+        if ( $totalowed == $borrower->{last_reported_amount}) {
             print "skipping, no difference\n" if ( $verbose );
             next;
         }
-
         print "updating\n" if ( $verbose );
 
-        my ( $additional, $waived, $paid, $returned ) = ( 0, 0, 0, 0 );
+        my $additional = Koha::Money->new();  # new fines
+        my $paid = Koha::Money->new();  # new payments
+        my $waived = C4::Accounts::get_total_waived_amount($borrower->{'borrowernumber'}, $borrower->{'last_reported_date'});
+        my $returned = 0; # No reliable way to detect returned items at this time
 
-        foreach my $acctline ( @$acctlines ) {
-            next if ( $acctline->{'date'} lt $borrower->{'last_reported_date'} );
-            next unless ( $acctline->{'amount'} );
-
-            # The amounts, waived, paid, etc. are required to be negative
-
-            if ( $acctline->{'amount'} < 0 ) {
-                $diff -= $acctline->{'amount'};
-                if ( $acctline->{'type'} && $acctline->{'type'} eq 'W' ) {
-                    $waived += $acctline->{'amount'};
-                } else {
-                    # No reliable way to detect returned items at this time
-                    $paid += $acctline->{'amount'};
-                }
-            } elsif ( $acctline->{'amountoutstanding'} ) {
-                $diff -= $acctline->{'amountoutstanding'};
-                $additional += $acctline->{'amountoutstanding'};
-            }
+        for my $fee ( @{C4::Accounts::getcharges($borrower->{'borrowernumber'}, since=>$borrower->{'last_reported_date'})} ) {
+            $additional += $fee->{'amount'};  # Note we do the whole amount since waives and payments are included below.
         }
-        
-        if ( $diff < -0.009 ) {
-            $paid += $diff;
-        } elsif ( $diff > 0.009 ) {
-            $additional += $diff;
+        for my $credit ( @{C4::Accounts::getpayments($borrower->{'borrowernumber'}, since=>$borrower->{'last_reported_date'})}){
+            $paid += $credit->{amount};                
+        }
+
+        # If our numbers don't add up, cheat and adjust additional or paid.
+        my $diff = $totalowed - $borrower->{last_reported_amount} - $additional - $paid - $waived;
+        if($diff){
+            $verbose and warn "Additional fees and payments did not add up to new totalowed.";
+        }
+        if($diff < 0){
+            $paid += $diff;            
+        } else {
+            $additional += $diff;            
         }
 
         push @updated, AddBorrowerUpdate( {
             %$borrower,
-            total => $total,
-            additional => $additional,
+            total => $totalowed->value,
+            additional => $additional->value,
             returned => $returned,
-            waived => $waived,
-            paid => $paid,
+            waived => $waived->value,
+            paid => $paid->value,
         } );
+           
     } else {
-        if ( $total < $minimum ) {
-            print "skipping, has only $total in fines\n" if ( $verbose );
+        if ( $totalowed < $borrower->{fines_alert_threshold} ) {
+            print "skipping, has only $totalowed in fines\n" if ( $verbose );
             next;
         }
 
-        if ( $confirm && !( $once && $sent_fine && $sent_fine->{'amountoutstanding'} ) ) {
-            C4::Accounts::manualinvoice( 
-               borrowernumber => $borrower->{borrowernumber},
-               description    => 'Sent to collections agency', 
-               accounttype    => 'A', 
-               amount         => $send_fine,
-               notmanual      => 1,
-            );
-            $total += $send_fine;
+         # Following original code here, we test for a collections fee that isn't resolved.
+         # If the collections fee has been resolved, they get charged again.  This is probably /usually/ good enough.
+         my $has_unpaid_collections_fee;
+         if($once){
+            for my $fee (@{C4::Accounts::getcharges($borrower->{'borrowernumber'}, accounttype=>'COLLECTIONS')}){
+                $has_unpaid_collections_fee = 1 if($fee->{amountoutstanding});
+            }             
+         }
+
+         if ( $confirm && !($once && $has_unpaid_collections_fee)){
+            $verbose && warn "charging collections fee.";
+            C4::Accounts::CreateFee({ 
+                borrowernumber => $borrower->{borrowernumber},
+                description    => 'Sent to collections agency', 
+                accounttype    => 'COLLECTIONS', 
+                amount         => Koha::Money->new($send_fine),
+                branchcode     => $borrower->{branchcode},
+            });
+            $totalowed += $send_fine;
         }
 
         print "submitting\n" if ( $verbose );
         push @submitted, AddBorrowerSubmit( {
             %$borrower,
-            total => $total,
+            total => $totalowed->value,
             earliest_due => GetEarliestDueDate( $borrower->{'borrowernumber'} ) || '',
         } );   
     }
 
-    MarkMemberReported( $borrower->{'borrowernumber'}, $total ) if ( $confirm );
+    MarkMemberReported( $borrower->{'borrowernumber'}, $totalowed->value ) if ( $confirm );
 }
 
 my @attachments;
