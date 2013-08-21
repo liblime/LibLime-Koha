@@ -250,9 +250,27 @@ function selectValueSet(selectName, Value) {
                     <td><input name="maxissueqty" size="3" value="<!-- TMPL_VAR NAME="default_maxissueqty" -->"/></td>
                     <td>
                         <select name="holdallowed">
-                            <option value="2">From Any Library</option>
-                            <option value="1">From Home Library</option>
-                            <option value="0">No Holds Allowed</option>
+                            <!-- TMPL_IF NAME="default_holdallowed_any" -->
+                            <option value="2" selected="selected">
+                            <!-- TMPL_ELSE -->
+                            <option value="2">
+                            <!-- /TMPL_IF -->
+                                From Any Library
+                            </option>
+                            <!-- TMPL_IF NAME="default_holdallowed_same" -->
+                            <option value="1" selected="selected">
+                            <!-- TMPL_ELSE -->
+                            <option value="1">
+                            <!-- /TMPL_IF -->
+                                From Home Library
+                            </option>
+                            <!-- TMPL_IF NAME="default_holdallowed_none" -->
+                            <option value="0" selected="selected">
+                            <!-- TMPL_ELSE -->
+                            <option value="0">
+                            <!-- /TMPL_IF -->
+                                No Holds Allowed
+                            </option>
                         </select>
                     </td>
                     <td><input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->"/><input type="submit" value="Add" class="submit" /></td>
@@ -322,7 +340,6 @@ function selectValueSet(selectName, Value) {
                 <tr>
                     <td>
                         <select name="categorycode">
-                            <option value="*">Default</option>
                         <!-- TMPL_LOOP NAME="categoryloop" -->
                             <option value="<!-- TMPL_VAR NAME="categorycode" -->"><!-- TMPL_VAR NAME="description" --></option>
                         <!-- /TMPL_LOOP -->

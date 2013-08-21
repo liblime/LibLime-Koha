@@ -131,41 +131,44 @@ elsif ($op eq 'add') {
 elsif ($op eq "set-branch-defaults") {
     my $categorycode  = $input->param('categorycode');
     my $maxissueqty   = $input->param('maxissueqty');
+    my $holdallowed   = $input->param('holdallowed');
     $maxissueqty =~ s/\s//g;
     $maxissueqty = undef if $maxissueqty !~ /^\d+/;
+    $holdallowed =~ s/\s//g;
+    $holdallowed = undef if $holdallowed !~ /^\d+/;
 
     if ($branch eq "*") {
         my $sth_search = $dbh->prepare("SELECT count(*) AS total
                                         FROM default_circ_rules");
         my $sth_insert = $dbh->prepare("INSERT INTO default_circ_rules
-                                        (maxissueqty)
-                                        VALUES (?)");
+                                        (maxissueqty, holdallowed)
+                                        VALUES (?, ?)");
         my $sth_update = $dbh->prepare("UPDATE default_circ_rules
-                                        SET maxissueqty = ?");
+                                        SET maxissueqty = ?, holdallowed = ?");
 
         $sth_search->execute();
         my $res = $sth_search->fetchrow_hashref();
         if ($res->{total}) {
-            $sth_update->execute($maxissueqty);
+            $sth_update->execute($maxissueqty, $holdallowed);
         } else {
-            $sth_insert->execute($maxissueqty);
+            $sth_insert->execute($maxissueqty, $holdallowed);
         }
     } else {
         my $sth_search = $dbh->prepare("SELECT count(*) AS total
                                         FROM default_branch_circ_rules
                                         WHERE branchcode = ?");
         my $sth_insert = $dbh->prepare("INSERT INTO default_branch_circ_rules
-                                        (branchcode, maxissueqty)
-                                        VALUES (?, ?)");
+                                        (branchcode, maxissueqty, holdallowed)
+                                        VALUES (?, ?, ?)");
         my $sth_update = $dbh->prepare("UPDATE default_branch_circ_rules
-                                        SET maxissueqty = ?
+                                        SET maxissueqty = ?, holdallowed = ?
                                         WHERE branchcode = ?");
         $sth_search->execute($branch);
         my $res = $sth_search->fetchrow_hashref();
         if ($res->{total}) {
-            $sth_update->execute($maxissueqty, $branch);
+            $sth_update->execute($maxissueqty, $holdallowed, $branch);
         } else {
-            $sth_insert->execute($branch, $maxissueqty);
+            $sth_insert->execute($branch, $holdallowed, $maxissueqty);
         }
     }
 }
@@ -349,26 +352,27 @@ while (my $row = $sth_branch_cat->fetchrow_hashref) {
 }
 my @sorted_branch_cat_rules = sort { $a->{'humancategorycode'} cmp $b->{'humancategorycode'} } @branch_cat_rules;
 
-my $sth_branch_default;
+my $sth_defaults;
 if ($branch eq "*") {
     # add global default
-    $sth_branch_default = $dbh->prepare("SELECT maxissueqty
-                                         FROM default_circ_rules");
-    $sth_branch_default->execute();
+    $sth_defaults = $dbh->prepare("SELECT maxissueqty, holdallowed
+                                   FROM default_circ_rules");
+    $sth_defaults->execute();
 } else {
     # add default for branch
-    $sth_branch_default = $dbh->prepare("SELECT maxissueqty
-                                         FROM default_branch_circ_rules
-                                         WHERE branchcode = ?");
-    $sth_branch_default->execute($branch);
+    $sth_defaults = $dbh->prepare("SELECT maxissueqty, holdallowed
+                                   FROM default_branch_circ_rules
+                                   WHERE branchcode = ?");
+    $sth_defaults->execute($branch);
 }
 
-if (my ($default_maxissueqty) = $sth_branch_default->fetchrow_array()) {
-    push @sorted_branch_cat_rules, {
-                                      default_humancategorycode => 1,
-                                      categorycode => '*',
-                                      maxissueqty => $default_maxissueqty,
-                                    };
+my $defaults = $sth_defaults->fetchrow_hashref;
+
+if ($defaults) {
+    $template->param(default_holdallowed_none => 1) if ($defaults->{holdallowed}== 0);
+    $template->param(default_holdallowed_same => 1) if ($defaults->{holdallowed}== 1);
+    $template->param(default_holdallowed_any  => 1) if ($defaults->{holdallowed}== 2);
+    $template->param(default_maxissueqty => $defaults->{maxissueqty});
 }
 
 # note undef maxissueqty so that template can deal with them
