@@ -318,6 +318,16 @@ sub DeleteAccruingFine {
     $sth_del->execute($issue_id);
 }
 
+=head ClearAccruingFines( )
+
+Truncates fees_accruing table.
+
+=cut
+
+sub ClearAccruingFines {
+    C4::Context->dbh()->do('TRUNCATE fees_accruing');
+}
+
 
 =head2 GetOverduesForBranch
 

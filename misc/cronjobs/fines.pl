@@ -94,6 +94,12 @@ INIT {
         "Delimiter: '$delim'\n";
 }
 
+# Truncate fees_accruing 
+# Without this, if Koha were to fail to remove an accruing fine
+# when an item was made no longer overdue, the estimated fee would persist indefinitely.
+
+C4::Overdues::ClearAccruingFines();
+
 my $data = Getoverdues();
 my $overdueItemsCounted = 0;
 my %calendars = ();
