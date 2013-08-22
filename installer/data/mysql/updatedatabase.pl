@@ -5059,7 +5059,7 @@ $DBversion = '4.09.00.023';
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
     $dbh->do(" DELETE FROM `issues` WHERE branchcode NOT IN ( SELECT branchcode from branches )"); 
-    $dbh->do(" DELETE FROM `old_issues` WHERE branchcode NOT IN ( SELECT branchcode from branches )");
+    $dbh->do(" UPDATE `old_issues` SET branchcode=NULL WHERE branchcode NOT IN ( SELECT branchcode from branches )");
     $dbh->do(" ALTER TABLE `issues` DROP INDEX `bordate` ");   
     $dbh->do(" ALTER TABLE `issues` ADD CONSTRAINT `issues_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
     $dbh->do(" ALTER TABLE `old_issues` DROP INDEX `old_bordate` ");
@@ -5151,7 +5151,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         itemnumber int(11) default NULL,
         description mediumtext default NULL,
         PRIMARY KEY (id),
-        CONSTRAINT `fees_ibfk1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `fees_bor` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ");
 
    $dbh->do("CREATE TABLE `payments` (
@@ -5202,8 +5202,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $sth->execute();
     my ($threshval) = $sth->fetchrow;
     $dbh->do("UPDATE `categories` SET fines_alert_threshold=$threshval");
-    $dbh->do('DELETE FROM systempreferences where variable="OwedNotificationValue"');
-    $dbh->do('UPDATE systempreferences SET explanation="If ON,allows a notification to be sent on total amount owed.  The notification threshold is set in Patron Categories." where variable="EnableOwedNotification"');
+    $dbh->do('DELETE FROM systempreferences where variable IN ("OwedNotificationValue", "EnableOwedNotification")');
 
     $dbh->do("ALTER TABLE `issuingrules` DROP COLUMN reservecharge");
     $dbh->do("ALTER TABLE `issuingrules` ADD COLUMN expired_hold_fee decimal(12,2) default NULL");
@@ -5261,7 +5260,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
     my $sth_itemstatus = $dbh->prepare("INSERT INTO itemstatus (statuscode,description,suppress) VALUES (?,?,1)");
     while( my ($lostval, $lib) = $sth->fetchrow){
-        say "$lostval => $lib";
+        #say "$lostval => $lib";
         my %lv_map;
         my %new_itemstatus;
         for ($lib){
@@ -5284,12 +5283,12 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
             # do in two passes since we don't want to clobber existing items.otherstatus values.
             # in those cases, we lose some information.
             my $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET i.itemlost=? WHERE o.itemlost=? AND otherstatus IS NOT NULL AND otherstatus <> ''");
-            warn $sth_upd->execute($lv_map{$lostval}->{lost}, $lostval);
+            $sth_upd->execute($lv_map{$lostval}->{lost}, $lostval);
             $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET i.itemlost=?, otherstatus=? WHERE o.itemlost=? AND otherstatus IS NULL OR otherstatus=''");
-            warn $sth_upd->execute($lv_map{$lostval}->{lost},$lv_map{$lostval}->{itemstatus}, $lostval);
+            $sth_upd->execute($lv_map{$lostval}->{lost},$lv_map{$lostval}->{itemstatus}, $lostval);
         } else {
             my $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET i.itemlost=? WHERE o.itemlost=?");
-            warn $sth_upd->execute($lv_map{$lostval}->{lost}, $lostval);
+            $sth_upd->execute($lv_map{$lostval}->{lost}, $lostval);
         }
     }
     #  All itemlost values should now be in range for enum.

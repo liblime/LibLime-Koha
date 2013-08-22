@@ -3424,6 +3424,7 @@
        "options" : null,
        "value" : null,
        "type" : "YesNo",
+       "hidden" : false,
        "tags" : [
          "Circulation"
       ]
@@ -3443,6 +3444,7 @@
       "options" : null,
       "value" : null,
       "type" : "free",
+      "hidden" : false,
       "tags" : [
          "Circulation"
       ]

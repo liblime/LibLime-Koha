@@ -468,7 +468,7 @@ sub do_patron{
                             description => $reversed_payments{$f}->{description},
                             notes       => sprintf("accountno:%d",$f),
                          };
-                ApplyCredit( $fee , $trans );
+                C4::Accounts::ApplyCredit( $fee , $trans );
                 $reversed_payments{$f}->{description} =~ /^Payment for no.(\d+)/;
                 if(defined $1){
                     # get rid of the "paid at" string in the original fine's description, since it is no longer paid (at least here)
@@ -598,14 +598,14 @@ sub do_patron{
    #  See pioneer borrower 651067.
    #  Not likely a coincidence that we are off by the amount of this forgiveness line..
                 $fine->{accounttype} = 'FINE';
-                $fee = CreateFee($fine);
+                $fee = C4::Accounts::CreateFee($fine);
                 my $to_wo = Koha::Money->new($paidfines{$f}->{amount});
                 $trans = {  accounttype  => 'FORGIVE',
                             date         => $paidfines{$f}->{date},
                             amount      => -1*$to_wo + $paidfines{$f}->{amountoutstanding},
                             notes       => 'FFOR accountline',
                          };
-                ApplyCredit( $fee , $trans );
+                C4::Accounts::ApplyCredit( $fee , $trans );
                 $verbose and warn sprintf "FFOR encountered with total forgiveness: %s", 1*$to_wo + $paidfines{$f}->{amountoutstanding};
                 push @logoutput,  sprintf "$borrowernumber\t%s\t FFOR encountered.\n", 1*$to_wo + $paidfines{$f}->{amountoutstanding};
                 delete $paidfines{$f};
@@ -647,7 +647,7 @@ sub do_patron{
                 # (and the corresponding RCR will be handled in %credits).
                 
                     $fine->{accounttype} = 'LOSTITEM';
-                    $fee = CreateFee($fine);
+                    $fee = C4::Accounts::CreateFee($fine);
                     if($paidfines{$f}->{description} =~ /claims returned at no\.(\d+)/){
                         $trans = {  accounttype  => 'CLAIMS_RETURNED',
                                 date         => $payments{$1}->{timestamp},
@@ -667,7 +667,7 @@ sub do_patron{
                                 notes       => 'accountline CR',
                              };
                     }
-                    ApplyCredit( $fee , $trans );
+                    C4::Accounts::ApplyCredit( $fee , $trans );
                     delete $paidfines{$f};
                     $resolved++;
                     next;
@@ -678,7 +678,7 @@ sub do_patron{
                     # Note there are cases where Claims Returned will be 'recharged'; that should generate a new lost item fee, which should be handled on another iteration.
                     # Note also, early ClaimsReturned functionality had these as a 'CR' instead of 'LR'. 
                     $fine->{accounttype} = 'LOSTITEM';
-                    $fee = CreateFee($fine);
+                    $fee = C4::Accounts::CreateFee($fine);
                     if($paidfines{$f}->{description} =~ /claims returned at no\.(\d+)/ && $payments{$1}){
                         $trans = {  accounttype  => 'CLAIMS_RETURNED',
                                 date         => $payments{$1}->{timestamp},
@@ -697,7 +697,7 @@ sub do_patron{
                                 notes       => 'accountline LR',
                              };
                     }
-                    ApplyCredit( $fee , $trans );
+                    C4::Accounts::ApplyCredit( $fee , $trans );
                     delete $paidfines{$f};
                     $resolved++;
                     next;
@@ -724,7 +724,7 @@ sub do_patron{
                     $accounttype = 'LOSTITEM'; 
                 };
                 $fine->{accounttype} = $accounttype;
-                $fee = CreateFee($fine) if($paidfines{$f}->{amount} > 0);
+                $fee = C4::Accounts::CreateFee($fine) if($paidfines{$f}->{amount} > 0);
                 $paidfines{$f}->{fee_id} = $fee->{id};  # for the second pass.
                 
 
@@ -892,7 +892,7 @@ sub do_patron{
                         }
        ### FIXME: This is probably wrong when there is a credit against the lost item fee.
                         delete $payments{$1};
-                        ApplyCredit( $fee , $trans );
+                        C4::Accounts::ApplyCredit( $fee , $trans );
                         delete $paidfines{$f};
                         $resolved++;
                         next;                           
@@ -931,7 +931,7 @@ sub do_patron{
                                         notes       => sprintf("accountno:%d",$payline),
                                         amount      => $to_writeoff,
                                      };
-                            ApplyCredit( $fee , $trans );                             
+                            C4::Accounts::ApplyCredit( $fee , $trans );                             
                         }
                     }
                     
@@ -977,7 +977,7 @@ sub do_patron{
                                         notes       => sprintf("accountno:%d",$payline),
                                         amount      => $payments{$payline}->{amount},
                                      };
-                            ApplyCredit( $fee , $trans );                            
+                            C4::Accounts::ApplyCredit( $fee , $trans );                            
                             delete $payments{$payline};
                         } else {
                             # missing payment line.
@@ -1022,7 +1022,7 @@ sub do_patron{
                                 description => $wo_line->{description},
                                 notes       => sprintf("accountno:%d",$wo_line->{accountno})
                              };
-                    if(ApplyCredit( $fee , $trans )){
+                    if(C4::Accounts::ApplyCredit( $fee , $trans )){
                         $verbose and warn "$borrowernumber Bad writeoff line at $wo_line";
                         push @logoutput,  "$borrowernumber\t$amount_left\tBad writeoff line at $wo_line";
                         $has_discrepancy=1;
@@ -1062,7 +1062,7 @@ sub do_patron{
                                     notes       => sprintf("accountno:%d",$pay_line),
                                     amount      => -1 * $amount_left,
                                  };
-                        ApplyCredit( $fee , $trans );
+                        C4::Accounts::ApplyCredit( $fee , $trans );
                         delete $paidfines{$f};
                         delete $payments{$pay_line};
                         $resolved++;
@@ -1091,7 +1091,7 @@ sub do_patron{
                                         description => $linked_writeoffs{$wo_line}->{description},
                                         notes           => sprintf("accountno:%d",$wo_line)
                                      };
-                            if(ApplyCredit( $fee , $trans )){
+                            if(C4::Accounts::ApplyCredit( $fee , $trans )){
                                 $verbose and warn "$borrowernumber Bad writeoff line at $wo_line";
                                 push @logoutput,  "$borrowernumber Bad writeoff line at $wo_line";
                                 $has_discrepancy=1;
@@ -1131,7 +1131,7 @@ sub do_patron{
                                     notes       => sprintf("accountno:%d",$pay_line),
                                     amount      => -1 * $amount_left,
                                  };
-                        ApplyCredit( $fee , $trans );
+                        C4::Accounts::ApplyCredit( $fee , $trans );
                         delete $paidfines{$f};
                         delete $payments{$pay_line};
                         $resolved++;
@@ -1159,7 +1159,7 @@ sub do_patron{
                                     amount      =>  -1 * $amount_left,
                                     description => $unlinked_writeoffs{$wo_line}->{description},
                                  };
-                        ApplyCredit( $fee , $trans );
+                        C4::Accounts::ApplyCredit( $fee , $trans );
                         delete $paidfines{$f};
                         delete $unlinked_writeoffs{$wo_line};
                         $resolved++;
@@ -1221,7 +1221,7 @@ sub do_patron{
                                     notes           => sprintf("accountno:%d",$refund_accountno),
                                     accounttype     => 'REFUND',
                     };
-                    my $fee = CreateFee($fine);
+                    my $fee = C4::Accounts::CreateFee($fine);
                     $refunds{$refund_accountno}->{fee_id} = $fee->{id};
                     ($unallocated,$unpaid) = C4::Accounts::allocate_payment( payment=>$pmt_inserted, fee=>$fee );
                 } 
@@ -1327,12 +1327,12 @@ sub do_patron{
 
 					my $accounttype = get_fine_accttype($debits{$matched_fee});
                     $fine->{accounttype} = ($accounttype && $ACCT_TYPES{$accounttype}->{class} eq 'fee') ? $accounttype : 'SUNDRY';  # if we don't know the fine type, mark it sundry.
-                    $fee = CreateFee($fine);
+                    $fee = C4::Accounts::CreateFee($fine);
                     $trans = {  accounttype => 'PAYMENT',
                                 date        => $debits{$matched_fee}->{date},
                                 description => $debits{$matched_fee}->{description},
                              };
-                    ApplyCredit( $fee , $trans );
+                    C4::Accounts::ApplyCredit( $fee , $trans );
                     delete $credits{$f};
                     delete $debits{$matched_fee};
                     $resolved++;
@@ -1390,7 +1390,7 @@ sub do_patron{
                 $fine->{accounttype} = 'SUNDRY';  # if we don't know the fine type, mark it sundry.
             }
 
-            my $fee = CreateFee($fine);
+            my $fee = C4::Accounts::CreateFee($fine);
             if($fee){
                 delete $debits{$f};
                 $resolved++;
@@ -1404,7 +1404,7 @@ sub do_patron{
         # This is likely due to a hard cutoff date on migrated fines data.
 
     
-        my $totalowed = gettotalowed($borrowernumber);
+        my $totalowed = C4::Accounts::gettotalowed($borrowernumber);
         my $applied_unallocated_payments_amt = Koha::Money->new();
         my $remaining_payments_amt = Koha::Money->new();
 
@@ -1559,7 +1559,7 @@ PAY:        for my $payment (sort { if(exists $a->{payment_id} && ! exists $b->{
         
         C4::Accounts::RedistributeCredits($borrowernumber);
         
-        $totalowed = gettotalowed($borrowernumber);
+        $totalowed = C4::Accounts::gettotalowed($borrowernumber);
         if(sprintf("%.2f",$totalowed) eq sprintf("%.2f",$balance)){
             $verbose and warn "SUCCESSFUL TRANSLATION TO NEW FEES STRUCTURE.";
         } else {
