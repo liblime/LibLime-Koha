@@ -154,9 +154,10 @@ sub getAllLanguages {
     my $cache = C4::Context->getcache(__PACKAGE__,
                                       {driver => 'RawMemory',
                                        datastore => C4::Context->cachehash});
-    return $cache->compute(
+    my $langs = $cache->compute(
         'all_languages:$current_language', '5m',
         sub {_seed_languages_cache($current_language)});
+    return $langs;
 }
 
 =head2 _get_themes
