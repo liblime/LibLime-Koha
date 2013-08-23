@@ -63,8 +63,9 @@ method update_bibs( ArrayRef[Koha::BareBib] $bibs = $self->bibs) {
             grep {$_->tag >= '100' && $_->subfield('0') ~~ $self->rcn}
             $bbib->marc->fields;
         for my $orig (@fields) {
+            my @ind = $self->transpose_indicators( $orig );
             my $new = MARC::Field->new(
-                $orig->tag, $heading->indicator(1), $heading->indicator(2),
+                $orig->tag, $ind[0], $ind[1],
                 map {$_->[0] => $_->[1]} $heading->subfields );
             $new->add_subfields( '0' => $self->rcn );
             $bbib->marc->insert_fields_after( $orig, $new );

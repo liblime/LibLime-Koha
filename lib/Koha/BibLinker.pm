@@ -35,9 +35,9 @@ method relink_from_headings( Koha::BareBib $bib ) {
             my $auth = $self->find_auth_from_bib_field( $f );
             unless ( $auth->rcn ~~ $f->subfield('0') ) {
                 my $auth_f = $auth->marc->field('1..');
+                my @ind = $auth->transpose_indicators( $f );
                 my $new_f = MARC::Field->new(
-                    $f->tag, $auth_f->indicator(1), $auth_f->indicator(2),
-                    (map {@$_} $auth_f->subfields) );
+                    $f->tag, $ind[0], $ind[1], (map {@$_} $auth_f->subfields) );
 
                 # Copy back uncontrolled subfields and $0
                 my @additional =
