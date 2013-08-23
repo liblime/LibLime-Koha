@@ -180,9 +180,16 @@ func new_stub_from_field(Str $class, MARC::Field $f, Str $citation = undef) {
     $marc->encoding('UTF-8');
     $marc->leader('     nz  a22     o  4500');
 
+    my @ind = (' ', ' ');
+    if ($typecode =~ /^PERSO|^CORPO|^MEETI/) {
+        $ind[0] = $f->indicator(1);
+    }
+    elsif ($typecode eq 'UNIF_TITLE') {
+        $ind[1] = $f->indicator(1);
+    }
+
     my @tags = (
-        [ $auth_type->{auth_tag_to_report},
-          $f->indicator(1), $f->indicator(2), @subfs_1xx ],
+        [ $auth_type->{auth_tag_to_report}, $ind[0], $ind[1], @subfs_1xx ],
         [ '667', '', '', 'a' => 'Machine generated authority record.' ],
         [ '999', '', '', 'z' => 1],
     );
@@ -276,6 +283,20 @@ method summary {
         [ map { { text => $_->as_string } } $self->marc->field('4..') ];
 
     return \%summary;
+}
+
+method transpose_indicators( MARC::Field $f ) {
+    # Given a bib heading, create an indicator set based on
+    # this authority's type and own 1xx indicators
+    my $auth_f = $self->marc->field('1..');
+    my @ind = ( $f->indicator(1), $f->indicator(2) );
+    if ($self->typecode =~ /^PERSO|^CORPO|^MEETI/) {
+        $ind[0] = $auth_f->indicator(1);
+    }
+    elsif ($self->typecode eq 'UNIF_TITLE') {
+        $ind[0] = $auth_f->indicator(2);
+    }
+    return @ind;
 }
 
 __PACKAGE__->meta->make_immutable;
