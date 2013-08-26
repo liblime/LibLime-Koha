@@ -1235,7 +1235,7 @@ sub GetReserveFee {
     my $sth = $dbh->prepare($query);
     $sth->execute($borrowernumber);
     my $data = $sth->fetchrow_hashref;
-    my $fee = KOHA::Money->new($data->{'reservefee'});
+    my $fee = Koha::Money->new($data->{'reservefee'});
 
     if($itemnumber){
         $sth = $dbh->prepare("SELECT reservefee FROM items join itemtypes ON(itype=itemtype) WHERE itemnumber=?");

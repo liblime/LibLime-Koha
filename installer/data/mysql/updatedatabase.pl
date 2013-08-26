@@ -5201,6 +5201,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     my $sth = $dbh->prepare('SELECT value from systempreferences where variable="OwedNotificationValue"');
     $sth->execute();
     my ($threshval) = $sth->fetchrow;
+    $threshval //= 0;
     $dbh->do("UPDATE `categories` SET fines_alert_threshold=$threshval");
     $dbh->do('DELETE FROM systempreferences where variable IN ("OwedNotificationValue", "EnableOwedNotification")');
 
