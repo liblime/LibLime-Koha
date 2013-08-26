@@ -256,12 +256,12 @@ sub do_patron{
     my $sth_actionlogs = $dbh->prepare("SELECT * FROM $actionlogs WHERE module='fines' AND object=? AND timestamp BETWEEN ? AND ? order by action_id desc");
     my $query;
     if($bno){
-        $query = "SELECT DISTINCT borrowernumber FROM accountlines WHERE borrowernumber = $bno";
+        $query = "SELECT DISTINCT borrowernumber FROM archive_accountlines WHERE borrowernumber = $bno";
     } elsif($from){
-        $query = "SELECT DISTINCT borrowernumber FROM accountlines WHERE borrowernumber >=$from";
+        $query = "SELECT DISTINCT borrowernumber FROM archive_accountlines WHERE borrowernumber >=$from";
         $query .= " AND borrowernumber % $workers = $worker_id " if($workers > 1);
     } else {
-        $query = "SELECT DISTINCT borrowernumber FROM accountlines";
+        $query = "SELECT DISTINCT borrowernumber FROM archive_accountlines ";
         $query .= " WHERE borrowernumber % $workers = $worker_id " if($workers > 1);
     }
     $query .= sprintf("LIMIT %d", $limit / $workers) if $limit;
@@ -271,7 +271,7 @@ sub do_patron{
     while(my ($borrowernumber) = $sth->fetchrow_array){
     print WLOG " $borrowernumber\n" if $workerlog;
         my @logoutput;
-        my $sth2 = $dbh->prepare("SELECT * FROM accountlines where borrowernumber=? ");
+        my $sth2 = $dbh->prepare("SELECT * FROM archive_accountlines where borrowernumber=? ");
         $sth2->execute($borrowernumber);
         my $balance = Koha::Money->new();
         my %paidfines = ();
