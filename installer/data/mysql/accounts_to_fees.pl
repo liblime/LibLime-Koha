@@ -163,6 +163,10 @@ if($clear && $bno){
     $dbh->do("DELETE FROM accounttypes where class='invoice' and accounttype <> 'SUNDRY'"); #We keep this invoice type for unidentified fee types.
 }
 
+if($clear){
+    $dbh->do("TRUNCATE fees_accruing");
+}
+
 
 my @protected_accounttypes = (keys %x, values %x);
 my $sth_accttype = $dbh->prepare('SELECT * FROM authorised_values where category="MANUAL_INV"');
@@ -296,6 +300,11 @@ sub do_patron{
             $a->{amountoutstanding} = Koha::Money->new(sprintf("%.2f",$a->{amountoutstanding}));
             $a->{amount} = Koha::Money->new(sprintf("%.2f",$a->{amount}));  # manualinvoice/credit allowed arbitrary precision values...
 
+            # Koha::Money maxes out at 10 billion.
+            # There are cases where barcodes were scanned into amount fields.
+            # We assume anything over $1M is error and we just drop it.
+            next if($a->{amount} > 1000000 || $a->{amount} < -1000000 );
+
             if($a->{amount} == 0 && $a->{amountoutstanding} >= 0 && $a->{accounttype} =~ /^FU?$/ ){
                 # zeroed amount bug, summer 2011.
                 $zeroed_fines{$a->{accountno}} = $a;
@@ -308,7 +317,7 @@ sub do_patron{
             if($a->{accounttype} eq 'FU' && $a->{amount} == $a->{amountoutstanding}){
                 $sth_issue->execute($borrowernumber, $a->{itemnumber});
                 # if still on issue, hopefully we can ignore the fine
-                next if($sth_issue->fetchrow());
+                next if($sth_issue->fetchrow_arrayref());
             }
             # BUG causes duplicate accountno's.
             # We will ignore these, but adjust balance accordingly.
@@ -735,12 +744,21 @@ sub do_patron{
                 my @ha_wo;
                 my @partial_pay;
              
-                while($paidfines{$f}->{description} =~ / (Fine Payment|Waiver of Fine|Adjustment debit|Balancing Entry|Adjustment credit|Misc\. charges|Found|Claimed Return) (\d{4}-\d{2}-\d{2}) (-?\d+\.\d{2})/g){
+                while($paidfines{$f}->{description} =~ / (Fine Payment|Waiver of Fine|Adjustment debit|Balancing Entry|Adjustment credit|Misc\. charges|Found|Claimed Return) (\d{4}-?\d{2}-?\d{2}) (-?\d+\.\d{2})/g){
                     push @partial_pay, {desc=>$1,date=>$2, amt=>$3};
                 }
+
+                # PTFS UPGRADE entries...
+                # If no matching payment by string match above, we add system credit on date of upgrade.
+                if(!scalar @partial_pay){
+                    if($paidfines{$f}->{description} =~ /^PTFS UPGRADE/ && !$paidfines{$f}->{amountoutstanding}){
+                        # Fine was fully credited.
+                        push @partial_pay, {desc => 'PTFS UPGRADE', date => $paidfines{$f}->{timestamp}, amt => -1 *$amount_paid };
+                    }
+                }
+
                 # some migrated payments have no associated accountline, but are tucked in description.
-                # There are several such strings, probabaly these are Pioneer-specific, so this may have to be
-                # adjusted for other sites.
+                # There are several such strings, differing across sites, so this will have to be adjusted for other sites.
                 # rather than adding credits/debits for each, we just sum them and use the orig desc.
                 # this should give us the right amountoutstanding in most cases.
                 # Note there are cases where the original fine winds up as a credit.  These may fail if they were somehow 'paid' against other fines, but I don't see examples of that (yet)
