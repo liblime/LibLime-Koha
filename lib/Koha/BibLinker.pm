@@ -12,12 +12,15 @@ use Method::Signatures;
 
 # $f is a controlled bib field, like a 1xx, 6xx, 7xx, etc.
 method find_auth_from_bib_field( MARC::Field $f ) {
-    my $subfields = Koha::HeadingMap::bib_headings->{$f->tag}{subfields};
-    my $naco = $f->as_naco( subfields => $subfields );
+    my $headmap = Koha::HeadingMap::bib_headings->{$f->tag};
+    my $naco = $f->as_naco( subfields => $headmap->{subfields} );
     my $authid = C4::Context->dbh->selectrow_arrayref(
-        'SELECT authid FROM auth_header WHERE naco = ?', undef, $naco );
+        'SELECT authid FROM auth_header WHERE naco=? AND authtypecode=? '.
+        'ORDER BY datemodified DESC LIMIT 1', undef,
+        $naco, $headmap->{auth_type} );
 
-    Koha::BibLinker::Xcp::NoAuthMatch->throw("No match for $naco")
+    Koha::BibLinker::Xcp::NoAuthMatch->throw(
+        "No match for '$naco' ($headmap->{auth_type})")
           unless $authid;
 
     return Koha::BareAuthority->new( id => $authid->[0] );
