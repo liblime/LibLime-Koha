@@ -318,9 +318,7 @@ sub kocReturnItem {
       $circ->{barcode},
       undef, #branch
       undef, #exemptfine
-      undef, #dropbox,
       $circ->{date}, # iso
-      undef, #tolost
    );
   my $borrower = GetMember( $borrowernumber, 'borrowernumber' );
   
@@ -346,7 +344,13 @@ sub kocReturnItem {
 sub kocMakePayment {
   my ( $circ ) = @_;
   my $borrower = GetMember( $circ->{ 'cardnumber' }, 'cardnumber' );
-  recordpayment( $borrower->{'borrowernumber'}, $circ->{'amount'} );
+    my $credit = { 
+                borrowernumber  => $borrower->{borrowernumber},
+                description     => "Offline circ payment accepted",
+                amount          => sprintf("%.2f",$circ->{'amount'}),
+                accounttype     => 'PAYMENT',
+            };
+  C4::Accounts::manualcredit($credit);
   push( @output, { payment => 1,
     amount => $circ->{'amount'},
     firstname => $borrower->{'firstname'},
