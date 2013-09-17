@@ -199,6 +199,7 @@ sub SeedTemplateWithSubscriptionDefaults($;$) {
     my $template = shift or die;
     my $s_id = shift;
     $template->param(defaults_loop => GetSubscriptionItemFields($s_id));
+    $template->param(getitenabled => C4::Context->preference('GetItAcquisitions'));
     return $template;
 }
 
