@@ -220,6 +220,11 @@ func min_or_zero( Str @strings ) {
     return List::Util::min(@strings) || 0;
 }
 
+func all_true( Str @strings ){
+    # BOOL:  returns true if all evaluate to true (but not if there are no elements to evaluate).
+    return (scalar grep { !$_ } @strings) ? 'false' : 'true';
+}
+
 func fullmarc( MARC::Record $record ) {
     return map {$_->[1]}
         map {$_->subfields}

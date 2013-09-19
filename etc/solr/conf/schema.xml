@@ -273,7 +273,8 @@
     
     <field name="popularity" type="int" indexed="true" stored="true" multiValued="false"/>
 
-    <field name="lost" type="int" indexed="true" stored="true" multiValued="true"/>
+    <field name="lost" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="all-items-lost" type="boolean" indexed="true" stored="true" multiValued="false"/>
     <field name="suppress" type="int" indexed="true" stored="true" multiValued="true"/>
 
     <field name="koha-tag" type="lowercase" indexed="true" stored="false" multiValued="true"/>

@@ -267,8 +267,7 @@ sub _build_query_from_cgi{
     if($self->opac()){
         push @systemlimits, 'suppress:0';
         if (C4::Context->preference('hidelostitems') == 1) {
-            # either lost ge 0 or no value in the lost register
-            push @systemlimits, 'lost:[* TO 0]';
+            push @systemlimits, 'all-items-lost:false';
         }
     } else {
         push(@systemlimits, 'suppress:[0 TO 1]') unless(grep(/^suppress:/, @userlimits));
