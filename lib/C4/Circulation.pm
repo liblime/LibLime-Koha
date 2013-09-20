@@ -2034,23 +2034,17 @@ sub GetUpcomingDueIssues {
     my $params = shift;
 
     $params->{'days_in_advance'} = 7 unless exists $params->{'days_in_advance'};
-    my $dbh = C4::Context->dbh;
 
     my $statement = <<END_SQL;
 SELECT issues.*, items.itype as itemtype, items.homebranch, TO_DAYS( date_due )-TO_DAYS( NOW() ) as days_until_due, items.barcode, items.holdingbranch
 FROM issues 
 LEFT JOIN items USING (itemnumber)
-WHERE ( TO_DAYS( NOW() )-TO_DAYS( date_due ) ) < ?
+WHERE ( TO_DAYS( date_due )-TO_DAYS( NOW() ) ) BETWEEN 0 AND ?
 END_SQL
 
     my @bind_parameters = ( $params->{'days_in_advance'} );
-    
-    my $sth = $dbh->prepare( $statement );
-    $sth->execute( @bind_parameters );
-    my $upcoming_dues = $sth->fetchall_arrayref({});
-    $sth->finish;
-
-    return $upcoming_dues;
+    return C4::Context->dbh->selectall_arrayref(
+        $statement, {Slice=>{}}, @bind_parameters);
 }
 
 =head2 CanBookBeRenewed
