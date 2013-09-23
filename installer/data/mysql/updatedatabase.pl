@@ -5256,8 +5256,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     $sth->execute();
     $dbh->do("UPDATE items set itemlost=NULL where itemlost NOT IN(SELECT DISTINCT authorised_value FROM authorised_values WHERE category='$lost_authval')"); # No constraints exist...
 
-    $dbh->do("CREATE TEMPORARY TABLE oldlostvalues (itemnumber int, itemlost tinyint(1)) AS
-                     SELECT itemnumber, itemlost FROM items WHERE itemlost <>0 AND itemlost IS NOT NULL");
+    $dbh->do("CREATE TABLE oldlostvalues AS SELECT itemnumber, itemlost olditemlost, itemlost newitemlost, otherstatus FROM items WHERE itemlost <>0 AND itemlost IS NOT NULL");
 
     my $sth_itemstatus = $dbh->prepare("INSERT INTO itemstatus (statuscode,description,suppress) VALUES (?,?,1)");
     while( my ($lostval, $lib) = $sth->fetchrow){
@@ -5283,19 +5282,21 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
         if(defined($lv_map{$lostval}->{itemstatus})){
             # do in two passes since we don't want to clobber existing items.otherstatus values.
             # in those cases, we lose some information.
-            my $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET i.itemlost=? WHERE o.itemlost=? AND otherstatus IS NOT NULL AND otherstatus <> ''");
-            $sth_upd->execute($lv_map{$lostval}->{lost}, $lostval);
-            $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET i.itemlost=?, otherstatus=? WHERE o.itemlost=? AND otherstatus IS NULL OR otherstatus=''");
-            $sth_upd->execute($lv_map{$lostval}->{lost},$lv_map{$lostval}->{itemstatus}, $lostval);
+            my $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET itemlost=?, newitemlost=? WHERE olditemlost=? AND i.otherstatus IS NOT NULL AND i.otherstatus <> ''");
+            $sth_upd->execute($lv_map{$lostval}->{lost},$lv_map{$lostval}->{lost}, $lostval);
+            $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET itemlost=?, newitemlost=?, i.otherstatus=? WHERE olditemlost=? AND i.otherstatus IS NULL OR i.otherstatus=''");
+            $sth_upd->execute($lv_map{$lostval}->{lost},$lv_map{$lostval}->{lost}, $lv_map{$lostval}->{itemstatus}, $lostval);
         } else {
-            my $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET i.itemlost=? WHERE o.itemlost=?");
-            $sth_upd->execute($lv_map{$lostval}->{lost}, $lostval);
+            my $sth_upd=$dbh->prepare("UPDATE items i JOIN oldlostvalues o USING(itemnumber) SET itemlost=?, newitemlost=? WHERE olditemlost=?");
+            $sth_upd->execute($lv_map{$lostval}->{lost},$lv_map{$lostval}->{lost}, $lostval);
         }
     }
+
     #  All itemlost values should now be in range for enum.
-    $dbh->do("UPDATE marc_subfield_structure SET authorised_value='lost_status' WHERE kohafield='items.itemlost'");
 
     $dbh->do("ALTER TABLE items CHANGE COLUMN itemlost itemlost enum('lost','longoverdue','missing','trace') default NULL");
+
+    $dbh->do("UPDATE marc_subfield_structure SET authorised_value='lost_status' WHERE kohafield='items.itemlost'");
     $dbh->do("UPDATE authorised_values set category='LOST-OLD' WHERE category='$lost_authval'");
 
     $dbh->do("UPDATE items set itemlost=NULL where itemlost=0");
@@ -5303,7 +5304,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     # NOW do deleteditems.
     $sth = $dbh->prepare("SELECT DISTINCT itemlost, lib from deleteditems join authorised_values on(itemlost=authorised_value) where category='$lost_authval' and itemlost <> 0 and itemlost is not null");
     $sth->execute();
-    $dbh->do("UPDATE items set itemlost=NULL where itemlost NOT IN(SELECT DISTINCT authorised_value FROM authorised_values WHERE category='$lost_authval')");
+    $dbh->do("UPDATE deleteditems set itemlost=NULL where itemlost NOT IN(SELECT DISTINCT authorised_value FROM authorised_values WHERE category='$lost_authval')");
     my $sth_deletedlostitems = $dbh->prepare("UPDATE deleteditems set itemlost=? WHERE itemlost=?");
     while( my ($lostval, $lib) = $sth->fetchrow){
          for ($lib){

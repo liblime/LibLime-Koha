@@ -406,7 +406,7 @@ sub GetMemberDetails {
     my $flags = patronflags( $borrower, $circ_session );
     my $accessflagshash;
 
-    $borrower->{totalowed} = $flags->{CHARGES}->{amount} // 0;  # probably shouldn't be in patronflags.
+    $borrower->{totalowed} = ($flags->{CHARGES}) ? $flags->{CHARGES}->{amount} : 0;  # probably shouldn't be in patronflags.
 
     $sth = $dbh->prepare('SELECT bit,flag FROM userflags');
     $sth->execute;

@@ -72,9 +72,11 @@ acqdate | 952d | most_recent
 
 on-shelf-at | 952 | on_shelf_at | unique
 owned-by | 952a | | unique
-lost | 9521 | | min_or_zero
+lost | 9521 | | unique
+all-items-lost | 9521 | | all_true
+# record must have at least one item with lost value null, or no items at all.
+
 text | 952x 952z
-# record must have at least one item with lost value < 1, or no items at all.
 
 on_order_count | 942t
 in_process_count | 942u

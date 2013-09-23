@@ -20,7 +20,7 @@ use strict;
 # with Koha; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-use C4::Accounts qw(recordpayment);
+use C4::Accounts;
 use ILS;
 use base qw(ILS::Transaction);
 
@@ -48,7 +48,14 @@ sub pay {
     my $borrowernumber = shift;
     my $amt            = shift;
     warn("RECORD:$borrowernumber::$amt");
-    recordpayment( $borrowernumber, $amt );
+    my $credit = { 
+                borrowernumber  => $borrowernumber,
+                description     => "Payment accepted via SIP2",
+                amount          => sprintf("%.2f",$amt),
+                accounttype     => 'PAYMENT',
+            };
+    C4::Accounts::manualcredit($credit);
+
 }
 
 #sub DESTROY {

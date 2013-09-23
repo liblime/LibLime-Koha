@@ -1885,7 +1885,7 @@ sub GetItemIssue {
     }
     
     my $sth = C4::Context->dbh->prepare("
-      SELECT s.*,i.biblionumber,b.title,i.homebranch,i.holdingbranch,
+      SELECT s.*,i.biblionumber,b.title,i.homebranch,i.holdingbranch,i.itype as itemtype,
              p.firstname,p.surname,p.cardnumber,p.categorycode
         FROM issues s, items i, biblio b, borrowers p
        WHERE s.itemnumber     = ? $and 
