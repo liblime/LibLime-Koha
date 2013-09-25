@@ -33,7 +33,7 @@ use JSON qw(from_json);
 use Koha;
 require Koha::RoseDB;
 
-$VERSION = '4.09.00.022';
+$VERSION = '4.09.00.028';
 
 =head1 NAME
 
