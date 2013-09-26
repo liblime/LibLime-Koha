@@ -22,9 +22,11 @@ use C4::Context;
 use C4::Koha;
 use C4::Members;
 use C4::Reserves;
+use C4::Letters;
 use C4::Items qw(GetItemsInfo);
 use C4::Branch qw(GetBranchName);
 use Digest::MD5 qw(md5_base64);
+use Date::Calc qw(Delta_Days);
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
@@ -54,6 +56,20 @@ sub new {
 	$debug and warn sprintf("Debarred = %s : ", ($debarred||'undef')) . Dumper(%{$kp->{flags}});
         my ($day, $month, $year) = (localtime)[3,4,5];
         my $today    = sprintf '%04d-%02d-%02d', $year+1900, $month+1, $day;
+        my ($dey,$dem,$ded) = split(/-/,$kp->{dateexpiry});
+        my $preexpiryperiod = C4::Context->preference("SIPExpiryPeriod");
+        my $preexpired = 0;
+        my $preexpired_msg = '';
+        if ($preexpiryperiod > 0) {
+            my $pepdays = Delta_Days($year+1900,$month+1,$day,$dey,$dem,$ded);
+            if ($pepdays <= $preexpiryperiod) {
+              $preexpired = 1;
+              my $letter = getletter('members','SIP_EXPIRY_ALERT');
+              C4::Letters::parseletter($letter,'borrowers',$kp->{borrowernumber});
+              C4::Letters::parseletter($letter,'branches',$kp->{branchcode});
+              $preexpired_msg = $letter->{content};
+            }
+        }
         my $expired  = ($today gt $kp->{dateexpiry}) ? 1 : 0;
         if ($expired) {
             if ($kp->{opacnote} ) {
@@ -85,10 +101,10 @@ sub new {
         address         => $adr,
         home_phone      => $kp->{phone},
         email_addr      => $kp->{email},
-        charge_ok       => ( !$debarred && !$expired ),
-        renew_ok        => ( !$debarred && !$expired ),
-        recall_ok       => ( !$debarred && !$expired ),
-        hold_ok         => ( !$debarred && !$expired ),
+        charge_ok       => ( !$debarred && !$expired && !$preexpired),
+        renew_ok        => ( !$debarred && !$expired && !$preexpired),
+        recall_ok       => ( !$debarred && !$expired && !$preexpired),
+        hold_ok         => ( !$debarred && !$expired && !$preexpired),
         card_lost       => ( $kp->{lost} || $kp->{gonenoaddress} || $flags->{LOST} ),
         claims_returned => 0,
         fines           => $fines_amount, 
@@ -103,10 +119,11 @@ sub new {
         fine_items      => [],
         recall_items    => [],
         unavail_holds   => [],
-        inet            => ( !$debarred && !$expired ),
+        inet            => ( !$debarred && !$expired && !$preexpired),
         expired         => $expired,
     );
     }
+    $ilspatron{screen_msg} = $preexpired_msg if ($preexpired && !$expired);
     $debug and warn "patron fines: $ilspatron{fines} ... amountoutstanding: $kp->{amountoutstanding} ... CHARGES->amount: $flags->{CHARGES}->{amount}";
 	for (qw(CHARGES CREDITS GNA LOST DBARRED NOTES)) {
 		($flags->{$_}) or next;

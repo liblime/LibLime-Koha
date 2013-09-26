@@ -5652,6 +5652,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
     SetVersion($DBversion);
 }
 
+$DBversion = '4.09.00.028';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(qq/
+      INSERT INTO letter (module,code,name,title,content) VALUES ('members','SIP_EXPIRY_ALERT','SIP Patron Pre-expiration','','Your card is expiring. Please take your items to the desk to renew your card and check out your items.');
+    /);
+   print "Update to $DBversion done ( Created a new notice for SIP screen message )\n";
+   SetVersion ($DBversion);
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
