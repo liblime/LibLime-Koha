@@ -368,6 +368,10 @@ Note that there is no function to modify a suggestion : only the status can be m
 
 sub ModStatus {
     my ($suggestionid,$status,$managedby,$biblionumber,$reason) = @_;
+
+    my $suggestion = GetSuggestion($suggestionid) // {};
+    return if $status ~~ $suggestion->{STATUS};
+
     my $dbh = C4::Context->dbh;
     my $sth;
     if ($managedby>0) {
