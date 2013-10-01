@@ -107,8 +107,18 @@ after 'save' => method {
 };
 
 method absorb( Koha::Authority $absorb_me ) {
-    # FIXME: rewrite all the appropriate fields in $absorb_me->bibs
-    # to match $self
+    # rewrite all of $absorb_me's bibs to have $self->rcn linkage
+    my @bibs = @{$absorb_me->bibs};
+    for my $bib (@bibs) {
+        my $marc = $bib->marc;
+        for ($marc->fields) {
+            next if $_->is_control_field;
+            my $subf0 = $_->subfield('0');
+            next unless $absorb_me->rcn ~~ $subf0;
+            $_->update( 0 => $self->rcn );
+        }
+    }
+    $self->update_bibs( \@bibs );
 }
 
 __PACKAGE__->meta->make_immutable;

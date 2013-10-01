@@ -1,0 +1,157 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Authority Cart</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="shortcut icon" href="<!-- TMPL_VAR NAME="themelang" -->/includes/favicon.ico" type="image/x-icon" />
+<meta http-equiv="Content-Language" content="en-us" />
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/authority-basket.js"></script>
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.min.js"></script>
+
+<script type="text/javascript" language="javascript">
+    var MSG_BASKET_EMPTY = _("Your cart is currently empty");
+    var MSG_RECORD_IN_BASKET = _("This item is already in your cart");
+    var MSG_RECORD_ADDED = _("This item has been added to your cart");
+    var MSG_NRECORDS_ADDED = _(" item(s) added to your cart");
+    var MSG_NRECORDS_IN_BASKET = _("already in your cart");
+    var MSG_NO_RECORD_SELECTED = _("No item was selected");   
+    var MSG_NO_RECORD_ADDED = _("No item was added to your cart");
+    var MSG_CONFIRM_DEL_BASKET = _("Are you sure you want to empty your cart?");
+    var MSG_CONFIRM_DEL_RECORDS = _("Are you sure you want to remove the selected items?");
+}
+</script>
+
+
+
+<script type="text/javascript" language="javascript">
+  function confirmEdit() {
+    if ( confirm( 'You are about to Merge Selected Authority to the Parent. Do you wish to continue?' ) ) {
+      self.opener.location='authority-basket.pl';
+      self.close();
+    } else {
+      return false;
+    }
+  }
+
+  function confirmDelete() {
+    if ( confirm( 'You are about to Merge and *delete* the Authority. Do you wish to continue?' ) ) {
+      self.opener.location='authority-basket.pl?delete=1';
+      self.close();
+    } else {
+      return false;
+    }
+  }
+ 
+function confirm_check(formElement) {
+
+    //Make sure we have an action
+    if (countSelected(formElement, 'radio', 'authIdparent') == 0) {
+      alert('Please Select the Parent to Merge to.');
+      return false;
+    }
+
+    //If all is OK, return true and let the form submit
+    return true;
+  }
+  /*End of form validation.*/
+
+  /*Below are various functions that can be
+   re-used in your own validation scripts:*/
+  
+  function countSelected(formElement, inputType, inputName) {
+    //If there is no input type, make it checkbox
+    if (inputType == null) inputType = 'checkbox';
+    var returnValue = 0;
+    //Loop for all elements in this form
+    for (var loopCounter = 0; loopCounter < formElement.length; loopCounter++) {
+      //If this element is the wanted type
+      var element = formElement.elements[loopCounter];
+      if (element.type == inputType && element.checked == true) {
+        //If we have the correct control name, increment the count
+        if (inputName.length > 0)
+          if (element.name == inputName)
+            returnValue++;
+        else
+          returnValue++
+      }
+    }
+    //Return the count
+    return returnValue;
+  }
+   
+	
+</script>
+
+
+</head>
+
+<body id="basket">
+
+<div id="doc" class="yui-t7">
+  <div class="container">
+    <h1>Authority Cart</h1>
+
+    <div id="toolbar">
+      <ul><li><a href="JavaScript:window.close()">Close The Cart</a></li>
+      </ul>
+    </div>
+
+    <div id="authorities_searchresultlist_results">
+<form id="merge" name="merge" method="post" action="/cgi-bin/koha/authorities/authority-basket.pl" onSubmit="return confirm_check(this);">
+<input type="hidden" name="authority_list" id="authority_list" value="<!-- TMPL_VAR NAME="authority_list" -->" />
+<input type="hidden" name="op" id="op" value="merge" />
+
+  <table>
+    <tr>
+      <th>Keep</th>
+      <th>Heading</th>
+      <th>Type</th>
+      <th>Associated bibs</th>
+    </tr>
+<!-- TMPL_LOOP NAME="result" -->
+    <!-- TMPL_UNLESS name="__odd__" -->
+    <tr>
+    
+    
+    <!-- /TMPL_UNLESS -->
+	<td><input type="radio"  id="authIdparent" name="authIdparent"  value="<!-- TMPL_VAR NAME="authid" -->"/>	</td>
+	<td>
+          <input type="hidden" name="authid" value="<TMPL_VAR authid>" />
+	  <TMPL_LOOP NAME="summary">
+            <strong><!-- TMPL_VAR NAME="heading" --></strong><br />
+	  </TMPL_LOOP>
+        </td>
+        <td>
+          <TMPL_VAR authtype>
+        </td>
+    <!-- TMPL_UNLESS name="isEDITORS" -->
+      <td>
+        <a href="../catalogue/search.pl?type=intranet&amp;op=do_search&amp;q=linked_rcn:%22<TMPL_VAR rcn>%22" class="button"><!-- TMPL_VAR NAME="used" --> biblio(s)
+        <label>        </label>
+        </a> </td>
+  <!-- /TMPL_UNLESS -->
+      </tr>
+<!-- /TMPL_LOOP -->
+  </table>
+  <table>
+    <tr>
+      <td><input name="linkbiblio"  type="submit" class="submit" id="linkbiblio" value="Merge Authorities" /></td>
+    </tr>
+  </table>
+  </form>
+</div>
+
+
+
+
+  </div>
+</div>
+
+
+
+<form name="myform" action="authority-basket.pl" method="get">
+    <input type="hidden" name="records" id="records" />
+</form>
+
+</body>
+</html>
+

@@ -1,6 +1,7 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Authorities &rsaquo; Authority search</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/authority-basket.js"></script>
 <script type="text/javascript" >
 //<![CDATA[
 function confirm_deletion(id) {
@@ -25,6 +26,53 @@ function searchauthority() {
 }
 //]]>
 </script>
+<script type="text/javascript" language="javascript">
+    var MSG_BASKET_EMPTY = _("Your cart is currently empty");                                   
+    var MSG_RECORD_IN_BASKET = _("This item is already in your cart");
+    var MSG_RECORD_ADDED = _("This item has been added to your cart");
+    var MSG_NRECORDS_ADDED = _(" item(s) added to your cart");
+    var MSG_NRECORDS_IN_BASKET = _("already in your cart");   
+    var MSG_NO_RECORD_SELECTED = _("No item was selected");   
+    var MSG_NO_RECORD_ADDED = _("No item was added to your cart");
+    var MSG_CONFIRM_DEL_BASKET = _("Are you sure you want to empty your cart?");
+    var MSG_CONFIRM_DEL_RECORDS = _("Are you sure you want to remove the selected items?");                 
+</script>
+<script language="JavaScript" type="text/javascript">
+//==========================================
+// Check All boxes
+//==========================================
+function CheckAll(fmobj) {
+  for (var i=0;i<fmobj.elements.length;i++) {
+    var e = fmobj.elements[i];
+    if ( (e.name != 'allbox') && (e.type=='checkbox') && (!e.disabled) ) {
+      e.checked = fmobj.allbox.checked;
+    }
+  }
+}
+
+//==========================================
+// Check all or uncheck all?
+//==========================================
+function CheckCheckAll(fmobj) {
+  var TotalBoxes = 0;
+  var TotalOn = 0;
+  for (var i=0;i<fmobj.elements.length;i++) {
+    var e = fmobj.elements[i];
+    if ((e.name != 'allbox') && (e.type=='checkbox')) {
+      TotalBoxes++;
+      if (e.checked) {
+       TotalOn++;
+      }
+    }
+  }
+  if (TotalBoxes==TotalOn) {
+    fmobj.allbox.checked=true;
+  }
+  else {
+   fmobj.allbox.checked=false;
+  }
+}
+</script>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -37,11 +85,28 @@ function searchauthority() {
    <div id="bd">
     <div id="yui-main">
     <div class="yui-g">
-    
-    <!-- TMPL_INCLUDE NAME="authorities-toolbar.inc" -->
-
-<!-- TMPL_IF name="total" -->
-<h1>Authority search results</h1>
+	
+      <span id="cmspan">
+    <a href="#" id="cartmenulink" class="">
+    <i></i>
+    <span>
+      <i></i><span></span>
+<!--      <img src="/opac-tmpl/prog/images/cart.gif" width="14" height="14" alt="" border="0" />
+-->
+      Authority Cart
+    <span id="basketcount"></span>
+    </span>
+  </a>
+  &nbsp;
+  <a class="empty" href="" onClick="delBasket(); return false;">Empty Cart</a>
+</span>
+	  
+      <p>        
+        <!-- TMPL_INCLUDE NAME="authorities-toolbar.inc" -->
+        
+        <!-- TMPL_IF name="total" -->
+            </p>
+      <h1>Authority search results</h1>
     <div class="pager">
         <!-- TMPL_INCLUDE page-numbers.inc -->
     </div>
@@ -50,10 +115,15 @@ function searchauthority() {
   Results <!-- TMPL_VAR NAME="from" --> to <!-- TMPL_VAR NAME="to" --> of <!-- TMPL_VAR NAME="total" -->
 </p>
 
+<p>
+ <button type="submit" class="submit" onClick="addMultiple();" >Add Selected Authorities To Cart</button>
+</p>
 <div id="authorities_searchresultlist_results">
+<form name="bookbag_form" id="bookbag_form" >
   <table>
     <tr>
-      <th>Summary</th>
+      <th>Select</th>
+	  <th>Summary</th>
       <th>Used in</th>
       <th>Delete</th>
     </tr>
@@ -62,8 +132,12 @@ function searchauthority() {
     <tr class="highlight">
     <!-- TMPL_ELSE -->
     <tr>
+    
     <!-- /TMPL_UNLESS -->
-      <td>
+	<td>
+      <input type="checkbox" id="bor<!-- TMPL_VAR NAME="authid" -->" name="borrowernumber" value="<!-- TMPL_VAR NAME="authid" -->"/></td>
+    </td>
+	   <td>
         <TMPL_LOOP NAME="summary">
         <a href="detail.pl?authid=<!-- TMPL_VAR NAME="authid" -->"><!-- TMPL_VAR NAME="heading" --></a><br/>
           <TMPL_IF seefrom><em>Linked from:</em><br/></TMPL_IF>
@@ -74,21 +148,19 @@ function searchauthority() {
           <TMPL_LOOP NAME="seealso">
           &nbsp;&nbsp;<a href="?op=do_search&type=intranet&authtypecode=&idx=auth-heading_lc&operator=contains&orderby=auth-heading-sort+asc&q=<TMPL_VAR text>"><TMPL_VAR text /></a><br/>
           </TMPL_LOOP>
-        </TMPL_LOOP>
-      </td>
+        </TMPL_LOOP>      </td>
   <!-- TMPL_UNLESS name="isEDITORS" -->
       <td>
-        <a href="../catalogue/search.pl?type=intranet&amp;op=do_search&amp;q=linked_rcn:%22<TMPL_VAR rcn>%22" class="button"><!-- TMPL_VAR NAME="used" --> biblio(s)</a>
-      </td>
+        <a href="../catalogue/search.pl?type=intranet&amp;op=do_search&amp;q=linked_rcn:%22<TMPL_VAR rcn>%22" class="button"><!-- TMPL_VAR NAME="used" --> biblio(s)</a>      </td>
   <!-- /TMPL_UNLESS -->
       <td>
   <!-- TMPL_UNLESS name="used" -->
         <a href="javascript:confirm_deletion(<!-- TMPL_VAR NAME="authid" -->)">Delete</a>
-  <!-- /TMPL_UNLESS -->
-      </td>
+  <!-- /TMPL_UNLESS -->      </td>
     </tr>
 <!-- /TMPL_LOOP -->
   </table>
+  </form>
 </div>
 
 <div class="pager">
