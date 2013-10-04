@@ -55,6 +55,7 @@ use C4::Reserves;
 use C4::Members::Messaging;
 use C4::Circulation;
 use C4::Accounts;
+use C4::Branch qw(GetBranchDetail);
 my $today     = C4::Dates->new();
 my $today_iso = $today->output('iso');
 
@@ -64,9 +65,9 @@ my $query;
 
 given(C4::Context->preference('CircControl')){
     when ('PickupLibrary'){
-        $query = "SELECT reserves.*, branchcode AS controlbranch, borrowers.categorycode, items.itype FROM reserves 
+        $query = "SELECT reserves.*, reserves.branchcode AS controlbranch, borrowers.categorycode, items.itype FROM reserves 
                 JOIN borrowers using(borrowernumber)
-                JOIN items using(itemnumber)  WHERE expirationdate < ?";
+                JOIN items using(itemnumber) WHERE expirationdate < ?";
     } when ('PatronLibrary') {
         $query = "SELECT reserves.*, borrowers.categorycode, borrowers.branchcode AS controlbranch, items.itype FROM reserves 
                 JOIN borrowers using(borrowernumber)
@@ -89,7 +90,7 @@ while (my $expref = $sth->fetchrow_hashref) {
   if($expref->{itype}){
       my $irule = C4::Circulation::GetIssuingRule($expref->{categorycode}, $expref->{itype}, $expref->{controlbranch});
       # Charge fine, if any -- 
-      if($irule->{expired_hold_fee} > 0){
+      if(defined($irule->{expired_hold_fee}) && $irule->{expired_hold_fee} > 0){
           C4::Accounts::CreateFee({   borrowernumber => $expref->{borrowernumber},
                         amount  => $irule->{expired_hold_fee},
                         accounttype => 'EXPIRED_HOLD',
@@ -111,7 +112,8 @@ while (my $expref = $sth->fetchrow_hashref) {
     my $borrower = C4::Members::GetMember( $borrowernumber, 'borrowernumber');
     my $biblio = GetBiblioData($biblionumber) or die sprintf "BIBLIONUMBER: %d\n", $biblionumber;
     my $letter = C4::Letters::getletter( 'reserves', 'HOLD_EXPIRED');
-    my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');
+    my $branch_details = GetBranchDetail($expref->{'branchcode'});
+    my $admin_email_address = $branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');
 
     C4::Letters::parseletter( $letter, 'branches', $expref->{branchcode} );
     C4::Letters::parseletter( $letter, 'borrowers', $expref->{borrowernumber} );
