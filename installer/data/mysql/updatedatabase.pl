@@ -5036,6 +5036,8 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     $default_names{Version} = 1; # Preserve Version pref
     my %default_names_lc = map {lc $_ => $_} keys %default_names;
 
+    $default_names{OwedNotificationValue} = 1; # Preserve -- used later in this script but then deleted.
+
     my @undeclared = grep {!exists $default_names{$_}} keys %used_names;
     for (@undeclared) {
         if (exists $default_names_lc{lc $_}) {

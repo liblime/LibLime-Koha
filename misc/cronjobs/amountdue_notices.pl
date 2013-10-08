@@ -302,7 +302,7 @@ foreach my $branchcode (@branches) {
     my @fee_summary_data = qw/date description amountoutstanding/;
     
     for my $cat (@cats){
-        next unless $cat->fines_alert_threshold;  # Yes, that means zero turns it off.
+        next unless $cat->fines_alert_threshold > 0;  # Yes, that means zero turns it off.
         my $notify_value = $cat->fines_alert_threshold;
         $verbose and warn sprintf "category: %s, threshold: %s, branch: %s", $cat->categorycode, $notify_value, $branchcode;
         my $borrowers = C4::Accounts::get_borrowers_with_fines(category => $cat->categorycode, threshold => $notify_value, branch => $branchcode, since=>$ignore, exclude_notified=>1);

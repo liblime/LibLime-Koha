@@ -1484,7 +1484,7 @@ sub get_borrowers_with_fines {
     my @borrowers;
     while (my $bor = $sth->fetchrow_hashref) {
         $bor->{balance} = gettotalowed($bor->{borrowernumber});
-        next if($bor->{balance} < $threshold);
+        next if($bor->{balance} == 0 || $bor->{balance} < $threshold);
         if($param{since}){
             $sth_lastfine->execute($bor->{borrowernumber});
             $sth_lastaccrual->execute($bor->{borrowernumber});
