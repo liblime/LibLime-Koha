@@ -88,19 +88,27 @@ $(document).ready(function() {
     	$("#refundAmount").val(totaldue);
         $("form#refundUnallocated").submit();
     });
+    $("button.reallocate").click(function(){
+      $("form#refundUnallocated")[0].reset();
+      $("#refundUnallocated input[name='reallocate']").val($(this).data('payid'));
+      $("#refundUnallocated input[name='op']").val('reallocate');
+      $("#refundUnallocated").submit();
+    });
     $("#payMany").button().click(function(){
     	$('#account_tabs').tabs('select',3);
-    	$("select#allocation").val('manual');
+
     	if($("input[name='target_fees']:checked").length){
+        $("select#allocation").val('manual');
     		var fees_to_pay = $.map($("input[name='target_fees']:checked"), function(e,i){ return e.value; });
     		$("div#feepicker").show();
     		$("select#fees_to_pay").val(fees_to_pay);
             var toPay = 0.0;
             $("select#fees_to_pay option:selected").each(function(){ toPay += parseFloat($(this).data('amount')); });
             $("#credit_amount").val(toPay.toFixed(2));
-        } else {
+      } else {
         	$("select#fees_to_pay").val();
-            $("#credit_amount").val(totaldue);    		
+          $("select#allocation").val('auto');
+          $("#credit_amount").val(totaldue);    		
     	}
     	return false;
     });
@@ -301,6 +309,7 @@ $(document).ready(function() {
         <!-- /TMPL_IF -->
           <!-- TMPL_IF NAME="has_unallocated" -->            <br />
           <form id="refundUnallocated" action="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR borrowernumber -->" method="post">
+            <input type="hidden" name="reallocate" value=""/>
           <table><caption>Unallocated credits <!-- TMPL_IF CAN_user_updatecharges_refund_charges -->&nbsp;&nbsp;<button class="issueFullRefund">Refund All</button><!-- /TMPL_IF --></caption>
             <tr>
             <th>Date</th>
@@ -308,6 +317,7 @@ $(document).ready(function() {
             <th>Branch</th>
             <th>Total Amount</th>
             <th>Unallocated</th>
+            <th>Auto-apply?</th>
             <!-- TMPL_IF CAN_user_updatecharges_refund_charges --><th>Refund</th><!-- /TMPL_IF -->
             </tr>
             <!-- TMPL_LOOP NAME="unallocated" -->
@@ -316,12 +326,20 @@ $(document).ready(function() {
                 <td><!-- TMPL_VAR branchcode --></td>
                 <td><!-- TMPL_VAR payment_amount --></td>
                 <td class="credit"><!-- TMPL_VAR NAME="amount" --></td>
+                <td><!-- TMPL_IF reallocate -->
+                      Yes
+                    <!-- TMPL_ELSE -->
+                      No <!-- TMPL_IF CAN_user_updatecharges_accept_payment -->
+                            <button class="small reallocate" data-payid="<!-- TMPL_VAR id -->" type="button">Auto-apply</button>
+                         <!-- /TMPL_IF -->
+                    <!-- /TMPL_IF -->
+                </td>
                 <!-- TMPL_IF CAN_user_updatecharges_refund_charges -->
                   <td><input type="checkbox" class="refundPayment" name="id" value="<!-- TMPL_VAR id -->" data-amount="<!-- TMPL_VAR amount -->" /></td>
                 <!-- /TMPL_IF -->
                 </tr>
             <!-- /TMPL_LOOP -->
-            <tr><td colspan="4" class="rightJustify" id="unallocatedLastRow">&nbsp;</td>
+            <tr><td colspan="5" class="rightJustify" id="unallocatedLastRow">&nbsp;</td>
             <!-- TMPL_IF CAN_user_updatecharges_refund_charges -->
               <td colspan="2"><input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR borrowernumber -->" />
                             <input type="hidden" name="amount" id="refundAmount" />

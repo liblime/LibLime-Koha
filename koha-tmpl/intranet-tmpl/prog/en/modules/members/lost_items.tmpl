@@ -54,12 +54,14 @@
                     <!-- TMPL_IF NAME="claims_returned" --><i>Claims Returned</i>
                         (<a href="lost_items.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&op=undo_claims_returned&lost_item_id=<!-- TMPL_VAR NAME="id" -->">Undo</a>)
                     <!-- TMPL_ELSE -->
-                        <form method=post action="lost_items.pl">
-                        <input type=hidden name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->">
-                        <input type=hidden name="op" value="claims_returned">
-                        <input type=hidden name="lost_item_id" value="<!-- TMPL_VAR NAME="id" -->">
-                        <input type=submit value="Make Claims Returned" style="font-size:80%">
-                        </form>
+                        <!-- TMPL_IF EXPR="itemlost eq 'lost'" -->
+                            <form method=post action="lost_items.pl">
+                                <input type=hidden name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->">
+                                <input type=hidden name="op" value="claims_returned">
+                                <input type=hidden name="lost_item_id" value="<!-- TMPL_VAR NAME="id" -->">
+                                <input type=submit value="Make Claims Returned" style="font-size:80%">
+                            </form>
+                        <!-- /TMPL_IF -->
                     <!-- /TMPL_IF -->
 
                 </td>

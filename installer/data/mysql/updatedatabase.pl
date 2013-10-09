@@ -5036,6 +5036,8 @@ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     $default_names{Version} = 1; # Preserve Version pref
     my %default_names_lc = map {lc $_ => $_} keys %default_names;
 
+    $default_names{OwedNotificationValue} = 1; # Preserve -- used later in this script but then deleted.
+
     my @undeclared = grep {!exists $default_names{$_}} keys %used_names;
     for (@undeclared) {
         if (exists $default_names_lc{lc $_}) {
@@ -5103,11 +5105,11 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
  $DBversion = '4.09.00.024';
  if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
-     for ( qw(LinkLostItemsToPatron MarkLostItemsReturned RefundLostReturnedAmount EnableOverdueAccruedAmount) ) {
+     for ( qw(LinkLostItemsToPatron MarkLostItemsReturned EnableOverdueAccruedAmount) ) {
          $dbh->do('DELETE FROM systempreferences WHERE variable LIKE ?', undef, $_);
      }
     $dbh->do("RENAME TABLE accountlines TO archive_accountlines");
-    
+
     $dbh->do("DROP TABLE IF EXISTS `fee_transactions`");
     $dbh->do("DROP TABLE IF EXISTS `fees`");
     $dbh->do("DROP TABLE IF EXISTS `payments`");
@@ -5660,6 +5662,15 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
    print "Update to $DBversion done ( Created a new notice for SIP screen message )\n";
    SetVersion ($DBversion);
 }
+
+ $DBversion = '4.09.00.029';
+ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do("ALTER TABLE `payments` ADD COLUMN reallocate TINYINT NOT NULL DEFAULT 1");
+
+     say "Upgrade to $DBversion done ( Add reallocate flag to payments table. )";
+     SetVersion ($DBversion);
+}
+
 
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;

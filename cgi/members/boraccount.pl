@@ -134,7 +134,11 @@ if($op eq 'maninvoice'){
     } else {
         $error = 'INVALID_PAYMENT_ID';
     }
-    warn $error;
+
+} elsif($op eq 'reallocate'){
+    my $pay_id = $input->param('reallocate');
+    C4::Accounts::set_reallocate_flag($pay_id, 1);
+
 } elsif($op eq 'refund'){
     my @pay_id = $input->param('id');
     my $amount = Koha::Money->new(sprintf("%.2f",$input->param('amount')));
