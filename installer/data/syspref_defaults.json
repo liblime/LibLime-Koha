@@ -2399,6 +2399,16 @@
          "Circulation"
       ]
    },
+   "RefundLostReturnedAmount" : {
+      "explanation" : "Refund a returned lost item rather than applying it to an outstanding balance",
+      "options" : null,
+      "value" : "0",
+      "hidden" : false,
+      "type" : "YesNo",
+      "tags" : [
+         "Circulation"
+      ]
+   },
    "AllowPatronsToCancelReadyHolds" : {
       "explanation" : "If ON, OPAC users will have the ability to cancel waiting holds",
       "options" : null,

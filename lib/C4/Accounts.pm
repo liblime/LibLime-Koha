@@ -702,7 +702,7 @@ sub RedistributeCredits {
     for my $charge (@outstanding_fees) {
         my ($credit, $payments, $remaining_fee);
         do {
-            ($credit, $payments) = get_unallocated_credits( $borrowernumber );
+            ($credit, $payments) = get_unallocated_credits( $borrowernumber, reallocable => 1 );
             last if not defined @$payments[0]; # No credits left, so bail
             # we have an unapplied credit and an unpaid fee, so let's match them up
             (undef, $remaining_fee) = allocate_payment( payment => @$payments[0]->{id}, fee => $charge->{'fee_id'} );
@@ -993,12 +993,13 @@ have unallocated amounts.
 
 =cut
 
-sub get_unallocated_credits {
-    my $borrowernumber = shift or return;
+func get_unallocated_credits($borrowernumber, :$reallocable) {
     my $dbh = C4::Context->dbh;
     my $total_credit = Koha::Money->new();
     my @payment_ids;
-    my $sth_credit = $dbh->prepare('SELECT * FROM payments LEFT JOIN fee_transactions on(payments.id = fee_transactions.payment_id) WHERE payments.borrowernumber = ? AND fee_id IS NULL AND amount < 0');
+    my $credit_select = "SELECT * FROM payments LEFT JOIN fee_transactions on(payments.id = fee_transactions.payment_id) WHERE payments.borrowernumber = ? AND fee_id IS NULL AND amount < 0";
+    $credit_select .= " AND reallocate=1" if $reallocable;
+    my $sth_credit = $dbh->prepare($credit_select);
     $sth_credit->execute( $borrowernumber );
     my $sth_total = $dbh->prepare("SELECT SUM(amount) FROM payments LEFT JOIN fee_transactions  on(payments.id = fee_transactions.payment_id) WHERE payments.id=?");
     my @payments;
@@ -1105,13 +1106,26 @@ sub allocate_payment {
     return($remaining_credit,$remaining_fee);
 }
 
+
+func set_reallocate_flag($payment_id, $reallocate){
+    my $dbh = C4::Context->dbh;
+    $reallocate //= 1;
+    warn $payment_id;
+warn $reallocate;
+    my $sth_reallocate = $dbh->prepare("UPDATE payments set reallocate=? where id=?");
+    $sth_reallocate->execute($reallocate, $payment_id);
+}
+
 =head2 deallocate_payment
 
-    $unallocated = deallocate_payment( payment=>$payment_id [, fee=>$fee ] );
+    $unallocated = deallocate_payment( payment=>$payment_id [, fee=>$fee, reallocate => 1 ] );
 
 Takes C<payment> as id or hash from getpayment() and optionally C<fee>, as fee_id from a C<fee> record or the C<fee> hashref (from getfee()).
 Adjusts the unallocated amount, disassociating the payment from the fee, or from all fees.
 Note that if supplying payment as hash, caller MUST call getpayment with dblock=>1 option.
+
+If reallocate option is passed (and falsey), mark the payment as not-to-be auto-reallocated.  [defaults to true]
+
 
 =cut
 
@@ -1122,6 +1136,7 @@ sub deallocate_payment {
         warn "Bad call to deallocate_payment";
         return;
     }
+    $args{reallocate} //= 1;
     my $dbh = C4::Context->dbh;
     
     my $fee;
@@ -1150,6 +1165,9 @@ sub deallocate_payment {
         }
         $sth_upd->execute($total->value,$target_row->{transaction_id});
         $dbh->commit();
+        if(!$args{reallocate}){
+            set_reallocate_flag($payment->{id},0);
+        }
         return $total;     
     };
     if($@){
@@ -1158,6 +1176,7 @@ sub deallocate_payment {
         return;
     }
 }
+
 
 =head2 chargelostitem
 
@@ -1273,13 +1292,14 @@ func credit_lost_item( $lost_item_id, :$credit, :$undo ) {
         my $sth_payments = $dbh->prepare('SELECT DISTINCT payment_id FROM fee_transactions WHERE fee_id=? AND payment_id IS NOT NULL');   # AND must be payment type
         
         my $credited = Koha::Money->new();
+        my $reallocate = !C4::Context->preference('RefundLostReturnedAmount');
         while (my ($fee_id) = $sth->fetchrow) {
             $sth_payments->execute($fee_id);
             while (my ($payment_id) = $sth_payments->fetchrow){
-                $credited += deallocate_payment(fee=>$fee_id, payment=>$payment_id);
+                $credited += deallocate_payment(fee=>$fee_id, payment=>$payment_id, reallocate=>$reallocate);
             }
             ApplyCredit($fee_id, {  accounttype => $credit });
-        }    
+        }
     }
     return;
 }
