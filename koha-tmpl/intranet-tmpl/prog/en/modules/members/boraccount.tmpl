@@ -96,17 +96,19 @@ $(document).ready(function() {
     });
     $("#payMany").button().click(function(){
     	$('#account_tabs').tabs('select',3);
-    	$("select#allocation").val('manual');
+
     	if($("input[name='target_fees']:checked").length){
+        $("select#allocation").val('manual');
     		var fees_to_pay = $.map($("input[name='target_fees']:checked"), function(e,i){ return e.value; });
     		$("div#feepicker").show();
     		$("select#fees_to_pay").val(fees_to_pay);
             var toPay = 0.0;
             $("select#fees_to_pay option:selected").each(function(){ toPay += parseFloat($(this).data('amount')); });
             $("#credit_amount").val(toPay.toFixed(2));
-        } else {
+      } else {
         	$("select#fees_to_pay").val();
-            $("#credit_amount").val(totaldue);    		
+          $("select#allocation").val('auto');
+          $("#credit_amount").val(totaldue);    		
     	}
     	return false;
     });
