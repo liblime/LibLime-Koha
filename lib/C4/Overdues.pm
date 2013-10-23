@@ -221,7 +221,7 @@ sub CalcFine {
     my $rule_max = C4::Context->preference('UseGranularMaxFines') ? $irule->{max_fine} : 0;
     my $max_fine = $rule_max || $sys_max;
     if ($amount >= $max_fine) {
-        Koha::Money->new($max_fine);
+        $amount = Koha::Money->new($max_fine);
         $ismax = 1
     }
 
