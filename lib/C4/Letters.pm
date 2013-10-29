@@ -767,7 +767,9 @@ sub CreateTALKINGtechMESSAGE {
     my $borrower = C4::Members::GetMember( $borrowernumber );
     croak "Unable to find borrower ($borrowernumber)" unless $borrower;
 
-    return 0 unless ( $borrower->{phone}
+    return 0 unless ( ( $borrower->{phone} ||
+                      ( C4::Context->preference("SMSSendDriver")
+                              && $borrower->{smsalertnumber} ))
                               && $borrower->{phone} !~ /^\s*\*/
                               && defined $code );
 
@@ -792,13 +794,19 @@ sub _ttech_compose_message {
             '%02d/%02d/%4d', reverse split(/-/, $date) );
     }
 
+    my $phonenumber = $borrower->{phone};
+    if ( C4::Context->preference("SMSSendDriver") ) {
+        $phonenumber = "T1-" . $borrower->{smsalertnumber}
+            unless ( $phonenumber =~ /^T1-/ );
+    }
+
     no warnings qw(uninitialized);
     my $msg = sprintf(
         q{"V","EN","%s","%s","%s","%s","%s","%s","%s","%s","","%s","%12.12s","%s","%s","%s",""},
         $code,                   $notelevel,
         $borrower->{cardnumber}, $borrower->{title},
         $borrower->{firstname},  $borrower->{surname},
-        $borrower->{phone},      $borrower->{email},
+        $phonenumber,            $borrower->{email},
         $item->{holdingbranch},  $branchname,
         $item->{barcode},        $due_date,
         $item->{title} );
