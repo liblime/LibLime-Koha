@@ -218,7 +218,7 @@ $(document).ready(function(){
       return false;
     }
     if($itemlost.val() == 'lost' && $itemlost.data('initialValue') != 'lost'){
-      if(confirm("Setting this value to 'lost' will charge lost fees to the most recent borrower.")){
+      if(confirm("Setting this value to 'lost' will charge lost fees if a borrower currently has the item checked out.")){
         return true;
       } else {
         $itemlost.val($itemlost.data('initialValue'));
