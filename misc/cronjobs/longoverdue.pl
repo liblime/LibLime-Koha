@@ -136,9 +136,9 @@ sub longoverdue_sth {
     SELECT issues.*,items.barcode,items.holdingbranch,items.homebranch,items.itemlost
       FROM issues, items
      WHERE items.itemnumber = issues.itemnumber
-      AND  DATE_SUB(CURDATE(), INTERVAL ? DAY)  > issues.date_due
-      AND  DATE_SUB(CURDATE(), INTERVAL ? DAY) <= issues.date_due
-      AND  items.itemlost <> ?
+      AND issues.date_due >= ?
+      AND issues.date_due < ?
+      AND  ( itemlost IS NULL OR itemlost <> ? )
      ORDER BY issues.date_due
     ";
     return C4::Context->dbh->prepare($query);
@@ -159,9 +159,9 @@ if($longodue_start){
     my ($startdate) = bounds($longodue_end);  # yes, range is backwards from date.
     my ($enddate) = bounds($longodue_start);
 
-    $verbose and printf "\nlongoverdue:\nDue %d - %d days ago (%s to %s), lost => longoverdue\n",
+    $verbose and printf "\nlongoverdue:\nDue %d - %d days ago (%s to %s), itemlost => longoverdue\n",
                     $longodue_start, $longodue_end, $startdate, $enddate;
-    $sth_items->execute($longodue_start, $longodue_end, 'longoverdue');
+    $sth_items->execute($startdate, $enddate, 'longoverdue');
     $count=0;
     while (my $row=$sth_items->fetchrow_hashref) {
         printf ("Due %s: item %d from borrower %d to lost: %s\n", $row->{date_due}, $row->{itemnumber}, $row->{borrowernumber}, 'longoverdue') if($debug);
@@ -183,9 +183,9 @@ if($lost_start){
     my ($startdate) = bounds($endrange);
     my ($enddate) = bounds($lost_start);
     $verbose and 
-        printf "\nlost:\nDue %d - %d days ago (%s to %s), lost => lost\n",
+        printf "\nlost:\nDue %d - %d days ago (%s to %s), itemlost => lost\n",
         $lost_start, $endrange, $startdate, $enddate;
-    $sth_items->execute($lost_start, $endrange, 'lost');
+    $sth_items->execute($startdate, $enddate, 'lost');
     $count=0;
     while (my $row=$sth_items->fetchrow_hashref) {
         printf ("Due %s: item %d from borrower %d to lost: %s\n", $row->{date_due}, $row->{itemnumber}, $row->{borrowernumber}, 'lost') if($debug);
@@ -214,8 +214,8 @@ sub summarize ($$) {
     my @report = @$arg or return undef;
     my $i = 0;
     for my $range (@report) {
-        printf "\nDue %3s - %3s days ago (%s to %s), lost => %s\n",
-            map {$range->{$_}} qw(startrange endrange date2 date1 lostvalue);
+        printf "\nDue %3s - %3s days ago (%s to %s), itemlost => %s\n",
+            map {$range->{$_}} qw(startrange endrange date1 date2 lostvalue);
         $got_items and printf "  %4s items\n", $range->{count};
     }
 }
