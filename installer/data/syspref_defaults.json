@@ -1371,10 +1371,10 @@
    },
    "OPACUserCSS" : {
       "explanation" : "Add CSS to be included in the OPAC in an embedded <style> tag.",
-      "options" : null,
+      "options" : "70|10",
       "value" : null,
       "hidden" : false,
-      "type" : "free",
+      "type" : "Textarea",
       "tags" : [
          "OPAC"
       ]
