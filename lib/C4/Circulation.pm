@@ -1094,6 +1094,13 @@ sub AddIssue {
       borrower_branch    => $borrower->{branchcode},
    );
    my $biblio = GetBiblioFromItemNumber($item->{itemnumber});
+
+    if($item->{otherstatus}){
+        my $stat = C4::Items::GetItemOtherStatus($item->{itemnumber});
+        if($stat->{clearoncheckout}){
+            C4::Items::ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
+        }
+    }
         
    if (($actualissue->{borrowernumber} // '') eq $borrower->{'borrowernumber'}) {
             $datedue = AddRenewal(
@@ -1618,9 +1625,14 @@ sub AddReturn {
         $doreturn = 0;
     }
 
-    # Set items.otherstatus back to NULL on check in regardless of whether the
-    # item was actually checked out.
-    C4::Items::ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
+    # Clear items.otherstatus even if not checked out.
+    if($item->{otherstatus}){
+        my $stat = C4::Items::GetItemOtherStatus($item->{itemnumber});
+        if($stat->{clearoncheckin}){
+            C4::Items::ModItem({ otherstatus => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
+        }
+    }
+
     C4::Items::ModItem({ onloan      => undef }, $item->{'biblionumber'}, $item->{'itemnumber'});
 
     # Clear the notforloan status if syspref is turned ON and value is negative

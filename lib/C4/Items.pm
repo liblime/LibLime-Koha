@@ -541,6 +541,13 @@ sub ModItem {
     $item->{'itemnumber'} = $itemnumber or return undef;
     my $orig_item = GetItem($itemnumber);
 
+    if($item->{otherstatus}){
+        my $stat = GetItemOtherStatus($item->{itemnumber});
+        if($item->{wthdrawn} && $stat->{clearonwithdrawn}){
+            $item->{otherstatus} = undef;
+        }
+    }
+
     # FIXME : ModItem is called on status mods, not just item edits.
     # status mods should be separated into a different function, so we can safely call _check_itembarcode.
     # _check_itembarcode($item) if(C4::Context->preference('itembarcodelength')) ;
@@ -579,6 +586,7 @@ sub ModItem {
                 itemtype
                 more_subfields_xml
                 enumchron
+                otherstatus
                 copynumber| ){
         $reindex = 1 if( exists($item->{$_}) && !($item->{$_} ~~ $orig_item->{$_}));
     }
