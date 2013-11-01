@@ -3459,6 +3459,16 @@
          "Circulation"
       ]
    },
+   "EditItemsColumnOrder" : {
+      "explanation" : "Order of columns in Edit Items view.  Specify by listing subfields, e.g. 'p,o,a,b,c,y'.  Leave blank for default columns.  Subfields excluded will not appear in the table view (but will appear in item editor).",
+      "options" : null,
+      "value" : "",
+      "hidden" : false,
+      "type" : "free",
+      "tags" : [
+         "Cataloging"
+      ]
+   },
    "SIPExpiryPeriod" : {
       "explanation" : "The number in days or less that a self-check patron will be notified of their upcoming card expiration.  A value of 0 means this functionality is turned OFF.",
       "options" : null,
