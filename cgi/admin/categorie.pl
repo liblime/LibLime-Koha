@@ -128,7 +128,7 @@ if ($op eq 'add_form') {
             $sth->execute(map { scalar $input->param($_) } ('description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','fines_alert_threshold','category_type','categorycode'));
             $sth->finish;
         } else {
-            my $sth=$dbh->prepare("INSERT INTO categories  (categorycode,description,enrolmentperiod,upperagelimit,dateofbirthrequired,enrolmentfee,reservefee,overduenoticerequired,maxholds,holds_block_threshold,circ_block_threshold,fines_alert_threshold=?,category_type) values (?,?,?,?,?,?,?,?,?,?,?,?)");
+            my $sth=$dbh->prepare("INSERT INTO categories  (categorycode,description,enrolmentperiod,upperagelimit,dateofbirthrequired,enrolmentfee,reservefee,overduenoticerequired,maxholds,holds_block_threshold,circ_block_threshold,fines_alert_threshold,category_type) values (?,?,?,?,?,?,?,?,?,?,?,?,?)");
             $sth->execute(map { scalar $input->param($_) } ('categorycode','description','enrolmentperiod','upperagelimit','dateofbirthrequired','enrolmentfee','reservefee','overduenoticerequired','maxholds','holds_block_threshold','circ_block_threshold','fines_alert_threshold','category_type'));
             $sth->finish;
         }
