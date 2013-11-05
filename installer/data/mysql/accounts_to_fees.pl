@@ -127,11 +127,11 @@ my %x = (
     # We need to add an interface to define invoice and payment types, but we don't have one yet.  So they'll go to SUNDRY,
     # The authval should still be in the description.
 
-# because it's easy to forget to pass an install-specific param...
-my $actionlogs_map = { 'pioneer consortium' => 'archive_action_logs', };
-
 if($actionlogs eq 'actionlogs'){
-    $actionlogs = $actionlogs_map->{lc(C4::Context->preference('LibraryName'))} // 'action_logs';
+    my $sth_archive_action_logs_test = $dbh->prepare("show tables like 'archive_action_logs'");
+    $sth_archive_action_logs_test->execute();
+    my ($hasarchive) = $sth_archive_action_logs_test->fetchrow_array;
+    $actionlogs = 'archive_action_logs' if $hasarchive;
 }
 eval{
     my $actionlogs_test = $dbh->do("SELECT action FROM $actionlogs limit 1"); # crash if bad tablename given.
@@ -146,7 +146,6 @@ $sth_logindex->execute();
 
 my ($indextest) = $sth_logindex->fetchrow_array();
 unless($indextest){
-    warn "Adding action_logs index.";
     $dbh->do("ALTER TABLE $actionlogs ADD INDEX fineslog (module(5),object,timestamp)");
 }
 
