@@ -5681,6 +5681,14 @@ $DBversion = '4.09.00.030';
      SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.031';
+ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do("DELETE FROM systempreferences WHERE variable='AddPatronLists'");
+
+     say "Upgrade to $DBversion done ( Deprecate AddPatronLists Syspref )";
+     SetVersion ($DBversion);
+}
+
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 

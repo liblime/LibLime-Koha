@@ -289,16 +289,16 @@ if ($findborrower) {
          {limit=>0}
     );
     my @borrowers = @$borrowers;
-    if (C4::Context->preference("AddPatronLists")) {
-        $template->param(
-            "AddPatronLists_".C4::Context->preference("AddPatronLists")=> "1",
-        );
-        if (C4::Context->preference("AddPatronLists")=~/code/){
-            my $categories = GetBorrowercategoryList;
-            $categories->[0]->{'first'} = 1;
-            $template->param(categories=>$categories);
-        }
+
+    my $borcats = GetBorrowercategoryList();
+    my @borcattypes;
+    for my $cattype (qw/A S C P I X/){
+        my @cats = grep { $_->{category_type} eq $cattype } @$borcats;
+        push(@borcattypes, { typename => $cattype,
+                             categoryloop => \@cats }) if scalar @cats;
     }
+    $template->param(typeloop => \@borcattypes); 
+
     if ( $#borrowers == -1 ) {
         $query->param( 'findborrower', '' );
         $message = "'$findborrower'";

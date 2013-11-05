@@ -2,72 +2,39 @@
 	<script type="text/javascript">
 	//<![CDATA[
 
-	// prepare DOM for YUI Toolbar
-
 	 $(document).ready(function() {
-<!--TMPL_IF Name="AddPatronLists_categorycode"-->
-<!--TMPL_ELSE-->
-	 	$("#addchild").parent().remove();
-		$("#addprofessional").parent().remove();
-		$("#addorganisation").parent().remove();
-		$("#addstaff").parent().remove();
-		$("#addstatistical").parent().remove();
-<!--/TMPL_IF-->
-	    $("#newmenuc").empty();
-	    yuiToolbar();
-	 });
-
-	// YUI Toolbar Functions
-
-	function yuiToolbar() {
-
-		var newmenu = [
-<!--TMPL_IF Name="AddPatronLists_categorycode"-->
-<!--TMPL_LOOP Name="categories"-->{ text: "<!--TMPL_VAR Name="description"-->",  url: "/cgi-bin/koha/members/memberentry.pl?op=add&amp;categorycode=<!--TMPL_VAR Name="categorycode"-->" },<!--/TMPL_LOOP-->
-<!--TMPL_ELSE-->
-			{ text: _("Adult Patron"),  url: "/cgi-bin/koha/members/memberentry.pl?op=add&amp;category_type=A" },
-			{ text: _("Child Patron"),  url: "/cgi-bin/koha/members/memberentry.pl?op=add&amp;category_type=C" },
-			{ text: _("Professional Patron"),  url: "/cgi-bin/koha/members/memberentry.pl?op=add&amp;category_type=P" },
-			{ text: _("Organization"),  url: "/cgi-bin/koha/members/memberentry.pl?op=add&amp;category_type=I" },
-			{ text: _("Staff"),  url: "/cgi-bin/koha/members/memberentry.pl?op=add&amp;category_type=S" },
-			{ text: _("Statistical"),  url: "/cgi-bin/koha/members/memberentry.pl?op=add&amp;category_type=X" },
-<!--/TMPL_IF-->
-		] 
-	
-    <!-- TMPL_IF NAME="CAN_user_borrowers_add_borrowers" -->
-	    new YAHOO.widget.Button({
-	        type: "menu",
-	        label: _("New"),
-	        name: "newmenubutton",
-	        menu: newmenu,
-	        container: "newmenuc"
+	    $("#categorycode").change(function(x){
+	    	window.location = '/cgi-bin/koha/members/memberentry.pl?op=add&amp;categorycode=' + $("#categorycode").val();
 	    });
-    <!-- /TMPL_IF -->
-	
-	}
-
+	 });
 	//]]>
 	</script>
+
 	<ul class="toolbar">
     <!-- TMPL_IF NAME="CAN_user_borrowers_add_borrowers" -->
 	<li id="newmenuc">
 		<form action="/cgi-bin/koha/members/memberentry.pl" method="get">
 			<input type="hidden" name="op" value="add" />
-			<label for="categorycode">New Patron: </label><select name="categorycode" id="categorycode">
-			<!--TMPL_IF Name="AddPatronLists_categorycode"-->
-				<!--TMPL_LOOP Name="categories"--><option value="<!--TMPL_VAR Name="categorycode"-->"><!--TMPL_VAR Name="description"--></option><!--/TMPL_LOOP-->
-			<!-- TMPL_ELSE -->
-				<option value="A">Adult Patron</option>
-				<option value="C">Child Patron</option>
-				<option value="P">Professional Patron</option>
-				<option value="I">Organization</option>
-				<option value="S">Staff</option>
-				<option value="X">Statistical</option>
-			<!--/TMPL_IF-->
+			<label for="categorycode">New Patron: </label>
+	        <select id="categorycode" name="categorycode">
+	        	<option value="">Select patron category</option>
+	        <!-- TMPL_LOOP NAME="typeloop" -->
+			<!-- TMPL_IF EXPR="typename eq 'C'" --><optgroup label="Child"><!-- /TMPL_IF -->
+			<!-- TMPL_IF EXPR="typename eq 'A'" --><optgroup label="Adult"><!-- /TMPL_IF -->
+			<!-- TMPL_IF EXPR="typename eq 'S'" --><optgroup label="Staff"><!-- /TMPL_IF -->
+			<!-- TMPL_IF EXPR="typename eq 'I'" --><optgroup label="Organization"><!-- /TMPL_IF -->
+			<!-- TMPL_IF EXPR="typename eq 'P'" --><optgroup label="Professional"><!-- /TMPL_IF -->
+			<!-- TMPL_IF EXPR="typename eq 'X'" --><optgroup label="Statistical"><!-- /TMPL_IF -->
+	        <!-- TMPL_LOOP NAME="categoryloop" -->
+				<option value="<!-- TMPL_VAR NAME="categorycode" -->"><!-- TMPL_VAR NAME="description" --></option>
+	        <!-- /TMPL_LOOP -->
+	        </optgroup>
+	        <!-- /TMPL_LOOP -->
 			</select>
-			<input type="submit" class="submit" value="Go" />
+
+			<input type="submit" class="submit hidden" value="Go" />
 		</form>
 	</li>
     <!-- /TMPL_IF -->
-</ul>
+	</ul>
 </div>
