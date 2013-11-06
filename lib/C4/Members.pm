@@ -1320,6 +1320,13 @@ sub MarkMemberReported {
     $sth->execute( $amount, $borrowernumber );
 }
 
+sub ClearBillingFlags {
+    my $borrowernumber = shift;
+    my $sth = C4::Context->dbh->prepare("UPDATE borrowers SET last_reported_date=NULL,
+            last_reported_amount=NULL, amount_notify_date=NULL WHERE borrowernumber=?");
+    $sth->execute($borrowernumber);
+}
+
 =head2 checkuniquemember (OUEST-PROVENCE)
 
   ($result,$categorycode)  = &checkuniquemember($collectivity,$surname,$firstname,$dateofbirth);

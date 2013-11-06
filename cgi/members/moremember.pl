@@ -89,6 +89,10 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 my $borrowernumber = $input->param('borrowernumber');
 
+if($input->param('op') && $input->param('op') eq 'clearbillingflags'){
+    C4::Members::ClearBillingFlags($borrowernumber);
+}
+
 my $data = GetMember( $borrowernumber ,'borrowernumber');
 if (   $data
     && C4::Branch::CategoryTypeIsUsed('patrons')

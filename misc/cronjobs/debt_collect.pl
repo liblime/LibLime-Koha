@@ -195,8 +195,8 @@ foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignore
             next;
         }
 
-        if ( $last_reported_amt < $borrower->{fines_alert_threshold} ) {
-            MarkMemberReported( $borrower->{'borrowernumber'}, 0 ) if ( $confirm );
+        if ( $totalowed < $borrower->{fines_alert_threshold} ) {
+            C4::Members::ClearBillingFlags($borrower->{'borrowernumber'});
             next;
         }
         if ( $totalowed == $borrower->{last_reported_amount}) {
@@ -240,6 +240,7 @@ foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignore
     } else {
         if ( $totalowed < $borrower->{fines_alert_threshold} ) {
             print "skipping, has only $totalowed in fines\n" if ( $verbose );
+            C4::Members::ClearBillingFlags($borrower->{'borrowernumber'});
             next;
         }
 
