@@ -379,10 +379,11 @@ foreach my $field (@fields) {
         push(@big_array, \%this_row);
     }
 }
-#use Data::Dumper;
-#warn Dumper \%witness;
 my ($holdingbrtagf,$holdingbrtagsubf) = &GetMarcFromKohaField("items.holdingbranch",$frameworkcode);
 @big_array = sort {$a->{$holdingbrtagsubf} cmp $b->{$holdingbrtagsubf}} @big_array;
+
+my @col_order = grep { exists $witness{$_} } ( C4::Context->preference("EditItemsColumnOrder") =~ /\w/g );
+@col_order = sort keys %witness unless scalar @col_order;
 
 # determing working library(ies) edit/delete for EditAllLibraries=0
 my @worklibs;
@@ -413,7 +414,7 @@ foreach(keys %$branches) {
 }
 for my $row ( @big_array ) {
     my %row_data;
-    my @item_fields = map +{ field => $_ || '' }, @$row{ sort keys(%witness) };
+    my @item_fields = map +{ field => $_ || '' }, @$row{ @col_order };
     $row_data{item_value} = [ @item_fields ];
     $row_data{itemnumber} = $row->{itemnumber};
     $row_data{holds} = ( GetReservesFromItemnumber( $row->{itemnumber} ) );
@@ -436,7 +437,7 @@ for my $row ( @big_array ) {
 || $$a{a}     cmp $$b{a}
 } @item_value_loop;
 
-foreach my $subfield_code (sort keys(%witness)) {
+foreach my $subfield_code (@col_order) {
     my %header_value;
     $header_value{header_value} = $witness{$subfield_code};
     push(@header_value_loop, \%header_value);

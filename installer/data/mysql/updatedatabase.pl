@@ -5663,7 +5663,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
    SetVersion ($DBversion);
 }
 
- $DBversion = '4.09.00.029';
+$DBversion = '4.09.00.029';
  if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
     $dbh->do("ALTER TABLE `payments` ADD COLUMN reallocate TINYINT NOT NULL DEFAULT 1");
 
@@ -5671,6 +5671,23 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
      SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.030';
+ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do("ALTER TABLE itemstatus ADD COLUMN clearoncheckout TINYINT NOT NULL DEFAULT 0");
+    $dbh->do("ALTER TABLE itemstatus ADD COLUMN clearoncheckin TINYINT NOT NULL DEFAULT 1");
+    $dbh->do("ALTER TABLE itemstatus ADD COLUMN clearonwithdrawn TINYINT NOT NULL DEFAULT 0");
+
+     say "Upgrade to $DBversion done ( Add clear-on settings to itemstatus table. )";
+     SetVersion ($DBversion);
+}
+
+$DBversion = '4.09.00.031';
+ if (C4::Context->preference('Version') < TransformToNum($DBversion)) {
+    $dbh->do("DELETE FROM systempreferences WHERE variable='AddPatronLists'");
+
+     say "Upgrade to $DBversion done ( Deprecate AddPatronLists Syspref )";
+     SetVersion ($DBversion);
+}
 
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;

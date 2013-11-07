@@ -1057,7 +1057,7 @@ sub allocate_payment {
             warn "*************Attempted overallocation of payment: $amt / $unallocated_amt";
             warn p $payment;
             warn p $fee;
-            return;
+            return $unallocated_amt, $fee->{amountoutstanding};
         }
     } else {
         $amt = $unallocated_amt;

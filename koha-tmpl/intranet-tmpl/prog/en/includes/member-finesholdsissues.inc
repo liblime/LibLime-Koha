@@ -4,7 +4,7 @@ $(document).ready(function() {
 	$.tablesorter.defaults.widgets = ['zebra'];
 	$("#issuest").tablesorter({<!-- TMPL_IF NAME="dateformat_metric" -->
 		dateFormat: 'uk',<!-- /TMPL_IF -->
-		headers: { 1: { sorter: 'articles' },5: { sorter: false },6:{sorter:false},7:{sorter:false},8:{sorter:false}}
+		headers: { 0:{sorter:false}, 2:{sorter: 'articles'}, 7:{sorter:false}, 8:{sorter:false}}
 	}); 
 	$("#holdst").tablesorter({
 		sortList: [[1,0]],
@@ -77,10 +77,10 @@ function confirmCancelWaiting(that) {
 <div id="finesholdsissues" class="toptabs">
   <ul>
     <!-- TMPL_IF NAME="CAN_user_circulate_view_checkout" -->
-    <li><a href="#tabs-checkedout">Checked Out</a></li>
+    <li><a href="#tabs-checkedout">Checked Out (<!-- TMPL_VAR issuecount -->)</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_updatecharges_view_charges" -->
-    <li><a href="#tabs-finesandcharges">Fines &amp; Charges</a></li>
+    <li><a href="#tabs-finesandcharges">Fines &amp; Charges (<!-- TMPL_VAR totaldue -->)</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_reserveforothers_view_holds" -->
     <li><a href="#tabs-onhold" id="onholdlink">On Hold (<TMPL_VAR NAME="countreserv">)</a></li>
@@ -97,27 +97,26 @@ function confirmCancelWaiting(that) {
     <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->" />
     <table id="issuest">
       <thead>
-	<tr>
+	     <tr>
+          <th scope="col" class="rownum"></th>
           <th scope="col">Due date</th>
           <th scope="col">Title</th>
           <th scope="col">Item Type</th>
           <th scope="col">Checked out on</th> 
-	  <th scope="col">Library</th>
+	        <th scope="col">Library</th>
           <th scope="col">Call no</th>
-          <th scope="col">Charge</th>
           <th scope="col">Price</th>
           <th scope="col">Renew <p class="column-tool"><a href="#" id="CheckAllitems">select all</a> | <a href="#" id="CheckNoitems">none</a></p></th>
           <!-- TMPL_IF NAME="dispreturn" -->
           <th scope="col">Check in <p class="column-tool"><a href="#" id="CheckAllreturns">select all</a> | <a href="#" id="CheckNoreturns">none</a></p></th>
-          <!-- /TMPL_IF>
-               </tr></thead>
+          <!-- /TMPL_IF -->
+        </tr>
+      </thead>
       <tfoot>
-	<tr>
-          <td colspan="6" style="text-align: right; font-weight:bold;">Totals:</td>
-	  <td><!-- TMPL_VAR NAME="totaldue" --></td>
+	     <tr>
+          <td colspan="7" style="text-align: right; font-weight:bold;">Total:</td>
           <td><!-- TMPL_VAR NAME="totalprice" --></td>
-          <td>
-            <p>
+          <td><p>
               Renewal due date: <input type="text" size="8" id="newduedate" name="newduedate" value="<!-- TMPL_VAR Name="newduedate" -->" />
               <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" id="newduedate_button" alt="Show Calendar" />
               <script type="text/javascript">
@@ -147,7 +146,8 @@ function confirmCancelWaiting(that) {
         <tr class="problem">
         <!-- TMPL_ELSE -->
         <tr>
-          <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
+        <td><!-- TMPL_VAR __counter__ --></td>
 	  <td<!-- TMPL_IF NAME="red" --> class="od"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="date_due" -->
             <!-- TMPL_IF NAME="itemlost" -->
             <span class="lost"><!-- TMPL_VAR NAME="itemlost" --></span>
@@ -165,7 +165,6 @@ function confirmCancelWaiting(that) {
           <td><!-- TMPL_VAR NAME="issuedate" --></td>
           <td><!-- TMPL_VAR NAME="branchcode" --></td>
           <td><!-- TMPL_VAR NAME="itemcallnumber" --></td>
-          <td><!-- TMPL_VAR NAME="charge" --></td>
           <td><!-- TMPL_VAR NAME="replacementprice" --></td>
           <!-- TMPL_IF NAME="renew_failed" -->
           <td class="problem">Renewal Failed</td>

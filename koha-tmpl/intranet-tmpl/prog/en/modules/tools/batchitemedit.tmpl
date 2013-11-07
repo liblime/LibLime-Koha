@@ -19,64 +19,76 @@
         Batch Edit Items
     </h1>
 
-
-
-
 <!-- TMPL_IF NAME="completed" -->
-<!-- TMPL_IF NAME="edit_complete" -->
-<!-- TODO make this more like the inventory results screen -->
+
+  <!-- TMPL_IF NAME="edit_complete" -->
+  <!-- TODO make this more like the inventory results screen -->
     <p>
-    <!-- TMPL_IF NAME="items_updated" -->
-        <!-- TMPL_VAR NAME="items_updated" --> Items processed
-    <!-- TMPL_ELSE -->
-        No items processed on that selection
-    <!-- /TMPL_IF -->
-</p>
-  <!-- TMPL_LOOP NAME="itemsloop" -->
-    <p>
-    Barcode:<!-- TMPL_VAR NAME="barcode" -->&nbsp;
-    <!-- This is bogus as the routines do not return success/ failure -->
-    <!-- TMPL_IF NAME="updated" -->
-      Successfully Updated
-    <!-- TMPL_ELSE -->
-      Failed to Update
-      <!-- TMPL_IF NAME="error" -->
-          : <!-- TMPL_VAR NAME="error" -->
+      <!-- TMPL_IF NAME="items_updated" -->
+          <!-- TMPL_VAR NAME="items_updated" --> Items processed
+      <!-- TMPL_ELSE -->
+          No items processed on that selection
       <!-- /TMPL_IF -->
-    <!-- /TMPL_IF -->
-
-    <!-- TMPL_VAR NAME="itemnumber" --> <!--TMPL_VAR NAME="barcode" -->
     </p>
-  <!-- /TMPL_LOOP -->
-<fieldset class="action">
-<a class="refresh" href="/cgi-bin/koha/tools/batchitemedit.pl"> Enter New Selection</a>
-<a class="cancel" href="/cgi-bin/koha/tools/tools-home.pl">Leave</a>
-</fieldset>
+    <!-- TMPL_LOOP NAME="itemsloop" -->
+      <p>
+        Barcode:<!-- TMPL_VAR NAME="barcode" -->&nbsp;
+        <!-- This is bogus as the routines do not return success/ failure -->
+        <!-- TMPL_IF NAME="updated" -->
+          <!-- TMPL_UNLESS warnings -->
+            Successfully
+          <!-- /TMPL_UNLESS -->
+           Updated
+        <!-- TMPL_ELSE -->
+          Failed to Update
+          <!-- TMPL_IF NAME="error" -->
+              : <!-- TMPL_VAR NAME="error" -->
+          <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
+
+        <!-- TMPL_VAR NAME="itemnumber" -->
+        <!-- TMPL_IF warnings -->
+            <!-- TMPL_LOOP warnings -->
+                <span class="warning"> [ <!-- TMPL_VAR field --> not updated; <!-- TMPL_VAR warning --> ]</span>
+            <!-- /TMPL_LOOP -->
+        <!-- /TMPL_IF -->
+      </p>
+    <!-- /TMPL_LOOP -->
+
+    <!-- TMPL_LOOP notfound -->
+        <p class="error">Barcode: <!-- TMPL_VAR barcode --> [not found] </p>
+    <!-- /TMPL_LOOP -->
+
+  <fieldset class="action">
+    <a class="refresh" href="/cgi-bin/koha/tools/batchitemedit.pl"> Enter New Selection</a>
+    <a class="cancel" href="/cgi-bin/koha/tools/tools-home.pl">Leave</a>
+  </fieldset>
 <!-- /TMPL_IF --> <!-- edit completed -->
-<!-- TMPL_IF NAME="delete_complete" -->
-<p>
-    <!-- TMPL_IF NAME="items_updated" -->
-        <!-- TMPL_VAR NAME="items_updated" --> Items flagged for deletion
-    <!-- TMPL_ELSE -->
-        No items selected for deletion
-    <!-- /TMPL_IF -->
-</p>
 
-<!-- TMPL_IF NAME="items_updated" -->
-<p>The list of selected items is delete list <!-- TMPL_VAR NAME="delete_list_id" --></p>
-<!-- /TMPL_IF -->
-  <!-- TMPL_LOOP NAME="itemsloop" -->
-    <p>
-    Barcode:<!-- TMPL_VAR NAME="barcode" -->&nbsp;
-    </p>
-  <!-- /TMPL_LOOP -->
-<fieldset class="action">
-<a class="refresh" href="/cgi-bin/koha/tools/batchitemedit.pl"> Enter New Selection</a>
-<a class="refresh" href="/cgi-bin/koha/tools/viewitemdeletelist.pl?list_id=<!-- TMPL_VAR NAME="delete_list_id" -->"> View Delete List</a>
-<a class="cancel" href="/cgi-bin/koha/tools/tools-home.pl">Leave</a>
-</fieldset>
+<!-- TMPL_IF NAME="delete_complete" -->
+  <p>
+      <!-- TMPL_IF NAME="items_updated" -->
+          <!-- TMPL_VAR NAME="items_updated" --> Items flagged for deletion
+      <!-- TMPL_ELSE -->
+          No items selected for deletion
+      <!-- /TMPL_IF -->
+  </p>
+
+  <!-- TMPL_IF NAME="items_updated" -->
+  <p>The list of selected items is delete list <!-- TMPL_VAR NAME="delete_list_id" --></p>
+  <!-- /TMPL_IF -->
+    <!-- TMPL_LOOP NAME="itemsloop" -->
+      <p>Barcode:<!-- TMPL_VAR NAME="barcode" -->&nbsp;</p>
+    <!-- /TMPL_LOOP -->
+  <fieldset class="action">
+    <a class="refresh" href="/cgi-bin/koha/tools/batchitemedit.pl"> Enter New Selection</a>
+    <a class="refresh" href="/cgi-bin/koha/tools/viewitemdeletelist.pl?list_id=<!-- TMPL_VAR NAME="delete_list_id" -->"> View Delete List</a>
+    <a class="cancel" href="/cgi-bin/koha/tools/tools-home.pl">Leave</a>
+  </fieldset>
 <!-- /TMPL_IF --> <!-- delete completed -->
+
 <!-- TMPL_ELSE -->
+
 <!-- itemnumber biblionumber biblioitemnumber barcode dateaccessioned booksellerid homebranch price replacementprice
 replacementpricedate datelastborrowed datelastseen stack notforloan damaged itemlost wthdrawn itemcallnumber
 issues renewals reserves restricted itemnotes holdingbranch paidfor timestamp location permanent_location
@@ -411,10 +423,11 @@ onloan cn_source cn_sort ccode materials uri itype more_subfields_xml enumchron 
             </select>
         </td>
         </tr>
-        <tr><td colspan="3" >On you can upload a file of barcode numbers to change</td></tr>
+        <tr><td colspan="3" >On you can upload a file of barcode numbers to change</td><td colspan="3"></td></tr>
         <tr><td>&nbsp;</td>
             <td><label for="uploadbarcodes">Barcode file:</label></td>
             <td><input type="file" id="uploadbarcodes" name="uploadbarcodes" /></td>
+            <td colspan="3"></td>
         </tr>
 </table>
 <fieldset class="action">

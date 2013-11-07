@@ -52,14 +52,16 @@ if($quicksearch){
                  debug => 1,
                  });
 }
-$template->param( 
-        "AddPatronLists_".C4::Context->preference("AddPatronLists")=> "1",
-            );
-if (C4::Context->preference("AddPatronLists")=~/code/){
-    my $categories=GetBorrowercategoryList;
-    $categories->[0]->{'first'}=1;
-    $template->param(categories=>$categories);  
-}  
+
+my $borcats = GetBorrowercategoryList();
+my @borcattypes;
+
+for my $cattype (qw/A S C P I X/){
+    my @cats = grep { $_->{category_type} eq $cattype } @$borcats;
+    push(@borcattypes, { typename => $cattype,
+                         categoryloop => \@cats }) if scalar @cats;
+}
+
 
 ## Advanced Patron Search
 my @attributes = C4::Members::AttributeTypes::GetAttributeTypes() if ( C4::Context->preference('ExtendedPatronAttributes') );
@@ -68,7 +70,7 @@ my $branchesloop = GetBranchesLoop();
 map {delete $_->{selected}} @{$branchesloop};
 
 $template->param(
-    CategoriesLoop => GetBorrowercategoryList(),
+    typeloop => \@borcattypes,
     BranchesLoop => $branchesloop,
     AttributesLoop => \@attributes,   
 );

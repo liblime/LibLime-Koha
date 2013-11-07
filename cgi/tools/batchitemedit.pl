@@ -77,40 +77,51 @@ if ( $op eq 'Proceed' ) {
     my $updated           = 0;
     my $columns_to_select = get_columns_to_select($reading_from_file);
     my $columns_to_edit   = get_columns_to_edit();
+
+    my $items = [];
+    my $notfound = [];
     if ( $columns_to_edit && $columns_to_select ) {
-        my $items = get_itemnumbers($columns_to_select);
-        foreach my $item ( @{$items} ) {
-            my $rep;
-            $rep->{barcode} = $item->{barcode};
-            ModItem( $columns_to_edit, $item->{bnum}, $item->{inum} );
-            ++$updated;
-            $rep->{updated} =
-              1;    # None of the update routines return success/failure
-            push @{$processed_items}, $rep;
-        }
+        $items = get_itemnumbers($columns_to_select);
     } elsif ( $columns_to_edit && $reading_from_file ) {
         while ( my $barcode = <$uploadbarcodes> ) {
             chomp $barcode;
             $barcode =~ s/\r//g;
-            my $rep = { barcode => $barcode, };
             my $item = GetItem( "", $barcode );
-            if ($item) {
-                ModItem( $columns_to_edit, $item->{biblionumber},
-                    $item->{itemnumber} );
-                ++$updated;
-                $rep->{updated} = 1;
+            if($item){
+                push @$items, $item;
             } else {
-                $rep->{error} = 'No matching item found';
-            }
-            push @{$processed_items}, $rep;
+                push @$notfound, { barcode => $barcode };
+            }            
         }
     }
+
+    foreach my $item ( @{$items} ) {
+        my $rep = { warnings => [] };
+        my %to_edit = %$columns_to_edit;
+        if($item->{onloan}){
+            if($columns_to_edit->{itemlost} eq 'lost'){
+                delete $to_edit{itemlost};
+                push @{$rep->{warnings}}, { field=> 'itemlost', warning => 'item is checked out.' };
+            }
+            if($columns_to_edit->{wthdrawn}){
+                delete $to_edit{wthdrawn};
+                push @{$rep->{warnings}}, { field=> 'withdrawn', warning => 'item is checked out.' };
+            }
+        }
+        $rep->{barcode} = $item->{barcode};
+        ModItem( \%to_edit, $item->{bnum}, $item->{inum} );
+        ++$updated;
+        $rep->{updated} = 1;    # None of the update routines return success/failure
+        push @{$processed_items}, $rep;
+    }
+
 
     $template->param(
         completed     => 1,
         edit_complete => 1,
         items_updated => $updated,
         itemsloop     => $processed_items,
+        notfound      => $notfound,
     );
 } elsif ( $op eq 'Delete' ) {
 
@@ -155,19 +166,22 @@ if ( $op eq 'Proceed' ) {
 } else {    # Generate the edit form
     my $branchloop           = get_branches();
     my $withdrawnloop        = get_withdrawn();
-    my $lostloop             = get_lost_statuses();
     my $damagedloop          = get_damaged();
     my $userestrictionloop   = get_userestrict();
     my $nflloop              = get_notforloan();
     my $collectioncodeloop   = get_ccodes();
     my $shelvinglocationloop = get_shelving_locations();
     my $itemtypeloop         = get_itypes();
-
+    my $itemlostvalues = C4::Items::get_itemlost_values();
+    my @itemlostloop = map { {  value => $_,
+                            description => $itemlostvalues->{$_}
+                            }
+                        } sort keys %$itemlostvalues;
     # pass_selections ???
     $template->param(
         branchloop           => $branchloop,
         withdrawnloop        => $withdrawnloop,
-        lostloop             => $lostloop,
+        lostloop             => \@itemlostloop,
         damagedloop          => $damagedloop,
         userestrictionloop   => $userestrictionloop,
         nflloop              => $nflloop,
@@ -225,10 +239,6 @@ sub get_withdrawn {
     return get_authorised_values('WITHDRAWN');
 }
 
-sub get_lost_statuses {
-    return get_authorised_values('LOST');
-}
-
 sub get_damaged {
     return get_authorised_values('DAMAGED');
 }
@@ -272,7 +282,7 @@ sub get_itemnumbers {
     # Get a list of matching item numbers
     # similar to C4/Items/GetItemsForInventory
     my $select =
-      'SELECT items.itemnumber as inum, barcode, itemcallnumber, title, author,'
+      'SELECT items.itemnumber as inum, barcode, itemcallnumber, title, author, onloan, '
       . ' biblio.biblionumber as bnum, datelastseen FROM items '
       . 'LEFT JOIN biblio ON items.biblionumber = biblio.biblionumber '
       . 'LEFT JOIN biblioitems on items.biblionumber = biblioitems.biblionumber';

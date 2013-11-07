@@ -97,6 +97,9 @@ if ( $op eq 'add_form' ) {
         holdsallowed    => $data->{'holdsallowed'},
         holdsfilled     => $data->{'holdsfilled'},
         suppress        => $data->{'suppress'},
+        clearoncheckout => $data->{'clearoncheckout'},
+        clearoncheckin  => $data->{'clearoncheckin'},
+        clearonwithdrawn => $data->{'clearonwithdrawn'},
         template        => C4::Context->preference('template'),
     );
 
@@ -112,40 +115,38 @@ elsif ( $op eq 'add_validate' ) {
     ";
     my $sth = $dbh->prepare($query);
     $sth->execute($statuscode);
+    my @bind = (
+            $input->param('description'),
+            $input->param('holdsallowed') ? 1 : 0,
+            $input->param('holdsfilled')  ? 1 : 0,
+            $input->param('suppress')     ? 1 : 0,
+            $input->param('clearoncheckin') ? 1 : 0,
+            $input->param('clearoncheckout') ? 1 : 0,
+            $input->param('clearonwithdrawn') ? 1 : 0,
+            $input->param('statuscode')
+        );
+    my $sth_add;
     if ( $sth->fetchrow ) {		# it's a modification
-        my $query2 = '
+        $sth_add = $dbh->prepare('
             UPDATE itemstatus
             SET    description = ?
                  , holdsallowed = ?
                  , holdsfilled  = ?
                  , suppress = ?
+                 , clearoncheckin = ?
+                 , clearoncheckout = ?
+                 , clearonwithdrawn = ?
             WHERE statuscode = ?
-        ';
-        $sth = $dbh->prepare($query2);
-        $sth->execute(
-            $input->param('description'),
-            $input->param('holdsallowed') ? 1 : 0,
-            $input->param('holdsfilled')  ? 1 : 0,
-            $input->param('suppress')     ? 1 : 0,
-            $input->param('statuscode')
-        );
-    }
-    else {    # add a new itemtype & not modif an old
-        my $query = "
+        ');
+    } else {
+        $sth_add = $dbh->prepare("
             INSERT INTO itemstatus
-                (statuscode,description,holdsallowed,holdsfilled,suppress)
+                (description,holdsallowed,holdsfilled,suppress,clearoncheckin,clearoncheckout,clearonwithdrawn,statuscode)
             VALUES
-                (?,?,?,?);
-            ";
-        my $sth = $dbh->prepare($query);
-        $sth->execute(
-            $input->param('statuscode'),
-            $input->param('description'),
-            $input->param('holdsallowed') ? 1 : 0,
-            $input->param('holdsfilled')  ? 1 : 0,
-            $input->param('suppress')     ? 1 : 0,
-        );
+                (?,?,?,?,?,?,?,?);
+            ");
     }
+    $sth_add->execute(@bind);
 
     print $input->redirect('itemstatus.pl'); # Fixme: if edit, should return to same page. in paginated table.
     exit;

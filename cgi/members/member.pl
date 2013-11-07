@@ -58,23 +58,16 @@ if($quicksearch){
                  debug => 1,
                  });
 }
-my $theme = $input->param('theme') || "default";
 
+my $borcats = GetBorrowercategoryList();
+my @borcattypes;
+for my $cattype (qw/A S C P I X/){
+    my @cats = grep { $_->{category_type} eq $cattype } @$borcats;
+    push(@borcattypes, { typename => $cattype,
+                         categoryloop => \@cats }) if scalar @cats;
+}
+$template->param(typeloop => \@borcattypes);  
 
-$template->param( 
-        "AddPatronLists_".C4::Context->preference("AddPatronLists")=> "1",
-            );
-if (C4::Context->preference("AddPatronLists")=~/code/){
-    my $categories=GetBorrowercategoryList;
-    $categories->[0]->{'first'}=1;
-    $template->param(categories=>$categories);  
-}  
-            # only used if allowthemeoverride is set
-#my %tmpldata = pathtotemplate ( template => 'member.tmpl', theme => $theme, language => 'fi' );
-    # FIXME - Error-checking
-#my $template = HTML::Template->new( filename => $tmpldata{'path'},
-#                   die_on_bad_params => 0,
-#                   loop_context_vars => 1 );
 
 my $member = $input->param('member');
 # trim leading and trailing whitespace from input

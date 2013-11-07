@@ -289,6 +289,11 @@ if ( defined $htmlfilename ) {
 my @cats = C4::Category->all();
 my $sth_bor_notif_date = $dbh->prepare("UPDATE borrowers SET amount_notify_date = CURDATE() WHERE borrowernumber = ?");
 
+# FIXME: This script sets amount_notify_date, but never clears it.
+# So a patron will get one notice.  Currently it can be cleared in patron
+# details view, and it's cleared if debt_collect is running, which covers
+# most users.
+
 foreach my $branchcode (@branches) {
 
     my $branch_details = C4::Branch::GetBranchDetail($branchcode);

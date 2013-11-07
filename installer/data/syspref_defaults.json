@@ -1739,16 +1739,6 @@
          "OPAC"
       ]
    },
-   "AddPatronLists" : {
-      "explanation" : "Allow user to choose what list to pick up from when adding patrons",
-      "options" : "categorycode|category_type",
-      "value" : "categorycode",
-      "hidden" : false,
-      "type" : "Choice",
-      "tags" : [
-         "Patrons"
-      ]
-   },
    "AmazonEnabled" : {
       "explanation" : "Turn ON Amazon Content - You MUST set AWSAccessKeyID, AWSPrivateKey, and AmazonAssocTag if enabled",
       "options" : null,
@@ -3457,6 +3447,16 @@
       "hidden" : false,
       "tags" : [
          "Circulation"
+      ]
+   },
+   "EditItemsColumnOrder" : {
+      "explanation" : "Order of columns in Edit Items view.  Specify by listing subfields, e.g. 'p,o,a,b,c,y'.  Leave blank for default columns.  Subfields excluded will not appear in the table view (but will appear in item editor).",
+      "options" : null,
+      "value" : "",
+      "hidden" : false,
+      "type" : "free",
+      "tags" : [
+         "Cataloging"
       ]
    },
    "SIPExpiryPeriod" : {

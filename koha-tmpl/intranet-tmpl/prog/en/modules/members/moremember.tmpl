@@ -265,15 +265,35 @@ if (nodename =="barcodes[]"){
 </div>
 
 <!-- TMPL_IF NAME="EnhancedMessagingPreferences" -->
-<div id="patron-messaging-prefs" style="padding-top: 1em;">
-<h3>Patron messaging preferences</h3>
-<!-- TMPL_INCLUDE NAME="messaging-preference-form.inc" -->
- <!-- TMPL_IF NAME="SMSSendDriver" -->
-      <div class="rows"> <ol><li><span class="label">SMS number:</span><!-- TMPL_VAR NAME="SMSnumber"  -->
-     </li></ol></div>
- <!-- /TMPL_IF -->
-</div>
-<div class="action"><a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=5">Edit</a></div>
+  <div id="patron-messaging-prefs" style="padding-top: 1em;">
+    <h3>Patron messaging preferences</h3>
+    <!-- TMPL_INCLUDE NAME="messaging-preference-form.inc" -->
+     <!-- TMPL_IF NAME="SMSSendDriver" -->
+          <div class="rows"> <ol><li><span class="label">SMS number:</span><!-- TMPL_VAR NAME="SMSnumber"  -->
+         </li></ol></div>
+     <!-- /TMPL_IF -->
+  </div>
+  <div class="action">
+    <a href="memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;step=5">Edit</a>
+  </div>
+<!-- /TMPL_IF -->
+
+<!-- TMPL_IF amount_notify_date -->
+  <div id="billing_notices">
+    <h3>Billing Notices</h3>
+      <ul>
+        <li>Billing notice sent: <!-- TMPL_VAR EXPR="date(amount_notify_date)" --></li>
+        <!-- TMPL_IF last_reported_date -->
+          <li>Last debt collect update: <!-- TMPL_VAR EXPR="date(last_reported_date)" --></li>
+          <li>Last debt collect amount: <!-- TMPL_VAR EXPR="currency(last_reported_amount)" --></li>
+        <!-- /TMPL_IF -->
+      </ul>
+      <!-- TMPL_IF CAN_user_circulate_override_max_fines -->
+        <a href="moremember.pl?borrowernumber=<!-- TMPL_VAR borrowernumber -->&op=clearbillingflags">
+          <button>Clear billing flags</button>
+        </a>
+      <!-- /TMPL_IF -->
+  </div>
 <!-- /TMPL_IF -->
 
 </div>

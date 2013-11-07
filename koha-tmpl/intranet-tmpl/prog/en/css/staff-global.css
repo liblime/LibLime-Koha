@@ -647,6 +647,16 @@ fieldset.action, div.action {
 	width : auto;
 }
 
+fieldset.rows li fieldset{
+       width:22em;
+       padding:.7em;
+}
+fieldset.rows li fieldset label{
+       float:none;
+       display:block;
+       text-align:left;
+}
+
 div.rows {
 float : left;
 clear : left;
@@ -868,6 +878,10 @@ fieldset.rows .inputnote {
 
 #editmenuc .first-child, #deleteshelf .first-child,#newmenuc .first-child, #addbiblio .first-child, #z3950search .first-child, #printmenuc .first-child, #newsupplier .first-child, #savemenuc .first-child {
 	padding-left : 15px;
+}
+
+.warning{
+	color: #C2AA4B;
 }
 
 .error,
