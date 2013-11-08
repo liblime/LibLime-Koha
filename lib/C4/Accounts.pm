@@ -1284,21 +1284,44 @@ func credit_lost_item( $lost_item_id, :$credit, :$undo ) {
 
     if($undo){
         # unforgive all such credits.  Hopefully this shouldn't really happen, but we're only keyed on itemnumber.
+        # FIXME: This is shady; no audit trail.  We shouldn't delete from fee_transactions.
         my $sth_waives = $dbh->prepare("DELETE FROM fee_transactions WHERE fee_id=? AND accounttype=?");
         while (my ($fee_id) = $sth->fetchrow) {
             $sth_waives->execute($fee_id, $credit);
         }
+        if(C4::Context->preference('ApplyFineWhenLostItemChargeRefunded')){
+            # We also must forgive the most recent overdue charges for this item.
+            my $sth_odue = $dbh->prepare("SELECT id from fees LEFT JOIN fee_transactions ON fee_id=fees.id
+                    WHERE borrowernumber = ? AND itemnumber = ? AND accounttype='FINE' ORDER BY timestamp DESC LIMIT 1");
+            $sth_odue->execute($lost_item->{borrowernumber}, $lost_item->{'itemnumber'});
+            my ($odue_fine) = $sth_odue->fetchrow;
+            if($odue_fine){
+                my $sth_payments = $dbh->prepare('SELECT DISTINCT payment_id FROM fee_transactions WHERE fee_id=? AND payment_id IS NOT NULL');
+                $sth_payments->execute($odue_fine);
+                while (my ($payment_id) = $sth_payments->fetchrow){
+                    deallocate_payment(fee=>$odue_fine, payment=>$payment_id);
+                }
+                #FIXME: 'CLAIMS_RETURNED' isn't the right credit type here; should add a 'cancel-claims-returned'
+                ApplyCredit($odue_fine, {  accounttype => $credit });
+            }
+        }
+
     } else {
         my $sth_payments = $dbh->prepare('SELECT DISTINCT payment_id FROM fee_transactions WHERE fee_id=? AND payment_id IS NOT NULL');   # AND must be payment type
-        
-        my $credited = Koha::Money->new();
+        #my $credited = Koha::Money->new();
         my $reallocate = !C4::Context->preference('RefundLostReturnedAmount');
         while (my ($fee_id) = $sth->fetchrow) {
             $sth_payments->execute($fee_id);
             while (my ($payment_id) = $sth_payments->fetchrow){
-                $credited += deallocate_payment(fee=>$fee_id, payment=>$payment_id, reallocate=>$reallocate);
+                #$credited += 
+                deallocate_payment(fee=>$fee_id, payment=>$payment_id, reallocate=>$reallocate);
             }
             ApplyCredit($fee_id, {  accounttype => $credit });
+        }
+        if(my $odue = C4::Context->preference('ApplyFineWhenLostItemChargeRefunded')){
+            my $old_issue = C4::Circulation::GetOldIssue($lost_item->{itemnumber});
+            my $returndate = ($odue eq 'DateLost') ? C4::Dates->new($lost_item->{date_lost}, 'iso') : undef;
+            C4::Overdues::ApplyFine($old_issue, $returndate);
         }
     }
     return;

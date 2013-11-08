@@ -280,7 +280,6 @@ sub ApplyFine {
     my $duedate = C4::Dates->new($issue->{'date_due'},'iso');
     my $borrower = C4::Members::GetMember($issue->{'borrowernumber'});  # Should be Memoized.
     my $item = C4::Items::GetItem($issue->{itemnumber});
-    # $issue->{branchcode} holds the circControl branch.
 
     return if($duedate->output('iso') gt $checkindate->output('iso')); # or it's not overdue, right?
     my $control = C4::Context->preference('CircControl');
@@ -291,6 +290,7 @@ sub ApplyFine {
     my $calendar = C4::Calendar->new(branchcode => $branchcode);
     #my ($amount,$chargeintervals)= CalcFine($issue, $borrower->{'categorycode'}, $branchcode, $checkindate, $calendar);
     my ($amount, $days_minus_grace, $daystocharge, $ismax)= CalcFine($issue, $borrower->{categorycode}, $branchcode, $checkindate, $calendar);
+
     if($amount){
         my $biblio = GetBiblioFromItemNumber($issue->{itemnumber});
     
