@@ -292,8 +292,9 @@ sub SearchMember {
 
     if (@$data) {
         $query = sprintf(
-            'SELECT * FROM borrowers b JOIN categories c ON b.categorycode = c.categorycode WHERE borrowernumber in (%s)',
-            join( ',', split('', '?' x @$data) ));
+            'SELECT * FROM borrowers b JOIN categories c ON b.categorycode = c.categorycode '.
+            'WHERE borrowernumber in (%s) ORDER BY %s',
+            join( ',', split('', '?' x @$data) ), $orderby);
         $data = $dbh->selectall_arrayref($query, {Slice=>{}}, @$data);
     }
     # This assumes a lost barcode search will never match a patron's name.
