@@ -2379,12 +2379,12 @@
          "Circulation"
       ]
    },
-   "ApplyMaxFineWhenLostItemChargeRefunded" : {
-      "explanation" : "Use with RefundReturnedLostItem. If set, the maxfine on an item will be applied automatically when the lost item charges are refunded after a patron returns the item",
-      "options" : null,
-      "value" : "1",
+   "ApplyFineWhenLostItemChargeRefunded" : {
+      "explanation" : "If set, an overdue charge will be applied when lost item charges are refunded after a lost item is marked not lost.  Set to blank to charge no fine; to DateLost or DateFound to calculate the fine based on either date.",
+      "options" : "|DateLost|DateFound",
+      "value" : "",
       "hidden" : false,
-      "type" : "YesNo",
+      "type" : "Choice",
       "tags" : [
          "Circulation"
       ]
