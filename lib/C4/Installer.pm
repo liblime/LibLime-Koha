@@ -484,7 +484,8 @@ sub set_version_syspref {
     my $kohaversion=C4::Context::KOHAVERSION;
     # remove the 3 last . to have a Perl number
     $kohaversion =~ s/(.*\..*)\.(.*)\.(.*)/$1$2$3/;
-    if (C4::Context->preference('Version')) {
+    my $version = eval { C4::Context->preference('Version') };
+    if ($version) {
         warn "UPDATE Version";
         my $finish=$self->{'dbh'}->prepare("UPDATE systempreferences SET value=? WHERE variable='Version'");
         $finish->execute($kohaversion);
@@ -493,7 +494,7 @@ sub set_version_syspref {
         my $finish=$self->{'dbh'}->prepare("INSERT into systempreferences (variable,value) values ('Version',?)");
         $finish->execute($kohaversion);
     }
-    C4::Context->clear_syspref_cache();
+    C4::Context->_clear_syspref_cache();
 }
 
 =head2 load_sql

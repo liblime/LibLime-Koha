@@ -543,7 +543,6 @@ has authenticated.
 sub _version_check ($$) {
     my $type = shift;
     my $query = shift;
-    my $version;
     # If Version syspref is unavailable, it means Koha is beeing installed,
     # and so we must redirect to OPAC maintenance page or to the WebInstaller
     # also, if OpacMaintenance is ON, OPAC should redirect to maintenance
@@ -551,7 +550,8 @@ sub _version_check ($$) {
         warn "OPAC Install required, redirecting to maintenance";
         print $query->redirect("/cgi-bin/koha/maintenance.pl");
     }
-    unless ($version = C4::Context->preference('Version')) {    # assignment, not comparison
+    my $version = eval { C4::Context->preference('Version') };
+    unless ($version) {
       if ($type ne 'opac') {
         warn "Install required, redirecting to Installer";
         print $query->redirect("/cgi-bin/koha/installer/install.pl");
