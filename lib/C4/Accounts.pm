@@ -27,6 +27,8 @@ use C4::Biblio;
 use C4::Items;
 use C4::LostItems;
 use C4::Circulation;
+use C4::Letters;
+use C4::Branch;
 use Koha::Money;
 
 use List::Util qw[min max];
@@ -1248,8 +1250,53 @@ sub chargelostitem{
             }
         }
     }
+
+    _sendItemLostNotice($lost);
     
     return;
+}
+
+=head2 _sendItemLostNotice
+
+    Extract and parse the ITEM_LOST notice and send it to the message_queue,
+    if the notice is in the patron's messaging preferences.
+
+=cut
+
+sub _sendItemLostNotice {
+    my $lost = shift;
+
+    # Send lost item notice, if desired
+    my $mprefs = C4::Members::Messaging::GetMessagingPreferences( {
+        borrowernumber => $lost->{borrowernumber},
+        message_name   => 'Item Lost'
+    } );
+
+    if ($mprefs->{'transports'}) {
+      my $borrower
+          = C4::Members::GetMember($lost->{borrowernumber}, 'borrowernumber');
+      my $biblio
+          = GetBiblioFromItemNumber($lost->{itemnumber})
+          or die sprintf "BIBLIONUMBER: %d\n", $lost->{biblionumber};
+
+      my $letter = C4::Letters::getletter( 'circulation', 'ITEM_LOST');
+      my $branch_details = GetBranchDetail( $lost->{'branchcode'} );
+      my $admin_email_address
+          = $branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');
+
+      C4::Letters::parseletter( $letter, 'branches', $lost->{borrower_branch} );
+      C4::Letters::parseletter( $letter, 'borrowers', $lost->{borrowernumber} );
+      C4::Letters::parseletter( $letter, 'biblio', $biblio->{biblionumber} );
+      C4::Letters::parseletter( $letter, 'items', $lost->{itemnumber} );
+
+      C4::Letters::EnqueueLetter( {
+          letter                 => $letter,
+          borrowernumber         => $borrower->{'borrowernumber'},
+          message_transport_type => $mprefs->{'transports'}->[0],
+          from_address           => $admin_email_address,
+          to_address             => $borrower->{'email'},
+      } );
+    }
 }
 
 =head2 credit_lost_item

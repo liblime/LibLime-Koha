@@ -5693,6 +5693,20 @@ $DBversion = '4.09.00.031';
      SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.032';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+    $dbh->do(qq/
+      INSERT INTO letter (module,code,name,title,content) VALUES ('circulation','ITEM_LOST','Item Lost','Item Lost','The following item now has a status of lost:\r\n\r\n<<biblio.title>>\r\n\r\n');
+    /);
+    $dbh->do(qq/
+      INSERT INTO message_attributes (message_attribute_id, message_name, takes_days) VALUES (9, 'Item Lost', 0);
+    /);
+    $dbh->do(qq/
+      INSERT INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES (9, 'email', 0, 'circulation', 'ITEM_LOST'), (9, 'sms', 0, 'circulation', 'ITEM_LOST');
+    /);
+   print "Upgrade to $DBversion done ( Created a new notice for ITEM_LOST )\n";
+   SetVersion ($DBversion);
+}
 
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
