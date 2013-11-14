@@ -18,4 +18,6 @@ values
 (7, 'email', 0, 'reserves',    'HOLD_CANCELED'),
 (7, 'sms',   0, 'reserves',    'HOLD_CANCELED'),
 (8, 'email', 0, 'reserves',    'HOLD_EXPIRED'),
-(8, 'sms',   0, 'reserves',    'HOLD_EXPIRED');
+(8, 'sms',   0, 'reserves',    'HOLD_EXPIRED'),
+(9, 'email', 0, 'circulation', 'ITEM_LOST'),
+(9, 'sms',   0, 'circulation', 'ITEM_LOST');

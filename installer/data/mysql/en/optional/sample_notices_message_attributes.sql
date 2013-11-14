@@ -7,4 +7,5 @@ values
 (5, 'Item Check-in', 0),
 (6, 'Item Checkout', 0),
 (7, 'Hold Canceled', 0),
-(8, 'Hold Expired', 0);
+(8, 'Hold Expired', 0),
+(9, 'Item Lost', 0);
