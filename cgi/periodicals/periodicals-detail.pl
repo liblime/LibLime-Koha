@@ -41,6 +41,10 @@ C4::Control::PeriodicalSerial::GenerateNextInSeries($periodical_id) if
     ($query->param('op') and $query->param('op') eq 'gen_next_seq');
 
 SeedTemplateWithPeriodicalData($template, $periodical_id);
+
+my @branches = C4::Auth::GetUserGroupBranches('subscriptions');
+@{$template->param('subscriptions_loop')} = grep { $$_{branchcode} ~~ @branches } @{$template->param('subscriptions_loop')};
+
 output_html_with_http_headers $query, $cookie, $template->output;
 
 exit 0;
