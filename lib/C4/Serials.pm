@@ -2514,7 +2514,7 @@ sub SetSubscriptionDefaults {
     my ( $subscriptionid, $defaults ) = @_;
     $defaults->{'subscriptionid'} = $subscriptionid;
     
-    my @cols = grep { $defaults->{$_} } keys %$defaults;
+    my @cols = grep { ($defaults->{$_} // '') ne '' } keys %$defaults;
     my $columns = join ',', @cols;
     my $binds = '?' . ',?' x (@cols - 1);
     
