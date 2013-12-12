@@ -73,7 +73,7 @@ acqdate | 952d | most_recent
 on-shelf-at | 952 | on_shelf_at | unique
 owned-by | 952a | | unique
 lost | 9521 | | unique
-all-items-lost | 9521 | | all_true
+all-items-lost | 952 | | all_items_lost
 # record must have at least one item with lost value null, or no items at all.
 
 text | 952x 952z
