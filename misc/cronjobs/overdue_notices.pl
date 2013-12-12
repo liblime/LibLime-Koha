@@ -260,18 +260,12 @@ if ( defined $csvfilename && $csvfilename =~ /^-/ ) {
     warn qq(using "$csvfilename" as filename, that seems odd);
 }
 
-my @branches    = C4::Overdues::GetBranchcodesWithOverdueRules();
-my $branchcount = scalar(@branches);
-my @overduebranches    = C4::Overdues::GetBranchcodesWithOverdueRules();	# Branches with overdue rules
-
-my $overduebranch_word = scalar @overduebranches > 1 ? 'branches' : 'branch';
-my $branches_word = scalar @branches > 1 ? 'branches' : 'branch';
-
 my $PrintNoticesMaxLines = C4::Context->preference('PrintNoticesMaxLines');
 
+my @branches    = C4::Overdues::GetBranchcodesWithOverdueRules();
+my $branchcount = scalar @branches;
 if ($branchcount) {
-    my $branch_word = scalar @branches > 1 ? 'branches' : 'branch';
-    $verbose and warn "Found $branchcount $branch_word with first message enabled: " . join( ', ', map { "'$_'" } @branches ), "\n";
+    $verbose and warn "Found $branchcount branch(es) with first message enabled: " . join( ', ', map { "'$_'" } @branches ), "\n";
 } else {
     die 'No branches with active overduerules';
 }
@@ -314,7 +308,6 @@ if ( defined $csvfilename ) {
     }
 }
 
-@branches = @overduebranches unless @branches;
 our $html_fh;
 if ( defined $htmlfilename ) {
   if ( $htmlfilename eq '' ) {

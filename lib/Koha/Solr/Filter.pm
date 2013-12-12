@@ -220,9 +220,9 @@ func min_or_zero( Str @strings ) {
     return List::Util::min(@strings) || 0;
 }
 
-func all_true( Str @strings ){
-    # BOOL:  returns true if all evaluate to true (but not if there are no elements to evaluate).
-    return (scalar grep { !$_ } @strings) ? 'false' : 'true';
+func all_items_lost( MARC::Field @f952s ){
+    # if items, return true if all are lost.
+    return (@f952s && (grep {$_->subfield('1')} @f952s) == @f952s) ? 'true' : 'false';
 }
 
 func fullmarc( MARC::Record $record ) {
