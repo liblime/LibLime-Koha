@@ -1596,13 +1596,14 @@ sub CancelReserve {
 
     my $moduser    = (C4::Context->userenv) ? C4::Context->userenv->{number} : 0;
     my $branchcode = (C4::Context->userenv) ? C4::Context->userenv->{branch} : '';
-    UpdateReserveCancelledStats(
-      $branchcode, 'reserve_canceled', undef, $reserve->{biblionumber},
-      $reserve->{itemnumber}, undef, $reserve->{borrowernumber},
-      undef, $moduser
-    );
-
-    _sendReserveCancellationLetter($reserve);
+    if($found eq 'C'){
+        UpdateReserveCancelledStats(
+          $branchcode, 'reserve_canceled', undef, $reserve->{biblionumber},
+          $reserve->{itemnumber}, undef, $reserve->{borrowernumber},
+          undef, $moduser
+        );
+        _sendReserveCancellationLetter($reserve);
+    }
 }
 
 sub _sendReserveCancellationLetter {
