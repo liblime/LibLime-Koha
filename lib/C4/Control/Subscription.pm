@@ -72,7 +72,7 @@ sub ConvertQueryToItemDefaults($) {
         my $key = $s->{kohafield};
 	next if (not $key);
         my ( $tablename, $fieldname ) = split(/\./, $key );
-        $item_defaults->{$fieldname} = $query->param("defaults_$key") if ($query->param("defaults_$key"));
+        $item_defaults->{$fieldname} = $query->param("defaults_$key") if (($query->param("defaults_$key") // '') ne '');
     }
     return $item_defaults;
 }
