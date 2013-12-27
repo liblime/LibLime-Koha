@@ -21,6 +21,7 @@ use Koha;
 use C4::Context;
 use C4::Auth qw(&check_api_auth);
 use C4::Biblio;
+use C4::Accounts qw(getcharges);
 use C4::Items qw(GetItem);
 
 use UNIVERSAL qw(can);	# make sure this is *after* C4 modules.
@@ -909,7 +910,7 @@ sub handle_login {
 # and we're going to believe it.
 #
 sub summary_info {
-    my ($ils, $patron, $summary, $start, $end) = @_;
+    my ($ils, $patron, $summary, $start, $end, $ewflag) = @_;
     my $resp = '';
     my $summary_type;
     #
@@ -938,13 +939,27 @@ sub summary_info {
 
     syslog("LOG_DEBUG", "summary_info: list = (%s)", join(", ", @{$itemlist}));
     foreach my $i (@{$itemlist}) {
+        next unless($i->{itemnumber});
         my $bibitem = GetBiblioFromItemNumber($i->{itemnumber});
-        if (C4::Context->preference('SIPItemDisplay') eq "barcode\+title") {
-          my $bctitle = $bibitem->{barcode} . " " . $bibitem->{title};
-          $resp .= add_field($fid, $bctitle);
+        if ($ewflag && ($summary_type == 3)) {
+          my $fees = C4::Accounts::getcharges($patron->{borrowernumber}, outstanding=>1, itemnumber=>$i->{itemnumber});
+          for my $fee (@$fees) {
+            my $itemfee = sprintf("%0.2f", $fee->{amountoutstanding});
+            my $ewfield = $bibitem->{barcode} . " " .
+                          "\$" . $itemfee . " \"" .
+                          $fee->{accounttype} . "\" " .
+                          $bibitem->{title};
+            $resp .= add_field($fid, $ewfield);
+          }
         }
         else {
-          $resp .= add_field($fid, $bibitem->{barcode});
+          if (C4::Context->preference('SIPItemDisplay') eq "barcode\+title") {
+            my $bctitle = $bibitem->{barcode} . " " . $bibitem->{title};
+            $resp .= add_field($fid, $bctitle);
+          }
+          else {
+            $resp .= add_field($fid, $bibitem->{barcode});
+          }
         }
     }
 
@@ -1032,7 +1047,8 @@ sub handle_patron_info {
     #          fine_items
     #        recall_items
 
-	$resp .= summary_info($ils, $patron, $summary, $start, $end);
+	my $ewflag = ($server->{sip_username} eq C4::Context->preference('EWSipUser')) ? 1 : 0;
+	$resp .= summary_info($ils, $patron, $summary, $start, $end, $ewflag);
 
 	$resp .= maybe_add(FID_HOME_ADDR,  $patron->address);
 	$resp .= maybe_add(FID_EMAIL,      $patron->email_addr);

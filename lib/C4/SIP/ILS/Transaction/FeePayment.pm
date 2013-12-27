@@ -21,6 +21,7 @@ use strict;
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use C4::Accounts;
+use C4::Items;
 use ILS;
 use base qw(ILS::Transaction);
 
@@ -47,15 +48,25 @@ sub pay {
     my $self           = shift;
     my $borrowernumber = shift;
     my $amt            = shift;
-    warn("RECORD:$borrowernumber::$amt");
+    my $barcode        = shift;
     my $credit = { 
                 borrowernumber  => $borrowernumber,
                 description     => "Payment accepted via SIP2",
                 amount          => sprintf("%.2f",$amt),
                 accounttype     => 'PAYMENT',
             };
-    C4::Accounts::manualcredit($credit);
-
+    my @fees_to_pay;
+    if ($barcode) {
+        my $itemnumber = C4::Items::GetItemnumberFromBarcode($barcode);
+        my $fees = C4::Accounts::getcharges($borrowernumber, outstanding=>1, itemnumber=>$itemnumber);          
+        for my $fee (@$fees) {
+          push @fees_to_pay,$fee->{fee_id};
+        }
+        C4::Accounts::manualcredit($credit, fees => \@fees_to_pay);
+    }
+    else {
+        C4::Accounts::manualcredit($credit);
+    }
 }
 
 #sub DESTROY {

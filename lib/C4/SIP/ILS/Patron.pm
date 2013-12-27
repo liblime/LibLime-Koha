@@ -25,6 +25,7 @@ use C4::Reserves;
 use C4::Letters;
 use C4::Items qw(GetItemsInfo);
 use C4::Branch qw(GetBranchName);
+use C4::Accounts qw(getcharges);
 use Digest::MD5 qw(md5_base64);
 use Date::Calc qw(Delta_Days);
 
@@ -137,7 +138,7 @@ sub new {
 		}
 	}
 
-    # FIXME: populate fine_items recall_items
+    # FIXME: populate recall_items
     my @unavail_holds = GetReservesFromBorrowernumber($kp->{borrowernumber},'U');
     foreach my $uh (@unavail_holds) {
         if (!defined $uh->{itemnumber}) {
@@ -146,6 +147,7 @@ sub new {
         }
         push @{ $ilspatron{unavail_holds} }, $uh;
     }
+    $ilspatron{fine_items} = getcharges($kp->{borrowernumber}, outstanding=>1);
     $ilspatron{items} = GetPendingIssues($kp->{borrowernumber});
     $self = \%ilspatron;
     $debug and warn Dumper($self);
