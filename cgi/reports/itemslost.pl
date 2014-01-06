@@ -49,6 +49,8 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 my $params = $query->Vars;
 my $get_items = $params->{'get_items'};
 
+my $itemlostvalues = C4::Items::get_itemlost_values();
+
 if ( $get_items ) {
     my $orderbyfilter    = $params->{'orderbyfilter'}   || undef;
     my $barcodefilter    = $params->{'barcodefilter'}   || undef;
@@ -59,10 +61,8 @@ if ( $get_items ) {
     my %where;
     $where{'barcode'}          = $barcodefilter   if defined $barcodefilter;
     $where{'homebranch'}       = $branchfilter if $branchfilter;
-    $where{'authorised_value'} = $loststatusfilter if $loststatusfilter;
-    
-    my $itype = C4::Context->preference('item-level_itypes') ? "itype" : "itemtype";
-    $where{$itype}            = $itemtypesfilter if $itemtypesfilter;
+    $where{'itemlost'}         = $loststatusfilter if $loststatusfilter;
+    $where{'itype'}            = $itemtypesfilter if $itemtypesfilter;
 
     my $items = GetItemsLost( \%where, $orderbyfilter );
     foreach my $it (@$items) {
@@ -92,11 +92,15 @@ foreach my $thisitemtype ( sort {$itemtypes->{$a}->{description} cmp $itemtypes-
 }
 
 # get lost statuses
-my $lost_status_loop = C4::Koha::GetAuthorisedValues( 'LOST' );
+
+my @itemlostloop = map { {  value => $_,
+                        description => $itemlostvalues->{$_}
+                        }
+                    } sort keys %$itemlostvalues;
 
 $template->param( branchloop     => GetBranchesLoop(C4::Context->userenv->{'branch'}),
                   itemtypeloop   => \@itemtypesloop,
-                  loststatusloop => $lost_status_loop,
+                  loststatusloop => \@itemlostloop,
 );
 
 # writing the template

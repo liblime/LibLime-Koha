@@ -1696,7 +1696,7 @@ sub AddReturn {
     
     ## Treat row in lostitems separate from items.itemlost.
     ## This is because librarian can choose not to unlink lost item from 
-    ## patron's account, so we have items.itemlost now 0 but lost_items defined.
+    ## patron's account, so we have items.itemlost now null but lost_items defined.
     ## FIXME: This may also mean there are multiple lost items rows for an itemnumber.  In LAK, there's a flag for that condition.
     my $lostitem = C4::LostItems::GetLostItem($item->{itemnumber}) // {};
 
@@ -1711,24 +1711,6 @@ sub AddReturn {
             lost_item_id        => $$lostitem{id},
         };
         C4::Accounts::credit_lost_item($lostitem->{id});
-
-        if (C4::Context->preference('ApplyMaxFineWhenLostItemChargeRefunded') && C4::Context->preference('RefundReturnedLostItem') && ! $exemptfine) {
-            my $patron = C4::Members::GetMember($lostitem->{borrowernumber});
-            # assume $lostitem->{holdingbranch} was the issuingbranch.
-            my ($circ_policy,$length) = GetIssuingRule($patron->{categorycode},$lostitem->{itemtype},$lostitem->{holdingbranch});
-
-            if ($circ_policy->{max_fine}) {
-                C4::Accounts::manualinvoice({
-                    borrowernumber  => $lostitem->{borrowernumber},
-                    amount          => $circ_policy->{max_fine},
-                    accounttype     => 'FINE',
-                    itemnumber      => $lostitem->{itemnumber},
-                    description     => $lostitem->{title} . ' [Max overdue fine on returned lost item]'
-                });
-            }
-        }
-
-        # C4::LostItems::DeleteLostItem($lostitem->{id});  # This is done in a separate confirmation step.
 
     }
 

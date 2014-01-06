@@ -38,7 +38,7 @@
     <tr>
         <th>Title</th>
         <th>Author</th>
-        <th>Lost Code</th>
+        <th>Lost Status</th>
         <th>Barcode</th>
         <th>Date last seen</th>
         <th>Price</th>
@@ -59,7 +59,7 @@
 						  <!-- TMPL_VAR NAME="title" escape="html" -->
 					 </a></td>
             <td><!-- TMPL_VAR NAME="author"--></td>
-            <td><!-- TMPL_VAR NAME="lib"--></td>
+            <td><!-- TMPL_VAR NAME="itemlost"--></td>
             <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber"-->" title="<!-- TMPL_VAR NAME="itemnotes"-->">
                     <!-- TMPL_VAR NAME="barcode"-->
                 </a></td>
@@ -111,13 +111,10 @@
                 <!-- /TMPL_LOOP -->
             </select></li>
 
-	<li><label for="loststatusfilter">Lost Status: </label><select name="loststatusfilter" id="loststatusfilter" title="Select a lost status">
-                <!-- TMPL_LOOP name="loststatusloop" -->
-                <!-- TMPL_IF NAME="selected" --><option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option>
-		<!-- TMPL_ELSE -->
-		<option value="<!-- TMPL_VAR NAME="authorised_value" -->"><!-- TMPL_VAR NAME="lib" --></option>
-		<!-- /TMPL_IF -->
-                <!-- /TMPL_LOOP -->
+	<li><label for="loststatusfilter">Lost Status: </label><select name="loststatusfilter" id="loststatusfilter" title="Any lost status">
+            <!-- TMPL_LOOP name="loststatusloop" -->
+		        <option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="description" --></option>
+            <!-- /TMPL_LOOP -->
             </select></li>
 </ol></fieldset>
 <fieldset class="action">    <input type="submit" value="Submit" />

@@ -86,6 +86,7 @@ foreach my $item (@items){
             $item->{lostby_name} = "$$lostbor{firstname} $$lostbor{surname}";
             $item->{lostby_borrowernumber} = $$lostitem{borrowernumber};
             $item->{lostby_cardnumber} = $$lostbor{cardnumber};
+            $item->{lostby_claims_returned} = $$lostitem{claims_returned};
         }
     }
     if ($updatefail && ($$item{itemnumber} ~~ $itemnumber)) {

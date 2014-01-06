@@ -1101,8 +1101,7 @@ sub GetItemsLost {
             LEFT JOIN biblio ON (items.biblionumber = biblio.biblionumber)
             LEFT JOIN biblioitems ON (items.biblionumber = biblioitems.biblionumber)
         WHERE
-            AND itemlost IS NOT NULL
-            AND itemlost <> 0
+            itemlost IS NOT NULL
     ";
     my @query_parameters;
     foreach my $key (keys %$where) {

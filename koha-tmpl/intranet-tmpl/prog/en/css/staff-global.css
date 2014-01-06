@@ -1672,6 +1672,10 @@ ul#i18nMenu li.more ul li a {
 	color : #999;
 	font-style : italic;
 }
+.claims-returned{
+	color: #900;
+	font-style: italic;
+}
 /* Tablesorter */
 .header {
 	background-image:url("../../img/ascdesc.gif");

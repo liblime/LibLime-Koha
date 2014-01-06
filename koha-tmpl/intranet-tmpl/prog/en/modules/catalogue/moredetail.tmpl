@@ -84,7 +84,8 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
                     </TMPL_IF>
                     </div></td></tr>
                 </TMPL_IF>
-                <TMPL_IF NAME="lostby_borrowernumber"><tr class=borderless><td class=borderless>Lost <TMPL_VAR NAME="lostby_date"> by <a href="/cgi-bin/koha/members/lost_items.pl?borrowernumber=<TMPL_VAR NAME="lostby_borrowernumber">"><TMPL_VAR NAME="lostby_name"></a> (<TMPL_VAR NAME="lostby_cardnumber">)</td></tr></TMPL_IF>
+                <TMPL_IF NAME="lostby_borrowernumber"><tr class=borderless><td class=borderless>Lost <TMPL_VAR NAME="lostby_date"> by <a href="/cgi-bin/koha/members/lost_items.pl?borrowernumber=<TMPL_VAR NAME="lostby_borrowernumber">"><TMPL_VAR NAME="lostby_name"></a> (<TMPL_VAR NAME="lostby_cardnumber">) <TMPL_IF "lostby_claims_returned"><div class="claims-returned">[Claims Returned]</div></TMPL_IF></td></tr></TMPL_IF>
+
                 <tr class=borderless><td class=borderless>
                 <!-- TMPL_IF NAME="CAN_user_circulate_change_lost_status" -->
                     <form action="updateitem.pl" method="post">
