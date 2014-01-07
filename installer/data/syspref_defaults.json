@@ -3468,5 +3468,15 @@
       "tags" : [
          "Patrons"
       ]
+   },
+   "EWSipUser" : {
+      "explanation" : "This is to be used when using EnvisionWare e-commerce software.  A SIP login account with the same name will need to be created within Koha as well as SIPconfig.xml.",
+      "options" : null,
+      "value" : "",
+      "hidden" : false,
+      "type" : "free",
+      "tags" : [
+         "Admin"
+      ]
    }
 }
