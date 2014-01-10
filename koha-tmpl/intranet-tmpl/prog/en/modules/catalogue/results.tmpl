@@ -395,7 +395,7 @@ function PopupZ3950() {
                                         <!-- TMPL_IF NAME="branchname" --><!-- TMPL_VAR NAME="branchname" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="location" --><!-- TMPL_VAR NAME="location" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="otherstatus" --> w/ <!-- TMPL_VAR NAME="otherstatus" --> status <!-- /TMPL_IF -->
-                                        <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnumber:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
+                                        <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?idx=callnumber&q=<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
                                         (<!-- TMPL_VAR NAME="count" -->)</li>
                                     <!-- /TMPL_LOOP --></ul>
                                     <!-- /TMPL_IF -->
