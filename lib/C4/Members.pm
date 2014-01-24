@@ -759,7 +759,6 @@ sub ModMember {
     if (@parameters) {
       $query =~ s/, $//;
       $query .= " WHERE borrowernumber=?";
-      warn "QUERY: $query";
       push @parameters, $data{'borrowernumber'};
       $debug and print STDERR "$query (executed w/ arg: $data{'borrowernumber'})";
       $sth = $dbh->prepare($query);
@@ -850,7 +849,7 @@ sub AddMember {
       altcontactsurname altcontactfirstname
       altcontactaddress1 altcontactaddress2 altcontactaddress3
       altcontactzipcode altcontactcountry altcontactphone
-      disable_reading_history
+      disable_reading_history smsalertnumber
    );
    my @params = ();
    my $query = sprintf("insert into borrowers(%s) values(%s)",

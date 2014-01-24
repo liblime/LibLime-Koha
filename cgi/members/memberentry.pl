@@ -359,8 +359,9 @@ if ($op eq 'save' || $op eq 'insert') {
   }
 }
 
-if ( ( defined $input->param('SMSnumber') ) && ( $input->param('SMSnumber') ne $newdata{'mobile'} ) ) {
-    $newdata{smsalertnumber} = $input->param('SMSnumber');
+if (($step == 0) || ($step == 5)) {
+    $newdata{smsalertnumber} = ( defined $input->param('SMSnumber') ) ?
+        $input->param('SMSnumber') : undef;
 }
 
 ###  Error checks should happen before this line.
@@ -683,7 +684,7 @@ if (C4::Context->preference('EnhancedMessagingPreferences')) {
         C4::Form::MessagingPreferences::set_form_values({ borrowernumber => $borrowernumber }, $template);
     }
     $template->param(SMSSendDriver => C4::Context->preference("SMSSendDriver"));
-    $template->param(SMSnumber     => defined $data{'smsalertnumber'} ? $data{'smsalertnumber'} : $data{'mobile'});
+    $template->param(SMSnumber     => $data{'smsalertnumber'});
 }
 
 $template->param( "showguarantor"  => ($category_type=~/A|I|S|X/) ? 0 : 1); # associate with step to know where you are

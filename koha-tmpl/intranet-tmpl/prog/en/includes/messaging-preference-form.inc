@@ -20,7 +20,6 @@
   <table>
     <tr><th></th>
         <th>Days in advance</th>
-        <!-- TMPL_IF NAME="SMSSendDriver" --><th>SMS</th><!-- /TMPL_IF -->
         <th>Email</th><th>Digests only?</th>
         <!-- <th>RSS</th> -->
     </tr>
@@ -43,23 +42,6 @@
         </td>
       <!-- TMPL_ELSE -->
          <td>-</td>
-      <!-- /TMPL_IF -->
-      <!-- TMPL_IF NAME="transport-sms" -->
-      <!-- TMPL_IF NAME="SMSSendDriver" --><td>
-          <!-- TMPL_IF NAME="messaging_form_inactive" -->
-                 <input type="checkbox"
-                 id="sms<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 name="<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 value="sms"   <!-- TMPL_VAR NAME="transport-sms" --> disabled="disabled" />
-          <!-- TMPL_ELSE -->
-                 <input type="checkbox"
-                 id="sms<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 name="<!-- TMPL_VAR NAME="message_attribute_id" -->"
-                 value="sms"   <!-- TMPL_VAR NAME="transport-sms"   --> onclick = "$('#none'+'<!-- TMPL_VAR NAME="message_attribute_id" -->').attr('checked','');" />
-          <!-- /TMPL_IF -->
-      </td><!-- /TMPL_IF -->
-      <!-- TMPL_ELSE -->
-      <td>-</td>
       <!-- /TMPL_IF -->
 
       <!-- TMPL_IF NAME="transport-email" -->

@@ -36,7 +36,7 @@
   <div class="dialog message"><h3>Settings Updated</h3></div>
   <!-- /TMPL_IF -->
   <table style="margin-right:1em;">
-    <tr><th>&nbsp;</th><th>Days in advance</th><!-- TMPL_IF NAME="SMSSendDriver" --><th>SMS</th><!-- /TMPL_IF --><th>Email</th><th>Digests only?</th><!-- <th>RSS</th> --><th>Do not notify</th></tr>
+    <tr><th>&nbsp;</th><th>Days in advance</th><th>Email</th><th>Digests only?</th><!-- <th>RSS</th> --><th>Do not notify</th></tr>
     <!-- TMPL_LOOP name="messaging_preferences" -->
     <tr>
       <td><!-- TMPL_VAR NAME="message_name" --></td>
@@ -53,11 +53,13 @@
       <td>-</td>
       <!-- /TMPL_IF -->
       <!-- TMPL_IF NAME="transport-sms" -->
+      <!--
       <!-- TMPL_IF NAME="SMSSendDriver" --><td><input type="checkbox"
                  id="sms<!-- TMPL_VAR NAME="message_attribute_id" -->"
                  name="<!-- TMPL_VAR NAME="message_attribute_id" -->"
                  value="sms" <!-- TMPL_VAR NAME="transport-sms"   --> onclick = "document.opacmessaging.none<!-- TMPL_VAR NAME="message_attribute_id" -->.checked=false;" /><!-- /TMPL_IF -->
       </td>
+      -->
       <!-- TMPL_ELSE -->
       <td>-</td>
       <!-- /TMPL_IF -->

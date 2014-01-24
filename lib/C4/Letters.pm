@@ -795,7 +795,7 @@ sub _ttech_compose_message {
     }
 
     my $phonenumber = $borrower->{phone};
-    if ( C4::Context->preference("SMSSendDriver") ) {
+    if ( C4::Context->preference("SMSSendDriver") && $borrower->{smsalertnumber}) {
         $phonenumber = "T1-" . $borrower->{smsalertnumber}
             unless ( $phonenumber =~ /^T1-/ );
     }
