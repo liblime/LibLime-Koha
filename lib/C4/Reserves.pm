@@ -2252,7 +2252,9 @@ sub _koha_notify_reserve {
     $sth->execute( $reservenumber );
     my $reserve = $sth->fetchrow_hashref;
     return unless $$reserve{found} ~~ 'W';
-    if (C4::Context->preference('TalkingTechEnabled') && (!$borrower->{'email'})) {
+    if (C4::Context->preference('TalkingTechEnabled') &&
+       ((!$borrower->{'email'}) || (C4::Context->preference('SMSSendDriver') &&
+       $borrower->{'smsalertnumber'}))) {
       my $biblio = &GetBiblioData($biblionumber);
       my $item = &GetItem($itemnumber);
       my @items;
