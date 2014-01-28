@@ -63,7 +63,9 @@ my $defaults = GetSubscriptionDefaults( $subscriptionid ) if ( $subscriptionid )
 foreach my $s ( @subfields ) {
   my ( $table, $column ) = split( /\./, $s->{'kohafield'} );
   $s->{'value'} = $defaults->{ $column };
-  $s->{'authorised_values'} = GetAuthorisedValues( $s->{'authorised_value'}, $defaults->{ $column } ) if ( $s->{'authorised_value'} );
+  $s->{'authorised_values'} = [
+    sort { uc($a->{lib}) cmp uc($b->{lib}) } @{GetAuthorisedValues( $s->{'authorised_value'}, $defaults->{ $column } )}
+  ];
 
   if ( $column eq 'itype' ) {
     my @itemtypes = C4::ItemType->all;
