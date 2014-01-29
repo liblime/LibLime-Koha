@@ -197,7 +197,13 @@ sub CalcFine {
     my ($daystocharge, $totaldays);
     my $start_date = C4::Dates->new($issue->{date_due},'iso');
 
-    my $irule = C4::Circulation::GetIssuingRule($bortype, $$issue{itemtype}, $branchcode);
+    my $itemtype = $issue->{itemtype};
+    if(!$itemtype){
+        my $item = C4::Items::GetItem($issue->{itemnumber});
+        $itemtype = $item->{itemtype} if $item;
+    }
+
+    my $irule = C4::Circulation::GetIssuingRule($bortype, $itemtype, $branchcode);
     if(C4::Context->preference('finesCalendar') eq 'noFinesWhenClosed') {
         $totaldays = $cal->daysBetween( $start_date, $end_date );
     } else {
