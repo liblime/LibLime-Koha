@@ -248,6 +248,7 @@ $(document).ready(function() {
         <table><caption>Current fines [Balance:  $<!-- TMPL_VAR NAME="total" -->]</caption>
           <tr>
             <th>Action</th>
+            <th>No.</th>
             <th>Date</th>
             <th>Description of charges</th>
             <th>Library</th>
@@ -272,6 +273,7 @@ $(document).ready(function() {
                 <!-- /TMPL_IF -->
               <!-- /TMPL_IF -->
               </td>
+              <td><!-- TMPL_VAR NAME="number" --></td>
               <td><!-- TMPL_VAR NAME="date" --></td>
               <td><span class="feeDescription"><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --><!-- /TMPL_IF --></span>&nbsp;
                 <!-- TMPL_IF NAME="accruing" -->Accruing overdue charge for <span class='title'><!-- TMPL_VAR NAME="title" --></span> (due <!-- TMPL_VAR NAME="date_due" -->) <!-- /TMPL_IF -->&nbsp;
@@ -364,6 +366,7 @@ $(document).ready(function() {
             <table class="accountHistory"><caption>Fees &amp; payments  <a href id="toggle-all-paydetails" data-viewstate="0">Show credit details</a></caption>
           <tr>
             <!-- TODO: <th>Edit</th> -->
+            <th>No.</th>
             <th>Date</th>
             <th>Description</th>
             <th>Library</th>
@@ -378,6 +381,7 @@ $(document).ready(function() {
             <!-- TMPL_ELSE -->
               <tr>
             <!-- /TMPL_IF -->
+	              <td><!-- TMPL_VAR NAME="number" --></td>
 	              <td><!-- TMPL_VAR NAME="date" --></td>
 	              <td><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --><!-- /TMPL_IF -->
 	                  <!-- TMPL_IF NAME="itemnumber" -->: <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR "title" --></a>&nbsp;<!-- /TMPL_IF -->

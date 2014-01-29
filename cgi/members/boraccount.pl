@@ -198,6 +198,11 @@ for my $fee (@$accruingfees){
     C4::Accounts::prepare_fee_for_display($fee);
     push @currentfees, $fee;
 }
+my $currentfee_count = 1;
+for (reverse @currentfees) {
+  $_->{number} = $currentfee_count;
+  $currentfee_count++;
+}
 my ($total_credits, $unallocated) = C4::Accounts::get_unallocated_credits( $borrowernumber );
 foreach my $row (@$unallocated) {
     $row->{date} =  C4::Dates::format_date($row->{'timestamp'});
@@ -217,6 +222,11 @@ for (@$allpayments){
 }
 my @sorted_history = sort { $b->{isodate} cmp $a->{isodate} || {($b->{payment}) ? 1 : 0 <=> ($a->{payment}) ? 1 : 0 } || $b->{transaction_id} <=> $a->{transaction_id} } @history;
 # FIXME: This still has payments beneath fines on the same day.
+my $history_count = 1;
+for (reverse @sorted_history) {
+  $_->{number} = $history_count;
+  $history_count++;
+}
 
 # display account summary, regardless of $op.
 
@@ -254,7 +264,7 @@ for my $pay_type (sort {$a cmp $b} C4::Accounts::getaccounttypes('payment')){
     push @payment_types, $option;
 }
 
-
+my @sorted_currentfees = sort {$b->{number} <=> $a->{number}} @currentfees;
 $template->param(
     firstname           => $data->{'firstname'},
     surname             => $data->{'surname'},
@@ -282,7 +292,7 @@ $template->param(
     fee_types           => \@fee_types,
     invoice_types       => \@invoice_types,
     payment_types       => \@payment_types,
-    currentfees         => \@currentfees,
+    currentfees         => \@sorted_currentfees,
     payablefees         => \@payablefees,
     has_payable         => scalar(@payablefees),
     unallocated         => $unallocated,
