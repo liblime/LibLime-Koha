@@ -184,16 +184,16 @@ foreach my $item (@items) {
     }
 
     # checking for holds
-    my $ItemBorrowerReserveInfo;
     my $hold = C4::Reserves::GetPendingReserveOnItem($item->{itemnumber});
     if ($hold) {
-        my $ItemBorrowerReserveInfo     = GetMember($hold->{borrowernumber});
+        my $itemBorrowerReserveInfo     = GetMember($hold->{borrowernumber});
         $item->{reservedate}            = $hold->{reservedate};
+        $item->{waitingdate}            = $hold->{waitingdate};
         $item->{ReservedForBorrowernumber} = $hold->{borrowernumber};
-        $item->{ReservedForSurname}     = $ItemBorrowerReserveInfo->{'surname'};
-        $item->{ReservedForFirstname}   = $ItemBorrowerReserveInfo->{'firstname'};
+        $item->{ReservedForSurname}     = $itemBorrowerReserveInfo->{'surname'};
+        $item->{ReservedForFirstname}   = $itemBorrowerReserveInfo->{'firstname'};
         $item->{ExpectedAtLibrary}      = $branches->{$hold->{branchcode}}{branchname} if($item->{holdingbranch} ne $hold->{branchcode});
-        $item->{cardnumber}             = $ItemBorrowerReserveInfo->{'cardnumber'};
+        $item->{cardnumber}             = $itemBorrowerReserveInfo->{'cardnumber'};
     }
 
 	# Check the transit status

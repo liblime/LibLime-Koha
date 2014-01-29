@@ -147,6 +147,7 @@ foreach my $item (@items){
     if ($hold) {
         my $ItemBorrowerReserveInfo     = GetMember($hold->{borrowernumber});
         $item->{reservedate}            = $hold->{reservedate};
+        $item->{waitingdate}            = $hold->{waitingdate};
         $item->{ReservedForBorrowernumber} = $hold->{borrowernumber};
         $item->{ReservedForSurname}     = $ItemBorrowerReserveInfo->{'surname'};
         $item->{ReservedForFirstname}   = $ItemBorrowerReserveInfo->{'firstname'};

@@ -1133,7 +1133,7 @@ If reallocate option is passed (and falsey), mark the payment as not-to-be auto-
 
 sub deallocate_payment {
     my %args = @_;
-    warn " deallocate_payment called with payment id : $args{payment} / fee id : $args{fee}";
+    # warn " deallocate_payment called with payment id : $args{payment} / fee id : $args{fee}";
     if(!$args{payment}){
         warn "Bad call to deallocate_payment";
         return;

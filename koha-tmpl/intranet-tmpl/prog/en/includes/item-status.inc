@@ -11,7 +11,7 @@
         : due <!-- TMPL_VAR NAME="datedue" --></span>
     <!-- TMPL_ELSIF Name="transfersince" -->
                In transit from <!-- TMPL_VAR NAME="transferfrom" -->,
-               to <!-- TMPL_VAR NAME="transferto" -->
+               to <!-- TMPL_VAR NAME="transferto" -->, since <!-- TMPL_VAR EXPR="date(transfersince)" -->
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF NAME="itemlost" -->
@@ -56,7 +56,7 @@
             ,<!-- TMPL_UNLESS waitingdate --> expected <!-- /TMPL_UNLESS -->
             at <!-- TMPL_VAR NAME="ExpectedAtLibrary" -->
         <!-- /TMPL_IF -->
-        since <!-- TMPL_VAR EXPR="default(date(waitingdate),date(reservedate))" -->
+        <!-- TMPL_IF waitingdate -->since <!-- TMPL_VAR EXPR="date(waitingdate)" --><!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF available -->Available<!-- /TMPL_IF -->
