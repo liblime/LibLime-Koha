@@ -5708,6 +5708,28 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
    SetVersion ($DBversion);
 }
 
+$DBversion = '4.09.00.033';
+if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
+   $dbh->do(qq/
+        CREATE TABLE acq_entity_link (
+            branch_code                 varchar(10) NOT NULL,
+            purchase_order_line_id      integer(16) default NULL,
+            purchase_order_line_copy_id integer(16) default NULL,
+            biblionumber                integer(11) default NULL,
+            itemnumber                  integer(11) default NULL,
+
+            CONSTRAINT `acq_entity_link_fk_1` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+            CONSTRAINT `acq_entity_link_fk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+            UNIQUE (purchase_order_line_id),
+            UNIQUE (purchase_order_line_copy_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    /);
+    $dbh->do(qq/
+      INSERT INTO acq_entity_link (branch_code) VALUES ('.LOCK');
+    /);
+   print "Upgrade to $DBversion done (GetIt entity link table)\n";
+   SetVersion ($DBversion);
+}
 printf "Database schema now up to date at version %s as of %s.\n", $DBversion, scalar localtime;
 
 =item DropAllForeignKeys($table)

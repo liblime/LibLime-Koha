@@ -1,0 +1,1 @@
+Serialization lock for GetIt bib/item record creation

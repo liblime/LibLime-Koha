@@ -2862,6 +2862,19 @@ CREATE TABLE `fees_accruing` (
    CONSTRAINT `fees_accruing_fk_1` FOREIGN KEY (`issue_id`) REFERENCES `issues` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `acq_entity_link`;
+CREATE TABLE acq_entity_link (
+    branch_code                 varchar(10) NOT NULL,
+    purchase_order_line_id      integer(16) default NULL,
+    purchase_order_line_copy_id integer(16) default NULL,
+    biblionumber                integer(11) default NULL,
+    itemnumber                  integer(11) default NULL,
+
+    CONSTRAINT `acq_entity_link_fk_1` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `acq_entity_link_fk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+    UNIQUE (purchase_order_line_id),
+    UNIQUE (purchase_order_line_copy_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
