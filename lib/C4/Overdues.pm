@@ -197,10 +197,10 @@ sub CalcFine {
     my ($daystocharge, $totaldays);
     my $start_date = C4::Dates->new($issue->{date_due},'iso');
 
-    my $itemtype = $issue->{itemtype};
+    my $itemtype = $issue->{itype};
     if(!$itemtype){
         my $item = C4::Items::GetItem($issue->{itemnumber});
-        $itemtype = $item->{itemtype} if $item;
+        $itemtype = $item->{itype} if $item;
     }
 
     my $irule = C4::Circulation::GetIssuingRule($bortype, $itemtype, $branchcode);
