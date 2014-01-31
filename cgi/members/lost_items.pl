@@ -62,7 +62,11 @@ if ($op eq 'delete') {
    C4::Accounts::credit_lost_item($lost_item_id, credit => 'CLAIMS_RETURNED');
 } elsif ($op eq 'undo_claims_returned') {
    C4::LostItems::ModLostItem( id => $lost_item_id, claims_returned => 0);
-   C4::Accounts::credit_lost_item($lost_item_id, credit => 'CLAIMS_RETURNED', undo => 1);
+   my $lost_item = C4::LostItems::GetLostItemById($lost_item_id);
+   if($lost_item->{itemlost} eq 'lost'){
+     C4::Accounts::credit_lost_item($lost_item_id, credit => 'CLAIMS_RETURNED', undo => 1);
+   }
+
 }
 
 

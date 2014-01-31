@@ -195,7 +195,7 @@ sub GetLostItemById
 {
    my $id  = shift;
    my $dbh = C4::Context->dbh;
-   my $sth = $dbh->prepare('SELECT * FROM lost_items WHERE id=?');
+   my $sth = $dbh->prepare('SELECT li.*, itemlost FROM lost_items li LEFT JOIN items on(li.itemnumber=items.itemnumber)  WHERE li.id=?');
    $sth->execute($id);
    return $sth->fetchrow_hashref();
 }
