@@ -1366,7 +1366,12 @@ func credit_lost_item( $lost_item_id, :$credit, :$undo ) {
             ApplyCredit($fee_id, {  accounttype => $credit });
         }
         if(my $odue = C4::Context->preference('ApplyFineWhenLostItemChargeRefunded')){
+            # FIXME: GetOldIssue gets the last checkout.  In this case we're sure it's the right one,
+            # But the issue should be stored by id in lost_items.
             my $old_issue = C4::Circulation::GetOldIssue($lost_item->{itemnumber});
+            if(!$old_issue->{borrowernumber}){  # possible patron anonymization
+                $old_issue->{borrowernumber} = $lost_item->{borrowernumber};
+            }
             my $returndate = ($odue eq 'DateLost') ? C4::Dates->new($lost_item->{date_lost}, 'iso') : undef;
             C4::Overdues::ApplyFine($old_issue, $returndate);
         }
