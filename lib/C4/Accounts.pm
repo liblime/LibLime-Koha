@@ -1365,7 +1365,10 @@ func credit_lost_item( $lost_item_id, :$credit, :$undo ) {
             }
             ApplyCredit($fee_id, {  accounttype => $credit });
         }
-        if(my $odue = C4::Context->preference('ApplyFineWhenLostItemChargeRefunded')){
+        if($credit eq 'LOSTRETURNED' && (my $odue = C4::Context->preference('ApplyFineWhenLostItemChargeRefunded'))){
+            # Only apply fine for actually returned item.
+            # Claims-returned items do not get an overdue charge until they are found.
+
             # FIXME: GetOldIssue gets the last checkout.  In this case we're sure it's the right one,
             # But the issue should be stored by id in lost_items.
             my $old_issue = C4::Circulation::GetOldIssue($lost_item->{itemnumber});
