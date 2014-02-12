@@ -189,6 +189,7 @@ foreach my $item (@items) {
         my $itemBorrowerReserveInfo     = GetMember($hold->{borrowernumber});
         $item->{reservedate}            = $hold->{reservedate};
         $item->{waitingdate}            = $hold->{waitingdate};
+        $item->{WaitingAtLibrary}       = $branches->{$hold->{branchcode}}{branchname} if($item->{waitingdate});
         $item->{ReservedForBorrowernumber} = $hold->{borrowernumber};
         $item->{ReservedForSurname}     = $itemBorrowerReserveInfo->{'surname'};
         $item->{ReservedForFirstname}   = $itemBorrowerReserveInfo->{'firstname'};

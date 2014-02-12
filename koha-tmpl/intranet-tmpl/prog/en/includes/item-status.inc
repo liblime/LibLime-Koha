@@ -40,7 +40,7 @@
 
     <!-- TMPL_IF NAME="reservedate"-->
         <!-- TMPL_IF NAME="waitingdate" -->
-            Waiting
+            Waiting at <!-- TMPL_VAR NAME="WaitingAtLibrary" -->
         <!-- TMPL_ELSE -->
             On hold
         <!-- /TMPL_IF -->
