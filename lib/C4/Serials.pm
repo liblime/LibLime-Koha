@@ -237,7 +237,7 @@ sub GetSerialInformation {
 
     my $subscription_defaults = GetSubscriptionDefaults( $data->{'subscriptionid'}  );            
     foreach my $key ( keys %$subscription_defaults ) {
-      $data->{ $key } = $subscription_defaults->{ $key } unless ( $data->{ $key } );
+      $data->{ $key } = $subscription_defaults->{ $key };
     }
     
     # create item information if we have serialsadditems for this subscription
