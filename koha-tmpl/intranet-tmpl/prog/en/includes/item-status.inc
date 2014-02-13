@@ -52,10 +52,6 @@
             <!-- /TMPL_IF -->
             </a>
         <!-- /TMPL_IF -->
-        <!-- TMPL_IF ExpectedAtLibrary -->
-            ,<!-- TMPL_UNLESS waitingdate --> expected <!-- /TMPL_UNLESS -->
-            at <!-- TMPL_VAR NAME="ExpectedAtLibrary" -->
-        <!-- /TMPL_IF -->
         <!-- TMPL_IF waitingdate -->since <!-- TMPL_VAR EXPR="date(waitingdate)" --><!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
 

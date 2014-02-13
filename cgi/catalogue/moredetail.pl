@@ -151,7 +151,6 @@ foreach my $item (@items){
         $item->{ReservedForBorrowernumber} = $hold->{borrowernumber};
         $item->{ReservedForSurname}     = $ItemBorrowerReserveInfo->{'surname'};
         $item->{ReservedForFirstname}   = $ItemBorrowerReserveInfo->{'firstname'};
-        $item->{ExpectedAtLibrary}      = $branches->{$hold->{branchcode}}{branchname} if($item->{holdingbranch} ne $hold->{branchcode});
         $item->{cardnumber}             = $ItemBorrowerReserveInfo->{'cardnumber'};
     }
 
