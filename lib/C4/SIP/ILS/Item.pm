@@ -113,6 +113,19 @@ sub new {
 	$self = $item;
 	bless $self, $type;
 
+    # Get item media type based upon items.itype
+    my $media_type_mapping = C4::Context->preference('SIPMediaTypeMapping');
+    $media_type_mapping =~ s/\s*//g;
+    my @media_types = split /\|/, $media_type_mapping;
+    $item->{'sip_media_type'} = sprintf "%03d",0;
+    for my $media_type_pair (@media_types) {
+      my ($itemtype,$media_type) = split /:/, $media_type_pair;
+      if ($itemtype eq $item->{itype}) {
+        $item->{'sip_media_type'} = sprintf "%03d",$media_type;
+        last;
+      }
+    }
+
     # Remove characters above 255 since they cause a
     # "Wide character in syswrite" error and terminate the session
     my $log_title = $self->{title};

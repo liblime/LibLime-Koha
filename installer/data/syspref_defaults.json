@@ -3478,5 +3478,15 @@
       "tags" : [
          "Admin"
       ]
+   },
+   "SIPMediaTypeMapping" : {
+      "explanation" : "Pipe delimited Koha item type:SIP2 media type mapping",
+      "options" : null,
+      "value" : "BK:001|MX:009|CF:007|MP:000|VM:006|MU:004|CR:002|REF:003",
+      "hidden" : false,
+      "type" : "free",
+      "tags" : [
+         "Circulation"
+      ]
    }
 }

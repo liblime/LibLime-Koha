@@ -569,9 +569,6 @@ sub handle_checkout {
 	$resp .= add_field(FID_TITLE_ID, $item->title_id);
 	$resp .= add_field(FID_DUE_DATE, $item->due_date);
 
-	$resp .= maybe_add(FID_SCREEN_MSG, $status->screen_msg);
-	$resp .= maybe_add(FID_PRINT_LINE, $status->print_line);
-
 	if ($protocol_version >= 2) {
 	    if ($ils->supports('security inhibit')) {
 		$resp .= add_field(FID_SECURITY_INHIBIT,
@@ -589,6 +586,9 @@ sub handle_checkout {
 				   $status->transaction_id);
 	    }
 	}
+
+	$resp .= maybe_add(FID_SCREEN_MSG, $status->screen_msg);
+	$resp .= maybe_add(FID_PRINT_LINE, $status->print_line);
 
     } else {
 	# Checkout failed
