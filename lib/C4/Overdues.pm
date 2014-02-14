@@ -306,7 +306,7 @@ sub ApplyFine {
                         itemnumber  => $issue->{itemnumber},
                         amount      => $amount,
                         accounttype => 'FINE',
-                        description => "Overdue: $biblio->{'title'}",
+                        description => "Overdue: $biblio->{'title'}, due on " . $duedate->output(),
                         );
         my $fee_rowid = C4::Accounts::CreateFee( \%new_fee );
     }

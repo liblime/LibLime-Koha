@@ -1199,6 +1199,7 @@ sub chargelostitem{
                                   li.holdingbranch,
                                   li.itemnumber,
                                   items.itype,
+                                  items.onloan,
                                   items.replacementprice,
                                   issues.id AS issue_id,
                                   itemtypes.replacement_price,
@@ -1225,12 +1226,13 @@ sub chargelostitem{
                item_homebranch    => $lost->{homebranch},
                item_holdingbranch => $lost->{holdingbranch},
                borrower_branch    => $lost->{borrower_branch} );
+        my $duedate = C4::Dates->new($lost->{'onloan'},'iso');
         my %new_fee_info = (
             borrowernumber => $lost->{'borrowernumber'},
             amount         => $amount,
             accounttype    => $accounttype,
             branchcode     => $circControlBranch,
-            description    => $ACCT_TYPES{$accounttype}->{'description'} . ": $lost->{'title'} [$lost->{barcode}]",
+            description    => $ACCT_TYPES{$accounttype}->{'description'} . ": $lost->{'title'}, due on " . $duedate->output(),
             itemnumber     => $lost->{itemnumber},
         );
         _insert_new_fee( \%new_fee_info );    
