@@ -727,7 +727,7 @@ sub AddReserve {
 
     # Assign holds fee if applicable
     my $fee = GetReserveFee( $borrowernumber, $biblionumber, $itemnumber );
-    if ( defined($fee) && $fee > 0 ) {
+    if ($fee->value > 0) {
         my $biblio = GetBiblioData($biblionumber); 
         C4::Accounts::manualinvoice({
             borrowernumber  => $borrowernumber,
