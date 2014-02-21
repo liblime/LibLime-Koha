@@ -65,7 +65,7 @@ method relink_from_headings( Koha::BareBib $bib ) {
                 push @additional, ('e', $f->subfield('e'))
                         if $f->tag !~ /^.11$/ && $f->subfield('e');
                 push @additional, ('v', $f->subfield('v'))
-                    if $f->tag =~ /^4..$/ && $f->subfield('v');
+                    if $f->tag =~ /^4..$|^8..$/ && $f->subfield('v');
                 $new_f->add_subfields( @additional, '0' => $auth->rcn );
 
                 $f->replace_with( $new_f );
