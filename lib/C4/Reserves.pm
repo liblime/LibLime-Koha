@@ -1832,21 +1832,13 @@ sub ModReserveTrace
    }
    
    ## update item's LOST status
-   ## get the authorised_value of 'trace'
-   $sth = $dbh->prepare("SELECT authorised_value
-      FROM authorised_values
-     WHERE category = 'LOST'
-       AND LCASE(lib) = 'trace'");
-   $sth->execute();
-   my $traceAuthVal = ($sth->fetchrow_array)[0];
-   die "No authorised value 'Trace' set for category 'LOST'\n" 
-   unless defined $traceAuthVal;   
+   my $itemlostVal = 'trace';
    $dbh->do(q|
       UPDATE items
          SET itemlost    = ?
        WHERE itemnumber  = ?
       |, undef,
-   $traceAuthVal, $itemnumber);
+   $itemlostVal, $itemnumber);
 
    if ($$res{item_level_request}) { ## item-level request
       ## suspend the hold, retain its priority
