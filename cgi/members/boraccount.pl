@@ -175,7 +175,6 @@ my @currentfees;
 my @payablefees;
 my @history;
 
-my $accruingfees = C4::Accounts::getaccruingcharges( $borrowernumber );
 for my $fee (@{C4::Accounts::getcharges( $borrowernumber )}){
     C4::Accounts::prepare_fee_for_display($fee);
     if($fee->{amountoutstanding} > 0){
@@ -193,10 +192,6 @@ for my $fee (@{C4::Accounts::getcharges( $borrowernumber )}){
         $fee->{'creditloop'} = $credits;
     }
     push(@history, $fee);
-}
-for my $fee (@$accruingfees){
-    C4::Accounts::prepare_fee_for_display($fee);
-    push @currentfees, $fee;
 }
 my $currentfee_count = 1;
 for (reverse @currentfees) {
@@ -226,6 +221,14 @@ my $history_count = 1;
 for (reverse @sorted_history) {
   $_->{number} = $history_count;
   $history_count++;
+}
+# Moved this block down for row number display purposes in the account table
+my $accruingfees = C4::Accounts::getaccruingcharges( $borrowernumber );
+for my $fee (@$accruingfees){
+    C4::Accounts::prepare_fee_for_display($fee);
+    $fee->{number} = $history_count;
+    push @currentfees, $fee;
+    $history_count++;
 }
 
 # display account summary, regardless of $op.
