@@ -98,8 +98,9 @@ $template->param(
 	action => $script_name
 );
 
+my $set_ttcode;
 if ($op eq 'add_form') {
-    add_form($module, $code, $template );
+    $set_ttcode = add_form($module, $code, $template );
 }
 elsif ( $op eq 'add_validate' ) {
     add_validate($input);
@@ -124,6 +125,18 @@ if ($op) {
 }
 
 if (C4::Context->preference('TalkingTechEnabled')) {
+  # Get TT notice types
+  my $notice_types_pref = C4::Context->preference('TalkingTechNoticeTypes');
+  $notice_types_pref =~ s/\s*//g;
+  my @notice_types = split /\|/, $notice_types_pref;
+  my @notice_types_loop;
+  foreach my $notice_type (@notice_types) {
+    push @notice_types_loop, {
+      value => $notice_type,
+      selected => ($notice_type eq $set_ttcode) ? 1 : 0,
+    };
+  }
+  $template->param(noticetypeloop => \@notice_types_loop);
   $template->param(TalkingTechEnabled => 1);
 }
 
@@ -134,6 +147,7 @@ sub add_form {
 
     my $dbh = C4::Context->dbh();
     my $letter;
+    my $set_ttcode = undef;
     # if code has been passed we can identify letter and its an update action
     if ($code) {
         $letter = $dbh->selectrow_hashref(q{SELECT module, code, name, title, content, ttcode FROM letter WHERE module=? AND code=?},
@@ -141,6 +155,7 @@ sub add_form {
         $template->param( modify => 1 );
         $template->param( code   => $letter->{code} );
         $template->param( ttcode => $letter->{ttcode} );
+        $set_ttcode = $letter->{ttcode} if ($letter->{ttcode});
     }
     else { # initialize the new fields
         $letter = {
@@ -207,7 +222,7 @@ sub add_form {
         $module => 1,
         SQLfieldname => $field_selection,
     );
-    return;
+    return $set_ttcode;
 }
 
 sub add_validate {
@@ -220,6 +235,7 @@ sub add_validate {
     my $content = $input->param('content');
     if (C4::Context->preference('TalkingTechEnabled')) {
       my $ttcode  = $input->param('ttcode');
+      $ttcode = undef if (!$ttcode);
       $ttcode = $ttcode ~~ 'NULL' ? undef : $ttcode;
       if (letter_exists($module, $code)) {
           $dbh->do(
