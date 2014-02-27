@@ -1212,6 +1212,7 @@ sub do_patron{
                             description     => $refunded_rcrs{$f}->{description},
                             notes           => sprintf("accountno:%d",$f),
                             accounttype     => 'CREDIT',
+                            reallocate      => 0
             };
             if($credit->{description} =~ /, issued at no\.(\d+)/){
                 my $refund_accountno = $1;
