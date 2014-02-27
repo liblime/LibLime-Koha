@@ -84,9 +84,17 @@ method update_bibs( ArrayRef[Koha::BareBib] $bibs = $self->bibs) {
             my $new = MARC::Field->new(
                 $orig->tag, $ind[0], $ind[1],
                 map {$_->[0] => $_->[1]} $heading->subfields );
-            $new->add_subfields( '0' => $self->rcn );
-            $bbib->marc->insert_fields_after( $orig, $new );
-            $bbib->marc->delete_fields( $orig );
+
+            # Copy back uncontrolled subfields and $0
+            my @additional =
+                map {@$_} grep {$_->[0] =~ /[iw1-9]/} $orig->subfields;
+            push @additional, ('e', $orig->subfield('e'))
+                if $orig->tag !~ /^.11$/ && $orig->subfield('e');
+            push @additional, ('v', $orig->subfield('v'))
+                if $orig->tag =~ /^4..$|^8..$/ && $orig->subfield('v');
+            $new->add_subfields( @additional, '0' => $self->rcn );
+
+            $orig->replace_with($new);
         }
         $bbib->save;
     }

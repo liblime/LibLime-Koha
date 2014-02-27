@@ -24,7 +24,7 @@ use Koha::HeadingMap;
 use C4::Context;
 use MARC::Record;
 use MARC::Field;
-use MARC::Field::Normalize::NACO qw(naco_from_authority);
+use MARC::Field::Normalize::NACO qw(naco_from_field);
 use Digest::SHA1;
 use Encode qw(encode_utf8);
 use TryCatch;
@@ -178,7 +178,7 @@ method _update {
 }
 
 method csearch_string {
-    return naco_from_authority( $self->marc );
+    return naco_from_field( $self->marc->field('1..'), subfields => 'a-z' );
 }
 
 func new_stub_from_field(Str $class, MARC::Field $f, Str $citation = undef) {
