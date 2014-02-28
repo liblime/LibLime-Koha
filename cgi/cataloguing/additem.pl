@@ -468,6 +468,11 @@ if (@worklibs && $itemnumber) { # item ownership
    }
 }
 
+if($itemnumber){
+    my $koha_item = C4::Items::GetItem($itemnumber);
+    $template->param('item_onloan' => $koha_item->{onloan} );
+}
+
 ## Move barcode field to the top of the list.
 my $barcode_index = 0;
 for my $i(0..$#{$item}) {

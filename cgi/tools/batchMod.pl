@@ -253,7 +253,8 @@ foreach my $tag (sort keys %{$tagslib}) {
 	$subfield_data{visibility} = "display:none;" if (($tagslib->{$tag}->{$subfield}->{hidden} > 4) || ($tagslib->{$tag}->{$subfield}->{hidden} < -4));
 	# testing branch value if IndependantBranches.
 
-	my $attributes_no_value = qq(tabindex="1" id="$subfield_data{id}" name="field_value" class="input_marceditor" size="67" maxlength="255" );
+    my $itemfield = ($tagslib->{$tag}->{$subfield}->{'kohafield'}) ? substr($tagslib->{$tag}->{$subfield}->{'kohafield'}, 6) : '';
+	my $attributes_no_value = qq(tabindex="1" id="$subfield_data{id}" name="field_value" class="input_marceditor $itemfield" size="67" maxlength="255" );
 	my $attributes          = qq($attributes_no_value value="" );
 
 	if ( $tagslib->{$tag}->{$subfield}->{authorised_value} ) {
@@ -282,8 +283,8 @@ foreach my $tag (sort keys %{$tagslib}) {
 	    my $sth = $dbh->prepare("select itemtype,description from itemtypes order by description");
 	    $sth->execute;
 	    while ( my ( $itemtype, $description ) = $sth->fetchrow_array ) {
-		push @authorised_values, $itemtype;
-		$authorised_lib{$itemtype} = $description;
+            push @authorised_values, $itemtype;
+            $authorised_lib{$itemtype} = $description;
 	    }
 
           #---- class_sources
@@ -303,7 +304,13 @@ foreach my $tag (sort keys %{$tagslib}) {
 
           #---- "true" authorised value
       }
-      else {
+      elsif ( $tagslib->{$tag}->{$subfield}->{authorised_value} eq "lost_status" ) {
+
+            my $itemlostvalues = C4::Items::get_itemlost_values();
+            @authorised_values = sort keys %$itemlostvalues;
+            %authorised_lib = %$itemlostvalues;
+
+      } else {
           push @authorised_values, "" unless ( $tagslib->{$tag}->{$subfield}->{mandatory} );
           $authorised_values_sth->execute( $tagslib->{$tag}->{$subfield}->{authorised_value} );
           while ( my ( $value, $lib ) = $authorised_values_sth->fetchrow_array ) {
@@ -311,6 +318,7 @@ foreach my $tag (sort keys %{$tagslib}) {
               $authorised_lib{$value} = $lib;
           }
       }
+
       $subfield_data{marc_value} =CGI::scrolling_list(      # FIXME: factor out scrolling_list
           -name     => "field_value",
           -values   => \@authorised_values,
@@ -320,7 +328,7 @@ foreach my $tag (sort keys %{$tagslib}) {
           -multiple => 0,
           -tabindex => 1,
           -id       => "tag_".$tag."_subfield_".$subfield."_".$index_subfield,
-          -class    => "input_marceditor",
+          -class    => "input_marceditor $itemfield",
       );
     # it's a thesaurus / authority field
     }

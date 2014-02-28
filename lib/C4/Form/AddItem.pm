@@ -302,7 +302,6 @@ sub get_form_values {
                 elsif ( $subfieldlib->{kohafield} eq "items.itemlost" ) {
                      %authorised_lib = %{C4::Items::get_itemlost_values()};
                      @authorised_values = keys %authorised_lib;
-                     push @field_class_names, 'itemlost';
                 }
                     #---- "true" authorised value
                 else {
@@ -312,6 +311,10 @@ sub get_form_values {
                         push @authorised_values, $value;
                         $authorised_lib{$value} = $lib;
                     }
+                }
+                if($subfieldlib->{kohafield}){
+                    # Add class name for mapped koha fields.
+                    push @field_class_names, substr($subfieldlib->{kohafield}, 6);
                 }
                 $subfield_data{marc_value} =CGI::scrolling_list( # FIXME: factor out scrolling_list
                     -name     => "field_value_$item_index",

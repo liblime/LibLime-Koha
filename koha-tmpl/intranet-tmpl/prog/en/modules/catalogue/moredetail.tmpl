@@ -151,7 +151,11 @@ div.msg {border:1px solid;padding:3px; background-color:#ffffcc;}
 
 	            <!-- TMPL_UNLESS NAME="notmine" -->
 	                <!-- TMPL_IF NAME="wthdrawn" -->
-	                    <input type="submit" name="submit" class="submit" value="Restore" /><!-- TMPL_ELSE --><input type="submit" name="submit" class="submit" value="Withdraw" />
+                        <input type="submit" name="submit" class="submit" value="Restore" />
+                    <!-- TMPL_ELSE -->
+                        <!-- TMPL_UNLESS onloan -->
+                            <input type="submit" name="submit" class="submit" value="Withdraw" />
+                        <!-- /TMPL_UNLESS -->
 	                <!-- /TMPL_IF -->
 	            <!-- /TMPL_UNLESS -->
                 </form>

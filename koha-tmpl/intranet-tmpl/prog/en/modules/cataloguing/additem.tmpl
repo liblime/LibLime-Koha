@@ -11,7 +11,10 @@ $(document).ready(function(){
           + ' <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR biblionumber>&itemnumber=<TMPL_VAR itemnumber>">Item status editor</a>'
           + ' to ensure lost and overdue charges are assessed.</span>';
       $("select.itemlost").after(helptxt);
-
+      // Cannot withdraw onloan item -- should probably disable itemlost as well.
+      <!-- TMPL_IF item_onloan -->
+        $("select.wthdrawn").attr('disabled','disabled');
+      <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
 });
 
@@ -484,7 +487,7 @@ function checkForDuplicateDefaultsName() {
     <!-- TMPL_ELSE -->
         <a name="edititem"></a>
         <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
-        <h2>Edit Item #<!-- TMPL_VAR NAME="itemnumber" --></h2>
+        <h2>Edit Item #<!-- TMPL_VAR NAME="itemnumber" -->  <!-- TMPL_IF item_onloan --><span class="warning">[currently checked out]</span><!-- /TMPL_IF --></h2>
         <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
 	<fieldset class="rows">
