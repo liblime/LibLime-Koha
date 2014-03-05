@@ -183,11 +183,48 @@ sub manualcredit {
     # clean up data
     if($credit->{amount} && $credit->{amount} > 0){
         $credit->{amount} = Koha::Money->new($credit->{amount}) unless Check::ISA::obj($credit->{amount}, 'Koha::Money');
+
+        # Ensure that lost items charge separately so they can be individually refunded.
+        my $charges = getcharges( $credit->{'borrowernumber'}, 'outstanding' => 1 );
+        my $amount_reserved = 0; # If the user selects certain payments over others.
+        if ($fees_to_pay && @$fees_to_pay) {
+            for my $j (@$charges) {
+                if (grep {/$j->{'fee_id'}/} @$fees_to_pay) {
+                    $amount_reserved += $j->{'amount'};
+                }
+            }
+        }
+        for my $i (@$charges) {
+            if ($i->{'accounttype'} eq 'LOSTITEM') { # Only process lost items this way.
+                if ( ($fees_to_pay && !@$fees_to_pay) || (grep {/$i->{'fee_id'}/} @$fees_to_pay) ) {
+                    if ($credit->{'amount'} >= $i->{'amount'}) {
+                        $credit->{'amount'} -= $i->{'amount'};
+                        @$fees_to_pay = grep { $_ != $i->{'fee_id'} } @$fees_to_pay;
+                        my $payment = { accounttype => 'PAYMENT',
+                                        amount => -1 * $i->{'amount'},
+                                        description => $i->{'description'}
+                        };
+                        $error ? ($error .= ApplyCredit($i->{'fee_id'}, $payment)) : ($error = ApplyCredit($i->{'fee_id'}, $payment));
+                    }
+                }
+                elsif ( ($credit->{'amount'} - $amount_reserved) >= $i->{'amount'} ) {
+                        $credit->{'amount'} -= $i->{'amount'};
+                        my $payment = { accounttype => 'PAYMENT',
+                                        amount => -1 * $i->{'amount'},
+                                        description => $i->{'description'}
+                        };
+                        $error ? ($error .= ApplyCredit($i->{'fee_id'}, $payment)) : ($error = ApplyCredit($i->{'fee_id'}, $payment));
+                }
+            }
+        }
+
         #$credit->{'date'} = ($credit->{'date'}) ? C4::Dates->new($credit->{'date'})->output('timestamp') : C4::Dates->output('timestamp');
         #FIXME: C4::Dates needs updates for above to work.  For now we assume the caller includes a valid date format if it exists.
         $credit->{amount} = -1 * $credit->{amount};  # FIXME : credits are negative, but manualcredit takes positive values.
-        ( $payment, $error ) = _insert_new_payment( $credit );
-        RedistributeCredits( $credit->{'borrowernumber'}, $fees_to_pay ) unless($options{noapply});        
+        if ($credit->{'amount'}) {
+            ( $payment, $error ) = _insert_new_payment( $credit );
+            RedistributeCredits( $credit->{'borrowernumber'}, $fees_to_pay ) unless($options{noapply});
+        }
     } else {
         $error = "INVALID_CREDIT_AMOUNT";
     }
