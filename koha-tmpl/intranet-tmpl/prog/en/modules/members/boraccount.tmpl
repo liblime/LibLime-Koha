@@ -1,6 +1,7 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Patrons &rsaquo; Account for <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
 <script language="javascript">
 //<![CDATA[
 $(document).ready(function() {
@@ -203,8 +204,10 @@ $(document).ready(function() {
         $(this).data('viewstate',1);
       }
       return false;
-    })
-
+    });
+    $("#boraccount-sort").tablesorter();
+    $("#unallocated-sort").tablesorter();
+    $("#history-sort").tablesorter();
 });
 //]]>
 </script>
@@ -245,7 +248,8 @@ $(document).ready(function() {
         <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
         <input type="hidden" name="op" value="pay" />
 
-        <table><caption>Current fines [Balance:  $<!-- TMPL_VAR NAME="total" -->]</caption>
+        <table id="boraccount-sort"><caption>Current fines [Balance:  $<!-- TMPL_VAR NAME="total" -->]</caption>
+          <thead>
           <tr>
             <th>Action</th>
             <th>No.</th>
@@ -256,8 +260,10 @@ $(document).ready(function() {
             <th>Original amt</th>
             <th>Outstanding</th>
           </tr>
+          </thead>
         
             <!-- FIXME: Shouldn't hardcode dollar signs, since Euro or Pound might be needed -->
+          <tbody>
           <!-- TMPL_LOOP NAME="currentfees" -->
            <tr>
               <td class="pay_column">
@@ -286,6 +292,7 @@ $(document).ready(function() {
               <td class="debit amountoutstanding"><!-- TMPL_IF amountoutstanding -->$<!-- TMPL_VAR NAME="amountoutstanding" --><!-- /TMPL_IF --></td>
            </tr>
           <!-- /TMPL_LOOP -->
+          </tbody>
         <tfoot>
           <tr>
             <td class="payall_column" rowspan="2">
@@ -312,7 +319,8 @@ $(document).ready(function() {
           <!-- TMPL_IF NAME="has_unallocated" -->            <br />
           <form id="refundUnallocated" action="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR borrowernumber -->" method="post">
             <input type="hidden" name="reallocate" value=""/>
-          <table><caption>Unallocated credits <!-- TMPL_IF CAN_user_updatecharges_refund_charges -->&nbsp;&nbsp;<button class="issueFullRefund">Refund All</button><!-- /TMPL_IF --></caption>
+          <table id="unallocated-sort"><caption>Unallocated credits <!-- TMPL_IF CAN_user_updatecharges_refund_charges -->&nbsp;&nbsp;<button class="issueFullRefund">Refund All</button><!-- /TMPL_IF --></caption>
+            <thead>
             <tr>
             <th>Date</th>
             <th>Description</th>
@@ -322,6 +330,8 @@ $(document).ready(function() {
             <th>Auto-apply?</th>
             <!-- TMPL_IF CAN_user_updatecharges_refund_charges --><th>Refund</th><!-- /TMPL_IF -->
             </tr>
+            </thead>
+            <tbody>
             <!-- TMPL_LOOP NAME="unallocated" -->
             <tr><td><!-- TMPL_VAR NAME="date" --></td>
                 <td><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --><!-- /TMPL_IF --></td>
@@ -341,6 +351,7 @@ $(document).ready(function() {
                 <!-- /TMPL_IF -->
                 </tr>
             <!-- /TMPL_LOOP -->
+            </tbody>
             <tr><td colspan="5" class="rightJustify" id="unallocatedLastRow">&nbsp;</td>
             <!-- TMPL_IF CAN_user_updatecharges_refund_charges -->
               <td colspan="2"><input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR borrowernumber -->" />
@@ -363,7 +374,8 @@ $(document).ready(function() {
             <h3 class="debit"><!-- /TMPL_IF -->Balance:  $<!-- TMPL_VAR NAME="total" --></h3>
             <br />
             
-            <table class="accountHistory"><caption>Fees &amp; payments  <a href id="toggle-all-paydetails" data-viewstate="0">Show credit details</a></caption>
+            <table id="history-sort" class="accountHistory"><caption>Fees &amp; payments  <a href id="toggle-all-paydetails" data-viewstate="0">Show credit details</a></caption>
+          <thead>
           <tr>
             <!-- TODO: <th>Edit</th> -->
             <th>No.</th>
@@ -375,6 +387,8 @@ $(document).ready(function() {
             <th>Payment</th>
             <th>Outstanding</th>
           </tr>
+          </thead>
+          <tbody>
           <!-- TMPL_LOOP NAME="account_history" -->
             <!-- TMPL_IF payment -->
               <tr class="credit">
@@ -422,6 +436,7 @@ $(document).ready(function() {
 	              <td class="debit"><!-- TMPL_UNLESS payment --><span class="currency">$<!-- TMPL_VAR EXPR=currency(amountoutstanding) --></span><!-- /TMPL_UNLESS --></td>
            </tr>
           <!-- /TMPL_LOOP -->
+          </tbody>
           <!-- TMPL_IF NAME="no_history" --><td colspan="8">Patron has no account history.</td><!--/TMPL_IF -->
           </table>
 
