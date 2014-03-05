@@ -157,10 +157,11 @@ function isValidDate(theFieldName){
         <!-- TMPL_IF NAME="amountoverfive" -->
             <div id="opac-user-fines"> <h3>Fines and Charges</h3>
             <table>
-                <tr><th colspan="2">Amount</th></tr>
+                <tr><th colspan="3">Amount</th></tr>
                 <tr>
-                    <td>You currently owe fines and charges amounting to:</td>
+                    <td>You owe </td>
                     <td><a href="/cgi-bin/koha/opac-account.pl"><!-- TMPL_VAR NAME="totalowed" --></a></td>
+                    <td>in outstanding charges.</td>
                 </tr>
             </table></div>
         <!-- /TMPL_IF -->
@@ -168,9 +169,11 @@ function isValidDate(theFieldName){
         <!-- TMPL_IF NAME="amountoverzero" -->
            <div id="opac-user-fines"> <h3>Fines and Charges</h3>
             <table>
-                <tr><th colspan="2">Amount</th></tr>
-                <tr><td>You currently owe fines and charges amounting to:</td>
-                <td><a href="/cgi-bin/koha/opac-account.pl"><!-- TMPL_VAR NAME="totalowed" --></a></td></tr>
+                <tr><th colspan="3">Amount</th></tr>
+                <tr><td>You owe </td>
+                <td><a href="/cgi-bin/koha/opac-account.pl"><!-- TMPL_VAR NAME="totalowed" --></a></td>
+                <td>in outstanding charges.</td>
+                </tr>
             </table></div>
         <!-- /TMPL_IF -->
 

@@ -237,7 +237,7 @@ $(document).ready(function() {
         <li><a href="#boraccount">Account</a></li>
         <li><a href="#history">Account history</a></li>
         <li><a href="#maninvoice">Add invoice</a></li>
-        <li><a href="#mancredit">Add credit</a></li>
+        <li><a href="#mancredit">Add payment or credit</a></li>
     </ul>
     <div id="boraccount">
         <!-- TMPL_IF NAME="totalcredit" --> <p>Account has net credit.</p>
@@ -474,7 +474,7 @@ $(document).ready(function() {
                 <li><label for="credit_desc">Description: </label><input type="text" name="desc" size="50" id="credit_desc" /></li>
                 <li><label for="credit_amount">Amount: </label><input type="text" name="amount" id="credit_amount" /> <a href="#" id="calcTotal">Calculate total due</a></li>
             </ol></fieldset>
-            <fieldset class="action"><input type="submit" name="add" value="Add Credit" /> 
+            <fieldset class="action"><input type="submit" name="add" value="Add" /> 
             <input type="reset" />
             </fieldset>
         </form>
