@@ -852,7 +852,8 @@ sub _insert_new_payment {
             borrowernumber  => $data->{borrowernumber},
             description     => ($data->{description}) ? $data->{description} : $ACCT_TYPES{$data->{accounttype}}->{description},
             received_by     => $data->{received_by} || $data->{operator_id},
-            date            => $data->{date} || undef
+            date            => $data->{date} || undef,
+            reallocate      => => $data->{reallocate} // 1
     };
     
     my $txn = {
@@ -870,11 +871,11 @@ sub _insert_new_payment {
         $txn->{operator_id} = $data->{'operator_id'} || $userenv->{'number'};
         $txn->{branchcode}  = $data->{'branchcode'} || $userenv->{'branch'};
     }
-    my @bind = ( $payment->{'borrowernumber'}, $payment->{'received_by'}, $payment->{'description'}, $payment->{date});
+    my @bind = ( $payment->{'borrowernumber'}, $payment->{'received_by'}, $payment->{'description'}, $payment->{date}, $payment->{reallocate});
     my $dbh = C4::Context->dbh;
     $dbh->begin_work();
     eval {
-        my $sth=$dbh->prepare_cached("INSERT INTO payments ( borrowernumber, received_by, description, date ) VALUES ( ?, ?, ?, ? )");
+        my $sth=$dbh->prepare_cached("INSERT INTO payments ( borrowernumber, received_by, description, date, reallocate ) VALUES ( ?, ?, ?, ?, ? )");
         my $rows_inserted = $sth->execute( @bind );
         $payment->{id} = $txn->{payment_id} = $dbh->{mysql_insertid};
         my ($trans_id, $trans_error) = _insert_fee_transaction( $txn );

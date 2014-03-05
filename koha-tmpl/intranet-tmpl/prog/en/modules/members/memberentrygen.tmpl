@@ -23,6 +23,9 @@
             document.form.zipcode.value=RegExp.$1;
             document.form.city.value=RegExp.$2;
         });
+        $("#memberentry_library_management select.categorycode").change(function(){
+            showStaffLibrary();
+        });
     });
 
     function clear_entry(node) {
@@ -700,25 +703,9 @@
     <legend>Library Management</legend><ol>
     <li>
     <!-- TMPL_IF NAME="typeloop" -->
-        <label for="categorycode">Category: </label>
-        <select id="categorycode" name="categorycode" onchange="showStaffLibrary()">>
-        <!-- TMPL_LOOP NAME="typeloop" -->
-		<!-- TMPL_IF EXPR="typename eq 'C'" --><optgroup label="Child"><!-- /TMPL_IF -->
-		<!-- TMPL_IF EXPR="typename eq 'A'" --><optgroup label="Adult"><!-- /TMPL_IF -->
-		<!-- TMPL_IF EXPR="typename eq 'S'" --><optgroup label="Staff"><!-- /TMPL_IF -->
-		<!-- TMPL_IF EXPR="typename eq 'I'" --><optgroup label="Organization"><!-- /TMPL_IF -->
-		<!-- TMPL_IF EXPR="typename eq 'P'" --><optgroup label="Professional"><!-- /TMPL_IF -->
-		<!-- TMPL_IF EXPR="typename eq 'X'" --><optgroup label="Statistical"><!-- /TMPL_IF -->
-                <!-- TMPL_LOOP NAME="categoryloop" -->
-				<!-- TMPL_IF NAME="categorycodeselected" -->
-               <option value="<!-- TMPL_VAR NAME="categorycode" -->" selected="selected"><!-- TMPL_VAR NAME="categoryname" --></option>
-				<!-- TMPL_ELSE -->
-<option value="<!-- TMPL_VAR NAME="categorycode" -->"><!-- TMPL_VAR NAME="categoryname" --></option>
-				<!-- /TMPL_IF -->
-                <!-- /TMPL_LOOP -->
-        </optgroup>
-        <!-- /TMPL_LOOP -->
-		</select>
+        <label>Category: </label>
+        <!-- TMPL_INCLUDE patroncat-select.inc -->
+
     <!-- TMPL_ELSE -->
         <span class="problem">There is no category type to add <!--TMPL_IF Name="A"-->an Adult<!--/TMPL_IF--><!--TMPL_IF Name="C"-->a Child<!--/TMPL_IF--><!--TMPL_IF Name="I"-->an Institution<!--/TMPL_IF--><!--TMPL_IF Name="P"-->a professionnal<!--/TMPL_IF--><!--TMPL_IF Name="S"-->a Staff Member<!--/TMPL_IF-->.</span>
               <a href="/cgi-bin/koha/admin/categorie.pl">Please create one</a>
@@ -1094,8 +1081,7 @@
       wl.options[0].selected = false;
    }
    function showStaffLibrary() {
-      var cat = document.getElementById('categorycode').options[
-         document.getElementById('categorycode').selectedIndex].value;
+      var cat = $("select.categorycode").val();
       var staffCats = new Array();
       staffCats = [<!-- TMPL_VAR NAME="jsStaff" -->];
       var isStaff = 0;

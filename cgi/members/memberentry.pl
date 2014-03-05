@@ -484,26 +484,17 @@ if ($ethnicitycategoriescount>=0) {
   $template->param(ethcatpopup => $ethcatpopup); # bad style, has to be fixed
 }
 
-my @typeloop;
-foreach (qw(C A S P I X)) {
-    my $action="WHERE category_type=?";
-	($categories,$labels)=GetborCatFromCatType($_,$action);
-	my @categoryloop;
-	foreach my $cat (@$categories){
-		push @categoryloop,{'categorycode' => $cat,
-			  'categoryname' => $labels->{$cat},
-			  'categorycodeselected' => ((defined($borrower_data->{'categorycode'}) && 
-                                                     $cat eq $borrower_data->{'categorycode'}) 
-                                                     || (defined($categorycode) && $cat eq $categorycode)),
-		};
-	}
-	my %typehash;
-	$typehash{'typename'}=$_;
-	$typehash{'categoryloop'}=\@categoryloop;
-	push @typeloop,{'typename' => $_,
-	  'categoryloop' => \@categoryloop};
-}  
-$template->param('typeloop' => \@typeloop);
+my $borcats = GetBorrowercategoryList();
+my @borcattypes;
+for my $cattype (qw/A S C P I X/){
+    my @cats = grep { $_->{category_type} eq $cattype } @$borcats;
+    for(@cats){
+      $_->{selected} = 1 if(defined($categorycode) && $_->{categorycode} eq $categorycode);
+    }
+    push(@borcattypes, { typename => $cattype,
+                         categoryloop => \@cats }) if scalar @cats;
+}
+$template->param(typeloop => \@borcattypes);
 
 # test in city
 $select_city=getidcity($data{'city'}) if defined $guarantorid and ($guarantorid ne '0');

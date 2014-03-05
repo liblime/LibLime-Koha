@@ -5063,13 +5063,21 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
     $dbh->do(" DELETE FROM `issues` WHERE branchcode NOT IN ( SELECT branchcode from branches )"); 
     $dbh->do(" UPDATE `old_issues` SET branchcode=NULL WHERE branchcode NOT IN ( SELECT branchcode from branches )");
-    $dbh->do(" ALTER TABLE `issues` DROP INDEX `bordate` ");   
-    $dbh->do(" ALTER TABLE `issues` ADD CONSTRAINT `issues_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
-    $dbh->do(" ALTER TABLE `old_issues` DROP INDEX `old_bordate` ");
-    $dbh->do(" ALTER TABLE `old_issues` ADD CONSTRAINT `old_issues_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE SET NULL ");
+    if($dbh->selectrow_array("SHOW INDEX FROM issues WHERE key_name='bordate'")){
+        $dbh->do(" ALTER TABLE `issues` DROP INDEX `bordate` ");
+    }
+    $dbh->do(" ALTER TABLE `issues` ADD CONSTRAINT `issues_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE CASCADE ");
+    if($dbh->selectrow_array("SHOW INDEX FROM old_issues WHERE key_name='old_bordate'")){
+        $dbh->do(" ALTER TABLE `old_issues` DROP INDEX `old_bordate` ");
+    }
+    $dbh->do(" ALTER TABLE `old_issues` ADD CONSTRAINT `old_issues_branch` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE SET NULL ON UPDATE CASCADE ");
 
-    $dbh->do(" ALTER TABLE `issues` DROP COLUMN `issuingbranch` ");
-    $dbh->do(" ALTER TABLE `old_issues` DROP COLUMN `issuingbranch` ");
+    if($dbh->selectrow_array("SHOW COLUMNS FROM issues WHERE field='issuingbranch'")){
+        $dbh->do(" ALTER TABLE `issues` DROP COLUMN `issuingbranch` ");
+    }
+    if($dbh->selectrow_array("SHOW COLUMNS FROM old_issues WHERE field='issuingbranch'")){
+        $dbh->do(" ALTER TABLE `old_issues` DROP COLUMN `issuingbranch` ");
+    }
     $dbh->do(" ALTER TABLE `issues` CHANGE COLUMN `return` `returnbranch` varchar(10) DEFAULT NULL ");
     $dbh->do(" ALTER TABLE `old_issues` CHANGE COLUMN `return` `returnbranch` varchar(10) DEFAULT NULL ");
 
