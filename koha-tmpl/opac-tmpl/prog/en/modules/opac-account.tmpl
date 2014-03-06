@@ -36,7 +36,7 @@
           </table> </div>
           <!-- /TMPL_IF -->
 
-        <h4>Past fines and charges:</h4>
+        <h4>Fines and charges:</h4>
         <div class="fines_detail">
 
           <!-- TMPL_IF NAME="ACCOUNT_LINES" -->
@@ -88,7 +88,6 @@
       </div>
       <!-- TMPL_IF NAME="totalaccruing" -->
         <div class="fines_summary">
-            <h4>Current fines and charges:</h4>
             <div class="fines_detail">
             <h5>You have overdue fines on currently checked out materials totaling <span class="debit">$ <!-- TMPL_VAR EXPR="currency(totalaccruing)" --></span>.</h5>
             <p>See <a href="/cgi-bin/koha/opac-user.pl">your summary page</a> for a list of currently checked out items.</p>
