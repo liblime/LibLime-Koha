@@ -291,7 +291,7 @@ sub GetSubscriptionItemFields($) {
                                                'items.holdingbranch'
                                               ] );
     # It doesn't make sense to set defaults for some of these subfields. Remove them.
-    @subfields = grep {$_->{tagsubfield} !~ /[012456dhjklmnqrs]/} @subfields;
+    @subfields = grep {$_->{tagsubfield} !~ /[012456dhjlmnqrs]/} @subfields;
 
     my $defaults = ($subscription_id)
         ? C4::Control::Subscription::GetSubscriptionDefaults($subscription_id)
@@ -315,7 +315,19 @@ sub GetSubscriptionItemFields($) {
 		push( @authorised_values, $v );
 	    }
 	    $s->{authorised_values} = \@authorised_values;
-	}  
+	}
+	elsif ( $column eq 'otherstatus' ) {
+	    my $itemstatuses = C4::Koha::GetOtherItemStatus();
+	    my @authorised_values;
+	    foreach my $i ( @$itemstatuses ) {
+		my $v;
+		$v->{authorised_value} = $i->{statuscode};
+		$v->{lib} = $i->{description};
+		$v->{selected} = 1 if ( $defaults->{$column} and $i->{itemtype} eq $defaults->{$column} );
+		push( @authorised_values, $v );
+	    }
+	    $s->{authorised_values} = \@authorised_values;
+	}
         for my $authval ( @{$s->{authorised_values}} ) {
             if ($s->{value} ~~ $authval->{authorised_value}) {
                 $authval->{selected} = 1;
