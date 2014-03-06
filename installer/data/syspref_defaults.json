@@ -3488,5 +3488,15 @@
       "tags" : [
          "Circulation"
       ]
+   },
+   "TalkingTechNoticeTypes" : {
+      "explanation" : "Pipe delimited notice types used by Talking Tech",
+      "options" : null,
+      "value" : "|CUSTOM|FINES|OVERDUE|PREOVERDUE|PRERESERVE|RECALL|RESERVE|RESERVECANCEL|RESERVEEXPIRE|SUSPEND",
+      "hidden" : false,
+      "type" : "free",
+      "tags" : [
+         "Circulation"
+      ]
    }
 }

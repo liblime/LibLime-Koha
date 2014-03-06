@@ -231,31 +231,13 @@ $(document).ready(function() {
                            <li>
                                 <label for="ttcode">Talking Tech Code: </label>
 				<select name="ttcode" id="ttcode">
-                                    <!--TMPL_IF EXPR="ttcode eq 'NULL'"-->
-                                    <option value="NULL" selected="selected"></option>
-                                    <!--TMPL_ELSE-->
-                                    <option value="NULL" ></option>
-                                    <!--/TMPL_IF-->
-                                    <!--TMPL_IF EXPR="ttcode eq 'OVERDUE'"-->
-                                    <option value="OVERDUE" selected="selected">OVERDUE</option>
-                                    <!--TMPL_ELSE-->
-                                    <option value="OVERDUE" >OVERDUE</option>
-                                    <!--/TMPL_IF-->
-                                    <!--TMPL_IF EXPR="ttcode eq 'FINE'"-->
-                                    <option value="FINE" selected="selected">FINE</option>
-                                    <!--TMPL_ELSE-->
-                                    <option value="FINE" >FINE</option>
-                                    <!--/TMPL_IF-->
-                                    <!--TMPL_IF EXPR="ttcode eq 'RESERVE'"-->
-                                    <option value="RESERVE" selected="selected">RESERVE</option>
-                                    <!--TMPL_ELSE-->
-                                    <option value="RESERVE" >RESERVE</option>
-                                    <!--/TMPL_IF-->
-                                    <!--TMPL_IF EXPR="ttcode eq 'PREOVERDUE'"-->
-                                    <option value="PREOVERDUE" selected="selected">PREOVERDUE</option>
-                                    <!--TMPL_ELSE-->
-                                    <option value="PREOVERDUE" >PREOVERDUE</option>
-                                    <!--/TMPL_IF-->
+                                    <!-- TMPL_LOOP NAME="noticetypeloop" -->
+                                      <!-- TMPL_IF NAME="selected" -->
+                                        <option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="value" --></option>
+                                      <!-- TMPL_ELSE -->
+                                        <option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="value" --></option>
+                                      <!-- /TMPL_IF -->
+                                    <!-- /TMPL_LOOP -->
                                 </select>
                           </li>
 		        <!-- /TMPL_IF -->
