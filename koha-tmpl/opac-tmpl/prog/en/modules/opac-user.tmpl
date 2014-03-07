@@ -16,13 +16,20 @@ $.tablesorter.addParser({
 });
             $(function() {
             $('#opac-user-views').tabs();
-			$("#holdst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
+			$("#aholdst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
 		dateFormat: 'uk',<!-- /TMPL_IF -->
 				widgets : ['zebra'],
 				sortList: [[0,0]],
 		        headers: { 0: { sorter: 'articles' },4: { sorter: false }
 				}
-			}); 
+			});
+			$("#sholdst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
+		dateFormat: 'uk',<!-- /TMPL_IF -->
+				widgets : ['zebra'],
+				sortList: [[0,0]],
+		        headers: { 0: { sorter: 'articles' },4: { sorter: false }
+				}
+			});
 			$("#checkoutst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
 		dateFormat: 'uk',<!-- /TMPL_IF -->
 				widgets : ['zebra'],
@@ -149,7 +156,7 @@ function isValidDate(theFieldName){
             <!-- TMPL_IF NAME="amountlessthanzero" --><li><a href="#opac-user-fines">Credits</a></li><!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="waiting_count" --><!-- TMPL_IF NAME="atdestination" --><li><a href="#opac-user-waiting">Waiting</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
-            <li><a href="#opac-user-holds"><div id="summaryholdstab">Holds</div></a></li>
+            <li><a href="#opac-user-holds">Holds</a></li>
         </ul>
         
 <!-- TMPL_IF NAME="OPACFinesTab" -->
@@ -355,7 +362,9 @@ function isValidDate(theFieldName){
     
 
         <div id="opac-user-holds">
+	<TMPL_IF EXPR="(reserves_count || suspended_reserves_count)">
 	<div id="HoldsTabMsg"></div>
+	<!-- TMPL_IF NAME="reserves_count" -->
         <form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
            <!-- TMPL_LOOP NAME="RESERVES" -->
              <input type="hidden" name="reservenumber" value="<!-- TMPL_VAR NAME="reservenumber" -->" />
@@ -366,7 +375,7 @@ function isValidDate(theFieldName){
            <input type="text" size="10" maxlength="10" id="resumealldate" name="resumealldate" />
            <label for="resumedate">( Optional, use format MM-DD-YYYY )</label>
         </form>
-        <table id="holdst">
+        <table id="aholdst">
         <caption><span class="HoldsLabel">Holds </span><span class="count">(<!-- TMPL_VAR NAME="reserves_count" --> total)</span></caption>
             <!-- RESERVES TABLE ROWS -->
             <thead><tr>
@@ -459,6 +468,7 @@ function isValidDate(theFieldName){
             <!-- /TMPL_LOOP -->
 			</tbody>
         </table>
+        <!-- /TMPL_IF -->
 
 	<!-- TMPL_IF NAME="suspended_reserves_count" -->
         <p>
@@ -469,7 +479,7 @@ function isValidDate(theFieldName){
            <!-- /TMPL_LOOP -->
            <input type="submit" name="submit" class="icon delete cancel" value="Resume All" />
         </form>
-       <table id="holdst"> 
+       <table id="sholdst">
         <caption>Suspended <span class="HoldsLabel">Holds </span><span class="count">(<!-- TMPL_VAR NAME="suspended_reserves_count" --> total)</span></caption>
             <!-- RESERVES TABLE ROWS -->
             <thead><tr>
@@ -520,7 +530,11 @@ function isValidDate(theFieldName){
 			</tbody>
         </table>
 	<!-- /TMPL_IF -->
-    </div>
+    <!-- TMPL_ELSE -->
+        <table>
+            <tr><td>You have no active or suspended items on hold</td></tr>
+        </table>
+    <!-- /TMPL_IF --></div>
     </div><!-- /opac-user views -->
     </div><!-- /userdetails -->
 </div>
