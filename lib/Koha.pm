@@ -18,6 +18,6 @@ use strict;
     }
 }
 
-our $VERSION = q{4.17.11.000};
+our $VERSION = q{4.17.12.000};
 
 1;
