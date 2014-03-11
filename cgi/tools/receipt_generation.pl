@@ -84,15 +84,14 @@ elsif ( $action eq 'claims_returned_found' ) {
 elsif ( $action eq 'payment_received' ) {
     my $borrowernumber = $cgi->param('borrowernumber');
     my $data;
-warn $content;
+
     $data = _get_fines_data( $borrowernumber, 'todayspayments' );
     $content = _replace_loop( $content, $data, 'TodaysPaymentsList' );
-warn $content;
 
     $data = _get_fines_data( $borrowernumber, 'recentfines' );
     $content = _replace_loop( $content, $data, 'RecentFinesList' );
-warn $content;
-    $content = _replace( $content, { TotalOwed => C4::Accounts::gettotalowed($borrowernumber)} );
+
+    $content = _replace( $content, { TotalOwed => C4::Accounts::gettotalowed($borrowernumber)->value } );
 }
 ## Process Hold Found Receipts
 elsif ( $action eq 'hold_found' ) {
@@ -289,14 +288,14 @@ sub _get_fines_data {
         $loopdata = C4::Accounts::getpayments($borrowernumber, since=>C4::Dates->new());
         for my $data (@$loopdata){
             $data->{amount} = -1* $data->{amount};
-            $data->{"fees-payments.".$_} = $data->{$_} for (keys %$data);  # fake the 'table name'
+            $data->{"fees-payments.".$_} = (($_ =~ /amount/) ? $data->{$_}->value : $data->{$_}) for (keys %$data);  # fake the 'table name'
         }
     } elsif($when eq 'recentfines'){
         #Include last 7 fines.
         $loopdata = C4::Accounts::getcharges($borrowernumber, limit=>7);
         for my $data (@$loopdata){
             $data->{date} = $data->{timestamp};
-            $data->{"fees-payments.".$_} = $data->{$_} for (keys %$data);
+            $data->{"fees-payments.".$_} = (($_ =~ /amount/) ? $data->{$_}->value : $data->{$_}) for (keys %$data);
         }
         # note date and timestamp are different in payments and fees.
     }
