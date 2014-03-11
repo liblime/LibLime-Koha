@@ -21,7 +21,7 @@ use strict;
 use CGI;
 use C4::Auth;
 use C4::Output;
-
+use C4::Items;
 use C4::Circulation;    # GetBiblioIssues
 use C4::Biblio;    # GetBiblio GetBiblioFromItemNumber
 use C4::Dates qw/format_date/;
@@ -63,6 +63,8 @@ if ($itemnumber){
 	);
 } 
 foreach (@$issues){
+	my $item = GetItem($_->{itemnumber});
+	$_->{homebranch} = $item->{homebranch} // '';
 	$_->{date_due}   = format_date($_->{date_due});
 	$_->{issuedate}  = format_date($_->{issuedate});
 	$_->{returndate} = format_date($_->{returndate});
