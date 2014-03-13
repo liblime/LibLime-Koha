@@ -59,6 +59,7 @@ my $format_fines_summary = sub {
     );
 
     my $fees = C4::Accounts::getcharges( $borrower->{'borrowernumber'}, outstanding=>1 );
+    my $totalaccruing = C4::Accounts::gettotalaccruing($borrower->{'borrowernumber'});
 
     my %params;
     for my $fee (@$fees){
@@ -68,6 +69,7 @@ my $format_fines_summary = sub {
             $params{"other_fees_total"} += $fee->{amountoutstanding};
         }
     }
+    $params{"outstanding_total"} += $totalaccruing;
     # FIXME: no need to call this multiple times.
     my $totalowed = C4::Accounts::gettotalowed($borrower->{'borrowernumber'});
     $params{"credits_total"} = $totalowed if $totalowed < 0;

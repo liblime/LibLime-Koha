@@ -657,6 +657,7 @@ Checkout anyway?<br>
                         <span class="circ-hlt">Fines:</span> Patron has  <a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR name="borrowernumber" -->">Outstanding fines<!-- TMPL_IF NAME="chargesamount" --> of $<!-- TMPL_VAR NAME="chargesamount" --><!-- /TMPL_IF --></a>:
                     </p>
                     <ul>
+                        <!-- TMPL_IF NAME="outstanding_total" --><li><span class="circ-hlt">Currently accruing overdue fees:</span> $<!-- TMPL_VAR NAME="outstanding_total" --></li><!-- /TMPL_IF -->
                         <!-- TMPL_IF NAME="lost_fines_total" --><li><span class="circ-hlt">Replacement fees:</span> $<!-- TMPL_VAR NAME="lost_fines_total" --></li><!-- /TMPL_IF -->
                         <!-- TMPL_IF NAME="overdue_fines_total" --><li><span class="circ-hlt">Overdue fines:</span> $<!-- TMPL_VAR NAME="overdue_fines_total" --></li><!-- /TMPL_IF -->
                         <!-- TMPL_IF NAME="reserve_fees_total" --><li><span class="circ-hlt">Hold fees:</span> $<!-- TMPL_VAR NAME="reserve_fees_total" --></li><!-- /TMPL_IF -->
@@ -678,7 +679,7 @@ Checkout anyway?<br>
 			<!-- /TMPL_IF -->
 
         	<!-- TMPL_IF NAME="credits" -->
-            <li><span class="circ-hlt">Credits:</span> Patron has a credit</li>
+            <li><span class="circ-hlt">Credits:</span> Patron has a credit: <!-- TMPL_VAR NAME="credits_total" --></li>
 			<!-- /TMPL_IF -->
 
         	<!-- TMPL_IF NAME="override_user" -->
