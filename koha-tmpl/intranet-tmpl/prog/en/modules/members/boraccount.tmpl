@@ -156,7 +156,7 @@ $(document).ready(function() {
     	$("#payOneFeeAmount").html("$" + $(this).data('outstanding').toFixed(2));
     	$("#payOneFeeSummary").html($(this).parents('tr').find('span.feeDescription').html());
         $("#selectForgiveType").show();
-        $("#payOneDlg").dialog('option', {title: "Waive fine"}).dialog('open');
+        $("#payOneDlg").dialog('option', {title: "Waive fine (select Write off or Forgive button below, then click Submit)"}).dialog('open');
         return false;
     });
     $("#selectForgiveType").buttonset();
@@ -167,8 +167,8 @@ $(document).ready(function() {
         width: '500px',
         buttons: { 
             "Submit": function() { var $form = $(this).children('form');
-                                    if($form.validate({ rules:{ amount: { pos_decimal: true, max: KOHA.maxPayable }, description: 'required' },
-                                                        messages: { amount: {pos_decimal: "Enter a currency amount.", max: "Value must be less than amount owed." }}}).form()){
+                                    if($form.validate({ rules:{ amount: { pos_decimal: true, max: KOHA.maxPayable }, desc: 'required' },
+                                                        messages: { amount: {pos_decimal: "Enter a currency amount.", max: "Value must be less than amount owed.", desc: "This field is required." }}}).form()){
                                         $form.submit();
                                         return true;
                                     } else {
@@ -449,6 +449,7 @@ $(document).ready(function() {
             <fieldset class="rows">
             <legend>Manual Credit</legend>
             <ol>
+            <li><strong>NOTE:  Description and Amount fields required</strong></li>
                 <li><label for="credit_type">Credit Type: </label><select name="accounttype" id="credit_type">
                     <!-- TMPL_LOOP NAME="payment_types" -->
                         <option value="<!-- TMPL_VAR NAME="accounttype" -->" <!-- TMPL_IF selected -->selected="selected"<!-- /TMPL_IF -->><!--TMPL_VAR NAME="description" --></option>
@@ -524,6 +525,7 @@ $(document).ready(function() {
       <table class="borderless">
         <tr><td>Fee Summary</td><td id="payOneFeeSummary">&nbsp;</td></tr>
         <tr><td>Amount Owed</td><td id="payOneFeeAmount">&nbsp;</td></tr>
+        <tr><td><strong>NOTE:</strong></td><td><strong>Description and Amount fields required</strong></td></tr>
         <tr><td><label for="payOneDesc">Description: </label></td><td><input type="text" name="desc" id="payOneDesc" size="50" /></td></tr>
         <tr><td><label for="payOneAmount">Amount: </label></td><td><input type="text" name="amount" id="payOneAmount" /></td></tr>
       </table>
