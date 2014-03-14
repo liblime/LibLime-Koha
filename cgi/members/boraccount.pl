@@ -235,6 +235,8 @@ for my $fee (@$accruingfees){
 
 my $totaldue = C4::Accounts::gettotalowed($borrowernumber);
 my $totalaccruing = C4::Accounts::gettotalaccruing($borrowernumber);
+my $totaloutstanding = ($totaldue - $totalaccruing);
+
 # FIXME: deprecate this vvv
 my $totaloverpayments = C4::Accounts::get_total_overpaid($borrowernumber);
 my @invoice_types;
@@ -288,8 +290,9 @@ $template->param(
 	branchname			=> GetBranchName($data->{'branchcode'}),
     has_current_fees    => scalar(@currentfees),
     has_unallocated     => ($total_credits < 0) ? 1 : 0,
-    total               => sprintf("%.2f",$totaldue),
-    totalaccruing       => sprintf("%.2f",$totalaccruing),
+    total               => $totaldue->value,
+    totalaccruing       => $totalaccruing->value,
+    totaloutstanding    => $totaloutstanding->value,
     totalcredit         => ($totaldue >= 0 ) ? 0 : 1,
     no_history          => (scalar(@history) > 0) ? 0 : 1,
     fee_types           => \@fee_types,
