@@ -295,6 +295,8 @@ $(document).ready(function() {
           </tbody>
         <tfoot>
           <tr>
+            <td>&nbsp;</td><td colspan="5">Total accruing</td> <td class="debit">[ $<!-- TMPL_VAR NAME="totalaccruing" --> ]</td><td>&nbsp;</td>
+          </tr><tr>
             <td class="payall_column" rowspan="2">
               <!-- TMPL_IF has_payable -->
 	              <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->
@@ -304,7 +306,7 @@ $(document).ready(function() {
 	                <button id="forgiveMany">Waive All</button>
 	              <!-- /TMPL_IF -->
               <!-- /TMPL_IF --></td>
-            <td colspan="5">Total accruing</td> <td class="debit">[ $<!-- TMPL_VAR NAME="totalaccruing" --> ]</td><td>&nbsp;</td>
+            <td colspan="6">Total currently outstanding</td> <td class="debit">[ $<!-- TMPL_VAR NAME="totaloutstanding" --> ]</td>
           </tr>
           <tr>
             <td colspan="6">Total due</td>
@@ -352,7 +354,7 @@ $(document).ready(function() {
                 </tr>
             <!-- /TMPL_LOOP -->
             </tbody>
-            <tr><td colspan="5" class="rightJustify" id="unallocatedLastRow">&nbsp;</td>
+            <tr><td colspan="6" class="rightJustify" id="unallocatedLastRow">&nbsp;</td>
             <!-- TMPL_IF CAN_user_updatecharges_refund_charges -->
               <td colspan="2"><input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR borrowernumber -->" />
                             <input type="hidden" name="amount" id="refundAmount" />
