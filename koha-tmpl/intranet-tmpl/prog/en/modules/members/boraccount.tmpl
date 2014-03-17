@@ -281,9 +281,9 @@ $(document).ready(function() {
               </td>
               <td><!-- TMPL_VAR NAME="number" --></td>
               <td><!-- TMPL_VAR NAME="date" --></td>
-              <td><span class="feeDescription"><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --><!-- /TMPL_IF --></span>&nbsp;
-                <!-- TMPL_IF NAME="accruing" -->Accruing overdue charge for <span class='title'><!-- TMPL_VAR NAME="title" --></span> (due <!-- TMPL_VAR NAME="date_due" -->) <!-- /TMPL_IF -->&nbsp;
-                <!-- TMPL_IF NAME="barcode" -->[<!-- TMPL_VAR NAME="barcode" -->]<!-- /TMPL_IF -->
+              <td><span class="feeDescription"><!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --> <!-- /TMPL_IF --></span>
+                <!-- TMPL_IF NAME="accruing" -->Accruing overdue charge for <span class='title'><!-- TMPL_VAR NAME="title" --></span> (due <!-- TMPL_VAR NAME="date_due" -->) <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="barcode" -->[barcode: <!-- TMPL_VAR NAME="barcode" -->]<!-- /TMPL_IF -->
                 <!-- TMPL_IF NAME="itemnumber" --><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR title --></a>&nbsp;<!-- /TMPL_IF -->
               </td>
               <td><!-- TMPL_VAR NAME="branchcode" --></td>
