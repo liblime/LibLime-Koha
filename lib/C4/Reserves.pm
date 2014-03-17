@@ -185,14 +185,9 @@ sub CleanupQueue
    ## recent catalog change: remove damaged and lost items
    $dbh->do('DELETE FROM tmp_holdsqueue WHERE itemnumber IN (
       SELECT itemnumber FROM items WHERE damaged=1)');
-   $sth = $dbh->prepare("SELECT t.itemnumber FROM items,
-      authorised_values av, tmp_holdsqueue t
-      WHERE (items.itemlost <> '' 
-         AND items.itemlost IS NOT NULL
-         AND items.itemlost <> 0)
-      AND items.itemlost = av.authorised_value
-      AND av.category = 'LOST'
-      AND items.itemnumber = t.itemnumber");
+   $sth = $dbh->prepare("SELECT t.itemnumber FROM items i,tmp_holdsqueue t
+      WHERE i.itemlost IN ('lost','missing','trace')
+      AND i.itemnumber = t.itemnumber");
    $sth->execute();
    while(my($itemnumber) = $sth->fetchrow_array) {
       $dbh->do('DELETE FROM tmp_holdsqueue
