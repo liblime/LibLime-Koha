@@ -133,7 +133,7 @@ if (C4::Context->preference('TalkingTechEnabled')) {
   foreach my $notice_type (@notice_types) {
     push @notice_types_loop, {
       value => $notice_type,
-      selected => ($notice_type eq $set_ttcode) ? 1 : 0,
+      selected => (defined($set_ttcode) && ($notice_type eq $set_ttcode)) ? 1 : 0,
     };
   }
   $template->param(noticetypeloop => \@notice_types_loop);
