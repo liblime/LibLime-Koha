@@ -58,6 +58,8 @@ use C4::Context;
 use C4::Output;
 use C4::Search;
 use C4::Biblio;
+use Koha::Solr::Service;
+use Koha::Solr::Query;
 
 my $input=new CGI;
 # my $type=$query->param('type');
@@ -76,40 +78,18 @@ if ($op eq "do_search" && $query) {
     # add the itemtype limit if applicable
     my $itemtypelimit = $input->param('itemtypelimit');
     if ( $itemtypelimit ) {
-        my $index = C4::Context->preference("item-level_itypes") ? 'itype' : 'itemtype';
-        $query .= " AND $index=$itemtypelimit";
+        $query .= " AND itemtype:$itemtypelimit";
     }
 
     $resultsperpage= $input->param('resultsperpage');
     $resultsperpage = 20 if(!defined $resultsperpage);
 
-    my ($error, $marcrecords, $total_hits) = SimpleSearch($query, $startfrom*$resultsperpage, $resultsperpage);
-    my $total = scalar @$marcrecords;
+    my $solr = Koha::Solr::Service->new();
+    my $q_param = {query => $query, rtype => 'bib'};
+    $q_param->{options} = { start => ($startfrom*$resultsperpage) } if $startfrom;
+    my ($results,$total_hits) = $solr->simpleSearch(Koha::Solr::Query->new($q_param), display => 1);
 
-    if (defined $error) {
-        $template->param(query_error => $error);
-        warn "error: ".$error;
-        output_html_with_http_headers $input, $cookie, $template->output;
-        exit;
-    }
-    my @results;
-
-    for(my $i=0;$i<$total;$i++) {
-        my %resultsloop;
-        my $marcrecord = MARC::File::XML::decode($marcrecords->[$i]);
-        my $biblio = TransformMarcToKoha(C4::Context->dbh,$marcrecord,'');
-
-        #build the hash for the template.
-        $resultsloop{highlight}       = ($i % 2)?(1):(0);
-        $resultsloop{title}           = $biblio->{'title'};
-        $resultsloop{subtitle}        = $biblio->{'subtitle'};
-        $resultsloop{biblionumber}    = $biblio->{'biblionumber'};
-        $resultsloop{author}          = $biblio->{'author'};
-        $resultsloop{publishercode}   = $biblio->{'publishercode'};
-        $resultsloop{publicationyear} = $biblio->{'publicationyear'};
-
-        push @results, \%resultsloop;
-    }
+    my $total = scalar @$results;
 
     ($template, $loggedinuser, $cookie)
         = get_template_and_user({template_name => "serials/result.tmpl",
@@ -141,7 +121,7 @@ if ($op eq "do_search" && $query) {
                 ($startfrom==($i-1)) && ($highlight=1);
                 push @numbers, { number => $i,
                     highlight => $highlight ,
-                    searchdata=> \@results,
+                    searchdata=> $results,
                     startfrom => ($i-1)};
             }
         }
@@ -153,13 +133,13 @@ if ($op eq "do_search" && $query) {
 
     if($total_hits < (($startfrom+1)*$resultsperpage))
     {
-        $to = $total;
+        $to = $total_hits;
     } else {
         $to = (($startfrom+1)*$resultsperpage);
     }
     $template->param(
                             query => $query,
-                            resultsloop => \@results,
+                            resultsloop => $results,
                             startfrom=> $startfrom,
                             displaynext=> $displaynext,
                             displayprev=> $displayprev,
