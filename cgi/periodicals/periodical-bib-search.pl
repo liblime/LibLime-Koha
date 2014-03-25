@@ -83,7 +83,7 @@ if ($op eq "do_search" && $query) {
     #my ($error, $marcrecords, $total_hits) = SimpleSearch($query, $startfrom*$resultsperpage, $resultsperpage);
     my $solr = Koha::Solr::Service->new();
     my $q_param = {query => $query, rtype => 'bib'};
-    $q_param->{options} = { start => $startfrom } if $startfrom;
+    $q_param->{options} = { start => ($startfrom*$resultsperpage) } if $startfrom;
     my ($results,$total_hits) = $solr->simpleSearch(Koha::Solr::Query->new($q_param), display => 1);
  
     my $total = scalar @$results;
@@ -146,7 +146,7 @@ if ($op eq "do_search" && $query) {
 
     if($total_hits < (($startfrom+1)*$resultsperpage))
     {
-        $to = $total;
+        $to = $total_hits;
     } else {
         $to = (($startfrom+1)*$resultsperpage);
     }
