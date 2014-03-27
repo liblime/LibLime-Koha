@@ -172,6 +172,9 @@ for my $upcoming ( @$upcoming_dues ) {
                                       itemnumber     => $upcoming->{'itemnumber'},
                                       substitute     => { 'items.content' => $titles }
                                     } );
+            $upcoming->{'title'} = $biblio->{'title'};
+            push @Ttitems,$upcoming;
+            C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'1') if ($letter);
         }
     } else {
         $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences(
@@ -207,12 +210,13 @@ for my $upcoming ( @$upcoming_dues ) {
                                     } );
             $upcoming->{'title'} = $biblio->{'title'};
             push @Ttitems,$upcoming;
-            if (($letter) && (C4::Context->preference('TalkingTechEnabled'))) {
-              C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'0');
-            }
+            C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'0') if ($letter);
         }
     }
 
+    # Skip the email if an SMS number is available and Talking Tech is in use
+    my $borrower = C4::Members::GetMember($upcoming->{'borrowernumber'});
+    next if ($borrower->{smsalertnumber} && C4::Context->preference('TalkingTechEnabled'));
     # If we have prepared a letter, send it.
     if ($letter) {
         if ($nomail) {
@@ -236,6 +240,7 @@ for my $upcoming ( @$upcoming_dues ) {
                     letter => $letter,
                     borrowernumber => $upcoming->{borrowernumber},
                     message_transport_type => $transport,
+                    to_address => $borrower->{email},
                     from_address => ($ccb->{branchemail} || $fromaddress || undef),
                 });
             }
@@ -298,9 +303,10 @@ for my $borrowernumber ( keys %{ $upcoming_digest} ) {
                                                   'items.content' => $titles
                                                 }
                          } );
-    if (($letter) && (C4::Context->preference('TalkingTechEnabled'))) {
-      C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'0');
-    }
+    C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'0') if ($letter);
+
+    # Skip the email if an SMS number is available and Talking Tech is in use
+    next if ($borrower->{smsalertnumber} && C4::Context->preference('TalkingTechEnabled'));
     if ($nomail) {
       local $, = "\f";
       print $letter->{'content'};
@@ -309,6 +315,7 @@ for my $borrowernumber ( keys %{ $upcoming_digest} ) {
       foreach my $transport ( @{$borrower_preferences->{'transports'}} ) {
         C4::Letters::EnqueueLetter( { letter                 => $letter,
                                       borrowernumber         => $borrowernumber,
+                                      to_address => $borrower->{email},
                                       from_address => ($ccb->{branchemail} || $fromaddress || undef),
                                       message_transport_type => $transport } );
       }
@@ -317,6 +324,7 @@ for my $borrowernumber ( keys %{ $upcoming_digest} ) {
 
 # Now, run through all the people that want digests and send them
 for my $borrowernumber ( keys %{ $due_digest} ) {
+    my @Ttitems;
     my @items = @{$due_digest->{$borrowernumber}};
     my $count = scalar @items;
     my $borrower = C4::Members::GetMember($borrowernumber);
@@ -336,6 +344,7 @@ for my $borrowernumber ( keys %{ $due_digest} ) {
     my $ccb = try {
         my $ccbcode;
         while ( my $item_info = $sth->fetchrow_hashref()) {
+            push (@Ttitems, $item_info);
             $ccbcode //= C4::Circulation::GetCircControlBranch(
                 pickup_branch => $item_info->{issuingbranch},
                 item_homebranch => $item_info->{homebranch},
@@ -356,7 +365,10 @@ for my $borrowernumber ( keys %{ $due_digest} ) {
                                                   'items.content' => $titles
                                                 }
                          } );
+    C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'1') if ($letter);
 
+    # Skip the email if an SMS number is available and Talking Tech is in use
+    next if ($borrower->{smsalertnumber} && C4::Context->preference('TalkingTechEnabled'));
     if ($nomail) {
       local $, = "\f";
       print $letter->{'content'};
@@ -365,6 +377,7 @@ for my $borrowernumber ( keys %{ $due_digest} ) {
       foreach my $transport ( @{$borrower_preferences->{'transports'}} ) {
         C4::Letters::EnqueueLetter( { letter                 => $letter,
                                       borrowernumber         => $borrowernumber,
+                                      to_address => $borrower->{email},
                                       from_address => ($ccb->{branchemail} || $fromaddress || undef),
                                       message_transport_type => $transport } );
       }

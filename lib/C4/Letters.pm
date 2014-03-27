@@ -767,6 +767,7 @@ sub CreateTALKINGtechMESSAGE {
     my $borrower = C4::Members::GetMember( $borrowernumber );
     croak "Unable to find borrower ($borrowernumber)" unless $borrower;
 
+    return 0 unless ( C4::Context->preference('TalkingTechEnabled') );
     return 0 unless ( ( $borrower->{phone} ||
                       ( C4::Context->preference("SMSSendDriver")
                               && $borrower->{smsalertnumber} ))

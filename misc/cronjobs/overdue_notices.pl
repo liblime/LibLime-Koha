@@ -502,11 +502,15 @@ END_SQL
                         }
                       );
                 } else {
+                    C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},$i);
+                    my $borrower = C4::Members::GetMember($borrowernumber);
+                    next if ($borrower->{smsalertnumber} && C4::Context->preference('TalkingTechEnabled'));
                     if ($email) {
                         C4::Letters::EnqueueLetter(
                             {   letter                 => $letter,
                                 borrowernumber         => $borrowernumber,
                                 message_transport_type => 'email',
+                                to_address             => $borrower->{email},
                                 from_address           => $admin_email_address,
                             }
                         );
@@ -530,9 +534,6 @@ END_SQL
                             }
                           );
                     }
-                }
-                if (C4::Context->preference('TalkingTechEnabled')) {
-                  C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},$i);
                 }
             }
             $sth->finish;
@@ -678,11 +679,15 @@ END_SQL
                         }
                       );
                 } else {
+                    C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},$i);
+                    my $borrower = C4::Members::GetMember($borrowernumber);
+                    next if ($borrower->{smsalertnumber} && C4::Context->preference('TalkingTechEnabled'));
                     if ($email) {
                         C4::Letters::EnqueueLetter(
                             {   letter                 => $letter,
                                 borrowernumber         => $borrowernumber,
                                 message_transport_type => 'email',
+                                to_address             => $borrower->{email},
                                 from_address           => $admin_email_address,
                             }
                         );
@@ -706,9 +711,6 @@ END_SQL
                             }
                           );
                     }
-                }
-                if (C4::Context->preference('TalkingTechEnabled')) {
-                  C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},$i);
                 }
             }
             $sth->finish;
