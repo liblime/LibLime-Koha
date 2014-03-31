@@ -316,7 +316,7 @@ The fees_accruing table is populated by the fines.pl cron job.
 sub getaccruingcharges {
 	my $borrowernumber = shift || return;
 	my $dbh        = C4::Context->dbh;
-	my $sth = $dbh->prepare(   "SELECT fees_accruing.*, itemnumber, date_due
+	my $sth = $dbh->prepare(   "SELECT fees_accruing.*, itemnumber, date_due, branchcode
                                 FROM fees_accruing
                                     LEFT JOIN issues on ( fees_accruing.issue_id = issues.id )
                                 WHERE issues.borrowernumber=?
