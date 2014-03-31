@@ -64,10 +64,11 @@ if ($itemnumber){
 } 
 foreach (@$issues){
 	my $item = GetItem($_->{itemnumber});
-	$_->{homebranch} = $item->{homebranch} // '';
-	$_->{date_due}   = format_date($_->{date_due});
-	$_->{issuedate}  = format_date($_->{issuedate});
-	$_->{returndate} = format_date($_->{returndate});
+	$_->{homebranch}    = $item->{homebranch} // '';
+	$_->{holdingbranch} = $item->{holdingbranch} // '';
+	$_->{date_due}      = format_date($_->{date_due});
+	$_->{issuedate}     = format_date($_->{issuedate});
+	$_->{returndate}    = format_date($_->{returndate});
 }
 $template->param(
     total        => scalar @$issues,
