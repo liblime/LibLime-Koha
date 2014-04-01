@@ -2013,6 +2013,18 @@ input.reversepayment{
 	font-size: smaller;
 }
 
+fieldset.rows label.includeAccruing{
+	float: none;
+	color: #666;
+}
+.fees-summary{
+	margin-top: 1.6em;
+	font-weight: bold;
+}
+#credit_amount, #invoice_amount{
+	font-size: larger;
+}
+
 /* jQuery-UI overrides */
 .ui-tabs-nav {
     background: none;

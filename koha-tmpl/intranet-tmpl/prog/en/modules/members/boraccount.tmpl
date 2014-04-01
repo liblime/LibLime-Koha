@@ -21,8 +21,12 @@ $(document).ready(function() {
            if($(this).val()=='auto'){
                $("select#fees_to_pay").val('');
                $("div#feepicker").hide();
+               $(".calcWhat").text('Total due');
+               $(".includeAccruing").show();
            } else {
                $("div#feepicker").show();
+               $(".calcWhat").text('Selected');
+               $(".includeAccruing").hide();
            }
     });
     $("div#maninvoice form").validate({
@@ -55,10 +59,15 @@ $(document).ready(function() {
     });
 
     var totaldue = <!-- TMPL_VAR total -->;
-    $("#calcTotal").click(function(){
+    var totalaccruing = <!-- TMPL_VAR totalaccruing -->;
+    $("#calcAmt").click(function(){
     	if($("select#allocation").val() == 'auto'){
     		if(totaldue > 0){
-                $("#credit_amount").val(totaldue.toFixed(2));    			
+            if($("#includeAccruing").prop('checked')){
+              $("#credit_amount").val(totaldue.toFixed(2));
+            } else {
+              $("#credit_amount").val((totaldue - totalaccruing).toFixed(2));
+            }
     		} else {
     			alert("This patron does not have an outstanding balance.");
     		}
@@ -67,6 +76,7 @@ $(document).ready(function() {
     		$("select#fees_to_pay option:selected").each(function(){ toPay += parseFloat($(this).data('amount')); });
     		$("#credit_amount").val(toPay.toFixed(2));
     	}
+      return false;
     });
     if(totaldue <= 0){
     	$("select#allocation").prop('disabled', true);
@@ -100,6 +110,8 @@ $(document).ready(function() {
 
     	if($("input[name='target_fees']:checked").length){
         $("select#allocation").val('manual');
+        $(".includeAccruing").hide();
+        $(".calcWhat").text('Selected');
     		var fees_to_pay = $.map($("input[name='target_fees']:checked"), function(e,i){ return e.value; });
     		$("div#feepicker").show();
     		$("select#fees_to_pay").val(fees_to_pay);
@@ -109,7 +121,8 @@ $(document).ready(function() {
       } else {
         	$("select#fees_to_pay").val();
           $("select#allocation").val('auto');
-          $("#credit_amount").val(totaldue);    		
+          $("#includeAccruing").val(true);
+          $("#credit_amount").val((totaldue - totalaccruing).toFixed(2));
     	}
     	return false;
     });
@@ -121,8 +134,8 @@ $(document).ready(function() {
     	if(forgivingAll){
     		$("#payOneFeeId").val('');
     		$("#payOneFeeSummary").html("ALL OUTSTANDING FEES");
-            $("#payOneFeeAmount").html("$"+totaldue.toFixed(2));
-            $("#payOneAmount").val(totaldue.toFixed(2)).prop('readonly', true);    		
+            $("#payOneFeeAmount").html("$"+(totaldue - totalaccruing).toFixed(2));
+            $("#payOneAmount").val((totaldue - totalaccruing).toFixed(2)).prop('readonly', true);
     	} else {
     		var feesToWaive = [];
             var amtToWaive = 0.0;
@@ -232,7 +245,19 @@ $(document).ready(function() {
     </div>
 <!-- /TMPL_IF -->
 
-<div id="account_tabs" class="toptabs">
+  <div class="fees-summary">
+    <!-- TMPL_IF NAME="totalcredit" --> <p>Account has net credit.</p>
+      <h3 class="credit">
+    <!-- TMPL_ELSE -->
+      <h3 class="debit">
+    <!-- /TMPL_IF -->
+    Balance:  $<!-- TMPL_VAR NAME="total" --></h3>
+    <ul>
+      <li>Accruing overdues: $<!-- TMPL_VAR NAME="totalaccruing" --></li>
+      <li>Outstanding charges: $<!-- TMPL_VAR NAME="totaloutstanding" --></li>
+    </ul>
+  </div>
+  <div id="account_tabs" class="toptabs">
     <ul>
         <li><a href="#boraccount">Account</a></li>
         <li><a href="#history">Account history</a></li>
@@ -240,15 +265,14 @@ $(document).ready(function() {
         <li><a href="#mancredit">Add payment or credit</a></li>
     </ul>
     <div id="boraccount">
-        <!-- TMPL_IF NAME="totalcredit" --> <p>Account has net credit.</p>
-            <h3 class="credit"><!-- TMPL_ELSE -->
-            <h3 class="debit"><!-- /TMPL_IF -->Balance:  $<!-- TMPL_VAR NAME="total" --></h3>
+
       <!-- TMPL_IF NAME="has_current_fees" -->
       <form action="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR borrowernumber -->" method="post">
         <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR Name="borrowernumber" -->" />
         <input type="hidden" name="op" value="pay" />
 
-        <table id="boraccount-sort"><caption><!-- TMPL_IF NAME="totalaccruing" -->Total accruing [ $<!-- TMPL_VAR NAME="totalaccruing" --> ] -- <!-- /TMPL_IF --><!-- TMPL_IF NAME="totaloutstanding" -->Total Outstanding $<!-- TMPL_VAR NAME="totaloutstanding" --> -- <!-- /TMPL_IF -->Total $<!-- TMPL_VAR NAME="total" --></caption>
+        <table id="boraccount-sort">
+          <caption>Outstanding and Accruing Fees</caption>
           <thead>
           <tr>
             <th>Action</th>
@@ -367,15 +391,10 @@ $(document).ready(function() {
           </tr>
           </table>
           </form>
-          
+
           <!-- /TMPL_IF -->
     </div>
         <div id="history">
-            <!-- TMPL_IF NAME="totalcredit" --> <p>Account has net credit.</p>
-            <h3 class="credit"><!-- TMPL_ELSE -->
-            <h3 class="debit"><!-- /TMPL_IF -->Balance:  $<!-- TMPL_VAR NAME="total" --></h3>
-            <br />
-            
             <table id="history-sort" class="accountHistory"><caption>Fees &amp; payments  <a href id="toggle-all-paydetails" data-viewstate="0">Show credit details</a></caption>
           <thead>
           <tr>
@@ -476,7 +495,16 @@ $(document).ready(function() {
                     </div>
                 </li>
                 <li><label for="credit_desc">Description: </label><input type="text" name="desc" size="50" id="credit_desc" /></li>
-                <li><label for="credit_amount">Amount: </label><input type="text" name="amount" id="credit_amount" /> <a href="#" id="calcTotal">Calculate total due</a></li>
+                <li><label for="credit_amount">Amount: </label>
+                    <input type="text" name="amount" id="credit_amount" />
+                    <span class="amtDueCalc">
+                      <button id="calcAmt">Calculate <span class="calcWhat">Total due</span></button>
+                      <!-- TMPL_IF EXPR="totalaccruing > 0" -->
+                        <label class="includeAccruing"> <input type="checkbox" id="includeAccruing"> Include accruing</label>
+                      <!-- /TMPL_IF -->
+                    </span>
+                    <div id="pay-accruing-warning" class="warning hidden">Payment amount includes accruing charges</div>
+                </li>
             </ol></fieldset>
             <fieldset class="action"><input type="submit" name="add" value="Add" /> 
             <input type="reset" />
