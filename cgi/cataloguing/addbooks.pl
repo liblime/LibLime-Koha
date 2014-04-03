@@ -35,6 +35,8 @@ use C4::Koha;
 use C4::Search;
 use C4::Circulation;
 
+use URI::Escape;
+
 my $input = new CGI;
 
 my $success = $input->param('biblioitem');
@@ -106,12 +108,14 @@ if ($query) {
       }
    }
 
+    # Potentially modify query contained within quotes for URL purposes
+    my $url_query = "/cgi-bin/koha/cataloguing/addbooks.pl?q=" . uri_escape($query) . "\&";
     $template->param(
         total          => $hits,
         query          => $query,
         resultsloop    => $results,
         #TODO: replace pagination_bar with Koha::Pager
-        pagination_bar => pagination_bar( "/cgi-bin/koha/cataloguing/addbooks.pl?q=$query&", getnbpages( $hits, $results_per_page ), $page, 'page' ),
+        pagination_bar => pagination_bar( $url_query, getnbpages( $hits, $results_per_page ), $page, 'page' ),
     );
 
 }
@@ -132,7 +136,8 @@ if ($query) {
         }
     }
     if (!$isbn) {
-        $title = $query;
+        # Potentially modify query contained within quotes for SQL purposes
+        $title = ($query =~ s/\"//gr);
     }
     ( $countbr, @resultsbr ) = BreedingSearch( $title, $isbn );
 }
