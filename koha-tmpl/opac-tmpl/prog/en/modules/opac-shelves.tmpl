@@ -170,7 +170,6 @@ $(function() {
                   <div id="toolbar" class="list-actions">
                     <span class="checkall"></span>
                     <span class="clearall"></span>
-			<span class="sendlist"><a href="#" class="send tag_hides" onclick="open(CGIBIN+'opac-sendshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelfnumber" -->','win_form','dependant=yes,scrollbars=no,resizable=no,height=300,width=450,top=50,left=100'); return false; ">Send List</a></span>
                       <a class="editshelf tag_hides" href="/cgi-bin/koha/opac-shelves.pl?shelfnumber=<!-- TMPL_VAR NAME="shelfnumber" -->&amp;op=modif">Edit List</a>
                       <form method="post" action="opac-shelves.pl" class="tag_hides">
                         <input type="hidden" value="1" name="shelves"/>
@@ -197,7 +196,6 @@ $(function() {
 
                       <a href="/cgi-bin/koha/opac-downloadshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelfnumber" -->" class="download tag_hides" onclick="open(CGIBIN+'opac-downloadshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelfnumber" -->','win_form','dependant=yes,scrollbars=no,resizable=no,height=300,width=450,top=50,left=100'); return false;">Download List</a>
 
-<span class="sendlist"><a href="/cgi-bin/koha/opac-sendshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelfnumber" -->" class="send tag_hides" onclick="open(CGIBIN+'opac-sendshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelfnumber" -->','win_form','dependant=yes,scrollbars=no,resizable=no,height=300,width=450,top=50,left=100'); return false; ">Send List</a></span>
 
 <a class="print tag_hides" href="opac-shelves.pl" onclick="print(); return false;">Print List</a>
 
@@ -361,7 +359,6 @@ $(function() {
                                 <!-- TMPL_IF NAME="viewcategory3" -->Open<!-- /TMPL_IF -->
                               </td>
                               <td>
-                              <span class="sendlist"><a href="#" class="send tag_hides" onclick="open(CGIBIN+'opac-sendshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelf" -->','win_form','dependant=yes,scrollbars=no,resizable=no,height=300,width=450,top=50,left=100'); return false; ">Send List</a></span>
                             <!-- TMPL_IF NAME="mine" -->
                                 <form action="/cgi-bin/koha/opac-shelves.pl" method="get">
                                   <input type="hidden" name="shelfnumber" value="<!-- TMPL_VAR NAME="shelf" -->" />
@@ -430,7 +427,6 @@ $(function() {
                             <!-- TMPL_IF NAME="viewcategory3" -->Open<!-- /TMPL_IF -->
 	                      </td>
                           <td>
-							<span class="sendlist"><a href="#" class="send tag_hides" onclick="open(CGIBIN+'opac-sendshelf.pl?shelfid=<!-- TMPL_VAR NAME="shelf" -->','win_form','dependant=yes,scrollbars=no,resizable=no,height=300,width=450,top=50,left=100'); return false; ">Send List</a></span>
                             <!-- TMPL_IF NAME="mine" -->
                               <form action="/cgi-bin/koha/opac-shelves.pl" method="get">
                                 <input type="hidden" name="shelfnumber" value="<!-- TMPL_VAR NAME="shelf" -->" />

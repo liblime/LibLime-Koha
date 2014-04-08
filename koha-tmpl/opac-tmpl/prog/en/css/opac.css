@@ -476,9 +476,6 @@ a .term {
 #toolbar a.send {
 	background-image: url(../../images/send.gif);
 }
-.sendlist {
-	display : none;
-}
 a.send {
 	background-image: url(../../images/send.gif);
 	background-position : 0px center;
