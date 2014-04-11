@@ -11,9 +11,9 @@ $(document).ready(function(){
           + ' <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR biblionumber>&itemnumber=<TMPL_VAR itemnumber>">Item status editor</a>'
           + ' to ensure lost and overdue charges are assessed.</span>';
       $("select.itemlost").after(helptxt);
-      // Cannot withdraw onloan item -- should probably disable itemlost as well.
       <!-- TMPL_IF item_onloan -->
-        $("select.wthdrawn").attr('disabled','disabled');
+        var oltxt = '<span class="tip">Note: An item checked out can not be set to a withdrawn status.  Setting this to withdrawn will be reverted upon <i>Save Changes</i>.</span>';
+        $("select.wthdrawn").after(oltxt);
       <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
 });
@@ -60,6 +60,19 @@ function Check(f) {
          f.field_value_0[i].value = str;
       }
    }
+   <!-- TMPL_IF item_onloan -->
+      // Check if wthdrawn field (952$0) is trying to be set
+      for(var ep=0;ep<f.subfield_0.length;ep++) {
+         if (f.subfield_0[ep].value == "0") {
+            break;
+         }
+      }
+      if (f.field_value_0[ep].value == 1) {
+         var astr = 'An issued item may not be set to withdrawn!\n';
+         alert(astr);
+         f.field_value_0[ep].value = 0;
+      }
+   <!-- /TMPL_IF -->
  
    var total_errors = 0;
    for (i=0; i<f.field_value_0.length; i++) {
