@@ -96,7 +96,6 @@ if($workers > 1 && $bno){
 
 open LOG, ">$logfile" or die "Can't open $logfile";
 print LOG "borrowernumber\tamount\tissue\n";
-close LOG;
 
 my %x = (
         A    => 'ACCTMANAGE',  # amt > 0, out >= 0 | manual invoice. may have been paid
@@ -206,14 +205,7 @@ sub get_fine_accttype {
     }
 }
 
-sub appendLog {
-    my $message = shift;
-    open FILE, "+>>", $logfile or die "$!";
-    flock(FILE, Fcntl::LOCK_EX) or die "$!";
-    print FILE $message;
-    close FILE;
-    return;
-}
+my @workerlogs = map { +File::Temp->new( UNLINK => 1, TMPDIR => $ENV{TMPDIR} || '/tmp') } (0..$workers-1);
 
 my %ACCT_TYPES = C4::Accounts::_get_accounttypes();
 
@@ -226,7 +218,14 @@ my @forks;
 my $forker = Parallel::ForkManager->new( $workers );
 $forker->run_on_finish(
     sub { my ($pid, $exit_code, $ident) = @_; 
+
             $verbose and warn "finished with worker $ident -- exited with $exit_code on pid $pid";
+            my $w = $workerlogs[$ident];
+            open(my $fh, "<", $w->filename);
+            while (<$fh>){
+                print LOG;
+            }
+
             if($exit_code){
                 kill 2, grep { $_ != $pid } @forks; # If any worker exited prematurely, kill all of them.
             }
@@ -268,11 +267,19 @@ sub do_patron{
         $query .= " WHERE borrowernumber % $workers = $worker_id " if($workers > 1);
     }
     $query .= sprintf("LIMIT %d", $limit / $workers) if $limit;
+
+
     my $sth = $dbh->prepare($query);
     $sth->execute();
-    open WLOG, '>', "worker$worker_id.log" if $workerlog;
+
+    my $log = $workerlogs[$worker_id];
+
     while(my ($borrowernumber) = $sth->fetchrow_array){
-    print WLOG " $borrowernumber\n" if $workerlog;
+
+        if($workerlog){
+            print $log " $borrowernumber\n";
+        }
+
         my @logoutput;
         my $sth2 = $dbh->prepare("SELECT * FROM archive_accountlines where borrowernumber=? ");
         $sth2->execute($borrowernumber);
@@ -1602,7 +1609,10 @@ PAY:        for my $payment (sort { if(exists $a->{payment_id} && ! exists $b->{
         }
         $num_bor_handled++;
         $discrepancies++ if $has_discrepancy;
-        appendLog(join('',@logoutput)) if(scalar @logoutput > 0);
+
+        if(scalar @logoutput > 0){
+            print $log join('',@logoutput);
+        }
         last if $exit;
     }
     return $num_bor_handled;
