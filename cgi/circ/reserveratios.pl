@@ -124,7 +124,7 @@ my $strsth =
  LEFT JOIN items ON items.biblionumber=reserves.biblionumber 
  LEFT JOIN biblio ON reserves.biblionumber=biblio.biblionumber
  WHERE 
-notforloan = 0 AND damaged = 0 AND itemlost = 0 AND wthdrawn = 0
+(notforloan = 0 or notforloan IS NULL) AND (damaged = 0 or damaged IS NULL) AND (itemlost = 0 or itemlost IS NULL) AND (wthdrawn = 0 or wthdrawn IS NULL)
  $sqldatewhere
 ";
 
