@@ -587,7 +587,7 @@ WriteMakefile(
                             'MARC::Charset'                    => 0.98,
                             'MARC::Crosswalk::DublinCore'      => 0.02,
                             'MARC::File::XML'                  => 0.88,
-                            'MARC::File::Normalize::NACO'      => 0.02,
+                            'MARC::Field::Normalize::NACO'     => 0.02,
                             'MARC::Record'                     => 2.00,
                             'MIME::Base64'                     => 3.07,
                             'MIME::Lite'                       => 3.00,
