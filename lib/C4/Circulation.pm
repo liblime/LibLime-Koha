@@ -2168,6 +2168,7 @@ sub AddRenewal {
    my $currBranch;
    if (C4::Context->userenv) { $currBranch = C4::Context->userenv->{branch} }
    else                      { $currBranch = $$issue{branchcode}         }
+
    my $branch = GetCircControlBranch(
       pickup_branch      => $issue->{branchcode},
       item_homebranch    => $item->{homebranch},
@@ -2181,10 +2182,6 @@ sub AddRenewal {
              (C4::Context->preference('item-level_itypes')) ? $biblio->{'itype'} : $biblio->{'itemtype'} ,
             $branch
         );
-        ## FIXME: why go through this trouble if datedue later uses today?
-#        $datedue = (C4::Context->preference('RenewalPeriodBase') eq 'date_due') ?
-#                                        C4::Dates->new($issue->{date_due}, 'iso') :
-#                                        C4::Dates->new(); # FIXME: datedue=today?
         $datedue =  CalcDateDue(C4::Dates->new(),$loanlength,$branch,$borrower);
     }
     die "Invalid date passed to AddRenewal." if ($datedue && ! $datedue->output('iso'));
@@ -2207,16 +2204,14 @@ EOF
     # of how many times it has been renewed.
     my $dbh = C4::Context->dbh;
     my $renews = ($issue->{'renewals'} // 0) + 1;
-    my $sth = $dbh->prepare("UPDATE issues SET date_due = ?, renewals = ?, lastreneweddate = ?, branchcode=?
-                            WHERE borrowernumber=? 
-                            AND itemnumber=?"
+    my $sth = $dbh->prepare("UPDATE issues SET date_due = ?, renewals = ?, lastreneweddate = ?
+                            WHERE borrowernumber=? AND itemnumber=?"
     );
-    $sth->execute( $datedue->output('iso'), 
-      $renews, 
+    $sth->execute( $datedue->output('iso'),
+      $renews,
       $lastreneweddate,
-      $currBranch,
-      $borrowernumber, 
-      $itemnumber 
+      $borrowernumber,
+      $itemnumber
    );
     $sth->finish;
     my %mod = ( 
@@ -2238,7 +2233,7 @@ EOF
    DeleteTransfer($itemnumber);
 
    # Log the renewal
-   UpdateStats( $branch, 'renew', $charge, $source, $itemnumber, $item->{itype}, $borrowernumber);
+   UpdateStats( $currBranch, 'renew', $charge, $source, $itemnumber, $item->{itype}, $borrowernumber);
    return $datedue->output('iso');
 }
 
