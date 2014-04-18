@@ -341,23 +341,23 @@ for my $borrowernumber ( keys %{ $due_digest} ) {
     die "no letter of type '$letter_type' found. Please see sample_notices.sql" unless $letter;
     $sth->execute($borrowernumber,'0');
     my $titles = "";
+    while ( my $item_info = $sth->fetchrow_hashref()) {
+      push (@Ttitems, $item_info);
+      my @item_info = map { $_ =~ /^date|date$/ ? format_date($item_info->{$_}) : $item_info->{$_} || '' } @item_content_fields;
+      $titles .= join("\t",@item_info) . "\n";
+    }
     my $ccb = try {
-        my $ccbcode;
-        while ( my $item_info = $sth->fetchrow_hashref()) {
-            push (@Ttitems, $item_info);
-            $ccbcode //= C4::Circulation::GetCircControlBranch(
-                pickup_branch => $item_info->{issuingbranch},
-                item_homebranch => $item_info->{homebranch},
-                borrower_branch => $item_info->{branchcode},
-            );
-            my @item_info = map { $_ =~ /^date|date$/ ? format_date($item_info->{$_}) : $item_info->{$_} || '' } @item_content_fields;
-            $titles .= join("\t",@item_info) . "\n";
-        }
+        my $ccbcode = C4::Circulation::GetCircControlBranch(
+            pickup_branch => $Ttitems[0]{issuingbranch},
+            item_homebranch => $Ttitems[0]{homebranch},
+            borrower_branch => $Ttitems[0]{branchcode},
+        );
         return GetBranchDetail($ccbcode);
     }
     catch {
         return {};
     };
+
     $letter = parse_letter( { letter         => $letter,
                               borrowernumber => $borrowernumber,
                               branchcode     => $borrower->{branchcode},
