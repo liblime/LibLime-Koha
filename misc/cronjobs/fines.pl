@@ -164,7 +164,7 @@ for (my $i=0; $i<scalar(@$data); $i++) {
   	
 	if (! $isHoliday ) {
         ($amount,$daycounttotal,$daycount,$ismax) = CalcFine($data->[$i], $borrower->{'categorycode'}, $branchcode, $today, $calendar);
-		C4::Overdues::AccrueFine($data->[$i]->{id},$amount) if( $amount > 0 ) ;
+		eval{C4::Overdues::AccrueFine($data->[$i]->{id},$amount) if( $amount > 0 )} ;
  	}
     my @cells = ();
     push @cells, map {$borrower->{$_} // ''} @borrower_fields;
