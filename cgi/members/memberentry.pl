@@ -129,7 +129,6 @@ $template->param("showothernames" => C4::Context->preference('DisplayOthernames'
 ($borrower_data = GetMember($borrowernumber,'borrowernumber')) if ($op eq 'modify' or $op eq 'save');
 my $categorycode  = $input->param('categorycode') || $borrower_data->{'categorycode'};
 my $category_type = $input->param('category_type');
-my $new_c_type = $category_type; #if we have input param, then we've already chosen the cat_type.
 unless ($category_type or !($categorycode)){
     my $borrowercategory = GetBorrowercategory($categorycode);
     $category_type    = $borrowercategory->{'category_type'};
@@ -488,9 +487,16 @@ my $borcats = GetBorrowercategoryList();
 my @borcattypes;
 for my $cattype (qw/A S C P I X/){
     my @cats = grep { $_->{category_type} eq $cattype } @$borcats;
+    my $no_selection = 1;
     for(@cats){
-      $_->{selected} = 1 if(defined($categorycode) && $_->{categorycode} eq $categorycode);
+      if ((defined($borrower_data->{'categorycode'}) && $_->{categorycode} eq $borrower_data->{'categorycode'}) || 
+          (defined($categorycode) && $_->{categorycode} eq $categorycode)) {
+        $_->{selected} = 1;
+        $no_selection = 0;
+      }
     }
+    # Select first category group option if no option was previously selected
+    $cats[0]->{selected} = 1 if (($no_selection) && ($category_type eq $cats[0]->{category_type}));
     push(@borcattypes, { typename => $cattype,
                          categoryloop => \@cats }) if scalar @cats;
 }
