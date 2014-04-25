@@ -1409,14 +1409,23 @@ func credit_lost_item( $lost_item_id, :$credit, :$undo ) {
             # Only apply fine for actually returned item.
             # Claims-returned items do not get an overdue charge until they are found.
 
-            # FIXME: GetOldIssue gets the last checkout.  In this case we're sure it's the right one,
-            # But the issue should be stored by id in lost_items.
-            my $old_issue = C4::Circulation::GetOldIssue($lost_item->{itemnumber});
-            if(!$old_issue->{borrowernumber}){  # possible patron anonymization
-                $old_issue->{borrowernumber} = $lost_item->{borrowernumber};
+            # Avoid duplicate charges -- lost_items can stay in the lost_items table after being found.
+            # LAK has a flag for that, we don't have one here.
+            # FIXME: Port flag.  This won't work well since we don't tie the fine to the issue but rather to the itemnumber/borrowernumber .
+            my $sth_odue = $dbh->prepare("SELECT id from fees LEFT JOIN fee_transactions ON fee_id=fees.id
+                    WHERE borrowernumber = ? AND itemnumber = ? AND accounttype='FINE' ORDER BY timestamp DESC LIMIT 1");
+            $sth_odue->execute($lost_item->{borrowernumber}, $lost_item->{'itemnumber'});
+            my ($odue_fine) = $sth_odue->fetchrow;
+            if(!$odue_fine){
+                # FIXME: GetOldIssue gets the last checkout.  In this case we're sure it's the right one,
+                # But the issue should be stored by id in lost_items.
+                my $old_issue = C4::Circulation::GetOldIssue($lost_item->{itemnumber});
+                if(!$old_issue->{borrowernumber}){  # possible patron anonymization
+                    $old_issue->{borrowernumber} = $lost_item->{borrowernumber};
+                }
+                my $returndate = ($odue eq 'DateLost') ? C4::Dates->new($lost_item->{date_lost}, 'iso') : undef;
+                C4::Overdues::ApplyFine($old_issue, $returndate);
             }
-            my $returndate = ($odue eq 'DateLost') ? C4::Dates->new($lost_item->{date_lost}, 'iso') : undef;
-            C4::Overdues::ApplyFine($old_issue, $returndate);
         }
     }
     return;
