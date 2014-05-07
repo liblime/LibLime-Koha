@@ -2494,9 +2494,8 @@ sub SetDisableReadingHistory {
 
 sub SearchMemberAdvanced {
   my ( $params ) = @_;
-#  warn Data::Dumper::Dumper( $params );
       
-  my $orderby = $params->{'orderby'} || 'borrowers.surname';
+  my $orderby = $params->{'orderby'} || 'borrowers.surname,borrowers.firstname';
   
   my $sql = "SELECT COUNT(*) FROM borrowers "
           . "LEFT JOIN categories ON borrowers.categorycode = categories.categorycode ";
