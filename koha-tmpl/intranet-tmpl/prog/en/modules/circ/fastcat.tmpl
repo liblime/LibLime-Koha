@@ -1,6 +1,55 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; FastAdd Item</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript">
+function FieldCheck() {
+    var alertString = '';
+    <!-- TMPL_IF NAME="title_reqd" -->
+        alertString += isFilled('title');
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="author_reqd" -->
+        alertString += isFilled('author');
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="note_reqd" -->
+        alertString += isFilled('note');
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="isbn_reqd" -->
+        alertString += isFilled('isbn');
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="pubplace_reqd" -->
+        alertString += isFilled('pubplace');
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="pubcode_reqd" -->
+        alertString += isFilled('pubcode');
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="pubyear_reqd" -->
+        alertString += isFilled('pubyear');
+    <!-- /TMPL_IF -->
+    if (alertString != '') {
+        alert(alertString);
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+function isFilled(field) {
+    var textstr;
+    var appStr = '';
+
+    textstr = eval(field).value;
+    textstr = textstr.replace(/^\s+|\s+$/g,'');
+    if (textstr == null || textstr == '') {
+        appStr = 'The ' + field + ' field is mandatory.  Please fill out.\n';
+        document.getElementById(field).setAttribute('style','background-color:#FFFF99');
+    }
+    else {
+        document.getElementById(field).setAttribute('style','background-color:transparent;');
+    }
+    return appStr;
+}
+</script>
 </head>
 <body>
 <!-- TMPL_INCLUDE NAME="header.inc" -->
@@ -19,7 +68,7 @@ framework accordingly.
 </TMPL_IF>
 <h2>Add Brief Record For Barcode <!-- TMPL_VAR NAME="barcode" --></h2>
 
-<form method="post" action="/cgi-bin/koha/circ/fastcat.pl">
+<form method="post" action="/cgi-bin/koha/circ/fastcat.pl" onsubmit="return FieldCheck()" name="FAform">
 
     <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->"/>
     <!-- TMPL_IF NAME="duedatespec" -->
@@ -31,44 +80,44 @@ framework accordingly.
         <tr valign="top">
             <td align="right">Title:</td>
             <td align="left">
-                <input type="text" name="title" size="60" maxlength="256" />
+                <input type="text" name="title" id="title" size="60" maxlength="256" />
             </td>
         </tr>
         <tr valign="top">
             <td align="right">Author:</td>
             <td align="left">
-                <input type="text" name="author" size="60" maxlength="256" />
+                <input type="text" name="author" id="author" size="60" maxlength="256" />
             </td>
         </tr>
         <tr valign="top">
             <td align="right">Notes:</td>
             <td align="left">
-                <input type="text" name="notes" size="60" maxlength="256" />
+                <input type="text" name="note" id="note" size="60" maxlength="256" />
             </td>
         </tr>
 <!-- Item Type ISBN Publisher(publishercode) Place Date (publicationyear) -->
         <tr valign="top">
             <td align="right">ISBN:</td>
             <td align="left">
-                <input type="text" name="isbn" size="20" maxlength="256" />
+                <input type="text" name="isbn" id="isbn" size="20" maxlength="256" />
             </td>
         </tr>
         <tr valign="top">
             <td align="right">Place:</td>
             <td align="left">
-                <input type="text" name="place" size="60" maxlength="256" />
+                <input type="text" name="place" id="pubplace" size="60" maxlength="256" />
             </td>
         </tr>
         <tr valign="top">
             <td align="right">Publisher:</td>
             <td align="left">
-                <input type="text" name="publishercode" size="60" maxlength="256" />
+                <input type="text" name="publishercode" id="pubcode" size="60" maxlength="256" />
             </td>
         </tr>
         <tr valign="top">
             <td align="right">Date:</td>
             <td align="left">
-                <input type="text" name="publicationyear" size="4" maxlength="256" />
+                <input type="text" name="publicationyear" id="pubyear" size="4" maxlength="256" />
             </td>
         </tr>
         <tr>

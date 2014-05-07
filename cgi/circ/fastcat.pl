@@ -93,13 +93,33 @@ my $permanent_location = $query->param('permanent_location');
 my %fw = %{C4::Koha::getframeworks() // {}};
 my $errNoFA = $fw{FA} ? 0:1;
 
+my $author_tag    = q{100};
+my $title_tag     = q{245};
+my $note_tag      = q{500};
+my $isbn_tag      = q{020};
+my $publisher_tag = q{260};
+if (!$errNoFA) {
+  my $tagslib = GetMarcStructure(1,$fw{FA}->{frameworkcode});
+  my $tag_100a_reqd = $tagslib->{$author_tag}->{'a'}->{mandatory};
+  my $tag_245a_reqd = $tagslib->{$title_tag}->{'a'}->{mandatory};
+  my $tag_500a_reqd = $tagslib->{$note_tag}->{'a'}->{mandatory};
+  my $tag_020a_reqd = $tagslib->{$isbn_tag}->{'a'}->{mandatory};
+  my $tag_260a_reqd = $tagslib->{$publisher_tag}->{'a'}->{mandatory};
+  my $tag_260b_reqd = $tagslib->{$publisher_tag}->{'b'}->{mandatory};
+  my $tag_260c_reqd = $tagslib->{$publisher_tag}->{'c'}->{mandatory};
+  $template->param(
+    title_reqd    => $tag_245a_reqd,
+    author_reqd   => $tag_100a_reqd,
+    note_reqd     => $tag_500a_reqd,
+    isbn_reqd     => $tag_020a_reqd,
+    pubplace_reqd => $tag_260a_reqd,
+    pubcode_reqd  => $tag_260b_reqd,
+    pubyear_reqd  => $tag_260c_reqd,
+  );
+}
+
 if ($write_record) {
     my $bib_record    = MARC::Record->new();
-    my $author_tag    = q{100};
-    my $title_tag     = q{245};
-    my $note_tag      = q{500};
-    my $isbn_tag      = q{020};
-    my $publisher_tag = q{260};
 
     if ($author) {
         my $field = MARC::Field->new( $author_tag, '1', q{ }, a => $author );
