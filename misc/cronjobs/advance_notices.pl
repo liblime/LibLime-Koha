@@ -64,6 +64,7 @@ my $maxdays     = 30;                                               # -e: the En
 my $fromaddress = C4::Context->preference('KohaAdminEmailAddress'); # -f: From address for the emails
 my $verbose     = 0;                                                # -v: verbose
 my $itemscontent = join(',',qw( issuedate title barcode author ));
+my $ttoff       = 0;                                                # -ttoff: No Talking Tech notices
 
 GetOptions( 'c'              => \$confirm,
             'n'              => \$nomail,
@@ -71,6 +72,7 @@ GetOptions( 'c'              => \$confirm,
             'f:s'            => \$fromaddress,
             'v'              => \$verbose,
             'itemscontent=s' => \$itemscontent,
+            'ttoff'          => \$ttoff,
        );
 my $usage = << 'ENDUSAGE';
 
@@ -87,6 +89,7 @@ This script has the following parameters :
         -i csv list of fields that get substituted into templates in places
            of the E<lt>E<lt>items.contentE<gt>E<gt> placeholder.  Defaults to
            issuedate,title,barcode,author
+        -ttoff turn off potential Talking Tech notices
 ENDUSAGE
 
 # Since advance notice options are not visible in the web-interface
@@ -113,6 +116,7 @@ unless ($confirm) {
 # The fields that will be substituted into <<items.content>>
 my @item_content_fields = split(/,/,$itemscontent);
 
+warn 'Talking Tech notices are OFF' if ($ttoff && $verbose);
 warn 'getting upcoming due issues' if $verbose;
 my $upcoming_dues = C4::Circulation::GetUpcomingDueIssues( { days_in_advance => $maxdays } );
 warn 'found ' . scalar( @$upcoming_dues ) . ' issues' if $verbose;
@@ -174,7 +178,9 @@ for my $upcoming ( @$upcoming_dues ) {
                                     } );
             $upcoming->{'title'} = $biblio->{'title'};
             push @Ttitems,$upcoming;
-            C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'1') if ($letter);
+            unless ($ttoff) {
+              C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'1') if ($letter);
+            }
         }
     } else {
         $borrower_preferences = C4::Members::Messaging::GetMessagingPreferences(
@@ -210,7 +216,9 @@ for my $upcoming ( @$upcoming_dues ) {
                                     } );
             $upcoming->{'title'} = $biblio->{'title'};
             push @Ttitems,$upcoming;
-            C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'0') if ($letter);
+            unless ($ttoff) {
+              C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'1') if ($letter);
+            }
         }
     }
 
@@ -225,7 +233,7 @@ for my $upcoming ( @$upcoming_dues ) {
         } else {
             my $ccb = try {
                 my $ccbcode = C4::Circulation::GetCircControlBranch(
-                    pickup_branch => $upcoming->{issuingbranch},
+                    pickup_branch => $upcoming->{holdingbranch},
                     item_homebranch => $upcoming->{homebranch},
                     borrower_branch => $upcoming->{branchcode},
                 );
@@ -253,7 +261,7 @@ for my $upcoming ( @$upcoming_dues ) {
 # Now, run through all the people that want digests and send them
 
 $sth = $dbh->prepare(<<'END_SQL');
-SELECT biblio.*, items.*, issues.*
+SELECT biblio.*, items.homebranch, items.holdingbranch, items.itype, items.barcode, issues.*
   FROM issues,items,biblio
   WHERE items.itemnumber=issues.itemnumber
     AND biblio.biblionumber=items.biblionumber
@@ -286,7 +294,7 @@ for my $borrowernumber ( keys %{ $upcoming_digest} ) {
     }
     my $ccb = try {
         my $ccbcode = C4::Circulation::GetCircControlBranch(
-            pickup_branch => $Ttitems[0]{issuingbranch},
+            pickup_branch => $Ttitems[0]{holdingbranch},
             item_homebranch => $Ttitems[0]{homebranch},
             borrower_branch => $Ttitems[0]{branchcode},
         );
@@ -299,11 +307,14 @@ for my $borrowernumber ( keys %{ $upcoming_digest} ) {
     $letter = parse_letter( { letter         => $letter,
                               borrowernumber => $borrowernumber,
                               branchcode     => $borrower->{branchcode},
+                              itemnumber     => $items[0],
                               substitute     => { count => $count,
                                                   'items.content' => $titles
                                                 }
                          } );
-    C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'0') if ($letter);
+    unless ($ttoff) {
+      C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'1') if ($letter);
+    }
 
     # Skip the email if an SMS number is available and Talking Tech is in use
     next if ($borrower->{smsalertnumber} && C4::Context->preference('TalkingTechEnabled'));
@@ -348,7 +359,7 @@ for my $borrowernumber ( keys %{ $due_digest} ) {
     }
     my $ccb = try {
         my $ccbcode = C4::Circulation::GetCircControlBranch(
-            pickup_branch => $Ttitems[0]{issuingbranch},
+            pickup_branch => $Ttitems[0]{holdingbranch},
             item_homebranch => $Ttitems[0]{homebranch},
             borrower_branch => $Ttitems[0]{branchcode},
         );
@@ -361,11 +372,14 @@ for my $borrowernumber ( keys %{ $due_digest} ) {
     $letter = parse_letter( { letter         => $letter,
                               borrowernumber => $borrowernumber,
                               branchcode     => $borrower->{branchcode},
+                              itemnumber     => $items[0],
                               substitute     => { count => $count,
                                                   'items.content' => $titles
                                                 }
                          } );
-    C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'1') if ($letter);
+    unless ($ttoff) {
+      C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'1') if ($letter);
+    }
 
     # Skip the email if an SMS number is available and Talking Tech is in use
     next if ($borrower->{smsalertnumber} && C4::Context->preference('TalkingTechEnabled'));
