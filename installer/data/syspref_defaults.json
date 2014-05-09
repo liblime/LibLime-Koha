@@ -269,16 +269,6 @@
          "OPAC"
       ]
    },
-   "BibliosCataloging" : {
-      "explanation" : "If set, a link to Biblios Cataloging will appear in the Koha menu and Biblios Cataloging-specific functionality will appear elsewhere. Please refer to the documentation for details.",
-      "options" : null,
-      "value" : "0",
-      "hidden" : true,
-      "type" : "YesNo",
-      "tags" : [
-         "Ignore"
-      ]
-   },
    "itembarcodelength" : {
       "explanation" : "Number of characters in system-wide barcode schema (item barcodes).",
       "options" : null,
