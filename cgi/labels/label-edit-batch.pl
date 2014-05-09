@@ -80,7 +80,6 @@ elsif ($op eq 'delete') {
     $errstr = "batch $batch_id was not deleted." if $err;
 }
 elsif ($op eq 'add') {
-    push @item_numbers, GetItemnumberFromBarcode($barcode) if $barcode;
     $batch = C4::Labels::Batch->retrieve(batch_id => $batch_id);
     $batch = C4::Labels::Batch->new(branch_code => $branch_code) if $batch == -2;
     if ($branch_code){
