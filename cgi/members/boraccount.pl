@@ -175,12 +175,15 @@ my @currentfees;
 my @payablefees;
 my @history;
 
+my $totaloutstanding = 0;
+$totaloutstanding = Koha::Money->new($totaloutstanding);
 for my $fee (@{C4::Accounts::getcharges( $borrowernumber )}){
     C4::Accounts::prepare_fee_for_display($fee);
     if($fee->{amountoutstanding} > 0){
         # currentfees shows summary of outstanding fees.
         push(@currentfees, $fee);
         push(@payablefees, $fee);
+        $totaloutstanding += Koha::Money->new($fee->{amountoutstanding});
     }
     my $credits = C4::Accounts::getcredits( $fee->{id} );
     if(scalar(@$credits)){
@@ -235,7 +238,6 @@ for my $fee (@$accruingfees){
 
 my $totaldue = C4::Accounts::gettotalowed($borrowernumber);
 my $totalaccruing = C4::Accounts::gettotalaccruing($borrowernumber);
-my $totaloutstanding = ($totaldue - $totalaccruing);
 
 # FIXME: deprecate this vvv
 my $totaloverpayments = C4::Accounts::get_total_overpaid($borrowernumber);
