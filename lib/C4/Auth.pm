@@ -301,8 +301,6 @@ sub get_template_and_user {
             UsePeriodicals               => C4::Context->preference('UsePeriodicals'),
             HideItypeInOPAC              => C4::Context->boolean_preference('HideItypeInOPAC'),
             GetItAcquisitions            => C4::Context->preference("GetItAcquisitions"),
-            BibliosCataloging            => C4::Context->preference("BibliosCataloging"),
-            biblios_link                 => C4::Context->config('biblios_url') // $ENV{BIBLIOS_LINK} // '',
             BatchItemEditor              => C4::Context->preference('BatchItemEditor'),
     );
 
@@ -336,7 +334,6 @@ sub get_template_and_user {
             ClearNotForLoan             => C4::Context->preference('ClearNotForLoan'),
             GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),
             searchdomainoptions       => $searchdomainoptions,
-            BibliosCataloging => C4::Context->preference("BibliosCataloging"),
         );
     }
     else {
@@ -446,7 +443,6 @@ sub get_template_and_user {
             OPACSerialIssueDisplayCount => C4::Context->preference("OPACSerialIssueDisplayCount"),
             ResetOpacInactivityTimeout => C4::Context->preference("ResetOpacInactivityTimeout"),
             GetItAcquisitions => C4::Context->preference("GetItAcquisitions"),
-            BibliosCataloging => C4::Context->preference("BibliosCataloging"),
             searchdomainoptions       => $searchdomainoptions,
             OPACQuickSearchFilter => C4::Koha::GetOpacSearchFilters(),
             localJQuery               => C4::Context->preference("localJQuery"),
