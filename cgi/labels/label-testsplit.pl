@@ -17,19 +17,12 @@ my($template,$loggedinuser,$cookie) = get_template_and_user(
 
    }
 );
-$template->param(
-   t  => $cgi->param('t'),
-   s  => join('<br>',_split($cgi->param('t'))),
-);
-output_html_with_http_headers $cgi,$cookie,$template->output;
-exit;
 
-sub _split
-{
-   my $t = shift;
-   my $re= $cgi->param('r');
-   $_    = $t;
-   my @parts = ();
-   eval{@parts = m/$re/x;};
-   return @parts;
-}
+my $re = $cgi->param('r');
+my $t = $cgi->param('t');
+$template->param(
+    t => $t,
+    s => join '<br>', ($t =~ m/$re/gx),
+);
+
+output_html_with_http_headers $cgi,$cookie,$template->output;
