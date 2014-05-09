@@ -17,8 +17,8 @@
 # Koha; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
 # Suite 330, Boston, MA  02111-1307 USA
 
-use strict;
-# use warnings;  # FIXME
+use Koha;
+use Try::Tiny;
 use CGI;
 use Text::CSV;
 use C4::Reports::Guided;
@@ -410,7 +410,8 @@ elsif ($phase eq 'Run this report'){
         }
         my @rows = ();
         my ($sth, $errors) = execute_query($sql, $offset, $limit);
-        my $total = select_2_select_count_value($sql) || 0;
+        my $total = try { select_2_select_count_value($sql) };
+        $total //= 0;
         unless ($sth) {
             die "execute_query failed to return sth for report $report: $sql";
         } else {
