@@ -1710,7 +1710,7 @@ sub AddReturn {
             barcode             => $barcode,
             lost_item_id        => $$lostitem{id},
         };
-        C4::Accounts::credit_lost_item($lostitem->{id});
+        C4::Accounts::credit_lost_item($lostitem->{id}, exemptfine => $exemptfine );
 
     }
 
