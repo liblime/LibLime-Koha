@@ -904,8 +904,8 @@ sub do_patron{
                 }
                 if($accounttype eq 'LOSTITEM'){
                     # there are cases where the accounttype didn't go from L to LR or CR when claims returned.
-                    if($paidfines{$f}->{description} =~ / claims returned at no\.(\d+) /){
-                        $trans = {  accounttype  => 'LOSTRETURNED',
+                    if($paidfines{$f}->{description} =~ /claims returned at no\.(\d+)/){
+                        $trans = {  accounttype  => 'CLAIMS_RETURNED',
                                 date         => $payments{$1}->{timestamp},
                                 description  => $payments{$1}->{'description'},
                              };

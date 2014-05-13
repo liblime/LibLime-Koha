@@ -1354,7 +1354,7 @@ If 'undo' is specified, this reverses the credit by deleting the associated tran
 
 =cut
 
-func credit_lost_item( $lost_item_id, :$credit, :$undo ) {
+func credit_lost_item( $lost_item_id, :$credit, :$undo, :$exemptfine ) {
     $credit = 'LOSTRETURNED' if(!$credit || $credit ne 'CLAIMS_RETURNED');
 
     my $dbh = C4::Context->dbh;
@@ -1376,6 +1376,7 @@ func credit_lost_item( $lost_item_id, :$credit, :$undo ) {
         while (my ($fee_id) = $sth->fetchrow) {
             $sth_waives->execute($fee_id, $credit);
         }
+        # FIXME: fees need to be keyed to issues to avoid targeting incorrect fee.
         if(C4::Context->preference('ApplyFineWhenLostItemChargeRefunded')){
             # We also must forgive the most recent overdue charges for this item.
             my $sth_odue = $dbh->prepare("SELECT id from fees LEFT JOIN fee_transactions ON fee_id=fees.id
@@ -1405,7 +1406,7 @@ func credit_lost_item( $lost_item_id, :$credit, :$undo ) {
             }
             ApplyCredit($fee_id, {  accounttype => $credit });
         }
-        if($credit eq 'LOSTRETURNED' && (my $odue = C4::Context->preference('ApplyFineWhenLostItemChargeRefunded'))){
+        if($credit eq 'LOSTRETURNED' && (my $odue = C4::Context->preference('ApplyFineWhenLostItemChargeRefunded')) && !$exemptfine){
             # Only apply fine for actually returned item.
             # Claims-returned items do not get an overdue charge until they are found.
 
