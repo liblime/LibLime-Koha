@@ -64,7 +64,7 @@ my $maxdays     = 30;                                               # -e: the En
 my $fromaddress = C4::Context->preference('KohaAdminEmailAddress'); # -f: From address for the emails
 my $verbose     = 0;                                                # -v: verbose
 my $itemscontent = join(',',qw( issuedate title barcode author ));
-my $ttoff       = 0;                                                # -ttoff: No Talking Tech notices
+my $use_tt      = 1;                                                # --[no-]use_tt: NoTalking Tech notices
 
 GetOptions( 'c'              => \$confirm,
             'n'              => \$nomail,
@@ -72,7 +72,7 @@ GetOptions( 'c'              => \$confirm,
             'f:s'            => \$fromaddress,
             'v'              => \$verbose,
             'itemscontent=s' => \$itemscontent,
-            'ttoff'          => \$ttoff,
+            'use-tt!'        => \$use_tt,
        );
 my $usage = << 'ENDUSAGE';
 
@@ -89,7 +89,7 @@ This script has the following parameters :
         -i csv list of fields that get substituted into templates in places
            of the E<lt>E<lt>items.contentE<gt>E<gt> placeholder.  Defaults to
            issuedate,title,barcode,author
-        -ttoff turn off potential Talking Tech notices
+        --[no-]use-tt turn on/off potential Talking Tech notices
 ENDUSAGE
 
 # Since advance notice options are not visible in the web-interface
@@ -116,7 +116,7 @@ unless ($confirm) {
 # The fields that will be substituted into <<items.content>>
 my @item_content_fields = split(/,/,$itemscontent);
 
-warn 'Talking Tech notices are OFF' if ($ttoff && $verbose);
+warn 'Talking Tech notices are OFF' if (!$use_tt && $verbose);
 warn 'getting upcoming due issues' if $verbose;
 my $upcoming_dues = C4::Circulation::GetUpcomingDueIssues( { days_in_advance => $maxdays } );
 warn 'found ' . scalar( @$upcoming_dues ) . ' issues' if $verbose;
@@ -178,7 +178,7 @@ for my $upcoming ( @$upcoming_dues ) {
                                     } );
             $upcoming->{'title'} = $biblio->{'title'};
             push @Ttitems,$upcoming;
-            unless ($ttoff) {
+            if ($use_tt) {
               C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'1') if ($letter);
             }
         }
@@ -216,7 +216,7 @@ for my $upcoming ( @$upcoming_dues ) {
                                     } );
             $upcoming->{'title'} = $biblio->{'title'};
             push @Ttitems,$upcoming;
-            unless ($ttoff) {
+            if ($use_tt) {
               C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'1') if ($letter);
             }
         }
@@ -312,7 +312,7 @@ for my $borrowernumber ( keys %{ $upcoming_digest} ) {
                                                   'items.content' => $titles
                                                 }
                          } );
-    unless ($ttoff) {
+    if ($use_tt) {
       C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'1') if ($letter);
     }
 
@@ -377,7 +377,7 @@ for my $borrowernumber ( keys %{ $due_digest} ) {
                                                   'items.content' => $titles
                                                 }
                          } );
-    unless ($ttoff) {
+    if ($use_tt) {
       C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'1') if ($letter);
     }
 
