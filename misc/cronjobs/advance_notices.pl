@@ -225,7 +225,7 @@ for my $upcoming ( @$upcoming_dues ) {
         } else {
             my $ccb = try {
                 my $ccbcode = C4::Circulation::GetCircControlBranch(
-                    pickup_branch => $upcoming->{issuingbranch},
+                    pickup_branch => $upcoming->{holdingbranch},
                     item_homebranch => $upcoming->{homebranch},
                     borrower_branch => $upcoming->{branchcode},
                 );
@@ -286,7 +286,7 @@ for my $borrowernumber ( keys %{ $upcoming_digest} ) {
     }
     my $ccb = try {
         my $ccbcode = C4::Circulation::GetCircControlBranch(
-            pickup_branch => $Ttitems[0]{issuingbranch},
+            pickup_branch => $Ttitems[0]{holdingbranch},
             item_homebranch => $Ttitems[0]{homebranch},
             borrower_branch => $Ttitems[0]{branchcode},
         );
@@ -348,7 +348,7 @@ for my $borrowernumber ( keys %{ $due_digest} ) {
     }
     my $ccb = try {
         my $ccbcode = C4::Circulation::GetCircControlBranch(
-            pickup_branch => $Ttitems[0]{issuingbranch},
+            pickup_branch => $Ttitems[0]{holdingbranch},
             item_homebranch => $Ttitems[0]{homebranch},
             borrower_branch => $Ttitems[0]{branchcode},
         );
