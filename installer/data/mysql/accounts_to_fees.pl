@@ -1583,14 +1583,27 @@ PAY:        for my $payment (sort { if(exists $a->{payment_id} && ! exists $b->{
         ## Lastly, clean up the account by redistributing credits.  (this would happen anyway the first time the account was viewed in staff interface)
         
         C4::Accounts::RedistributeCredits($borrowernumber);
-        
+
         $totalowed = C4::Accounts::gettotalowed($borrowernumber);
+        $totalowed -= C4::Accounts::gettotalaccruing($borrowernumber); # In case fines job was run.
         if(sprintf("%.2f",$totalowed) eq sprintf("%.2f",$balance)){
             $verbose and warn "SUCCESSFUL TRANSLATION TO NEW FEES STRUCTURE.";
         } else {
             $verbose and warn "!!!!!!!!!!  FAILURE  !!!!!!!!!!!! borrower $borrowernumber \n\t TOTALOWED: $totalowed  <==>  BALANCE: $balance";
             push @logoutput,  sprintf "%s\t%s\tDISCREPANCY --old/new balance: %s / %s\n", $borrowernumber, $totalowed-$balance, $balance, $totalowed;
             $has_discrepancy=1;
+            my $diff_discrepancy = $balance-$totalowed;
+            if ($diff_discrepancy < 0 ){
+                my $trans = {
+                    accounttype => 'CREDIT',
+                    description => 'System-generated credit :: LK-4.18 upgrade',
+                    amount => $diff_discrepancy,
+                    notes => sprintf("%s DISCREPANCY --old/new balance: %s / %s\n", $diff_discrepancy, $balance, $totalowed),
+                    borrowernumber => $borrowernumber,
+                };
+                my ($new_pmt , $err) = C4::Accounts::_insert_new_payment($trans);
+                C4::Accounts::RedistributeCredits($borrowernumber);
+            }
             $exit = 1 if $die;
         }
         my $unhandled = scalar(keys %paidfines) + scalar(keys %linked_writeoffs) + scalar(keys %unlinked_writeoffs) + scalar(keys %unknown);
