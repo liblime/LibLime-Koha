@@ -2037,7 +2037,7 @@ WHERE ( TO_DAYS( date_due )-TO_DAYS( NOW() ) ) BETWEEN 0 AND ?
 END_SQL
 
     my @bind_parameters = ( $params->{'days_in_advance'} );
-    return C4::Context->dbh->selectall_arrayref(
+    return C4::Context->replica_dbh->selectall_arrayref(
         $statement, {Slice=>{}}, @bind_parameters);
 }
 
