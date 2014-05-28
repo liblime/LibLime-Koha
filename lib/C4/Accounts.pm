@@ -1424,6 +1424,12 @@ func credit_lost_item( $lost_item_id, :$credit, :$undo, :$exemptfine ) {
                 if(!$old_issue->{borrowernumber}){  # possible patron anonymization
                     $old_issue->{borrowernumber} = $lost_item->{borrowernumber};
                 }
+ 		if(!$old_issue->{branchcode}){  # possible no old_issue
+      			$old_issue->{branchcode} = $lost_item->{holdingbranch};
+          	}
+        	if(!$old_issue->{date_due}){  # possible no old_issue
+           		$old_issue->{date_due} = $lost_item->{date_lost};
+          	}
                 my $returndate = ($odue eq 'DateLost') ? C4::Dates->new($lost_item->{date_lost}, 'iso') : undef;
                 C4::Overdues::ApplyFine($old_issue, $returndate);
             }
