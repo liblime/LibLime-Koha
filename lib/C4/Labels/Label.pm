@@ -621,10 +621,7 @@ sub _split_title
 sub _split_custom
 {
    my($str,$re) = @_;
-   $_ = $str;
-   my @parts = ();
-   eval{@parts = m/$re/x};
-   return @parts;
+   return ($str =~ m/$re/gx);
 }
 
 sub _split_lccn {
