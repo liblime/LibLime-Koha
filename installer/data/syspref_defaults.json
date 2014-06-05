@@ -3488,5 +3488,15 @@
       "tags" : [
          "Circulation"
       ]
+   },
+   "SIPResponseDelimiter" : {
+      "explanation" : "This sets the SIP response line delimiter.  Technical specification suggests CR, but a CRLF option is also available and set as default.",
+      "options" : "CRLF|CR",
+      "value" : "CRLF",
+      "hidden" : false,
+      "type" : "Choice",
+      "tags" : [
+         "Admin"
+      ]
    }
 }

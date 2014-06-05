@@ -95,6 +95,9 @@ if (defined($config->{'options'})) {
 print scalar(localtime),  " -- startup -- procid:$$\n";
 #print "Params for Net::Server : \n" . Dumper(\@parms);
 
+# Set line delimiter via syspref (technically should be carriage return \r)
+our $response_delimiter = C4::Context->preference('SIPResponseDelimiter');
+
 #
 # This is the main event.
 __PACKAGE__ ->run(@parms);
@@ -248,7 +251,9 @@ sub telnet_transport {
 			Sip::MsgType::login_core($self,$uid,$pwd) and last;
 	    }
 		syslog("LOG_WARNING", "Invalid login attempt: '%s'", ($uid||''));
-		print("Invalid login$CRLF");
+		($response_delimiter eq "CR") ?
+                    print("Invalid login$CR") :
+                    print("Invalid login$CRLF");
 	}
     }; # End of eval
 
@@ -259,7 +264,9 @@ sub telnet_transport {
 		syslog("LOG_ERR", "telnet_transport: Login Failed");
 		die "Login Failure";
     } else {
-		print "Login OK.  Initiating SIP$CRLF";
+		($response_delimiter eq "CR") ?
+		    print "Login OK.  Initiating SIP$CR" :
+		    print "Login OK.  Initiating SIP$CRLF";
     }
 
     $self->{account} = $account;

@@ -8,6 +8,7 @@ use strict;
 use warnings;
 use English;
 use Exporter;
+use C4::Context;
 
 use Sys::Syslog qw(syslog);
 use POSIX qw(strftime);
@@ -38,6 +39,8 @@ BEGIN {
 our $error_detection = 0;
 our $protocol_version = 1;
 our $field_delimiter = '|'; 	# Protocol Default
+# Set line delimiter via syspref (technically should be carriage return \r)
+our $response_delimiter = C4::Context->preference('SIPResponseDelimiter');
 
 # We need to keep a copy of the last message we sent to the SC,
 # in case there's a transmission error and the SC sends us a
@@ -204,10 +207,14 @@ sub write_msg {
     }
 
     if ($file) {
-		print $file "$msg$CRLF";
+		($response_delimiter eq "CR") ?
+		    print $file "$msg$CR" :
+		    print $file "$msg$CRLF";
 		syslog("LOG_DEBUG", "write_msg outputting to $file");
     } else {
-		print "$msg$CRLF";
+		($response_delimiter eq "CR") ?
+		    print "$msg$CR" :
+		    print "$msg$CRLF";
     }
 	# Remove characters above 255 since they cause a
 	# "Wide character in syswrite" error and terminate the session
