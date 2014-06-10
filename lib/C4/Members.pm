@@ -1280,9 +1280,10 @@ sub GetNotifiedMembers {
           last_reported_date, last_reported_amount, exclude_from_collection
         FROM borrowers
         WHERE
-          amount_notify_date IS NOT NULL
+          (amount_notify_date IS NOT NULL
           AND CURRENT_DATE BETWEEN DATE_ADD(amount_notify_date, INTERVAL ? DAY)
-          AND DATE_ADD(amount_notify_date, INTERVAL ? DAY)
+          AND DATE_ADD(amount_notify_date, INTERVAL ? DAY))
+          OR (amount_notify_date IS NULL AND last_reported_date IS NOT NULL)
     ";
     $query .= " AND categorycode NOT IN (" . join( ", ", map( { "?" } @ignored_categories ) ) . ")" if ( @ignored_categories );
 
@@ -1303,11 +1304,12 @@ sub MarkMemberReported {
     if ($amount < 0.01) {
       $sth = $dbh->prepare( "
           UPDATE borrowers
-            SET last_reported_date = CURRENT_DATE,
-              last_reported_amount = ?,
+            SET last_reported_date = NULL,
+              last_reported_amount = NULL,
               amount_notify_date   = NULL
             WHERE borrowernumber = ?
       " );
+      $sth->execute( $borrowernumber );
     }
     else {
       $sth = $dbh->prepare( "
@@ -1316,8 +1318,8 @@ sub MarkMemberReported {
               last_reported_amount = ?
             WHERE borrowernumber = ?
       " );
+      $sth->execute( $amount, $borrowernumber );
     }
-    $sth->execute( $amount, $borrowernumber );
 }
 
 sub ClearBillingFlags {
