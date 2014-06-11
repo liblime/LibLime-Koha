@@ -278,15 +278,17 @@ if (nodename =="barcodes[]"){
   </div>
 <!-- /TMPL_IF -->
 
-<!-- TMPL_IF amount_notify_date -->
+<!-- TMPL_IF last_reported_date -->
   <div id="billing_notices">
     <h3>Billing Notices</h3>
       <ul>
-        <li>Billing notice sent: <!-- TMPL_VAR EXPR="date(amount_notify_date)" --></li>
-        <!-- TMPL_IF last_reported_date -->
-          <li>Last debt collect update: <!-- TMPL_VAR EXPR="date(last_reported_date)" --></li>
-          <li>Last debt collect amount: <!-- TMPL_VAR EXPR="currency(last_reported_amount)" --></li>
+        <!-- TMPL_IF amount_notify_date -->
+          <li>Billing notice sent: <!-- TMPL_VAR EXPR="date(amount_notify_date)" --></li>
+        <!-- TMPL_ELSE -->
+          <li>Patron sent to collection.
         <!-- /TMPL_IF -->
+        <li>Last debt collect update: <!-- TMPL_VAR EXPR="date(last_reported_date)" --></li>
+        <li>Last debt collect amount: <!-- TMPL_VAR EXPR="currency(last_reported_amount)" --></li>
       </ul>
       <!-- TMPL_IF CAN_user_circulate_override_max_fines -->
         <a href="moremember.pl?borrowernumber=<!-- TMPL_VAR borrowernumber -->&op=clearbillingflags">
