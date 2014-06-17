@@ -498,7 +498,7 @@ sub patronflags {
     my ( $patroninformation, $circ_session ) = @_;
     $circ_session ||= {};
 
-    my $amount = C4::Accounts::gettotalowed($patroninformation->{borrowernumber});
+    my $amount = C4::Accounts::gettotalowed($patroninformation->{borrowernumber},C4::Context->preference('ExcludeAccruingInTotal'));
 
     my $cat = GetCategoryInfo($$patroninformation{categorycode});
 
