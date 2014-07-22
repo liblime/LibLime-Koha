@@ -425,7 +425,7 @@ $(document).ready(function(){
                 <tr>
             <!-- /TMPL_UNLESS -->
 
-                <td class="select selectcol"><!--TMPL_IF EXPR="opacbookbag || virtualshelves" --><input type="checkbox" id="bib<!-- TMPL_VAR NAME="biblionumber" -->" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" title="Click to add to <TMPL_VAR NAME="opacbookbagName">" <!-- TMPL_IF NAME="norequests" --> DISABLED<!-- /TMPL_IF -->/> <label for="bib<!-- TMPL_VAR NAME="biblionumber" -->"></label><!-- /TMPL_IF --></td>
+                <td class="select selectcol"><!--TMPL_IF EXPR="opacbookbag || virtualshelves" --><input type="checkbox" id="bib<!-- TMPL_VAR NAME="biblionumber" -->" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" title="Click to add to <TMPL_VAR NAME="opacbookbagName">" /> <label for="bib<!-- TMPL_VAR NAME="biblionumber" -->"></label><!-- /TMPL_IF --></td>
                 <td class="select selectcol"><!-- TMPL_VAR NAME="result_number" -->.</td>
 
 				<!-- TMPL_UNLESS NAME="item-level_itypes" -->
