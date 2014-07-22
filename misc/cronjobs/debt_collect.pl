@@ -185,7 +185,7 @@ foreach my $borrower ( @{ GetNotifiedMembers( $wait, $max_wait, $branch, @ignore
     }
     $borrower->{fines_alert_threshold} = $categories{$borrower->{categorycode}};
     
-    my $totalowed = C4::Accounts::gettotalowed($borrower->{'borrowernumber'});
+    my $totalowed = C4::Accounts::gettotalowed($borrower->{'borrowernumber'},C4::Context->preference('ExcludeAccruingInTotal'));
 
     my $last_reported_amt = Koha::Money->new($borrower->{last_reported_amount});
 

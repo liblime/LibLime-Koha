@@ -3498,5 +3498,15 @@
       "tags" : [
          "Admin"
       ]
+   },
+   "ExcludeAccruingInTotal" : {
+      "explanation" : "If ON, accruing overdue fees will NOT be included in the calculation of the total due.",
+      "options" : null,
+      "value" : "0",
+      "hidden" : false,
+      "type" : "YesNo",
+      "tags" : [
+         "Patrons"
+      ]
    }
 }

@@ -371,16 +371,18 @@ sub getcredits {
 
 =head2 gettotalowed
 
-    &gettotalowed($borrowernumber);
+    &gettotalowed($borrowernumber, [$exclude_accruing]);
 
 Gets the total owed for a borrower.
 Returns the currency value owed for all outstanding fines by summing every balance-altering
-transaction over the history of the account.  Includes accruing fines.
+transaction over the history of the account.  Includes accruing fines, unless
+$exclude_accruing is passed as true.
 
 =cut
 
 sub gettotalowed {
     my $borrowernumber = shift;
+    my $exclude_accruing = shift || 0;
     my $dbh = C4::Context->dbh;
     # Since borrowernumber is stored in fees and payments, not fee_transactions,
     # this is done with two queries: the first gets all outstanding charges, the second
@@ -392,7 +394,11 @@ sub gettotalowed {
     my $sth_credit = $dbh->prepare("SELECT SUM(amount) FROM payments LEFT JOIN fee_transactions on(payments.id = fee_transactions.payment_id) where payments.borrowernumber = ? and fee_id is null" );
     $sth_credit->execute( $borrowernumber );
     my ( $credit ) = $sth_credit->fetchrow_array;
-    $amountoutstanding += Koha::Money->new($credit) + gettotalaccruing($borrowernumber);
+    if ($exclude_accruing) {
+        $amountoutstanding += Koha::Money->new($credit);
+    } else {
+        $amountoutstanding += Koha::Money->new($credit) + gettotalaccruing($borrowernumber);
+    }
     return $amountoutstanding ;
 }
 
@@ -1637,7 +1643,7 @@ sub get_borrowers_with_fines {
     
     my @borrowers;
     while (my $bor = $sth->fetchrow_hashref) {
-        $bor->{balance} = gettotalowed($bor->{borrowernumber});
+        $bor->{balance} = gettotalowed($bor->{borrowernumber},$param{exclude_accruing});
         next if($bor->{balance} == 0 || $bor->{balance} < $threshold);
         if($param{since}){
             $sth_lastfine->execute($bor->{borrowernumber});

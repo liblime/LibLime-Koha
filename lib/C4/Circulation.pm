@@ -75,6 +75,7 @@ BEGIN {
         &GetItemIssue
                 &GetOpenIssue
         &GetItemIssues
+        &GetIssueItem
         &GetBorrowerIssues
         &GetIssuingCharges
         &GetIssuingRule
@@ -862,7 +863,7 @@ sub CanBookBeIssued {
     #
 
     # DEBTS
-    my $amount = C4::Accounts::gettotalowed($borrower->{'borrowernumber'});
+    my $amount = C4::Accounts::gettotalowed($borrower->{'borrowernumber'},C4::Context->preference('ExcludeAccruingInTotal'));
     my $cat = C4::Members::GetCategoryInfo($$borrower{categorycode}) // {};
     $$cat{circ_block_threshold} //= 0;
     if ( C4::Context->preference("IssuingInProcess") ) {
@@ -2039,6 +2040,28 @@ END_SQL
     my @bind_parameters = ( $params->{'days_in_advance'} );
     return C4::Context->replica_dbh->selectall_arrayref(
         $statement, {Slice=>{}}, @bind_parameters);
+}
+
+=head2 GetIssueItem
+
+$issue = GetIssueItem( $issue_id );
+
+Returns the row from the issues table with an id = issue_id
+
+C<$issue_id> is the id in the issues table (issues.id)
+
+Returns a hashref
+
+=cut
+
+sub GetIssueItem {
+  my ( $issue_id ) = shift || return;
+
+  my $dbh = C4::Context->dbh;
+  my $sth = $dbh->prepare( "SELECT * FROM issues WHERE id = ?" );
+  $sth->execute( $issue_id );
+  my $issue = $sth->fetchrow_hashref();
+  return $issue;
 }
 
 =head2 CanBookBeRenewed

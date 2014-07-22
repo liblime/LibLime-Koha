@@ -34,6 +34,7 @@ use C4::Members;
 use C4::Letters;
 use C4::Accounts;
 use C4::Category;
+use C4::Circulation;
 
 use Getopt::Long;
 use Pod::Usage;
@@ -310,7 +311,7 @@ foreach my $branchcode (@branches) {
         next unless $cat->fines_alert_threshold > 0;  # Yes, that means zero turns it off.
         my $notify_value = $cat->fines_alert_threshold;
         $verbose and warn sprintf "category: %s, threshold: %s, branch: %s", $cat->categorycode, $notify_value, $branchcode;
-        my $borrowers = C4::Accounts::get_borrowers_with_fines(category => $cat->categorycode, threshold => $notify_value, branch => $branchcode, since=>$ignore, exclude_notified=>1);
+        my $borrowers = C4::Accounts::get_borrowers_with_fines(category => $cat->categorycode, threshold => $notify_value, branch => $branchcode, since=>$ignore, exclude_notified=>1, exclude_accruing=>C4::Context->preference('ExcludeAccruingInTotal'));
 
         for my $patron_hits ( @$borrowers ) {
           my $letter = C4::Letters::getletter( 'circulation', $letter_code );
@@ -325,6 +326,17 @@ foreach my $branchcode (@branches) {
           for my $fee (@$outstandingfees){
               C4::Accounts::prepare_fee_for_display($fee);
               $fee_summary .= join("\t", map($fee->{$_}, @fee_summary_data)) . "\n";
+          }
+          unless (C4::Context->preference('ExcludeAccruingInTotal')) {
+              my $accruingfees = C4::Accounts::getaccruingcharges($patron_hits->{borrowernumber});
+              for my $fee (@$accruingfees){
+                  $fee->{'amountoutstanding'} = $fee->{'amount'};
+                  my $issue = C4::Circulation::GetIssueItem($fee->{'issue_id'});
+                  $fee->{'itemnumber'} = $issue->{'itemnumber'};
+                  C4::Accounts::prepare_fee_for_display($fee);
+                  $fee->{'description'} = "Accruing overdue: " . $fee->{'title'};
+                  $fee_summary .= join("\t", map($fee->{$_}, @fee_summary_data)) . "\n";
+              }
           }
           
           $verbose and warn "Patron: $patron_hits->{borrowernumber} Amount: $amount_due\n";
