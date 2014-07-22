@@ -153,6 +153,7 @@ $(document).ready(function() {
     	KOHA.maxPayable = $(this).data('outstanding');
     	// stashing this in variable instead of calling $.validate().rules('add') because validator is created at form submission.  Couldn't get rules to stick otherwise.
         $("#payOneFeeId").val($(this).data('fee_id'));
+        $("#payOneDesc").val($(this).data('fee_description')).prop('readonly', false);
         $("#payOneAmount").val($(this).data('outstanding').toFixed(2)).prop('readonly', false);
         $("#payOneOp").val('pay');
         $("#payOneFeeAmount").html("$" + $(this).data('outstanding').toFixed(2));
@@ -164,6 +165,7 @@ $(document).ready(function() {
     $(".forgiveOne").button().click(function(){
         KOHA.maxPayable = $(this).data('outstanding');
     	$("#payOneFeeId").val($(this).data('fee_id'));
+        $("#payOneDesc").val($(this).data('fee_description')).prop('readonly', false);
     	$("#payOneAmount").val($(this).data('outstanding').toFixed(2)).prop('readonly', false);
     	$("#payOneOp").val('forgive');
     	$("#payOneFeeAmount").html("$" + $(this).data('outstanding').toFixed(2));
@@ -293,12 +295,12 @@ $(document).ready(function() {
               <td class="pay_column">
               <!-- TMPL_IF EXPR="CAN_user_updatecharges_accept_payment || CAN_user_updatecharges_writeoff_charges" -->
                 <!-- TMPL_IF NAME="payable" -->
-                  <input type="checkbox" name="target_fees" value="<!-- TMPL_VAR id -->" data-outstanding="<!-- TMPL_VAR NAME="amountoutstanding" -->" />
+                  <input type="checkbox" name="target_fees" value="<!-- TMPL_VAR id -->" data-outstanding="<!-- TMPL_VAR NAME="amountoutstanding" -->" data-fee_description="<!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --> <!-- /TMPL_IF -->" />
                   <!-- TMPL_IF NAME="CAN_user_updatecharges_accept_payment" -->                
-                    <button class="payOne" data-fee_id="<!-- TMPL_VAR id -->" data-outstanding="<!-- TMPL_VAR NAME="amountoutstanding" -->">Pay</button>
+                    <button class="payOne" data-fee_id="<!-- TMPL_VAR id -->" data-outstanding="<!-- TMPL_VAR NAME="amountoutstanding" -->" data-fee_description="<!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --> <!-- /TMPL_IF -->">Pay</button>
                   <!-- /TMPL_IF -->
                   <!-- TMPL_IF NAME="CAN_user_updatecharges_writeoff_charges" -->
-                    <button class="forgiveOne" data-fee_id="<!-- TMPL_VAR id -->" data-outstanding="<!-- TMPL_VAR NAME="amountoutstanding" -->">Waive</button>
+                    <button class="forgiveOne" data-fee_id="<!-- TMPL_VAR id -->" data-outstanding="<!-- TMPL_VAR NAME="amountoutstanding" -->" data-fee_description="<!-- TMPL_IF description --><!-- TMPL_VAR NAME="description" --><!-- TMPL_ELSE --><!-- TMPL_VAR accounttype_desc --> <!-- /TMPL_IF -->">Waive</button>
                   <!-- /TMPL_IF -->
                 <!-- /TMPL_IF -->
               <!-- /TMPL_IF -->
