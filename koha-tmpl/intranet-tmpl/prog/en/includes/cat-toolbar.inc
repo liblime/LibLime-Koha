@@ -58,6 +58,7 @@ function confirm_deletion() {
 	    $("#edititems").parent().remove();
 	    $("#duplicatebiblio").parent().remove();
 		$("#deletebiblio").parent().remove();
+		$("#mergebib").parent().remove();
 		$("#newitem").parent().remove();
 		$("#newsub").parent().remove();
 	    $("#editmenuc").empty();
@@ -91,6 +92,11 @@ function confirm_deletion() {
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
 	        { text: _("Edit Items"), url: "/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" },
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="CAN_user_editcatalogue_delete_bibliographic" -->
+        <!-- TMPL_IF NAME="CAN_user_editcatalogue_relink_items" -->
+            { text: _("Merge Record"), url: "/cgi-bin/koha/catalogue/mergebib.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->" },
+        <!-- /TMPL_IF -->
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="CAN_user_editcatalogue_add_bibliographic" -->
 	        { text: _("Edit as New (Duplicate)"), url: "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=&amp;op=duplicate" },
@@ -186,6 +192,9 @@ function confirm_deletion() {
 	<li><a id="duplicatebiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;frameworkcode=<!--TMPL_VAR Name="current_framework" -->&amp;op=duplicate">Duplicate Record</a></li>
 	<!-- /TMPL_IF -->
 	<!-- TMPL_IF NAME="CAN_user_editcatalogue_delete_bibliographic" -->
+	<!-- TMPL_IF NAME="CAN_user_editcatalogue_relink_items" -->
+	<li><a id="mergebib" href="/cgi-bin/koha/catalogue/mergebib.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Merge Record</a></li>
+	<!-- /TMPL_IF -->
 	<li><a id="deletebiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl?op=delete&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Delete</a></li>
 	<!-- /TMPL_IF -->
 	<!-- /TMPL_IF -->
