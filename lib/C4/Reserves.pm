@@ -1237,12 +1237,13 @@ sub GetReserveFee {
         $sth->execute($itemnumber);
 
     } else {
-        $sth = $dbh->prepare("SELECT MAX(reservefee) FROM items join itemtypes ON(itype=itemtype) WHERE biblionumber=?");
+        $sth = $dbh->prepare("SELECT MAX(reservefee) AS reservefee FROM items join itemtypes ON(itype=itemtype) WHERE biblionumber=?");
         $sth->execute($biblionumber);
     }
 
-    my $itemtype_fee = $sth->fetchrow_hashref // 0;
-    $fee += $itemtype_fee;
+    my $itype_data = $sth->fetchrow_hashref;
+    my $itemtype_fee = $itype_data->{'reservefee'} // 0;
+    $fee += Koha::Money->new($itemtype_fee);
 
     return $fee;
 }
