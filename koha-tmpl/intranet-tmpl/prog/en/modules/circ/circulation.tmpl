@@ -292,7 +292,7 @@ function refocus(calendar) {
       <br>(same title, <span class=problem>different item</span>: 
       <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<TMPL_VAR NAME="res_biblionumber">&itemnumber=<TMPL_VAR NAME="res_itemnumber">#item<TMPL_VAR NAME="res_itemnumber">"><TMPL_VAR NAME="res_barcode"></a>)
    <TMPL_ELSE>for <span class=problem>a different patron</span>:<br>
-      <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<TMPL_VAR NAME="res_borrowernumber">"><TMPL_VAR NAME="res_firstname"> <TMPL_VAR NAME="res_surname"> (<TMPL_VAR NAME="res_cardnumber">)</a>
+      <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<TMPL_VAR NAME="res_borrowernumber">"><TMPL_VAR NAME="res_firstname"> <TMPL_VAR NAME="res_surname"> (<TMPL_VAR NAME="res_cardnumber">) <TMPL_VAR NAME="res_smsalertnumber"></a>
    </TMPL_IF>
 </TMPL_IF>
 <!-- TMPL_IF NAME="TOO_MANY" -->
