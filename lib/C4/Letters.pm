@@ -817,6 +817,7 @@ sub _ttech_compose_message {
 
 sub _ttech_enqueue_message {
     my ( $borrower, $item, $code, $msg ) = @_;
+    return unless ($item && defined($item->{itemnumber}));
     C4::Context->dbh->do(
         q{INSERT INTO ttech_message_queue
             (borrowernumber, itemnumber, code, content, added_at)
