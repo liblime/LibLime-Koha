@@ -34,6 +34,7 @@
 	<li><a href="/cgi-bin/koha/tools/inventory.pl">Inventory/stocktaking</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_tools_batch_edit_items" -->
+    <li><a href="/cgi-bin/koha/tools/batch-delete.pl">Batch Delete</a></li>
     <TMPL_IF EXPR="BatchItemEditor eq 'Community'">
 	<li><a href="/cgi-bin/koha/tools/batchMod.pl">Batch Item Edit</a></li>
     <TMPL_ELSE>

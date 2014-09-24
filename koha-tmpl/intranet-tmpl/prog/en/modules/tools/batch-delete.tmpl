@@ -1,0 +1,266 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Tools &rsaquo; Batch Delete</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+<style>
+  p.notice {
+    text-align: center;
+    font-weight: bold;
+  }
+  img.displayed {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  /* Styles for dim overlay and message box */
+  #dim {
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    z-index:100;
+    /* background: url('/intranet-tmpl/prog/img/dim.png'); */
+    display:none;
+    text-align:left;
+  }
+  /* Message box, positioned in dead center of browser */
+  .msgbox{
+    position:absolute;
+    width:300px;
+    height:200px;
+    z-index:200;
+    border:1px solid #222;
+    background: #FFF;
+    top: 50%;
+    left: 50%;
+    margin-top: -100px;
+    margin-left: -150px;
+  }
+</style>
+
+<script type="text/javascript">
+  // Adjust height of overlay to fill screen when page loads.
+  $(document).ready(function(){
+     $("#dim").css("height", $(document).height());
+  });
+  // Adjust height of overlay to fill screen when browser gets resized.
+  $(window).bind("resize", function(){
+     $("#dim").css("height", $(window).height());
+  });
+</script>
+
+<script type="text/javascript">
+
+  var maxLength=5000;
+
+  function charLimit(el) {
+    if (el.value.length > maxLength) return false;
+    return true;
+  }
+
+  function characterCount(el, spanID) {
+    var charCount = document.getElementById(spanID);
+    if (el.value.length > maxLength) el.value = el.value.substring(0,maxLength);
+    if (charCount) charCount.innerHTML = maxLength - el.value.length;
+    return true;
+  }
+
+  function showDeleteItemOptions() {
+    document.getElementById("delete_item_options").style.display = 'block';
+    document.getElementById("delete_title_options").style.display = 'none';
+    document.getElementById("upload_identifiers").style.display = 'block';
+  }
+
+  function showDeleteTitleOptions() {
+    document.getElementById("delete_title_options").style.display = 'block';
+    document.getElementById("delete_item_options").style.display = 'none';
+    document.getElementById("upload_identifiers").style.display = 'block';
+    document.getElementById("scan_textarea_identifiers").value = '';
+  }
+
+  function checkForm() {
+    var response = confirm("Please confirm delete");
+    if (response) {
+      $("#dim").fadeIn();
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
+</script>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc"-->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a> &rsaquo; Batch Delete</div>
+
+<div id="doc3" class="yui-t2">
+  <div id="bd">
+    <div id="yui-main">
+      <div class="yui-b">
+        <h1>Batch Delete</h1>
+
+        <TMPL_IF EXPR="DISPLAY > 0">
+
+        <h2><TMPL_IF EXPR="DISPLAY == 2">Title</TMPL_IF><TMPL_IF EXPR="DISPLAY == 3">Item</TMPL_IF> batch delete results</h2>
+        <p>Total Deleted: <TMPL_VAR NAME="TOTAL_DELETED"></p>
+
+        <form action="#" method="post">
+        <input type="hidden" name="download_results" value="1">
+        <textarea name="download_data" readonly="1" style="display:none;">
+        <TMPL_LOOP NAME="ID_LOOP"><TMPL_VAR NAME="ID">	<TMPL_VAR NAME="STATUS">	<TMPL_VAR NAME="CN">	<TMPL_VAR NAME="TITLE">	<TMPL_VAR NAME="AUTHOR">
+        </TMPL_LOOP>
+        </textarea>
+        <input type="submit" name="download_submit" value="Download results" />
+        </form>
+        <br /><br />
+
+        <table>
+        <tr><th>ID</th><th>Status</th><th>Call Number</th><th>Title</th><th>Author</th></tr>
+        <TMPL_LOOP NAME="ID_LOOP">
+            <tr><td><TMPL_VAR NAME="ID"></td><td><TMPL_VAR NAME="STATUS"></td><td><TMPL_VAR NAME="CN"></td><td><TMPL_VAR NAME="TITLE"></td><td><TMPL_VAR NAME="AUTHOR"></td></tr>
+        </TMPL_LOOP>
+        </table>
+
+        <TMPL_ELSE>
+
+        <div class="alert">
+          <big><big>WARNING:</span> This will <strong>PERMANENTLY</strong> delete titles or items. Use with caution!</big></big>
+        </div>
+
+        <form method="post" action="/cgi-bin/koha/tools/batch-delete.pl" enctype="multipart/form-data">
+          <input type="hidden" name="process" value="1" />
+          <div class="yui-u">
+            <fieldset>
+            <legend>Type of Deletion</legend>
+
+            <input type="radio" name="delete_type" value="delete_titles" onchange="showDeleteTitleOptions();"> Titles</input><br/><br/>
+            <input type="radio" name="delete_type" value="delete_items" onchange="showDeleteItemOptions();"> Items</input>
+
+            </fieldset>
+          </div>
+
+          <div id="delete_title_options" style="display:none;">
+            <fieldset>
+            <legend>Delete Title Options</legend>
+            <p>Unchecking any of the following will prevent records that match the condition from being deleted.</p>
+            <p>Delete titles:
+            <ul>
+
+            <li><input type="checkbox" value="0" name="items_attached" checked="checked" />
+            <label for="items_attached">with items attached</label></li>
+
+            <li><input type="checkbox" value="0" name="bib_is_on_hold" checked="checked" />
+            <label for="bib_is_on_hold">with holds</label></li>
+
+            <li><input type="checkbox" value="0" name="aqorders_link" checked="checked" />
+            <label for="aqorders_link">linked to acquisition records</label></li>
+
+            <li><input type="checkbox" value="0" name="suggestions_link" checked="checked" />
+            <label for="suggestions_link">in acquisition suggestions</label></li>
+
+            <li><input type="checkbox" value="0" name="subscription_link" checked="checked" />
+            <label for="subscription_link">linked to periodical or serial records</label></li>
+
+            <li><input type="checkbox" value="0" name="patron_tags" checked="checked" />
+            <label for="patron_tags">with patron tags</label></li>
+
+            <li><input type="checkbox" value="0" name="patron_reviews" checked="checked" />
+            <label for="patron_reviews">with patron reviews</label></li>
+
+            </ul>
+            </fieldset>
+          </div>
+
+          <div id="delete_item_options" style="display:none;">
+            <fieldset>
+            <legend>Delete Item Options</legend>
+            <p>Unchecking any of the following will prevent records that match the condition from being deleted.</p>
+            <p>Delete items:
+            <ul>
+
+            <li><input type="checkbox" value="0" name="item_is_on_hold" checked="checked" />
+            <label for="item_is_on_hold">with holds, including the hold shelf</label></li>
+
+            <li><input type="checkbox" value="0" name="checked_out" checked="checked" />
+            <label for="checked_out">if checked out; will be treated as lost and charged to the patron</label></li>
+
+            <li><input type="checkbox" value="0" name="periodical_link" checked="checked" />
+            <label for="periodical_link">linked to periodical or serial records</label></li>
+
+            <li><input type="checkbox" value="0" name="course_reserve" checked="checked" />
+            <label for="course_reserve">from course reserves</label></li>
+
+            <li><input type="checkbox" value="0" name="lost" checked="checked" />
+            <label for="lost">marked lost</label></li>
+
+            <li><input type="checkbox" value="0" name="damaged" checked="checked" />
+            <label for="damaged">marked damaged</label></li>
+
+            <li><input type="checkbox" value="0" name="withdrawn" checked="checked" />
+            <label for="withdrawn">marked withdrawn</label></li>
+
+            <li><input type="checkbox" value="0" name="patron_lost" checked="checked" />
+            <label for="patron_lost">from a patron's lost list</label></li>
+
+            <!-- TMPL_IF NAME="CAN_user_editcatalogue_delete_bibliographic" -->
+            <p>Titles without any items</p>
+            <li><input type="checkbox" value="1" name="delete_title" />
+            <label for="delete_title">delete titles that have no more items attached</label></li>
+            <!-- /TMPL_IF -->
+
+            </ul>
+            </fieldset>
+
+            <fieldset>
+            <legend>Scan barcodes (optional)</legend>
+            <p>Barcodes for non-existent records are silently ignored.</p>
+            <textarea onkeypress="return charLimit(this)" onkeyup="return characterCount(this, 'scan_charCount')" name="scan_identifiers" id="scan_textarea_identifiers" rows="10" cols="40" maxlength=6000></textarea><br/>
+            <p><strong><span id="scan_charCount">5000</span></strong> more characters available.</p>
+            </fieldset>
+
+          </div>
+
+          <div id="upload_identifiers" style="display:none;">
+            <fieldset>
+            <legend>Upload Identifiers</legend>
+            <p>Use <em>itemnumbers</em> for items or <em>biblionumbers</em> for titles.</p>
+            <textarea onkeypress="return charLimit(this)" onkeyup="return characterCount(this, 'charCount')" name="text_identifiers" id="textarea_identifiers" rows="10" cols="40" maxlength=6000></textarea><br/>
+            <p><strong><span id="charCount">5000</span></strong> more characters available.</p>
+            <label for="upload_identifiers">Select file</label>
+            <input type="file" name="file_identifiers" id="file_upload_identifiers" />
+            <p>Note: files are limited to 100 characters per line, 500 lines maximum. Extra characters or lines are silently ignored. Use plain text files only.</p>
+            </fieldset>
+
+            <button id="submitter" type="submit" name="submit" value="Submit" onclick="return checkForm(this)">Submit</button>
+        </form>
+
+            <a href="/cgi-bin/koha/tools/batch-delete.pl"><button name="cancel" value="Cancel">Cancel</button></a>
+          </div>
+
+        </TMPL_IF>
+
+        <div id="dim">
+          <div class="msgbox">
+            <br />
+            <br />
+            <br />
+            <p class="notice">Your request is being processed</p>
+            <br />
+            <br />
+            <img src='/intranet-tmpl/prog/img/loading.gif' class="displayed" />
+          </div>
+        </div>
+
+        </div>
+      </div>
+    <div class="yui-b">
+    <!-- TMPL_INCLUDE NAME="tools-menu.inc" -->
+    </div>
+  </div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
