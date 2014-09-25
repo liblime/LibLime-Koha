@@ -669,7 +669,7 @@ sub do_patron{
                                 description  => $payments{$1}->{'description'},
                              };
 
-                        if($payments{$1}->{amount} != -1*$paidfines{$f}->{amount}){
+                       if(not (exists($payments{$1}->{amount})) or $payments{$1}->{amount} != -1*$paidfines{$f}->{amount}){
                             $verbose and warn "Mismatched FOR line for CR accountline.  Borrower $borrowernumber, account $f , associated line $1";  
                             push @logoutput,  "Mismatched FOR line for CR accountline.  Borrower $borrowernumber, account $f , associated line $1\n";           
                             $has_discrepancy=1;                 
