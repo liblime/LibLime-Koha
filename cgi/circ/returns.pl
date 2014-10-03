@@ -486,6 +486,7 @@ if ( $messages->{'ResFound'}) {
             reservenotes   => $reserve->{'reservenotes'},
             resWaiting     => ($reserve->{found} ~~ 'W')? 1:0,
             sms            => $borr->{'smsalertnumber'},
+            mobile         => $borr->{'mobile'},
         );
     } # else { ; }  # error?
 }

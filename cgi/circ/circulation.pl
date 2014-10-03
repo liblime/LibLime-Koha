@@ -463,7 +463,7 @@ if ($barcode) {
                      $template->param(RESERVED => 1) unless $confirm_required;
                      if ($$res{borrowernumber} ne $borrowernumber) {
                         my $resbor = GetMember($$res{borrowernumber});
-                        foreach(qw(firstname surname cardnumber smsalertnumber)) { $$res{$_} = $$resbor{$_} }
+                        foreach(qw(firstname surname cardnumber smsalertnumber mobile)) { $$res{$_} = $$resbor{$_} }
                      }
                      foreach(keys %$res) {
                         $template->param("res_$_" => $$res{$_});
