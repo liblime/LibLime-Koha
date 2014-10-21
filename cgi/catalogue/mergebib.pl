@@ -132,7 +132,7 @@ sub merge_holds {
     # Retrieve all reserve records and re-order priority.
     my $query = q{ SELECT reservenumber FROM reserves WHERE biblionumber = ?
                     AND (found IS NULL OR found = 'S') AND  priority > 0
-                    ORDER BY priority ASC, timestamp DESC, reservedate ASC };
+                    ORDER BY reservedate ASC };
     my $res_ids = $dbh->selectall_arrayref( $query, undef, $bib_save_id );
     my $priority = 1;
 
