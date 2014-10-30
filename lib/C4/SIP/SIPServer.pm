@@ -305,6 +305,12 @@ sub sip_protocol_loop {
         
     try {
         while ($input = Sip::read_SIP_packet(*STDIN)) {
+
+            # Forcibly close DB handle and create fresh one.
+            # Meant to ensure a local TZ datetime is inserted into statistics.
+            C4::Context->dbh->disconnect;
+            my $dbh = C4::Context->dbh;
+
             # begin input hacks ...  a cheap stand in for better Telnet layer
             $input =~ s/^[^A-z0-9]+//s;	# Kill leading bad characters... like Telnet handshakers
             $input =~ s/[^A-z0-9]+$//s;	# Same on the end, should get DOSsy ^M line-endings too.
