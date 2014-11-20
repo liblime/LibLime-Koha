@@ -873,7 +873,7 @@
 	<span class="resultspub">
             <xsl:for-each select="marc:datafield[@tag=260]">
                     <xsl:call-template name="subfieldSelect">
-                        <xsl:with-param name="codes">bcg</xsl:with-param>
+                        <xsl:with-param name="codes">abc</xsl:with-param>
                     </xsl:call-template>
             </xsl:for-each>
 	</span>
