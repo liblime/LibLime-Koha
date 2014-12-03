@@ -30,6 +30,7 @@ use C4::Letters;
 use C4::Output;
 use Koha;
 use C4::Context;
+use C4::Biblio;
 
 
 my $query      = CGI->new();
