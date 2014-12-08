@@ -1238,7 +1238,8 @@ sub AddIssue {
     ## handle previously lost
     if (my $lostitem = GetLostItem($$item{itemnumber})) {
         ## whoever last lost this item will get credit that it was found
-        C4::Accounts::credit_lost_item($lostitem->{id});
+        ## if syspref is ON
+        C4::Accounts::credit_lost_item($lostitem->{id}) if C4::Context->preference("RefundReturnedLostItem");
         C4::LostItems::DeleteLostItem($$lostitem{id}); # FIXME: In AddReturn, staff is prompted to delete, but not here.
     }
 
@@ -1711,7 +1712,8 @@ sub AddReturn {
             barcode             => $barcode,
             lost_item_id        => $$lostitem{id},
         };
-        C4::Accounts::credit_lost_item($lostitem->{id}, exemptfine => $exemptfine );
+        # Refund lost item charge if syspref is ON
+        C4::Accounts::credit_lost_item($lostitem->{id}, exemptfine => $exemptfine ) if C4::Context->preference("RefundReturnedLostItem");
 
     }
 
