@@ -97,7 +97,8 @@ $(document).ready(function() {
     });
     $("button.issueFullRefund").click(function(){
     	$("#refundAmount").val(totaldue);
-        $("form#refundUnallocated").submit();
+        $("input.refundPayment[name='id']").each(function() { $(this).prop('checked', true); });
+        $("#refundSubmit").submit();
     });
     $("button.reallocate").click(function(){
       $("form#refundUnallocated")[0].reset();

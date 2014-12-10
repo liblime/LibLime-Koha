@@ -1156,8 +1156,6 @@ sub allocate_payment {
 func set_reallocate_flag($payment_id, $reallocate){
     my $dbh = C4::Context->dbh;
     $reallocate //= 1;
-    warn $payment_id;
-warn $reallocate;
     my $sth_reallocate = $dbh->prepare("UPDATE payments set reallocate=? where id=?");
     $sth_reallocate->execute($reallocate, $payment_id);
 }
