@@ -639,17 +639,27 @@ sub GetSubscriptions {
         $query .= ' biblio.biblionumber = ? OR';
         push(@bind, $biblionumber);
     }
-    if (defined $ISSN) {
-        $query .= ' biblioitems.issn LIKE ? OR';
-        push(@bind, $ISSN);
-    }
-    if ($title) {
-        $query .= ' (';
-        foreach my $title_element (split(/\s+/, $title)) {
-            $query .= ' biblio.title LIKE ? AND';
-            push(@bind, "%$title_element%");
+    else {
+        if (defined $ISSN and $title) {
+            $query .= ' ( biblioitems.issn = ? OR ' .
+                (join(' AND ', map{ qq{biblio.title LIKE "%$_%"} } split (/\s+/,$title))) .
+                ' )';
+            push(@bind, $ISSN);
         }
-        $query =~ s/ AND$/)/;
+        else {
+            if (defined $ISSN) {
+                $query .= ' biblioitems.issn LIKE ?';
+                push(@bind, "%" . $ISSN . "%");
+            }
+            else {
+                $query .= ' (';
+                foreach my $title_element (split(/\s+/, $title)) {
+                    $query .= ' biblio.title LIKE ? AND';
+                    push(@bind, "%$title_element%");
+                }
+                $query =~ s/ AND$/)/;
+            }
+        }
     }
     $query =~ s/ OR$//;
     $query .= ' ORDER BY title';
