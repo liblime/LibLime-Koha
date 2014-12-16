@@ -560,6 +560,7 @@ sub TooMany {
     }
 
     # Now count total loans against the limit for the branch
+    # If SystemWideIssueCap is set, this value will be compared to all issues
     my $branch_borrower_circ_rule = GetBranchBorrowerCircRule($branch, $cat_borrower);
     if (defined($branch_borrower_circ_rule->{maxissueqty})) {
         my @bind_params = ();
@@ -568,20 +569,27 @@ sub TooMany {
                                   WHERE borrowernumber = ? ";
         push @bind_params, $borrower->{borrowernumber};
 
-        if (C4::Context->preference('CircControl') eq 'PickupLibrary') {
-            $branch_count_query .= " AND issues.branchcode = ? ";
-            push @bind_params, $branch;
-        } elsif (C4::Context->preference('CircControl') eq 'PatronLibrary') {
-            ; # if branch is the patron's home branch, then count all loans by patron
-        } else {
-            $branch_count_query .= " AND items.homebranch = ? ";
-            push @bind_params, $branch;
+        # If SystemWideIssueCap is being used (i.e. > 0), don't limit issues
+        # to a particular branch and use it for $max_loans_allowed below.
+        unless (C4::Context->preference('SystemWideIssueCap')) {
+            if (C4::Context->preference('CircControl') eq 'PickupLibrary') {
+                $branch_count_query .= " AND issues.branchcode = ? ";
+                push @bind_params, $branch;
+            } elsif (C4::Context->preference('CircControl') eq 'PatronLibrary') {
+                ; # if branch is the patron's home branch, then count all loans by patron
+            } else {
+                $branch_count_query .= " AND items.homebranch = ? ";
+                push @bind_params, $branch;
+            }
         }
+
         my $branch_count_sth = $dbh->prepare($branch_count_query);
         $branch_count_sth->execute(@bind_params);
         my ($current_loan_count) = $branch_count_sth->fetchrow_array;
 
-        my $max_loans_allowed = $branch_borrower_circ_rule->{maxissueqty};
+        my $max_loans_allowed = (C4::Context->preference('SystemWideIssueCap'))
+            ? (C4::Context->preference('SystemWideIssueCap'))
+            : $branch_borrower_circ_rule->{maxissueqty};
         if ($current_loan_count >= $max_loans_allowed) {
             return "$current_loan_count / $max_loans_allowed";
         }

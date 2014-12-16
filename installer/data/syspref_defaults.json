@@ -3508,5 +3508,15 @@
       "tags" : [
          "Patrons"
       ]
+   },
+   "SystemWideIssueCap" : {
+      "explanation" : "System-wide Total Current Checkouts Allowed that will apply regardless of the CircControl setting. A value of 0 means this functionality is turned OFF.",
+      "options" : null,
+      "value" : "0",
+      "hidden" : false,
+      "type" : "Integer",
+      "tags" : [
+         "Circulation"
+      ]
    }
 }
