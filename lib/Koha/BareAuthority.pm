@@ -181,7 +181,7 @@ method csearch_string {
     return naco_from_field( $self->marc->field('1..'), subfields => 'a-z' );
 }
 
-func new_stub_from_field(Str $class, MARC::Field $f, Str $citation = undef) {
+func new_stub_from_field(Str $class, MARC::Field $f, Maybe[Str] $citation = undef) {
     my $heading_info = Koha::HeadingMap::bib_headings->{$f->tag}
         || Koha::Xcp->throw($f->tag.' is not a heading field');
 
