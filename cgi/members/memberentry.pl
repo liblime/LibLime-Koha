@@ -789,11 +789,11 @@ sub patron_attributes_form {
                 $newentry->{use_dropdown} = 0;
                 if ($attr_type->authorised_value_category()) {
                     $newentry->{use_dropdown} = 1;
-                    $newentry->{auth_val_loop} = GetAuthorisedValues($attr_type->authorised_value_category(), $attr->{value});
+                    my $authvals = GetAuthorisedValues($attr_type->authorised_value_category(), $attr->{value});
+                    $newentry->{auth_val_loop} = [ sort {lc($a->{lib}) cmp lc($b->{lib})} @{$authvals} ];
                 }
                 $i++;
                 $newentry->{form_id} = "patron_attr_$i";
-                #use Data::Dumper; die Dumper($entry) if  $entry->{use_dropdown};
                 push @attribute_loop, $newentry;
             }
         } else {
