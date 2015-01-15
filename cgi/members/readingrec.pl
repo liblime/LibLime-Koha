@@ -91,6 +91,7 @@ for (my $i=0;$i<$count;$i++){
 	( $line{charge} ) = sprintf( "%.2f", C4::Circulation::GetIssuingCharges( $issues->[$i]->{'itemnumber'}, $borrowernumber ) );
 	$line{replacementprice}=$issues->[$i]->{'replacementprice'};
 	$line{itemtype}=$issues->[$i]->{'itype'};
+	$line{branchcode}=$issues->[$i]->{'branchcode'};
 	push(@loop_reading,\%line);
 }
 
