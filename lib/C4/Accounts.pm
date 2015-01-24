@@ -1258,33 +1258,31 @@ sub chargelostitem{
     my $amount = $lost->{replacementprice} || $lost->{replacement_price} || 0;
     return unless $amount;
     $amount = Koha::Money->new($amount);
-    my $lost_item_charges = getcharges($lost->{borrowernumber}, itemnumber => $lost->{itemnumber}, accounttype => 'LOSTITEM');
-    unless(@$lost_item_charges){
-        my $accounttype = 'LOSTITEM';
-        # note issues.branchcode IS the circControl branch, but we might not have an issue.
-        # TODO: store circControl branch  AND issue_id in lost_items.
-        my $circControlBranch = C4::Circulation::GetCircControlBranch(
-               pickup_branch      => $lost->{holdingbranch},
-               item_homebranch    => $lost->{homebranch},
-               item_holdingbranch => $lost->{holdingbranch},
-               borrower_branch    => $lost->{borrower_branch} );
-        my $duedate = C4::Dates->new($lost->{'onloan'},'iso');
-        my %new_fee_info = (
-            borrowernumber => $lost->{'borrowernumber'},
-            amount         => $amount,
-            accounttype    => $accounttype,
-            branchcode     => $circControlBranch,
-            description    => $ACCT_TYPES{$accounttype}->{'description'} . ": $lost->{'title'}, due on " . $duedate->output(),
-            itemnumber     => $lost->{itemnumber},
-        );
-        _insert_new_fee( \%new_fee_info );    
-    }
+
+    my $accounttype = 'LOSTITEM';
+    # note issues.branchcode IS the circControl branch, but we might not have an issue.
+    # TODO: store circControl branch  AND issue_id in lost_items.
+    my $circControlBranch = C4::Circulation::GetCircControlBranch(
+           pickup_branch      => $lost->{holdingbranch},
+           item_homebranch    => $lost->{homebranch},
+           item_holdingbranch => $lost->{holdingbranch},
+           borrower_branch    => $lost->{borrower_branch} );
+    my $duedate = C4::Dates->new($lost->{'onloan'},'iso');
+    my %new_fee_info = (
+        borrowernumber => $lost->{'borrowernumber'},
+        amount         => $amount,
+        accounttype    => $accounttype,
+        branchcode     => $circControlBranch,
+        description    => $ACCT_TYPES{$accounttype}->{'description'} . ": $lost->{'title'}, due on " . $duedate->output(),
+        itemnumber     => $lost->{itemnumber},
+    );
+    _insert_new_fee( \%new_fee_info );
 
     # mark issue returned if checked out.
     # FIXME: we probably shouldn't have a lost item record and an issue record.
     # creation of lost item should probably force a return, or we should just leave it up to the caller.
     if($lost->{issue_id}){
-        C4::Circulation::MarkIssueReturned($lost->{'borrowernumber'},$lost->{itemnumber});    
+        C4::Circulation::MarkIssueReturned($lost->{'borrowernumber'},$lost->{itemnumber});
     } else {
         # Waive any overdue charges (but only if there was actually a lost item charge)
         if($amount){
