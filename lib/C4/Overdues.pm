@@ -305,6 +305,7 @@ sub ApplyFine {
                         borrowernumber => $issue->{borrowernumber},
                         itemnumber  => $issue->{itemnumber},
                         amount      => $amount,
+                        branchcode  => $branchcode,
                         accounttype => 'FINE',
                         description => "Overdue: $biblio->{'title'}, due on " . $duedate->output(),
                         );
