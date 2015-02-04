@@ -362,14 +362,22 @@ sub item_must_exist {
 sub item_is_on_hold {
     my $id = shift;
     my $dbh = C4::Context->dbh;
-    my $db_query =
-        q{SELECT reservenumber
-          FROM reserves
-          WHERE itemnumber=?
-          AND (found <> 'S' OR found IS NULL)
-          ORDER BY priority ASC LIMIT 1};
-    my $return = $dbh->selectrow_arrayref( $db_query, undef, $id );
-    return $return->[0];
+    my $db_query_item = q{SELECT reservenumber FROM reserves WHERE itemnumber = ?
+        AND (found <> 'S' OR found IS NULL) ORDER BY priority ASC LIMIT 1};
+    my $return_item = $dbh->selectrow_arrayref( $db_query_item, undef, $id );
+    return $return_item->[0] if $return_item->[0]; # There is an item level hold. Squawk early.
+
+    my $db_query_biblionumber = q{SELECT biblionumber FROM items WHERE itemnumber = ?};
+    my $return_biblionumber = $dbh->selectrow_arrayref( $db_query_biblionumber, undef, $id );
+
+    if ($return_biblionumber->[0]) { # We have a biblionumber. Let's see if we have a title level hold.
+        my $db_query_title = q{SELECT reservenumber FROM reserves WHERE biblionumber = ?
+            AND (found <> 'S' OR found IS NULL) ORDER BY priority ASC LIMIT 1};
+        my $return_title = $dbh->selectrow_arrayref( $db_query_title, undef, $return_biblionumber->[0] );
+        return $return_title->[0];
+    }
+
+    return 0; # In case we don't find a biblionumber.
 }
 
 sub checked_out {
