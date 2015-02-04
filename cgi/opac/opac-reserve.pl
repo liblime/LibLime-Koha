@@ -18,6 +18,7 @@
 use Koha;
 use CGI;
 use List::Util qw/first/;
+use Date::Calc qw/Date_to_Days/;
 use C4::Biblio;
 use C4::Items;
 use C4::Auth;    # checkauth, getborrowernumber.
@@ -262,6 +263,16 @@ if ( $borr->{debarred} && ($borr->{debarred} eq 1) ) {
     $template->param(
                      message  => 1,
                      debarred => 1
+                    );
+}
+# Account expiration was not being checked for some reason
+my $expiration_date = $borr->{dateexpiry};
+if ($expiration_date and $expiration_date ne '0000-00-00' and
+    Date_to_Days(split /-/,C4::Dates->today('iso')) > Date_to_Days(split /-/,$expiration_date)) {
+    $noreserves = 1;
+    $template->param(
+                     message  => 1,
+                     expired  => 1
                     );
 }
 
