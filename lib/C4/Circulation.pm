@@ -2145,8 +2145,17 @@ sub CanBookBeRenewed {
         $sth2->finish;
         my ( $resfound, $resrec ) = C4::Reserves::CheckReserves($itemnumber);
         if ($resfound) {
-            $renewokay = 0;
-            $error="on_reserve"
+            # If there are still items available, then active hold is OK
+            # Account for transfers?
+            my $biblio = GetBiblioFromItemNumber($itemnumber);
+            my %exclusions = ( itemlost => 1, withdrawn => 1, damaged => 1 );
+            if (my $num_avail = GetAvailableItemsCount($biblio->{biblionumber},undef,%exclusions)) {
+                $renewokay = 1;
+            }
+            else {
+                $renewokay = 0;
+                $error="on_reserve"
+            }
         }
 
     }
