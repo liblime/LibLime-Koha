@@ -410,7 +410,7 @@ sub DelBiblio {
 }
 
 sub GetAvailableItemsCount {
-    my ($biblionumber, $branchcode) = @_;
+    my ($biblionumber, $branchcode, %exclusions) = @_;
   
     my $query = 'SELECT COUNT(*)
                  FROM items
@@ -423,6 +423,15 @@ sub GetAvailableItemsCount {
     if ($branchcode) {
         $query .= ' AND items.holdingbranch = ?';
         push( @params, $branchcode );
+    }
+    if ($exclusions{itemlost}) {
+        $query .= ' AND items.itemlost IS NULL';
+    }
+    if ($exclusions{withdrawn}) {
+        $query .= ' AND items.wthdrawn = 0';
+    }
+    if ($exclusions{damaged}) {
+        $query .= ' AND items.damaged = 0';
     }
 
     my ($count) = C4::Context->dbh->selectrow_array($query, undef, @params);
