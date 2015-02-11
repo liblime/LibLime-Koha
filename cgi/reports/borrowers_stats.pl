@@ -73,7 +73,7 @@ my ($template, $borrowernumber, $cookie)
 				});
 $template->param(do_it => $do_it);
 if ($do_it) {
-	my $results = calculate($line, $column, $digits, $borstat,$borstat1 ,\@filters);
+	my $results = calculate($line, $column, $digits, $period, $borstat, $borstat1 ,\@filters);
 	if ($output eq "screen"){
 		$template->param(mainloop => $results);
 		output_html_with_http_headers $input, $cookie, $template->output;
@@ -161,7 +161,7 @@ sub catcodes_hash() {
 }
 
 sub calculate {
-	my ($line, $column, $digits, $status, $activity, $filters) = @_;
+	my ($line, $column, $digits, $period, $status, $activity, $filters) = @_;
 	my @mainloop;
 	my @loopfooter;
 	my @loopcol;
@@ -228,14 +228,14 @@ sub calculate {
 	my %cathash = ($line eq 'categorycode' or $column eq 'categorycode') ? &catcodes_hash : ();
 	push @loopfilter, {debug=>1, crit=>"\%cathash", filter=>join(", ", map {$cathash{$_}} sort keys %cathash)};
 
-	my $strsth = "SELECT distinctrow $linefield FROM borrowers WHERE $line IS NOT NULL ";
+	my $strsth = "SELECT DISTINCTROW $linefield FROM borrowers WHERE $line IS NOT NULL ";
 	$linefilter =~ s/\*/%/g;
     my @params;
 	if ( $linefilter ) {
         ( $strsth, @params ) = AddCondition( $strsth, $linefield, $linefilter );
 	}
 	$strsth .= " AND $status='1' " if ($status);
-	$strsth .=" order by $linefield";
+	$strsth .=" ORDER BY $linefield";
 	
 	push @loopfilter, {sql=>1, crit=>"Query", filter=>$strsth};
 	my $sth = $dbh->prepare($strsth);
@@ -258,13 +258,13 @@ sub calculate {
 	} else {
 		$colfield = $column;
 	}
-	my $strsth2 = "select distinctrow $colfield from borrowers where $column is not null";
+	my $strsth2 = "SELECT DISTINCTROW $colfield FROM borrowers WHERE $column IS NOT NULL";
     my @colvalues;
 	if ($colfilter) {
         ( $strsth2, @colvalues ) = AddCondition( $strsth2, $colfield, $colfilter );
 	}
 	$strsth2 .= " AND $status='1' " if ($status);
-	$strsth2 .= " order by $colfield";
+	$strsth2 .= " ORDER BY $colfield";
 	push @loopfilter, {sql=>1, crit=>"Query", filter=>$strsth2};
 	my $sth2 = $dbh->prepare($strsth2);
 	if (@colvalues) {
@@ -299,22 +299,22 @@ sub calculate {
 	my $strcalc .= "SELECT $linefield, $colfield, count( * ) FROM borrowers WHERE 1 ";
 	$strcalc = AddCondition( $strcalc, 'categorycode', @$filters[0], 0 ) if ( @$filters[0] );
 	@$filters[1]=~ s/\*/%/g if (@$filters[1]);
-	$strcalc .= " AND zipcode like '" . @$filters[1] ."'" if ( @$filters[1] );
+	$strcalc .= " AND zipcode LIKE '" . @$filters[1] ."'" if ( @$filters[1] );
 	$strcalc = AddCondition( $strcalc, 'branchcode', @$filters[2], 0 ) if ( @$filters[2] );
 	@$filters[3]=~ s/\*/%/g if (@$filters[3]);
 	$strcalc .= " AND dateofbirth > '" . @$filters[3] ."'" if ( @$filters[3] );
 	@$filters[4]=~ s/\*/%/g if (@$filters[4]);
 	$strcalc .= " AND dateofbirth < '" . @$filters[4] ."'" if ( @$filters[4] );
     @$filters[5]=~ s/\*/%/g if (@$filters[5]);
-    $strcalc .= " AND sex like '" . @$filters[5] ."'" if ( @$filters[5] );
+    $strcalc .= " AND sex LIKE '" . @$filters[5] ."'" if ( @$filters[5] );
     @$filters[6]=~ s/\*/%/g if (@$filters[6]);
-	$strcalc .= " AND sort1 like '" . @$filters[6] ."'" if ( @$filters[6] );
+	$strcalc .= " AND sort1 LIKE '" . @$filters[6] ."'" if ( @$filters[6] );
 	@$filters[7]=~ s/\*/%/g if (@$filters[7]);
-	$strcalc .= " AND sort2 like '" . @$filters[7] ."'" if ( @$filters[7] );
-	$strcalc .= " AND borrowernumber in (select distinct(borrowernumber) from old_issues where issuedate > '" . $newperioddate . "')" if ($activity eq 'active');
-	$strcalc .= " AND borrowernumber not in (select distinct(borrowernumber) from old_issues where issuedate > '" . $newperioddate . "')" if ($activity eq 'nonactive');
+	$strcalc .= " AND sort2 LIKE '" . @$filters[7] ."'" if ( @$filters[7] );
+	$strcalc .= " AND borrowernumber IN (SELECT DISTINCT(borrowernumber) FROM old_issues WHERE borrowernumber = borrowers.borrowernumber AND issuedate > '" . $newperioddate . "')" if ($activity eq 'active');
+	$strcalc .= " AND borrowernumber NOT IN (SELECT DISTINCT(borrowernumber) FROM old_issues WHERE borrowernumber = borrowers.borrowernumber AND issuedate > '" . $newperioddate . "')" if ($activity eq 'inactive');
 	$strcalc .= " AND $status='1' " if ($status);
-	$strcalc .= " group by $linefield, $colfield";
+	$strcalc .= " GROUP BY $linefield, $colfield";
 	push @loopfilter, {sql=>1, crit=>"Query", filter=>$strcalc};
 	my $dbcalc = $dbh->prepare($strcalc);
 	$dbcalc->execute;
