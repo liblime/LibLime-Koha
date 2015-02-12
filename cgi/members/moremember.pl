@@ -141,6 +141,12 @@ $data->{'IS_ADULT'} = ( $data->{'categorycode'} ne 'I' );
 for (qw(debarred gonenoaddress lost borrowernotes exclude_from_collection)) {
 	 $data->{$_} and $template->param(flagged => 1) and last;
 }
+# Flag patron for exceeding circ threshold as well
+my $borrower = GetMemberDetails($borrowernumber);
+my $flags = $borrower->{'flags'};
+foreach my $flag (sort keys %{$flags}) {
+  $template->param(flagged => 1) if (($flags->{$flag}->{'noissues'}) && ($flag eq 'CHARGES'));
+}
 
 $data->{'ethnicity'} = fixEthnicity( $data->{'ethnicity'} );
 $data->{ 'sex_'. ($data->{sex} // '') .'_p' } = 1;

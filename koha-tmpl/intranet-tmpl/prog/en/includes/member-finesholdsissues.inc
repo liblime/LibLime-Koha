@@ -220,11 +220,23 @@ function confirmCancelWaiting(that) {
       <!-- /TMPL_IF -->
       <!-- /TMPL_IF -->
       <!-- TMPL_IF NAME="dispreturn" -->
-      <input type="submit" name="renew_checked" value="Renew or Return checked items" />
+        <!-- TMPL_IF NAME="flagged" -->
+          <input type="submit" name="renew_checked" value="Renew or Return checked items" onclick="return confirm('If renewing, the account is flagged.  Are you sure you want to renew?')"/>
+        <!-- TMPL_ELSE -->
+          <input type="submit" name="renew_checked" value="Renew or Return checked items" />
+        <!-- /TMPL_IF -->
       <!--TMPL_ELSE-->
-      <input type="submit" name="renew_checked" value="Renew checked items" />
+        <!-- TMPL_IF NAME="flagged" -->
+          <input type="submit" name="renew_checked" value="Renew checked items" onclick="return confirm('The account is flagged.  Are you sure you want to renew?')" />
+        <!-- TMPL_ELSE -->
+          <input type="submit" name="renew_checked" value="Renew checked items" />
+        <!-- /TMPL_IF -->
       <!-- /TMPL_IF -->
-      <input type="submit" id="renew_all" name="renew_all" value="Renew all" />
+      <!-- TMPL_IF NAME="flagged" -->
+        <input type="submit" id="renew_all" name="renew_all" value="Renew all" onclick="return confirm('The account is flagged.  Are you sure you want to renew?')" />
+      <!--TMPL_ELSE-->
+        <input type="submit" id="renew_all" name="renew_all" value="Renew all" />
+      <!-- /TMPL_IF -->
       <!-- TMPL_IF NAME="dispreturn" -->
       <input type="submit" id="return_all" name="return_all" value="Return all" />
       <!-- /TMPL_IF -->
