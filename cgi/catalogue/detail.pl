@@ -193,7 +193,7 @@ foreach my $item (@items) {
         $item->{ReservedForBorrowernumber} = $hold->{borrowernumber};
         $item->{ReservedForSurname}     = $itemBorrowerReserveInfo->{'surname'};
         $item->{ReservedForFirstname}   = $itemBorrowerReserveInfo->{'firstname'};
-        $item->{cardnumber}             = $itemBorrowerReserveInfo->{'cardnumber'};
+        $item->{ReservedForCardNumber}  = $itemBorrowerReserveInfo->{'cardnumber'};
     }
 
 	# Check the transit status
