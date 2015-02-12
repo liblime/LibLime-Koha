@@ -46,7 +46,7 @@
         <!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="canreservefromotherbranches" -->for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="ReservedForBorrowernumber" -->">
             <!-- TMPL_IF NAME="hidepatronname" -->
-              <!-- TMPL_VAR NAME="cardnumber" -->
+              <!-- TMPL_VAR NAME="ReservedForCardNumber" -->
             <!-- TMPL_ELSE -->
               <!-- TMPL_VAR NAME="ReservedForFirstname" --> <!-- TMPL_VAR NAME="ReservedForSurname" -->
             <!-- /TMPL_IF -->
