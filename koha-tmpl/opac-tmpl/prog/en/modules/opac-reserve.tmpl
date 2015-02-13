@@ -147,6 +147,10 @@
         $("#selections").val(selections);
         $("#biblionumbers").val(biblionumbers);
 
+        // Keyboard entries or double clicks cause potential double form submission
+        $("form[name='placehold']").submit(); // Needed for Chrome
+        $(".placehold").attr("disabled",true);
+
         return true;
     });
 
@@ -255,7 +259,7 @@
                 <!-- /TMPL_LOOP -->
               </h3>
 		<div id="HoldsConfirmMsg"></div>
-            <form action="/cgi-bin/koha/opac-reserve.pl" method="post">
+            <form action="/cgi-bin/koha/opac-reserve.pl" method="post" name="placehold">
             <input type="hidden" name="place_reserve" value="1"/>
 
 

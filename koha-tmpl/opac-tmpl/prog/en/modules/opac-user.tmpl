@@ -15,6 +15,10 @@ $.tablesorter.addParser({
     type: 'text' 
 });
             $(function() {
+                $(".renew_all").click(function() {
+                    $("form[name='renew_all']").submit(); // Needed for Chrome
+                    $(".renew_all").attr("disabled",true);
+                });
             $('#opac-user-views').tabs();
 			$("#aholdst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
 		dateFormat: 'uk',<!-- /TMPL_IF -->
@@ -77,7 +81,7 @@ $.tablesorter.addParser({
 				<!-- /TMPL_IF -->
 			});
 <!-- TMPL_IF NAME="GoogleJackets" -->KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF -->
-            });
+            }); // end ready
 //]]>
 
 function checkDates(){
@@ -296,13 +300,13 @@ function isValidDate(theFieldName){
         <!-- /TMPL_LOOP --></tbody>
         </table>
 		<!-- TMPL_IF name="OpacRenewalAllowed" -->
-		<form action="/cgi-bin/koha/opac-renew.pl" method="post">
+		<form action="/cgi-bin/koha/opac-renew.pl" method="post" name="renew_all">
 			<input type="hidden" name="from" value="opac_user" />
 			<input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
 			<!-- TMPL_LOOP NAME="ISSUES" -->
 			<input type="hidden" name="item" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
 			<!-- /TMPL_LOOP -->
-			<!-- TMPL_UNLESS name="patron_flagged" --><input type="submit" value="Renew All" /><!-- /TMPL_UNLESS -->
+			<!-- TMPL_UNLESS name="patron_flagged" --><input type="submit" value="Renew All" class="renew_all" /><!-- /TMPL_UNLESS -->
 		</form>
 		<!-- /TMPL_IF -->
     <!-- TMPL_ELSE -->

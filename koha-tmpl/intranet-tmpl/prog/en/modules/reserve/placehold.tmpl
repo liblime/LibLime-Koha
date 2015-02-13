@@ -113,6 +113,11 @@ function check() {
     $("input.warning").click(function() {
         return confirm( _( 'Patron has exceeded hold limits.' ) + "\n\n" + _( 'Place hold?' ) );
     });
+    // Keyboard entries or double clicks cause potential double form submission
+    $("input.submit").click(function() {
+        $("form[name='form']").submit(); // Needed for Chrome
+        $("input.submit").attr("disabled",true);
+    });
  	$("#requestany").click(function() {
 		if($(this).prop('checked')){
 		$("input[name=checkitem]").each(function() {
@@ -323,7 +328,7 @@ function check() {
          <!-- TMPL_ELSIF NAME="none_available" -->
                     <input type="submit" disabled="disabled" value="Place Hold" />
          <!-- TMPL_ELSE -->
-                    <input type="submit" value="Place Hold" />
+                    <input type="submit" class="submit" value="Place Hold" />
          <!-- /TMPL_IF -->
       <!-- /TMPL_IF -->
         </fieldset>
@@ -500,7 +505,7 @@ function check() {
             <!-- TMPL_ELSIF NAME="none_available" -->
                 <input type="submit" disabled="disabled" value="Place Hold" />
             <!-- TMPL_ELSE -->
-                <input type="submit" value="Place Hold" />
+                <input type="submit" class="submit" value="Place Hold" />
             <!-- /TMPL_IF -->
         <!-- /TMPL_IF -->
     </fieldset>
