@@ -236,26 +236,26 @@ sub calculate {
     @$filters[0]=~ s/\*/%/g if (@$filters[0]);
     $strcalc = AddCondition( $strcalc, "borrowers.categorycode", @$filters[0], 0 ) if ( @$filters[0] );
     if (@$filters[1]){
-        my $strqueryfilter="SELECT DISTINCT borrowernumber FROM old_issues where old_issues.timestamp> @$filters[1] ";
+        my $strqueryfilter="SELECT DISTINCT borrowernumber FROM old_issues WHERE borrowernumber = borrowers.borrowernumber AND old_issues.timestamp > @$filters[1] ";
 #        my $queryfilter = $dbh->prepare("SELECT DISTINCT borrowernumber FROM old_issues where old_issues.timestamp> ".format_date_in_iso(@$filters[1]));
-        $strcalc .= " AND borrowers.borrowernumber not in ($strqueryfilter)";
+        $strcalc .= " AND borrowers.borrowernumber NOT IN ($strqueryfilter)";
         
 # 		$queryfilter->execute(@$filters[1]);
 # 		while (my ($borrowernumber)=$queryfilter->fetchrow){
 # 			$strcalc .= " AND borrowers.borrowernumber <> $borrowernumber ";
 # 		}
     } else {
-        my $strqueryfilter="SELECT DISTINCT borrowernumber FROM old_issues ";
+        my $strqueryfilter="SELECT DISTINCT borrowernumber FROM old_issues WHERE borrowernumber = borrowers.borrowernumber";
 #        my $queryfilter = $dbh->prepare("SELECT DISTINCT borrowernumber FROM old_issues ");
 #        $queryfilter->execute;
-        $strcalc .= " AND borrowers.borrowernumber not in ($strqueryfilter)";
+        $strcalc .= " AND borrowers.borrowernumber NOT IN ($strqueryfilter)";
 # 		while (my ($borrowernumber)=$queryfilter->fetchrow){
 # 			$strcalc .= " AND borrowers.borrowernumber <> $borrowernumber ";
 # 		}
     }
-    $strcalc .= " group by borrowers.borrowernumber";
+    $strcalc .= " GROUP BY borrowers.borrowernumber";
     $strcalc .= ", $colfield" if ($column);
-    $strcalc .= " order by $colfield " if ($colfield);
+    $strcalc .= " ORDER BY $colfield " if ($colfield);
     my $max;
     if ($line) {
         if (@loopcol) {
