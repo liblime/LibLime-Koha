@@ -214,7 +214,7 @@ for my $upcoming ( @$upcoming_dues ) {
                                     } );
             $upcoming->{'title'} = $biblio->{'title'};
             push @Ttitems,$upcoming;
-            C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'1') if ($use_tt && $letter);
+            C4::Letters::CreateTALKINGtechMESSAGE($upcoming->{'borrowernumber'},\@Ttitems,$letter->{ttcode},'0') if ($use_tt && $letter);
         }
     }
 
@@ -308,7 +308,7 @@ for my $borrowernumber ( keys %{ $upcoming_digest} ) {
                                                   'items.content' => $titles
                                                 }
                          } );
-    C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'1') if ($use_tt && $letter);
+    C4::Letters::CreateTALKINGtechMESSAGE($borrowernumber,\@Ttitems,$letter->{ttcode},'0') if ($use_tt && $letter);
 
     # Skip the email if an SMS number is available and Talking Tech is in use
     next if ($borrower->{smsalertnumber} && C4::Context->preference('TalkingTechEnabled'));
