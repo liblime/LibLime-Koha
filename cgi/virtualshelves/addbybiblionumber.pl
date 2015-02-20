@@ -108,7 +108,8 @@ if ( $shelfnumber || ( $shelfnumber == -1 ) ) {    # the shelf already exist.
 }
 else {    # this shelf doesn't already exist.
     my $limit = 10;
-    my ($shelflist) = GetRecentShelves(1, $limit, $loggedinuser);
+    # Don't limit private (parameter 1 below) lists
+    my ($shelflist) = GetRecentShelves(1, undef, $loggedinuser);
     my @shelvesloop;
     my %shelvesloop;
     for my $shelf ( @{ $shelflist->[0] } ) {
