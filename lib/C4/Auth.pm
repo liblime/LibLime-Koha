@@ -814,7 +814,7 @@ sub checkauth {
                 # and the number of lists to be displayed of each type in the 'Lists' button drop down
                 my $row_count = 10; # FIXME:This probably should be a syspref
                 my ($total, $totshelves, $barshelves, $pubshelves);
-                ($barshelves, $totshelves) = C4::VirtualShelves::GetRecentShelves(1, $row_count, $borrowernumber);
+                ($barshelves, $totshelves) = C4::VirtualShelves::GetRecentShelves(1, undef, $borrowernumber); # Don't limit private lists
                 $total->{'bartotal'} = $totshelves;
                 ($pubshelves, $totshelves) = C4::VirtualShelves::GetRecentShelves(2, $row_count, undef);
                 $total->{'pubtotal'} = $totshelves;
