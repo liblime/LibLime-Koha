@@ -128,6 +128,8 @@ else {
 	}
 
 	my @biblios;
+        # Bibs being passed as URL query string in the form ###/###/###/
+        @biblionumber = split( /\//, $biblionumber[0]) if ($biblionumber[0] =~ /\/$/);
 	for my $bib (@biblionumber) {
                 $bib =~ s/[^\d]//g;
 		my $data = GetBiblioData( $bib );
