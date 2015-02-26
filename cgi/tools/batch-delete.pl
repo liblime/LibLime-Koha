@@ -265,7 +265,16 @@ sub delete_item {
 }
 
 sub _delete_item {
-    my ($id, $delete_title) = @_;
+    my ($id, $delete_title) = @_; # $id is itemnumber
+
+    # If checked out, create lost item, return, and charge the patron.
+    # Needed to move the calling of these actions up before item was
+    # deleted out of items table.
+    if (checked_out($id)) {
+      my $issue = C4::Circulation::GetItemIssue($id);
+      my $lost_id = C4::LostItems::CreateLostItem($id,$issue->{borrowernumber});
+      C4::Accounts::chargelostitem($lost_id);
+    }
 
     # Delete the item.
     my $dbh = C4::Context->dbh;
@@ -276,9 +285,6 @@ sub _delete_item {
     if ( $delete_title && !items_attached($item->{biblionumber}) ) {
         _delete_title( $item->{biblionumber} );
     }
-
-    # If checked out, charge the patron.
-    C4::Accounts::chargelostitem($id) if checked_out($id);
 
     return 'OK';
 }
