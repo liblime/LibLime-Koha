@@ -91,11 +91,11 @@ my ($sqlorderby, $sqldatewhere) = ("","");
 $debug and warn format_date_in_iso($startdate) . "\n" . format_date_in_iso($enddate);
 my @query_params = ();
 if ($startdate) {
-    $sqldatewhere .= " AND reservedate >= ?";
+    $sqldatewhere .= " AND DATE(reservedate) >= ?";
     push @query_params, format_date_in_iso($startdate);
 }
 if ($enddate) {
-    $sqldatewhere .= " AND reservedate <= ?";
+    $sqldatewhere .= " AND DATE(reservedate) <= ?";
     push @query_params, format_date_in_iso($enddate);
 }
 
@@ -155,7 +155,7 @@ AND reserves.itemnumber IS NULL
 AND items.itemnumber NOT IN (SELECT itemnumber FROM branchtransfers where datearrived IS NULL)
 AND items.itemnumber NOT IN (SELECT itemnumber FROM issues WHERE itemnumber IS NOT NULL)
 AND reserves.priority <> 0 
-AND notforloan = 0 AND damaged = 0 AND itemlost = 0 AND wthdrawn = 0
+AND notforloan = 0 AND damaged = 0 AND itemlost IS NULL AND wthdrawn = 0
 ";
 # GROUP BY reserves.biblionumber allows only items that are not checked out, else multiples occur when 
 #    multiple patrons have a hold on an item
