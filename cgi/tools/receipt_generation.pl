@@ -289,6 +289,20 @@ sub _get_fines_data {
         for my $data (@$loopdata){
             $data->{amount} = -1* $data->{amount};
             $data->{"fees-payments.".$_} = (($_ =~ /amount/) ? $data->{$_}->value : $data->{$_}) for (keys %$data);  # fake the 'table name'
+            # Cycle through the non-lost item transactions (which are
+            # accounted for differently) to get the title of the item
+            # from the fee description.
+            if ($data->{description} !~ /^Lost Item/) {
+                my $num_trans = scalar @{$data->{transactions}};
+                if ($num_trans) {
+                    for my $nt (0..$num_trans-1) {
+                        my $fee_id = $data->{transactions}[$nt]->{fee_id};
+                        my $fee = C4::Accounts::getfee($fee_id);
+                        my $trans_amt = sprintf "%.2f", (-1 * $data->{transactions}[$nt]->{amount}->value);
+                        $data->{'fees-payments.description'} .= "<br>&nbsp;&nbsp;&nbsp;&nbsp;$fee->{description}:&nbsp;&nbsp;$trans_amt";
+                    }
+                }
+            }
         }
     } elsif($when eq 'recentfines'){
         #Include last 7 fines.
