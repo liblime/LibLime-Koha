@@ -236,7 +236,7 @@ for my $fee (@$accruingfees){
 
 # display account summary, regardless of $op.
 
-my $totaldue = C4::Accounts::gettotalowed($borrowernumber);
+my $totaldue = C4::Accounts::gettotalowed($borrowernumber,C4::Context->preference('ExcludeAccruingInTotal'));
 my $totalaccruing = C4::Accounts::gettotalaccruing($borrowernumber);
 
 # FIXME: deprecate this vvv

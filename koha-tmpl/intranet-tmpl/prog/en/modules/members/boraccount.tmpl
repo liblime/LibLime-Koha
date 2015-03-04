@@ -96,8 +96,10 @@ $(document).ready(function() {
         }
     });
     $("button.issueFullRefund").click(function(){
-    	$("#refundAmount").val(totaldue);
+        var toRefund = 0.0;
         $("input.refundPayment[name='id']").each(function() { $(this).prop('checked', true); });
+        $("input.refundPayment[name='id']:checked").each(function(){ toRefund += parseFloat($(this).data('amount')); });
+        $("#refundAmount").val(toRefund);
         $("#refundSubmit").submit();
     });
     $("button.reallocate").click(function(){
