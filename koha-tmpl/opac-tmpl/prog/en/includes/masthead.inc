@@ -153,7 +153,7 @@
     <span class="search_desc">Your search:</span> <ul><li class="searchTerm">&ldquo;<!-- TMPL_VAR NAME="user_query" ESCAPE="HTML"-->&rdquo;</li></ul>
     <!-- TMPL_IF "user_limit" --><span class="search_desc">Limited to:</span> <ul><!-- TMPL_LOOP user_limit --><li class="limit"><!-- TMPL_VAR "limit_desc" ESCAPE="HTML"--></li><!-- /TMPL_LOOP --> </ul><!-- /TMPL_IF -->
     <p class="resultscount">Returned <span class="numresults"><!-- TMPL_VAR NAME="total" --></span> results.
-    <span class="rssfeed"><a href="/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" -->&amp;format=rss2"><img src="/opac-tmpl/prog/images/feed-icon-16x16.png" alt="Subscribe to this search" title="Subscribe to this search" border="0" /></a></span></p>
+    <span class="rssfeed"><a href="/cgi-bin/koha/opac-search.pl?q=<!-- TMPL_VAR name="user_query" ESCAPE="URL" --><!-- TMPL_LOOP user_limit -->&amp;limit=<!-- TMPL_VAR limit ESCAPE="URL" --><!-- /TMPL_LOOP -->&amp;format=rss2"><img src="/opac-tmpl/prog/images/feed-icon-16x16.png" alt="Subscribe to this search" title="Subscribe to this search" border="0" /></a></span></p>
     </div>
 <!-- TMPL_ELSE -->
   <!-- TMPL_UNLESS search_form -->
