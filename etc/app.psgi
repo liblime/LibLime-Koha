@@ -17,7 +17,7 @@ my $branches = Koha::Squatting::Branch->init;
 builder {
     enable '+Koha::Plack::WarnPrefix';
 
-    enable_if { $_[0]->{REMOTE_ADDR} eq '127.0.0.1' } 'ReverseProxy';
+    enable 'ReverseProxy';
 
     enable 'Deflater';
     enable 'HTTPExceptions';
