@@ -263,44 +263,62 @@ Returns an arrayref of fines hashrefs, most recent first.
 =cut
 
 sub getcharges {
-	my $borrowernumber = shift || return;
-    my %options = @_ ;
-	my $dbh        = C4::Context->dbh;
-	my $query = " SELECT * FROM fees JOIN fee_transactions AS ft on(id = fee_id)
-                                WHERE borrowernumber = ? and accounttype in (select accounttype from accounttypes where class='fee' or class='invoice') ";
+    my $borrowernumber = shift || return;
     my @bind = ($borrowernumber);
-    if($options{since}){
+
+    my %options = @_;
+    my $dbh = C4::Context->dbh;
+    my $query = qq{
+        SELECT * FROM fees
+        JOIN fee_transactions AS ft ON(id = fee_id)
+        WHERE borrowernumber = ?
+            AND accounttype IN (select accounttype from accounttypes where class='fee' or class='invoice')
+        };
+
+    if ($options{since}) {
         $query .= " AND timestamp > ? ";
         push @bind, (ref $options{since} eq 'C4::Dates') ? $options{since}->output('iso') : $options{since};
     }
-    if($options{itemnumber}){
+
+    if($options{itemnumber}) {
         $query .= " AND itemnumber = ? ";
         push @bind, $options{itemnumber};
-    }    
-    if($options{accounttype}){
+    }
+
+    if ($options{accounttype}) {
         $query .= " AND accounttype = ? ";
         push @bind, $options{accounttype};
     }
+
     $query .= " ORDER BY ft.timestamp DESC";
-    if($options{limit}){
+
+    if ($options{limit}) {
         $query .= " LIMIT ? ";
         push @bind, $options{limit};
     }
-    my $sth = $dbh->prepare($query);
-	$sth->execute( @bind);
-    my @results;
-    my $sth_outstanding = $dbh->prepare("select sum(amount) from fees LEFT JOIN fee_transactions on(fees.id=fee_transactions.fee_id) where fees.id = ?");
 
-    while ( my $data = $sth->fetchrow_hashref ) {
-        $sth_outstanding->execute( $data->{fee_id} );
+    my $sth = $dbh->prepare($query);
+    $sth->execute(@bind);
+
+    my @results;
+    my $sth_outstanding = $dbh->prepare("SELECT SUM(amount) FROM fees LEFT JOIN fee_transactions ON(fees.id=fee_transactions.fee_id) WHERE fees.id = ?");
+
+    while (my $data = $sth->fetchrow_hashref) {
+        $sth_outstanding->execute($data->{fee_id});
+
         my ($outstanding) = $sth_outstanding->fetchrow_array;
-        if($options{'outstanding'}){
+
+        if ($options{'outstanding'}) {
             next unless($outstanding > 0);
         }
+
         $data->{'amountoutstanding'} = Koha::Money->new($outstanding);
-        $data->{'amount'} = Koha::Money->new($data->{amount});
-		push @results,$data;
-	}
+        $data->{'amount'}            = Koha::Money->new($data->{amount});
+
+        push @results, $data;
+    }
+
+
     return \@results;
 }
 
@@ -345,28 +363,35 @@ options:  payments => 1  will only return payments, not waives.
 =cut
 
 sub getcredits {
-	my $fee_id = shift;
+    my $fee_id = shift;
     my %options = @_;
 
-	my $dbh = C4::Context->dbh;
+    my $dbh = C4::Context->dbh;
     my @ptypes = _get_accounttypes('payment');
     my @ttypes = _get_accounttypes('transaction');
-    my @accounttypes =  ($options{payments}) ? @ptypes : ( @ptypes, @ttypes );
-    my $placeholders = join(',', map {'?'} @accounttypes);
-	my $sth = $dbh->prepare(   "SELECT * FROM fee_transactions LEFT JOIN payments on(fee_transactions.payment_id = payments.id)
-                                WHERE fee_id = ?
-                                AND accounttype IN ($placeholders)
-                                ORDER BY timestamp DESC"
-                           );
-    $sth->execute( $fee_id, @accounttypes );
-    my @results;
-    while(my $data = $sth->fetchrow_hashref){
-        $data->{'amount'} = Koha::Money->new($data->{amount});
-        $data->{date} = $data->{timestamp} unless $data->{date};  # transaction types don't have date.
-        push @results,$data;
-    }
-    return \@results;
 
+    my @accounttypes =  ($options{payments}) ? @ptypes : ( @ptypes, @ttypes );
+    my $placeholders = join(',', map {'?'} @accounttypes); # FIXME: this passes in an array with anon hashes every other value.
+
+    my $query = qq{
+        SELECT * FROM fee_transactions
+        LEFT JOIN payments ON(fee_transactions.payment_id = payments.id)
+        WHERE fee_id = ?
+        AND accounttype IN ($placeholders)
+        ORDER BY timestamp DESC
+    };
+
+    my $sth = $dbh->prepare($query);
+    $sth->execute($fee_id, @accounttypes);
+    my @results;
+
+    while (my $data = $sth->fetchrow_hashref) {
+        $data->{'amount'} = Koha::Money->new($data->{amount});
+        $data->{date} = $data->{timestamp} unless $data->{date}; # transaction types don't have date.
+        push @results, $data;
+    }
+
+    return \@results;
 }
 
 =head2 gettotalowed
@@ -432,16 +457,24 @@ Get information about a Koha fine from the fees and fee_transactions tables, inc
 sub getfee {
     my $fee_id = shift;
     my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM fees JOIN fee_transactions ON(fees.id = fee_transactions.fee_id)
-                                WHERE fees.id = ?
-                                AND  accounttype in (select accounttype from accounttypes where class IN ('fee', 'invoice'))");
-    $sth->execute( $fee_id );
+
+    my $query_fee = qq{
+        SELECT * FROM fees
+        LEFT JOIN fee_transactions ON (fees.id = fee_transactions.fee_id)
+        WHERE fees.id = ?
+            AND accounttype IN (SELECT accounttype FROM accounttypes WHERE class IN ('fee', 'invoice'))
+    };
+
+    my $sth = $dbh->prepare($query_fee);
+    $sth->execute($fee_id);
     my $fee = $sth->fetchrow_hashref;
     my $sth_outstanding = $dbh->prepare("select sum(amount) from fees LEFT JOIN fee_transactions on(fees.id=fee_transactions.fee_id) where fees.id = ?");
     $sth_outstanding->execute( $fee_id );
     my ($outstanding) = $sth_outstanding->fetchrow_array;
+
     $fee->{'amountoutstanding'} = Koha::Money->new($outstanding);
-    $fee->{'amount'} = Koha::Money->new($fee->{amount});
+    $fee->{'amount'}            = Koha::Money->new($fee->{amount});
+
     return $fee;
 }
 
@@ -655,63 +688,89 @@ Returns dbh error on error.
 sub ApplyCredit {
     my $fee = shift or return;
     my $action = shift;
-    # $dbh->{AutoCommit} = 0;  TODO: transaction.
+
     my $dbh = C4::Context->dbh;
+    # $dbh->{AutoCommit} = 0;  TODO: transaction.
+
     $fee = getfee($fee) unless ref $fee;
-    $action = { accounttype => $action } unless ref($action);  # allow action to be passed in as scalar accounttype.
-    $debug and warn "updating fee $fee->{'id'} . action: $action->{'accounttype'}";
-    my ( $new_pmt, $pmt_error, $trans_inserted, $trans_error );
+    $action = { accounttype => $action } unless ref $action; # Allow action to be passed in as scalar accounttype.
+
+    $debug and warn "updating fee '$fee->{id}', action: '$action->{accounttype}'";
+
+    my ($new_pmt, $pmt_error, $trans_inserted, $trans_error);
     my $userenv = C4::Context->userenv();
-    $action->{'operator_id'} = $userenv->{'number'} if( ! defined($action->{'operator_id'}) && $userenv);
-    $action->{'branchcode'} = $userenv->{'branch'} if( ! defined($action->{'branchcode'}) && $userenv);
-    $action->{'amount'} = Koha::Money->new($action->{amount}) if(defined $action->{amount});
-    
-    my $transaction = { fee_id          => $fee->{id},
-                        borrowernumber  => $fee->{'borrowernumber'},
-                        operator_id     => $action->{'operator_id'},
-                        branchcode      => $action->{'branchcode'},
+
+    $action->{operator_id} = $userenv->{number} if ( !defined $action->{operator_id} && $userenv );
+    $action->{branchcode}  = $userenv->{branch} if ( !defined $action->{branchcode}  && $userenv );
+    $action->{amount}      = Koha::Money->new($action->{amount}) if(defined $action->{amount});
+
+    my $transaction = {
+                        fee_id          => $fee->{id},
+                        borrowernumber  => $fee->{borrowernumber},
+                        operator_id     => $action->{operator_id},
+                        branchcode      => $action->{branchcode},
                         accounttype     => $action->{accounttype},
-                        notes           => $action->{'notes'},
+                        notes           => $action->{notes},
                         description     => $action->{description},
                       };
-    $transaction->{timestamp} = $transaction->{'date'} = $action->{'date'} if($action->{'date'});
+
+    $transaction->{timestamp} = $transaction->{date} = $action->{date} if $action->{date};
     my $acct_types = getaccounttypes();
-    if($action && $action->{accounttype}){
-        if($acct_types->{$action->{accounttype}}->{class} eq 'transaction') {
-            $transaction->{amount} =  (defined $action->{amount}) ? $action->{amount} : -1 * $fee->{amountoutstanding};
-            if($transaction->{amount} >= 0 || $transaction->{amount} < -1 * $fee->{'amountoutstanding'}){
-                warn "ApplyCredit received a positive credit or excess writeoff.  Borrower $fee->{borrowernumber}, fee $fee->{id} , attempt to credit $transaction->{amount} against $fee->{'amountoutstanding'} "; # indicates bad call. 
+
+    if ($action && $action->{accounttype}) {
+
+        if ( $acct_types->{$action->{accounttype}}->{class} eq 'transaction' ) { # TRANSACTION
+
+            $transaction->{amount} =  (defined $action->{amount}) ? $action->{amount} : (-1 * $fee->{amountoutstanding}) ;
+
+            if ( ($transaction->{amount} >= 0) || ( $transaction->{amount} < (-1 * $fee->{amountoutstanding}) ) ) { # Bad call: positive credit or excess writeoff NOT PERMITTED!
+                warn "ApplyCredit [transaction] received a positive credit or excess writeoff: " .
+                    "borrower '$fee->{borrowernumber}', fee '$fee->{id}'; " .
+                    "attempt to credit amount '$transaction->{amount}' greater than " .
+                    "the amount outstanding '$fee->{amountoutstanding}' ";
                 return 'INVALID_TRANSACTION_AMOUNT';
             }
-            ( $trans_inserted, $trans_error ) = _insert_fee_transaction( $transaction );
-            if ( $trans_error ) {
+
+            ($trans_inserted, $trans_error) = _insert_fee_transaction($transaction);
+
+            if ($trans_error) {
                 warn "Error inserting fee_transaction $trans_error";
                 return $trans_error;
             }
-        } elsif($acct_types->{$action->{accounttype}}->{class} eq 'payment' ) {
+
+        }
+        elsif ( $acct_types->{$action->{accounttype}}->{class} eq 'payment' ) { # PAYMENT
             my $pay_amt;
-            if(! defined $action->{'amount'} || $action->{'amount'} == -1 * $fee->{'amountoutstanding'}){
-                # Payment in full.
-                $pay_amt = -1 * $fee->{amountoutstanding};
-            } elsif($action->{amount} < 0 && $action->{amount} > -1 * $fee->{'amountoutstanding'}) {
-                # Partial payment.
-                $pay_amt = $action->{amount};
-            } else {
-                warn "ApplyCredit received a positive credit : Borrower $fee->{borrowernumber}, fee $fee->{id}"; # indicates bad call. 
-                return 'INVALID_PAYMENT_AMOUNT';
-                # We do not allow overpayment here.
+
+            if ( (!defined $action->{'amount'}) || ($action->{'amount'} == (-1 * $fee->{'amountoutstanding'})) ) { # Full payment
+                $pay_amt = (-1 * $fee->{amountoutstanding});
             }
+            elsif ( ($action->{amount} < 0) && ($action->{amount} > (-1 * $fee->{'amountoutstanding'})) ) { # Partial payment
+                $pay_amt = $action->{amount};
+            }
+            else { # Bad call: overpayment NOT PERMITTED!
+                warn "ApplyCredit [payment] received a positive credit: " .
+                    "borrower '$fee->{borrowernumber}', fee '$fee->{id}'; " .
+                    "attempt to credit amount '$action->{amount}' greater than " .
+                    "the amount outstanding '$fee->{amountoutstanding}' ";
+                return 'INVALID_PAYMENT_AMOUNT';
+            }
+
             $transaction->{amount} = $pay_amt;
-            ($new_pmt, $pmt_error) = _insert_new_payment( $transaction );
-            my ($unallocated,$unpaid) = allocate_payment( payment=>$new_pmt, fee=>$fee );
-        } else {
-            # No action specified.  Bail.
+            ($new_pmt, $pmt_error) = _insert_new_payment($transaction);
+
+            my ($unallocated, $unpaid) = allocate_payment( payment => $new_pmt, fee => $fee ); # Why bother gathering the return values if they arent' used?
+
+        }
+        else { # Bad call: $acct_types->{$action->{accounttype}}->{class} NEITHER a 'transaction' nor a 'payment'.
             return 'NO_ACTION_SPECIFIED';
         }
-    } else {
-        # nothing to do ?
+
+    }
+    else { # Bad call: $action && $action->{accounttype} not defined.
         return 'NO_ACTION_SPECIFIED';
     }
+
     return;
 }
 
@@ -1081,49 +1140,61 @@ and the new total owed on the fee.
 
 sub allocate_payment {
     my %args = @_;
-    if(!$args{payment} || !$args{fee}){
-        cluck "Bad call to allocate_payment." . p %args;
+
+    if (!$args{payment} || !$args{fee}){
+        cluck "FAIL: sub allocate_payment: \$args{payment} = '$args{payment}'; \$args{fee} = '$args{fee}'; full dump of \%args : " . p %args;
         return;
     }
+
     my $payment = (ref $args{payment}) ? $args{payment} : getpayment($args{payment}, unallocated=>1);
     my $fee = (ref $args{fee}) ? $args{fee} : getfee($args{fee});
-    if(!exists $payment->{id} || !exists $fee->{id}){
-        warn "Attempt to allocate payment to fee.  One/both don't exist.";
+
+    if (!exists $payment->{id} || !exists $fee->{id}){
+        warn "WARNING: sub allocate_payment: attempt to allocate payment to fee. \$payment->{id} = '$payment->{id}'; \$fee->{id} = '$fee->{id}'";
     }
-    if(!exists $payment->{unallocated}){
-        ## ^^ FIXME: type slop. since we allow $payment to be passed in as a hashref, it might be payments join transactions rather than output of getpayment.
+
+    if ( !exists $payment->{unallocated} ) {
+        # FIXME: type slop. since we allow $payment to be passed in as a hashref, it
+        # might be payments join transactions rather than output of getpayment.
         $payment = getpayment($payment->{id}, unallocated=>1);
     }
+
     my $unallocated_amt = (Check::ISA::obj($payment->{unallocated}->{amount}, 'Koha::Money')) ? $payment->{unallocated}->{amount} : Koha::Money->new($payment->{unallocated}->{amount});
     my $amt;
-    if(exists $args{amount}){
+
+    if ( exists $args{amount} ) {
         $amt = (Check::ISA::obj($args{amount}, 'Koha::Money')) ? $args{amount} : Koha::Money->new($args{amount});
-        $amt = -1 * $amt unless $amt < 0;
-        if($amt < $unallocated_amt || $amt < -1 * $fee->{amountoutstanding}){
-            warn "*************Attempted overallocation of payment: $amt / $unallocated_amt";
+        $amt = (-1 * $amt) unless ($amt < 0);
+
+        if ( ($amt < $unallocated_amt) || ($amt < (-1 * $fee->{amountoutstanding})) ) {
+            warn "FAIL: sub allocate_payment: attempted OVER allocation of payment: \$amt = '$amt'; \$unallocated_amt = '$unallocated_amt'";
             warn p $payment;
             warn p $fee;
             return $unallocated_amt, $fee->{amountoutstanding};
         }
-    } else {
+    }
+    else {
         $amt = $unallocated_amt;
     }
+
     my $preserve_date = exists $args{preserve_date};
     my $dbh = C4::Context->dbh;
-# FIXME: Rather than doing transaction in this sub, it should die on failure, and callers should do the transactions.    
     my $remaining_credit = $unallocated_amt;
     my $remaining_fee = $fee->{'amountoutstanding'};
-    $amt = max($amt,$remaining_credit,-1*$remaining_fee);
+
+    $amt = max($amt, $remaining_credit, (-1 * $remaining_fee) );
+
     $debug and warn "Allocating payment $payment->{id}: have $unallocated_amt to apply to $remaining_fee ; applying $amt";
-    if ($unallocated_amt == $amt) {
-        # full allocation of unallocated portion..
+
+    # FIXME: Rather than doing transaction in this sub, it should die on failure, and
+    # callers should do the transactions.
+    if ($unallocated_amt == $amt) { # Full allocation of unallocated portion
         $remaining_fee += $amt;
         $remaining_credit -= $amt;
         my $sth_trans = $dbh->prepare_cached("UPDATE fee_transactions set fee_id = ? where transaction_id = ?");
         $sth_trans->execute( $fee->{'id'}, $payment->{unallocated}->{transaction_id} );
-    } else {
-        # If there is some remaining credit, then we adjust the fee_id=NULL fee_transaction, and we add a new one with this fee_id.
-        
+    }
+    else { # If there is some remaining credit, then we adjust the fee_id = NULL fee_transaction, and we add a new one with this fee_id.
         $remaining_credit -= $amt;
         my $pay_trans = {
             fee_id      => $fee->{id},
@@ -1131,25 +1202,26 @@ sub allocate_payment {
             amount      => $amt,
             accounttype => $payment->{unallocated}->{'accounttype'},
             notes       => $payment->{unallocated}->{notes}  # Primarily for upgrade script.
-            };
-        $pay_trans->{timestamp} = $payment->{unallocated}->{timestamp} if($preserve_date);
+        };
+        $pay_trans->{timestamp} = $payment->{unallocated}->{timestamp} if $preserve_date;
+
         $dbh->begin_work();
-        eval{
-            
+        eval {
             my ($trans_id, $trans_error) = _insert_fee_transaction( $pay_trans );
             my $sth_trans = $dbh->prepare_cached("UPDATE fee_transactions set amount = ? where transaction_id = ?");
             my $update_ok = $sth_trans->execute( $remaining_credit->value, $payment->{unallocated}->{transaction_id} );
             $remaining_fee = Koha::Money->new();
             $dbh->commit();
         };
-        if($@){
+        if ($@) {
             warn "allocate_payment aborted : $@";
             $dbh->rollback;
             $remaining_credit = $unallocated_amt;
             $remaining_fee = $fee->{'amountoutstanding'};
         }
     }
-    return($remaining_credit,$remaining_fee);
+
+    return ( $remaining_credit, $remaining_fee );
 }
 
 
