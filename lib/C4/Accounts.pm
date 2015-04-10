@@ -468,8 +468,16 @@ sub getfee {
     my $sth = $dbh->prepare($query_fee);
     $sth->execute($fee_id);
     my $fee = $sth->fetchrow_hashref;
-    my $sth_outstanding = $dbh->prepare("select sum(amount) from fees LEFT JOIN fee_transactions on(fees.id=fee_transactions.fee_id) where fees.id = ?");
-    $sth_outstanding->execute( $fee_id );
+
+    my $query_outstanding = qq{
+        SELECT SUM(amount) FROM fees
+        LEFT JOIN fee_transactions ON (fees.id = fee_transactions.fee_id)
+        WHERE fees.id = ?
+            AND accounttype IN (SELECT accounttype FROM accounttypes WHERE class IN ('fee', 'invoice'))
+    };
+
+    my $sth_outstanding = $dbh->prepare($query_outstanding);
+    $sth_outstanding->execute($fee_id);
     my ($outstanding) = $sth_outstanding->fetchrow_array;
 
     $fee->{'amountoutstanding'} = Koha::Money->new($outstanding);
