@@ -2157,7 +2157,7 @@ sub CanBookBeRenewed {
             # If there are still items available, then active hold is OK
             # Account for transfers?
             my $biblio = GetBiblioFromItemNumber($itemnumber);
-            my %exclusions = ( itemlost => 1, withdrawn => 1, damaged => 1 );
+            my %exclusions = ( itemlost => 1, withdrawn => 1, damaged => 1, otherstatus => 1 );
             if (my $num_avail = GetAvailableItemsCount($biblio->{biblionumber},undef,%exclusions)) {
                 $renewokay = 1;
             }
