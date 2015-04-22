@@ -433,6 +433,9 @@ sub GetAvailableItemsCount {
     if ($exclusions{damaged}) {
         $query .= ' AND items.damaged = 0';
     }
+    if ($exclusions{otherstatus}) {
+        $query .= ' AND items.otherstatus IS NULL';
+    }
 
     my ($count) = C4::Context->dbh->selectrow_array($query, undef, @params);
     return $count;
