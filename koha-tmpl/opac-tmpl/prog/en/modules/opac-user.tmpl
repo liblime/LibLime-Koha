@@ -19,11 +19,6 @@ $.tablesorter.addParser({
                     $("form[name='renew_all']").submit(); // Needed for Chrome
                     $(".renew_all").attr("disabled",true);
                 });
-                $(".renew_once").one('click', function() {
-                    var href = this.href;
-                    $(".renew_once").removeAttr("href");
-                    location.href = href;
-                });
             $('#opac-user-views').tabs();
 			$("#aholdst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
 		dateFormat: 'uk',<!-- /TMPL_IF -->
@@ -292,7 +287,7 @@ function isValidDate(theFieldName){
                 <!-- /TMPL_IF -->
                 <!-- TMPL_IF name="OpacRenewalAllowed" -->
                     <!-- TMPL_UNLESS name="patron_flagged" -->
-                    <td><!-- TMPL_IF NAME="status" --><a href="/cgi-bin/koha/opac-renew.pl?from=opac_user&amp;item=<!-- TMPL_VAR NAME="itemnumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" class="renew_once">Renew</a> <span class="renewals">(<!-- TMPL_VAR NAME="renewsleft" --> of <!-- TMPL_VAR NAME="renewsallowed" --> renewals remaining)</span>
+                    <td><!-- TMPL_IF NAME="status" --><a href="/cgi-bin/koha/opac-renew.pl?from=opac_user&amp;item=<!-- TMPL_VAR NAME="itemnumber" -->&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->" class="one_click">Renew</a> <span class="renewals">(<!-- TMPL_VAR NAME="renewsleft" --> of <!-- TMPL_VAR NAME="renewsallowed" --> renewals remaining)</span>
                         <!-- TMPL_ELSE -->
                         Not renewable<!-- TMPL_IF NAME="too_many" --> <span class="renewals">(<!-- TMPL_VAR NAME="renewsleft" --> of <!-- TMPL_VAR NAME="renewsallowed" --> renewals remaining)</span><!-- TMPL_ELSE --><!-- TMPL_IF NAME="on_reserve" --> <span class="renewals">(On hold)</span><!-- /TMPL_IF --><!-- /TMPL_IF --> 
                         <!-- /TMPL_IF --></td>

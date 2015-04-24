@@ -12,6 +12,11 @@ function Dopop(link) {
 }
 
 $(document).ready(function(){
+        $(".one_click").one("click", function() {
+            var href = this.href;
+            $(".one_click").removeAttr("href");
+            location.href = href;
+        });
 	$(".close").click(function(){
 		window.close();
 	});
