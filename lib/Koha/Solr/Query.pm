@@ -129,7 +129,7 @@ sub _build_query_from_cgi{
         $query .= sprintf ' %s ', uc($op)
             if $query;
 
-        if ( !$idx ) {
+        if ( !$idx || $idx eq 'text' ) {
             # user may have specified field. In this case, we assume
             # they used proper syntax. (should only happen when idx=='').
             $query .= $q;
