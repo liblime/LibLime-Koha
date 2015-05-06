@@ -63,7 +63,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 				</div>
 			</div>
 		<!-- TMPL_ELSE -->
-			<input id="findborrower" name="findborrower" size="40" type="text" />
+			<input id="findborrower" name="findborrower" size="50" type="text" value="<!-- TMPL_VAR NAME="searchfield" -->" />
 			<input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
 			<input name="printer" value="" type="hidden" />
 			<input value="Submit" class="submit" type="submit" />

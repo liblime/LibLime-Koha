@@ -9,7 +9,7 @@
 	<div id="tabs-syspref_search" class="residentsearch">
 	<p class="tip">System preference search:</p>
 	    <form action="/cgi-bin/koha/admin/systempreferences.pl" method="post">
-        <input type="text" size="40" name="searchfield" value="<!-- TMPL_VAR NAME="searchfield" -->" />
+        <input type="text" size="50" name="searchfield" value="<!-- TMPL_VAR NAME="searchfield" -->" />
 		<input type="hidden" value="all" name="tab" />
         <input type="submit" name="ok" class="submit" value="Search" />
     </form>
@@ -19,7 +19,7 @@
 	<div id="tabs-catalog_search" class="residentsearch">
 	<p class="tip">Enter search keywords:</p>
 		<form action="/cgi-bin/koha/catalogue/search.pl"  method="get" id="cat-search-block">
-			 <input type="text" name="q" id="search-form" size="40" value="" title="Enter the terms you wish to search for." class="form-text" />
+			 <input type="text" name="q" id="search-form" size="50" value="<!-- TMPL_VAR NAME="searchfield" -->" title="Enter the terms you wish to search for." class="form-text" />
 				<input type="submit" value="Submit" class="submit" />
 		</form>
 	</div>

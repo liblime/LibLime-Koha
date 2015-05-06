@@ -242,6 +242,7 @@ if ( $op eq 'add_validate' ) {
     my $tab = $input->param('tab');
     $template->param( $tab => 1 );
     my $results = StringSearch( $searchfield, $tab );
+    $template->param( searchfield => $searchfield );
     my $count = @$results;
     my @loop_data = ();
     for ( my $i = $offset ; $i < ( $offset + $pagesize < $count ? $offset + $pagesize : $count ) ; $i++ ) {

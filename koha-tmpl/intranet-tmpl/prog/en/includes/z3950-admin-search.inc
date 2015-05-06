@@ -53,7 +53,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 	<div id="tabs-z3950_search" class="residentsearch">
 	<p class="tip">Z39.50 Server Search:</p>
 	<form action="/cgi-bin/koha/admin/z3950servers.pl" method="post">
-                <input type="text" name="searchfield" size="40" value="<!-- TMPL_VAR name="searchfield" -->" />
+                <input type="text" name="searchfield" size="50" value="<!-- TMPL_VAR name="searchfield" -->" />
                 <input type="submit" class="submit" name="search" value="Search" />
         </form>
 	</div>
@@ -72,7 +72,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
             </div>
         </div>
 	<!-- TMPL_ELSE -->
-            <input id="findborrower" name="findborrower" size="40" class="focus" type="text" />
+            <input id="findborrower" name="findborrower" size="50" class="focus" type="text" />
             <input name="branch" value="<!-- TMPL_VAR name="branch" -->" type="hidden" />
             <input name="printer" value="" type="hidden" />
             <input value="Submit" class="submit" type="submit" />
@@ -84,7 +84,7 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 	<div id="tabs-catalog_search" class="residentsearch">
 	<p class="tip">Enter search keywords:</p>
 		<form action="/cgi-bin/koha/catalogue/search.pl"  method="get" id="cat-search-block">
-			 <input type="text" name="q" id="search-form" size="40" value="" title="Enter the terms you wish to search for." class="form-text" />
+			 <input type="text" name="q" id="search-form" size="50" value="" title="Enter the terms you wish to search for." class="form-text" />
 				<input type="submit" value="Submit"  class="submit" />
 		</form>
 	</div>
