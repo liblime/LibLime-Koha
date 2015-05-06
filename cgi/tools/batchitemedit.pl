@@ -109,7 +109,7 @@ if ( $op eq 'Proceed' ) {
             }
         }
         $rep->{barcode} = $item->{barcode};
-        ModItem( \%to_edit, $item->{bnum}, $item->{inum} );
+        ModItem( \%to_edit, $item->{biblionumber}, $item->{itemnumber} );
         ++$updated;
         $rep->{updated} = 1;    # None of the update routines return success/failure
         push @{$processed_items}, $rep;
