@@ -415,7 +415,10 @@ sub GetAvailableItemsCount {
     my $query = 'SELECT COUNT(*)
                  FROM items
                  LEFT JOIN issues ON issues.itemnumber = items.itemnumber
+                 LEFT JOIN branchtransfers ON branchtransfers.itemnumber = items.itemnumber
                  WHERE issues.timestamp IS NULL
+                 AND branchtransfers.datesent IS NULL
+                 AND branchtransfers.datearrived IS NULL
                  AND items.notforloan = 0
                  AND items.biblionumber = ?';
     my @params = ($biblionumber);
