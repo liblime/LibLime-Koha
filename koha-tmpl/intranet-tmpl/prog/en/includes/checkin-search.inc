@@ -10,7 +10,7 @@
 <div id="tabs-catalog_search" class="residentsearch">
     <p class="tip">Enter search keywords:</p>
     <form action="/cgi-bin/koha/catalogue/search.pl"  method="get" id="cat-search-block">
-        <input type="text" name="q" id="search-form" size="40" />
+        <input type="text" name="q" id="search-form" size="50" />
         <input type="submit" class="submit" value="Submit"/>
     </form>
 </div>
