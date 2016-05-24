@@ -534,7 +534,7 @@ WriteMakefile(
                             'Algorithm::CheckDigits'           => 0.50,
                             'Attribute::Handlers'              => 0.79,
                             'Biblio::EndnoteStyle'             => 0.05,
-                            'Business::ISBN'                   => 2.05,
+                            'Business::ISBN'                   => 2.010,
                             'Cache::Memcached'                 => 1.24,
                             'Cache::Memcached::Fast'           => 0.19,
                             'CGI'                              => 3.15,
