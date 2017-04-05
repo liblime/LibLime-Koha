@@ -11,8 +11,8 @@
 
 <div class="container">
 <h1>Issues for a subscription</h1>
-	<a href="opac-detail.pl?biblionumber=<!-- TMPL_VAR name="biblionumber" -->" class="button">Normal View</a>
-	<a href="opac-serial-issues.pl?selectview=full&amp;biblionumber=<!-- TMPL_VAR name="biblionumber" -->" class="button">Full History</a>
+	<a href="opac-detail.pl?biblionumber=<!-- TMPL_VAR name="biblionumber" ESCAPE="html" -->" class="button">Normal View</a>
+	<a href="opac-serial-issues.pl?selectview=full&amp;biblionumber=<!-- TMPL_VAR name="biblionumber" ESCAPE="html"-->" class="button">Full History</a>
 
 <form method="post" name="f">
 <!-- TMPL_LOOP name="subscription_LOOP" -->
