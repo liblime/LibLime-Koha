@@ -605,7 +605,8 @@ $default=$data{'branchcode'}  if ($op eq 'modify' || ($op eq 'add' && $category_
 #            -default => $default,
 #        );
 my $CGIbranch = [];
-foreach(keys %$branches) {
+# Sort branches by branch name before generating CGI branch array
+foreach (sort {lc($branches->{$a}{branchname}) cmp lc($branches->{$a}{branchname})} keys %$branches) {
    push @$CGIbranch, {
       branchcode => $_,
       branchname => $$branches{$_}{branchname},
